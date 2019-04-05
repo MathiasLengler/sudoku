@@ -1,6 +1,8 @@
 use std::fmt::{Display, Formatter};
 use std::fmt;
 
+use itertools::Itertools;
+
 use cell::SudokuCell;
 
 use crate::position::Position;
@@ -34,8 +36,8 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
 
     pub fn has_conflict(&self) -> bool {
         self.all_rows().any(|row| self.has_duplicate(row)) ||
-        self.all_columns().any(|column| self.has_duplicate(column)) ||
-        self.all_blocks().any(|block| self.has_duplicate(block))
+            self.all_columns().any(|column| self.has_duplicate(column)) ||
+            self.all_blocks().any(|block| self.has_duplicate(block))
     }
 
     // TODO: conflict location pairs
@@ -156,7 +158,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
 //        }
 //    }
 
-    fn side_length(&self) -> usize {
+    pub fn side_length(&self) -> usize {
         self.base.pow(2)
     }
 
@@ -167,12 +169,27 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
 
 impl<Cell: SudokuCell> Display for Sudoku<Cell> {
     fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
-        f.write_str(
-            &self.cells
-                .chunks(self.side_length())
-                .map(|chunk| chunk.iter().map(ToString::to_string).collect::<String>())
-                .collect::<Vec<_>>().join("\n")
-        )
+        const PADDING: usize = 3;
+
+        let horizontal_block_separator = "-".repeat(self.base + (PADDING * self.side_length()));
+
+        let output_string = self.cells
+            .chunks(self.side_length())
+            .map(|row| row.chunks(self.base)
+                .map(|block_row| block_row.iter()
+                    .map(|cell| format!("{:>PADDING$}", cell.to_string(), PADDING = PADDING))
+                    .collect::<String>()
+                ).collect::<Vec<_>>().join("|")
+            )
+            .collect::<Vec<String>>()
+            .chunks(self.base)
+            .intersperse(&[horizontal_block_separator])
+            .flatten()
+            .cloned()
+            .collect::<Vec<String>>().join("\n");
+
+
+        f.write_str(&output_string)
     }
 }
 

@@ -6,8 +6,8 @@ fn main() {
     let mut sudoku = Sudoku::<OptionCell>::new(3);
 
     let mut debug_value = 0;
-    for y in 0..9 {
-        for x in 0..9 {
+    for y in 0..sudoku.side_length() {
+        for x in 0..sudoku.side_length() {
             sudoku.set(Position { x, y }, OptionCell(Some(debug_value)));
             debug_value += 1;
         }

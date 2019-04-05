@@ -5,7 +5,7 @@ pub trait SudokuCell: Default + Clone + Display + Ord + Eq {
 }
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Default, Debug)]
-pub struct OptionCell(pub Option<u8>);
+pub struct OptionCell(pub Option<usize>);
 
 impl Display for OptionCell {
     fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
