@@ -8,13 +8,17 @@ use crate::position::Position;
 pub mod cell;
 pub mod position;
 
+
+// TODO: generate valid solved sudoku
+// TODO: generate valid incomplete sudoku
+// TODO: solve/verify incomplete sudoku
+
 #[derive(Clone, Debug)]
 pub struct Sudoku<Cell: SudokuCell> {
     base: usize,
     cells: Vec<Cell>,
 
 }
-
 
 // TODO: rethink indexing story (internal/cell position/block position)
 impl<Cell: SudokuCell> Sudoku<Cell> {
