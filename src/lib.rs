@@ -1,5 +1,6 @@
 use std::fmt::{Display, Formatter};
 use std::fmt;
+use std::ops::RangeInclusive;
 
 use itertools::Itertools;
 
@@ -9,6 +10,7 @@ use crate::position::Position;
 
 pub mod cell;
 pub mod position;
+pub mod backtrack;
 
 
 // TODO: generate valid solved sudoku
@@ -53,6 +55,20 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
         let cell_count_dedup = cells.len();
 
         cell_count != cell_count_dedup
+    }
+
+    pub fn all_positions(&self) -> impl Iterator<Item=Position> {
+        let side_length = self.side_length();
+
+        (0..side_length)
+            .flat_map(move |row_index| (0..side_length).map(move |column_index| Position {
+                x: column_index,
+                y: row_index
+            }))
+    }
+
+    pub fn all_empty_positions(&self) -> Vec<Position> {
+        self.all_positions().filter(|pos| !self.get(*pos).has_value()).collect()
     }
 
     // TODO: Cell with Position
@@ -158,11 +174,15 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
 //        }
 //    }
 
+    pub fn value_range(&self) -> RangeInclusive<usize> {
+        1..=self.side_length()
+    }
+
     pub fn side_length(&self) -> usize {
         self.base.pow(2)
     }
 
-    fn cell_count(&self) -> usize {
+    pub fn cell_count(&self) -> usize {
         self.base.pow(4)
     }
 }
