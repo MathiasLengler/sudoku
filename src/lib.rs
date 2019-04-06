@@ -10,7 +10,8 @@ use crate::position::Position;
 
 pub mod cell;
 pub mod position;
-pub mod backtrack;
+pub mod solver;
+pub mod generator;
 
 
 // TODO: generate valid solved sudoku
@@ -25,6 +26,7 @@ pub struct Sudoku<Cell: SudokuCell> {
 }
 
 // TODO: rethink indexing story (internal/cell position/block position)
+// TODO: separate sudoku and grid (model/controller)
 impl<Cell: SudokuCell> Sudoku<Cell> {
     pub fn new(base: usize) -> Self {
         let mut sudoku = Sudoku {
@@ -213,3 +215,30 @@ impl<Cell: SudokuCell> Display for Sudoku<Cell> {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::cell::OptionCell;
+
+    #[test]
+    fn test_has_conflict() {
+        let mut sudoku = Sudoku::<OptionCell>::new(3);
+
+        let mut debug_value = 0;
+        for y in 0..sudoku.side_length() {
+            for x in 0..sudoku.side_length() {
+                sudoku.set(Position { x, y }, OptionCell(Some(debug_value)));
+                debug_value += 1;
+            }
+        }
+
+        assert!(!sudoku.has_conflict());
+
+        sudoku.set(Position {
+            x: 2,
+            y: 2,
+        }, OptionCell(Some(0)));
+
+        assert!(sudoku.has_conflict());
+    }
+}

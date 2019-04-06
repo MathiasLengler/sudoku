@@ -1,7 +1,8 @@
 use std::fmt::{self, Display, Formatter};
 
-pub trait SudokuCell: Default + Clone + Display + Ord + Eq {
+pub trait SudokuCell: Default + Clone + Display + Ord + Eq + Send {
     fn has_value(&self) -> bool;
+    fn new_with_value(value: usize) -> Self;
 }
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Default, Debug)]
@@ -19,5 +20,9 @@ impl Display for OptionCell {
 impl SudokuCell for OptionCell {
     fn has_value(&self) -> bool {
         self.0.is_some()
+    }
+
+    fn new_with_value(value: usize) -> Self {
+        OptionCell(Some(value))
     }
 }
