@@ -1,3 +1,3 @@
 pub mod backtracking;
 
-// TODO: contraint solver
+// TODO: constraint solver

@@ -1,6 +1,8 @@
 use std::fmt::{Display, Formatter};
 use std::fmt;
+use std::iter::FromIterator;
 use std::ops::RangeInclusive;
+use std::str::FromStr;
 
 use itertools::Itertools;
 
@@ -14,7 +16,6 @@ pub mod solver;
 pub mod generator;
 
 
-// TODO: generate valid solved sudoku
 // TODO: generate valid incomplete sudoku
 // TODO: solve/verify incomplete sudoku
 
@@ -27,6 +28,8 @@ pub struct Sudoku<Cell: SudokuCell> {
 
 // TODO: rethink indexing story (internal/cell position/block position)
 // TODO: separate sudoku and grid (model/controller)
+// TODO: move row, all_rows, column, all_column, all_cells into grid
+// TODO: Cell with Position in iterators
 impl<Cell: SudokuCell> Sudoku<Cell> {
     pub fn new(base: usize) -> Self {
         let mut sudoku = Sudoku {
@@ -65,7 +68,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
         (0..side_length)
             .flat_map(move |row_index| (0..side_length).map(move |column_index| Position {
                 x: column_index,
-                y: row_index
+                y: row_index,
             }))
     }
 
@@ -73,8 +76,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
         self.all_positions().filter(|pos| !self.get(*pos).has_value()).collect()
     }
 
-    // TODO: Cell with Position
-    // TODO: rethink parameter
+    // TODO: parameter row_index
     fn row(&self, pos: Position) -> impl Iterator<Item=&Cell> {
         self.assert_position(pos);
 
@@ -93,8 +95,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     }
 
 
-    // TODO: Cell with Position
-    // TODO: rethink parameter
+    // TODO: parameter column_index
     fn column(&self, pos: Position) -> impl Iterator<Item=&Cell> {
         self.assert_position(pos);
 
@@ -112,8 +113,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
         })
     }
 
-    // TODO: Cell with Position
-    // TODO: rethink parameter
+    // TODO: parameter block_position
     fn block(&self, pos: Position) -> impl Iterator<Item=&Cell> {
         self.assert_position(pos);
 
@@ -189,6 +189,20 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     }
 }
 
+impl<Cell: SudokuCell> FromIterator<usize> for Sudoku<Cell> {
+    fn from_iter<I: IntoIterator<Item=usize>>(iter: I) -> Self {
+        let _values: Vec<_> = iter.into_iter().collect();
+            // TODO:
+
+//        Sudoku {
+//            base: values.len().sqrt().sqrt(),
+//            cells: vec![],
+//        }
+
+        unimplemented!()
+    }
+}
+
 impl<Cell: SudokuCell> Display for Sudoku<Cell> {
     fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
         const PADDING: usize = 3;
@@ -217,8 +231,9 @@ impl<Cell: SudokuCell> Display for Sudoku<Cell> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::cell::OptionCell;
+
+    use super::*;
 
     #[test]
     fn test_has_conflict() {
