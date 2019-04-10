@@ -6,30 +6,44 @@ use rayon::prelude::ParallelIterator;
 use crate::cell::SudokuCell;
 use crate::Sudoku;
 
-pub struct ParallelRandomGenerator {
-    try_limit: usize
+pub struct RandomGenerator {
+    try_limit: usize,
+    base: usize,
+    parallel: bool,
 }
 
-impl ParallelRandomGenerator {
-    pub fn new(try_limit: usize) -> ParallelRandomGenerator {
-        ParallelRandomGenerator {
-            try_limit
+impl RandomGenerator {
+    pub fn new(base: usize, try_limit: usize, parallel: bool) -> RandomGenerator {
+        RandomGenerator {
+            try_limit,
+            base,
+            parallel,
         }
     }
 
     pub fn generate<Cell: SudokuCell>(&self) -> Option<Sudoku<Cell>> {
-        (0..self.try_limit)
-            .into_par_iter()
-            .filter_map(|_try_count| {
-                let mut sudoku = Sudoku::<Cell>::new(3);
+        let tries = 0..self.try_limit;
 
-                if Self::try_fill(&mut sudoku) {
-                    Some(sudoku)
-                } else {
-                    None
-                }
-            })
-            .find_any(|_| true)
+        let filter_function = |_try_count| {
+            let mut sudoku = Sudoku::<Cell>::new(self.base);
+
+            if Self::try_fill(&mut sudoku) {
+                Some(sudoku)
+            } else {
+                None
+            }
+        };
+
+        if self.parallel {
+            tries
+                .into_par_iter()
+                .filter_map(filter_function)
+                .find_any(|_| true)
+        } else {
+            tries
+                .filter_map(filter_function)
+                .next()
+        }
     }
 
     fn try_fill<Cell: SudokuCell>(sudoku: &mut Sudoku<Cell>) -> bool {

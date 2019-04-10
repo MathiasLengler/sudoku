@@ -1,20 +1,20 @@
 use std::fmt::{Display, Formatter};
 use std::fmt;
-use std::iter::FromIterator;
 use std::ops::RangeInclusive;
-use std::str::FromStr;
 
+use failure::ensure;
 use itertools::Itertools;
 
 use cell::SudokuCell;
 
+use crate::error::Result;
 use crate::position::Position;
 
 pub mod cell;
 pub mod position;
 pub mod solver;
 pub mod generator;
-
+pub mod error;
 
 // TODO: generate valid incomplete sudoku
 // TODO: solve/verify incomplete sudoku
@@ -39,6 +39,27 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
 
         sudoku.cells = vec![Default::default(); sudoku.cell_count()];
         sudoku
+    }
+
+    pub fn new_from_nested_cells(cells: Vec<Vec<Cell>>) -> Result<Self> {
+        Self::new_from_flat_cells(cells.into_iter().flatten().collect())
+    }
+
+    pub fn new_from_flat_cells(cells: Vec<Cell>) -> Result<Self> {
+        let base = Self::cell_count_to_base(cells.len())?;
+
+        Ok(Sudoku {
+            base,
+            cells
+        })
+    }
+
+    fn cell_count_to_base(cell_count: usize) -> Result<usize> {
+        let approx_base = (cell_count as f64).sqrt().sqrt().round() as usize;
+
+        ensure!(Self::base_to_cell_count(approx_base) == cell_count, "Cell count {} has no valid sudoku base.");
+
+        Ok(approx_base)
     }
 
     pub fn has_conflict(&self) -> bool {
@@ -185,26 +206,16 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     }
 
     pub fn cell_count(&self) -> usize {
-        self.base.pow(4)
+        Self::base_to_cell_count(self.base)
     }
-}
 
-impl<Cell: SudokuCell> FromIterator<usize> for Sudoku<Cell> {
-    fn from_iter<I: IntoIterator<Item=usize>>(iter: I) -> Self {
-        let _values: Vec<_> = iter.into_iter().collect();
-            // TODO:
-
-//        Sudoku {
-//            base: values.len().sqrt().sqrt(),
-//            cells: vec![],
-//        }
-
-        unimplemented!()
+    fn base_to_cell_count(base: usize) -> usize {
+        base.pow(4)
     }
 }
 
 impl<Cell: SudokuCell> Display for Sudoku<Cell> {
-    fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         const PADDING: usize = 3;
 
         let horizontal_block_separator = "-".repeat(self.base + (PADDING * self.side_length()));
