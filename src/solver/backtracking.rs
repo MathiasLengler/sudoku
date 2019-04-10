@@ -42,6 +42,7 @@ pub struct BacktrackingSolver<Cell: SudokuCell> {
 }
 
 // TODO: solutions iterator
+// TODO: current state animation
 impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
     pub fn new(sudoku: Sudoku<Cell>) -> BacktrackingSolver<Cell> {
         Self::new_with_limit(sudoku, 0)
@@ -63,6 +64,10 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
         solver.init();
 
         solver
+    }
+
+    pub fn sudoku(&self) -> &Sudoku<Cell> {
+        &self.sudoku
     }
 
     fn init(&mut self) {
@@ -105,8 +110,6 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
 
                 if choice.value == 0 {
                     // Backtrack
-                    println!("Backtrack");
-
                     self.choices.pop();
 
                     match self.choices.last_mut() {
@@ -131,7 +134,7 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
                 } else {
                     // We went through the whole solution space and marked all potential solutions on the way
                     Some(false)
-                }
+                };
             }
         }
 
@@ -155,12 +158,14 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
     }
 
     fn debug_print(&self) {
-        println!(
-            "Solver at step {}:\n{}\nChoices = {:?}",
-            self.step_count,
-            self.sudoku,
-            self.choices.iter().rev().map(ToString::to_string).collect::<Vec<_>>()
-        );
+        if self.step_count % 10000 == 0 {
+            println!(
+                "Solver at step {}:\n{}\nChoices = {:?}",
+                self.step_count,
+                self.sudoku,
+                self.choices.iter().rev().map(ToString::to_string).collect::<Vec<_>>()
+            );
+        }
     }
 }
 
@@ -173,7 +178,7 @@ mod tests {
 
     use super::*;
 
-    // Input space (
+// Input space (
     //      [empty, partial, full] sudoku,
     //      [conflict/ no conflict],
     //      [0, 1, n] solutions
@@ -202,7 +207,13 @@ mod tests {
                 vec![0, 0, 0, 0],
                 vec![0, 0, 0, 0],
                 vec![0, 1, 0, 2],
-            ]
+            ],
+            vec![
+                vec![0, 0, 1, 0],
+                vec![4, 0, 0, 0],
+                vec![0, 0, 0, 2],
+                vec![0, 3, 0, 0],
+            ],
         ]
             .into_iter()
             .map(TryInto::<Sudoku<OptionCell>>::try_into)
@@ -216,6 +227,48 @@ mod tests {
             let solve_ret = solver.solve();
 
             assert!(solve_ret);
+
+            println!("{}", solver.sudoku());
+
+            assert!(solver.sudoku().all_empty_positions().is_empty())
+        }
+
+        Ok(())
+    }
+
+    //    #[ignore]
+    #[test]
+    fn test_base_3() -> Result<()> {
+        let sudokus = vec![
+            // 11 Star difficulty
+            vec![
+                vec![8, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 3, 6, 0, 0, 0, 0, 0],
+                vec![0, 7, 0, 0, 9, 0, 2, 0, 0],
+                vec![0, 5, 0, 0, 0, 7, 0, 0, 0],
+                vec![0, 0, 0, 0, 4, 5, 7, 0, 0],
+                vec![0, 0, 0, 1, 0, 0, 0, 3, 0],
+                vec![0, 0, 1, 0, 0, 0, 0, 6, 8],
+                vec![0, 0, 8, 5, 0, 0, 0, 1, 0],
+                vec![0, 9, 0, 0, 0, 0, 4, 0, 0],
+            ]
+        ]
+            .into_iter()
+            .map(TryInto::<Sudoku<OptionCell>>::try_into)
+            .collect::<Result<Vec<_>>>()?;
+
+        for (sudoku_index, sudoku) in sudokus.into_iter().enumerate() {
+            eprintln!("sudoku_index = {:?}", sudoku_index);
+
+            let mut solver = BacktrackingSolver::new(sudoku);
+
+            let solve_ret = solver.solve();
+
+            assert!(solve_ret);
+
+            println!("{}", solver.sudoku());
+
+            assert!(solver.sudoku().all_empty_positions().is_empty())
         }
 
         Ok(())
