@@ -1,4 +1,5 @@
 use std::fmt::{self, Display, Formatter};
+use std::num::NonZeroUsize;
 
 pub trait SudokuCell: Default + Clone + Display + Ord + Eq + Send {
     fn has_value(&self) -> bool;
@@ -6,7 +7,7 @@ pub trait SudokuCell: Default + Clone + Display + Ord + Eq + Send {
 }
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Default, Debug)]
-pub struct OptionCell(pub Option<usize>);
+pub struct OptionCell(pub Option<NonZeroUsize>);
 
 impl Display for OptionCell {
     fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
@@ -23,6 +24,9 @@ impl SudokuCell for OptionCell {
     }
 
     fn new_with_value(value: usize) -> Self {
-        OptionCell(Some(value))
+        match NonZeroUsize::new(value) {
+            Some(value) => OptionCell(Some(value)),
+            None => OptionCell(None),
+        }
     }
 }
