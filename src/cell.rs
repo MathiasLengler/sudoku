@@ -1,7 +1,7 @@
-use std::fmt::{self, Display, Formatter};
+use std::fmt::{self, Display, Formatter, Debug};
 use std::num::NonZeroUsize;
 
-pub trait SudokuCell: Default + Clone + Display + Ord + Eq + Send {
+pub trait SudokuCell: Default + Clone + Display + Debug + Ord + Eq + Send {
     fn has_value(&self) -> bool;
     fn new_with_value(value: usize) -> Self;
 }

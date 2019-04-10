@@ -1,3 +1,4 @@
+use std::convert::{TryFrom, TryInto};
 use std::fmt::{Display, Formatter};
 use std::fmt;
 use std::ops::RangeInclusive;
@@ -7,7 +8,7 @@ use itertools::Itertools;
 
 use cell::SudokuCell;
 
-use crate::error::Result;
+use crate::error::{Error, Result};
 use crate::position::Position;
 
 pub mod cell;
@@ -16,8 +17,8 @@ pub mod solver;
 pub mod generator;
 pub mod error;
 
-// TODO: generate valid incomplete sudoku
 // TODO: solve/verify incomplete sudoku
+// TODO: generate valid incomplete sudoku
 
 #[derive(Clone, Debug)]
 pub struct Sudoku<Cell: SudokuCell> {
@@ -30,6 +31,7 @@ pub struct Sudoku<Cell: SudokuCell> {
 // TODO: separate sudoku and grid (model/controller)
 // TODO: move row, all_rows, column, all_column, all_cells into grid
 // TODO: Cell with Position in iterators
+// TODO: Check value of cells
 impl<Cell: SudokuCell> Sudoku<Cell> {
     pub fn new(base: usize) -> Self {
         let mut sudoku = Sudoku {
@@ -39,27 +41,6 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
 
         sudoku.cells = vec![Default::default(); sudoku.cell_count()];
         sudoku
-    }
-
-    pub fn new_from_nested_cells(cells: Vec<Vec<Cell>>) -> Result<Self> {
-        Self::new_from_flat_cells(cells.into_iter().flatten().collect())
-    }
-
-    pub fn new_from_flat_cells(cells: Vec<Cell>) -> Result<Self> {
-        let base = Self::cell_count_to_base(cells.len())?;
-
-        Ok(Sudoku {
-            base,
-            cells
-        })
-    }
-
-    fn cell_count_to_base(cell_count: usize) -> Result<usize> {
-        let approx_base = (cell_count as f64).sqrt().sqrt().round() as usize;
-
-        ensure!(Self::base_to_cell_count(approx_base) == cell_count, "Cell count {} has no valid sudoku base.");
-
-        Ok(approx_base)
     }
 
     pub fn has_conflict(&self) -> bool {
@@ -115,7 +96,6 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
         })
     }
 
-
     // TODO: parameter column_index
     fn column(&self, pos: Position) -> impl Iterator<Item=&Cell> {
         self.assert_position(pos);
@@ -124,6 +104,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
 
         (starting_index..self.cell_count()).step_by(self.side_length()).map(move |i| &self.cells[i])
     }
+
 
     fn all_columns(&self) -> impl Iterator<Item=impl Iterator<Item=&Cell>> {
         (0..self.side_length()).map(move |row_index| {
@@ -165,7 +146,6 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
         all_block_base_pos.map(move |block_base_pos| self.block(block_base_pos))
     }
 
-
     pub fn get(&self, pos: Position) -> &Cell {
         self.assert_position(pos);
 
@@ -174,12 +154,17 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
         &self.cells[index]
     }
 
-    pub fn set(&mut self, pos: Position, value: Cell) {
+
+    pub fn set(&mut self, pos: Position, value: Cell) -> Cell {
+        use std::mem;
+
         self.assert_position(pos);
 
         let index = self.index_at(pos);
 
-        self.cells[index] = value;
+        let previous_value = mem::replace(&mut self.cells[index], value);
+
+        previous_value
     }
 
     fn assert_position(&self, pos: Position) {
@@ -190,12 +175,13 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
         pos.x + pos.y * self.side_length()
     }
 
-//    fn pos_at(&self, index: usize) -> Position {
-//        Position {
-//            x: index / self.side_length(),
-//            y: index % self.side_length(),
-//        }
-//    }
+    #[allow(dead_code)]
+    fn pos_at(&self, index: usize) -> Position {
+        Position {
+            x: index / self.side_length(),
+            y: index % self.side_length(),
+        }
+    }
 
     pub fn value_range(&self) -> RangeInclusive<usize> {
         1..=self.side_length()
@@ -211,6 +197,58 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
 
     fn base_to_cell_count(base: usize) -> usize {
         base.pow(4)
+    }
+
+    fn cell_count_to_base(cell_count: usize) -> Result<usize> {
+        let approx_base = (cell_count as f64).sqrt().sqrt().round() as usize;
+
+        ensure!(
+            Self::base_to_cell_count(approx_base) == cell_count,
+            "Cell count {} has no valid sudoku base",
+            cell_count
+        );
+
+        Ok(approx_base)
+    }
+}
+
+impl<Cell: SudokuCell> TryFrom<Vec<Vec<Cell>>> for Sudoku<Cell> {
+    type Error = Error;
+
+    fn try_from(nested_cells: Vec<Vec<Cell>>) -> Result<Self> {
+        nested_cells.into_iter().flatten().collect::<Vec<_>>().try_into()
+    }
+}
+
+impl<Cell: SudokuCell> TryFrom<Vec<Cell>> for Sudoku<Cell> {
+    type Error = Error;
+
+    fn try_from(cells: Vec<Cell>) -> Result<Self> {
+        let base = Self::cell_count_to_base(cells.len())?;
+
+        Ok(Sudoku {
+            base,
+            cells,
+        })
+    }
+}
+
+impl<Cell: SudokuCell> TryFrom<Vec<Vec<usize>>> for Sudoku<Cell> {
+    type Error = Error;
+
+    fn try_from(nested_values: Vec<Vec<usize>>) -> Result<Self> {
+        nested_values.into_iter().flatten().collect::<Vec<_>>().try_into()
+    }
+}
+
+impl<Cell: SudokuCell> TryFrom<Vec<usize>> for Sudoku<Cell> {
+    type Error = Error;
+
+    fn try_from(values: Vec<usize>) -> Result<Self> {
+        values.into_iter()
+            .map(|value| Cell::new_with_value(value))
+            .collect::<Vec<_>>()
+            .try_into()
     }
 }
 
@@ -250,10 +288,10 @@ mod tests {
     fn test_has_conflict() {
         let mut sudoku = Sudoku::<OptionCell>::new(3);
 
-        let mut debug_value = 0;
+        let mut debug_value = 1;
         for y in 0..sudoku.side_length() {
             for x in 0..sudoku.side_length() {
-                sudoku.set(Position { x, y }, OptionCell(Some(debug_value)));
+                sudoku.set(Position { x, y }, OptionCell::new_with_value(debug_value));
                 debug_value += 1;
             }
         }
@@ -263,7 +301,7 @@ mod tests {
         sudoku.set(Position {
             x: 2,
             y: 2,
-        }, OptionCell(Some(0)));
+        }, OptionCell::new_with_value(1));
 
         assert!(sudoku.has_conflict());
     }
