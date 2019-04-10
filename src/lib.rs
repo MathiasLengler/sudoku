@@ -298,11 +298,12 @@ mod tests {
 
         assert!(!sudoku.has_conflict());
 
-        sudoku.set(Position {
-            x: 2,
-            y: 2,
-        }, OptionCell::new_with_value(1));
+        let previous_cell = sudoku.set(Position { x: 2, y: 2 }, OptionCell::new_with_value(1));
 
         assert!(sudoku.has_conflict());
+
+        sudoku.set(Position { x: 2, y: 2 }, previous_cell);
+
+        assert!(!sudoku.has_conflict());
     }
 }
