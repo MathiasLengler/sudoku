@@ -41,7 +41,7 @@ pub struct BacktrackingSolver<Cell: SudokuCell> {
     step_limit: Option<NonZeroUsize>,
 }
 
-// TODO: solve iterator/all solutions
+// TODO: solutions iterator
 impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
     pub fn new(sudoku: Sudoku<Cell>) -> BacktrackingSolver<Cell> {
         Self::new_with_limit(sudoku, 0)
@@ -66,21 +66,15 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
     }
 
     fn init(&mut self) {
-        let first_pos = match self.empty_positions.first() {
-            Some(first_pos) => self.choices.push(Choice {
+        if let Some(first_pos) = self.empty_positions.first() {
+            self.choices.push(Choice {
                 pos: *first_pos,
                 value: *self.value_range.start(),
-            }),
-            // Sudoku is filled completely
-            None => {
-                // TODO: catch early?
-            }
+            })
         };
     }
 
-    // TODO: test filled sudoku with conflict
-    // TODO: test filled sudoku without conflict
-    // TODO: test partial filled sudoku
+    // TODO: refactor return type
     pub fn solve(&mut self) -> bool {
         self.debug_print();
 
@@ -103,6 +97,7 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
         }
     }
 
+    // TODO: refactor return type
     fn step(&mut self) -> Option<bool> {
         match self.choices.last() {
             Some(choice) => {
@@ -119,6 +114,7 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
                             prev_choice.set_next(&self.value_range)
                         }
                         None => {
+                            // TODO: return value?
                             // Backtracked on first position
                         }
                     }
@@ -126,11 +122,17 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
                     return None;
                 }
             }
-            // TODO: differentiate between unsolvable and filled sudoku (with/without conflict)
-            // No choices left
-            None => return Some(
-                !self.sudoku.has_conflict() &&
-            ),
+            None => {
+                // No choices left
+                return if self.empty_positions.is_empty() {
+                    // TODO: multiple returns?
+                    // Sudoku is filled completely
+                    Some(!self.sudoku.has_conflict())
+                } else {
+                    // We went through the whole solution space and marked all potential solutions on the way
+                    Some(false)
+                }
+            }
         }
 
         if self.sudoku.has_conflict() {
@@ -170,6 +172,21 @@ mod tests {
     use crate::error::Result;
 
     use super::*;
+
+    // Input space (
+    //      [empty, partial, full] sudoku,
+    //      [conflict/ no conflict],
+    //      [0, 1, n] solutions
+    // )
+
+    // TODO: test filled sudoku with conflict
+    // TODO: test filled sudoku without conflict
+    // TODO: test partial filled sudoku without conflict and no possible solution
+    // TODO: test partial filled sudoku without conflict and one possible solution
+    // TODO: test partial filled sudoku without conflict and multiple possible solutions
+    // TODO: test partial filled sudoku with conflict (implies no solutions)
+    // TODO: test empty sudoku and multiple possible solutions
+    // TODO: test multiple calls
 
     #[test]
     fn test_base_2() -> Result<()> {

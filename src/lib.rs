@@ -20,7 +20,7 @@ pub mod error;
 // TODO: solve/verify incomplete sudoku
 // TODO: generate valid incomplete sudoku
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Sudoku<Cell: SudokuCell> {
     base: usize,
     cells: Vec<Cell>,
