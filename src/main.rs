@@ -32,17 +32,13 @@ fn main() -> Result<()> {
 
         let before = Instant::now();
 
-        let solve_ret = solver.solve();
+        let solve_ret = solver.next();
 
         let after = Instant::now();
 
         eprintln!("time = {:?}", after - before);
 
-        assert!(solve_ret);
-
-        println!("{}", solver.sudoku());
-
-        assert!(solver.sudoku().all_empty_positions().is_empty());
+        println!("{}", solve_ret.unwrap());
     }
 
     Ok(())

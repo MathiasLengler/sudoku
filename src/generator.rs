@@ -74,15 +74,16 @@ impl RandomGenerator {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::cell::OptionCell;
+
+    use super::*;
 
     #[test]
     fn test_generate() {
         let generator = RandomGenerator::new(2, 1_000, false);
         let sudoku = generator.generate::<OptionCell>().unwrap();
 
-        assert!(sudoku.all_empty_positions().is_empty());
+        assert!(sudoku.empty_positions().is_empty());
         assert!(!sudoku.has_conflict());
     }
 }

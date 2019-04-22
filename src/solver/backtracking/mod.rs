@@ -10,6 +10,17 @@ use crate::Sudoku;
 
 mod choice;
 
+#[derive(Debug)]
+enum StepResult<Cell: SudokuCell> {
+    Solution(Box<Sudoku<Cell>>),
+    // Sudoku was filled completely
+    Filled,
+    // We went through the whole solution space and marked all potential solutions on the way
+    Finished,
+    Backtrack,
+    NextCandidate,
+    NextCell,
+}
 
 pub struct BacktrackingSolver<Cell: SudokuCell> {
     sudoku: Sudoku<Cell>,
@@ -22,14 +33,21 @@ pub struct BacktrackingSolver<Cell: SudokuCell> {
     debug_print: bool,
 }
 
-// TODO: solutions iterator
+impl<Cell: SudokuCell> Iterator for BacktrackingSolver<Cell> {
+    type Item = Sudoku<Cell>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.try_solve()
+    }
+}
+
 impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
     pub fn new(sudoku: Sudoku<Cell>) -> BacktrackingSolver<Cell> {
         Self::new_with_limit(sudoku, 0, false)
     }
 
     pub fn new_with_limit(sudoku: Sudoku<Cell>, step_limit: usize, debug_print: bool) -> BacktrackingSolver<Cell> {
-        let empty_positions = sudoku.all_empty_positions();
+        let empty_positions = sudoku.empty_positions();
 
         let mut solver = BacktrackingSolver {
             sudoku,
@@ -45,41 +63,36 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
         solver
     }
 
-    pub fn sudoku(&self) -> &Sudoku<Cell> {
-        &self.sudoku
-    }
-
     fn init(&mut self) {
         if let Some(first_pos) = self.empty_positions.first() {
             self.choices.push(Choice::new(*first_pos, &self.sudoku))
         };
     }
 
-    // TODO: refactor return type
-    pub fn solve(&mut self) -> bool {
-        self.debug_print();
-
+    fn try_solve(&mut self) -> Option<Sudoku<Cell>> {
         loop {
-            let step_ret = self.step();
+            let step_result = self.step();
 
             self.step_count += 1;
 
-            self.debug_print();
+            self.debug_print(&step_result);
 
-            if let Some(step_ret) = step_ret {
-                return step_ret;
+            match step_result {
+                StepResult::Solution(sudoku) => return Some(*sudoku),
+                StepResult::Filled => return None,
+                StepResult::Finished => return None,
+                _ => {}
             }
 
             if let Some(step_limit) = self.step_limit {
                 if self.step_count >= step_limit.get() {
-                    return false;
+                    return None;
                 }
             }
         }
     }
 
-    // TODO: refactor return type
-    fn step(&mut self) -> Option<bool> {
+    fn step(&mut self) -> StepResult<Cell> {
         match self.choices.last() {
             Some(choice) => {
                 self.sudoku.set(choice.position(), choice.selection());
@@ -88,49 +101,37 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
                     // Backtrack
                     self.choices.pop();
 
-                    match self.choices.last_mut() {
-                        Some(prev_choice) => {
-                            prev_choice.set_next()
-                        }
-                        None => {
-                            // TODO: return value?
-                            // Backtracked on first position
-                        }
+                    if let Some(prev_choice) = self.choices.last_mut() {
+                        prev_choice.set_next()
                     }
 
-                    return None;
+                    StepResult::Backtrack
+                } else if self.sudoku.has_conflict_at(choice.position()) {
+                    self.choices.last_mut().unwrap().set_next();
+
+                    StepResult::NextCandidate
+                } else {
+                    match self.empty_positions.get(self.choices.len()) {
+                        Some(next_position) => {
+                            self.choices.push(Choice::new(*next_position, &self.sudoku));
+
+                            StepResult::NextCell
+                        }
+                        None => StepResult::Solution(Box::new(self.sudoku.clone())),
+                    }
                 }
             }
             None => {
-                // No choices left
-                return if self.empty_positions.is_empty() {
-                    // TODO: multiple returns?
-                    // Sudoku is filled completely
-                    Some(!self.sudoku.has_conflict())
+                if self.empty_positions.is_empty() {
+                    StepResult::Filled
                 } else {
-                    // We went through the whole solution space and marked all potential solutions on the way
-                    Some(false)
-                };
+                    StepResult::Finished
+                }
             }
         }
-
-        if self.sudoku.has_conflict() {
-            self.choices.last_mut().unwrap().set_next();
-        } else {
-            // Go to next cell
-            let next_position = match self.empty_positions.get(self.choices.len()) {
-                Some(next_position) => next_position,
-                // Solved
-                None => return Some(true),
-            };
-
-            self.choices.push(Choice::new(*next_position, &self.sudoku))
-        }
-
-        None
     }
 
-    fn debug_print(&self) {
+    fn debug_print(&self, step_result: &StepResult<Cell>) {
         use crossterm::Crossterm;
 
         lazy_static! {
@@ -141,10 +142,11 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
             CROSSTERM.terminal().clear(crossterm::ClearType::All).unwrap();
 
             CROSSTERM.terminal().write(format!(
-                "Solver at step {}:\n{}\nChoices = {:?}",
+                "Solver at step {}:\n{}\n{:?}\nChoices = {:?}",
                 self.step_count,
                 self.sudoku,
-                self.choices.len()
+                step_result,
+                self.choices.len(),
             )).unwrap();
 
             ::std::thread::sleep(Duration::from_nanos(1));
@@ -177,6 +179,18 @@ mod tests {
     // TODO: test empty sudoku and multiple possible solutions
     // TODO: test multiple calls
 
+    fn assert_solve_result<Cell: SudokuCell>(solve_result: Option<Sudoku<Cell>>) {
+        assert!(solve_result.is_some());
+
+        let sudoku = solve_result.unwrap();
+
+//        println!("{}", sudoku);
+
+        assert!(!sudoku.has_conflict());
+
+        assert!(sudoku.empty_positions().is_empty());
+    }
+
     #[test]
     fn test_base_2() -> Result<()> {
         let sudokus = vec![
@@ -208,13 +222,9 @@ mod tests {
 
             let mut solver = BacktrackingSolver::new_with_limit(sudoku, 1000, false);
 
-            let solve_ret = solver.solve();
+            let solve_result = solver.try_solve();
 
-            assert!(solve_ret);
-
-            println!("{}", solver.sudoku());
-
-            assert!(solver.sudoku().all_empty_positions().is_empty())
+            assert_solve_result(solve_result);
         }
 
         Ok(())
@@ -245,13 +255,9 @@ mod tests {
 
             let mut solver = BacktrackingSolver::new(sudoku);
 
-            let solve_ret = solver.solve();
+            let solve_result = solver.try_solve();
 
-            assert!(solve_ret);
-
-            println!("{}", solver.sudoku());
-
-            assert!(solver.sudoku().all_empty_positions().is_empty());
+            assert_solve_result(solve_result);
         }
 
         Ok(())

@@ -33,7 +33,6 @@ pub struct Sudoku<Cell: SudokuCell> {
 // TODO: move row, all_rows, column, all_column, all_cells into grid
 // TODO: Cell with Position in iterators
 // TODO: Check value of cells
-// TODO: Candidates(Position)
 impl<Cell: SudokuCell> Sudoku<Cell> {
     pub fn new(base: usize) -> Self {
         let mut sudoku = Sudoku {
@@ -63,6 +62,12 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
             self.all_blocks().any(|block| self.has_duplicate(block))
     }
 
+    pub fn has_conflict_at(&self, pos: Position) -> bool {
+        self.has_duplicate(self.row(pos.y)) ||
+            self.has_duplicate(self.column(pos.x)) ||
+            self.has_duplicate(self.block(pos))
+    }
+
     // TODO: conflict location pairs
     fn has_duplicate<'a>(&'a self, cells: impl Iterator<Item=&'a Cell>) -> bool {
         let mut cells: Vec<_> = cells.filter(|cell| cell.has_value()).collect();
@@ -88,7 +93,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
             }))
     }
 
-    pub fn all_empty_positions(&self) -> Vec<Position> {
+    pub fn empty_positions(&self) -> Vec<Position> {
         self.all_positions().filter(|pos| !self.get(*pos).has_value()).collect()
     }
 
