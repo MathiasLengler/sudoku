@@ -1,44 +1,21 @@
-use std::fmt::{self, Display};
 use std::num::NonZeroUsize;
-use std::ops::RangeInclusive;
 use std::time::Duration;
 
 use lazy_static::lazy_static;
 
 use crate::cell::SudokuCell;
 use crate::position::Position;
+use crate::solver::backtracking::choice::Choice;
 use crate::Sudoku;
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub struct Choice {
-    pos: Position,
-    value: usize,
-}
+mod choice;
 
-impl Choice {
-    fn set_next(&mut self, value_range: &RangeInclusive<usize>) {
-        if self.value != *value_range.end() {
-            // Try next value
-            self.value += 1;
-        } else {
-            // Queue deletion of current cell
-            self.value = 0;
-        }
-    }
-}
-
-impl Display for Choice {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}={}", self.pos, self.value)
-    }
-}
 
 pub struct BacktrackingSolver<Cell: SudokuCell> {
     sudoku: Sudoku<Cell>,
-    choices: Vec<Choice>,
+    choices: Vec<Choice<Cell>>,
 
     empty_positions: Vec<Position>,
-    value_range: RangeInclusive<usize>,
 
     step_count: usize,
     step_limit: Option<NonZeroUsize>,
@@ -53,13 +30,11 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
 
     pub fn new_with_limit(sudoku: Sudoku<Cell>, step_limit: usize, debug_print: bool) -> BacktrackingSolver<Cell> {
         let empty_positions = sudoku.all_empty_positions();
-        let value_range: RangeInclusive<usize> = sudoku.value_range();
 
         let mut solver = BacktrackingSolver {
             sudoku,
             choices: vec![],
             empty_positions,
-            value_range,
             step_count: 0,
             step_limit: NonZeroUsize::new(step_limit),
             debug_print,
@@ -76,10 +51,7 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
 
     fn init(&mut self) {
         if let Some(first_pos) = self.empty_positions.first() {
-            self.choices.push(Choice {
-                pos: *first_pos,
-                value: *self.value_range.start(),
-            })
+            self.choices.push(Choice::new(*first_pos, &self.sudoku))
         };
     }
 
@@ -110,15 +82,15 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
     fn step(&mut self) -> Option<bool> {
         match self.choices.last() {
             Some(choice) => {
-                self.sudoku.set(choice.pos, Cell::new_with_value(choice.value));
+                self.sudoku.set(choice.position(), choice.selection());
 
-                if choice.value == 0 {
+                if choice.is_exhausted() {
                     // Backtrack
                     self.choices.pop();
 
                     match self.choices.last_mut() {
                         Some(prev_choice) => {
-                            prev_choice.set_next(&self.value_range)
+                            prev_choice.set_next()
                         }
                         None => {
                             // TODO: return value?
@@ -143,7 +115,7 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
         }
 
         if self.sudoku.has_conflict() {
-            self.choices.last_mut().unwrap().set_next(&self.value_range);
+            self.choices.last_mut().unwrap().set_next();
         } else {
             // Go to next cell
             let next_position = match self.empty_positions.get(self.choices.len()) {
@@ -152,10 +124,7 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
                 None => return Some(true),
             };
 
-            self.choices.push(Choice {
-                pos: *next_position,
-                value: *self.value_range.start(),
-            })
+            self.choices.push(Choice::new(*next_position, &self.sudoku))
         }
 
         None
@@ -251,7 +220,6 @@ mod tests {
         Ok(())
     }
 
-    #[ignore]
     #[test]
     fn test_base_3() -> Result<()> {
         let sudokus = vec![
@@ -283,7 +251,7 @@ mod tests {
 
             println!("{}", solver.sudoku());
 
-            assert!(solver.sudoku().all_empty_positions().is_empty())
+            assert!(solver.sudoku().all_empty_positions().is_empty());
         }
 
         Ok(())

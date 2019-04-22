@@ -1,7 +1,8 @@
+use std::collections::btree_set::BTreeSet;
+use std::collections::vec_deque::VecDeque;
 use std::convert::{TryFrom, TryInto};
 use std::fmt::{Display, Formatter};
 use std::fmt;
-use std::ops::RangeInclusive;
 
 use failure::ensure;
 use itertools::Itertools;
@@ -44,6 +45,18 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
         sudoku
     }
 
+    pub fn candidates(&self, pos: Position) -> VecDeque<Cell> {
+        let conflicting_cells = self.column(pos.x)
+            .chain(self.row(pos.y))
+            .chain(self.block(pos))
+            .cloned()
+            .collect::<BTreeSet<Cell>>();
+
+        let values = self.value_range().map(|cell| cell).collect::<BTreeSet<Cell>>();
+
+        values.difference(&conflicting_cells).cloned().collect()
+    }
+
     pub fn has_conflict(&self) -> bool {
         self.all_rows().any(|row| self.has_duplicate(row)) ||
             self.all_columns().any(|column| self.has_duplicate(column)) ||
@@ -80,43 +93,34 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     }
 
     // TODO: parameter row_index
-    fn row(&self, pos: Position) -> impl Iterator<Item=&Cell> {
-        self.assert_position(pos);
+    fn row(&self, row_index: usize) -> impl Iterator<Item=&Cell> {
+        self.assert_coordinate(row_index);
 
-        let starting_index = pos.y * self.side_length();
+        let starting_index = row_index * self.side_length();
 
         (starting_index..starting_index + self.side_length()).map(move |i| &self.cells[i])
     }
 
     fn all_rows(&self) -> impl Iterator<Item=impl Iterator<Item=&Cell>> {
         (0..self.side_length()).map(move |row_index| {
-            self.row(Position {
-                x: 0,
-                y: row_index,
-            })
+            self.row(row_index)
         })
     }
 
     // TODO: parameter column_index
-    fn column(&self, pos: Position) -> impl Iterator<Item=&Cell> {
-        self.assert_position(pos);
+    fn column(&self, column_index: usize) -> impl Iterator<Item=&Cell> {
+        self.assert_coordinate(column_index);
 
-        let starting_index = pos.x;
-
-        (starting_index..self.cell_count()).step_by(self.side_length()).map(move |i| &self.cells[i])
+        (column_index..self.cell_count()).step_by(self.side_length()).map(move |i| &self.cells[i])
     }
 
 
     fn all_columns(&self) -> impl Iterator<Item=impl Iterator<Item=&Cell>> {
-        (0..self.side_length()).map(move |row_index| {
-            self.column(Position {
-                x: row_index,
-                y: 0,
-            })
+        (0..self.side_length()).map(move |column_index| {
+            self.column(column_index)
         })
     }
 
-    // TODO: parameter block_position
     fn block(&self, pos: Position) -> impl Iterator<Item=&Cell> {
         self.assert_position(pos);
 
@@ -156,16 +160,20 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     }
 
 
-    pub fn set(&mut self, pos: Position, value: Cell) -> Cell {
+    pub fn set(&mut self, pos: Position, cell: Cell) -> Cell {
         use std::mem;
 
         self.assert_position(pos);
 
         let index = self.index_at(pos);
 
-        let previous_value = mem::replace(&mut self.cells[index], value);
+        let previous_value = mem::replace(&mut self.cells[index], cell);
 
         previous_value
+    }
+
+    fn assert_coordinate(&self, coordinate: usize) {
+        assert!(coordinate < self.side_length())
     }
 
     fn assert_position(&self, pos: Position) {
@@ -184,8 +192,8 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
         }
     }
 
-    pub fn value_range(&self) -> RangeInclusive<usize> {
-        1..=self.side_length()
+    pub fn value_range(&self) -> impl Iterator<Item=Cell> {
+        (1..=self.side_length()).map(|value| Cell::new_with_value(value))
     }
 
     pub fn side_length(&self) -> usize {

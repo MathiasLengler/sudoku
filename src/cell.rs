@@ -1,9 +1,11 @@
-use std::fmt::{self, Display, Formatter, Debug};
+use std::fmt::{self, Debug, Display, Formatter};
 use std::num::NonZeroUsize;
 
+// TODO: generic cell value type
 pub trait SudokuCell: Default + Clone + Display + Debug + Ord + Eq + Send {
     fn has_value(&self) -> bool;
     fn new_with_value(value: usize) -> Self;
+    fn value(&self) -> Option<usize>;
 }
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Default, Debug)]
@@ -28,5 +30,9 @@ impl SudokuCell for OptionCell {
             Some(value) => OptionCell(Some(value)),
             None => OptionCell(None),
         }
+    }
+
+    fn value(&self) -> Option<usize> {
+        self.0.map(|value| value.get())
     }
 }

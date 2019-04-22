@@ -1,8 +1,10 @@
+use std::convert::TryInto;
+use std::time::Instant;
+
 use sudoku::cell::OptionCell;
 use sudoku::error::Result;
 use sudoku::solver::backtracking::BacktrackingSolver;
 use sudoku::Sudoku;
-use std::convert::TryInto;
 
 fn main() -> Result<()> {
     let sudokus = vec![
@@ -26,15 +28,21 @@ fn main() -> Result<()> {
     for (sudoku_index, sudoku) in sudokus.into_iter().enumerate() {
         eprintln!("sudoku_index = {:?}", sudoku_index);
 
-        let mut solver = BacktrackingSolver::new_with_limit(sudoku, 0, true);
+        let mut solver = BacktrackingSolver::new_with_limit(sudoku, 0, false);
+
+        let before = Instant::now();
 
         let solve_ret = solver.solve();
+
+        let after = Instant::now();
+
+        eprintln!("time = {:?}", after - before);
 
         assert!(solve_ret);
 
         println!("{}", solver.sudoku());
 
-        assert!(solver.sudoku().all_empty_positions().is_empty())
+        assert!(solver.sudoku().all_empty_positions().is_empty());
     }
 
     Ok(())
