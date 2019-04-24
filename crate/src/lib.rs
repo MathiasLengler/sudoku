@@ -1,3 +1,6 @@
+use log::debug;
+use sudoku::cell::OptionCell;
+use sudoku::Sudoku;
 use wasm_bindgen::prelude::*;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
@@ -9,8 +12,19 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 // Called by our JS entry point to run the example.
 #[wasm_bindgen]
 pub fn run() -> Result<(), JsValue> {
-    set_panic_hook();
+    init();
 
+    append_hello_dom()?;
+
+    let sudoku = Sudoku::<OptionCell>::new(3);
+
+    debug!("Hello!");
+    debug!("{}", sudoku);
+
+    Ok(())
+}
+
+fn append_hello_dom()-> Result<(), JsValue> {
     let window = web_sys::window().expect("should have a Window");
     let document = window.document().expect("should have a Document");
 
@@ -24,9 +38,15 @@ pub fn run() -> Result<(), JsValue> {
     Ok(())
 }
 
-fn set_panic_hook() {
-    // When the `console_error_panic_hook` feature is enabled, we can call the
-    // `set_panic_hook` function to get better error messages if we ever panic.
-    #[cfg(feature = "console_error_panic_hook")]
-    console_error_panic_hook::set_once();
+fn init() {
+    use log::Level;
+    use std::panic;
+    use std::sync::{ONCE_INIT, Once};
+    static SET_HOOK: Once = ONCE_INIT;
+
+    #[cfg(feature = "console")]
+        SET_HOOK.call_once(|| {
+        panic::set_hook(Box::new(console_error_panic_hook::hook));
+        console_log::init_with_level(Level::Debug);
+    });
 }
