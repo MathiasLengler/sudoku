@@ -28,7 +28,7 @@ fn main() -> Result<()> {
     for (sudoku_index, sudoku) in sudokus.into_iter().enumerate() {
         eprintln!("sudoku_index = {:?}", sudoku_index);
 
-        let mut solver = BacktrackingSolver::new_with_limit(sudoku, 0, false);
+        let mut solver = BacktrackingSolver::new_with_limit(sudoku, 0);
 
         let before = Instant::now();
 

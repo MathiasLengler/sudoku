@@ -1,8 +1,6 @@
 use std::num::NonZeroUsize;
 use std::time::Duration;
 
-use lazy_static::lazy_static;
-
 use crate::cell::SudokuCell;
 use crate::position::Position;
 use crate::solver::backtracking::choice::Choice;
@@ -30,7 +28,6 @@ pub struct BacktrackingSolver<Cell: SudokuCell> {
 
     step_count: usize,
     step_limit: Option<NonZeroUsize>,
-    debug_print: bool,
 }
 
 impl<Cell: SudokuCell> Iterator for BacktrackingSolver<Cell> {
@@ -43,10 +40,10 @@ impl<Cell: SudokuCell> Iterator for BacktrackingSolver<Cell> {
 
 impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
     pub fn new(sudoku: Sudoku<Cell>) -> BacktrackingSolver<Cell> {
-        Self::new_with_limit(sudoku, 0, false)
+        Self::new_with_limit(sudoku, 0)
     }
 
-    pub fn new_with_limit(sudoku: Sudoku<Cell>, step_limit: usize, debug_print: bool) -> BacktrackingSolver<Cell> {
+    pub fn new_with_limit(sudoku: Sudoku<Cell>, step_limit: usize) -> BacktrackingSolver<Cell> {
         let empty_positions = sudoku.empty_positions();
 
         let mut solver = BacktrackingSolver {
@@ -55,7 +52,6 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
             empty_positions,
             step_count: 0,
             step_limit: NonZeroUsize::new(step_limit),
-            debug_print,
         };
 
         solver.init();
@@ -131,26 +127,32 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
         }
     }
 
+    #[cfg(not(feature = "debug_print"))]
+    fn debug_print(&self, _step_result: &StepResult<Cell>) {
+        // Do nothing
+    }
+
+    #[cfg(feature = "debug_print")]
     fn debug_print(&self, step_result: &StepResult<Cell>) {
         use crossterm::Crossterm;
+        use lazy_static::lazy_static;
+
 
         lazy_static! {
             static ref CROSSTERM: Crossterm = Crossterm::new();
         }
 
-        if self.debug_print {
-            CROSSTERM.terminal().clear(crossterm::ClearType::All).unwrap();
+        CROSSTERM.terminal().clear(crossterm::ClearType::All).unwrap();
 
-            CROSSTERM.terminal().write(format!(
-                "Solver at step {}:\n{}\n{:?}\nChoices = {:?}",
-                self.step_count,
-                self.sudoku,
-                step_result,
-                self.choices.len(),
-            )).unwrap();
+        CROSSTERM.terminal().write(format!(
+            "Solver at step {}:\n{}\n{:?}\nChoices = {:?}",
+            self.step_count,
+            self.sudoku,
+            step_result,
+            self.choices.len(),
+        )).unwrap();
 
-            ::std::thread::sleep(Duration::from_nanos(1));
-        }
+        ::std::thread::sleep(Duration::from_nanos(1));
     }
 }
 
@@ -220,7 +222,7 @@ mod tests {
         for (sudoku_index, sudoku) in sudokus.into_iter().enumerate() {
             eprintln!("sudoku_index = {:?}", sudoku_index);
 
-            let mut solver = BacktrackingSolver::new_with_limit(sudoku, 1000, false);
+            let mut solver = BacktrackingSolver::new_with_limit(sudoku, 1000);
 
             let solve_result = solver.try_solve();
 
