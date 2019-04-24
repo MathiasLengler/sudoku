@@ -1,5 +1,4 @@
 use std::num::NonZeroUsize;
-use std::time::Duration;
 
 use crate::cell::SudokuCell;
 use crate::position::Position;
@@ -136,7 +135,7 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
     fn debug_print(&self, step_result: &StepResult<Cell>) {
         use crossterm::Crossterm;
         use lazy_static::lazy_static;
-
+        use std::time::Duration;
 
         lazy_static! {
             static ref CROSSTERM: Crossterm = Crossterm::new();

@@ -25,7 +25,6 @@ pub mod error;
 pub struct Sudoku<Cell: SudokuCell> {
     base: usize,
     cells: Vec<Cell>,
-
 }
 
 // TODO: rethink indexing story (internal/cell position/block position)
@@ -45,15 +44,16 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     }
 
     pub fn candidates(&self, pos: Position) -> VecDeque<Cell> {
-        let conflicting_cells = self.column(pos.x)
-            .chain(self.row(pos.y))
+        let conflicting_cells = self.column(pos.column)
+            .chain(self.row(pos.row))
             .chain(self.block(pos))
-            .cloned()
-            .collect::<BTreeSet<Cell>>();
+            .collect::<BTreeSet<&Cell>>();
 
-        let values = self.value_range().map(|cell| cell).collect::<BTreeSet<Cell>>();
+        let value_range: Vec<Cell> = self.value_range().collect();
 
-        values.difference(&conflicting_cells).cloned().collect()
+        let values = value_range.iter().collect::<BTreeSet<&Cell>>();
+
+        values.difference(&conflicting_cells).map(|cell| (**cell).clone()).collect()
     }
 
     pub fn has_conflict(&self) -> bool {
@@ -63,8 +63,8 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     }
 
     pub fn has_conflict_at(&self, pos: Position) -> bool {
-        self.has_duplicate(self.row(pos.y)) ||
-            self.has_duplicate(self.column(pos.x)) ||
+        self.has_duplicate(self.row(pos.row)) ||
+            self.has_duplicate(self.column(pos.column)) ||
             self.has_duplicate(self.block(pos))
     }
 
@@ -88,8 +88,8 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
 
         (0..side_length)
             .flat_map(move |row_index| (0..side_length).map(move |column_index| Position {
-                x: column_index,
-                y: row_index,
+                column: column_index,
+                row: row_index,
             }))
     }
 
@@ -147,8 +147,8 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
             (0..self.base)
                 .flat_map(
                     move |block_y| (0..self.base).map(move |block_x| Position {
-                        x: block_x,
-                        y: block_y,
+                        column: block_x,
+                        row: block_y,
                     })
                 )
                 .map(move |pos| pos * self.base);
@@ -182,18 +182,18 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     }
 
     fn assert_position(&self, pos: Position) {
-        assert!(pos.x < self.side_length() && pos.y < self.side_length())
+        assert!(pos.column < self.side_length() && pos.row < self.side_length())
     }
 
     fn index_at(&self, pos: Position) -> usize {
-        pos.x + pos.y * self.side_length()
+        pos.column + pos.row * self.side_length()
     }
 
     #[allow(dead_code)]
     fn pos_at(&self, index: usize) -> Position {
         Position {
-            x: index / self.side_length(),
-            y: index % self.side_length(),
+            column: index / self.side_length(),
+            row: index % self.side_length(),
         }
     }
 
@@ -223,6 +223,10 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
         );
 
         Ok(approx_base)
+    }
+
+    pub fn cell_strings(&self) -> Vec<String> {
+        self.cells.iter().map(ToString::to_string).collect()
     }
 }
 
@@ -305,18 +309,18 @@ mod tests {
         let mut debug_value = 1;
         for y in 0..sudoku.side_length() {
             for x in 0..sudoku.side_length() {
-                sudoku.set(Position { x, y }, OptionCell::new_with_value(debug_value));
+                sudoku.set(Position { column: x, row: y }, OptionCell::new_with_value(debug_value));
                 debug_value += 1;
             }
         }
 
         assert!(!sudoku.has_conflict());
 
-        let previous_cell = sudoku.set(Position { x: 2, y: 2 }, OptionCell::new_with_value(1));
+        let previous_cell = sudoku.set(Position { column: 2, row: 2 }, OptionCell::new_with_value(1));
 
         assert!(sudoku.has_conflict());
 
-        sudoku.set(Position { x: 2, y: 2 }, previous_cell);
+        sudoku.set(Position { column: 2, row: 2 }, previous_cell);
 
         assert!(!sudoku.has_conflict());
     }

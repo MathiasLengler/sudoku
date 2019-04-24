@@ -5,13 +5,13 @@ use std::ops::{Div, Mul};
 // TODO: make fields private and add getters
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Position {
-    pub x: usize,
-    pub y: usize,
+    pub column: usize,
+    pub row: usize,
 }
 
 impl Display for Position {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_tuple("Pos").field(&self.x).field(&self.y).finish()
+        f.debug_tuple("Pos").field(&self.column).field(&self.row).finish()
     }
 }
 
@@ -20,8 +20,8 @@ impl Div for Position {
 
     fn div(self, rhs: Self) -> Self::Output {
         Position {
-            x: self.x / rhs.x,
-            y: self.y / rhs.y,
+            column: self.column / rhs.column,
+            row: self.row / rhs.row,
         }
     }
 }
@@ -31,8 +31,8 @@ impl Div<usize> for Position {
 
     fn div(self, rhs: usize) -> Self::Output {
         self / Position {
-            x: rhs,
-            y: rhs,
+            column: rhs,
+            row: rhs,
         }
     }
 }
@@ -42,8 +42,8 @@ impl Mul for Position {
 
     fn mul(self, rhs: Position) -> Self::Output {
         Position {
-            x: self.x * rhs.x,
-            y: self.y * rhs.y,
+            column: self.column * rhs.column,
+            row: self.row * rhs.row,
         }
     }
 }
@@ -53,8 +53,8 @@ impl Mul<usize> for Position {
 
     fn mul(self, rhs: usize) -> Self::Output {
         self * Position {
-            x: rhs,
-            y: rhs,
+            column: rhs,
+            row: rhs,
         }
     }
 }
