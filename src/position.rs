@@ -1,9 +1,10 @@
 use std::fmt::{self, Display};
 use std::ops::{Div, Mul};
 
+use serde::{Deserialize, Serialize};
+
 // TODO: Marker for Cell/Block
-// TODO: make fields private and add getters
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
 pub struct Position {
     pub column: usize,
     pub row: usize,

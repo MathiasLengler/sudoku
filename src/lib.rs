@@ -17,6 +17,7 @@ pub mod position;
 pub mod solver;
 pub mod generator;
 pub mod error;
+pub mod transport;
 
 // TODO: solve/verify incomplete sudoku
 // TODO: generate valid incomplete sudoku
@@ -28,9 +29,9 @@ pub struct Sudoku<Cell: SudokuCell> {
 }
 
 // TODO: rethink indexing story (internal/cell position/block position)
-// TODO: separate sudoku and grid (model/controller)
+// TODO: separate sudoku and grid (model/controller) (efficiency?)
 // TODO: move row, all_rows, column, all_column, all_cells into grid
-// TODO: Cell with Position in iterators
+// TODO: Cell with Position in iterators (PositionedCell?)
 // TODO: Check value of cells
 impl<Cell: SudokuCell> Sudoku<Cell> {
     pub fn new(base: usize) -> Self {
@@ -43,6 +44,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
         sudoku
     }
 
+    // TODO: return cell values
     pub fn candidates(&self, pos: Position) -> VecDeque<Cell> {
         let conflicting_cells = self.column(pos.column)
             .chain(self.row(pos.row))
@@ -197,7 +199,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
         }
     }
 
-    pub fn value_range(&self) -> impl Iterator<Item=Cell> {
+    fn value_range(&self) -> impl Iterator<Item=Cell> {
         (1..=self.side_length()).map(|value| Cell::new_with_value(value))
     }
 
@@ -207,6 +209,10 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
 
     pub fn cell_count(&self) -> usize {
         Self::base_to_cell_count(self.base)
+    }
+
+    pub fn base(&self) -> usize {
+        self.base
     }
 
     fn base_to_cell_count(base: usize) -> usize {
@@ -223,10 +229,6 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
         );
 
         Ok(approx_base)
-    }
-
-    pub fn cell_strings(&self) -> Vec<String> {
-        self.cells.iter().map(ToString::to_string).collect()
     }
 }
 
