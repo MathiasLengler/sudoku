@@ -10,7 +10,6 @@ crate-type = ["cdylib"]
 
 [dependencies]
 # wasm
-wasm-bindgen = "0.2.25"
 console_error_panic_hook = { version = "0.1.5", optional = true }
 wee_alloc = { version = "0.4.2", optional = true }
 console_log = { version = "0.1.2", optional = true }
@@ -18,7 +17,10 @@ console_log = { version = "0.1.2", optional = true }
 # own
 log = "0.4.6"
 sudoku = { path = "../../../Rust/sudoku" }
+serde = "1.0.90"
+wasm-typescript-definition = "0.1.4"
 
+# wasm
 [dependencies.web-sys]
 version = "0.3"
 features = [
@@ -28,6 +30,10 @@ features = [
   "Node",
   "Window",
 ]
+
+[dependencies.wasm-bindgen]
+version = "0.2.42"
+features = ["serde-serialize"]
 
 [features]
 default = ["console"]
