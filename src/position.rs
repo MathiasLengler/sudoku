@@ -2,6 +2,7 @@ use std::fmt::{self, Display};
 use std::ops::{Div, Mul};
 
 // TODO: Marker for Cell/Block
+// TODO: make fields private and add getters
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Position {
     pub x: usize,
