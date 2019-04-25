@@ -54,7 +54,6 @@ impl SudokuController {
         debug!("Hello!");
     }
 
-    // TODO: add type assertion on TS side
     pub fn get_sudoku(&self) -> JsValue {
         JsValue::from_serde(&TransportSudoku::from(&self.sudoku)).unwrap()
     }
@@ -67,6 +66,7 @@ impl SudokuController {
 use wasm_typescript_definition::TypescriptDefinition;
 
 #[derive(Serialize, TypescriptDefinition)]
+#[serde(tag = "tag", content = "fields")]
 enum TypescriptTest {
     #[allow(unused)]
     V1 {

@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "module": "esnext", // needed to have dynamic imports
+    "lib": [
+      "dom",
+      "es2015"
+    ],
+    "moduleResolution": "node"
+  },
+  "files": [
+    "./src/index.ts"
+  ],
+}
