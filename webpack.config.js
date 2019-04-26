@@ -5,7 +5,7 @@ const dist = path.resolve(__dirname, "dist");
 const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
 
 module.exports = {
-  entry: "./src/index.ts",
+  entry: "./src/index.tsx",
   output: {
     path: dist,
     filename: "bundle.js"
@@ -28,9 +28,15 @@ module.exports = {
     }),
   ],
   module: {
-    rules: [{
-      test: /\.tsx?$/,
-      loader: "ts-loader"
-    }]
+    rules: [
+      {
+        test: /\.tsx?$/,
+        loader: "ts-loader"
+      },
+      {
+        test: /\.css$/,
+        use: [{loader: 'style-loader'}, {loader: 'css-loader'}],
+      },
+    ]
   }
 };

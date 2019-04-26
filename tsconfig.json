@@ -6,9 +6,11 @@
       "dom",
       "es2015"
     ],
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "jsx": "react"
   },
-  "files": [
-    "./src/index.ts"
-  ],
+  "include": [
+    "src/**/*"
+  ]
 }

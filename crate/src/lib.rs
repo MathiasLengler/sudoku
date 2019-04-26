@@ -55,36 +55,10 @@ impl SudokuController {
     }
 
     pub fn get_sudoku(&self) -> JsValue {
-        JsValue::from_serde(&TransportSudoku::from(&self.sudoku)).unwrap()
+        let transport_sudoku = TransportSudoku::from(&self.sudoku);
+
+        JsValue::from_serde(&transport_sudoku).unwrap()
     }
-
-    pub fn test_typescript(&self) -> JsValue {
-        JsValue::from_serde(&TypescriptTest::V1 { foo: false }).unwrap()
-    }
-}
-
-use wasm_typescript_definition::TypescriptDefinition;
-
-#[derive(Serialize, TypescriptDefinition)]
-#[serde(tag = "tag", content = "fields")]
-enum TypescriptTest {
-    #[allow(unused)]
-    V1 {
-        #[serde(rename = "Foo")]
-        foo: bool,
-    },
-    #[allow(unused)]
-    V2 {
-        #[serde(rename = "Bar")]
-        bar: i64,
-        #[serde(rename = "Baz")]
-        baz: u64,
-    },
-    #[allow(unused)]
-    V3 {
-        #[serde(rename = "Quux")]
-        quux: String,
-    },
 }
 
 fn append_hello_dom() -> Result<(), JsValue> {

@@ -18,7 +18,6 @@ console_log = { version = "0.1.2", optional = true }
 log = "0.4.6"
 sudoku = { path = "../../../Rust/sudoku" }
 serde = "1.0.90"
-wasm-typescript-definition = "0.1.4"
 
 # wasm
 [dependencies.web-sys]
