@@ -1,3 +1,94 @@
-* {
-    color: red;
+body {
+    font-family: sans-serif;
+}
+
+.grid {
+    /*React Variables*/
+    --sideLength: 0;
+    --base: 0;
+
+    /*CSS Variables*/
+    --gridWidth: 95vw;
+    --gutter: 0px;
+    --noOfGutters: calc(var(--sideLength) - 1);
+    --rowHeight: calc((var(--gridWidth) - (var(--noOfGutters) * var(--gutter))) / var(--sideLength));
+
+    /*Styling*/
+    display: grid;
+    grid-template-columns: repeat(var(--sideLength), 1fr);
+    grid-template-rows: repeat(var(--sideLength), 1fr);
+    place-items: stretch;
+
+    border-bottom: 1px solid black;
+    border-left: 1px solid black;
+
+    /*Square cells*/
+    width: var(--gridWidth);
+    height: var(--gridWidth);
+    grid-auto-rows: var(--rowHeight);
+    grid-gap: var(--gutter);
+
+    /*TODO: user colors*/
+    /*Color Variables*/
+    --block-border-color: #606266;
+    --cell-border-color: #bec6d4;
+    --cell-focus-bg-color: #bbdefb;
+    --cell-guide-group-bg-color: #e2e7ed;
+    --cell-guide-value-bg-color: #c8d0de;
+    --cell-value-color: #212121;
+    --candiate-color: #606266;
+    --bg-color: #ffffff;
+}
+
+
+.grid:nth-child(--base) {
+    background-color: red;
+}
+
+.cell {
+    --cell-column: 0;
+    --cell-row: 0;
+
+    grid-column: calc(1 + var(--cell-column));
+    grid-row: calc(1 + var(--cell-row));
+
+    border-top: 1px solid black;
+    border-right: 1px solid black;
+}
+
+.value {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+}
+
+.valueText {
+    font-weight: bold;
+    font-size: 300%;
+    color: var(--cell-value-color);
+}
+
+.candidates {
+    display: grid;
+    grid-template-columns: repeat(var(--base), 1fr);
+    grid-template-rows: repeat(var(--base), 1fr);
+    width: 100%;
+    height: 100%;
+    place-items: center;
+}
+
+.candidate {
+    --candidate-column: 0;
+    --candidate-row: 0;
+
+    grid-column: calc(1 + var(--candidate-column));
+    grid-row: calc(1 + var(--candidate-row));
+}
+
+.block {
+    /*TODO: dynamic*/
+    grid-row: 1 /span 3;
+    grid-column: 1 / span 3;
+    border: 3px solid black;
 }

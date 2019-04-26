@@ -12,6 +12,7 @@ module.exports = {
   },
   devServer: {
     contentBase: dist,
+    host: '0.0.0.0'
   },
   resolve: {
     extensions: [".ts", ".tsx", ".js", ".wasm"]
@@ -38,5 +39,5 @@ module.exports = {
         use: [{loader: 'style-loader'}, {loader: 'css-loader'}],
       },
     ]
-  }
+  },
 };
