@@ -34,6 +34,7 @@ pub struct Sudoku<Cell: SudokuCell> {
 // TODO: Cell with Position in iterators (PositionedCell?)
 // TODO: Check value of cells
 // TODO: Preset value/user filled cells
+// TODO: provide undo/redo API
 impl<Cell: SudokuCell> Sudoku<Cell> {
     pub fn new(base: usize) -> Self {
         let mut sudoku = Sudoku {
