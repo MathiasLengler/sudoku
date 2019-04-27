@@ -6,5 +6,7 @@ declare module 'csstype' {
     '--candidate-row'?: number;
     '--cell-column'?: number;
     '--cell-row'?: number;
+    '--block-column'?: number;
+    '--block-row'?: number;
   }
 }

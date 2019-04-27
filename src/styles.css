@@ -1,5 +1,18 @@
 body {
-    font-family: sans-serif;
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size: 1rem;
+    font-weight: 400;
+    margin: 0;
+}
+
+.gridContainer {
+    width: 100%;
+    display: grid;
+    place-items: center;
+}
+
+.grid > span {
+    user-select: none;
 }
 
 .grid {
@@ -7,11 +20,23 @@ body {
     --sideLength: 0;
     --base: 0;
 
-    /*CSS Variables*/
-    --gridWidth: 95vw;
+    /*Grid Variables*/
+    --gridWidth: 95vmin;
     --gutter: 0px;
     --noOfGutters: calc(var(--sideLength) - 1);
     --rowHeight: calc((var(--gridWidth) - (var(--noOfGutters) * var(--gutter))) / var(--sideLength));
+
+    /*Style Variables*/
+    --block-border-color: #606266;
+    --block-border-size: 5px;
+    --cell-border-color: #bec6d4;
+    --cell-border-size: 1px;
+    --cell-focus-bg-color: #bbdefb;
+    --cell-guide-group-bg-color: #e2e7ed;
+    --cell-guide-value-bg-color: #c8d0de;
+    --cell-value-color: #212121;
+    --candiate-color: #606266;
+    --bg-color: #ffffff;
 
     /*Styling*/
     display: grid;
@@ -19,30 +44,15 @@ body {
     grid-template-rows: repeat(var(--sideLength), 1fr);
     place-items: stretch;
 
-    border-bottom: 1px solid black;
-    border-left: 1px solid black;
+    border-bottom: var(--block-border-size) solid var(--block-border-color);
+    border-right: var(--block-border-size) solid var(--block-border-color);
+    background-color: var(--bg-color);
 
     /*Square cells*/
     width: var(--gridWidth);
     height: var(--gridWidth);
     grid-auto-rows: var(--rowHeight);
     grid-gap: var(--gutter);
-
-    /*TODO: user colors*/
-    /*Color Variables*/
-    --block-border-color: #606266;
-    --cell-border-color: #bec6d4;
-    --cell-focus-bg-color: #bbdefb;
-    --cell-guide-group-bg-color: #e2e7ed;
-    --cell-guide-value-bg-color: #c8d0de;
-    --cell-value-color: #212121;
-    --candiate-color: #606266;
-    --bg-color: #ffffff;
-}
-
-
-.grid:nth-child(--base) {
-    background-color: red;
 }
 
 .cell {
@@ -52,8 +62,11 @@ body {
     grid-column: calc(1 + var(--cell-column));
     grid-row: calc(1 + var(--cell-row));
 
-    border-top: 1px solid black;
-    border-right: 1px solid black;
+    border-top: var(--cell-border-size) solid var(--cell-border-color);
+    border-right: var(--cell-border-size) solid var(--cell-border-color);
+
+    min-width: 0;
+    min-height: 0;
 }
 
 .value {
@@ -61,11 +74,11 @@ body {
     place-items: center;
     width: 100%;
     height: 100%;
+    line-height: 1;
 }
 
 .valueText {
-    font-weight: bold;
-    font-size: 300%;
+    font-size: var(--rowHeight);
     color: var(--cell-value-color);
 }
 
@@ -84,11 +97,22 @@ body {
 
     grid-column: calc(1 + var(--candidate-column));
     grid-row: calc(1 + var(--candidate-row));
+
+    color: var(--candiate-color);
+    font-size: calc(var(--rowHeight) / 3.5);
+    line-height: 1;
 }
 
 .block {
-    /*TODO: dynamic*/
-    grid-row: 1 /span 3;
-    grid-column: 1 / span 3;
-    border: 3px solid black;
+    --block-column: 0;
+    --block-row: 0;
+
+    grid-row: calc(1 + var(--block-row)) /span var(--base);
+    grid-column: calc(1 + var(--block-column)) / span var(--base);
+
+    border-top: var(--block-border-size) solid var(--block-border-color);
+    border-left: var(--block-border-size) solid var(--block-border-color);
+
+    pointer-events: none;
+    z-index: 1;
 }

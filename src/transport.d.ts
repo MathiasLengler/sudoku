@@ -8,10 +8,10 @@ interface TransportSudoku {
 interface TransportCell {
   value?: number,
   candidates: Array<number>,
-  position: Position,
+  position: CellPosition,
 }
 
-interface Position {
+interface CellPosition {
   column: number,
   row: number,
 }
