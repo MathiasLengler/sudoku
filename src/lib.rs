@@ -33,6 +33,7 @@ pub struct Sudoku<Cell: SudokuCell> {
 // TODO: move row, all_rows, column, all_column, all_cells into grid
 // TODO: Cell with Position in iterators (PositionedCell?)
 // TODO: Check value of cells
+// TODO: Preset value/user filled cells
 impl<Cell: SudokuCell> Sudoku<Cell> {
     pub fn new(base: usize) -> Self {
         let mut sudoku = Sudoku {
