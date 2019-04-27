@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import {App} from './app/app';
+import {Sudoku} from './app/sudoku';
 import "./styles.css";
 
 import("../crate/pkg").then(module => {
@@ -14,5 +14,5 @@ import("../crate/pkg").then(module => {
 
   console.log(sudoku);
 
-  ReactDOM.render(<App ctrl={ctrl}/>, document.getElementById('root'));
+  ReactDOM.render(<Sudoku ctrl={ctrl}/>, document.getElementById('root'));
 });
