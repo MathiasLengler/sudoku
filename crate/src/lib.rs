@@ -5,8 +5,6 @@ use sudoku::Sudoku;
 use sudoku::transport::TransportSudoku;
 use wasm_bindgen::prelude::*;
 
-// TODO: add typescript to webpack
-
 #[cfg(feature = "wee_alloc")]
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
@@ -14,8 +12,6 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 #[wasm_bindgen]
 pub fn run() -> Result<(), JsValue> {
     init();
-
-    append_hello_dom()?;
 
     Ok(())
 }
@@ -59,20 +55,6 @@ impl SudokuController {
 
         JsValue::from_serde(&transport_sudoku).unwrap()
     }
-}
-
-fn append_hello_dom() -> Result<(), JsValue> {
-    let window = web_sys::window().expect("should have a Window");
-    let document = window.document().expect("should have a Document");
-
-    let p: web_sys::Node = document.create_element("p")?.into();
-    p.set_text_content(Some("Hello from Rust, WebAssembly, and Webpack!"));
-
-    let body = document.body().expect("should have a body");
-    let body: &web_sys::Node = body.as_ref();
-    body.append_child(&p)?;
-
-    Ok(())
 }
 
 fn init() {
