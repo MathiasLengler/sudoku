@@ -3,12 +3,13 @@ import {SudokuController} from "../../crate/pkg";
 import {Grid} from "./grid";
 
 // TODO: figure out grid updates
-// TODO: history?
 // TODO: cell selection
-// TODO: highlight conflicting cells
-// TODO: number panel below grid
+//  guide highlighting (row/column/block)
+// TODO: mark conflicting cells
+// TODO: number selection panel
+// TODO: keyboard input
 // TODO: refactor flat grid into blocks with cells
-//  (clean css margins with nested grid and no block border hack)
+//  clean css margins with nested grid and no block border hack
 
 interface AppProps {
   ctrl: SudokuController
