@@ -1,6 +1,3 @@
-use std::collections::vec_deque::VecDeque;
-use std::num::NonZeroUsize;
-
 use serde::{Deserialize, Serialize};
 
 use crate::cell::SudokuCell;
@@ -18,14 +15,13 @@ pub struct TransportSudoku {
 impl<Cell: SudokuCell> From<&Sudoku<Cell>> for TransportSudoku {
     fn from(sudoku: &Sudoku<Cell>) -> Self {
         Self {
-            cells: sudoku.all_cell_positions().map(|position| TransportCell {
-                value: sudoku.get(position).value(),
-                // TODO: save candidates in cell and move code to sudoku.set_all_candidates()
-                candidates: sudoku.direct_candidates(position)
-                    .into_iter()
-                    .map(|cell| cell.value().unwrap())
-                    .collect(),
-                position,
+            cells: sudoku.all_cell_positions().map(|position| {
+                let cell = sudoku.get(position);
+                TransportCell {
+                    value: cell.value(),
+                    candidates: cell.candidates(),
+                    position,
+                }
             }).collect(),
             base: sudoku.base(),
             side_length: sudoku.side_length(),
@@ -36,7 +32,7 @@ impl<Cell: SudokuCell> From<&Sudoku<Cell>> for TransportSudoku {
 
 #[derive(Serialize, Deserialize)]
 pub struct TransportCell {
-    value: Option<NonZeroUsize>,
-    candidates: VecDeque<NonZeroUsize>,
+    value: usize,
+    candidates: Vec<usize>,
     position: Position,
 }

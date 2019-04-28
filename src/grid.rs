@@ -17,13 +17,13 @@ pub struct Grid<Cell: SudokuCell> {
 // TODO: rethink indexing story (internal/cell position/block position)
 impl<Cell: SudokuCell> Grid<Cell> {
     pub fn new(base: usize) -> Self {
-        let mut sudoku = Grid {
+        let mut grid = Grid {
             base,
             cells: vec![],
         };
 
-        sudoku.cells = vec![Default::default(); sudoku.cell_count()];
-        sudoku
+        grid.cells = vec![Default::default(); grid.cell_count()];
+        grid
     }
 
     pub fn get_pos(&self, pos: Position) -> &Cell {
@@ -54,8 +54,8 @@ impl<Cell: SudokuCell> Grid<Cell> {
         }
     }
 
-    pub fn value_range(&self) -> impl Iterator<Item=Cell> {
-        (1..=self.side_length()).map(|value| Cell::new_with_value(value))
+    pub fn value_range(&self) -> impl Iterator<Item=usize> {
+        (1..=self.side_length())
     }
 
     pub fn base(&self) -> usize {
@@ -63,11 +63,19 @@ impl<Cell: SudokuCell> Grid<Cell> {
     }
 
     pub fn side_length(&self) -> usize {
-        self.base.pow(2)
+        Self::base_to_side_length(self.base)
+    }
+
+    pub fn max_value(&self) -> usize {
+        self.side_length()
     }
 
     pub fn cell_count(&self) -> usize {
         Self::base_to_cell_count(self.base)
+    }
+
+    fn base_to_side_length(base: usize) -> usize {
+        base.pow(2)
     }
 
     fn base_to_cell_count(base: usize) -> usize {
@@ -158,21 +166,21 @@ impl<Cell: SudokuCell> Grid<Cell> {
         self.assert_coordinate(pos.column);
         self.assert_coordinate(pos.row);
     }
-
-    // TODO: Check value of cells
-    // TODO: assert all entry points
-    fn assert_cell_value_range() {}
 }
 
-impl<Cell: SudokuCell> TryFrom<Vec<Cell>> for Grid<Cell> {
+impl<Cell: SudokuCell> TryFrom<Vec<usize>> for Grid<Cell> {
     type Error = Error;
 
-    fn try_from(cells: Vec<Cell>) -> Result<Self> {
-        let base = Self::cell_count_to_base(cells.len())?;
+    fn try_from(values: Vec<usize>) -> Result<Self> {
+        let base = Self::cell_count_to_base(values.len())?;
+
+        let max = Self::base_to_side_length(base);
 
         Ok(Grid {
             base,
-            cells,
+            cells: values.into_iter()
+                .map(|value| Cell::new_with_value(value, max))
+                .collect(),
         })
     }
 }

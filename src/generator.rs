@@ -64,7 +64,7 @@ impl RandomGenerator {
 
         'outer: for pos in positions {
             for value in 1..=sudoku.side_length() {
-                sudoku.set(pos, Cell::new_with_value(value));
+                sudoku.set_value(pos, value);
 
                 if !sudoku.has_conflict() {
                     continue 'outer;

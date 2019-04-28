@@ -21,7 +21,7 @@ enum StepResult<Cell: SudokuCell> {
 
 pub struct BacktrackingSolver<Cell: SudokuCell> {
     sudoku: Sudoku<Cell>,
-    choices: Vec<Choice<Cell>>,
+    choices: Vec<Choice>,
 
     empty_positions: Vec<Position>,
 
@@ -90,7 +90,7 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
     fn step(&mut self) -> StepResult<Cell> {
         match self.choices.last() {
             Some(choice) => {
-                self.sudoku.set(choice.position(), choice.selection());
+                self.sudoku.set_value(choice.position(), choice.selection());
 
                 if choice.is_exhausted() {
                     // Backtrack
@@ -185,7 +185,7 @@ mod tests {
 
         let sudoku = solve_result.unwrap();
 
-//        println!("{}", sudoku);
+        println!("{}", sudoku);
 
         assert!(!sudoku.has_conflict());
 

@@ -6,15 +6,15 @@ use crate::position::Position;
 use crate::Sudoku;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Choice<Cell: SudokuCell> {
+pub struct Choice {
     pos: Position,
-    candidates: VecDeque<Cell>,
-    selection: Cell,
+    candidates: VecDeque<usize>,
+    selection: usize,
 }
 
-impl<Cell: SudokuCell> Choice<Cell> {
-    pub fn new(pos: Position, sudoku: &Sudoku<Cell>) -> Choice<Cell> {
-        let mut candidates = sudoku.direct_candidates(pos);
+impl Choice {
+    pub fn new<Cell: SudokuCell>(pos: Position, sudoku: &Sudoku<Cell>) -> Choice {
+        let mut candidates = sudoku.direct_candidates(pos).into();
         let selection = Self::next_selection(&mut candidates);
 
         Self {
@@ -24,10 +24,10 @@ impl<Cell: SudokuCell> Choice<Cell> {
         }
     }
 
-    fn next_selection(candidates: &mut VecDeque<Cell>) -> Cell {
+    fn next_selection(candidates: &mut VecDeque<usize>) -> usize {
         match candidates.pop_front() {
             Some(candidate) => candidate,
-            None => Cell::new_with_value(0),
+            None => 0,
         }
     }
 
@@ -36,20 +36,20 @@ impl<Cell: SudokuCell> Choice<Cell> {
     }
 
     pub fn is_exhausted(&self) -> bool {
-        !self.selection.has_value()
+        !self.selection == 0
     }
 
     pub fn position(&self) -> Position {
         self.pos
     }
 
-    pub fn selection(&self) -> Cell {
-        self.selection.clone()
+    pub fn selection(&self) -> usize {
+        self.selection
     }
 }
 
-impl<Cell: SudokuCell> Display for Choice<Cell> {
+impl Display for Choice {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}={:?} ({:?})", self.pos, self.selection, self.candidates)
+        write!(f, "{}={} ({:?})", self.pos, self.selection, self.candidates)
     }
 }
