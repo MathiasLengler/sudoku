@@ -1,11 +1,11 @@
 import * as React from 'react';
 import * as CSS from 'csstype';
 
-interface SudokuProps {
+interface GridProps {
   sudoku: TransportSudoku
 }
 
-export const Sudoku: React.FunctionComponent<SudokuProps> = (props) => {
+export const Grid: React.FunctionComponent<GridProps> = (props) => {
   const {cells, base, side_length} = props.sudoku;
 
   const style: CSS.Properties = {
