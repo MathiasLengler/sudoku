@@ -18,9 +18,10 @@ pub struct TransportSudoku {
 impl<Cell: SudokuCell> From<&Sudoku<Cell>> for TransportSudoku {
     fn from(sudoku: &Sudoku<Cell>) -> Self {
         Self {
-            cells: sudoku.all_positions().map(|position| TransportCell {
+            cells: sudoku.all_cell_positions().map(|position| TransportCell {
                 value: sudoku.get(position).value(),
-                candidates: sudoku.candidates(position)
+                // TODO: save candidates in cell and move code to sudoku.set_all_candidates()
+                candidates: sudoku.direct_candidates(position)
                     .into_iter()
                     .map(|cell| cell.value().unwrap())
                     .collect(),

@@ -14,7 +14,7 @@ pub struct Choice<Cell: SudokuCell> {
 
 impl<Cell: SudokuCell> Choice<Cell> {
     pub fn new(pos: Position, sudoku: &Sudoku<Cell>) -> Choice<Cell> {
-        let mut candidates = sudoku.candidates(pos);
+        let mut candidates = sudoku.direct_candidates(pos);
         let selection = Self::next_selection(&mut candidates);
 
         Self {
