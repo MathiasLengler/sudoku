@@ -36,7 +36,7 @@ impl Choice {
     }
 
     pub fn is_exhausted(&self) -> bool {
-        !self.selection == 0
+        self.selection == 0
     }
 
     pub fn position(&self) -> Position {

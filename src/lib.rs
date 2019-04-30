@@ -171,21 +171,33 @@ mod tests {
     fn test_has_conflict() {
         let mut sudoku = Sudoku::<OptionCell>::new(3);
 
-        let mut debug_value = 1;
-        for y in 0..sudoku.side_length() {
-            for x in 0..sudoku.side_length() {
-                sudoku.set_value(Position { column: x, row: y }, debug_value);
-                debug_value += 1;
-            }
-        }
+        assert!(!sudoku.has_conflict());
+
+        sudoku.set_value(Position { column: 0, row: 0 }, 1);
 
         assert!(!sudoku.has_conflict());
 
-        let previous_value = sudoku.set_value(Position { column: 2, row: 2 }, 1);
+        sudoku.set_value(Position { column: 1, row: 0 }, 1);
 
         assert!(sudoku.has_conflict());
 
-        sudoku.set_value(Position { column: 2, row: 2 }, previous_value);
+        sudoku.set_value(Position { column: 1, row: 0 }, 0);
+
+        assert!(!sudoku.has_conflict());
+
+        sudoku.set_value(Position { column: 0, row: 1 }, 1);
+
+        assert!(sudoku.has_conflict());
+
+        sudoku.set_value(Position { column: 0, row: 1 }, 0);
+
+        assert!(!sudoku.has_conflict());
+
+        sudoku.set_value(Position { column: 1, row: 1 }, 1);
+
+        assert!(sudoku.has_conflict());
+
+        sudoku.set_value(Position { column: 1, row: 1 }, 0);
 
         assert!(!sudoku.has_conflict());
     }
