@@ -1,5 +1,5 @@
 import * as React from "react";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {Grid} from "./grid";
 import {TypedWasmSudoku} from "../index";
 
@@ -17,9 +17,26 @@ interface AppProps {
 }
 
 export const App: React.FunctionComponent<AppProps> = (props) => {
+  console.log("App render");
+
   const [sudoku, setSudoku] = useState(() => props.wasmSudoku.get_sudoku());
 
-  const _ctrl = new SudokuController(props.wasmSudoku, (sudoku) => setSudoku(sudoku));
+  const ctrl = new SudokuController(props.wasmSudoku, (sudoku) => setSudoku(sudoku));
+
+  useEffect(
+    () => {
+      let timer1 = setTimeout(() =>
+        ctrl.setValue({row: 1, column: 1}, 1), 5000);
+      let timer2 = setTimeout(() =>
+        ctrl.setCandidates({row: 1, column: 0}, [1,3,5,8]), 10000);
+
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+      }
+    },
+    [] //useEffect will run only one time
+  );
 
   return (
     <div className='sudoku'>
@@ -36,9 +53,6 @@ class SudokuController {
   constructor(rustSudoku: TypedWasmSudoku, onUpdate: (this: void, sudoku: TransportSudoku) => void) {
     this.rustSudoku = rustSudoku;
     this.onUpdate = onUpdate;
-
-    setTimeout(() => this.setValue({row: 1, column: 1}, 1), 1000);
-    setTimeout(() => this.setCandidates({row: 1, column: 0}, [1,3,5,8]), 2000);
   }
 
   private update() {
@@ -54,11 +68,13 @@ class SudokuController {
   }
 
   setValue(pos: CellPosition, value: number): number {
+    console.log("SudokuController", "setValue", pos, value);
     return this.with_update(() =>
       this.rustSudoku.setValue(pos, value));
   }
 
   setCandidates(pos: CellPosition, candidates: number[]) {
+    console.log("SudokuController", "setCandidates", pos, candidates);
     return this.with_update(() =>
       this.rustSudoku.setCandidates(pos, candidates));
   }
