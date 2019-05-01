@@ -27,6 +27,14 @@ pub struct Sudoku<Cell: SudokuCell> {
     grid: Grid<Cell>,
 }
 
+// TODO: make sudoku fully generic over cell
+//  struct T {
+//      t: Sudoku<Cell<u8>>,
+//  }
+
+// TODO: clear candidates on set_value
+// TODO: Preset value/user filled cells
+// TODO: provide undo/redo API
 impl<Cell: SudokuCell> Sudoku<Cell> {
     pub fn new(base: usize) -> Self {
         Sudoku {
@@ -73,8 +81,6 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     }
 }
 
-// TODO: Preset value/user filled cells
-// TODO: provide undo/redo API
 /// Utility iterators
 impl<Cell: SudokuCell> Sudoku<Cell> {
     pub(crate) fn all_cell_positions(&self) -> impl Iterator<Item = Position> {
