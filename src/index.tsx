@@ -2,12 +2,12 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import {App} from './app/app';
 import "./styles.css";
-import {RustSudoku} from "../crate/pkg";
+import {WasmSudoku} from "../crate/pkg";
 
-export class TypedRustSudoku {
-  private rustSudoku: RustSudoku;
+export class TypedWasmSudoku {
+  private rustSudoku: WasmSudoku;
 
-  constructor(rustSudoku: RustSudoku) {
+  constructor(rustSudoku: WasmSudoku) {
     this.rustSudoku = rustSudoku;
   }
 
@@ -19,17 +19,21 @@ export class TypedRustSudoku {
     return this.rustSudoku.get_sudoku()
   }
 
-  set_value(pos: CellPosition, value: number): void {
+  setValue(pos: CellPosition, value: number): number {
     return this.rustSudoku.set_value(pos, value);
+  }
+
+  setCandidates(pos: CellPosition, candidates: number[]) {
+    return this.rustSudoku.set_candidates(pos, candidates);
   }
 }
 
 import("../crate/pkg").then(module => {
   module.run();
 
-  const typedRustSudoku = new TypedRustSudoku(module.get_rust_sudoku());
+  const typedWasmSudoku = new TypedWasmSudoku(module.get_rust_sudoku());
 
-  typedRustSudoku.say_hello();
+  typedWasmSudoku.say_hello();
 
-  ReactDOM.render(<App rustSudoku={typedRustSudoku}/>, document.getElementById('root'));
+  ReactDOM.render(<App wasmSudoku={typedWasmSudoku}/>, document.getElementById('root'));
 });
