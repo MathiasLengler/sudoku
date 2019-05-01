@@ -160,7 +160,7 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
 mod tests {
     use std::convert::TryInto;
 
-    use crate::cell::OptionCell;
+    use crate::cell::Cell;
     use crate::error::Result;
 
     use super::*;
@@ -215,7 +215,7 @@ mod tests {
             ],
         ]
             .into_iter()
-            .map(TryInto::<Sudoku<OptionCell>>::try_into)
+            .map(TryInto::<Sudoku<Cell>>::try_into)
             .collect::<Result<Vec<_>>>()?;
 
         for (sudoku_index, sudoku) in sudokus.into_iter().enumerate() {
@@ -248,7 +248,7 @@ mod tests {
             ]
         ]
             .into_iter()
-            .map(TryInto::<Sudoku<OptionCell>>::try_into)
+            .map(TryInto::<Sudoku<Cell>>::try_into)
             .collect::<Result<Vec<_>>>()?;
 
         for (sudoku_index, sudoku) in sudokus.into_iter().enumerate() {

@@ -1,22 +1,23 @@
 use std::convert::{TryFrom, TryInto};
-use std::fmt::{Display, Formatter};
 use std::fmt;
+use std::fmt::{Display, Formatter};
 
 use fixedbitset::FixedBitSet;
 
 use cell::SudokuCell;
 
+use crate::cell::value::SudokuValue;
 use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::position::Position;
 
 pub mod cell;
+pub mod error;
+pub mod generator;
+mod grid;
 pub mod position;
 pub mod solver;
-pub mod generator;
-pub mod error;
 pub mod transport;
-mod grid;
 
 // TODO: solve/verify incomplete sudoku
 // TODO: generate valid incomplete sudoku
@@ -29,7 +30,7 @@ pub struct Sudoku<Cell: SudokuCell> {
 impl<Cell: SudokuCell> Sudoku<Cell> {
     pub fn new(base: usize) -> Self {
         Sudoku {
-            grid: Grid::new(base)
+            grid: Grid::new(base),
         }
     }
 
@@ -42,7 +43,9 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     pub fn set_candidates(&mut self, pos: Position, candidates: Vec<usize>) {
         let max_value = self.grid.max_value();
 
-        self.grid.get_pos_mut(pos).set_candidates(candidates, max_value);
+        self.grid
+            .get_pos_mut(pos)
+            .set_candidates(candidates, max_value);
     }
 
     pub fn set_all_direct_candidates(&mut self) {
@@ -74,29 +77,33 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
 // TODO: provide undo/redo API
 /// Utility iterators
 impl<Cell: SudokuCell> Sudoku<Cell> {
-    pub(crate) fn all_cell_positions(&self) -> impl Iterator<Item=Position> {
+    pub(crate) fn all_cell_positions(&self) -> impl Iterator<Item = Position> {
         let side_length = self.side_length();
 
-        (0..side_length)
-            .flat_map(move |row_index| (0..side_length).map(move |column_index| Position {
+        (0..side_length).flat_map(move |row_index| {
+            (0..side_length).map(move |column_index| Position {
                 column: column_index,
                 row: row_index,
-            }))
+            })
+        })
     }
 
     pub(crate) fn empty_positions(&self) -> Vec<Position> {
-        self.all_cell_positions().filter(|pos| !self.get(*pos).has_value()).collect()
+        self.all_cell_positions()
+            .filter(|pos| !self.get(*pos).value().is_some())
+            .collect()
     }
 }
 
 impl<Cell: SudokuCell> Sudoku<Cell> {
     // TODO: return cell values
     pub(crate) fn direct_candidates(&self, pos: Position) -> Vec<usize> {
-        let conflicting_values = self.grid.column(pos.column)
+        let conflicting_values = self
+            .grid
+            .column(pos.column)
             .chain(self.grid.row(pos.row))
             .chain(self.grid.block(pos))
-            .filter(|cell| cell.has_value())
-            .map(|cell| cell.value())
+            .filter_map(|cell| cell.value().as_opt_usize())
             .collect::<FixedBitSet>();
 
         let values: FixedBitSet = self.grid.value_range().collect();
@@ -105,22 +112,27 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     }
 
     pub(crate) fn has_conflict(&self) -> bool {
-        self.grid.all_rows().any(|row| self.has_duplicate(row)) ||
-            self.grid.all_columns().any(|column| self.has_duplicate(column)) ||
-            self.grid.all_blocks().any(|block| self.has_duplicate(block))
+        self.grid.all_rows().any(|row| self.has_duplicate(row))
+            || self
+                .grid
+                .all_columns()
+                .any(|column| self.has_duplicate(column))
+            || self
+                .grid
+                .all_blocks()
+                .any(|block| self.has_duplicate(block))
     }
 
     pub(crate) fn has_conflict_at(&self, pos: Position) -> bool {
-        self.has_duplicate(self.grid.row(pos.row)) ||
-            self.has_duplicate(self.grid.column(pos.column)) ||
-            self.has_duplicate(self.grid.block(pos))
+        self.has_duplicate(self.grid.row(pos.row))
+            || self.has_duplicate(self.grid.column(pos.column))
+            || self.has_duplicate(self.grid.block(pos))
     }
 
     // TODO: conflict location pairs
-    fn has_duplicate<'a>(&'a self, cells: impl Iterator<Item=&'a Cell>) -> bool {
+    fn has_duplicate<'a>(&'a self, cells: impl Iterator<Item = &'a Cell>) -> bool {
         let mut cells: Vec<_> = cells
-            .filter(|cell| cell.has_value())
-            .map(|cell| cell.value())
+            .filter_map(|cell| cell.value().as_opt_usize())
             .collect();
 
         cells.sort();
@@ -139,9 +151,11 @@ impl<Cell: SudokuCell> TryFrom<Vec<Vec<usize>>> for Sudoku<Cell> {
     type Error = Error;
 
     fn try_from(nested_values: Vec<Vec<usize>>) -> Result<Self> {
-        nested_values.into_iter()
+        nested_values
+            .into_iter()
             .flatten()
-            .collect::<Vec<_>>().try_into()
+            .collect::<Vec<_>>()
+            .try_into()
     }
 }
 
@@ -150,7 +164,7 @@ impl<Cell: SudokuCell> TryFrom<Vec<usize>> for Sudoku<Cell> {
 
     fn try_from(values: Vec<usize>) -> Result<Self> {
         Ok(Sudoku {
-            grid: values.try_into()?
+            grid: values.try_into()?,
         })
     }
 }
@@ -163,13 +177,13 @@ impl<Cell: SudokuCell> Display for Sudoku<Cell> {
 
 #[cfg(test)]
 mod tests {
-    use crate::cell::OptionCell;
+    use crate::cell::Cell;
 
     use super::*;
 
     #[test]
     fn test_has_conflict() {
-        let mut sudoku = Sudoku::<OptionCell>::new(3);
+        let mut sudoku = Sudoku::<Cell>::new(3);
 
         assert!(!sudoku.has_conflict());
 

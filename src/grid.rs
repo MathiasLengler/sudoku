@@ -9,14 +9,14 @@ use crate::error::{Error, Result};
 use crate::position::Position;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Grid<Cell: SudokuCell> {
+pub(super) struct Grid<Cell: SudokuCell> {
     base: usize,
     cells: Vec<Cell>,
 }
 
 // TODO: rethink indexing story (internal/cell position/block position)
 impl<Cell: SudokuCell> Grid<Cell> {
-    pub fn new(base: usize) -> Self {
+    pub(super) fn new(base: usize) -> Self {
         let mut grid = Grid {
             base,
             cells: vec![],
@@ -26,7 +26,7 @@ impl<Cell: SudokuCell> Grid<Cell> {
         grid
     }
 
-    pub fn get_pos(&self, pos: Position) -> &Cell {
+    pub(super) fn get_pos(&self, pos: Position) -> &Cell {
         self.assert_position(pos);
 
         let index = self.index_at(pos);
@@ -34,7 +34,7 @@ impl<Cell: SudokuCell> Grid<Cell> {
         &self.cells[index]
     }
 
-    pub fn get_pos_mut(&mut self, pos: Position) -> &mut Cell {
+    pub(super) fn get_pos_mut(&mut self, pos: Position) -> &mut Cell {
         self.assert_position(pos);
 
         let index = self.index_at(pos);
@@ -54,23 +54,23 @@ impl<Cell: SudokuCell> Grid<Cell> {
         }
     }
 
-    pub fn value_range(&self) -> impl Iterator<Item=usize> {
+    pub(super) fn value_range(&self) -> impl Iterator<Item=usize> {
         (1..=self.side_length())
     }
 
-    pub fn base(&self) -> usize {
+    pub(super) fn base(&self) -> usize {
         self.base
     }
 
-    pub fn side_length(&self) -> usize {
+    pub(super) fn side_length(&self) -> usize {
         Self::base_to_side_length(self.base)
     }
 
-    pub fn max_value(&self) -> usize {
+    pub(super) fn max_value(&self) -> usize {
         self.side_length()
     }
 
-    pub fn cell_count(&self) -> usize {
+    pub(super) fn cell_count(&self) -> usize {
         Self::base_to_cell_count(self.base)
     }
 
@@ -98,7 +98,7 @@ impl<Cell: SudokuCell> Grid<Cell> {
 // TODO: Cell with Position in iterators (PositionedCell?)
 /// Utility iterators
 impl<Cell: SudokuCell> Grid<Cell> {
-    pub fn row(&self, row_index: usize) -> impl Iterator<Item=&Cell> {
+    pub(super) fn row(&self, row_index: usize) -> impl Iterator<Item=&Cell> {
         self.assert_coordinate(row_index);
 
         let starting_index = row_index * self.side_length();
@@ -106,26 +106,26 @@ impl<Cell: SudokuCell> Grid<Cell> {
         (starting_index..starting_index + self.side_length()).map(move |i| &self.cells[i])
     }
 
-    pub fn all_rows(&self) -> impl Iterator<Item=impl Iterator<Item=&Cell>> {
+    pub(super) fn all_rows(&self) -> impl Iterator<Item=impl Iterator<Item=&Cell>> {
         (0..self.side_length()).map(move |row_index| {
             self.row(row_index)
         })
     }
 
-    pub fn column(&self, column_index: usize) -> impl Iterator<Item=&Cell> {
+    pub(super) fn column(&self, column_index: usize) -> impl Iterator<Item=&Cell> {
         self.assert_coordinate(column_index);
 
         (column_index..self.cell_count()).step_by(self.side_length()).map(move |i| &self.cells[i])
     }
 
 
-    pub fn all_columns(&self) -> impl Iterator<Item=impl Iterator<Item=&Cell>> {
+    pub(super) fn all_columns(&self) -> impl Iterator<Item=impl Iterator<Item=&Cell>> {
         (0..self.side_length()).map(move |column_index| {
             self.column(column_index)
         })
     }
 
-    pub fn block(&self, pos: Position) -> impl Iterator<Item=&Cell> {
+    pub(super) fn block(&self, pos: Position) -> impl Iterator<Item=&Cell> {
         self.assert_position(pos);
 
         let block_base_pos = (pos / self.base) * self.base;
@@ -141,7 +141,7 @@ impl<Cell: SudokuCell> Grid<Cell> {
             .map(move |i| &self.cells[i])
     }
 
-    pub fn all_blocks(&self) -> impl Iterator<Item=impl Iterator<Item=&Cell>> {
+    pub(super) fn all_blocks(&self) -> impl Iterator<Item=impl Iterator<Item=&Cell>> {
         let all_block_base_pos =
             (0..self.base)
                 .flat_map(

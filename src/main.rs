@@ -1,7 +1,7 @@
 use std::convert::TryInto;
 use std::time::Instant;
 
-use sudoku::cell::OptionCell;
+use sudoku::cell::Cell;
 use sudoku::error::Result;
 use sudoku::solver::backtracking::BacktrackingSolver;
 use sudoku::Sudoku;
@@ -22,7 +22,7 @@ fn main() -> Result<()> {
         ]
     ]
         .into_iter()
-        .map(TryInto::<Sudoku<OptionCell>>::try_into)
+        .map(TryInto::<Sudoku<Cell>>::try_into)
         .collect::<Result<Vec<_>>>()?;
 
     for (sudoku_index, sudoku) in sudokus.into_iter().enumerate() {
