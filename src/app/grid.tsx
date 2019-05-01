@@ -1,26 +1,37 @@
 import * as React from 'react';
 import * as CSS from 'csstype';
+import {isEqual} from "lodash"
 
 interface GridProps {
-  sudoku: TransportSudoku
+  sudoku: TransportSudoku,
+  selectedPos: CellPosition,
+  setSelectedPos: React.Dispatch<React.SetStateAction<CellPosition>>
 }
 
 export const Grid: React.FunctionComponent<GridProps> = (props) => {
-  const {cells, base, side_length} = props.sudoku;
+  const {
+    sudoku: {cells, base, side_length},
+    selectedPos,
+    setSelectedPos
+  } = props;
 
-  const style: CSS.Properties = {
-    '--sideLength': side_length,
-    '--base': base,
-  };
+  return <div className='grid'>
+    <Blocks side_length={side_length} base={base}/>
+    {cells.map((cell, i) => {
+        if (isEqual(selectedPos, cell.position)) {
+          console.log("Selected:", selectedPos);
+        }
 
-  return (
-    <div className='grid' style={style}>
-      <Blocks side_length={side_length} base={base}/>
-      {cells.map((cell, i) =>
-        <Cell key={i} cell={cell} base={base}/>
-      )}
-    </div>
-  )
+        return <Cell
+          key={i}
+          cell={cell}
+          base={base}
+          selected={isEqual(selectedPos, cell.position)}
+          setSelectedPos={setSelectedPos}
+        />
+      }
+    )}
+  </div>
 };
 
 interface BlocksProps {
@@ -58,7 +69,6 @@ const Block: React.FunctionComponent<BlockProps> = (props) => {
     '--block-row': row * base,
   };
 
-  // TODO: add blocks
   return (
     <div className={'block'} style={style}/>
   )
@@ -68,20 +78,30 @@ const Block: React.FunctionComponent<BlockProps> = (props) => {
 interface CellProps {
   cell: TransportCell,
   base: TransportSudoku['base'],
+  selected: boolean,
+  setSelectedPos: React.Dispatch<React.SetStateAction<CellPosition>>,
 }
 
 const Cell: React.FunctionComponent<CellProps> = (props) => {
+  const {
+    cell: {position, candidates, value},
+    base,
+    selected,
+    setSelectedPos
+  } = props;
+
   const style: CSS.Properties = {
-    '--cell-column': props.cell.position.column,
-    '--cell-row': props.cell.position.row,
+    '--cell-column': position.column,
+    '--cell-row': position.row,
+    backgroundColor: selected ? "red" : "green",
   };
 
   return (
-    <div className='cell' style={style}>
+    <div className='cell' style={style} onClick={() => setSelectedPos(position)}>
       {
-        props.cell.value ?
-          <div className='value'><span className='valueText'>{props.cell.value}</span></div> :
-          <Candidates candidates={props.cell.candidates} base={props.base}/>
+        value ?
+          <div className='cellValue'><span className='cellValueText'>{value}</span></div> :
+          <Candidates candidates={candidates} base={base}/>
       }
     </div>
   )
