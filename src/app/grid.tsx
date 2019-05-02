@@ -22,7 +22,7 @@ export const Grid: React.FunctionComponent<GridProps> = (props) => {
           console.log("Selected:", selectedPos);
         }
 
-        return <Cell
+        return <MemoCell
           key={i}
           cell={cell}
           base={base}
@@ -83,6 +83,8 @@ interface CellProps {
 }
 
 const Cell: React.FunctionComponent<CellProps> = (props) => {
+  console.log("Cell render", props);
+
   const {
     cell: {position, candidates, value},
     base,
@@ -106,6 +108,11 @@ const Cell: React.FunctionComponent<CellProps> = (props) => {
     </div>
   )
 };
+
+
+const MemoCell = React.memo(Cell, (prevProps, nextProps) => {
+  return isEqual(prevProps, nextProps)
+});
 
 interface CandidatesProps {
   candidates: TransportCell['candidates'],
