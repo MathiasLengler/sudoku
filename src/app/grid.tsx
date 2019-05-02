@@ -97,6 +97,7 @@ const Cell: React.FunctionComponent<CellProps> = (props) => {
   const style: CSS.Properties = {
     '--cell-column': position.column,
     '--cell-row': position.row,
+    // TODO: remove debug style
     backgroundColor: selected ? "red" : "green",
   };
 
