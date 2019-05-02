@@ -2,6 +2,8 @@ import * as React from 'react';
 import * as CSS from 'csstype';
 import {isEqual} from "lodash"
 
+// TODO: modularize
+
 interface GridProps {
   sudoku: TransportSudoku,
   selectedPos: CellPosition,

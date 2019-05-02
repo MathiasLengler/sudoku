@@ -1,22 +1,20 @@
 import * as React from "react";
 
+export type onSelectorValue = (number: number) => void;
+
 interface SelectorProps {
   side_length: TransportSudoku['side_length'],
+  onSelectorValue: onSelectorValue,
 }
 
 export const Selector: React.FunctionComponent<SelectorProps> = (props) => {
-  const {side_length} = props;
-
-  // TODO:
-  const on_click = (number: number) => {
-    console.log(number)
-  };
+  const {side_length, onSelectorValue} = props;
 
   return (
     <div className='selector'>
       {Array.from(Array(side_length).keys())
         .map(value =>
-          <SelectorValue key={value} value={value + 1} on_click={on_click}/>
+          <SelectorValue key={value} value={value + 1} onSelectorValue={onSelectorValue}/>
         )}
     </div>
   )
@@ -24,14 +22,14 @@ export const Selector: React.FunctionComponent<SelectorProps> = (props) => {
 
 interface ValueProps {
   value: number,
-  on_click: (number: number) => void,
+  onSelectorValue: onSelectorValue,
 }
 
 const SelectorValue: React.FunctionComponent<ValueProps> = (props) => {
-  const {value, on_click} = props;
+  const {value, onSelectorValue} = props;
   return (
     <div className='selectorValue'>
-      <span className='selectorValueText' onClick={() => on_click(value)}>{value}</span>
+      <span className='selectorValueText' onClick={() => onSelectorValue(value)}>{value}</span>
     </div>
   );
 };

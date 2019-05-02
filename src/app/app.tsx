@@ -1,17 +1,10 @@
 import * as React from "react";
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {Grid} from "./grid";
 import {TypedWasmSudoku} from "../index";
 import * as CSS from "csstype";
-import {Selector} from "./selector";
+import {onSelectorValue, Selector} from "./selector";
 
-// TODO: figure out grid updates
-// TODO: guide highlighting (row/column/block)
-// TODO: mark conflicting cells
-// TODO: keyboard input
-// TODO: refactor flat grid into blocks with cells
-//  clean css margins with nested grid and no block border hack
-// TODO: fix selection performance
 
 interface AppProps {
   wasmSudoku: TypedWasmSudoku,
@@ -28,7 +21,15 @@ export const App: React.FunctionComponent<AppProps> = (props) => {
 
   const sudokuController = new SudokuController(
     props.wasmSudoku,
-    (sudoku) => setSudoku(sudoku)
+    (sudoku) => setSudoku(sudoku),
+  );
+
+  // TODO: abstraction?
+  const onSelectorValue: onSelectorValue = useCallback(
+    (selectorValue) => {
+      sudokuController.setValue(selectedPos, selectorValue);
+    },
+    [sudokuController, selectedPos],
   );
 
   useEffect(
@@ -54,18 +55,18 @@ export const App: React.FunctionComponent<AppProps> = (props) => {
   return (
     <div className='sudoku' style={style}>
       <Grid sudoku={sudoku} selectedPos={selectedPos} setSelectedPos={setSelectedPos}/>
-      <Selector side_length={sudoku.side_length}/>
+      <Selector side_length={sudoku.side_length} onSelectorValue={onSelectorValue}/>
     </div>
   )
 };
 
-class SudokuController {
-  private rustSudoku: TypedWasmSudoku;
-  private readonly onSudokuUpdate: (this: void, sudoku: TransportSudoku) => void;
+type onSudokuUpdate = (this: void, sudoku: TransportSudoku) => void;
 
-  constructor(rustSudoku: TypedWasmSudoku, onSudokuUpdate: (this: void, sudoku: TransportSudoku) => void) {
-    this.rustSudoku = rustSudoku;
-    this.onSudokuUpdate = onSudokuUpdate;
+class SudokuController {
+  constructor(
+    private readonly rustSudoku: TypedWasmSudoku,
+    private readonly onSudokuUpdate: onSudokuUpdate
+  ) {
   }
 
   private updateSudoku() {

@@ -67,6 +67,7 @@ body {
     grid-gap: var(--gutter);
 }
 
+/*TODO: add modifiers for cell (highlight, guide...)*/
 .cell {
     --cell-column: 0;
     --cell-row: 0;
