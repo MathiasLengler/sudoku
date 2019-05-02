@@ -14,6 +14,10 @@
 ## Tooling
 - add ESLint: @typescript-eslint/eslint-plugin
 - evaluate UI frameworks
+- PWA
+  - offline
+  - add to home
+  - Framework?
 
 ## UX
 - keyboard value input
