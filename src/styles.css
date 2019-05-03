@@ -1,5 +1,5 @@
 body {
-    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-size: 1rem;
     font-weight: 400;
     margin: 0;
@@ -10,7 +10,7 @@ body {
     height: 100vh;
     display: grid;
     place-items: center;
-    justify-content: space-evenly;
+    justify-content: center;
 
     /*React Variables*/
     --sideLength: 0;
@@ -21,7 +21,7 @@ body {
     --block-border-size: 5px;
     --cell-border-color: #bec6d4;
     --cell-border-size: 1px;
-    --cell-bg-color-focus: #bbdefb;
+    --cell-bg-color-selected: #bbdefb;
     --cell-bg-color-guide-group: #e2e7ed;
     --cell-bg-color-guide-value: #c8d0de;
     --cell-bg-color-conflict-preset: #fdc0cb;
@@ -48,8 +48,6 @@ body {
     --rowHeight: calc((var(--gridWidth) - (var(--noOfGutters) * var(--gutter))) / var(--sideLength));
     --cell-padding: 0.2rem;
 
-
-
     /*Styling*/
     display: grid;
     grid-template-columns: repeat(var(--sideLength), 1fr);
@@ -67,7 +65,6 @@ body {
     grid-gap: var(--gutter);
 }
 
-/*TODO: add modifiers for cell (highlight, guide...)*/
 .cell {
     --cell-column: 0;
     --cell-row: 0;
@@ -84,6 +81,18 @@ body {
     padding: var(--cell-padding);
 
     cursor: pointer;
+}
+
+.cell--selected {
+    background-color: var(--cell-bg-color-selected);
+}
+
+.cell--guide-group {
+    background-color: var(--cell-bg-color-guide-group);
+}
+
+.cell--guide-guide-value {
+    background-color: var(--cell-bg-color-guide-value);
 }
 
 .cellValue {

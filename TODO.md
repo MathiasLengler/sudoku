@@ -27,6 +27,7 @@
 
 ### Selector Control Panel:
 - set candidate mode toggle
+- sticky value toggle
 - delete cell button
 - undo button
 - redo button

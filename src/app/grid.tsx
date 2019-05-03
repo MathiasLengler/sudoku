@@ -1,6 +1,7 @@
 import * as React from 'react';
 import * as CSS from 'csstype';
-import {isEqual} from "lodash"
+import {isEqual} from "lodash";
+import {MemoCell} from "./cell";
 
 // TODO: modularize
 
@@ -21,7 +22,6 @@ export const Grid: React.FunctionComponent<GridProps> = (props) => {
     <Blocks side_length={side_length} base={base}/>
     {cells.map((cell, i) => {
         if (isEqual(selectedPos, cell.position)) {
-          console.log("Selected:", selectedPos);
         }
 
         return <MemoCell
@@ -76,77 +76,7 @@ const Block: React.FunctionComponent<BlockProps> = (props) => {
   )
 };
 
-
-interface CellProps {
-  cell: TransportCell,
-  base: TransportSudoku['base'],
-  selected: boolean,
-  setSelectedPos: React.Dispatch<React.SetStateAction<CellPosition>>,
-}
-
-const Cell: React.FunctionComponent<CellProps> = (props) => {
-  console.log("Cell render", props);
-
-  const {
-    cell: {position, candidates, value},
-    base,
-    selected,
-    setSelectedPos
-  } = props;
-
-  const style: CSS.Properties = {
-    '--cell-column': position.column,
-    '--cell-row': position.row,
-    // TODO: remove debug style
-    backgroundColor: selected ? "red" : "green",
-  };
-
-  return (
-    <div className='cell' style={style} onClick={() => setSelectedPos(position)}>
-      {
-        value ?
-          <div className='cellValue'><span className='cellValueText'>{value}</span></div> :
-          <Candidates candidates={candidates} base={base}/>
-      }
-    </div>
-  )
-};
-
-
-const MemoCell = React.memo(Cell, (prevProps, nextProps) => {
-  return isEqual(prevProps, nextProps)
-});
-
-interface CandidatesProps {
-  candidates: TransportCell['candidates'],
-  base: TransportSudoku['base']
-}
-
-const Candidates: React.FunctionComponent<CandidatesProps> = (props) => {
-  const {base} = props;
-
-  return (
-    <div className='candidates'>
-      {
-        props.candidates.map((candidate, i) => {
-          // Candidates are 1 based, grid calculations are 0 based.
-          const {column, row} = indexToPosition(candidate - 1, base);
-
-          const style: CSS.Properties = {
-            '--candidate-column': column,
-            '--candidate-row': row,
-          };
-
-          return <span key={i} className='candidate' style={style}>
-            {candidate}
-          </span>
-        })
-      }
-    </div>
-  )
-};
-
-const indexToPosition = (index: number, base: TransportSudoku['base']): CellPosition => {
+export const indexToPosition = (index: number, base: TransportSudoku['base']): CellPosition => {
   return {
     column: index % base,
     row: Math.floor(index / base)

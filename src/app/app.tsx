@@ -4,6 +4,7 @@ import {Grid} from "./grid";
 import {TypedWasmSudoku} from "../index";
 import * as CSS from "csstype";
 import {onSelectorValue, Selector} from "./selector";
+import {WasmSudokuController} from "./controllers";
 
 
 interface AppProps {
@@ -15,14 +16,14 @@ export const App: React.FunctionComponent<AppProps> = (props) => {
 
   const [sudoku, setSudoku] = useState(() => props.wasmSudoku.get_sudoku());
 
-  const [selectedPos, setSelectedPos] = useState<CellPosition>(() => {
-    return {column: 0, row: 0}
-  });
-
-  const sudokuController = new SudokuController(
+  const sudokuController = new WasmSudokuController(
     props.wasmSudoku,
     (sudoku) => setSudoku(sudoku),
   );
+
+  const [selectedPos, setSelectedPos] = useState<CellPosition>(() => {
+    return {column: 0, row: 0}
+  });
 
   // TODO: abstraction?
   const onSelectorValue: onSelectorValue = useCallback(
@@ -32,6 +33,25 @@ export const App: React.FunctionComponent<AppProps> = (props) => {
     [sudokuController, selectedPos],
   );
 
+  useEffect(() => {
+    const keyDownListener = (ev: KeyboardEvent) => {
+      const value = keyToValue(ev.key);
+
+      if (value !== undefined) {
+        console.log("keyDownListener", value);
+
+        sudokuController.setValue(selectedPos, value)
+      }
+    };
+
+    document.addEventListener('keydown', keyDownListener);
+
+    return () => {
+      document.removeEventListener('keydown', keyDownListener);
+    };
+  }, [sudokuController, selectedPos]);
+
+  // Debug setters
   useEffect(
     () => {
       let timer1 = setTimeout(() =>
@@ -47,49 +67,28 @@ export const App: React.FunctionComponent<AppProps> = (props) => {
     []
   );
 
+  const {base, side_length} = sudoku;
+
   const style: CSS.Properties = {
-    '--sideLength': sudoku.side_length,
-    '--base': sudoku.base,
+    '--sideLength': side_length,
+    '--base': base,
   };
 
   return (
     <div className='sudoku' style={style}>
       <Grid sudoku={sudoku} selectedPos={selectedPos} setSelectedPos={setSelectedPos}/>
-      <Selector side_length={sudoku.side_length} onSelectorValue={onSelectorValue}/>
+      <Selector side_length={side_length} onSelectorValue={onSelectorValue}/>
     </div>
   )
 };
 
-type onSudokuUpdate = (this: void, sudoku: TransportSudoku) => void;
+const keyToValue = (key: string): number | undefined => {
+  const value = parseInt(key);
 
-class SudokuController {
-  constructor(
-    private readonly rustSudoku: TypedWasmSudoku,
-    private readonly onSudokuUpdate: onSudokuUpdate
-  ) {
+  if (Number.isInteger(value)) {
+    return value
+  } else {
+    return undefined;
   }
+};
 
-  private updateSudoku() {
-    this.onSudokuUpdate(this.rustSudoku.get_sudoku())
-  }
-
-  private withSudokuUpdate<T>(f: () => T): T {
-    let ret = f();
-
-    this.updateSudoku();
-
-    return ret;
-  }
-
-  setValue(pos: CellPosition, value: number): number {
-    console.log("SudokuController", "setValue", pos, value);
-    return this.withSudokuUpdate(() =>
-      this.rustSudoku.setValue(pos, value));
-  }
-
-  setCandidates(pos: CellPosition, candidates: number[]) {
-    console.log("SudokuController", "setCandidates", pos, candidates);
-    return this.withSudokuUpdate(() =>
-      this.rustSudoku.setCandidates(pos, candidates));
-  }
-}
