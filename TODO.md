@@ -22,7 +22,16 @@
 - PWA
   - offline
   - add to home
+  - fullscreen
   - Framework?
+- monorepo sudoku + sudoku-wasm
+- move to github
+  - azure pipelines
+    - run tests
+    - run linting
+      - eslint
+      - clippy
+    - deploy master to gh-pages
 
 ## UX
 - keyboard value input
