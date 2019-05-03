@@ -2,17 +2,19 @@
 
 ## UI
 - guide highlighting
-  - selected cell
-  - row
-  - column
-  - block
-  - value
+  - [X] selected cell
+  - [ ] row
+  - [ ] column
+  - [ ] block
+  - [ ] value
 - mark conflicting cells
 - refactor flat grid into blocks with cells
   - => clean css margins with nested grid and no block border overlay hack
 - responsive aspect ratio
   - control placement
   - grid size respects control size
+  - root sudoku has viewport with/height
+    - handle overflow/force grid to size?
 
 ## Tooling
 - add ESLint: @typescript-eslint/eslint-plugin
