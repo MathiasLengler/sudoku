@@ -1,8 +1,8 @@
 interface TransportSudoku {
   cells: Array<TransportCell>,
   base: number,
-  side_length: number,
-  cell_count: number,
+  sideLength: number,
+  cellCount: number,
 }
 
 interface TransportCell {

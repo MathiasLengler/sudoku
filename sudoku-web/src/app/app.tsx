@@ -34,20 +34,20 @@ export const App: React.FunctionComponent<AppProps> = (props) => {
     [sudokuController, selectedPos],
   );
 
-  const {base, side_length} = sudoku;
+  const {base, sideLength} = sudoku;
 
   useDebugSetters(sudokuController);
-  useKeyboardInput(sudokuController, selectedPos, side_length, setSelectedPos);
+  useKeyboardInput(sudokuController, selectedPos, sideLength, setSelectedPos);
 
   const style: CSS.Properties = {
-    '--sideLength': side_length,
+    '--sideLength': sideLength,
     '--base': base,
   };
 
   return (
     <div className='sudoku' style={style}>
       <Grid sudoku={sudoku} selectedPos={selectedPos} setSelectedPos={setSelectedPos}/>
-      <Selector side_length={side_length} onSelectorValue={onSelectorValue}/>
+      <Selector sideLength={sideLength} onSelectorValue={onSelectorValue}/>
     </div>
   )
 };

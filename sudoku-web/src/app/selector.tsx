@@ -4,16 +4,16 @@ import {valuesFromSideLength} from "./utils";
 export type onSelectorValue = (number: number) => void;
 
 interface SelectorProps {
-  side_length: TransportSudoku['side_length'],
+  sideLength: TransportSudoku['sideLength'],
   onSelectorValue: onSelectorValue,
 }
 
 export const Selector: React.FunctionComponent<SelectorProps> = (props) => {
-  const {side_length, onSelectorValue} = props;
+  const {sideLength, onSelectorValue} = props;
 
   return (
     <div className='selector'>
-      {valuesFromSideLength(side_length)
+      {valuesFromSideLength(sideLength)
         .map(value =>
           <SelectorValue key={value} value={value} onSelectorValue={onSelectorValue}/>
         )}

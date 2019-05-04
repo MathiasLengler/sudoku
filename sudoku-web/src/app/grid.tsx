@@ -14,13 +14,13 @@ interface GridProps {
 
 export const Grid: React.FunctionComponent<GridProps> = (props) => {
   const {
-    sudoku: {cells, base, side_length},
+    sudoku: {cells, base, sideLength},
     selectedPos,
     setSelectedPos
   } = props;
 
   return <div className='grid'>
-    <Blocks side_length={side_length} base={base}/>
+    <Blocks sideLength={sideLength} base={base}/>
     {cells.map((cell, i) => {
         if (isEqual(selectedPos, cell.position)) {
         }
@@ -38,18 +38,18 @@ export const Grid: React.FunctionComponent<GridProps> = (props) => {
 };
 
 interface BlocksProps {
-  side_length: TransportSudoku['side_length'],
+  sideLength: TransportSudoku['sideLength'],
   base: TransportSudoku['base'],
 }
 
 const Blocks: React.FunctionComponent<BlocksProps> = (props) => {
-  const {side_length, base} = props;
+  const {sideLength, base} = props;
   return (
     <>
       {
-        Array.from(Array(side_length).keys())
-          .map(block_index =>
-            <Block key={block_index} base={base} block_index={block_index}/>
+        Array.from(Array(sideLength).keys())
+          .map(blockIndex =>
+            <Block key={blockIndex} base={base} blockIndex={blockIndex}/>
           )
       }
     </>
@@ -59,13 +59,13 @@ const Blocks: React.FunctionComponent<BlocksProps> = (props) => {
 
 interface BlockProps {
   base: TransportSudoku['base'],
-  block_index: number,
+  blockIndex: number,
 }
 
 const Block: React.FunctionComponent<BlockProps> = (props) => {
-  const {base, block_index} = props;
+  const {base, blockIndex} = props;
 
-  const {column, row} = indexToPosition(block_index, base);
+  const {column, row} = indexToPosition(blockIndex, base);
 
   const style: CSS.Properties = {
     '--block-column': column * base,

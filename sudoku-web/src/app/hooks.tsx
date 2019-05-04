@@ -6,7 +6,7 @@ import {clamp} from "lodash";
 export function useKeyboardInput(
   sudokuController: WasmSudokuController,
   selectedPos: CellPosition,
-  side_length: TransportSudoku['side_length'],
+  sideLength: TransportSudoku['sideLength'],
   setSelectedPos: React.Dispatch<React.SetStateAction<CellPosition>>
 ) {
   function keyToValue(key: string): number | undefined {
@@ -38,8 +38,8 @@ export function useKeyboardInput(
         return;
     }
 
-    column = clamp(column, 0, side_length - 1);
-    row = clamp(row, 0, side_length - 1);
+    column = clamp(column, 0, sideLength - 1);
+    row = clamp(row, 0, sideLength - 1);
 
     return {row, column};
   };
