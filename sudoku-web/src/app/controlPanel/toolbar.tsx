@@ -1,9 +1,9 @@
 import * as React from "react";
-import Switch from '@material-ui/core/Switch';
-import FormControlLabel from "@material-ui/core/FormControlLabel";
 import IconButton from "@material-ui/core/IconButton";
 import DeleteIcon from '@material-ui/icons/Delete';
+import NoteIcon from '@material-ui/icons/Note';
 import {WasmSudokuController} from "../wasmSudokuController";
+import Tooltip from "@material-ui/core/Tooltip";
 
 
 interface ToolbarProps {
@@ -15,20 +15,21 @@ interface ToolbarProps {
 export const Toolbar: React.FunctionComponent<ToolbarProps> = (props) => {
   const {sudokuController, candidateMode, setCandidateMode} = props;
 
+  const enterDelay = 500;
+  const leaveDelay = 200;
+
   return (
     <div className='actions'>
-      <FormControlLabel
-        control={
-          <Switch
-            checked={candidateMode}
-            onChange={(event, checked) => setCandidateMode(checked)}
-          />
-        }
-        label="candidate"
-      />
-      <IconButton onClick={() => sudokuController.delete()} aria-label="Delete Cell">
-        <DeleteIcon />
-      </IconButton>
+      <Tooltip title="Toggle candidate mode" enterDelay={enterDelay} leaveDelay={leaveDelay}>
+        <IconButton color={candidateMode ? "primary": "default"} onClick={() => setCandidateMode(!candidateMode)}>
+          <NoteIcon/>
+        </IconButton>
+      </Tooltip>
+      <Tooltip title="Delete selected cell" enterDelay={enterDelay} leaveDelay={leaveDelay}>
+        <IconButton onClick={() => sudokuController.delete()}>
+          <DeleteIcon/>
+        </IconButton>
+      </Tooltip>
     </div>
   )
 };
