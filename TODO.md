@@ -37,7 +37,7 @@
 ### Selector Control Panel:
 - [X] set candidate mode toggle
 - [ ] sticky value toggle
-- [ ] delete cell button
+- [X] delete cell button
 - [ ] undo button
 - [ ] redo button
 ### Gameplay Options
