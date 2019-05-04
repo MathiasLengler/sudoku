@@ -38,6 +38,8 @@ export class WasmSudokuController {
 
   public delete() {
     this.withSudokuUpdate(() => {
+      // TODO: remove after cell refactoring
+      this.wasmSudoku.setValue(this.selectedPos, 0);
       this.wasmSudoku.setCandidates(this.selectedPos, []);
     });
   }
