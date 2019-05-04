@@ -3,9 +3,11 @@
   "name": "sudoku-web",
   "version": "0.2.0",
   "license": "MIT",
+  "repository": "https://github.com/MathiasLengler/sudoku",
   "scripts": {
     "start": "webpack-dev-server -d",
-    "build": "webpack"
+    "build": "webpack",
+    "lint": "eslint src/**"
   },
   "bin": {
     "create-rust-webpack": ".bin/create-rust-webpack.js"
@@ -24,7 +26,12 @@
     "typescript": "^3.4.5",
     "webpack": "^4.30.0",
     "webpack-cli": "^3.3.1",
-    "webpack-dev-server": "^3.3.1"
+    "webpack-dev-server": "^3.3.1",
+    "eslint": "^5.16.0",
+    "@typescript-eslint/eslint-plugin": "^1.7.0",
+    "@typescript-eslint/parser": "^1.7.0",
+    "eslint-plugin-react-hooks": "^1.6.0",
+    "eslint-plugin-react": "^7.13.0"
   },
   "dependencies": {
     "lodash": "^4.17.11",

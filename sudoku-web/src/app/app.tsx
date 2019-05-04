@@ -9,13 +9,13 @@ import {useDebugSetters, useKeyboardInput} from "./hooks";
 
 
 interface AppProps {
-  wasmSudoku: TypedWasmSudoku,
+  wasmSudoku: TypedWasmSudoku;
 }
 
 export const App: React.FunctionComponent<AppProps> = (props) => {
   console.log("App render");
 
-  const [sudoku, setSudoku] = useState(() => props.wasmSudoku.get_sudoku());
+  const [sudoku, setSudoku] = useState(() => props.wasmSudoku.getSudoku());
 
   const sudokuController = new WasmSudokuController(
     props.wasmSudoku,
@@ -26,7 +26,6 @@ export const App: React.FunctionComponent<AppProps> = (props) => {
     return {column: 0, row: 0}
   });
 
-  // TODO: abstraction?
   const onSelectorValue: onSelectorValue = useCallback(
     (selectorValue) => {
       sudokuController.setValue(selectedPos, selectorValue);

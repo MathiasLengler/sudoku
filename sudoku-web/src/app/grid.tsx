@@ -7,9 +7,9 @@ import {indexToPosition} from "./utils";
 // TODO: modularize
 
 interface GridProps {
-  sudoku: TransportSudoku,
-  selectedPos: CellPosition,
-  setSelectedPos: React.Dispatch<React.SetStateAction<CellPosition>>
+  sudoku: TransportSudoku;
+  selectedPos: CellPosition;
+  setSelectedPos: React.Dispatch<React.SetStateAction<CellPosition>>;
 }
 
 export const Grid: React.FunctionComponent<GridProps> = (props) => {
@@ -22,24 +22,23 @@ export const Grid: React.FunctionComponent<GridProps> = (props) => {
   return <div className='grid'>
     <Blocks sideLength={sideLength} base={base}/>
     {cells.map((cell, i) => {
-        if (isEqual(selectedPos, cell.position)) {
-        }
-
-        return <MemoCell
-          key={i}
-          cell={cell}
-          base={base}
-          selected={isEqual(selectedPos, cell.position)}
-          setSelectedPos={setSelectedPos}
-        />
+      if (isEqual(selectedPos, cell.position)) {
       }
-    )}
+
+      return <MemoCell
+        key={i}
+        cell={cell}
+        base={base}
+        selected={isEqual(selectedPos, cell.position)}
+        setSelectedPos={setSelectedPos}
+      />
+    })}
   </div>
 };
 
 interface BlocksProps {
-  sideLength: TransportSudoku['sideLength'],
-  base: TransportSudoku['base'],
+  sideLength: TransportSudoku['sideLength'];
+  base: TransportSudoku['base'];
 }
 
 const Blocks: React.FunctionComponent<BlocksProps> = (props) => {
@@ -58,8 +57,8 @@ const Blocks: React.FunctionComponent<BlocksProps> = (props) => {
 
 
 interface BlockProps {
-  base: TransportSudoku['base'],
-  blockIndex: number,
+  base: TransportSudoku['base'];
+  blockIndex: number;
 }
 
 const Block: React.FunctionComponent<BlockProps> = (props) => {

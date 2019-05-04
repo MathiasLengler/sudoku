@@ -4,8 +4,8 @@ import {valuesFromSideLength} from "./utils";
 export type onSelectorValue = (number: number) => void;
 
 interface SelectorProps {
-  sideLength: TransportSudoku['sideLength'],
-  onSelectorValue: onSelectorValue,
+  sideLength: TransportSudoku['sideLength'];
+  onSelectorValue: onSelectorValue;
 }
 
 export const Selector: React.FunctionComponent<SelectorProps> = (props) => {
@@ -22,8 +22,8 @@ export const Selector: React.FunctionComponent<SelectorProps> = (props) => {
 };
 
 interface ValueProps {
-  value: number,
-  onSelectorValue: onSelectorValue,
+  value: number;
+  onSelectorValue: onSelectorValue;
 }
 
 const SelectorValue: React.FunctionComponent<ValueProps> = (props) => {

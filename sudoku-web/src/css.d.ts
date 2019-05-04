@@ -1,3 +1,5 @@
+// TS declaration merging
+
 // noinspection ES6UnusedImports
 import * as CSS from 'csstype';
 

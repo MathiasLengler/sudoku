@@ -1,17 +1,17 @@
 interface TransportSudoku {
-  cells: Array<TransportCell>,
-  base: number,
-  sideLength: number,
-  cellCount: number,
+  cells: TransportCell[];
+  base: number;
+  sideLength: number;
+  cellCount: number;
 }
 
 interface TransportCell {
-  value?: number,
-  candidates: Array<number>,
-  position: CellPosition,
+  value?: number;
+  candidates: number[];
+  position: CellPosition;
 }
 
 interface CellPosition {
-  column: number,
-  row: number,
+  column: number;
+  row: number;
 }

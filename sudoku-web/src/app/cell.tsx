@@ -5,10 +5,10 @@ import * as classnames from 'classnames'
 import {indexToPosition} from "./utils";
 
 interface CellProps {
-  cell: TransportCell,
-  base: TransportSudoku['base'],
-  selected: boolean,
-  setSelectedPos: React.Dispatch<React.SetStateAction<CellPosition>>,
+  cell: TransportCell;
+  base: TransportSudoku['base'];
+  selected: boolean;
+  setSelectedPos: React.Dispatch<React.SetStateAction<CellPosition>>;
 }
 
 const Cell: React.FunctionComponent<CellProps> = (props) => {
@@ -46,7 +46,7 @@ const Cell: React.FunctionComponent<CellProps> = (props) => {
 export const MemoCell = React.memo(Cell, isEqual);
 
 interface CellValueProps {
-  value: TransportCell['value'],
+  value: TransportCell['value'];
 }
 
 const CellValue: React.FunctionComponent<CellValueProps> = (props) => {
@@ -56,8 +56,8 @@ const CellValue: React.FunctionComponent<CellValueProps> = (props) => {
 
 
 interface CandidatesProps {
-  candidates: TransportCell['candidates'],
-  base: TransportSudoku['base']
+  candidates: TransportCell['candidates'];
+  base: TransportSudoku['base'];
 }
 
 const Candidates: React.FunctionComponent<CandidatesProps> = (props) => {

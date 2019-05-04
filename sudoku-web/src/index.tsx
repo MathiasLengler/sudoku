@@ -1,29 +1,26 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import {App} from './app/app';
-import "./styles.css";
+import "../res/styles.css";
 import {WasmSudoku} from "../../sudoku-wasm/pkg";
 
 export class TypedWasmSudoku {
-  private rustSudoku: WasmSudoku;
-
-  constructor(rustSudoku: WasmSudoku) {
-    this.rustSudoku = rustSudoku;
+  public constructor(private rustSudoku: WasmSudoku) {
   }
 
-  say_hello(): void {
+  public sayHello(): void {
     return this.rustSudoku.say_hello()
   }
 
-  get_sudoku(): TransportSudoku {
+  public getSudoku(): TransportSudoku {
     return this.rustSudoku.get_sudoku()
   }
 
-  setValue(pos: CellPosition, value: number): number {
+  public setValue(pos: CellPosition, value: number): number {
     return this.rustSudoku.set_value(pos, value);
   }
 
-  setCandidates(pos: CellPosition, candidates: number[]) {
+  public setCandidates(pos: CellPosition, candidates: number[]) {
     return this.rustSudoku.set_candidates(pos, candidates);
   }
 }
@@ -33,7 +30,7 @@ import("../../sudoku-wasm/pkg").then(module => {
 
   const typedWasmSudoku = new TypedWasmSudoku(module.get_rust_sudoku());
 
-  typedWasmSudoku.say_hello();
+  typedWasmSudoku.sayHello();
 
   ReactDOM.render(<App wasmSudoku={typedWasmSudoku}/>, document.getElementById('root'));
 });
