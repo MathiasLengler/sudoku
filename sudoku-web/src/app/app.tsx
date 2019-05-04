@@ -1,11 +1,12 @@
 import * as React from "react";
 import {useCallback, useState} from "react";
-import {Grid} from "./grid";
+import {Grid} from "./grid/grid";
 import {TypedWasmSudoku} from "../index";
 import * as CSS from "csstype";
-import {onSelectorValue, Selector} from "./selector";
+import {onSelectorValue} from "./controlPanel/selector";
 import {WasmSudokuController} from "./controllers";
 import {useDebugSetters, useKeyboardInput} from "./hooks";
+import {ControlPanel} from "./controlPanel/controlPanel";
 
 
 interface AppProps {
@@ -46,7 +47,7 @@ export const App: React.FunctionComponent<AppProps> = (props) => {
   return (
     <div className='sudoku' style={style}>
       <Grid sudoku={sudoku} selectedPos={selectedPos} setSelectedPos={setSelectedPos}/>
-      <Selector sideLength={sideLength} onSelectorValue={onSelectorValue}/>
+      <ControlPanel sideLength={sideLength} onSelectorValue={onSelectorValue}/>
     </div>
   )
 };

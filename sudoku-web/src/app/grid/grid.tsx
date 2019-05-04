@@ -2,7 +2,7 @@ import * as React from 'react';
 import * as CSS from 'csstype';
 import {isEqual} from "lodash";
 import {MemoCell} from "./cell";
-import {indexToPosition} from "./utils";
+import {indexToPosition} from "../utils";
 
 interface GridProps {
   sudoku: TransportSudoku;

@@ -1,5 +1,5 @@
 import * as React from "react";
-import {valuesFromSideLength} from "./utils";
+import {valuesFromSideLength} from "../utils";
 
 export type onSelectorValue = (number: number) => void;
 
@@ -29,8 +29,8 @@ interface ValueProps {
 const SelectorValue: React.FunctionComponent<ValueProps> = (props) => {
   const {value, onSelectorValue} = props;
   return (
-    <div className='selectorValue'>
-      <span className='selectorValueText' onClick={() => onSelectorValue(value)}>{value}</span>
+    <div className='selectorValue' onClick={() => onSelectorValue(value)}>
+      <span className='selectorValueText'>{value}</span>
     </div>
   );
 };
