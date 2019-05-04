@@ -2,6 +2,7 @@
   "author": "Mathias Lengler <mathias@lengler.dev>",
   "name": "sudoku-web",
   "version": "0.2.0",
+  "license": "MIT",
   "scripts": {
     "start": "webpack-dev-server -d",
     "build": "webpack"
