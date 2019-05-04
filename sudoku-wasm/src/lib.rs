@@ -1,15 +1,15 @@
+use std::cell::RefCell;
+use std::mem::drop;
 use std::num::NonZeroUsize;
 
+use js_sys;
 use log::debug;
-use std::mem::drop;
-use sudoku::cell::Cell;
-use sudoku::transport::TransportSudoku;
-use sudoku::Sudoku;
 use wasm_bindgen::prelude::*;
 
-use js_sys;
-use std::cell::RefCell;
+use sudoku::cell::Cell;
 use sudoku::position::Position;
+use sudoku::transport::TransportSudoku;
+use sudoku::Sudoku;
 
 #[cfg(feature = "wee_alloc")]
 #[global_allocator]
@@ -26,19 +26,28 @@ pub fn run() -> Result<(), JsValue> {
 pub fn get_rust_sudoku() -> WasmSudoku {
     use std::convert::TryFrom;
 
-    // 11 Star difficulty
-    let sudoku = Sudoku::<Cell>::try_from(vec![
-        vec![8, 0, 0, 0, 0, 0, 0, 0, 0],
-        vec![0, 0, 3, 6, 0, 0, 0, 0, 0],
-        vec![0, 7, 0, 0, 9, 0, 2, 0, 0],
-        vec![0, 5, 0, 0, 0, 7, 0, 0, 0],
-        vec![0, 0, 0, 0, 4, 5, 7, 0, 0],
-        vec![0, 0, 0, 1, 0, 0, 0, 3, 0],
-        vec![0, 0, 1, 0, 0, 0, 0, 6, 8],
-        vec![0, 0, 8, 5, 0, 0, 0, 1, 0],
-        vec![0, 9, 0, 0, 0, 0, 4, 0, 0],
-    ])
-    .unwrap();
+    let [base_2, base_3] = [
+        vec![
+            vec![0, 3, 4, 0],
+            vec![4, 0, 0, 2],
+            vec![1, 0, 0, 3],
+            vec![0, 2, 1, 0],
+        ],
+        vec![
+            vec![8, 0, 0, 0, 0, 0, 0, 0, 0],
+            vec![0, 0, 3, 6, 0, 0, 0, 0, 0],
+            vec![0, 7, 0, 0, 9, 0, 2, 0, 0],
+            vec![0, 5, 0, 0, 0, 7, 0, 0, 0],
+            vec![0, 0, 0, 0, 4, 5, 7, 0, 0],
+            vec![0, 0, 0, 1, 0, 0, 0, 3, 0],
+            vec![0, 0, 1, 0, 0, 0, 0, 6, 8],
+            vec![0, 0, 8, 5, 0, 0, 0, 1, 0],
+            vec![0, 9, 0, 0, 0, 0, 4, 0, 0],
+        ],
+    ];
+
+    let sudoku = Sudoku::<Cell>::try_from(base_3).unwrap();
+    //    let sudoku = Sudoku::<Cell>::new(4);
 
     WasmSudoku {
         sudoku: RefCell::new(sudoku),

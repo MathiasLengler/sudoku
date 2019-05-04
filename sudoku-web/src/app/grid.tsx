@@ -2,6 +2,7 @@ import * as React from 'react';
 import * as CSS from 'csstype';
 import {isEqual} from "lodash";
 import {MemoCell} from "./cell";
+import {indexToPosition} from "./utils";
 
 // TODO: modularize
 
@@ -76,9 +77,3 @@ const Block: React.FunctionComponent<BlockProps> = (props) => {
   )
 };
 
-export const indexToPosition = (index: number, base: TransportSudoku['base']): CellPosition => {
-  return {
-    column: index % base,
-    row: Math.floor(index / base)
-  }
-};

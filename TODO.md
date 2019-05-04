@@ -34,7 +34,6 @@
     - deploy master to gh-pages
 
 ## UX
-- keyboard value input
 
 ### Selector Control Panel:
 - set candidate mode toggle

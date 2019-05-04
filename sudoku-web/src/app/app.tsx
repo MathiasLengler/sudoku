@@ -1,10 +1,11 @@
 import * as React from "react";
-import {useCallback, useEffect, useState} from "react";
+import {useCallback, useState} from "react";
 import {Grid} from "./grid";
 import {TypedWasmSudoku} from "../index";
 import * as CSS from "csstype";
 import {onSelectorValue, Selector} from "./selector";
 import {WasmSudokuController} from "./controllers";
+import {useDebugSetters, useKeyboardInput} from "./hooks";
 
 
 interface AppProps {
@@ -33,41 +34,10 @@ export const App: React.FunctionComponent<AppProps> = (props) => {
     [sudokuController, selectedPos],
   );
 
-  useEffect(() => {
-    const keyDownListener = (ev: KeyboardEvent) => {
-      const value = keyToValue(ev.key);
-
-      if (value !== undefined) {
-        console.log("keyDownListener", value);
-
-        sudokuController.setValue(selectedPos, value)
-      }
-    };
-
-    document.addEventListener('keydown', keyDownListener);
-
-    return () => {
-      document.removeEventListener('keydown', keyDownListener);
-    };
-  }, [sudokuController, selectedPos]);
-
-  // Debug setters
-  useEffect(
-    () => {
-      let timer1 = setTimeout(() =>
-        sudokuController.setValue({row: 1, column: 1}, 1), 1000);
-      let timer2 = setTimeout(() =>
-        sudokuController.setCandidates({row: 1, column: 0}, [1, 3, 5, 8]), 2000);
-
-      return () => {
-        clearTimeout(timer1);
-        clearTimeout(timer2);
-      }
-    },
-    []
-  );
-
   const {base, side_length} = sudoku;
+
+  useDebugSetters(sudokuController);
+  useKeyboardInput(sudokuController, selectedPos, side_length, setSelectedPos);
 
   const style: CSS.Properties = {
     '--sideLength': side_length,
@@ -81,14 +51,3 @@ export const App: React.FunctionComponent<AppProps> = (props) => {
     </div>
   )
 };
-
-const keyToValue = (key: string): number | undefined => {
-  const value = parseInt(key);
-
-  if (Number.isInteger(value)) {
-    return value
-  } else {
-    return undefined;
-  }
-};
-

@@ -4,6 +4,8 @@ use crate::cell::SudokuCell;
 use crate::position::Position;
 use crate::Sudoku;
 
+// TODO:
+//  conflicting cells (groups?)
 #[derive(Serialize, Deserialize)]
 pub struct TransportSudoku {
     cells: Vec<TransportCell>,
@@ -15,14 +17,17 @@ pub struct TransportSudoku {
 impl<Cell: SudokuCell> From<&Sudoku<Cell>> for TransportSudoku {
     fn from(sudoku: &Sudoku<Cell>) -> Self {
         Self {
-            cells: sudoku.all_cell_positions().map(|position| {
-                let cell = sudoku.get(position);
-                TransportCell {
-                    value: cell.value(),
-                    candidates: cell.candidates(),
-                    position,
-                }
-            }).collect(),
+            cells: sudoku
+                .all_cell_positions()
+                .map(|position| {
+                    let cell = sudoku.get(position);
+                    TransportCell {
+                        value: cell.value(),
+                        candidates: cell.candidates(),
+                        position,
+                    }
+                })
+                .collect(),
             base: sudoku.base(),
             side_length: sudoku.side_length(),
             cell_count: sudoku.cell_count(),
@@ -30,6 +35,9 @@ impl<Cell: SudokuCell> From<&Sudoku<Cell>> for TransportSudoku {
     }
 }
 
+// TODO:
+//  is_editable
+//  is_correct
 #[derive(Serialize, Deserialize)]
 pub struct TransportCell {
     value: usize,

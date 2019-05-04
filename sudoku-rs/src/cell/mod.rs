@@ -7,6 +7,8 @@ use crate::cell::value::SudokuValue;
 
 pub mod value;
 
+// TODO: is_editable cell
+
 // TODO: are default value parameters wise?
 pub trait SudokuCell<Value = usize>: Default + Clone + Display + Debug + Ord + Eq + Send
 where

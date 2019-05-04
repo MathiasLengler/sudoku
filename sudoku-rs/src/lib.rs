@@ -33,8 +33,8 @@ pub struct Sudoku<Cell: SudokuCell> {
 //  }
 
 // TODO: clear candidates on set_value
-// TODO: Preset value/user filled cells
 // TODO: provide undo/redo API
+// TODO: return result in all asserts
 impl<Cell: SudokuCell> Sudoku<Cell> {
     pub fn new(base: usize) -> Self {
         Sudoku {

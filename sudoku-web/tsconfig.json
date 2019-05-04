@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "strict": true,
+    "noFallthroughCasesInSwitch": true,
     "module": "esnext", // needed to have dynamic imports
     "lib": [
       "dom",

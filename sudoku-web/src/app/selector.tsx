@@ -1,4 +1,5 @@
 import * as React from "react";
+import {valuesFromSideLength} from "./utils";
 
 export type onSelectorValue = (number: number) => void;
 
@@ -12,9 +13,9 @@ export const Selector: React.FunctionComponent<SelectorProps> = (props) => {
 
   return (
     <div className='selector'>
-      {Array.from(Array(side_length).keys())
+      {valuesFromSideLength(side_length)
         .map(value =>
-          <SelectorValue key={value} value={value + 1} onSelectorValue={onSelectorValue}/>
+          <SelectorValue key={value} value={value} onSelectorValue={onSelectorValue}/>
         )}
     </div>
   )
