@@ -8,8 +8,6 @@ function keyToValue(key: string): number | undefined {
 
   if (Number.isInteger(value)) {
     return value
-  } else {
-    return undefined;
   }
 }
 

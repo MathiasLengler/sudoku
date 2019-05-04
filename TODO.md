@@ -17,7 +17,6 @@
     - handle overflow/force grid to size?
 
 ## Tooling
-- add ESLint: @typescript-eslint/eslint-plugin
 - evaluate UI frameworks
 - PWA
   - offline

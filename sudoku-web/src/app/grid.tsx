@@ -4,8 +4,6 @@ import {isEqual} from "lodash";
 import {MemoCell} from "./cell";
 import {indexToPosition} from "./utils";
 
-// TODO: modularize
-
 interface GridProps {
   sudoku: TransportSudoku;
   selectedPos: CellPosition;
