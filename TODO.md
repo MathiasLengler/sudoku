@@ -35,11 +35,11 @@
 ## UX
 
 ### Selector Control Panel:
-- set candidate mode toggle
-- sticky value toggle
-- delete cell button
-- undo button
-- redo button
+- [X] set candidate mode toggle
+- [ ] sticky value toggle
+- [ ] delete cell button
+- [ ] undo button
+- [ ] redo button
 ### Gameplay Options
 - fill direct candidates (on start vs button)
 - remove direct candidates on set value

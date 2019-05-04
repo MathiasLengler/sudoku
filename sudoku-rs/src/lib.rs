@@ -56,6 +56,14 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
             .set_candidates(candidates, max_value);
     }
 
+    pub fn toggle_candidate(&mut self, pos: Position, candidate: usize) -> bool {
+        let max_value = self.grid.max_value();
+
+        self.grid
+            .get_pos_mut(pos)
+            .toggle_candidate(candidate, max_value)
+    }
+
     pub fn set_all_direct_candidates(&mut self) {
         self.all_cell_positions().for_each(|pos| {
             let candidates = self.direct_candidates(pos);

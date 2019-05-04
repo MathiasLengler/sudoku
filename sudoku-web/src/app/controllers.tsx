@@ -1,11 +1,13 @@
-import {TypedWasmSudoku} from "../index";
+import {TypedWasmSudoku} from "../typedWasmSudoku";
 
 export type onSudokuUpdate = (this: void, sudoku: TransportSudoku) => void;
 
 export class WasmSudokuController {
   public constructor(
     private readonly wasmSudoku: TypedWasmSudoku,
-    private readonly onSudokuUpdate: onSudokuUpdate
+    private readonly onSudokuUpdate: onSudokuUpdate,
+    private readonly candidateMode: boolean,
+    private readonly selectedPos: CellPosition,
   ) {
   }
 
@@ -21,15 +23,15 @@ export class WasmSudokuController {
     return ret;
   }
 
-  public setValue(pos: CellPosition, value: number): number {
-    console.log("WasmSudokuController", "setValue", pos, value);
-    return this.withSudokuUpdate(() =>
-      this.wasmSudoku.setValue(pos, value));
-  }
+  public handleValue(value: number) {
+    console.log("WasmSudokuController", "handleValue", this, value);
 
-  public setCandidates(pos: CellPosition, candidates: number[]) {
-    console.log("WasmSudokuController", "setCandidates", pos, candidates);
-    return this.withSudokuUpdate(() =>
-      this.wasmSudoku.setCandidates(pos, candidates));
+    this.withSudokuUpdate(() => {
+      if (this.candidateMode) {
+        this.wasmSudoku.toggleCandidate(this.selectedPos, value);
+      } else {
+        this.wasmSudoku.setValue(this.selectedPos, value);
+      }
+    });
   }
 }

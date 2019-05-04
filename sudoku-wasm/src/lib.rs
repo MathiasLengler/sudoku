@@ -91,6 +91,12 @@ impl WasmSudoku {
 
         Ok(())
     }
+
+    pub fn toggle_candidate(&mut self, pos: JsValue, candidate: usize) -> bool {
+        self.sudoku
+            .borrow_mut()
+            .toggle_candidate(Self::import_pos(pos), candidate)
+    }
 }
 
 /// Conversion Helpers

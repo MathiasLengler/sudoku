@@ -7,6 +7,14 @@ use crate::cell::value::SudokuValue;
 
 pub mod value;
 
+// TODO: cell should be an enum
+//  a cell can only hold either a value or candidates
+//  value() and candidates() should return a option
+//  legal range of value is 1..=n
+//  rethink non zero * situation
+
+// TODO: set or toggle value
+
 // TODO: is_editable cell
 
 // TODO: are default value parameters wise?
@@ -27,6 +35,8 @@ where
     fn set_candidates<I>(&mut self, candidates: I, max: Value)
     where
         I: IntoIterator<Item = Value>;
+
+    fn toggle_candidate(&mut self, candidate: Value, max: Value) -> bool;
 }
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Default, Debug)]
@@ -49,7 +59,7 @@ where
         I: IntoIterator<Item = Value>,
     {
         Self {
-            value: Self::import_value(value, max),
+            value: Self::assert_value(value, max),
             candidates: Self::import_candidates(candidates, max),
         }
     }
@@ -67,7 +77,7 @@ where
     }
 
     fn set_value(&mut self, value: Value, max: Value) -> Value {
-        let new_value = Self::import_value(value, max);
+        let new_value = Self::assert_value(value, max);
 
         replace(&mut self.value, new_value)
     }
@@ -78,6 +88,16 @@ where
     {
         self.candidates = Self::import_candidates(candidates, max)
     }
+
+    fn toggle_candidate(&mut self, candidate: Value, max: Value) -> bool {
+        let candidate = Self::assert_candidate(candidate, max).as_usize();
+
+        let new_state = !self.candidates[candidate];
+
+        self.candidates.set(candidate, new_state);
+
+        new_state
+    }
 }
 
 /// Conversion Helpers
@@ -86,23 +106,25 @@ where
     Value: SudokuValue,
     Value::Error: std::error::Error,
 {
-    fn import_value(value: Value, max: Value) -> Value {
-        Self::assert_value(value, max)
-    }
     fn import_candidates<I: IntoIterator<Item = Value>>(candidates: I, max: Value) -> FixedBitSet {
-        candidates
+        let mut candidates: FixedBitSet = candidates
             .into_iter()
             .map(|candidate| {
                 let candidate: Value = Self::assert_candidate(candidate, max);
                 candidate.as_usize()
             })
-            .collect()
+            .collect();
+
+        candidates.grow(max.as_usize() + 1);
+
+        candidates
     }
     fn export_candidates(candidates: &FixedBitSet) -> Vec<Value> {
-        candidates
-            .ones()
-            .map(|candidate| Value::try_from(candidate).unwrap())
-            .collect()
+        candidates.ones().map(Self::export_candidate).collect()
+    }
+
+    fn export_candidate(candidate: usize) -> Value {
+        Value::try_from(candidate).unwrap() + Value::one()
     }
 
     fn assert_value(value: Value, max: Value) -> Value {
@@ -114,7 +136,7 @@ where
     fn assert_candidate(candidate: Value, max: Value) -> Value {
         assert!(candidate != Value::zero() && candidate <= max);
 
-        candidate
+        candidate - Value::one()
     }
 }
 
