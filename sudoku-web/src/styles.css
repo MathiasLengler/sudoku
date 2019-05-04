@@ -1,0 +1,177 @@
+body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 1rem;
+    font-weight: 400;
+    margin: 0;
+}
+
+.sudoku {
+    width: 100vw;
+    height: 100vh;
+    display: grid;
+    place-items: center;
+    justify-content: center;
+
+    /*React Variables*/
+    --sideLength: 0;
+    --base: 0;
+
+    /*Style Variables*/
+    --block-border-color: #606266;
+    --block-border-size: 5px;
+    --cell-border-color: #bec6d4;
+    --cell-border-size: 1px;
+    --cell-bg-color-selected: #bbdefb;
+    --cell-bg-color-guide-group: #e2e7ed;
+    --cell-bg-color-guide-value: #c8d0de;
+    --cell-bg-color-conflict-preset: #fdc0cb;
+    --cell-value-color-preset: #212121;
+    --cell-value-color-user: #0d47a1;
+    --cell-value-color-user-conflict: #ff0000;
+    --candiate-color: #606266;
+    --bg-color: #ffffff;
+
+    /*No Select*/
+    user-select: none; /* supported by Chrome and Opera */
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* Internet Explorer/Edge */
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.grid {
+    /*Grid Variables*/
+    --gridWidth: 95vmin;
+    --gutter: 0px;
+    --noOfGutters: calc(var(--sideLength) - 1);
+    --rowHeight: calc((var(--gridWidth) - (var(--noOfGutters) * var(--gutter))) / var(--sideLength));
+    --cell-padding: 0.2rem;
+
+    /*Styling*/
+    display: grid;
+    grid-template-columns: repeat(var(--sideLength), 1fr);
+    grid-template-rows: repeat(var(--sideLength), 1fr);
+    place-items: stretch;
+
+    border-bottom: var(--block-border-size) solid var(--block-border-color);
+    border-right: var(--block-border-size) solid var(--block-border-color);
+    background-color: var(--bg-color);
+
+    /*Square cells*/
+    width: var(--gridWidth);
+    height: var(--gridWidth);
+    grid-auto-rows: var(--rowHeight);
+    grid-gap: var(--gutter);
+}
+
+.cell {
+    --cell-column: 0;
+    --cell-row: 0;
+
+    grid-column: calc(1 + var(--cell-column));
+    grid-row: calc(1 + var(--cell-row));
+
+    border-top: var(--cell-border-size) solid var(--cell-border-color);
+    border-right: var(--cell-border-size) solid var(--cell-border-color);
+
+    min-width: 0;
+    min-height: 0;
+
+    padding: var(--cell-padding);
+
+    cursor: pointer;
+}
+
+.cell--selected {
+    background-color: var(--cell-bg-color-selected);
+}
+
+.cell--guide-group {
+    background-color: var(--cell-bg-color-guide-group);
+}
+
+.cell--guide-guide-value {
+    background-color: var(--cell-bg-color-guide-value);
+}
+
+.cellValue {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+}
+
+.cellValueText {
+    line-height: 1;
+    font-size: calc(var(--rowHeight) * 0.9);
+    color: var(--cell-value-color-preset);
+}
+
+.candidates {
+    display: grid;
+    grid-template-columns: repeat(var(--base), 1fr);
+    grid-template-rows: repeat(var(--base), 1fr);
+    width: 100%;
+    height: 100%;
+    place-items: center;
+}
+
+.candidate {
+    --candidate-column: 0;
+    --candidate-row: 0;
+
+    grid-column: calc(1 + var(--candidate-column));
+    grid-row: calc(1 + var(--candidate-row));
+
+    color: var(--candiate-color);
+    font-size: calc(var(--rowHeight) / 3.5);
+    line-height: 1;
+}
+
+.block {
+    --block-column: 0;
+    --block-row: 0;
+
+    grid-row: calc(1 + var(--block-row)) /span var(--base);
+    grid-column: calc(1 + var(--block-column)) / span var(--base);
+
+    border-top: var(--block-border-size) solid var(--block-border-color);
+    border-left: var(--block-border-size) solid var(--block-border-color);
+
+    pointer-events: none;
+    z-index: 1;
+}
+
+.selector {
+    --gridWidth: 95vmin;
+    --gutter: 0px;
+    --noOfGutters: calc(var(--sideLength) - 1);
+    --rowHeight: calc((var(--gridWidth) - (var(--noOfGutters) * var(--gutter))) / var(--sideLength));
+
+
+    width: var(--gridWidth);
+    height: var(--rowHeight);
+    display: grid;
+    place-items: center;
+    grid-template-columns: repeat(var(--sideLength), 1fr);
+    grid-template-rows: 1fr;
+    grid-gap: var(--gutter);
+}
+
+.selectorValue {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+
+    cursor: pointer;
+
+    border: var(--cell-border-size) solid var(--cell-border-color);
+}
+
+.selectorValueText {
+    color: var(--cell-value-color-preset);
+    line-height: 1;
+    font-size: calc(var(--rowHeight) * 0.9);
+}
