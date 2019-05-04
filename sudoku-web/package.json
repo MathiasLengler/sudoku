@@ -1,9 +1,7 @@
 {
-  "author": "Nick Fitzgerald <nfitzgerald@mozilla.com>",
-  "name": "create-rust-webpack",
+  "author": "Mathias Lengler <mathias@lengler.dev>",
+  "name": "sudoku-web",
   "version": "0.2.0",
-  "repository": "https://github.com/rustwasm/rust-webpack-template",
-  "license": "(MIT OR Apache-2.0)",
   "scripts": {
     "start": "webpack-dev-server -d",
     "build": "webpack"

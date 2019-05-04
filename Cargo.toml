@@ -1,0 +1,9 @@
+[workspace]
+
+members = [
+    "sudoku-rs",
+    "sudoku-wasm"
+]
+
+[profile.release]
+debug = true

@@ -17,7 +17,7 @@ js-sys = "0.3.19"
 
 # own
 log = "0.4.6"
-sudoku = { path = "../../../Rust/sudoku" }
+sudoku = { path = "../sudoku-rs" }
 serde = "1.0.90"
 
 # wasm

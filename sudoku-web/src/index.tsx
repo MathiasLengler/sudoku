@@ -2,7 +2,7 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import {App} from './app/app';
 import "./styles.css";
-import {WasmSudoku} from "../crate/pkg";
+import {WasmSudoku} from "../../sudoku-wasm/pkg";
 
 export class TypedWasmSudoku {
   private rustSudoku: WasmSudoku;
@@ -28,7 +28,7 @@ export class TypedWasmSudoku {
   }
 }
 
-import("../crate/pkg").then(module => {
+import("../../sudoku-wasm/pkg").then(module => {
   module.run();
 
   const typedWasmSudoku = new TypedWasmSudoku(module.get_rust_sudoku());
