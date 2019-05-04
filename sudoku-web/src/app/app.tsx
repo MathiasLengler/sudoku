@@ -1,9 +1,8 @@
 import * as React from "react";
-import {useCallback, useState} from "react";
+import {useState} from "react";
 import {Grid} from "./grid/grid";
 import * as CSS from "csstype";
-import {onSelectorValue} from "./controlPanel/selector";
-import {WasmSudokuController} from "./controllers";
+import {WasmSudokuController} from "./wasmSudokuController";
 import {useKeyboardInput} from "./hooks";
 import {ControlPanel} from "./controlPanel/controlPanel";
 import {TypedWasmSudoku} from "../typedWasmSudoku";
@@ -26,13 +25,11 @@ export const App: React.FunctionComponent<AppProps> = (props) => {
   const [candidateMode, setCandidateMode] = useState(false);
 
   // Dependent on state
-  const sudokuController = new WasmSudokuController(props.wasmSudoku, (sudoku) => setSudoku(sudoku), candidateMode, selectedPos);
-
-  const onSelectorValue: onSelectorValue = useCallback(
-    (selectorValue) => {
-      sudokuController.handleValue(selectorValue);
-    },
-    [sudokuController],
+  const sudokuController = new WasmSudokuController(
+    props.wasmSudoku,
+    (sudoku) => setSudoku(sudoku),
+    candidateMode,
+    selectedPos
   );
 
   const {base, sideLength} = sudoku;
@@ -51,8 +48,8 @@ export const App: React.FunctionComponent<AppProps> = (props) => {
         selectedPos={selectedPos}
         setSelectedPos={setSelectedPos}/>
       <ControlPanel
+        sudokuController={sudokuController}
         sideLength={sideLength}
-        onSelectorValue={onSelectorValue}
         candidateMode={candidateMode}
         setCandidateMode={setCandidateMode}/>
     </div>

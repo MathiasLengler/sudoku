@@ -1,4 +1,4 @@
-import {WasmSudokuController} from "./controllers";
+import {WasmSudokuController} from "./wasmSudokuController";
 import * as React from "react";
 import {useEffect} from "react";
 import {clamp} from "lodash";
