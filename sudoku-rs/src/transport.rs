@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::cell::SudokuCell;
+use crate::cell::{CellView, SudokuCell};
 use crate::position::Position;
 use crate::Sudoku;
 
@@ -23,8 +23,7 @@ impl<Cell: SudokuCell> From<&Sudoku<Cell>> for TransportSudoku {
                 .map(|position| {
                     let cell = sudoku.get(position);
                     TransportCell {
-                        value: cell.value(),
-                        candidates: cell.candidates(),
+                        cell_view: cell.view(),
                         position,
                     }
                 })
@@ -42,7 +41,7 @@ impl<Cell: SudokuCell> From<&Sudoku<Cell>> for TransportSudoku {
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransportCell {
-    value: usize,
-    candidates: Vec<usize>,
+    #[serde(flatten)]
+    cell_view: CellView,
     position: Position,
 }

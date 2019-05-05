@@ -6,7 +6,6 @@ use fixedbitset::FixedBitSet;
 
 use cell::SudokuCell;
 
-use crate::cell::value::SudokuValue;
 use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::position::Position;
@@ -42,10 +41,10 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
         }
     }
 
-    pub fn set_value(&mut self, pos: Position, value: usize) -> usize {
+    pub fn set_value(&mut self, pos: Position, value: usize) {
         let max_value = self.grid.max_value();
 
-        self.grid.get_pos_mut(pos).set_value(value, max_value)
+        self.grid.get_pos_mut(pos).set_value(value, max_value);
     }
 
     pub fn set_candidates(&mut self, pos: Position, candidates: Vec<usize>) {
@@ -56,12 +55,12 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
             .set_candidates(candidates, max_value);
     }
 
-    pub fn toggle_candidate(&mut self, pos: Position, candidate: usize) -> bool {
+    pub fn toggle_candidate(&mut self, pos: Position, candidate: usize) {
         let max_value = self.grid.max_value();
 
         self.grid
             .get_pos_mut(pos)
-            .toggle_candidate(candidate, max_value)
+            .toggle_candidate(candidate, max_value);
     }
 
     pub fn set_all_direct_candidates(&mut self) {
@@ -117,7 +116,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
             .column(pos.column)
             .chain(self.grid.row(pos.row))
             .chain(self.grid.block(pos))
-            .filter_map(|cell| cell.value().as_opt_usize())
+            .filter_map(|cell| cell.value_as_usize())
             .collect::<FixedBitSet>();
 
         let values: FixedBitSet = self.grid.value_range().collect();
@@ -145,9 +144,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
 
     // TODO: conflict location pairs
     fn has_duplicate<'a>(&'a self, cells: impl Iterator<Item = &'a Cell>) -> bool {
-        let mut cells: Vec<_> = cells
-            .filter_map(|cell| cell.value().as_opt_usize())
-            .collect();
+        let mut cells: Vec<_> = cells.filter_map(|cell| cell.value_as_usize()).collect();
 
         cells.sort();
 

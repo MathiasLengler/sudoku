@@ -5,13 +5,23 @@ interface TransportSudoku {
   cellCount: number;
 }
 
-interface TransportCell {
-  value?: number;
-  candidates: number[];
-  position: CellPosition;
-}
-
 interface CellPosition {
   column: number;
   row: number;
 }
+
+interface BaseCell {
+  position: CellPosition;
+}
+
+interface ValueCell extends BaseCell {
+  kind: "Value";
+  value: number;
+}
+
+interface CandidatesCell extends BaseCell {
+  kind: "Candidates";
+  candidates: number[];
+}
+
+type TransportCell = ValueCell | CandidatesCell;

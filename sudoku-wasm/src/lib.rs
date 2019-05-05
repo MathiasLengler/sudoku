@@ -1,8 +1,5 @@
 use std::cell::RefCell;
-use std::mem::drop;
-use std::num::NonZeroUsize;
 
-use js_sys;
 use log::debug;
 use wasm_bindgen::prelude::*;
 
@@ -75,27 +72,22 @@ impl WasmSudoku {
         JsValue::from_serde(&transport_sudoku).unwrap()
     }
 
-    pub fn set_value(&self, pos: JsValue, value: usize) -> Result<usize, JsValue> {
-        let old_value = self
-            .sudoku
+    pub fn set_value(&self, pos: JsValue, value: usize) {
+        self.sudoku
             .borrow_mut()
             .set_value(Self::import_pos(pos), value);
-
-        Ok(old_value)
     }
 
-    pub fn set_candidates(&mut self, pos: JsValue, candidates: JsValue) -> Result<(), JsValue> {
+    pub fn set_candidates(&mut self, pos: JsValue, candidates: JsValue) {
         self.sudoku
             .borrow_mut()
             .set_candidates(Self::import_pos(pos), Self::import_candidates(candidates));
-
-        Ok(())
     }
 
-    pub fn toggle_candidate(&mut self, pos: JsValue, candidate: usize) -> bool {
+    pub fn toggle_candidate(&mut self, pos: JsValue, candidate: usize) {
         self.sudoku
             .borrow_mut()
-            .toggle_candidate(Self::import_pos(pos), candidate)
+            .toggle_candidate(Self::import_pos(pos), candidate);
     }
 }
 

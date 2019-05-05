@@ -1,6 +1,6 @@
 use std::convert::TryFrom;
-use std::fmt::{Display, Formatter};
 use std::fmt;
+use std::fmt::{Display, Formatter};
 
 use failure::ensure;
 
@@ -22,7 +22,7 @@ impl<Cell: SudokuCell> Grid<Cell> {
             cells: vec![],
         };
 
-        grid.cells = vec![Default::default(); grid.cell_count()];
+        grid.cells = vec![Cell::new(Self::base_to_max_value(base)); grid.cell_count()];
         grid
     }
 
@@ -54,7 +54,7 @@ impl<Cell: SudokuCell> Grid<Cell> {
         }
     }
 
-    pub(super) fn value_range(&self) -> impl Iterator<Item=usize> {
+    pub(super) fn value_range(&self) -> impl Iterator<Item = usize> {
         (1..=self.side_length())
     }
 
@@ -67,7 +67,7 @@ impl<Cell: SudokuCell> Grid<Cell> {
     }
 
     pub(super) fn max_value(&self) -> usize {
-        self.side_length()
+        Self::base_to_max_value(self.base)
     }
 
     pub(super) fn cell_count(&self) -> usize {
@@ -76,6 +76,10 @@ impl<Cell: SudokuCell> Grid<Cell> {
 
     fn base_to_side_length(base: usize) -> usize {
         base.pow(2)
+    }
+
+    fn base_to_max_value(base: usize) -> usize {
+        Self::base_to_side_length(base)
     }
 
     fn base_to_cell_count(base: usize) -> usize {
@@ -98,7 +102,7 @@ impl<Cell: SudokuCell> Grid<Cell> {
 // TODO: Cell with Position in iterators (PositionedCell?)
 /// Utility iterators
 impl<Cell: SudokuCell> Grid<Cell> {
-    pub(super) fn row(&self, row_index: usize) -> impl Iterator<Item=&Cell> {
+    pub(super) fn row(&self, row_index: usize) -> impl Iterator<Item = &Cell> {
         self.assert_coordinate(row_index);
 
         let starting_index = row_index * self.side_length();
@@ -106,26 +110,23 @@ impl<Cell: SudokuCell> Grid<Cell> {
         (starting_index..starting_index + self.side_length()).map(move |i| &self.cells[i])
     }
 
-    pub(super) fn all_rows(&self) -> impl Iterator<Item=impl Iterator<Item=&Cell>> {
-        (0..self.side_length()).map(move |row_index| {
-            self.row(row_index)
-        })
+    pub(super) fn all_rows(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell>> {
+        (0..self.side_length()).map(move |row_index| self.row(row_index))
     }
 
-    pub(super) fn column(&self, column_index: usize) -> impl Iterator<Item=&Cell> {
+    pub(super) fn column(&self, column_index: usize) -> impl Iterator<Item = &Cell> {
         self.assert_coordinate(column_index);
 
-        (column_index..self.cell_count()).step_by(self.side_length()).map(move |i| &self.cells[i])
+        (column_index..self.cell_count())
+            .step_by(self.side_length())
+            .map(move |i| &self.cells[i])
     }
 
-
-    pub(super) fn all_columns(&self) -> impl Iterator<Item=impl Iterator<Item=&Cell>> {
-        (0..self.side_length()).map(move |column_index| {
-            self.column(column_index)
-        })
+    pub(super) fn all_columns(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell>> {
+        (0..self.side_length()).map(move |column_index| self.column(column_index))
     }
 
-    pub(super) fn block(&self, pos: Position) -> impl Iterator<Item=&Cell> {
+    pub(super) fn block(&self, pos: Position) -> impl Iterator<Item = &Cell> {
         self.assert_position(pos);
 
         let block_base_pos = (pos / self.base) * self.base;
@@ -141,16 +142,15 @@ impl<Cell: SudokuCell> Grid<Cell> {
             .map(move |i| &self.cells[i])
     }
 
-    pub(super) fn all_blocks(&self) -> impl Iterator<Item=impl Iterator<Item=&Cell>> {
-        let all_block_base_pos =
-            (0..self.base)
-                .flat_map(
-                    move |block_y| (0..self.base).map(move |block_x| Position {
-                        column: block_x,
-                        row: block_y,
-                    })
-                )
-                .map(move |pos| pos * self.base);
+    pub(super) fn all_blocks(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell>> {
+        let all_block_base_pos = (0..self.base)
+            .flat_map(move |block_y| {
+                (0..self.base).map(move |block_x| Position {
+                    column: block_x,
+                    row: block_y,
+                })
+            })
+            .map(move |pos| pos * self.base);
 
         all_block_base_pos.map(move |block_base_pos| self.block(block_base_pos))
     }
@@ -178,7 +178,8 @@ impl<Cell: SudokuCell> TryFrom<Vec<usize>> for Grid<Cell> {
 
         Ok(Grid {
             base,
-            cells: values.into_iter()
+            cells: values
+                .into_iter()
                 .map(|value| Cell::new_with_value(value, max))
                 .collect(),
         })
@@ -193,21 +194,29 @@ impl<Cell: SudokuCell> Display for Grid<Cell> {
 
         let horizontal_block_separator = "-".repeat(self.base() + (PADDING * self.side_length()));
 
-        let output_string = self.cells
+        let output_string = self
+            .cells
             .chunks(self.side_length())
-            .map(|row| row.chunks(self.base())
-                .map(|block_row| block_row.iter()
-                    .map(|cell| format!("{:>PADDING$}", cell.to_string(), PADDING = PADDING))
-                    .collect::<String>()
-                ).collect::<Vec<_>>().join("|")
-            )
+            .map(|row| {
+                row.chunks(self.base())
+                    .map(|block_row| {
+                        block_row
+                            .iter()
+                            .map(|cell| {
+                                format!("{:>PADDING$}", cell.to_string(), PADDING = PADDING)
+                            })
+                            .collect::<String>()
+                    })
+                    .collect::<Vec<_>>()
+                    .join("|")
+            })
             .collect::<Vec<String>>()
             .chunks(self.base())
             .intersperse(&[horizontal_block_separator])
             .flatten()
             .cloned()
-            .collect::<Vec<String>>().join("\n");
-
+            .collect::<Vec<String>>()
+            .join("\n");
 
         f.write_str(&output_string)
     }
