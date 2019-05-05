@@ -1,7 +1,7 @@
 import {WasmSudokuController} from "./wasmSudokuController";
 import * as React from "react";
 import {useEffect} from "react";
-import {clamp} from "lodash";
+import clamp from "lodash/clamp";
 
 function keyToValue(key: string): number | undefined {
   const value = parseInt(key);

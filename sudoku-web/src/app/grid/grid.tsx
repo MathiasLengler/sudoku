@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as CSS from 'csstype';
-import {isEqual} from "lodash";
+import isEqual from "lodash/isEqual";
 import {MemoCell} from "./cell";
 import {indexToPosition} from "../utils";
 

@@ -1,8 +1,10 @@
+/* eslint-disable */
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 const dist = path.resolve(__dirname, "dist");
 const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
 module.exports = {
   entry: "./src/index.tsx",
@@ -21,13 +23,10 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: 'index.html'
     }),
-
-    // TODO: fix watching
     new WasmPackPlugin({
       crateDirectory: path.resolve(__dirname, "../sudoku-wasm"),
-      // WasmPackPlugin defaults to compiling in "dev" profile. To change that, use forceMode: 'release':
-      // forceMode: 'release'
     }),
+    // new BundleAnalyzerPlugin(),
   ],
   module: {
     rules: [

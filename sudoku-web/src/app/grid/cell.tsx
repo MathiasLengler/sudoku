@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as CSS from "csstype";
-import {isEqual} from "lodash";
-import * as classnames from 'classnames'
+import isEqual from "lodash/isEqual";
+import classnames from 'classnames'
 import {indexToPosition} from "../utils";
 
 interface CellProps {
