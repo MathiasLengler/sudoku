@@ -22,6 +22,7 @@ steps:
     displayName: 'Install Node.js'
 
   - script: |
+      export PATH=$PATH:$HOME/.cargo/bin
       npm install
       npm run build
     workingDirectory: sudoku-web
