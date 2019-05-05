@@ -48,13 +48,15 @@ export function useKeyboardInput(
       const value = keyToValue(key);
 
       if (value !== undefined) {
+        ev.preventDefault();
         return sudokuController.handleValue(value);
       }
 
       const newPos = keyToNewPos(key, selectedPos, sideLength);
 
       if (newPos !== undefined) {
-        setSelectedPos(newPos);
+        ev.preventDefault();
+        return setSelectedPos(newPos);
       }
     };
 
