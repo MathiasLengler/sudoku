@@ -3,7 +3,7 @@ import {useState} from "react";
 import {Grid} from "./grid/grid";
 import * as CSS from "csstype";
 import {WasmSudokuController} from "./wasmSudokuController";
-import {useKeyboardInput} from "./hooks";
+import {useKeyboardInput} from "./useKeyboardInput";
 import {ControlPanel} from "./controlPanel/controlPanel";
 import {TypedWasmSudoku} from "../typedWasmSudoku";
 

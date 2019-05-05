@@ -3,7 +3,7 @@ use std::mem::replace;
 use std::num::NonZeroUsize;
 
 use fixedbitset::FixedBitSet;
-use num::{NumCast, One, PrimInt, Unsigned};
+use num::{NumCast, One, PrimInt, Unsigned, Zero};
 use serde::{Deserialize, Serialize};
 
 use crate::cell::value::SudokuValue;
@@ -79,7 +79,11 @@ where
     }
 
     fn new_with_value(value: Value::Primitive, max: Value::Primitive) -> Self {
-        Cell::Value(Self::import_value(value, max))
+        if value == Value::Primitive::zero() {
+            Self::new(max)
+        } else {
+            Cell::Value(Self::import_value(value, max))
+        }
     }
 
     fn new_with_candidates<I>(candidates: I, max: Value::Primitive) -> Self
@@ -126,7 +130,7 @@ where
     }
 
     fn set_value(&mut self, value: Value::Primitive, max: Value::Primitive) {
-        replace(self, Cell::Value(Self::import_value(value, max)));
+        replace(self, Self::new_with_value(value, max));
     }
 
     fn set_or_toggle_value(&mut self, value: Value::Primitive, max: Value::Primitive) {

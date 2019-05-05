@@ -15,11 +15,13 @@ const Cell: React.FunctionComponent<CellProps> = (props) => {
   console.log("Cell render", props);
 
   const {
-    cell: {position, candidates, value},
+    cell,
     base,
     selected,
     setSelectedPos
   } = props;
+
+  const {position} = cell;
 
   if (selected) {
     console.log("Selected:", position);
@@ -36,9 +38,9 @@ const Cell: React.FunctionComponent<CellProps> = (props) => {
   return (
     <div className={cellClassNames} style={style} onClick={() => setSelectedPos(position)}>
       {
-        value ?
-          <CellValue  value={value}/>:
-          <Candidates candidates={candidates} base={base}/>
+        cell.kind === "value" ?
+          <CellValue value={cell.value}/> :
+          <Candidates candidates={cell.candidates} base={base}/>
       }
     </div>
   )
@@ -46,7 +48,7 @@ const Cell: React.FunctionComponent<CellProps> = (props) => {
 export const MemoCell = React.memo(Cell, isEqual);
 
 interface CellValueProps {
-  value: TransportCell['value'];
+  value: ValueCell['value'];
 }
 
 const CellValue: React.FunctionComponent<CellValueProps> = (props) => {
@@ -56,7 +58,7 @@ const CellValue: React.FunctionComponent<CellValueProps> = (props) => {
 
 
 interface CandidatesProps {
-  candidates: TransportCell['candidates'];
+  candidates: CandidatesCell['candidates'];
   base: TransportSudoku['base'];
 }
 

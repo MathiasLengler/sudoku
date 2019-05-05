@@ -47,6 +47,14 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
         self.grid.get_pos_mut(pos).set_value(value, max_value);
     }
 
+    pub fn set_or_toggle_value(&mut self, pos: Position, value: usize) {
+        let max_value = self.grid.max_value();
+
+        self.grid
+            .get_pos_mut(pos)
+            .set_or_toggle_value(value, max_value);
+    }
+
     pub fn set_candidates(&mut self, pos: Position, candidates: Vec<usize>) {
         let max_value = self.grid.max_value();
 

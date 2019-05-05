@@ -78,6 +78,12 @@ impl WasmSudoku {
             .set_value(Self::import_pos(pos), value);
     }
 
+    pub fn set_or_toggle_value(&self, pos: JsValue, value: usize) {
+        self.sudoku
+            .borrow_mut()
+            .set_or_toggle_value(Self::import_pos(pos), value);
+    }
+
     pub fn set_candidates(&mut self, pos: JsValue, candidates: JsValue) {
         self.sudoku
             .borrow_mut()

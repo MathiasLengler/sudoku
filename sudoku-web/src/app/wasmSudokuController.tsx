@@ -26,12 +26,11 @@ export class WasmSudokuController {
   public handleValue(value: number) {
     console.log("WasmSudokuController", "handleValue", value);
 
-    // TODO: handle value==0
     this.withSudokuUpdate(() => {
       if (this.candidateMode) {
         this.wasmSudoku.toggleCandidate(this.selectedPos, value);
       } else {
-        this.wasmSudoku.setValue(this.selectedPos, value);
+        this.wasmSudoku.setOrToggleValue(this.selectedPos, value);
       }
     });
   }

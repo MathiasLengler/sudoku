@@ -15,12 +15,12 @@ interface BaseCell {
 }
 
 interface ValueCell extends BaseCell {
-  kind: "Value";
+  kind: "value";
   value: number;
 }
 
 interface CandidatesCell extends BaseCell {
-  kind: "Candidates";
+  kind: "candidates";
   candidates: number[];
 }
 

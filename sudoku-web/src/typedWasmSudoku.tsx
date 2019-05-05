@@ -12,15 +12,19 @@ export class TypedWasmSudoku {
     return this.rustSudoku.get_sudoku()
   }
 
-  public setValue(pos: CellPosition, value: number): number {
+  public setValue(pos: CellPosition, value: number) {
     return this.rustSudoku.set_value(pos, value);
+  }
+
+  public setOrToggleValue(pos: CellPosition, value: number) {
+    return this.rustSudoku.set_or_toggle_value(pos, value);
   }
 
   public setCandidates(pos: CellPosition, candidates: number[]) {
     return this.rustSudoku.set_candidates(pos, candidates);
   }
 
-  public toggleCandidate(pos: CellPosition, candidate: number): boolean {
+  public toggleCandidate(pos: CellPosition, candidate: number) {
     return this.rustSudoku.toggle_candidate(pos, candidate);
   }
 }
