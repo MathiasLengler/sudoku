@@ -40,6 +40,8 @@ steps:
     displayName: 'Install SSH Key'
 
   - script: |
+      git config user.email "mathias@lengler.dev"
+      git config user.name "Mathias Lengler"
       npm run deploy
     workingDirectory: sudoku-web
     displayName: 'Deploy to github pages'
