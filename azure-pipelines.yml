@@ -1,0 +1,44 @@
+# Publish GitHub Pages
+# azure-pipelines.yml
+
+trigger:
+  - master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+  - script: curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
+    displayName: 'Install rustc'
+
+  - script: |
+      export PATH=$PATH:$HOME/.cargo/bin
+      RUST_BACKTRACE=1 cargo test --verbose -- --test-threads=1
+    displayName: 'Test rust'
+
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '10.x'
+    displayName: 'Install Node.js'
+
+  - script: |
+      npm install
+      npm run build
+    workingDirectory: sudoku-web
+    displayName: 'npm install and build'
+
+  - task: InstallSSHKey@0
+    inputs:
+      hostName: |
+        |1|rcYeF+C2GipUa/cfmtlj0LoZlP8=|+VtIYb3D79dMX0O8hiC8TBE+New= ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ==
+        |1|3kr7UK95Z5sg3LExtPHSkW0hnXI=|mBuM8OeL4KwFdww0/kDSjosuVv8= ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ==
+      sshPublicKey: |
+        ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC2eUsUd7z4x+2Zav4LdW9xTwRpTQTPLDwP+AYsIh8tYeqseIoteYns9IzhoN8YsNXQ1i5lckjTgo6HzbceiTD+e4tvMdu1G5I4HyJMfc63RMLJn/BlcUr5wjFym63VhWVx7tx193wmxGaGYUNJzNpm2k+KB0z+HI9IkWDnGU43KiN/lHbGtnfc53DEayiSH2chKJQlZaTiqj3/uF+R+7JLreK9M3Sim2YnCytTwFAFWyjEG66gU2VWOtxV6C3PCRNYa8NT4bux5sM5CPnkMQjsVmvTZnkza7DR1SjmoZuM6WTAtesdVvISCPlotMLt2sPbEumdi2wbE8yQ7cCBZRQv Mathias@MatzeDesktop
+      sshKeySecureFile:
+        azure-sudoku
+    displayName: 'Install SSH Key'
+
+  - script: |
+      npm run deploy
+    workingDirectory: sudoku-web
+    displayName: 'Deploy to github pages'
