@@ -27,4 +27,8 @@ export class TypedWasmSudoku {
   public toggleCandidate(pos: CellPosition, candidate: number) {
     return this.rustSudoku.toggle_candidate(pos, candidate);
   }
+
+  public delete(pos: CellPosition) {
+    return this.rustSudoku.delete(pos);
+  }
 }

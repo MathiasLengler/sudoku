@@ -27,19 +27,21 @@ export class WasmSudokuController {
     console.log("WasmSudokuController", "handleValue", value);
 
     this.withSudokuUpdate(() => {
-      if (this.candidateMode) {
-        this.wasmSudoku.toggleCandidate(this.selectedPos, value);
+      if (value === 0) {
+        this.wasmSudoku.delete(this.selectedPos);
       } else {
-        this.wasmSudoku.setOrToggleValue(this.selectedPos, value);
+        if (this.candidateMode) {
+          this.wasmSudoku.toggleCandidate(this.selectedPos, value);
+        } else {
+          this.wasmSudoku.setOrToggleValue(this.selectedPos, value);
+        }
       }
     });
   }
 
   public delete() {
     this.withSudokuUpdate(() => {
-      // TODO: remove after cell refactoring
-      this.wasmSudoku.setValue(this.selectedPos, 0);
-      this.wasmSudoku.setCandidates(this.selectedPos, []);
+      this.wasmSudoku.delete(this.selectedPos);
     });
   }
 }
