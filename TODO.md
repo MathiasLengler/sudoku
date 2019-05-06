@@ -26,6 +26,7 @@
   - run linting
     - eslint
     - clippy
+- evaluate useReducer
 ## UX
 - Hotkey for candidate mode toggle
 - save settings
