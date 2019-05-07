@@ -115,6 +115,12 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
         })
     }
 
+    pub(crate) fn all_block_positions(
+        &self,
+    ) -> impl Iterator<Item = impl Iterator<Item = Position>> {
+        self.grid.all_block_positions()
+    }
+
     pub(crate) fn empty_positions(&self) -> Vec<Position> {
         self.all_cell_positions()
             .filter(|pos| !self.get(*pos).value().is_some())

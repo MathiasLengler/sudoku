@@ -16,7 +16,11 @@ export const App: React.FunctionComponent<AppProps> = (props) => {
   console.log("App render");
 
   // State
-  const [sudoku, setSudoku] = useState(() => props.wasmSudoku.getSudoku());
+  const [sudoku, setSudoku] = useState(() => {
+    const sudoku = props.wasmSudoku.getSudoku();
+    console.log(sudoku);
+    return sudoku;
+  });
 
   const [selectedPos, setSelectedPos] = useState<CellPosition>(() => {
     return {column: 0, row: 0}

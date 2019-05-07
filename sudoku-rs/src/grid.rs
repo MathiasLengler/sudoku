@@ -100,6 +100,7 @@ impl<Cell: SudokuCell> Grid<Cell> {
 }
 
 // TODO: Cell with Position in iterators (PositionedCell?)
+//  alternative: define position iterators
 /// Utility iterators
 impl<Cell: SudokuCell> Grid<Cell> {
     pub(super) fn row(&self, row_index: usize) -> impl Iterator<Item = &Cell> {
@@ -153,6 +154,34 @@ impl<Cell: SudokuCell> Grid<Cell> {
             .map(move |pos| pos * self.base);
 
         all_block_base_pos.map(move |block_base_pos| self.block(block_base_pos))
+    }
+
+    pub(super) fn block_positions(&self, pos: Position) -> impl Iterator<Item = Position> {
+        self.assert_position(pos);
+
+        let base = self.base;
+
+        let Position {
+            column: base_column,
+            row: base_row,
+        } = (pos / base) * base;
+
+        (base_row..base_row + base).flat_map(move |row| {
+            (base_column..base_column + base).map(move |column| Position { column, row })
+        })
+    }
+
+    pub(super) fn all_block_positions(
+        &self,
+    ) -> impl Iterator<Item = impl Iterator<Item = Position>> {
+        let all_block_base_pos = (0..self.base)
+            .flat_map(move |row| (0..self.base).map(move |column| Position { column, row }))
+            .map(move |pos| pos * self.base);
+
+        all_block_base_pos
+            .map(|block_base_pos| self.block_positions(block_base_pos))
+            .collect::<Vec<_>>()
+            .into_iter()
     }
 }
 

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::cell::{CellView, SudokuCell};
+use crate::cell::{Cell, CellView, SudokuCell};
 use crate::position::Position;
 use crate::Sudoku;
 
@@ -10,6 +10,7 @@ use crate::Sudoku;
 #[serde(rename_all = "camelCase")]
 pub struct TransportSudoku {
     cells: Vec<TransportCell>,
+    block_cells: Vec<Vec<TransportCell>>,
     base: usize,
     side_length: usize,
     cell_count: usize,
@@ -20,12 +21,14 @@ impl<Cell: SudokuCell> From<&Sudoku<Cell>> for TransportSudoku {
         Self {
             cells: sudoku
                 .all_cell_positions()
-                .map(|position| {
-                    let cell = sudoku.get(position);
-                    TransportCell {
-                        cell_view: cell.view(),
-                        position,
-                    }
+                .map(|pos| TransportCell::from_cell_and_pos(sudoku.get(pos).view(), pos))
+                .collect(),
+            block_cells: sudoku
+                .all_block_positions()
+                .map(|block| {
+                    block
+                        .map(|pos| TransportCell::from_cell_and_pos(sudoku.get(pos).view(), pos))
+                        .collect()
                 })
                 .collect(),
             base: sudoku.base(),
@@ -44,4 +47,13 @@ pub struct TransportCell {
     #[serde(flatten)]
     cell_view: CellView,
     position: Position,
+}
+
+impl TransportCell {
+    fn from_cell_and_pos(cell_view: CellView, position: Position) -> Self {
+        Self {
+            cell_view,
+            position,
+        }
+    }
 }

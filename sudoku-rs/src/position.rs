@@ -4,6 +4,7 @@ use std::ops::{Div, Mul};
 use serde::{Deserialize, Serialize};
 
 // TODO: Marker for Cell/Block
+//  use euclid
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
 pub struct Position {
     pub column: usize,
@@ -12,7 +13,10 @@ pub struct Position {
 
 impl Display for Position {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_tuple("Pos").field(&self.column).field(&self.row).finish()
+        f.debug_tuple("Pos")
+            .field(&self.column)
+            .field(&self.row)
+            .finish()
     }
 }
 
