@@ -18,7 +18,7 @@ body {
 
     /*Style Variables*/
     --block-border-color: #606266;
-    --block-border-size: 5px;
+    --block-border-size: 4px;
     --cell-border-color: #bec6d4;
     --cell-border-size: 1px;
     --cell-padding: 0.2rem;
@@ -119,7 +119,7 @@ body {
     background-color: var(--cell-bg-color-guide-group);
 }
 
-.cell--guide-guide-value {
+.cell--guide-value {
     background-color: var(--cell-bg-color-guide-value);
 }
 
