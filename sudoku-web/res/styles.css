@@ -21,6 +21,7 @@ body {
     --block-border-size: 5px;
     --cell-border-color: #bec6d4;
     --cell-border-size: 1px;
+    --cell-padding: 0.2rem;
     --cell-bg-color-selected: #bbdefb;
     --cell-bg-color-guide-group: #e2e7ed;
     --cell-bg-color-guide-value: #c8d0de;
@@ -42,41 +43,68 @@ body {
 
 .grid {
     /*Grid Variables*/
-    --gridWidth: 95vmin;
-    --gutter: 0px;
-    --noOfGutters: calc(var(--sideLength) - 1);
-    --rowHeight: calc((var(--gridWidth) - (var(--noOfGutters) * var(--gutter))) / var(--sideLength));
-    --cell-padding: 0.2rem;
+    --grid-width: 95vmin;
+    --grid-gutter: var(--block-border-size);
+    --grid-no-of-gutters: calc(var(--base) - 1);
+    --grid-row-height: calc((var(--grid-width) - (var(--grid-no-of-gutters) * var(--grid-gutter))) / var(--base));
 
     /*Styling*/
     display: grid;
-    grid-template-columns: repeat(var(--sideLength), 1fr);
-    grid-template-rows: repeat(var(--sideLength), 1fr);
+    grid-template-columns: repeat(var(--base), 1fr);
+    grid-template-rows: repeat(var(--base), 1fr);
     place-items: stretch;
 
-    border-bottom: var(--block-border-size) solid var(--block-border-color);
-    border-right: var(--block-border-size) solid var(--block-border-color);
-    background-color: var(--bg-color);
+    border: var(--block-border-size) solid var(--block-border-color);
+    background-color: var(--block-border-color);
+
+    /*Square blocks*/
+    width: var(--grid-width);
+    height: var(--grid-width);
+    grid-auto-rows: var(--grid-row-height);
+    grid-gap: var(--grid-gutter);
+}
+
+.block {
+    /*Grid Variables*/
+    --block-column: 0;
+    --block-row: 0;
+
+    --block-width: var(--grid-row-height);
+    --block-gutter: var(--cell-border-size);
+    --block-no-of-gutters: calc(var(--base) - 1);
+    --block-row-height: calc((var(--block-width) - (var(--block-no-of-gutters) * var(--block-gutter))) / var(--base));
+
+    /*Styling*/
+    display: grid;
+    grid-template-columns: repeat(var(--base), 1fr);
+    grid-template-rows: repeat(var(--base), 1fr);
+    place-items: stretch;
+
+    grid-row: calc(1 + var(--block-row));
+    grid-column: calc(1 + var(--block-column));
+
+    background-color: var(--cell-border-color);
 
     /*Square cells*/
-    width: var(--gridWidth);
-    height: var(--gridWidth);
-    grid-auto-rows: var(--rowHeight);
-    grid-gap: var(--gutter);
+    width: var(--block-width);
+    height: var(--block-width);
+    grid-auto-rows: var(--block-row-height);
+    grid-gap: var(--block-gutter);
 }
 
 .cell {
     --cell-column: 0;
     --cell-row: 0;
 
+    --cell-size: calc(var(--block-row-height) - var(--cell-padding));
+
     grid-column: calc(1 + var(--cell-column));
     grid-row: calc(1 + var(--cell-row));
 
-    border-top: var(--cell-border-size) solid var(--cell-border-color);
-    border-right: var(--cell-border-size) solid var(--cell-border-color);
-
     min-width: 0;
     min-height: 0;
+
+    background-color: var(--bg-color);
 
     padding: var(--cell-padding);
 
@@ -104,7 +132,7 @@ body {
 
 .cellValueText {
     line-height: 1;
-    font-size: calc(var(--rowHeight) * 0.9);
+    font-size: calc(var(--cell-size));
     color: var(--cell-value-color-preset);
 }
 
@@ -125,38 +153,27 @@ body {
     grid-row: calc(1 + var(--candidate-row));
 
     color: var(--candiate-color);
-    font-size: calc(var(--rowHeight) / 3.5);
+    font-size: calc(var(--cell-size) / (var(--base) + 0.1));
     line-height: 1;
-}
 
-.block {
-    --block-column: 0;
-    --block-row: 0;
-
-    grid-row: calc(1 + var(--block-row)) /span var(--base);
-    grid-column: calc(1 + var(--block-column)) / span var(--base);
-
-    border-top: var(--block-border-size) solid var(--block-border-color);
-    border-left: var(--block-border-size) solid var(--block-border-color);
-
-    pointer-events: none;
-    z-index: 1;
+    min-width: 0;
+    min-height: 0;
 }
 
 .selector {
-    --gridWidth: 95vmin;
-    --gutter: 0px;
-    --noOfGutters: calc(var(--sideLength) - 1);
-    --rowHeight: calc((var(--gridWidth) - (var(--noOfGutters) * var(--gutter))) / var(--sideLength));
+    --grid-width: 95vmin;
+    --grid-gutter: 0px;
+    --grid-no-of-gutters: calc(var(--sideLength) - 1);
+    --grid-row-height: calc((var(--grid-width) - (var(--grid-no-of-gutters) * var(--grid-gutter))) / var(--sideLength));
 
 
-    width: var(--gridWidth);
-    height: var(--rowHeight);
+    width: var(--grid-width);
+    height: var(--grid-row-height);
     display: grid;
     place-items: center;
     grid-template-columns: repeat(var(--sideLength), 1fr);
     grid-template-rows: 1fr;
-    grid-gap: var(--gutter);
+    grid-gap: var(--grid-gutter);
 }
 
 .selectorValue {
@@ -173,7 +190,7 @@ body {
 .selectorValueText {
     color: var(--cell-value-color-preset);
     line-height: 1;
-    font-size: calc(var(--rowHeight) * 0.9);
+    font-size: calc(var(--grid-row-height) * 0.9);
 }
 
 .actions {

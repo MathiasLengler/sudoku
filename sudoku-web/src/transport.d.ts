@@ -1,6 +1,7 @@
+type Block = TransportCell[];
+
 interface TransportSudoku {
-  cells: TransportCell[];
-  blockCells: TransportCell[][];
+  blocks: Block[];
   base: number;
   sideLength: number;
   cellCount: number;

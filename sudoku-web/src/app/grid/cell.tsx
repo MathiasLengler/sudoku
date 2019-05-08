@@ -5,6 +5,7 @@ import classnames from 'classnames'
 import {indexToPosition} from "../utils";
 
 interface CellProps {
+  blockCellIndex: number;
   cell: TransportCell;
   base: TransportSudoku['base'];
   selected: boolean;
@@ -15,28 +16,30 @@ const Cell: React.FunctionComponent<CellProps> = (props) => {
   console.log("Cell render", props);
 
   const {
+    blockCellIndex,
     cell,
     base,
     selected,
     setSelectedPos
   } = props;
 
-  const {position} = cell;
+  const {position: gridPosition} = cell;
+
+  const blockCellPosition = indexToPosition(blockCellIndex, base);
 
   if (selected) {
-    console.log("Selected:", position);
+    console.log("Selected:", "gridPosition", gridPosition, "blockCellPosition", blockCellPosition);
   }
 
   const style: CSS.Properties = {
-    '--cell-column': position.column,
-    '--cell-row': position.row,
+    '--cell-column': blockCellPosition.column,
+    '--cell-row': blockCellPosition.row,
   };
 
   let cellClassNames = classnames("cell", {"cell--selected": selected});
 
-
   return (
-    <div className={cellClassNames} style={style} onClick={() => setSelectedPos(position)}>
+    <div className={cellClassNames} style={style} onClick={() => setSelectedPos(gridPosition)}>
       {
         cell.kind === "value" ?
           <CellValue value={cell.value}/> :

@@ -33,7 +33,7 @@ function keyToNewPos(key: string, selectedPos: CellPosition, sideLength: Transpo
   column = clamp(column, 0, sideLength - 1);
   row = clamp(row, 0, sideLength - 1);
 
-  return {row, column};
+  return {row: row, column: column};
 }
 
 export function useKeyboardInput(

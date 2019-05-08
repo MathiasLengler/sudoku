@@ -9,8 +9,7 @@ use crate::Sudoku;
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransportSudoku {
-    cells: Vec<TransportCell>,
-    block_cells: Vec<Vec<TransportCell>>,
+    blocks: Vec<Vec<TransportCell>>,
     base: usize,
     side_length: usize,
     cell_count: usize,
@@ -19,11 +18,7 @@ pub struct TransportSudoku {
 impl<Cell: SudokuCell> From<&Sudoku<Cell>> for TransportSudoku {
     fn from(sudoku: &Sudoku<Cell>) -> Self {
         Self {
-            cells: sudoku
-                .all_cell_positions()
-                .map(|pos| TransportCell::from_cell_and_pos(sudoku.get(pos).view(), pos))
-                .collect(),
-            block_cells: sudoku
+            blocks: sudoku
                 .all_block_positions()
                 .map(|block| {
                     block

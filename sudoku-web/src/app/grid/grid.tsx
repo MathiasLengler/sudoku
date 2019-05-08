@@ -12,65 +12,66 @@ interface GridProps {
 
 export const Grid: React.FunctionComponent<GridProps> = (props) => {
   const {
-    sudoku: {cells, base, sideLength},
+    sudoku: {base, blocks},
     selectedPos,
     setSelectedPos
   } = props;
 
   return <div className='grid'>
-    <Blocks sideLength={sideLength} base={base}/>
-    {cells.map((cell, i) => {
-      if (isEqual(selectedPos, cell.position)) {
-      }
+    {
+      blocks
+        .map((block, blockIndex) =>
+          <Block
+            key={blockIndex}
+            block={block}
+            blockIndex={blockIndex}
+            base={base}
+            selectedPos={selectedPos}
+            setSelectedPos={setSelectedPos}
+          />
+        )
+    }
 
-      return <MemoCell
-        key={i}
-        cell={cell}
-        base={base}
-        selected={isEqual(selectedPos, cell.position)}
-        setSelectedPos={setSelectedPos}
-      />
-    })}
   </div>
 };
 
-interface BlocksProps {
-  sideLength: TransportSudoku['sideLength'];
-  base: TransportSudoku['base'];
-}
-
-const Blocks: React.FunctionComponent<BlocksProps> = (props) => {
-  const {sideLength, base} = props;
-  return (
-    <>
-      {
-        Array.from(Array(sideLength).keys())
-          .map(blockIndex =>
-            <Block key={blockIndex} base={base} blockIndex={blockIndex}/>
-          )
-      }
-    </>
-  )
-};
-
-
 interface BlockProps {
-  base: TransportSudoku['base'];
+  block: Block;
   blockIndex: number;
+  base: TransportSudoku['base'];
+  selectedPos: CellPosition;
+  setSelectedPos: React.Dispatch<React.SetStateAction<CellPosition>>;
 }
 
 const Block: React.FunctionComponent<BlockProps> = (props) => {
-  const {base, blockIndex} = props;
+  const {
+    block,
+    blockIndex,
+    base,
+    selectedPos,
+    setSelectedPos
+  } = props;
 
-  const {column, row} = indexToPosition(blockIndex, base);
+  const {column: blockColumn, row: blockRow} = indexToPosition(blockIndex, base);
 
   const style: CSS.Properties = {
-    '--block-column': column * base,
-    '--block-row': row * base,
+    '--block-column': blockColumn,
+    '--block-row': blockRow,
   };
 
   return (
-    <div className={'block'} style={style}/>
+    <div className={'block'} style={style}>
+      {block.map((cell, blockCellIndex) =>
+        <MemoCell
+          key={blockCellIndex}
+          blockCellIndex={blockCellIndex}
+          cell={cell}
+          base={base}
+          selected={isEqual(selectedPos, cell.position)}
+          setSelectedPos={setSelectedPos}
+        />
+      )}
+    </div>
   )
 };
 
