@@ -3,9 +3,9 @@
 ## UI
 - guide highlighting
   - [X] selected cell
-  - [ ] row
-  - [ ] column
-  - [ ] block
+  - [X] row
+  - [X] column
+  - [X] block
   - [ ] value
 - mark conflicting cells
 - responsive aspect ratio
