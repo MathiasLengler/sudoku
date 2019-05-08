@@ -5,42 +5,54 @@ import classnames from 'classnames'
 import {indexToPosition} from "../utils";
 
 interface CellProps {
+  blockCellIndex: number;
   cell: TransportCell;
   base: TransportSudoku['base'];
   selected: boolean;
   setSelectedPos: React.Dispatch<React.SetStateAction<CellPosition>>;
+  guideGroup: boolean;
+  guideValue: boolean;
 }
 
 const Cell: React.FunctionComponent<CellProps> = (props) => {
-  console.log("Cell render", props);
+  console.log("Cell render", props.cell.position);
 
   const {
+    blockCellIndex,
     cell,
     base,
     selected,
-    setSelectedPos
+    setSelectedPos,
+    guideGroup,
+    guideValue,
   } = props;
 
-  const {position} = cell;
+  const {position: gridPosition} = cell;
+
+  const blockCellPosition = indexToPosition(blockCellIndex, base);
 
   if (selected) {
-    console.log("Selected:", position);
+    console.log("Selected:", "gridPosition", gridPosition, "blockCellPosition", blockCellPosition);
   }
 
   const style: CSS.Properties = {
-    '--cell-column': position.column,
-    '--cell-row': position.row,
+    '--cell-column': blockCellPosition.column,
+    '--cell-row': blockCellPosition.row,
   };
 
-  let cellClassNames = classnames("cell", {"cell--selected": selected});
-
+  let cellClassNames = classnames(
+    "cell",
+    {"cell--selected": selected},
+    {"cell--guide-group": guideGroup},
+    {"cell--guide-value": guideValue}
+  );
 
   return (
-    <div className={cellClassNames} style={style} onClick={() => setSelectedPos(position)}>
+    <div className={cellClassNames} style={style} onClick={() => setSelectedPos(gridPosition)}>
       {
         cell.kind === "value" ?
           <CellValue value={cell.value}/> :
-          <Candidates candidates={cell.candidates} base={base}/>
+          <MemoCandidates candidates={cell.candidates} base={base}/>
       }
     </div>
   )
@@ -85,3 +97,5 @@ const Candidates: React.FunctionComponent<CandidatesProps> = (props) => {
     </div>
   )
 };
+
+export const MemoCandidates = React.memo(Candidates, isEqual);

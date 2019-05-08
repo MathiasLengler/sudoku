@@ -43,8 +43,13 @@ pub fn get_rust_sudoku() -> WasmSudoku {
         ],
     ];
 
-    let sudoku = Sudoku::<Cell>::try_from(base_3).unwrap();
+    let mut sudoku = Sudoku::<Cell>::try_from(base_3).unwrap();
     //    let sudoku = Sudoku::<Cell>::new(4);
+
+    sudoku.set_candidates(
+        Position { column: 1, row: 1 },
+        vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+    );
 
     WasmSudoku {
         sudoku: RefCell::new(sudoku),

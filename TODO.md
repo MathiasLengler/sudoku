@@ -8,8 +8,6 @@
   - [ ] block
   - [ ] value
 - mark conflicting cells
-- refactor flat grid into blocks with cells
-  - => clean css margins with nested grid and no block border overlay hack
 - responsive aspect ratio
   - control placement
   - grid size respects control size
@@ -17,22 +15,19 @@
     - handle overflow/force grid to size?
 
 ## Tooling
-- evaluate UI frameworks
 - PWA
   - offline
   - add to home
   - fullscreen
   - Framework?
-- monorepo sudoku + sudoku-wasm
-- move to github
-  - azure pipelines
-    - run tests
-    - run linting
-      - eslint
-      - clippy
-    - deploy master to gh-pages
-
+- azure pipelines
+  - run linting
+    - eslint
+    - clippy
+- evaluate useReducer
 ## UX
+- Hotkey for candidate mode toggle
+- save settings
 
 ### Selector Control Panel:
 - [X] set candidate mode toggle
