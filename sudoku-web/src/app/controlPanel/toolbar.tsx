@@ -1,6 +1,7 @@
 import * as React from "react";
 import IconButton from "@material-ui/core/IconButton";
 import DeleteIcon from '@material-ui/icons/Delete';
+import InfoIcon from '@material-ui/icons/Info';
 import NoteIcon from '@material-ui/icons/Note';
 import {WasmSudokuController} from "../wasmSudokuController";
 import Tooltip from "@material-ui/core/Tooltip";
@@ -28,6 +29,11 @@ export const Toolbar: React.FunctionComponent<ToolbarProps> = (props) => {
       <Tooltip title="Delete selected cell" enterDelay={enterDelay} leaveDelay={leaveDelay}>
         <IconButton onClick={() => sudokuController.delete()}>
           <DeleteIcon/>
+        </IconButton>
+      </Tooltip>
+      <Tooltip title="Set all direct candidates" enterDelay={enterDelay} leaveDelay={leaveDelay}>
+        <IconButton onClick={() => sudokuController.setAllDirectCandidates()}>
+          <InfoIcon/>
         </IconButton>
       </Tooltip>
     </div>

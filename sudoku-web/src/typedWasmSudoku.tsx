@@ -31,4 +31,8 @@ export class TypedWasmSudoku {
   public delete(pos: CellPosition) {
     return this.rustSudoku.delete(pos);
   }
+
+  public setAllDirectCandidates() {
+    return this.rustSudoku.set_all_direct_candidates();
+  }
 }

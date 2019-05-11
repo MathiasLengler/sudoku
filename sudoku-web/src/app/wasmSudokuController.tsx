@@ -44,4 +44,10 @@ export class WasmSudokuController {
       this.wasmSudoku.delete(this.selectedPos);
     });
   }
+
+  public setAllDirectCandidates() {
+    this.withSudokuUpdate(() => {
+      this.wasmSudoku.setAllDirectCandidates();
+    });
+  }
 }

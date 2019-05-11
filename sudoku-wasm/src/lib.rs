@@ -104,6 +104,10 @@ impl WasmSudoku {
     pub fn delete(&mut self, pos: JsValue) {
         self.sudoku.borrow_mut().delete(Self::import_pos(pos));
     }
+
+    pub fn set_all_direct_candidates(&mut self) {
+        self.sudoku.borrow_mut().set_all_direct_candidates();
+    }
 }
 
 /// Conversion Helpers

@@ -78,7 +78,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     }
 
     pub fn set_all_direct_candidates(&mut self) {
-        self.all_cell_positions().for_each(|pos| {
+        self.empty_positions().into_iter().for_each(|pos| {
             let candidates = self.direct_candidates(pos);
 
             self.set_candidates(pos, candidates);
