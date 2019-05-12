@@ -156,6 +156,34 @@ impl<Cell: SudokuCell> Grid<Cell> {
         all_block_base_pos.map(move |block_base_pos| self.block(block_base_pos))
     }
 
+    pub(super) fn row_positions(&self, row: usize) -> impl Iterator<Item = Position> {
+        self.assert_coordinate(row);
+
+        (0..self.side_length()).map(move |column| Position { column, row })
+    }
+
+    pub(super) fn all_row_positions(&self) -> impl Iterator<Item = impl Iterator<Item = Position>> {
+        (0..self.side_length())
+            .map(move |row_index| self.row_positions(row_index))
+            .collect::<Vec<_>>()
+            .into_iter()
+    }
+
+    pub(super) fn column_positions(&self, column: usize) -> impl Iterator<Item = Position> {
+        self.assert_coordinate(column);
+
+        (0..self.side_length()).map(move |row| Position { column, row })
+    }
+
+    pub(super) fn all_column_positions(
+        &self,
+    ) -> impl Iterator<Item = impl Iterator<Item = Position>> {
+        (0..self.side_length())
+            .map(move |column| self.column_positions(column))
+            .collect::<Vec<_>>()
+            .into_iter()
+    }
+
     pub(super) fn block_positions(&self, pos: Position) -> impl Iterator<Item = Position> {
         self.assert_position(pos);
 

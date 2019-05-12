@@ -9,6 +9,7 @@ use cell::SudokuCell;
 use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::position::Position;
+use std::collections::btree_set::BTreeSet;
 
 pub mod cell;
 pub mod error;
@@ -24,20 +25,32 @@ pub mod transport;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Sudoku<Cell: SudokuCell> {
     grid: Grid<Cell>,
+    settings: Settings,
+}
+
+// TODO: use settings
+#[derive(Clone, Debug, Eq, PartialEq, Default)]
+struct Settings {
+    update_candidates_on_set_value: bool,
 }
 
 // TODO: make sudoku fully generic over cell
-//  struct T {
-//      t: Sudoku<Cell<u8>>,
-//  }
+//  Sudoku<Cell<u8>>
 
 // TODO: clear candidates on set_value
 // TODO: provide undo/redo API
 // TODO: return result in all asserts
 impl<Cell: SudokuCell> Sudoku<Cell> {
     pub fn new(base: usize) -> Self {
+        Self::new_with_grid(Grid::new(base))
+    }
+
+    fn new_with_grid(grid: Grid<Cell>) -> Self {
         Sudoku {
-            grid: Grid::new(base),
+            grid,
+            settings: Settings {
+                update_candidates_on_set_value: true,
+            },
         }
     }
 
@@ -50,9 +63,14 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     pub fn set_or_toggle_value(&mut self, pos: Position, value: usize) {
         let max_value = self.grid.max_value();
 
-        self.grid
+        let set_value = self
+            .grid
             .get_pos_mut(pos)
             .set_or_toggle_value(value, max_value);
+
+        if self.settings.update_candidates_on_set_value && set_value {
+            self.update_candidates(pos, value);
+        }
     }
 
     pub fn set_candidates(&mut self, pos: Position, candidates: Vec<usize>) {
@@ -129,7 +147,25 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
 }
 
 impl<Cell: SudokuCell> Sudoku<Cell> {
-    // TODO: return cell values
+    fn update_candidates(&mut self, pos: Position, value: usize) {
+        let max = self.grid.max_value();
+
+        let unique_positions: BTreeSet<_> = self
+            .grid
+            .column_positions(pos.column)
+            .chain(self.grid.row_positions(pos.row))
+            .chain(self.grid.block_positions(pos))
+            .collect();
+
+        for unique_position in unique_positions {
+            let cell = self.grid.get_pos_mut(unique_position);
+
+            if cell.candidates().is_some() {
+                cell.delete_candidate(value, max)
+            }
+        }
+    }
+
     pub(crate) fn direct_candidates(&self, pos: Position) -> Vec<usize> {
         let conflicting_values = self
             .grid
@@ -194,9 +230,7 @@ impl<Cell: SudokuCell> TryFrom<Vec<usize>> for Sudoku<Cell> {
     type Error = Error;
 
     fn try_from(values: Vec<usize>) -> Result<Self> {
-        Ok(Sudoku {
-            grid: values.try_into()?,
-        })
+        Ok(Self::new_with_grid(values.try_into()?))
     }
 }
 
