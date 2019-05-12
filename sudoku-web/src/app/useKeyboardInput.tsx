@@ -86,7 +86,9 @@ export function useKeyboardInput(
 
       const toolbarAction = keyToToolbarAction(key);
 
-      if (toolbarAction) {
+      if (toolbarAction !== undefined) {
+        ev.preventDefault();
+
         switch (toolbarAction) {
           case "toggleCandidateMode":
             setCandidateMode(!candidateMode);
@@ -108,5 +110,5 @@ export function useKeyboardInput(
     return () => {
       document.removeEventListener('keydown', keyDownListener);
     };
-  }, [sudokuController, selectedPos, setSelectedPos, sideLength]);
+  }, [sudokuController, selectedPos, setSelectedPos, sideLength, setCandidateMode, candidateMode]);
 }
