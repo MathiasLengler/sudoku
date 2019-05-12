@@ -29,9 +29,10 @@
 - evaluate useReducer
 
 ## UX
-- Hotkeys
-  - candidate mode toggle
-- save settings (local storage)
+- save (local storage)
+  - settings
+  - current board
+  - highscore
 
 ### Selector Control Panel:
 - [X] set candidate mode toggle
