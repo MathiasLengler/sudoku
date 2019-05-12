@@ -7,12 +7,14 @@
   - [X] column
   - [X] block
   - [ ] value
+    - with/without their groups
 - mark conflicting cells
 - responsive aspect ratio
   - control placement
   - grid size respects control size
   - root sudoku has viewport with/height
     - handle overflow/force grid to size?
+  - react hook calculates on resize and sets grid size via css variable
 
 ## Tooling
 - PWA
@@ -25,27 +27,33 @@
     - eslint
     - clippy
 - evaluate useReducer
+
 ## UX
-- Hotkey for candidate mode toggle
-- save settings
+- Hotkeys
+  - candidate mode toggle
+- save settings (local storage)
 
 ### Selector Control Panel:
 - [X] set candidate mode toggle
 - [ ] sticky value toggle
+  - no selected cell when active
+  - guide for all values equal to sticky value
 - [X] delete cell button
 - [ ] undo button
+  - sudokuCanUndo
 - [ ] redo button
+  - sudokuCanRedo
 ### Gameplay Options
-- fill direct candidates (on start vs button)
+- fill direct candidates on new sudoku
 - remove direct candidates on set value
 - highlight incorrect value
 ### Solver Controls
 - Solve button
 - Solver selector
-- Options
   - Backtracking
-    - animation
   - Strategic
+- Options
+    - animation / speed
     - select strategies
 ### New sudoku:
 - Generate with difficulty
