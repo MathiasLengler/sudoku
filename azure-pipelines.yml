@@ -4,6 +4,8 @@
 trigger:
   - master
 
+pr: none
+
 pool:
   vmImage: 'ubuntu-latest'
 
@@ -38,6 +40,7 @@ steps:
       sshKeySecureFile:
         azure-sudoku
     displayName: 'Install SSH Key'
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
 
   - script: |
       git config user.email "mathias@lengler.dev"
