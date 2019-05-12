@@ -86,7 +86,7 @@ export function useKeyboardInput(
 
       const toolbarAction = keyToToolbarAction(key);
 
-      if (toolbarAction) {
+      if (toolbarAction !== undefined) {
         ev.preventDefault();
 
         switch (toolbarAction) {
