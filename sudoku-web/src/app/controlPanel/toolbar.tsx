@@ -20,20 +20,20 @@ export const Toolbar: React.FunctionComponent<ToolbarProps> = (props) => {
   const leaveDelay = 200;
 
   return (
-    <div className='actions'>
+    <div>
       <Tooltip title="Toggle candidate mode" enterDelay={enterDelay} leaveDelay={leaveDelay}>
         <IconButton color={candidateMode ? "primary": "default"} onClick={() => setCandidateMode(!candidateMode)}>
-          <NoteIcon/>
+          <NoteIcon fontSize="large"/>
         </IconButton>
       </Tooltip>
       <Tooltip title="Delete selected cell" enterDelay={enterDelay} leaveDelay={leaveDelay}>
         <IconButton onClick={() => sudokuController.delete()}>
-          <DeleteIcon/>
+          <DeleteIcon fontSize="large"/>
         </IconButton>
       </Tooltip>
       <Tooltip title="Set all direct candidates" enterDelay={enterDelay} leaveDelay={leaveDelay}>
         <IconButton onClick={() => sudokuController.setAllDirectCandidates()}>
-          <InfoIcon/>
+          <InfoIcon fontSize="large"/>
         </IconButton>
       </Tooltip>
     </div>

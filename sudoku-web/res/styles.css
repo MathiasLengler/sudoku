@@ -12,6 +12,8 @@ body {
     place-items: center;
     justify-content: center;
 
+    grid-template-rows: min-content min-content min-content;
+
     /*React Variables*/
     --sideLength: 0;
     --base: 0;
@@ -62,6 +64,8 @@ body {
     height: var(--grid-width);
     grid-auto-rows: var(--grid-row-height);
     grid-gap: var(--grid-gutter);
+
+    touch-action: none;
 }
 
 .block {
@@ -191,8 +195,4 @@ body {
     color: var(--cell-value-color-preset);
     line-height: 1;
     font-size: calc(var(--grid-row-height) * 0.9);
-}
-
-.actions {
-
 }

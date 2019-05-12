@@ -48,7 +48,32 @@ const Cell: React.FunctionComponent<CellProps> = (props) => {
   );
 
   return (
-    <div className={cellClassNames} style={style} onClick={() => setSelectedPos(gridPosition)}>
+    <div className={cellClassNames}
+         style={style}
+         onPointerDown={() => setSelectedPos(gridPosition)}
+         onPointerMove={(e) => {
+           // Left Mouse, Touch Contact, Pen contact
+           if (e.buttons !== 1) {
+             return;
+           }
+
+           setSelectedPos(gridPosition);
+
+           // Workaround for touch drag cell selection
+           if (e.pointerType !== "mouse") {
+             let el = document.elementFromPoint(e.clientX, e.clientY);
+             if (el) {
+               while (el.parentElement !== null) {
+                 if (el.classList.contains("cell")) {
+                   el.setPointerCapture(e.pointerId);
+                   break;
+                 }
+                 el = el.parentElement;
+               }
+             }
+           }
+         }}
+    >
       {
         cell.kind === "value" ?
           <CellValue value={cell.value}/> :
