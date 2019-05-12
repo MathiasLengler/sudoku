@@ -172,7 +172,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
             .column(pos.column)
             .chain(self.grid.row(pos.row))
             .chain(self.grid.block(pos))
-            .filter_map(|cell| cell.value_as_usize())
+            .filter_map(|cell| cell.value())
             .collect::<FixedBitSet>();
 
         let values: FixedBitSet = self.grid.value_range().collect();
@@ -200,7 +200,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
 
     // TODO: conflict location pairs
     fn has_duplicate<'a>(&'a self, cells: impl Iterator<Item = &'a Cell>) -> bool {
-        let mut cells: Vec<_> = cells.filter_map(|cell| cell.value_as_usize()).collect();
+        let mut cells: Vec<_> = cells.filter_map(|cell| cell.value()).collect();
 
         cells.sort();
 

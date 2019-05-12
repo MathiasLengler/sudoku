@@ -3,7 +3,7 @@ use std::mem::replace;
 use std::num::NonZeroUsize;
 
 use fixedbitset::FixedBitSet;
-use num::{NumCast, One, PrimInt, Unsigned, Zero};
+use num::{cast, PrimInt, ToPrimitive, Unsigned, Zero};
 use serde::{Deserialize, Serialize};
 
 use crate::cell::value::SudokuValue;
@@ -11,46 +11,41 @@ use crate::cell::value::SudokuValue;
 pub mod value;
 
 // TODO: is_editable cell
-
-// TODO: remove Value::Primitive from public API
 pub trait SudokuCell<Value = NonZeroUsize>: Clone + Display + Debug + Ord + Eq + Send
 where
     Value: SudokuValue,
     Value::Primitive: PrimInt + Unsigned,
 {
     /// Constructs new empty cell (empty candidates and no value)
-    fn new(max: Value::Primitive) -> Self;
+    fn new(max: usize) -> Self;
     /// Constructs a new cell with a set value
-    fn new_with_value(value: Value::Primitive, max: Value::Primitive) -> Self;
+    fn new_with_value(value: usize, max: usize) -> Self;
     /// Constructs a new cell with the provided candidates
-    fn new_with_candidates<I>(candidates: I, max: Value::Primitive) -> Self
+    fn new_with_candidates<I>(candidates: I, max: usize) -> Self
     where
-        I: IntoIterator<Item = Value::Primitive>;
+        I: IntoIterator<Item = usize>;
 
     fn view(&self) -> CellView;
 
     /// Value if any.
-    fn value(&self) -> Option<Value::Primitive>;
-
-    /// Value as a usize if any.
-    fn value_as_usize(&self) -> Option<usize>;
+    fn value(&self) -> Option<usize>;
 
     /// Candidates if any
-    fn candidates(&self) -> Option<Vec<Value::Primitive>>;
+    fn candidates(&self) -> Option<Vec<usize>>;
 
-    fn delete(&mut self, max: Value::Primitive);
+    fn delete(&mut self, max: usize);
 
-    fn set_value(&mut self, value: Value::Primitive, max: Value::Primitive);
+    fn set_value(&mut self, value: usize, max: usize);
 
     /// Returns true if a new value has been set.
-    fn set_or_toggle_value(&mut self, value: Value::Primitive, max: Value::Primitive) -> bool;
-    fn set_candidates<I>(&mut self, candidates: I, max: Value::Primitive)
+    fn set_or_toggle_value(&mut self, value: usize, max: usize) -> bool;
+    fn set_candidates<I>(&mut self, candidates: I, max: usize)
     where
-        I: IntoIterator<Item = Value::Primitive>;
+        I: IntoIterator<Item = usize>;
 
-    fn toggle_candidate(&mut self, candidate: Value::Primitive, max: Value::Primitive);
+    fn toggle_candidate(&mut self, candidate: usize, max: usize);
 
-    fn delete_candidate(&mut self, candidate: Value::Primitive, max: Value::Primitive);
+    fn delete_candidate(&mut self, candidate: usize, max: usize);
 }
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Debug)]
@@ -76,21 +71,21 @@ where
     Value: SudokuValue,
     Value::Primitive: PrimInt + Unsigned,
 {
-    fn new(max: Value::Primitive) -> Self {
+    fn new(max: usize) -> Self {
         Self::new_with_candidates(std::iter::empty(), max)
     }
 
-    fn new_with_value(value: Value::Primitive, max: Value::Primitive) -> Self {
-        if value == Value::Primitive::zero() {
+    fn new_with_value(value: usize, max: usize) -> Self {
+        if value == 0 {
             Self::new(max)
         } else {
             Cell::Value(Self::import_value(value, max))
         }
     }
 
-    fn new_with_candidates<I>(candidates: I, max: Value::Primitive) -> Self
+    fn new_with_candidates<I>(candidates: I, max: usize) -> Self
     where
-        I: IntoIterator<Item = Value::Primitive>,
+        I: IntoIterator<Item = usize>,
     {
         Cell::Candidates(Self::import_candidates(candidates, max))
     }
@@ -98,47 +93,40 @@ where
     fn view(&self) -> CellView {
         match self {
             Cell::Value(value) => CellView::Value {
-                value: Self::primitive_as_usize(Self::export_value(*value)),
+                value: Self::export_value(*value),
             },
             Cell::Candidates(candidates) => CellView::Candidates {
-                candidates: Self::export_candidates(candidates)
-                    .into_iter()
-                    .map(Self::primitive_as_usize)
-                    .collect(),
+                candidates: Self::export_candidates(candidates),
             },
         }
     }
 
-    fn value(&self) -> Option<Value::Primitive> {
+    fn value(&self) -> Option<usize> {
         match self {
             Cell::Value(value) => Some(Self::export_value(*value)),
             Cell::Candidates(_) => None,
         }
     }
 
-    fn value_as_usize(&self) -> Option<usize> {
-        self.value().map(|value| Self::primitive_as_usize(value))
-    }
-
-    fn candidates(&self) -> Option<Vec<Value::Primitive>> {
+    fn candidates(&self) -> Option<Vec<usize>> {
         match self {
             Cell::Candidates(candidates) => Some(Self::export_candidates(candidates)),
             Cell::Value(_) => None,
         }
     }
 
-    fn delete(&mut self, max: Value::Primitive) {
+    fn delete(&mut self, max: usize) {
         replace(self, Self::new(max));
     }
 
-    fn set_value(&mut self, value: Value::Primitive, max: Value::Primitive) {
+    fn set_value(&mut self, value: usize, max: usize) {
         replace(self, Self::new_with_value(value, max));
     }
 
-    fn set_or_toggle_value(&mut self, value: Value::Primitive, max: Value::Primitive) -> bool {
+    fn set_or_toggle_value(&mut self, value: usize, max: usize) -> bool {
         match self {
             Cell::Value(current_value) => {
-                if current_value.get() == value {
+                if Self::export_value(*current_value) == value {
                     self.delete(max);
                     false
                 } else {
@@ -153,16 +141,16 @@ where
         }
     }
 
-    fn set_candidates<I>(&mut self, candidates: I, max: Value::Primitive)
+    fn set_candidates<I>(&mut self, candidates: I, max: usize)
     where
-        I: IntoIterator<Item = Value::Primitive>,
+        I: IntoIterator<Item = usize>,
     {
         replace(
             self,
             Cell::Candidates(Self::import_candidates(candidates, max)),
         );
     }
-    fn toggle_candidate(&mut self, candidate: Value::Primitive, max: Value::Primitive) {
+    fn toggle_candidate(&mut self, candidate: usize, max: usize) {
         let imported_candidate = Self::import_candidate(candidate, max);
 
         match self {
@@ -178,7 +166,7 @@ where
         }
     }
 
-    fn delete_candidate(&mut self, candidate: Value::Primitive, max: Value::Primitive) {
+    fn delete_candidate(&mut self, candidate: usize, max: usize) {
         let imported_candidate = Self::import_candidate(candidate, max);
 
         match self {
@@ -196,50 +184,48 @@ where
     Value: SudokuValue,
     Value::Primitive: PrimInt + Unsigned,
 {
-    fn import_candidates<I: IntoIterator<Item = Value::Primitive>>(
-        candidates: I,
-        max: Value::Primitive,
-    ) -> FixedBitSet {
+    fn import_candidates<I: IntoIterator<Item = usize>>(candidates: I, max: usize) -> FixedBitSet {
         let mut candidates: FixedBitSet = candidates
             .into_iter()
             .map(|candidate| Self::import_candidate(candidate, max))
             .collect();
 
-        candidates.grow(Self::primitive_as_usize(max) + 1);
+        candidates.grow(max + 1);
 
         candidates
     }
-    fn import_value(value: Value::Primitive, max: Value::Primitive) -> Value {
+    fn import_value(value: usize, max: usize) -> Value {
         assert!(value <= max);
 
-        let value = Value::new(value).expect("Value can't be 0");
+        let value_as_primitive: Value::Primitive =
+            cast(value).expect("Could not convert value to cell value primitive");
+
+        let value = Value::new(value_as_primitive).expect("Value can't be 0");
 
         value
     }
 
-    fn import_candidate(candidate: Value::Primitive, max: Value::Primitive) -> usize {
-        assert!(candidate <= max);
+    fn import_candidate(candidate: usize, max: usize) -> usize {
+        assert!(candidate != 0 && candidate <= max);
 
-        Value::new(candidate).expect("Candidate can't be 0");
-
-        Self::primitive_as_usize(candidate - Value::Primitive::one())
+        candidate - 1
     }
 
-    fn export_value(value: Value) -> Value::Primitive {
-        value.get()
+    fn export_value(value: Value) -> usize {
+        Self::primitive_as_usize(value.get())
     }
 
-    fn export_candidates(candidates: &FixedBitSet) -> Vec<Value::Primitive> {
+    fn export_candidates(candidates: &FixedBitSet) -> Vec<usize> {
         candidates.ones().map(Self::export_candidate).collect()
     }
 
-    fn export_candidate(candidate: usize) -> Value::Primitive {
-        <Value::Primitive as NumCast>::from(candidate + 1).unwrap()
+    fn export_candidate(candidate: usize) -> usize {
+        candidate + 1
     }
 
     fn primitive_as_usize(primitive: Value::Primitive) -> usize {
         // Unwrap should be safe.
-        <usize as NumCast>::from(primitive).unwrap()
+        primitive.to_usize().unwrap()
     }
 }
 
@@ -249,7 +235,7 @@ where
     Value::Primitive: PrimInt + Unsigned,
 {
     fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
-        f.write_str(&if let Some(value) = self.value_as_usize() {
+        f.write_str(&if let Some(value) = self.value() {
             value.to_string()
         } else {
             "_".to_string()
