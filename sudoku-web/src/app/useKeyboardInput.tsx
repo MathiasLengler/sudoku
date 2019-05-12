@@ -4,10 +4,12 @@ import {useEffect} from "react";
 import clamp from "lodash/clamp";
 
 function keyToValue(key: string): number | undefined {
-  const value = parseInt(key);
+  if (key.length === 1) {
+    const value = parseInt(key, 36);
 
-  if (Number.isInteger(value)) {
-    return value
+    if (Number.isInteger(value)) {
+      return value
+    }
   }
 }
 
@@ -44,17 +46,22 @@ export function useKeyboardInput(
 ) {
   useEffect(() => {
     const keyDownListener = (ev: KeyboardEvent) => {
-      const {key} = ev;
+      const {key, altKey, ctrlKey, metaKey, shiftKey} = ev;
+
+      if (altKey || ctrlKey || metaKey || shiftKey) {
+        return;
+      }
+
       const value = keyToValue(key);
 
-      if (value !== undefined) {
+      if (value) {
         ev.preventDefault();
         return sudokuController.handleValue(value);
       }
 
       const newPos = keyToNewPos(key, selectedPos, sideLength);
 
-      if (newPos !== undefined) {
+      if (newPos) {
         ev.preventDefault();
         return setSelectedPos(newPos);
       }

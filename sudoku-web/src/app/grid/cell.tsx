@@ -15,7 +15,7 @@ interface CellProps {
 }
 
 const Cell: React.FunctionComponent<CellProps> = (props) => {
-  console.log("Cell render", props.cell.position);
+  console.debug("Cell render", props.cell.position);
 
   const {
     blockCellIndex,

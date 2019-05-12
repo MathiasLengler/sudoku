@@ -8,6 +8,7 @@ export class WasmSudokuController {
     private readonly onSudokuUpdate: onSudokuUpdate,
     private readonly candidateMode: boolean,
     private readonly selectedPos: CellPosition,
+    private readonly sideLength: TransportSudoku['sideLength'],
   ) {
   }
 
@@ -25,6 +26,12 @@ export class WasmSudokuController {
 
   public handleValue(value: number) {
     console.log("WasmSudokuController", "handleValue", value);
+
+    if (value > this.sideLength) {
+      console.warn("WasmSudokuController", "tried to handle value greater than current sudoku allows:", value);
+
+      return;
+    }
 
     this.withSudokuUpdate(() => {
       if (value === 0) {
