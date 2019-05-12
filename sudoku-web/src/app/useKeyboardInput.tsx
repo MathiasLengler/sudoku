@@ -3,6 +3,9 @@ import * as React from "react";
 import {useEffect} from "react";
 import clamp from "lodash/clamp";
 
+// TODO: Backspace/Delete key should delete cell
+// TODO: key for candidate mode toggle
+
 function keyToValue(key: string): number | undefined {
   if (key.length === 1) {
     const value = parseInt(key, 36);
@@ -54,14 +57,14 @@ export function useKeyboardInput(
 
       const value = keyToValue(key);
 
-      if (value) {
+      if (value !== undefined) {
         ev.preventDefault();
         return sudokuController.handleValue(value);
       }
 
       const newPos = keyToNewPos(key, selectedPos, sideLength);
 
-      if (newPos) {
+      if (newPos !== undefined) {
         ev.preventDefault();
         return setSelectedPos(newPos);
       }
