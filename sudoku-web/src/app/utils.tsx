@@ -19,3 +19,9 @@ export function cellPositionToBlockPosition(cellPosition: CellPosition, base: Tr
     row: Math.floor(cellPosition.row / base),
   };
 }
+
+export function valueToString(value: ValueCell['value']): string {
+  return value.toString(36);
+}
+
+export function assertNever( param: never ) { }

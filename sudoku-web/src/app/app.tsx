@@ -13,12 +13,12 @@ interface AppProps {
 }
 
 export const App: React.FunctionComponent<AppProps> = (props) => {
-  console.log("App render");
+  console.debug("App render");
 
   // State
   const [sudoku, setSudoku] = useState(() => {
     const sudoku = props.wasmSudoku.getSudoku();
-    console.log(sudoku);
+    console.debug(sudoku);
     return sudoku;
   });
 
@@ -29,16 +29,17 @@ export const App: React.FunctionComponent<AppProps> = (props) => {
   const [candidateMode, setCandidateMode] = useState(false);
 
   // Dependent on state
+  const {base, sideLength} = sudoku;
+
   const sudokuController = new WasmSudokuController(
     props.wasmSudoku,
     (sudoku) => setSudoku(sudoku),
     candidateMode,
-    selectedPos
+    selectedPos,
+    sideLength
   );
 
-  const {base, sideLength} = sudoku;
-
-  useKeyboardInput(sudokuController, selectedPos, setSelectedPos, sideLength);
+  useKeyboardInput(sudokuController, selectedPos, setSelectedPos, sideLength, candidateMode, setCandidateMode);
 
   const style: CSS.Properties = {
     '--sideLength': sideLength,

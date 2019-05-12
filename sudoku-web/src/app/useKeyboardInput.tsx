@@ -2,12 +2,15 @@ import {WasmSudokuController} from "./wasmSudokuController";
 import * as React from "react";
 import {useEffect} from "react";
 import clamp from "lodash/clamp";
+import {assertNever} from "./utils";
 
 function keyToValue(key: string): number | undefined {
-  const value = parseInt(key);
+  if (key.length === 1) {
+    const value = parseInt(key, 36);
 
-  if (Number.isInteger(value)) {
-    return value
+    if (Number.isInteger(value)) {
+      return value
+    }
   }
 }
 
@@ -36,15 +39,37 @@ function keyToNewPos(key: string, selectedPos: CellPosition, sideLength: Transpo
   return {row: row, column: column};
 }
 
+type ToolbarAction = "toggleCandidateMode" | "delete" | "setAllDirectCandidates";
+
+function keyToToolbarAction(key: string): ToolbarAction | undefined {
+  switch (key) {
+    case " ":
+      return "toggleCandidateMode";
+    case "Delete":
+      return "delete";
+    case "Insert":
+      return "setAllDirectCandidates";
+    default:
+      return;
+  }
+}
+
 export function useKeyboardInput(
   sudokuController: WasmSudokuController,
   selectedPos: CellPosition,
   setSelectedPos: React.Dispatch<React.SetStateAction<CellPosition>>,
-  sideLength: TransportSudoku["sideLength"]
+  sideLength: TransportSudoku["sideLength"],
+  candidateMode: boolean,
+  setCandidateMode: React.Dispatch<React.SetStateAction<boolean>>
 ) {
   useEffect(() => {
     const keyDownListener = (ev: KeyboardEvent) => {
-      const {key} = ev;
+      const {key, altKey, ctrlKey, metaKey, shiftKey} = ev;
+
+      if (altKey || ctrlKey || metaKey || shiftKey) {
+        return;
+      }
+
       const value = keyToValue(key);
 
       if (value !== undefined) {
@@ -57,6 +82,24 @@ export function useKeyboardInput(
       if (newPos !== undefined) {
         ev.preventDefault();
         return setSelectedPos(newPos);
+      }
+
+      const toolbarAction = keyToToolbarAction(key);
+
+      if (toolbarAction) {
+        switch (toolbarAction) {
+          case "toggleCandidateMode":
+            setCandidateMode(!candidateMode);
+            break;
+          case "setAllDirectCandidates":
+            sudokuController.setAllDirectCandidates();
+            break;
+          case "delete":
+            sudokuController.delete();
+            break;
+          default:
+            assertNever(toolbarAction);
+        }
       }
     };
 
