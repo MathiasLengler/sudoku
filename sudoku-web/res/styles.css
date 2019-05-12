@@ -46,10 +46,10 @@ body {
 
 .grid {
     /*Grid Variables*/
-    --grid-width: 95vmin;
+    --grid-size: 95vmin;
     --grid-gutter: var(--block-border-size);
     --grid-no-of-gutters: calc(var(--base) - 1);
-    --grid-row-height: calc((var(--grid-width) - (var(--grid-no-of-gutters) * var(--grid-gutter))) / var(--base));
+    --grid-row-height: calc((var(--grid-size) - (var(--grid-no-of-gutters) * var(--grid-gutter))) / var(--base));
 
     /*Styling*/
     display: grid;
@@ -60,8 +60,8 @@ body {
     background-color: var(--block-border-color);
 
     /*Square blocks*/
-    width: var(--grid-width);
-    height: var(--grid-width);
+    width: var(--grid-size);
+    height: var(--grid-size);
     grid-auto-rows: var(--grid-row-height);
     grid-gap: var(--grid-gutter);
 
@@ -73,10 +73,10 @@ body {
     --block-column: 0;
     --block-row: 0;
 
-    --block-width: var(--grid-row-height);
+    --block-size: var(--grid-row-height);
     --block-gutter: var(--cell-border-size);
     --block-no-of-gutters: calc(var(--base) - 1);
-    --block-row-height: calc((var(--block-width) - (var(--block-no-of-gutters) * var(--block-gutter))) / var(--base));
+    --block-row-height: calc((var(--block-size) - (var(--block-no-of-gutters) * var(--block-gutter))) / var(--base));
 
     /*Styling*/
     display: grid;
@@ -89,8 +89,8 @@ body {
     background-color: var(--cell-border-color);
 
     /*Square cells*/
-    width: var(--block-width);
-    height: var(--block-width);
+    width: var(--block-size);
+    height: var(--block-size);
     grid-auto-rows: var(--block-row-height);
     grid-gap: var(--block-gutter);
 }
@@ -163,13 +163,13 @@ body {
 }
 
 .selector {
-    --grid-width: 95vmin;
+    --grid-size: 95vmin;
     --grid-gutter: 0px;
     --grid-no-of-gutters: calc(var(--sideLength) - 1);
-    --grid-row-height: calc((var(--grid-width) - (var(--grid-no-of-gutters) * var(--grid-gutter))) / var(--sideLength));
+    --grid-row-height: calc((var(--grid-size) - (var(--grid-no-of-gutters) * var(--grid-gutter))) / var(--sideLength));
 
 
-    width: var(--grid-width);
+    width: var(--grid-size);
     height: var(--grid-row-height);
     display: grid;
     place-items: stretch;
