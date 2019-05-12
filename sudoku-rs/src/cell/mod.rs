@@ -10,8 +10,6 @@ use crate::cell::value::SudokuValue;
 
 pub mod value;
 
-// TODO: set or toggle value
-
 // TODO: is_editable cell
 
 // TODO: remove Value::Primitive from public API
@@ -43,12 +41,16 @@ where
     fn delete(&mut self, max: Value::Primitive);
 
     fn set_value(&mut self, value: Value::Primitive, max: Value::Primitive);
-    fn set_or_toggle_value(&mut self, value: Value::Primitive, max: Value::Primitive);
+
+    /// Returns true if a new value has been set.
+    fn set_or_toggle_value(&mut self, value: Value::Primitive, max: Value::Primitive) -> bool;
     fn set_candidates<I>(&mut self, candidates: I, max: Value::Primitive)
     where
         I: IntoIterator<Item = Value::Primitive>;
 
     fn toggle_candidate(&mut self, candidate: Value::Primitive, max: Value::Primitive);
+
+    fn delete_candidate(&mut self, candidate: Value::Primitive, max: Value::Primitive);
 }
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Debug)]
@@ -133,16 +135,21 @@ where
         replace(self, Self::new_with_value(value, max));
     }
 
-    fn set_or_toggle_value(&mut self, value: Value::Primitive, max: Value::Primitive) {
+    fn set_or_toggle_value(&mut self, value: Value::Primitive, max: Value::Primitive) -> bool {
         match self {
             Cell::Value(current_value) => {
                 if current_value.get() == value {
                     self.delete(max);
+                    false
                 } else {
-                    self.set_value(value, max)
+                    self.set_value(value, max);
+                    true
                 }
             }
-            Cell::Candidates(_) => self.set_value(value, max),
+            Cell::Candidates(_) => {
+                self.set_value(value, max);
+                true
+            }
         }
     }
 
@@ -168,6 +175,17 @@ where
                     Self::new_with_candidates(std::iter::once(candidate), max),
                 );
             }
+        }
+    }
+
+    fn delete_candidate(&mut self, candidate: Value::Primitive, max: Value::Primitive) {
+        let imported_candidate = Self::import_candidate(candidate, max);
+
+        match self {
+            Cell::Candidates(candidates) => {
+                candidates.set(imported_candidate, false);
+            }
+            Cell::Value(_) => {}
         }
     }
 }
