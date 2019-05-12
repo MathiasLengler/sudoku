@@ -39,7 +39,7 @@ export const App: React.FunctionComponent<AppProps> = (props) => {
     sideLength
   );
 
-  useKeyboardInput(sudokuController, selectedPos, setSelectedPos, sideLength);
+  useKeyboardInput(sudokuController, selectedPos, setSelectedPos, sideLength, candidateMode, setCandidateMode);
 
   const style: CSS.Properties = {
     '--sideLength': sideLength,

@@ -23,3 +23,5 @@ export function cellPositionToBlockPosition(cellPosition: CellPosition, base: Tr
 export function valueToString(value: ValueCell['value']): string {
   return value.toString(36);
 }
+
+export function assertNever( param: never ) { }

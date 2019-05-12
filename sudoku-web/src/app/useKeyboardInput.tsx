@@ -2,9 +2,7 @@ import {WasmSudokuController} from "./wasmSudokuController";
 import * as React from "react";
 import {useEffect} from "react";
 import clamp from "lodash/clamp";
-
-// TODO: Backspace/Delete key should delete cell
-// TODO: key for candidate mode toggle
+import {assertNever} from "./utils";
 
 function keyToValue(key: string): number | undefined {
   if (key.length === 1) {
@@ -41,11 +39,28 @@ function keyToNewPos(key: string, selectedPos: CellPosition, sideLength: Transpo
   return {row: row, column: column};
 }
 
+type ToolbarAction = "toggleCandidateMode" | "delete" | "setAllDirectCandidates";
+
+function keyToToolbarAction(key: string): ToolbarAction | undefined {
+  switch (key) {
+    case " ":
+      return "toggleCandidateMode";
+    case "Delete":
+      return "delete";
+    case "Insert":
+      return "setAllDirectCandidates";
+    default:
+      return;
+  }
+}
+
 export function useKeyboardInput(
   sudokuController: WasmSudokuController,
   selectedPos: CellPosition,
   setSelectedPos: React.Dispatch<React.SetStateAction<CellPosition>>,
-  sideLength: TransportSudoku["sideLength"]
+  sideLength: TransportSudoku["sideLength"],
+  candidateMode: boolean,
+  setCandidateMode: React.Dispatch<React.SetStateAction<boolean>>
 ) {
   useEffect(() => {
     const keyDownListener = (ev: KeyboardEvent) => {
@@ -67,6 +82,24 @@ export function useKeyboardInput(
       if (newPos !== undefined) {
         ev.preventDefault();
         return setSelectedPos(newPos);
+      }
+
+      const toolbarAction = keyToToolbarAction(key);
+
+      if (toolbarAction) {
+        switch (toolbarAction) {
+          case "toggleCandidateMode":
+            setCandidateMode(!candidateMode);
+            break;
+          case "setAllDirectCandidates":
+            sudokuController.setAllDirectCandidates();
+            break;
+          case "delete":
+            sudokuController.delete();
+            break;
+          default:
+            assertNever(toolbarAction);
+        }
       }
     };
 
