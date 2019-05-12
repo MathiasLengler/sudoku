@@ -1,5 +1,5 @@
 import * as React from "react";
-import {valuesFromSideLength} from "../utils";
+import {valuesFromSideLength, valueToString} from "../utils";
 import {WasmSudokuController} from "../wasmSudokuController";
 
 interface SelectorProps {
@@ -34,7 +34,7 @@ const SelectorValue: React.FunctionComponent<ValueProps> = (props) => {
 
   return (
     <div className='selectorValue' onClick={onClick}>
-      <span className='selectorValueText'>{value}</span>
+      <span className='selectorValueText'>{valueToString(value)}</span>
     </div>
   );
 };

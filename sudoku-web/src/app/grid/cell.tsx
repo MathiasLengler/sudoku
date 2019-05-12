@@ -2,7 +2,8 @@ import * as React from "react";
 import * as CSS from "csstype";
 import isEqual from "lodash/isEqual";
 import classnames from 'classnames'
-import {indexToPosition} from "../utils";
+import {indexToPosition, valueToString} from "../utils";
+import {PointerEventHandler} from "react";
 
 interface CellProps {
   blockCellIndex: number;
@@ -47,32 +48,34 @@ const Cell: React.FunctionComponent<CellProps> = (props) => {
     {"cell--guide-value": guideValue}
   );
 
+  const onPointerMove: PointerEventHandler = (e) => {
+    // Left Mouse, Touch Contact, Pen contact
+    if (e.buttons !== 1) {
+      return;
+    }
+
+    setSelectedPos(gridPosition);
+
+    // Workaround for touch drag cell selection
+    if (e.pointerType !== "mouse") {
+      let el = document.elementFromPoint(e.clientX, e.clientY);
+      if (el) {
+        while (el.parentElement !== null) {
+          if (el.classList.contains("cell")) {
+            el.setPointerCapture(e.pointerId);
+            break;
+          }
+          el = el.parentElement;
+        }
+      }
+    }
+  };
+
   return (
     <div className={cellClassNames}
          style={style}
          onPointerDown={() => setSelectedPos(gridPosition)}
-         onPointerMove={(e) => {
-           // Left Mouse, Touch Contact, Pen contact
-           if (e.buttons !== 1) {
-             return;
-           }
-
-           setSelectedPos(gridPosition);
-
-           // Workaround for touch drag cell selection
-           if (e.pointerType !== "mouse") {
-             let el = document.elementFromPoint(e.clientX, e.clientY);
-             if (el) {
-               while (el.parentElement !== null) {
-                 if (el.classList.contains("cell")) {
-                   el.setPointerCapture(e.pointerId);
-                   break;
-                 }
-                 el = el.parentElement;
-               }
-             }
-           }
-         }}
+         onPointerMove={onPointerMove}
     >
       {
         cell.kind === "value" ?
@@ -90,7 +93,7 @@ interface CellValueProps {
 
 const CellValue: React.FunctionComponent<CellValueProps> = (props) => {
   const {value} = props;
-  return <div className='cellValue'><span className='cellValueText'>{value}</span></div>;
+  return <div className='cellValue'><span className='cellValueText'>{valueToString(value)}</span></div>;
 };
 
 
@@ -115,7 +118,7 @@ const Candidates: React.FunctionComponent<CandidatesProps> = (props) => {
           };
 
           return <span key={i} className='candidate' style={style}>
-            {candidate}
+            {valueToString(candidate)}
           </span>
         })
       }
