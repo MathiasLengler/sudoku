@@ -15,6 +15,7 @@ pub(super) struct Grid<Cell: SudokuCell> {
 }
 
 // TODO: rethink indexing story (internal/cell position/block position)
+//  => position based indexing (performance should be no issue)
 impl<Cell: SudokuCell> Grid<Cell> {
     pub(super) fn new(base: usize) -> Self {
         let mut grid = Grid {
@@ -99,10 +100,9 @@ impl<Cell: SudokuCell> Grid<Cell> {
     }
 }
 
-// TODO: Cell with Position in iterators (PositionedCell?)
-//  alternative: define position iterators
 /// Utility iterators
 impl<Cell: SudokuCell> Grid<Cell> {
+    // TODO: change cell iters to be based on position iters and move to separate impl block
     pub(super) fn row(&self, row_index: usize) -> impl Iterator<Item = &Cell> {
         self.assert_coordinate(row_index);
 

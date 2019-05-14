@@ -28,7 +28,7 @@ pub struct Sudoku<Cell: SudokuCell> {
     settings: Settings,
 }
 
-// TODO: use settings
+// TODO: add public settings API
 #[derive(Clone, Debug, Eq, PartialEq, Default)]
 struct Settings {
     update_candidates_on_set_value: bool,
@@ -36,10 +36,11 @@ struct Settings {
 
 // TODO: make sudoku fully generic over cell
 //  Sudoku<Cell<u8>>
+//  Alternative: sudoku decides cell type based on base at runtime
 
-// TODO: clear candidates on set_value
 // TODO: provide undo/redo API
 // TODO: return result in all asserts
+//  sudoku::Error as JSValue (JS Exception)?
 impl<Cell: SudokuCell> Sudoku<Cell> {
     pub fn new(base: usize) -> Self {
         Self::new_with_grid(Grid::new(base))

@@ -9,12 +9,6 @@
   - [ ] value
     - with/without their groups
 - mark conflicting cells
-- responsive aspect ratio
-  - control placement
-  - grid size respects control size
-  - root sudoku has viewport with/height
-    - handle overflow/force grid to size?
-  - react hook calculates on resize and sets grid size via css variable
 
 ## Tooling
 - PWA
@@ -46,7 +40,7 @@
   - sudokuCanRedo
 ### Gameplay Options
 - fill direct candidates on new sudoku
-- remove direct candidates on set value
+- remove direct candidates on set value (is implemented and hardcoded true)
 - highlight incorrect value
 ### Solver Controls
 - Solve button

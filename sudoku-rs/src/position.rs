@@ -4,7 +4,7 @@ use std::ops::{Div, Mul};
 use serde::{Deserialize, Serialize};
 
 // TODO: Marker for Cell/Block
-//  use euclid
+//  compare with euclid (except x, y bad for clarity)
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
 pub struct Position {
     pub column: usize,
