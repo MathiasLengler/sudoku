@@ -13,5 +13,6 @@ declare module 'csstype' {
     '--cell-row'?: number;
     '--block-column'?: number;
     '--block-row'?: number;
+    '--outer-grid-size'?: string;
   }
 }

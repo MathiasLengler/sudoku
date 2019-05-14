@@ -3,6 +3,7 @@ body {
     font-size: 1rem;
     font-weight: 400;
     margin: 0;
+    overflow: hidden;
 }
 
 .sudoku {
@@ -18,6 +19,7 @@ body {
     /*React Variables*/
     --sideLength: 0;
     --base: 0;
+    --outer-grid-size: 100vmin;
 
     /*Style Variables*/
     --block-border-color: #606266;
@@ -46,7 +48,7 @@ body {
 
 .grid {
     /*Grid Variables*/
-    --grid-size: 95vmin;
+    --grid-size: calc(var(--outer-grid-size) - (2 * var(--block-border-size)));
     --grid-gutter: var(--block-border-size);
     --grid-no-of-gutters: calc(var(--base) - 1);
     --grid-row-height: calc((var(--grid-size) - (var(--grid-no-of-gutters) * var(--grid-gutter))) / var(--base));
@@ -163,19 +165,21 @@ body {
 }
 
 .selector {
-    --grid-size: 95vmin;
-    --grid-gutter: 0px;
-    --grid-no-of-gutters: calc(var(--sideLength) - 1);
-    --grid-row-height: calc((var(--grid-size) - (var(--grid-no-of-gutters) * var(--grid-gutter))) / var(--sideLength));
+    --selector-size: var(--outer-grid-size);
+    --selector-gutter: 0px;
+    --selector-no-of-gutters: calc(var(--sideLength) - 1);
+    --selector-row-height: calc((var(--selector-size) - (var(--selector-no-of-gutters) * var(--selector-gutter))) / var(--sideLength));
 
 
-    width: var(--grid-size);
-    height: var(--grid-row-height);
+    width: var(--selector-size);
+    height: var(--selector-row-height);
     display: grid;
     place-items: stretch;
     grid-template-columns: repeat(var(--sideLength), 1fr);
     grid-template-rows: 1fr;
-    grid-gap: var(--grid-gutter);
+    grid-gap: var(--selector-gutter);
+
+    background-color: var(--cell-border-color);
 }
 
 .selectorValue {
@@ -184,11 +188,14 @@ body {
 
     cursor: pointer;
 
-    border: var(--cell-border-size) solid var(--cell-border-color);
+    background-color: var(--bg-color);
+
+    min-width: 0;
+    min-height: 0;
 }
 
 .selectorValueText {
     color: var(--cell-value-color-preset);
     line-height: 1;
-    font-size: calc(var(--grid-row-height) * 0.9);
+    font-size: calc(var(--selector-row-height) * 0.9);
 }
