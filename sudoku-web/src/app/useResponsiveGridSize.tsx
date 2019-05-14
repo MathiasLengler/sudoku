@@ -29,17 +29,19 @@ export function useResponsiveGridSize(toolbarHeight: number, sideLength: Transpo
   const windowSize = useWindowSize();
 
   return useMemo(() => {
-    console.debug("toolbarHeight", toolbarHeight);
-    console.debug("windowSize", windowSize);
-
     const gridAndSelectorHeight = (windowSize.height - (toolbarHeight));
-    console.debug("gridAndSelectorHeight", gridAndSelectorHeight);
 
     const gridHeight = (sideLength * gridAndSelectorHeight) / (sideLength + 1);
-    console.debug("gridHeight", gridHeight);
 
     const gridSize = Math.min(gridHeight, windowSize.width);
-    console.debug("GridSize", gridSize);
+
+    console.debug("useResponsiveGridSize", {
+      toolbarHeight,
+      windowSize,
+      gridAndSelectorHeight,
+      gridHeight,
+      gridSize
+    });
 
     return gridSize;
   }, [sideLength, toolbarHeight, windowSize]);
