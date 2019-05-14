@@ -3,6 +3,7 @@ body {
     font-size: 1rem;
     font-weight: 400;
     margin: 0;
+    overflow: hidden;
 }
 
 .sudoku {
@@ -11,12 +12,14 @@ body {
     display: grid;
     place-items: center;
     justify-content: center;
+    /*place-content: center;*/
 
     grid-template-rows: min-content min-content min-content;
 
     /*React Variables*/
     --sideLength: 0;
     --base: 0;
+    --outer-grid-size: 100vmin;
 
     /*Style Variables*/
     --block-border-color: #606266;
@@ -45,23 +48,22 @@ body {
 
 .grid {
     /*Grid Variables*/
-    --grid-width: 95vmin;
+    --grid-size: calc(var(--outer-grid-size) - (2 * var(--block-border-size)));
     --grid-gutter: var(--block-border-size);
     --grid-no-of-gutters: calc(var(--base) - 1);
-    --grid-row-height: calc((var(--grid-width) - (var(--grid-no-of-gutters) * var(--grid-gutter))) / var(--base));
+    --grid-row-height: calc((var(--grid-size) - (var(--grid-no-of-gutters) * var(--grid-gutter))) / var(--base));
 
     /*Styling*/
     display: grid;
     grid-template-columns: repeat(var(--base), 1fr);
     grid-template-rows: repeat(var(--base), 1fr);
-    place-items: stretch;
 
     border: var(--block-border-size) solid var(--block-border-color);
     background-color: var(--block-border-color);
 
     /*Square blocks*/
-    width: var(--grid-width);
-    height: var(--grid-width);
+    width: var(--grid-size);
+    height: var(--grid-size);
     grid-auto-rows: var(--grid-row-height);
     grid-gap: var(--grid-gutter);
 
@@ -73,16 +75,15 @@ body {
     --block-column: 0;
     --block-row: 0;
 
-    --block-width: var(--grid-row-height);
+    --block-size: var(--grid-row-height);
     --block-gutter: var(--cell-border-size);
     --block-no-of-gutters: calc(var(--base) - 1);
-    --block-row-height: calc((var(--block-width) - (var(--block-no-of-gutters) * var(--block-gutter))) / var(--base));
+    --block-row-height: calc((var(--block-size) - (var(--block-no-of-gutters) * var(--block-gutter))) / var(--base));
 
     /*Styling*/
     display: grid;
     grid-template-columns: repeat(var(--base), 1fr);
     grid-template-rows: repeat(var(--base), 1fr);
-    place-items: stretch;
 
     grid-row: calc(1 + var(--block-row));
     grid-column: calc(1 + var(--block-column));
@@ -90,8 +91,8 @@ body {
     background-color: var(--cell-border-color);
 
     /*Square cells*/
-    width: var(--block-width);
-    height: var(--block-width);
+    width: var(--block-size);
+    height: var(--block-size);
     grid-auto-rows: var(--block-row-height);
     grid-gap: var(--block-gutter);
 }
@@ -112,6 +113,9 @@ body {
 
     padding: var(--cell-padding);
 
+    display: grid;
+    place-items: stretch;
+
     cursor: pointer;
 }
 
@@ -130,8 +134,6 @@ body {
 .cellValue {
     display: grid;
     place-items: center;
-    width: 100%;
-    height: 100%;
 }
 
 .cellValueText {
@@ -142,11 +144,9 @@ body {
 
 .candidates {
     display: grid;
+    place-items: center;
     grid-template-columns: repeat(var(--base), 1fr);
     grid-template-rows: repeat(var(--base), 1fr);
-    width: 100%;
-    height: 100%;
-    place-items: center;
 }
 
 .candidate {
@@ -165,34 +165,37 @@ body {
 }
 
 .selector {
-    --grid-width: 95vmin;
-    --grid-gutter: 0px;
-    --grid-no-of-gutters: calc(var(--sideLength) - 1);
-    --grid-row-height: calc((var(--grid-width) - (var(--grid-no-of-gutters) * var(--grid-gutter))) / var(--sideLength));
+    --selector-size: var(--outer-grid-size);
+    --selector-gutter: 0px;
+    --selector-no-of-gutters: calc(var(--sideLength) - 1);
+    --selector-row-height: calc((var(--selector-size) - (var(--selector-no-of-gutters) * var(--selector-gutter))) / var(--sideLength));
 
 
-    width: var(--grid-width);
-    height: var(--grid-row-height);
+    width: var(--selector-size);
+    height: var(--selector-row-height);
     display: grid;
-    place-items: center;
+    place-items: stretch;
     grid-template-columns: repeat(var(--sideLength), 1fr);
     grid-template-rows: 1fr;
-    grid-gap: var(--grid-gutter);
+    grid-gap: var(--selector-gutter);
+
+    background-color: var(--cell-border-color);
 }
 
 .selectorValue {
     display: grid;
     place-items: center;
-    width: 100%;
-    height: 100%;
 
     cursor: pointer;
 
-    border: var(--cell-border-size) solid var(--cell-border-color);
+    background-color: var(--bg-color);
+
+    min-width: 0;
+    min-height: 0;
 }
 
 .selectorValueText {
     color: var(--cell-value-color-preset);
     line-height: 1;
-    font-size: calc(var(--grid-row-height) * 0.9);
+    font-size: calc(var(--selector-row-height) * 0.9);
 }

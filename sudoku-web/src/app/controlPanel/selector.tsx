@@ -25,6 +25,7 @@ interface ValueProps {
   value: number;
 }
 
+// TODO: use material ui button(base)/styling
 const SelectorValue: React.FunctionComponent<ValueProps> = (props) => {
   const {value, sudokuController} = props;
 

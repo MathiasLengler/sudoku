@@ -6,6 +6,7 @@ import {WasmSudokuController} from "./wasmSudokuController";
 import {useKeyboardInput} from "./useKeyboardInput";
 import {ControlPanel} from "./controlPanel/controlPanel";
 import {TypedWasmSudoku} from "../typedWasmSudoku";
+import {useClientHeight, useResponsiveGridSize} from "./useResponsiveGridSize";
 
 
 interface AppProps {
@@ -28,9 +29,14 @@ export const App: React.FunctionComponent<AppProps> = (props) => {
 
   const [candidateMode, setCandidateMode] = useState(false);
 
-  // Dependent on state
+  // Responsive Grid
+  const [toolbarHeight, toolbarRef] = useClientHeight();
+
   const {base, sideLength} = sudoku;
 
+  const gridSize = useResponsiveGridSize(toolbarHeight, sideLength);
+
+  // Dependent on state
   const sudokuController = new WasmSudokuController(
     props.wasmSudoku,
     (sudoku) => setSudoku(sudoku),
@@ -44,6 +50,7 @@ export const App: React.FunctionComponent<AppProps> = (props) => {
   const style: CSS.Properties = {
     '--sideLength': sideLength,
     '--base': base,
+    "--outer-grid-size": `${gridSize}px`
   };
 
   return (
@@ -56,7 +63,9 @@ export const App: React.FunctionComponent<AppProps> = (props) => {
         sudokuController={sudokuController}
         sideLength={sideLength}
         candidateMode={candidateMode}
-        setCandidateMode={setCandidateMode}/>
+        setCandidateMode={setCandidateMode}
+        toolbarRef={toolbarRef}
+      />
     </div>
   )
 };
