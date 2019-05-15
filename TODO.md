@@ -6,8 +6,9 @@
   - [X] row
   - [X] column
   - [X] block
-  - [ ] value
-    - with/without their groups
+  - [x] value
+    - [ ] with/without their groups
+    - candidates?
 - mark conflicting cells
 
 ## Tooling

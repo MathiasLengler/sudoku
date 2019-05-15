@@ -24,5 +24,18 @@ export function valueToString(value: ValueCell['value']): string {
   return value.toString(36);
 }
 
+export function cellFromBlocks(blocks: TransportSudoku['blocks'], pos: CellPosition, base: TransportSudoku['base']): TransportCell {
+  const blockPosition = cellPositionToBlockPosition(pos, base);
+  const blockIndex = positionToIndex(blockPosition, base);
+  const block = blocks[blockIndex];
+  const cellPositionInBlock = {
+    column: pos.column - blockPosition.column * base,
+    row: pos.row - blockPosition.row * base
+  };
+  const cellIndexInBlock = positionToIndex(cellPositionInBlock, base);
+  return block[cellIndexInBlock];
+}
+
 // noinspection JSUnusedLocalSymbols
-export function assertNever( param: never ) { }
+export function assertNever(param: never) {
+}
