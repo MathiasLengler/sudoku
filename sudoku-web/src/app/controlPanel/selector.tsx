@@ -1,6 +1,7 @@
 import * as React from "react";
 import {valuesFromSideLength, valueToString} from "../utils";
 import {WasmSudokuController} from "../wasmSudokuController";
+import ButtonBase from '@material-ui/core/ButtonBase';
 
 interface SelectorProps {
   sudokuController: WasmSudokuController;
@@ -25,7 +26,6 @@ interface ValueProps {
   value: number;
 }
 
-// TODO: use material ui button(base)/styling
 const SelectorValue: React.FunctionComponent<ValueProps> = (props) => {
   const {value, sudokuController} = props;
 
@@ -34,8 +34,8 @@ const SelectorValue: React.FunctionComponent<ValueProps> = (props) => {
   };
 
   return (
-    <div className='selectorValue' onClick={onClick}>
+    <ButtonBase className='selectorValue' onClick={onClick}>
       <span className='selectorValueText'>{valueToString(value)}</span>
-    </div>
+    </ButtonBase>
   );
 };

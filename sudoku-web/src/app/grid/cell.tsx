@@ -1,9 +1,9 @@
 import * as React from "react";
+import {PointerEventHandler} from "react";
 import * as CSS from "csstype";
 import isEqual from "lodash/isEqual";
 import classnames from 'classnames'
 import {indexToPosition, valueToString} from "../utils";
-import {PointerEventHandler} from "react";
 
 interface CellProps {
   blockCellIndex: number;
@@ -44,8 +44,8 @@ const Cell: React.FunctionComponent<CellProps> = (props) => {
   let cellClassNames = classnames(
     "cell",
     {"cell--selected": selected},
-    {"cell--guide-group": guideGroup},
-    {"cell--guide-value": guideValue}
+    {"cell--guide-value": !selected && guideValue},
+    {"cell--guide-group": !selected && !guideValue && guideGroup},
   );
 
   const onPointerMove: PointerEventHandler = (e) => {

@@ -7,7 +7,7 @@ import {useKeyboardInput} from "./useKeyboardInput";
 import {ControlPanel} from "./controlPanel/controlPanel";
 import {TypedWasmSudoku} from "../typedWasmSudoku";
 import {useClientHeight, useResponsiveGridSize} from "./useResponsiveGridSize";
-
+import CssBaseline from '@material-ui/core/CssBaseline';
 
 interface AppProps {
   wasmSudoku: TypedWasmSudoku;
@@ -54,18 +54,21 @@ export const App: React.FunctionComponent<AppProps> = (props) => {
   };
 
   return (
-    <div className='sudoku' style={style}>
-      <Grid
-        sudoku={sudoku}
-        selectedPos={selectedPos}
-        setSelectedPos={setSelectedPos}/>
-      <ControlPanel
-        sudokuController={sudokuController}
-        sideLength={sideLength}
-        candidateMode={candidateMode}
-        setCandidateMode={setCandidateMode}
-        toolbarRef={toolbarRef}
-      />
-    </div>
+    <>
+      <CssBaseline/>
+      <div className='sudoku' style={style}>
+        <Grid
+          sudoku={sudoku}
+          selectedPos={selectedPos}
+          setSelectedPos={setSelectedPos}/>
+        <ControlPanel
+          sudokuController={sudokuController}
+          sideLength={sideLength}
+          candidateMode={candidateMode}
+          setCandidateMode={setCandidateMode}
+          toolbarRef={toolbarRef}
+        />
+      </div>
+    </>
   )
 };

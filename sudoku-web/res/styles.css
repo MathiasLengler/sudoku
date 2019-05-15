@@ -1,9 +1,9 @@
 body {
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-    font-size: 1rem;
-    font-weight: 400;
-    margin: 0;
     overflow: hidden;
+}
+
+button {
+    font-family: "Roboto", "Helvetica", "Arial", sans-serif;
 }
 
 .sudoku {
@@ -23,7 +23,7 @@ body {
 
     /*Style Variables*/
     --block-border-color: #606266;
-    --block-border-size: 4px;
+    --block-border-size: 2px;
     --cell-border-color: #bec6d4;
     --cell-border-size: 1px;
     --cell-padding: 0.2rem;
@@ -62,8 +62,8 @@ body {
     background-color: var(--block-border-color);
 
     /*Square blocks*/
-    width: var(--grid-size);
-    height: var(--grid-size);
+    width: var(--outer-grid-size);
+    height: var(--outer-grid-size);
     grid-auto-rows: var(--grid-row-height);
     grid-gap: var(--grid-gutter);
 
@@ -166,7 +166,7 @@ body {
 
 .selector {
     --selector-size: var(--outer-grid-size);
-    --selector-gutter: 0px;
+    --selector-gutter: var(--cell-border-size);
     --selector-no-of-gutters: calc(var(--sideLength) - 1);
     --selector-row-height: calc((var(--selector-size) - (var(--selector-no-of-gutters) * var(--selector-gutter))) / var(--sideLength));
 
@@ -179,6 +179,8 @@ body {
     grid-template-rows: 1fr;
     grid-gap: var(--selector-gutter);
 
+    border: var(--block-border-size) solid var(--block-border-color);
+
     background-color: var(--cell-border-color);
 }
 
@@ -188,7 +190,7 @@ body {
 
     cursor: pointer;
 
-    background-color: var(--bg-color);
+    background-color: var(--bg-color) !important;
 
     min-width: 0;
     min-height: 0;

@@ -2,7 +2,7 @@ import * as React from 'react';
 import * as CSS from 'csstype';
 import isEqual from "lodash/isEqual";
 import {MemoCell} from "./cell";
-import {cellPositionToBlockPosition, indexToPosition} from "../utils";
+import {cellFromBlocks, cellPositionToBlockPosition, indexToPosition} from "../utils";
 
 interface GridProps {
   sudoku: TransportSudoku;
@@ -17,6 +17,8 @@ export const Grid: React.FunctionComponent<GridProps> = (props) => {
     setSelectedPos
   } = props;
 
+  const selectedCell = cellFromBlocks(blocks, selectedPos, base);
+
   return <div className='grid'>
     {
       blocks
@@ -28,6 +30,7 @@ export const Grid: React.FunctionComponent<GridProps> = (props) => {
             base={base}
             selectedPos={selectedPos}
             setSelectedPos={setSelectedPos}
+            selectedCell={selectedCell}
           />
         )
     }
@@ -41,6 +44,7 @@ interface BlockProps {
   base: TransportSudoku['base'];
   selectedPos: CellPosition;
   setSelectedPos: React.Dispatch<React.SetStateAction<CellPosition>>;
+  selectedCell: TransportCell;
 }
 
 const Block: React.FunctionComponent<BlockProps> = (props) => {
@@ -49,7 +53,8 @@ const Block: React.FunctionComponent<BlockProps> = (props) => {
     blockIndex,
     base,
     selectedPos,
-    setSelectedPos
+    setSelectedPos,
+    selectedCell
   } = props;
 
   const blockPosition = indexToPosition(blockIndex, base);
@@ -63,31 +68,29 @@ const Block: React.FunctionComponent<BlockProps> = (props) => {
 
   const containsSelectedPos = isEqual(blockPosition, selectedBlockPosition);
 
-  return (
-    <div className={'block'} style={style}>
-      {block.map((cell, blockCellIndex) => {
-        const selected = containsSelectedPos && isEqual(selectedPos, cell.position);
+  return <div className={'block'} style={style}>
+    {block.map((cell, blockCellIndex) => {
+      const selected = containsSelectedPos && isEqual(selectedPos, cell.position);
 
-        const guideGroup = !selected &&
-          (containsSelectedPos
-            || (selectedPos.column == cell.position.column)
-            || (selectedPos.row == cell.position.row));
+      const guideGroup = containsSelectedPos
+        || selectedPos.column == cell.position.column
+        || selectedPos.row == cell.position.row;
 
-        // TODO: selectedValue?
-        const guideValue = false;
+      const guideValue = selectedCell.kind === "value"
+        && cell.kind === "value"
+        && selectedCell.value === cell.value;
 
-        return <MemoCell
-          key={blockCellIndex}
-          blockCellIndex={blockCellIndex}
-          cell={cell}
-          base={base}
-          selected={selected}
-          setSelectedPos={setSelectedPos}
-          guideValue={guideValue}
-          guideGroup={guideGroup}
-        />
-      })}
-    </div>
-  )
+      return <MemoCell
+        key={blockCellIndex}
+        blockCellIndex={blockCellIndex}
+        cell={cell}
+        base={base}
+        selected={selected}
+        setSelectedPos={setSelectedPos}
+        guideValue={guideValue}
+        guideGroup={guideGroup}
+      />
+    })}
+  </div>
 };
 
