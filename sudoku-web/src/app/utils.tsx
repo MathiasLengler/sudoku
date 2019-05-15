@@ -24,4 +24,5 @@ export function valueToString(value: ValueCell['value']): string {
   return value.toString(36);
 }
 
+// noinspection JSUnusedLocalSymbols
 export function assertNever( param: never ) { }

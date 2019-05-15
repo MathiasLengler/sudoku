@@ -1,5 +1,5 @@
 import * as React from "react";
-import {useMemo, useState} from "react";
+import {useState} from "react";
 import {Grid} from "./grid/grid";
 import * as CSS from "csstype";
 import {WasmSudokuController} from "./wasmSudokuController";
