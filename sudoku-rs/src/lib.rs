@@ -1,15 +1,16 @@
+use std::collections::btree_set::BTreeSet;
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
 use fixedbitset::FixedBitSet;
 
+use cell::Cell;
 use cell::SudokuCell;
 
 use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::position::Position;
-use std::collections::btree_set::BTreeSet;
 
 pub mod cell;
 pub mod error;
@@ -22,14 +23,14 @@ pub mod transport;
 // TODO: solve/verify incomplete sudoku
 // TODO: generate valid incomplete sudoku
 
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Sudoku<Cell: SudokuCell> {
-    grid: Grid<Cell>,
+#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
+pub struct Sudoku<TCell: SudokuCell = Cell> {
+    grid: Grid<TCell>,
     settings: Settings,
 }
 
 // TODO: add public settings API
-#[derive(Clone, Debug, Eq, PartialEq, Default)]
+#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 struct Settings {
     update_candidates_on_set_value: bool,
 }
@@ -41,12 +42,12 @@ struct Settings {
 // TODO: provide undo/redo API
 // TODO: return result in all asserts
 //  sudoku::Error as JSValue (JS Exception)?
-impl<Cell: SudokuCell> Sudoku<Cell> {
+impl<TCell: SudokuCell> Sudoku<TCell> {
     pub fn new(base: usize) -> Self {
         Self::new_with_grid(Grid::new(base))
     }
 
-    fn new_with_grid(grid: Grid<Cell>) -> Self {
+    fn new_with_grid(grid: Grid<TCell>) -> Self {
         Sudoku {
             grid,
             settings: Settings {
@@ -104,7 +105,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
         });
     }
 
-    pub fn get(&self, pos: Position) -> &Cell {
+    pub fn get(&self, pos: Position) -> &TCell {
         self.grid.get_pos(pos)
     }
 
@@ -122,7 +123,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
 }
 
 /// Utility iterators
-impl<Cell: SudokuCell> Sudoku<Cell> {
+impl<TCell: SudokuCell> Sudoku<TCell> {
     pub(crate) fn all_cell_positions(&self) -> impl Iterator<Item = Position> {
         let side_length = self.side_length();
 
@@ -147,7 +148,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     }
 }
 
-impl<Cell: SudokuCell> Sudoku<Cell> {
+impl<TCell: SudokuCell> Sudoku<TCell> {
     fn update_candidates(&mut self, pos: Position, value: usize) {
         let max = self.grid.max_value();
 
@@ -200,7 +201,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     }
 
     // TODO: conflict location pairs
-    fn has_duplicate<'a>(&'a self, cells: impl Iterator<Item = &'a Cell>) -> bool {
+    fn has_duplicate<'a>(&'a self, cells: impl Iterator<Item = &'a TCell>) -> bool {
         let mut cells: Vec<_> = cells.filter_map(|cell| cell.value()).collect();
 
         cells.sort();
@@ -215,7 +216,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     }
 }
 
-impl<Cell: SudokuCell> TryFrom<Vec<Vec<usize>>> for Sudoku<Cell> {
+impl<TCell: SudokuCell> TryFrom<Vec<Vec<usize>>> for Sudoku<TCell> {
     type Error = Error;
 
     fn try_from(nested_values: Vec<Vec<usize>>) -> Result<Self> {
@@ -227,7 +228,7 @@ impl<Cell: SudokuCell> TryFrom<Vec<Vec<usize>>> for Sudoku<Cell> {
     }
 }
 
-impl<Cell: SudokuCell> TryFrom<Vec<usize>> for Sudoku<Cell> {
+impl<TCell: SudokuCell> TryFrom<Vec<usize>> for Sudoku<TCell> {
     type Error = Error;
 
     fn try_from(values: Vec<usize>) -> Result<Self> {
@@ -235,7 +236,7 @@ impl<Cell: SudokuCell> TryFrom<Vec<usize>> for Sudoku<Cell> {
     }
 }
 
-impl<Cell: SudokuCell> Display for Sudoku<Cell> {
+impl<TCell: SudokuCell> Display for Sudoku<TCell> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{}", self.grid)
     }

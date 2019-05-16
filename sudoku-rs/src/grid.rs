@@ -8,10 +8,14 @@ use crate::cell::SudokuCell;
 use crate::error::{Error, Result};
 use crate::position::Position;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 pub(super) struct Grid<Cell: SudokuCell> {
     base: usize,
     cells: Vec<Cell>,
+    // TODO: fixedCellIndices
+    //  evaluate API for (un)fixing a cell
+    //  check access
+    //  propagate to transport sudoku
 }
 
 // TODO: rethink indexing story (internal/cell position/block position)

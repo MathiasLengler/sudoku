@@ -10,9 +10,9 @@ mod choice;
 #[derive(Debug)]
 enum StepResult<Cell: SudokuCell> {
     Solution(Box<Sudoku<Cell>>),
-    // Sudoku was filled completely
+    /// Sudoku was filled completely
     Filled,
-    // We went through the whole solution space and marked all potential solutions on the way
+    /// Went through the whole solution space and marked all potential solutions on the way
     Finished,
     Backtrack,
     NextCandidate,
@@ -74,8 +74,7 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
 
             match step_result {
                 StepResult::Solution(sudoku) => return Some(*sudoku),
-                StepResult::Filled => return None,
-                StepResult::Finished => return None,
+                StepResult::Filled | StepResult::Finished => return None,
                 _ => {}
             }
 
@@ -88,7 +87,9 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
     }
 
     fn step(&mut self) -> StepResult<Cell> {
-        match self.choices.last() {
+        let choices_len = self.choices.len();
+
+        match self.choices.last_mut() {
             Some(choice) => {
                 self.sudoku.set_value(choice.position(), choice.selection());
 
@@ -106,13 +107,17 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
 
                     StepResult::NextCandidate
                 } else {
-                    match self.empty_positions.get(self.choices.len()) {
+                    match self.empty_positions.get(choices_len) {
                         Some(next_position) => {
                             self.choices.push(Choice::new(*next_position, &self.sudoku));
 
                             StepResult::NextCell
                         }
-                        None => StepResult::Solution(Box::new(self.sudoku.clone())),
+                        None => {
+                            choice.set_next();
+
+                            StepResult::Solution(Box::new(self.sudoku.clone()))
+                        }
                     }
                 }
             }
@@ -141,23 +146,29 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
             static ref CROSSTERM: Crossterm = Crossterm::new();
         }
 
-        CROSSTERM.terminal().clear(crossterm::ClearType::All).unwrap();
+        CROSSTERM
+            .terminal()
+            .clear(crossterm::ClearType::All)
+            .unwrap();
 
-        CROSSTERM.terminal().write(format!(
-            "Solver at step {}:\n{}\n{:?}\nChoices = {:?}",
-            self.step_count,
-            self.sudoku,
-            step_result,
-            self.choices.len(),
-        )).unwrap();
+        CROSSTERM
+            .terminal()
+            .write(format!(
+                "Solver at step {}:\n{}\n{:?}\nChoices = {:?}",
+                self.step_count,
+                self.sudoku,
+                step_result,
+                self.choices.len(),
+            ))
+            .unwrap();
 
         ::std::thread::sleep(Duration::from_nanos(1));
     }
 }
 
-
 #[cfg(test)]
 mod tests {
+    use std::collections::HashSet;
     use std::convert::TryInto;
 
     use crate::cell::Cell;
@@ -165,7 +176,7 @@ mod tests {
 
     use super::*;
 
-// Input space (
+    // Input space (
     //      [empty, partial, full] sudoku,
     //      [conflict/ no conflict],
     //      [0, 1, n] solutions
@@ -185,11 +196,34 @@ mod tests {
 
         let sudoku = solve_result.unwrap();
 
-        println!("{}", sudoku);
+        assert_solved_sudoku(&sudoku);
+    }
 
+    fn assert_solved_sudoku<Cell: SudokuCell>(sudoku: &Sudoku<Cell>) {
         assert!(!sudoku.has_conflict());
 
         assert!(sudoku.empty_positions().is_empty());
+    }
+
+    #[test]
+    fn test_iter_all_solutions() {
+        const NUMBER_OF_2X2_SOLUTIONS: usize = 288;
+
+        let sudoku = Sudoku::<Cell>::new(2);
+
+        let solver = BacktrackingSolver::new(sudoku);
+
+        let solutions = solver.collect::<Vec<_>>();
+
+        assert_eq!(solutions.len(), NUMBER_OF_2X2_SOLUTIONS);
+
+        solutions
+            .iter()
+            .for_each(|solution| assert_solved_sudoku(solution));
+
+        let unique_solutions = solutions.into_iter().collect::<HashSet<_>>();
+
+        assert_eq!(unique_solutions.len(), NUMBER_OF_2X2_SOLUTIONS);
     }
 
     #[test]
@@ -214,9 +248,9 @@ mod tests {
                 vec![0, 3, 0, 0],
             ],
         ]
-            .into_iter()
-            .map(TryInto::<Sudoku<Cell>>::try_into)
-            .collect::<Result<Vec<_>>>()?;
+        .into_iter()
+        .map(TryInto::<Sudoku<Cell>>::try_into)
+        .collect::<Result<Vec<_>>>()?;
 
         for (sudoku_index, sudoku) in sudokus.into_iter().enumerate() {
             eprintln!("sudoku_index = {:?}", sudoku_index);
@@ -245,11 +279,11 @@ mod tests {
                 vec![0, 0, 1, 0, 0, 0, 0, 6, 8],
                 vec![0, 0, 8, 5, 0, 0, 0, 1, 0],
                 vec![0, 9, 0, 0, 0, 0, 4, 0, 0],
-            ]
+            ],
         ]
-            .into_iter()
-            .map(TryInto::<Sudoku<Cell>>::try_into)
-            .collect::<Result<Vec<_>>>()?;
+        .into_iter()
+        .map(TryInto::<Sudoku<Cell>>::try_into)
+        .collect::<Result<Vec<_>>>()?;
 
         for (sudoku_index, sudoku) in sudokus.into_iter().enumerate() {
             eprintln!("sudoku_index = {:?}", sudoku_index);

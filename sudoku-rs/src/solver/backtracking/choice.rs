@@ -5,6 +5,8 @@ use crate::cell::SudokuCell;
 use crate::position::Position;
 use crate::Sudoku;
 
+// TODO: shuffle the candidates when using the solver as a generator on an empty sudoku
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Choice {
     pos: Position,
