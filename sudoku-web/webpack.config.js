@@ -28,6 +28,9 @@ module.exports = {
     }),
     new WasmPackPlugin({
       crateDirectory: path.resolve(__dirname, "../sudoku-wasm"),
+      watchDirectories: [
+        path.resolve(__dirname, "../sudoku-rs")
+      ],
     }),
     // new BundleAnalyzerPlugin(),
     new webpack.HotModuleReplacementPlugin()
