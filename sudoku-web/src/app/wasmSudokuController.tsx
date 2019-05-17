@@ -25,6 +25,16 @@ export class WasmSudokuController {
     return ret;
   }
 
+  private checkFixed(): boolean {
+    if (this.selectedCell.fixed) {
+      console.warn("WasmSudokuController", "cannot modify a fixed cell", this.selectedCell);
+
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   public handleValue(value: number) {
     console.log("WasmSudokuController", "handleValue", value);
 
@@ -34,9 +44,7 @@ export class WasmSudokuController {
       return;
     }
 
-    if (this.selectedCell.fixed) {
-      console.warn("WasmSudokuController", "cannot modify a fixed cell", this.selectedCell);
-
+    if (this.checkFixed()) {
       return;
     }
 
@@ -54,6 +62,10 @@ export class WasmSudokuController {
   }
 
   public delete() {
+    if (this.checkFixed()) {
+      return;
+    }
+
     this.withSudokuUpdate(() => {
       this.wasmSudoku.delete(this.selectedPos);
     });
