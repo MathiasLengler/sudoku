@@ -23,7 +23,8 @@ pub fn run() -> Result<(), JsValue> {
 pub fn get_rust_sudoku() -> WasmSudoku {
     use std::convert::TryFrom;
 
-    let [base_2, base_3] = [
+    let [_base_1, _base_2, _base_3] = [
+        vec![vec![0]],
         vec![
             vec![0, 3, 4, 0],
             vec![4, 0, 0, 2],
@@ -43,7 +44,7 @@ pub fn get_rust_sudoku() -> WasmSudoku {
         ],
     ];
 
-    let sudoku = Sudoku::<Cell>::try_from(base_3).unwrap();
+    let sudoku = Sudoku::<Cell>::try_from(_base_3).unwrap();
     //    let sudoku = Sudoku::<Cell>::new(4);
 
     WasmSudoku {
