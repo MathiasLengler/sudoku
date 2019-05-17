@@ -2,10 +2,6 @@
 
 ## UI
 - guide highlighting
-  - [X] selected cell
-  - [X] row
-  - [X] column
-  - [X] block
   - [x] value
     - [ ] with/without their groups
     - candidates?
@@ -30,11 +26,9 @@
   - highscore
 
 ### Selector Control Panel:
-- [X] set candidate mode toggle
 - [ ] sticky value toggle
   - no selected cell when active
   - guide for all values equal to sticky value
-- [X] delete cell button
 - [ ] undo button
   - sudokuCanUndo
 - [ ] redo button

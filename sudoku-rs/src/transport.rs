@@ -36,7 +36,6 @@ impl<Cell: SudokuCell> From<&Sudoku<Cell>> for TransportSudoku {
 }
 
 // TODO:
-//  is_editable
 //  is_correct
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

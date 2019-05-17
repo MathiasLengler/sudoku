@@ -38,6 +38,9 @@ impl<Cell: SudokuCell> Iterator for BacktrackingSolver<Cell> {
 }
 
 impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
+    // TODO: evaluate sudoku parameter type or sudoku/solver interaction
+    //  &mut: need to deconstruct sudoku after solving
+    //   wasm?
     pub fn new(sudoku: Sudoku<Cell>) -> BacktrackingSolver<Cell> {
         Self::new_with_limit(sudoku, 0)
     }
@@ -188,8 +191,6 @@ mod tests {
     // TODO: test partial filled sudoku without conflict and one possible solution
     // TODO: test partial filled sudoku without conflict and multiple possible solutions
     // TODO: test partial filled sudoku with conflict (implies no solutions)
-    // TODO: test empty sudoku and multiple possible solutions
-    // TODO: test multiple calls
 
     fn assert_solve_result<Cell: SudokuCell>(solve_result: Option<Sudoku<Cell>>) {
         assert!(solve_result.is_some());
