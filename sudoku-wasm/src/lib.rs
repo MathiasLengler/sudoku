@@ -4,6 +4,7 @@ use log::debug;
 use wasm_bindgen::prelude::*;
 
 use sudoku::cell::Cell;
+use sudoku::generator::backtracking::BacktrackingGenerator;
 use sudoku::position::Position;
 use sudoku::transport::TransportSudoku;
 use sudoku::Sudoku;
@@ -20,7 +21,7 @@ pub fn run() -> Result<(), JsValue> {
 }
 
 #[wasm_bindgen]
-pub fn get_rust_sudoku() -> WasmSudoku {
+pub fn get_wasm_sudoku() -> WasmSudoku {
     use std::convert::TryFrom;
 
     let [_base_1, _base_2, _base_3] = [
@@ -44,8 +45,10 @@ pub fn get_rust_sudoku() -> WasmSudoku {
         ],
     ];
 
-    let mut sudoku = Sudoku::<Cell>::try_from(_base_3).unwrap();
-    //    let sudoku = Sudoku::<Cell>::new(4);
+    //    let mut sudoku = Sudoku::<Cell>::try_from(_base_3).unwrap();
+    //    let mut sudoku = Sudoku::<Cell>::new(4);
+
+    let mut sudoku = BacktrackingGenerator::new(3).generate();
 
     sudoku.fix_all_values();
 

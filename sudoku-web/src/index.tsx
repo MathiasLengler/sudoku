@@ -7,7 +7,7 @@ import {TypedWasmSudoku} from "./typedWasmSudoku";
 import("../../sudoku-wasm/pkg").then(module => {
   module.run();
 
-  const typedWasmSudoku = new TypedWasmSudoku(module.get_rust_sudoku());
+  const typedWasmSudoku = new TypedWasmSudoku(module.get_wasm_sudoku());
 
   typedWasmSudoku.sayHello();
 

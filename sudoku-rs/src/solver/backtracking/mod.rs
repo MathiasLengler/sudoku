@@ -7,6 +7,36 @@ use crate::Sudoku;
 
 mod choice;
 
+// TODO: how to externally drive solver (steps)
+//  make step into an iterator over step results
+
+pub struct BacktrackingSolver<Cell: SudokuCell> {
+    sudoku: Sudoku<Cell>,
+    /// Cached
+    empty_positions: Vec<Position>,
+    /// Choices stack
+    choices: Vec<Choice>,
+    /// Step limit checking
+    step_count: usize,
+    /// Settings
+    settings: BacktrackingSolverSettings,
+}
+
+#[derive(Debug, Default)]
+pub struct BacktrackingSolverSettings {
+    step_limit: Option<NonZeroUsize>,
+    shuffle_candidates: bool,
+}
+
+impl BacktrackingSolverSettings {
+    pub fn new(step_limit: usize, shuffle_candidates: bool) -> Self {
+        Self {
+            step_limit: NonZeroUsize::new(step_limit),
+            shuffle_candidates,
+        }
+    }
+}
+
 #[derive(Debug)]
 enum StepResult<Cell: SudokuCell> {
     Solution(Box<Sudoku<Cell>>),
@@ -19,33 +49,18 @@ enum StepResult<Cell: SudokuCell> {
     NextCell,
 }
 
-pub struct BacktrackingSolver<Cell: SudokuCell> {
-    sudoku: Sudoku<Cell>,
-    choices: Vec<Choice>,
-
-    empty_positions: Vec<Position>,
-
-    step_count: usize,
-    step_limit: Option<NonZeroUsize>,
-}
-
-impl<Cell: SudokuCell> Iterator for BacktrackingSolver<Cell> {
-    type Item = Sudoku<Cell>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.try_solve()
-    }
-}
-
 impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
     // TODO: evaluate sudoku parameter type or sudoku/solver interaction
     //  &mut: need to deconstruct sudoku after solving
     //   wasm?
     pub fn new(sudoku: Sudoku<Cell>) -> BacktrackingSolver<Cell> {
-        Self::new_with_limit(sudoku, 0)
+        Self::new_with_settings(sudoku, Default::default())
     }
 
-    pub fn new_with_limit(sudoku: Sudoku<Cell>, step_limit: usize) -> BacktrackingSolver<Cell> {
+    pub fn new_with_settings(
+        sudoku: Sudoku<Cell>,
+        settings: BacktrackingSolverSettings,
+    ) -> BacktrackingSolver<Cell> {
         let empty_positions = sudoku.empty_positions();
 
         let mut solver = BacktrackingSolver {
@@ -53,7 +68,7 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
             choices: vec![],
             empty_positions,
             step_count: 0,
-            step_limit: NonZeroUsize::new(step_limit),
+            settings,
         };
 
         solver.init();
@@ -63,7 +78,11 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
 
     fn init(&mut self) {
         if let Some(first_pos) = self.empty_positions.first() {
-            self.choices.push(Choice::new(*first_pos, &self.sudoku))
+            self.choices.push(Choice::new(
+                &self.sudoku,
+                *first_pos,
+                self.settings.shuffle_candidates,
+            ))
         };
     }
 
@@ -81,7 +100,7 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
                 _ => {}
             }
 
-            if let Some(step_limit) = self.step_limit {
+            if let Some(step_limit) = self.settings.step_limit {
                 if self.step_count >= step_limit.get() {
                     return None;
                 }
@@ -112,7 +131,11 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
                 } else {
                     match self.empty_positions.get(choices_len) {
                         Some(next_position) => {
-                            self.choices.push(Choice::new(*next_position, &self.sudoku));
+                            self.choices.push(Choice::new(
+                                &self.sudoku,
+                                *next_position,
+                                self.settings.shuffle_candidates,
+                            ));
 
                             StepResult::NextCell
                         }
@@ -169,6 +192,14 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
     }
 }
 
+impl<Cell: SudokuCell> Iterator for BacktrackingSolver<Cell> {
+    type Item = Sudoku<Cell>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.try_solve()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::HashSet;
@@ -206,17 +237,12 @@ mod tests {
         assert!(sudoku.empty_positions().is_empty());
     }
 
-    #[test]
-    fn test_iter_all_solutions() {
+    fn assert_iter(solver: BacktrackingSolver<Cell>) {
         const NUMBER_OF_2X2_SOLUTIONS: usize = 288;
-
-        let sudoku = Sudoku::<Cell>::new(2);
-
-        let solver = BacktrackingSolver::new(sudoku);
 
         let solutions = solver.collect::<Vec<_>>();
 
-        assert_eq!(solutions.len(), NUMBER_OF_2X2_SOLUTIONS);
+        assert_eq!(NUMBER_OF_2X2_SOLUTIONS, solutions.len());
 
         solutions
             .iter()
@@ -224,7 +250,24 @@ mod tests {
 
         let unique_solutions = solutions.into_iter().collect::<HashSet<_>>();
 
-        assert_eq!(unique_solutions.len(), NUMBER_OF_2X2_SOLUTIONS);
+        assert_eq!(NUMBER_OF_2X2_SOLUTIONS, unique_solutions.len());
+    }
+
+    #[test]
+    fn test_iter_all_solutions() {
+        let solver = BacktrackingSolver::new(Sudoku::<Cell>::new(2));
+
+        assert_iter(solver);
+    }
+
+    #[test]
+    fn test_test_iter_all_solutions_shuffle_candidates() {
+        let solver = BacktrackingSolver::new_with_settings(
+            Sudoku::<Cell>::new(2),
+            BacktrackingSolverSettings::new(0, true),
+        );
+
+        assert_iter(solver);
     }
 
     #[test]
@@ -256,7 +299,7 @@ mod tests {
         for (sudoku_index, sudoku) in sudokus.into_iter().enumerate() {
             eprintln!("sudoku_index = {:?}", sudoku_index);
 
-            let mut solver = BacktrackingSolver::new_with_limit(sudoku, 1000);
+            let mut solver = BacktrackingSolver::new(sudoku);
 
             let solve_result = solver.try_solve();
 
