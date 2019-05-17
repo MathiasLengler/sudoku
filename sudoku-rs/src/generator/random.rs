@@ -13,10 +13,7 @@ pub struct RandomGenerator {
 
 impl RandomGenerator {
     pub fn new(base: usize, try_limit: usize) -> RandomGenerator {
-        RandomGenerator {
-            try_limit,
-            base,
-        }
+        RandomGenerator { try_limit, base }
     }
 
     pub fn generate<Cell: SudokuCell>(&self) -> Option<Sudoku<Cell>> {
@@ -36,16 +33,22 @@ impl RandomGenerator {
     }
 
     #[cfg(not(feature = "parallel"))]
-    fn run<Cell: SudokuCell>(&self, tries: Range<usize>, filter_function: impl Fn(usize) -> Option<Sudoku<Cell>>) -> Option<Sudoku<Cell>> {
-        tries
-            .filter_map(filter_function)
-            .next()
+    fn run<Cell: SudokuCell>(
+        &self,
+        tries: Range<usize>,
+        filter_function: impl Fn(usize) -> Option<Sudoku<Cell>>,
+    ) -> Option<Sudoku<Cell>> {
+        tries.filter_map(filter_function).next()
     }
 
     #[cfg(feature = "parallel")]
-    fn run<Cell: SudokuCell>(&self, tries: Range<usize>, filter_function: impl Fn(usize) -> Option<Sudoku<Cell>>) -> Option<Sudoku<Cell>> {
-        use rayon::prelude::*;
+    fn run<Cell: SudokuCell>(
+        &self,
+        tries: Range<usize>,
+        filter_function: impl Fn(usize) -> Option<Sudoku<Cell>>,
+    ) -> Option<Sudoku<Cell>> {
         use rayon::prelude::ParallelIterator;
+        use rayon::prelude::*;
 
         tries
             .into_par_iter()
@@ -54,7 +57,7 @@ impl RandomGenerator {
     }
 
     fn try_fill<Cell: SudokuCell>(sudoku: &mut Sudoku<Cell>) -> bool {
-        let mut positions: Vec<_> = sudoku.all_cell_positions().collect();
+        let mut positions = sudoku.empty_positions();
 
         let mut rng = thread_rng();
 

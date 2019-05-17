@@ -3,28 +3,37 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 
 use failure::ensure;
+use fixedbitset::FixedBitSet;
 
 use crate::cell::SudokuCell;
 use crate::error::{Error, Result};
 use crate::position::Position;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 pub(super) struct Grid<Cell: SudokuCell> {
     base: usize,
     cells: Vec<Cell>,
+    fixed_cells: FixedBitSet,
 }
 
 // TODO: rethink indexing story (internal/cell position/block position)
-//  => position based indexing (performance should be no issue)
+//  => use Index/IndexMut with custom index type:
+//     Cell, Row, Column, Block
 impl<Cell: SudokuCell> Grid<Cell> {
     pub(super) fn new(base: usize) -> Self {
-        let mut grid = Grid {
-            base,
-            cells: vec![],
-        };
+        let cell_count = Self::base_to_cell_count(base);
 
-        grid.cells = vec![Cell::new(Self::base_to_max_value(base)); grid.cell_count()];
-        grid
+        let cells = vec![Cell::new(Self::base_to_max_value(base)); cell_count];
+
+        Self::new_with_cells(base, cells)
+    }
+
+    fn new_with_cells(base: usize, cells: Vec<Cell>) -> Self {
+        Grid {
+            base,
+            fixed_cells: Default::default(),
+            cells,
+        }
     }
 
     pub(super) fn get_pos(&self, pos: Position) -> &Cell {
@@ -40,19 +49,40 @@ impl<Cell: SudokuCell> Grid<Cell> {
 
         let index = self.index_at(pos);
 
+        assert!(
+            !self.fixed_cells[index],
+            "Frozen cell at {} can't be modified",
+            pos
+        );
+
         &mut self.cells[index]
+    }
+
+    pub(super) fn fix_all_values(&mut self) {
+        self.fixed_cells = self
+            .all_positions()
+            .filter_map(|pos| {
+                if self.get_pos(pos).value().is_some() {
+                    Some(self.index_at(pos))
+                } else {
+                    None
+                }
+            })
+            .collect();
+    }
+
+    pub(super) fn unfix(&mut self) {
+        self.fixed_cells = Default::default()
+    }
+
+    pub(super) fn is_fixed(&self, pos: Position) -> bool {
+        let index = self.index_at(pos);
+
+        self.fixed_cells[index]
     }
 
     fn index_at(&self, pos: Position) -> usize {
         pos.column + pos.row * self.side_length()
-    }
-
-    #[allow(dead_code)]
-    fn pos_at(&self, index: usize) -> Position {
-        Position {
-            column: index / self.side_length(),
-            row: index % self.side_length(),
-        }
     }
 
     pub(super) fn value_range(&self) -> impl Iterator<Item = usize> {
@@ -100,60 +130,51 @@ impl<Cell: SudokuCell> Grid<Cell> {
     }
 }
 
-/// Utility iterators
+/// Cell iterators
 impl<Cell: SudokuCell> Grid<Cell> {
-    // TODO: change cell iters to be based on position iters and move to separate impl block
-    pub(super) fn row(&self, row_index: usize) -> impl Iterator<Item = &Cell> {
-        self.assert_coordinate(row_index);
-
-        let starting_index = row_index * self.side_length();
-
-        (starting_index..starting_index + self.side_length()).map(move |i| &self.cells[i])
+    fn positions_to_cells(
+        &self,
+        positions: impl Iterator<Item = Position>,
+    ) -> impl Iterator<Item = &Cell> {
+        positions.map(move |pos| self.get_pos(pos))
     }
 
-    pub(super) fn all_rows(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell>> {
-        (0..self.side_length()).map(move |row_index| self.row(row_index))
+    fn nested_positions_to_nested_cells(
+        &self,
+        nested_positions: impl Iterator<Item = impl Iterator<Item = Position>>,
+    ) -> impl Iterator<Item = impl Iterator<Item = &Cell>> {
+        nested_positions.map(move |row_pos| row_pos.map(move |pos| self.get_pos(pos)))
     }
 
-    pub(super) fn column(&self, column_index: usize) -> impl Iterator<Item = &Cell> {
-        self.assert_coordinate(column_index);
-
-        (column_index..self.cell_count())
-            .step_by(self.side_length())
-            .map(move |i| &self.cells[i])
+    pub(super) fn row_cells(&self, row: usize) -> impl Iterator<Item = &Cell> {
+        self.positions_to_cells(self.row_positions(row))
     }
 
-    pub(super) fn all_columns(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell>> {
-        (0..self.side_length()).map(move |column_index| self.column(column_index))
+    pub(super) fn all_row_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell>> {
+        self.nested_positions_to_nested_cells(self.all_row_positions())
     }
 
-    pub(super) fn block(&self, pos: Position) -> impl Iterator<Item = &Cell> {
-        self.assert_position(pos);
-
-        let block_base_pos = (pos / self.base) * self.base;
-
-        let block_base_index = self.index_at(block_base_pos);
-
-        (block_base_index..self.cell_count())
-            .step_by(self.side_length())
-            .take(self.base)
-            .flat_map(move |block_row_start_index| {
-                (block_row_start_index..block_row_start_index + self.base)
-            })
-            .map(move |i| &self.cells[i])
+    pub(super) fn column_cells(&self, column: usize) -> impl Iterator<Item = &Cell> {
+        self.positions_to_cells(self.column_positions(column))
     }
 
-    pub(super) fn all_blocks(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell>> {
-        let all_block_base_pos = (0..self.base)
-            .flat_map(move |block_y| {
-                (0..self.base).map(move |block_x| Position {
-                    column: block_x,
-                    row: block_y,
-                })
-            })
-            .map(move |pos| pos * self.base);
+    pub(super) fn all_column_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell>> {
+        self.nested_positions_to_nested_cells(self.all_column_positions())
+    }
 
-        all_block_base_pos.map(move |block_base_pos| self.block(block_base_pos))
+    pub(super) fn block_cells(&self, pos: Position) -> impl Iterator<Item = &Cell> {
+        self.positions_to_cells(self.block_positions(pos))
+    }
+
+    pub(super) fn all_block_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell>> {
+        self.nested_positions_to_nested_cells(self.all_block_positions())
+    }
+}
+
+/// Position iterators
+impl<Cell: SudokuCell> Grid<Cell> {
+    pub(super) fn all_positions(&self) -> impl Iterator<Item = Position> {
+        self.all_row_positions().flatten()
     }
 
     pub(super) fn row_positions(&self, row: usize) -> impl Iterator<Item = Position> {
@@ -233,13 +254,12 @@ impl<Cell: SudokuCell> TryFrom<Vec<usize>> for Grid<Cell> {
 
         let max = Self::base_to_side_length(base);
 
-        Ok(Grid {
-            base,
-            cells: values
-                .into_iter()
-                .map(|value| Cell::new_with_value(value, max))
-                .collect(),
-        })
+        let cells = values
+            .into_iter()
+            .map(|value| Cell::new_with_value(value, max))
+            .collect();
+
+        Ok(Self::new_with_cells(base, cells))
     }
 }
 

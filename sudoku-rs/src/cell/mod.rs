@@ -1,9 +1,10 @@
 use std::fmt::{self, Debug, Display, Formatter};
+use std::hash::Hash;
 use std::mem::replace;
 use std::num::NonZeroUsize;
 
 use fixedbitset::FixedBitSet;
-use num::{cast, PrimInt, ToPrimitive, Unsigned, Zero};
+use num::{cast, PrimInt, ToPrimitive, Unsigned};
 use serde::{Deserialize, Serialize};
 
 use crate::cell::value::SudokuValue;
@@ -11,7 +12,8 @@ use crate::cell::value::SudokuValue;
 pub mod value;
 
 // TODO: is_editable cell
-pub trait SudokuCell<Value = NonZeroUsize>: Clone + Display + Debug + Ord + Eq + Send
+pub trait SudokuCell<Value = NonZeroUsize>:
+    Clone + Display + Debug + Ord + Eq + Hash + Send
 where
     Value: SudokuValue,
     Value::Primitive: PrimInt + Unsigned,
@@ -48,7 +50,7 @@ where
     fn delete_candidate(&mut self, candidate: usize, max: usize);
 }
 
-#[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Debug)]
+#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 pub enum Cell<Value = NonZeroUsize>
 where
     Value: SudokuValue,

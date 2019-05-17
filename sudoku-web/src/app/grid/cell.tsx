@@ -5,6 +5,26 @@ import isEqual from "lodash/isEqual";
 import classnames from 'classnames'
 import {indexToPosition, valueToString} from "../utils";
 
+function cellBackgroundClass(selected: boolean, guideValue: boolean, guideGroup: boolean) {
+  if (selected) {
+    return "cell--selected";
+  }
+  if (guideValue) {
+    return "cell--guide-value";
+  }
+  if (guideGroup) {
+    return "cell--guide-group";
+  }
+}
+
+function cellColorClass(fixed: boolean) {
+  if (fixed) {
+    return "cell--fixed";
+  } else {
+    return "cell--user";
+  }
+}
+
 interface CellProps {
   blockCellIndex: number;
   cell: TransportCell;
@@ -16,8 +36,6 @@ interface CellProps {
 }
 
 const Cell: React.FunctionComponent<CellProps> = (props) => {
-  console.debug("Cell render", props.cell.position);
-
   const {
     blockCellIndex,
     cell,
@@ -32,10 +50,6 @@ const Cell: React.FunctionComponent<CellProps> = (props) => {
 
   const blockCellPosition = indexToPosition(blockCellIndex, base);
 
-  if (selected) {
-    console.log("Selected:", "gridPosition", gridPosition, "blockCellPosition", blockCellPosition);
-  }
-
   const style: CSS.Properties = {
     '--cell-column': blockCellPosition.column,
     '--cell-row': blockCellPosition.row,
@@ -43,9 +57,8 @@ const Cell: React.FunctionComponent<CellProps> = (props) => {
 
   let cellClassNames = classnames(
     "cell",
-    {"cell--selected": selected},
-    {"cell--guide-value": !selected && guideValue},
-    {"cell--guide-group": !selected && !guideValue && guideGroup},
+    cellBackgroundClass(selected, guideValue, guideGroup),
+    cellColorClass(cell.fixed),
   );
 
   const onPointerMove: PointerEventHandler = (e) => {

@@ -30,8 +30,8 @@ button {
     --cell-bg-color-selected: #bbdefb;
     --cell-bg-color-guide-group: #e2e7ed;
     --cell-bg-color-guide-value: #c8d0de;
-    --cell-bg-color-conflict-preset: #fdc0cb;
-    --cell-value-color-preset: #212121;
+    --cell-bg-color-fixed-conflict: #fdc0cb;
+    --cell-value-color-fixed: #212121;
     --cell-value-color-user: #0d47a1;
     --cell-value-color-user-conflict: #ff0000;
     --candiate-color: #606266;
@@ -131,6 +131,14 @@ button {
     background-color: var(--cell-bg-color-guide-value);
 }
 
+.cell--fixed {
+    color: var(--cell-value-color-fixed);
+}
+
+.cell--user {
+    color: var(--cell-value-color-user);
+}
+
 .cellValue {
     display: grid;
     place-items: center;
@@ -139,7 +147,6 @@ button {
 .cellValueText {
     line-height: 1;
     font-size: calc(var(--cell-size));
-    color: var(--cell-value-color-preset);
 }
 
 .candidates {
@@ -197,7 +204,7 @@ button {
 }
 
 .selectorValueText {
-    color: var(--cell-value-color-preset);
+    color: var(--cell-value-color-fixed);
     line-height: 1;
     font-size: calc(var(--selector-row-height) * 0.9);
 }
