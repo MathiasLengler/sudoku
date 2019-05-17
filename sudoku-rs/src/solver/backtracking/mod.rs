@@ -7,8 +7,9 @@ use crate::Sudoku;
 
 mod choice;
 
-// TODO: how to externally drive solver (steps)
+// TODO: how to externally drive and visualize solver (steps)
 //  make step into an iterator over step results
+//  common Solver trait?
 
 pub struct BacktrackingSolver<Cell: SudokuCell> {
     sudoku: Sudoku<Cell>,
@@ -24,17 +25,8 @@ pub struct BacktrackingSolver<Cell: SudokuCell> {
 
 #[derive(Debug, Default)]
 pub struct BacktrackingSolverSettings {
-    step_limit: Option<NonZeroUsize>,
-    shuffle_candidates: bool,
-}
-
-impl BacktrackingSolverSettings {
-    pub fn new(step_limit: usize, shuffle_candidates: bool) -> Self {
-        Self {
-            step_limit: NonZeroUsize::new(step_limit),
-            shuffle_candidates,
-        }
-    }
+    pub step_limit: Option<NonZeroUsize>,
+    pub shuffle_candidates: bool,
 }
 
 #[derive(Debug)]
@@ -50,9 +42,6 @@ enum StepResult<Cell: SudokuCell> {
 }
 
 impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
-    // TODO: evaluate sudoku parameter type or sudoku/solver interaction
-    //  &mut: need to deconstruct sudoku after solving
-    //   wasm?
     pub fn new(sudoku: Sudoku<Cell>) -> BacktrackingSolver<Cell> {
         Self::new_with_settings(sudoku, Default::default())
     }
@@ -61,7 +50,7 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
         sudoku: Sudoku<Cell>,
         settings: BacktrackingSolverSettings,
     ) -> BacktrackingSolver<Cell> {
-        let empty_positions = sudoku.empty_positions();
+        let empty_positions = sudoku.all_empty_positions();
 
         let mut solver = BacktrackingSolver {
             sudoku,
@@ -74,6 +63,10 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
         solver.init();
 
         solver
+    }
+
+    pub fn into_sudoku(self) -> Sudoku<Cell> {
+        self.sudoku
     }
 
     fn init(&mut self) {
@@ -234,7 +227,7 @@ mod tests {
     fn assert_solved_sudoku<Cell: SudokuCell>(sudoku: &Sudoku<Cell>) {
         assert!(!sudoku.has_conflict());
 
-        assert!(sudoku.empty_positions().is_empty());
+        assert!(sudoku.all_empty_positions().is_empty());
     }
 
     fn assert_iter(solver: BacktrackingSolver<Cell>) {
@@ -264,7 +257,10 @@ mod tests {
     fn test_test_iter_all_solutions_shuffle_candidates() {
         let solver = BacktrackingSolver::new_with_settings(
             Sudoku::<Cell>::new(2),
-            BacktrackingSolverSettings::new(0, true),
+            BacktrackingSolverSettings {
+                shuffle_candidates: true,
+                step_limit: Default::default(),
+            },
         );
 
         assert_iter(solver);

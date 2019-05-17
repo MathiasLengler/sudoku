@@ -4,7 +4,9 @@ use log::debug;
 use wasm_bindgen::prelude::*;
 
 use sudoku::cell::Cell;
-use sudoku::generator::backtracking::BacktrackingGenerator;
+use sudoku::generator::backtracking::{
+    BacktrackingGenerator, BacktrackingGeneratorSettings, BacktrackingGeneratorTarget,
+};
 use sudoku::position::Position;
 use sudoku::transport::TransportSudoku;
 use sudoku::Sudoku;
@@ -48,7 +50,19 @@ pub fn get_wasm_sudoku() -> WasmSudoku {
     //    let mut sudoku = Sudoku::<Cell>::try_from(_base_3).unwrap();
     //    let mut sudoku = Sudoku::<Cell>::new(4);
 
-    let mut sudoku = BacktrackingGenerator::new(3).generate();
+    //    let mut sudoku = BacktrackingGenerator::new(BacktrackingGeneratorSettings {
+    //        base: 3,
+    //        target: Default::default(),
+    //    })
+    //    .generate()
+    //    .unwrap();
+
+    let mut sudoku = BacktrackingGenerator::new(BacktrackingGeneratorSettings {
+        base: 3,
+        target: BacktrackingGeneratorTarget::Critical,
+    })
+    .generate()
+    .unwrap();
 
     sudoku.fix_all_values();
 

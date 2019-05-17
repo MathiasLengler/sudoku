@@ -21,6 +21,7 @@ button {
     --base: 0;
     --outer-grid-size: 100vmin;
 
+    /* TODO: define as calculated colors from base colors (hsl/material-ui?) */
     /*Style Variables*/
     --block-border-color: #606266;
     --block-border-size: 2px;

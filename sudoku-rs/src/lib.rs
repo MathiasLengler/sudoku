@@ -23,6 +23,10 @@ pub mod transport;
 // TODO: solve/verify incomplete sudoku
 // TODO: generate valid incomplete sudoku
 
+// TODO: deref(mut) to grid
+//  check public API
+//  grid seems to be a leaky abstraction if multiple wrapper methods are needed
+
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 pub struct Sudoku<TCell: SudokuCell = Cell> {
     grid: Grid<TCell>,
@@ -98,7 +102,7 @@ impl<TCell: SudokuCell> Sudoku<TCell> {
     }
 
     pub fn set_all_direct_candidates(&mut self) {
-        self.empty_positions().into_iter().for_each(|pos| {
+        self.all_empty_positions().into_iter().for_each(|pos| {
             let candidates = self.direct_candidates(pos);
 
             self.set_candidates(pos, candidates);
@@ -136,13 +140,17 @@ impl<TCell: SudokuCell> Sudoku<TCell> {
 
 /// Utility iterators
 impl<TCell: SudokuCell> Sudoku<TCell> {
+    pub(crate) fn all_positions(&self) -> impl Iterator<Item = Position> {
+        self.grid.all_positions()
+    }
+
     pub(crate) fn all_block_positions(
         &self,
     ) -> impl Iterator<Item = impl Iterator<Item = Position>> {
         self.grid.all_block_positions()
     }
 
-    pub(crate) fn empty_positions(&self) -> Vec<Position> {
+    pub(crate) fn all_empty_positions(&self) -> Vec<Position> {
         self.grid
             .all_positions()
             .filter(|pos| !self.get(*pos).value().is_some())
