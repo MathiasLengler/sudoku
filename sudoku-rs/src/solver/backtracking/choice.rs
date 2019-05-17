@@ -1,22 +1,33 @@
-use std::collections::vec_deque::VecDeque;
 use std::fmt::{self, Display};
+
+use rand::seq::SliceRandom;
 
 use crate::cell::SudokuCell;
 use crate::position::Position;
 use crate::Sudoku;
 
-// TODO: shuffle the candidates when using the solver as a generator on an empty sudoku
-
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Choice {
     pos: Position,
-    candidates: VecDeque<usize>,
+    candidates: Vec<usize>,
     selection: usize,
 }
 
 impl Choice {
-    pub fn new<Cell: SudokuCell>(pos: Position, sudoku: &Sudoku<Cell>) -> Choice {
-        let mut candidates = sudoku.direct_candidates(pos).into();
+    pub fn new<Cell: SudokuCell>(
+        sudoku: &Sudoku<Cell>,
+        pos: Position,
+        shuffle_candidates: bool,
+    ) -> Choice {
+        let mut candidates = sudoku.direct_candidates(pos);
+
+        if shuffle_candidates {
+            candidates.shuffle(&mut rand::thread_rng())
+        } else {
+            // Ascending value selection order when selecting values from the end of the vec
+            candidates.reverse();
+        }
+
         let selection = Self::next_selection(&mut candidates);
 
         Self {
@@ -26,8 +37,8 @@ impl Choice {
         }
     }
 
-    fn next_selection(candidates: &mut VecDeque<usize>) -> usize {
-        match candidates.pop_front() {
+    fn next_selection(candidates: &mut Vec<usize>) -> usize {
+        match candidates.pop() {
             Some(candidate) => candidate,
             None => 0,
         }

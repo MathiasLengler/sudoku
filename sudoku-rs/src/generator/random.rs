@@ -6,6 +6,8 @@ use rand::thread_rng;
 use crate::cell::SudokuCell;
 use crate::Sudoku;
 
+/// Naive completed sudoku generator by inserting candidates at random positions.
+/// Clears the sudoku if a deadlock is encountered and tries again.
 pub struct RandomGenerator {
     try_limit: usize,
     base: usize,
@@ -42,11 +44,12 @@ impl RandomGenerator {
     }
 
     #[cfg(feature = "parallel")]
-    fn run<Cell: SudokuCell>(
-        &self,
-        tries: Range<usize>,
-        filter_function: impl Fn(usize) -> Option<Sudoku<Cell>>,
-    ) -> Option<Sudoku<Cell>> {
+    fn run<Cell, F>(&self, tries: Range<usize>, filter_function: F) -> Option<Sudoku<Cell>>
+    where
+        Cell: SudokuCell,
+        F: Fn(usize) -> Option<Sudoku<Cell>>,
+        F: Send + Sync,
+    {
         use rayon::prelude::ParallelIterator;
         use rayon::prelude::*;
 
@@ -57,7 +60,7 @@ impl RandomGenerator {
     }
 
     fn try_fill<Cell: SudokuCell>(sudoku: &mut Sudoku<Cell>) -> bool {
-        let mut positions = sudoku.empty_positions();
+        let mut positions = sudoku.all_empty_positions();
 
         let mut rng = thread_rng();
 
@@ -66,10 +69,10 @@ impl RandomGenerator {
         let mut no_deadlock = true;
 
         'outer: for pos in positions {
-            for value in 1..=sudoku.side_length() {
+            for value in sudoku.direct_candidates(pos) {
                 sudoku.set_value(pos, value);
 
-                if !sudoku.has_conflict() {
+                if !sudoku.has_conflict_at(pos) {
                     continue 'outer;
                 }
             }
@@ -93,7 +96,7 @@ mod tests {
         let generator = RandomGenerator::new(2, 1_000);
         let sudoku = generator.generate::<Cell>().unwrap();
 
-        assert!(sudoku.empty_positions().is_empty());
+        assert!(sudoku.all_empty_positions().is_empty());
         assert!(!sudoku.has_conflict());
     }
 }
