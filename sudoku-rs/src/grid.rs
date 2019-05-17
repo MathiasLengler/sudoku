@@ -3,6 +3,7 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 
 use failure::ensure;
+use fixedbitset::FixedBitSet;
 
 use crate::cell::SudokuCell;
 use crate::error::{Error, Result};
@@ -12,23 +13,27 @@ use crate::position::Position;
 pub(super) struct Grid<Cell: SudokuCell> {
     base: usize,
     cells: Vec<Cell>,
-    // TODO: fixedCellIndices
-    //  evaluate API for (un)fixing a cell
-    //  check access
-    //  propagate to transport sudoku
+    fixed_cells: FixedBitSet,
 }
 
 // TODO: rethink indexing story (internal/cell position/block position)
-//  => position based indexing (performance should be no issue)
+//  => use Index/IndexMut with custom index type:
+//     Cell, Row, Column, Block
 impl<Cell: SudokuCell> Grid<Cell> {
     pub(super) fn new(base: usize) -> Self {
-        let mut grid = Grid {
-            base,
-            cells: vec![],
-        };
+        let cell_count = Self::base_to_cell_count(base);
 
-        grid.cells = vec![Cell::new(Self::base_to_max_value(base)); grid.cell_count()];
-        grid
+        let cells = vec![Cell::new(Self::base_to_max_value(base)); cell_count];
+
+        Self::new_with_cells(base, cells)
+    }
+
+    fn new_with_cells(base: usize, cells: Vec<Cell>) -> Self {
+        Grid {
+            base,
+            fixed_cells: Default::default(),
+            cells,
+        }
     }
 
     pub(super) fn get_pos(&self, pos: Position) -> &Cell {
@@ -44,19 +49,40 @@ impl<Cell: SudokuCell> Grid<Cell> {
 
         let index = self.index_at(pos);
 
+        assert!(
+            !self.fixed_cells[index],
+            "Frozen cell at {} can't be modified",
+            pos
+        );
+
         &mut self.cells[index]
+    }
+
+    pub(super) fn fix_all_values(&mut self) {
+        self.fixed_cells = self
+            .all_positions()
+            .filter_map(|pos| {
+                if self.get_pos(pos).value().is_some() {
+                    Some(self.index_at(pos))
+                } else {
+                    None
+                }
+            })
+            .collect();
+    }
+
+    pub(super) fn unfix(&mut self) {
+        self.fixed_cells = Default::default()
+    }
+
+    pub(super) fn is_fixed(&self, pos: Position) -> bool {
+        let index = self.index_at(pos);
+
+        self.fixed_cells[index]
     }
 
     fn index_at(&self, pos: Position) -> usize {
         pos.column + pos.row * self.side_length()
-    }
-
-    #[allow(dead_code)]
-    fn pos_at(&self, index: usize) -> Position {
-        Position {
-            column: index / self.side_length(),
-            row: index % self.side_length(),
-        }
     }
 
     pub(super) fn value_range(&self) -> impl Iterator<Item = usize> {
@@ -106,37 +132,51 @@ impl<Cell: SudokuCell> Grid<Cell> {
 
 /// Cell iterators
 impl<Cell: SudokuCell> Grid<Cell> {
-    pub(super) fn row(&self, row: usize) -> impl Iterator<Item = &Cell> {
-        self.row_positions(row).map(move |pos| self.get_pos(pos))
+    fn positions_to_cells(
+        &self,
+        positions: impl Iterator<Item = Position>,
+    ) -> impl Iterator<Item = &Cell> {
+        positions.map(move |pos| self.get_pos(pos))
     }
 
-    pub(super) fn all_rows(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell>> {
-        self.all_row_positions()
-            .map(move |row_pos| row_pos.map(move |pos| self.get_pos(pos)))
+    fn nested_positions_to_nested_cells(
+        &self,
+        nested_positions: impl Iterator<Item = impl Iterator<Item = Position>>,
+    ) -> impl Iterator<Item = impl Iterator<Item = &Cell>> {
+        nested_positions.map(move |row_pos| row_pos.map(move |pos| self.get_pos(pos)))
     }
 
-    pub(super) fn column(&self, column: usize) -> impl Iterator<Item = &Cell> {
-        self.column_positions(column)
-            .map(move |pos| self.get_pos(pos))
+    pub(super) fn row_cells(&self, row: usize) -> impl Iterator<Item = &Cell> {
+        self.positions_to_cells(self.row_positions(row))
     }
 
-    pub(super) fn all_columns(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell>> {
-        self.all_column_positions()
-            .map(move |row_pos| row_pos.map(move |pos| self.get_pos(pos)))
+    pub(super) fn all_row_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell>> {
+        self.nested_positions_to_nested_cells(self.all_row_positions())
     }
 
-    pub(super) fn block(&self, pos: Position) -> impl Iterator<Item = &Cell> {
-        self.block_positions(pos).map(move |pos| self.get_pos(pos))
+    pub(super) fn column_cells(&self, column: usize) -> impl Iterator<Item = &Cell> {
+        self.positions_to_cells(self.column_positions(column))
     }
 
-    pub(super) fn all_blocks(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell>> {
-        self.all_block_positions()
-            .map(move |row_pos| row_pos.map(move |pos| self.get_pos(pos)))
+    pub(super) fn all_column_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell>> {
+        self.nested_positions_to_nested_cells(self.all_column_positions())
+    }
+
+    pub(super) fn block_cells(&self, pos: Position) -> impl Iterator<Item = &Cell> {
+        self.positions_to_cells(self.block_positions(pos))
+    }
+
+    pub(super) fn all_block_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell>> {
+        self.nested_positions_to_nested_cells(self.all_block_positions())
     }
 }
 
 /// Position iterators
 impl<Cell: SudokuCell> Grid<Cell> {
+    pub(super) fn all_positions(&self) -> impl Iterator<Item = Position> {
+        self.all_row_positions().flatten()
+    }
+
     pub(super) fn row_positions(&self, row: usize) -> impl Iterator<Item = Position> {
         self.assert_coordinate(row);
 
@@ -214,13 +254,12 @@ impl<Cell: SudokuCell> TryFrom<Vec<usize>> for Grid<Cell> {
 
         let max = Self::base_to_side_length(base);
 
-        Ok(Grid {
-            base,
-            cells: values
-                .into_iter()
-                .map(|value| Cell::new_with_value(value, max))
-                .collect(),
-        })
+        let cells = values
+            .into_iter()
+            .map(|value| Cell::new_with_value(value, max))
+            .collect();
+
+        Ok(Self::new_with_cells(base, cells))
     }
 }
 

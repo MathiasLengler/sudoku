@@ -105,6 +105,18 @@ impl<TCell: SudokuCell> Sudoku<TCell> {
         });
     }
 
+    pub fn fix_all_values(&mut self) {
+        self.grid.fix_all_values()
+    }
+
+    pub fn unfix(&mut self) {
+        self.grid.unfix()
+    }
+
+    pub fn is_fixed(&self, pos: Position) -> bool {
+        self.grid.is_fixed(pos)
+    }
+
     pub fn get(&self, pos: Position) -> &TCell {
         self.grid.get_pos(pos)
     }
@@ -124,17 +136,6 @@ impl<TCell: SudokuCell> Sudoku<TCell> {
 
 /// Utility iterators
 impl<TCell: SudokuCell> Sudoku<TCell> {
-    pub(crate) fn all_cell_positions(&self) -> impl Iterator<Item = Position> {
-        let side_length = self.side_length();
-
-        (0..side_length).flat_map(move |row_index| {
-            (0..side_length).map(move |column_index| Position {
-                column: column_index,
-                row: row_index,
-            })
-        })
-    }
-
     pub(crate) fn all_block_positions(
         &self,
     ) -> impl Iterator<Item = impl Iterator<Item = Position>> {
@@ -142,7 +143,8 @@ impl<TCell: SudokuCell> Sudoku<TCell> {
     }
 
     pub(crate) fn empty_positions(&self) -> Vec<Position> {
-        self.all_cell_positions()
+        self.grid
+            .all_positions()
             .filter(|pos| !self.get(*pos).value().is_some())
             .collect()
     }
@@ -157,23 +159,22 @@ impl<TCell: SudokuCell> Sudoku<TCell> {
             .column_positions(pos.column)
             .chain(self.grid.row_positions(pos.row))
             .chain(self.grid.block_positions(pos))
+            .filter(|pos| self.grid.get_pos(*pos).candidates().is_some())
             .collect();
 
         for unique_position in unique_positions {
             let cell = self.grid.get_pos_mut(unique_position);
 
-            if cell.candidates().is_some() {
-                cell.delete_candidate(value, max)
-            }
+            cell.delete_candidate(value, max)
         }
     }
 
     pub(crate) fn direct_candidates(&self, pos: Position) -> Vec<usize> {
         let conflicting_values = self
             .grid
-            .column(pos.column)
-            .chain(self.grid.row(pos.row))
-            .chain(self.grid.block(pos))
+            .column_cells(pos.column)
+            .chain(self.grid.row_cells(pos.row))
+            .chain(self.grid.block_cells(pos))
             .filter_map(|cell| cell.value())
             .collect::<FixedBitSet>();
 
@@ -183,21 +184,21 @@ impl<TCell: SudokuCell> Sudoku<TCell> {
     }
 
     pub(crate) fn has_conflict(&self) -> bool {
-        self.grid.all_rows().any(|row| self.has_duplicate(row))
+        self.grid.all_row_cells().any(|row| self.has_duplicate(row))
             || self
                 .grid
-                .all_columns()
+                .all_column_cells()
                 .any(|column| self.has_duplicate(column))
             || self
                 .grid
-                .all_blocks()
+                .all_block_cells()
                 .any(|block| self.has_duplicate(block))
     }
 
     pub(crate) fn has_conflict_at(&self, pos: Position) -> bool {
-        self.has_duplicate(self.grid.row(pos.row))
-            || self.has_duplicate(self.grid.column(pos.column))
-            || self.has_duplicate(self.grid.block(pos))
+        self.has_duplicate(self.grid.row_cells(pos.row))
+            || self.has_duplicate(self.grid.column_cells(pos.column))
+            || self.has_duplicate(self.grid.block_cells(pos))
     }
 
     // TODO: conflict location pairs

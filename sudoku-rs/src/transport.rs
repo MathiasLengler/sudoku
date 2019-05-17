@@ -22,7 +22,9 @@ impl<Cell: SudokuCell> From<&Sudoku<Cell>> for TransportSudoku {
                 .all_block_positions()
                 .map(|block| {
                     block
-                        .map(|pos| TransportCell::from_cell_and_pos(sudoku.get(pos).view(), pos))
+                        .map(|pos| {
+                            TransportCell::new(sudoku.get(pos).view(), pos, sudoku.is_fixed(pos))
+                        })
                         .collect()
                 })
                 .collect(),
@@ -42,13 +44,15 @@ pub struct TransportCell {
     #[serde(flatten)]
     cell_view: CellView,
     position: Position,
+    fixed: bool,
 }
 
 impl TransportCell {
-    fn from_cell_and_pos(cell_view: CellView, position: Position) -> Self {
+    fn new(cell_view: CellView, position: Position, fixed: bool) -> Self {
         Self {
             cell_view,
             position,
+            fixed,
         }
     }
 }

@@ -8,6 +8,7 @@ export class WasmSudokuController {
     private readonly onSudokuUpdate: onSudokuUpdate,
     private readonly candidateMode: boolean,
     private readonly selectedPos: CellPosition,
+    private readonly selectedCell: TransportCell,
     private readonly sideLength: TransportSudoku['sideLength'],
   ) {
   }
@@ -29,6 +30,12 @@ export class WasmSudokuController {
 
     if (value > this.sideLength) {
       console.warn("WasmSudokuController", "tried to handle value greater than current sudoku allows:", value);
+
+      return;
+    }
+
+    if (this.selectedCell.fixed) {
+      console.warn("WasmSudokuController", "cannot modify a fixed cell", this.selectedCell);
 
       return;
     }

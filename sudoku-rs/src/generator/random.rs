@@ -57,7 +57,7 @@ impl RandomGenerator {
     }
 
     fn try_fill<Cell: SudokuCell>(sudoku: &mut Sudoku<Cell>) -> bool {
-        let mut positions: Vec<_> = sudoku.all_cell_positions().collect();
+        let mut positions = sudoku.empty_positions();
 
         let mut rng = thread_rng();
 

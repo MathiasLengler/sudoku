@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 // TODO: Marker for Cell/Block
 //  compare with euclid (except x, y bad for clarity)
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub struct Position {
     pub column: usize,
     pub row: usize,

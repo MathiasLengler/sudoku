@@ -8,14 +8,13 @@ import {ControlPanel} from "./controlPanel/controlPanel";
 import {TypedWasmSudoku} from "../typedWasmSudoku";
 import {useClientHeight, useResponsiveGridSize} from "./useResponsiveGridSize";
 import CssBaseline from '@material-ui/core/CssBaseline';
+import {cellFromBlocks} from "./utils";
 
 interface AppProps {
   wasmSudoku: TypedWasmSudoku;
 }
 
 export const App: React.FunctionComponent<AppProps> = (props) => {
-  console.debug("App render");
-
   // State
   const [sudoku, setSudoku] = useState(() => {
     const sudoku = props.wasmSudoku.getSudoku();
@@ -32,16 +31,19 @@ export const App: React.FunctionComponent<AppProps> = (props) => {
   // Responsive Grid
   const [toolbarHeight, toolbarRef] = useClientHeight();
 
-  const {base, sideLength} = sudoku;
+  const {blocks, base, sideLength} = sudoku;
 
   const gridSize = useResponsiveGridSize(toolbarHeight, sideLength);
 
   // Dependent on state
+  const selectedCell = cellFromBlocks(blocks, selectedPos, base);
+
   const sudokuController = new WasmSudokuController(
     props.wasmSudoku,
     (sudoku) => setSudoku(sudoku),
     candidateMode,
     selectedPos,
+    selectedCell,
     sideLength
   );
 
@@ -60,7 +62,8 @@ export const App: React.FunctionComponent<AppProps> = (props) => {
         <Grid
           sudoku={sudoku}
           selectedPos={selectedPos}
-          setSelectedPos={setSelectedPos}/>
+          setSelectedPos={setSelectedPos}
+          selectedCell={selectedCell}/>
         <ControlPanel
           sudokuController={sudokuController}
           sideLength={sideLength}

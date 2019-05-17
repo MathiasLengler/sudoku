@@ -2,22 +2,22 @@ import * as React from 'react';
 import * as CSS from 'csstype';
 import isEqual from "lodash/isEqual";
 import {MemoCell} from "./cell";
-import {cellFromBlocks, cellPositionToBlockPosition, indexToPosition} from "../utils";
+import {cellPositionToBlockPosition, indexToPosition} from "../utils";
 
 interface GridProps {
   sudoku: TransportSudoku;
   selectedPos: CellPosition;
   setSelectedPos: React.Dispatch<React.SetStateAction<CellPosition>>;
+  selectedCell: TransportCell;
 }
 
 export const Grid: React.FunctionComponent<GridProps> = (props) => {
   const {
     sudoku: {base, blocks},
     selectedPos,
-    setSelectedPos
+    setSelectedPos,
+    selectedCell,
   } = props;
-
-  const selectedCell = cellFromBlocks(blocks, selectedPos, base);
 
   return <div className='grid'>
     {
