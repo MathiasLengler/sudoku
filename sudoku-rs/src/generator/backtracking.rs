@@ -8,9 +8,9 @@ use crate::Sudoku;
 // TODO: replace with separate generate methods (return type)
 pub enum BacktrackingGeneratorTarget {
     Filled,
-    EmptyCells { count: usize },
+    FromFilled { distance: usize },
     Critical,
-    CriticalDistance { count: usize },
+    FromCritical { distance: usize },
 }
 
 impl Default for BacktrackingGeneratorTarget {
@@ -41,9 +41,11 @@ impl BacktrackingGenerator {
 
         match self.settings.target {
             Filled => Some(filled_sudoku),
-            EmptyCells { count } => unimplemented!(),
+            FromFilled {
+                distance: _distance,
+            } => unimplemented!(),
             Critical => Self::critical(filled_sudoku, 0),
-            CriticalDistance { count } => unimplemented!(),
+            FromCritical { distance } => Self::critical(filled_sudoku, distance),
         }
     }
 
@@ -59,9 +61,10 @@ impl BacktrackingGenerator {
         solver.next().unwrap()
     }
 
+    // TODO: optimize performance for base >= 3
     fn critical<Cell: SudokuCell>(
         mut sudoku: Sudoku<Cell>,
-        distance_count: usize,
+        distance: usize,
     ) -> Option<Sudoku<Cell>> {
         assert!(sudoku.all_empty_positions().is_empty());
 
@@ -69,42 +72,53 @@ impl BacktrackingGenerator {
 
         all_positions.shuffle(&mut rand::thread_rng());
 
-        let mut deleted_values: Vec<(Position, usize)> = vec![];
+        let mut deleted: Vec<(Position, usize)> = vec![];
 
-        loop {
-            if let Some(pos) = all_positions.pop() {
-                let cell: &Cell = sudoku.get(pos);
+        for pos in all_positions {
+            let cell: &Cell = sudoku.get(pos);
 
-                if let Some(value) = cell.value() {
-                    sudoku.delete(pos);
+            if let Some(value) = cell.value() {
+                sudoku.delete(pos);
 
-                    deleted_values.push((pos, value));
+                deleted.push((pos, value));
 
-                    // TODO: try other positions before returning
-                    if !Self::has_unique_solution(&sudoku) {
-                        // sudoku is critical
-                        // TODO: set value distance_count times
-                        sudoku.set_value(pos, value);
+                if !Self::has_unique_solution(&sudoku) {
+                    // current position is necessary for unique solution
+                    sudoku.set_value(pos, value);
 
-                        return Some(sudoku);
-                    } else {
-                    }
-                } else {
-                    panic!("Expected value at {} but got: {:?}", pos, cell)
+                    deleted.pop();
                 }
             } else {
-                return None;
+                panic!("Expected value at {} but got: {:?}", pos, cell)
             }
         }
 
-        unimplemented!()
+        for (deleted_pos, deleted_value) in deleted.into_iter().take(distance) {
+            sudoku.set_value(deleted_pos, deleted_value);
+        }
+
+        Some(sudoku)
     }
 
     // TODO: move to sudoku
     fn has_unique_solution<Cell: SudokuCell>(sudoku: &Sudoku<Cell>) -> bool {
         let mut solver = BacktrackingSolver::new(sudoku.clone());
 
-        solver.nth(1).is_none()
+        assert!(solver.next().is_some());
+
+        solver.next().is_none()
+    }
+
+    fn is_critical<Cell: SudokuCell>(sudoku: &Sudoku<Cell>) -> bool {
+        let mut sudoku = sudoku.clone();
+
+        Self::has_unique_solution(&sudoku)
+            && sudoku.all_value_positions().into_iter().all(|pos| {
+                let prev_cell = sudoku.delete(pos);
+                let has_multiple_solutions = !Self::has_unique_solution(&sudoku);
+                sudoku.set_value(pos, prev_cell.value().unwrap());
+                has_multiple_solutions
+            })
     }
 }
 
@@ -123,7 +137,8 @@ mod tests {
 
         let sudoku = generator.generate::<Cell>().unwrap();
 
-        // TODO: asserts
         println!("{}", sudoku);
+
+        assert!(BacktrackingGenerator::is_critical(&sudoku));
     }
 }

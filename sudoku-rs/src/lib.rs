@@ -28,8 +28,8 @@ pub mod transport;
 //  grid seems to be a leaky abstraction if multiple wrapper methods are needed
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
-pub struct Sudoku<TCell: SudokuCell = Cell> {
-    grid: Grid<TCell>,
+pub struct Sudoku<Cell: SudokuCell> {
+    grid: Grid<Cell>,
     settings: Settings,
 }
 
@@ -46,12 +46,12 @@ struct Settings {
 // TODO: provide undo/redo API
 // TODO: return result in all asserts
 //  sudoku::Error as JSValue (JS Exception)?
-impl<TCell: SudokuCell> Sudoku<TCell> {
+impl<Cell: SudokuCell> Sudoku<Cell> {
     pub fn new(base: usize) -> Self {
         Self::new_with_grid(Grid::new(base))
     }
 
-    fn new_with_grid(grid: Grid<TCell>) -> Self {
+    fn new_with_grid(grid: Grid<Cell>) -> Self {
         Sudoku {
             grid,
             settings: Settings {
@@ -95,10 +95,10 @@ impl<TCell: SudokuCell> Sudoku<TCell> {
             .toggle_candidate(candidate, max_value);
     }
 
-    pub fn delete(&mut self, pos: Position) {
+    pub fn delete(&mut self, pos: Position) -> Cell {
         let max_value = self.grid.max_value();
 
-        self.grid.get_pos_mut(pos).delete(max_value);
+        self.grid.get_pos_mut(pos).delete(max_value)
     }
 
     pub fn set_all_direct_candidates(&mut self) {
@@ -121,7 +121,7 @@ impl<TCell: SudokuCell> Sudoku<TCell> {
         self.grid.is_fixed(pos)
     }
 
-    pub fn get(&self, pos: Position) -> &TCell {
+    pub fn get(&self, pos: Position) -> &Cell {
         self.grid.get_pos(pos)
     }
 
@@ -139,7 +139,7 @@ impl<TCell: SudokuCell> Sudoku<TCell> {
 }
 
 /// Utility iterators
-impl<TCell: SudokuCell> Sudoku<TCell> {
+impl<Cell: SudokuCell> Sudoku<Cell> {
     pub(crate) fn all_positions(&self) -> impl Iterator<Item = Position> {
         self.grid.all_positions()
     }
@@ -153,12 +153,19 @@ impl<TCell: SudokuCell> Sudoku<TCell> {
     pub(crate) fn all_empty_positions(&self) -> Vec<Position> {
         self.grid
             .all_positions()
-            .filter(|pos| !self.get(*pos).value().is_some())
+            .filter(|pos| self.get(*pos).value().is_none())
+            .collect()
+    }
+
+    pub(crate) fn all_value_positions(&self) -> Vec<Position> {
+        self.grid
+            .all_positions()
+            .filter(|pos| self.get(*pos).value().is_some())
             .collect()
     }
 }
 
-impl<TCell: SudokuCell> Sudoku<TCell> {
+impl<Cell: SudokuCell> Sudoku<Cell> {
     fn update_candidates(&mut self, pos: Position, value: usize) {
         let max = self.grid.max_value();
 
@@ -210,7 +217,7 @@ impl<TCell: SudokuCell> Sudoku<TCell> {
     }
 
     // TODO: conflict location pairs
-    fn has_duplicate<'a>(&'a self, cells: impl Iterator<Item = &'a TCell>) -> bool {
+    fn has_duplicate<'a>(&'a self, cells: impl Iterator<Item = &'a Cell>) -> bool {
         let mut cells: Vec<_> = cells.filter_map(|cell| cell.value()).collect();
 
         cells.sort();
@@ -225,7 +232,7 @@ impl<TCell: SudokuCell> Sudoku<TCell> {
     }
 }
 
-impl<TCell: SudokuCell> TryFrom<Vec<Vec<usize>>> for Sudoku<TCell> {
+impl<Cell: SudokuCell> TryFrom<Vec<Vec<usize>>> for Sudoku<Cell> {
     type Error = Error;
 
     fn try_from(nested_values: Vec<Vec<usize>>) -> Result<Self> {
@@ -237,7 +244,7 @@ impl<TCell: SudokuCell> TryFrom<Vec<Vec<usize>>> for Sudoku<TCell> {
     }
 }
 
-impl<TCell: SudokuCell> TryFrom<Vec<usize>> for Sudoku<TCell> {
+impl<Cell: SudokuCell> TryFrom<Vec<usize>> for Sudoku<Cell> {
     type Error = Error;
 
     fn try_from(values: Vec<usize>) -> Result<Self> {
@@ -245,7 +252,7 @@ impl<TCell: SudokuCell> TryFrom<Vec<usize>> for Sudoku<TCell> {
     }
 }
 
-impl<TCell: SudokuCell> Display for Sudoku<TCell> {
+impl<Cell: SudokuCell> Display for Sudoku<Cell> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{}", self.grid)
     }

@@ -58,7 +58,7 @@ pub fn get_wasm_sudoku() -> WasmSudoku {
     //    .unwrap();
 
     let mut sudoku = BacktrackingGenerator::new(BacktrackingGeneratorSettings {
-        base: 3,
+        base: 2,
         target: BacktrackingGeneratorTarget::Critical,
     })
     .generate()

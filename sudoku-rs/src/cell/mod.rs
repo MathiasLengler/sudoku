@@ -35,7 +35,7 @@ where
     /// Candidates if any
     fn candidates(&self) -> Option<Vec<usize>>;
 
-    fn delete(&mut self, max: usize);
+    fn delete(&mut self, max: usize) -> Self;
 
     fn set_value(&mut self, value: usize, max: usize);
 
@@ -117,8 +117,8 @@ where
         }
     }
 
-    fn delete(&mut self, max: usize) {
-        replace(self, Self::new(max));
+    fn delete(&mut self, max: usize) -> Self {
+        replace(self, Self::new(max))
     }
 
     fn set_value(&mut self, value: usize, max: usize) {
