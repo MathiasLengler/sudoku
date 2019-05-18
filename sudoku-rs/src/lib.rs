@@ -17,6 +17,8 @@ pub mod error;
 pub mod generator;
 mod grid;
 pub mod position;
+#[cfg(any(test, feature = "benchmark"))]
+pub mod samples;
 pub mod solver;
 pub mod transport;
 

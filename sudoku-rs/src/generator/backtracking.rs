@@ -34,7 +34,7 @@ impl BacktrackingGenerator {
         Self { settings }
     }
 
-    pub fn generate<Cell: SudokuCell>(mut self) -> Option<Sudoku<Cell>> {
+    pub fn generate<Cell: SudokuCell>(&self) -> Option<Sudoku<Cell>> {
         use self::BacktrackingGeneratorTarget::*;
 
         let filled_sudoku = self.filled_sudoku();
@@ -82,7 +82,7 @@ impl BacktrackingGenerator {
 
                 deleted.push((pos, value));
 
-                if !Self::has_unique_solution(&sudoku) {
+                if !BacktrackingSolver::has_unique_solution(&sudoku) {
                     // current position is necessary for unique solution
                     sudoku.set_value(pos, value);
 
@@ -100,22 +100,13 @@ impl BacktrackingGenerator {
         Some(sudoku)
     }
 
-    // TODO: move to sudoku
-    fn has_unique_solution<Cell: SudokuCell>(sudoku: &Sudoku<Cell>) -> bool {
-        let mut solver = BacktrackingSolver::new(sudoku.clone());
-
-        assert!(solver.next().is_some());
-
-        solver.next().is_none()
-    }
-
     fn is_critical<Cell: SudokuCell>(sudoku: &Sudoku<Cell>) -> bool {
         let mut sudoku = sudoku.clone();
 
-        Self::has_unique_solution(&sudoku)
+        BacktrackingSolver::has_unique_solution(&sudoku)
             && sudoku.all_value_positions().into_iter().all(|pos| {
                 let prev_cell = sudoku.delete(pos);
-                let has_multiple_solutions = !Self::has_unique_solution(&sudoku);
+                let has_multiple_solutions = !BacktrackingSolver::has_unique_solution(&sudoku);
                 sudoku.set_value(pos, prev_cell.value().unwrap());
                 has_multiple_solutions
             })

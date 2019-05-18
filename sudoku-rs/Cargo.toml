@@ -17,8 +17,17 @@ num = "0.2.0"
 nonzero_ext = "0.1.5"
 log = "0.4"
 
+[dev-dependencies]
+criterion = "0.2"
+
+[[bench]]
+name = "sudoku_benchmark"
+harness = false
+#required-features = ["benchmark"]
+
 [features]
 default = []
 debug_print = ["crossterm"]
 parallel = ["rayon"]
 wasm-bindgen = ["rand/wasm-bindgen"]
+benchmark = []

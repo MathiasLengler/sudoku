@@ -18,9 +18,9 @@
     - eslint
     - clippy
 - evaluate useReducer
-- add criterion benchmark
-  - solver
-  - generator
+- [x] add criterion benchmark
+  - [x] solver
+  - [x] generator
   - sudoku
     - all_positions
     - update_candidates
