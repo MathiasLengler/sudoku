@@ -18,7 +18,14 @@
     - eslint
     - clippy
 - evaluate useReducer
-
+- add criterion benchmark
+  - solver
+  - generator
+  - sudoku
+    - all_positions
+    - update_candidates
+    - direct_candidates
+    - has_duplicate
 ## UX
 - save (local storage)
   - settings
@@ -29,28 +36,35 @@
 - [ ] sticky value toggle
   - no selected cell when active
   - guide for all values equal to sticky value
-- [ ] undo button
-  - sudokuCanUndo
-- [ ] redo button
-  - sudokuCanRedo
-### Gameplay Options
-- fill direct candidates on new sudoku
-- remove direct candidates on set value (is implemented and hardcoded true)
-- highlight incorrect value
-### Solver Controls
-- Solve button
-- Solver selector
-  - Backtracking
-  - Strategic
-- Options
-    - animation / speed
-    - select strategies
+- [ ] undo/redo buttons
+  - sudokuCan{Undo|Redo}
 ### New sudoku:
 - Generate with difficulty
   - by number of empty cells
   - by needed strategies
-- Editable
+- Editable mode
   - freeze button
-  - input for solver
+  - use cases:
+    - input for solver
+    - interactive import
 - Import
   - Does a sudoku exchange format exist?
+    - String of values
+      - Empty cell as `[\.\-0]`
+      - optional spaces between values
+      - optional newline between rows
+### Gameplay Options
+- fill direct candidates on new sudoku
+- remove direct candidates on set value (is implemented and hardcoded true)
+- highlight incorrect value
+  - Sudoku needs a solved grid
+  - add flag to TransportSudoku
+### Solver Controls
+- Solve button?
+- Solver selector
+  - Backtracking
+  - Strategic
+  - Hybrid
+- Options
+    - animation / speed
+    - select strategies

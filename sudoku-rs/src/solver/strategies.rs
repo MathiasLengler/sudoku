@@ -14,3 +14,7 @@
 //! Naked Quad | dj4 | 5000 | 4000
 //! Hidden Quad | us4 | 7000 | 5000
 //! Swordfish | sf4 | 8000 | 6000
+
+// TODO: start implementing:
+//  single candidate in cell (Single Candidate)
+//  single candidate in group (Single Position)
