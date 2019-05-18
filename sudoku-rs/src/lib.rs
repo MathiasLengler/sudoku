@@ -20,11 +20,9 @@ pub mod position;
 pub mod solver;
 pub mod transport;
 
-// TODO: solve/verify incomplete sudoku
-// TODO: generate valid incomplete sudoku
-
 // TODO: deref(mut) to grid
 //  check public API
+//   can invariants be broken? (cell max_value)
 //  grid seems to be a leaky abstraction if multiple wrapper methods are needed
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
@@ -169,6 +167,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     fn update_candidates(&mut self, pos: Position, value: usize) {
         let max = self.grid.max_value();
 
+        // TODO: extract group_positions iterator
         let unique_positions: BTreeSet<_> = self
             .grid
             .column_positions(pos.column)
@@ -185,6 +184,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     }
 
     pub(crate) fn direct_candidates(&self, pos: Position) -> Vec<usize> {
+        // TODO: extract group_positions iterator
         let conflicting_values = self
             .grid
             .column_cells(pos.column)
