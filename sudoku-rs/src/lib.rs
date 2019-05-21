@@ -212,7 +212,8 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
                 .any(|block| self.has_duplicate(block))
     }
 
-    pub(crate) fn has_conflict_at(&self, pos: Position) -> bool {
+    // TODO: optimize: is value in group?
+    pub fn has_conflict_at(&self, pos: Position) -> bool {
         self.has_duplicate(self.grid.row_cells(pos.row))
             || self.has_duplicate(self.grid.column_cells(pos.column))
             || self.has_duplicate(self.grid.block_cells(pos))

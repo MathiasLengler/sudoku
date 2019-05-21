@@ -21,11 +21,12 @@
 - [x] add criterion benchmark
   - [x] solver
   - [x] generator
-  - sudoku
-    - all_positions
-    - update_candidates
-    - direct_candidates
-    - has_duplicate
+  - [ ] sudoku
+    - [X] has_conflict_at
+    - [ ] has_duplicate
+    - [ ] all_positions
+    - [ ] update_candidates
+    - [ ] direct_candidates
 ## UX
 - save (local storage)
   - settings

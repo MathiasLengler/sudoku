@@ -37,7 +37,6 @@ enum StepResult<Cell: SudokuCell> {
     /// Went through the whole solution space and marked all potential solutions on the way
     Finished,
     Backtrack,
-    NextCandidate,
     NextCell,
 }
 
@@ -117,10 +116,6 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
                     }
 
                     StepResult::Backtrack
-                } else if self.sudoku.has_conflict_at(choice.position()) {
-                    self.choices.last_mut().unwrap().set_next();
-
-                    StepResult::NextCandidate
                 } else {
                     match self.empty_positions.get(choices_len) {
                         Some(next_position) => {
