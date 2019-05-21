@@ -63,7 +63,7 @@ fn criterion_benchmark(c: &mut Criterion) {
             },
             vec![2, 3],
         )
-        .sample_size(10),
+        .sample_size(20),
     );
 
     c.bench(
