@@ -6,7 +6,6 @@ use std::fmt::{Display, Formatter};
 
 use fixedbitset::FixedBitSet;
 
-use cell::Cell;
 use cell::SudokuCell;
 
 use crate::error::{Error, Result};
@@ -166,7 +165,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
         }
     }
 
-    pub(crate) fn direct_candidates(&self, pos: Position) -> Vec<usize> {
+    pub fn direct_candidates(&self, pos: Position) -> Vec<usize> {
         // TODO: extract group_positions iterator
         let conflicting_values = self
             .grid
@@ -275,5 +274,14 @@ mod tests {
         sudoku.set_value(Position { column: 1, row: 1 }, 0);
 
         assert!(!sudoku.has_conflict());
+    }
+
+    #[test]
+    fn test_direct_candidates() {
+        let sudoku = samples::base_3().pop().unwrap();
+
+        let direct_candidates = sudoku.direct_candidates(Position { column: 1, row: 1 });
+
+        assert_eq!(direct_candidates, vec![1, 2, 4]);
     }
 }

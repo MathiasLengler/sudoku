@@ -99,6 +99,13 @@ impl BacktrackingGenerator {
 
         Some(sudoku)
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::cell::Cell;
+
+    use super::*;
 
     fn is_critical<Cell: SudokuCell>(sudoku: &Sudoku<Cell>) -> bool {
         let mut sudoku = sudoku.clone();
@@ -111,13 +118,6 @@ impl BacktrackingGenerator {
                 has_multiple_solutions
             })
     }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::cell::Cell;
-
-    use super::*;
 
     #[test]
     fn test_critical() {
@@ -130,6 +130,6 @@ mod tests {
 
         println!("{}", sudoku);
 
-        assert!(BacktrackingGenerator::is_critical(&sudoku));
+        assert!(is_critical(&sudoku));
     }
 }

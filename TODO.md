@@ -24,7 +24,7 @@
     - [X] has_duplicate
     - [X] all_positions
     - [ ] update_candidates
-    - [ ] direct_candidates
+    - [X] direct_candidates
     - [ ] set_all_direct_candidates
 ## UX
 - save (local storage)

@@ -4,7 +4,7 @@ use crate::cell::Cell;
 use crate::error::Result;
 use crate::Sudoku;
 
-pub fn base_2() -> Result<Vec<Sudoku<Cell>>> {
+pub fn base_2() -> Vec<Sudoku<Cell>> {
     vec![
         vec![
             vec![0, 3, 4, 0],
@@ -28,9 +28,10 @@ pub fn base_2() -> Result<Vec<Sudoku<Cell>>> {
     .into_iter()
     .map(TryInto::<Sudoku<Cell>>::try_into)
     .collect::<Result<Vec<_>>>()
+    .unwrap()
 }
 
-pub fn base_3() -> Result<Vec<Sudoku<Cell>>> {
+pub fn base_3() -> Vec<Sudoku<Cell>> {
     vec![
         // 11 Star difficulty
         vec![
@@ -48,4 +49,5 @@ pub fn base_3() -> Result<Vec<Sudoku<Cell>>> {
     .into_iter()
     .map(TryInto::<Sudoku<Cell>>::try_into)
     .collect::<Result<Vec<_>>>()
+    .unwrap()
 }

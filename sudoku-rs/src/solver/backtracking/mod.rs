@@ -273,36 +273,28 @@ mod tests {
     }
 
     #[test]
-    fn test_base_2() -> Result<()> {
-        let sudokus = crate::samples::base_2()?;
+    fn test_base_2() {
+        let sudokus = crate::samples::base_2();
 
         for (sudoku_index, sudoku) in sudokus.into_iter().enumerate() {
-            eprintln!("sudoku_index = {:?}", sudoku_index);
-
             let mut solver = BacktrackingSolver::new(sudoku);
 
             let solve_result = solver.try_solve();
 
             assert_solve_result(solve_result);
         }
-
-        Ok(())
     }
 
     #[test]
-    fn test_base_3() -> Result<()> {
-        let sudokus = crate::samples::base_3()?;
+    fn test_base_3() {
+        let sudokus = crate::samples::base_3();
 
         for (sudoku_index, sudoku) in sudokus.into_iter().enumerate() {
-            eprintln!("sudoku_index = {:?}", sudoku_index);
-
             let mut solver = BacktrackingSolver::new(sudoku);
 
             let solve_result = solver.try_solve();
 
             assert_solve_result(solve_result);
         }
-
-        Ok(())
     }
 }
