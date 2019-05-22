@@ -1,4 +1,5 @@
 use std::collections::btree_set::BTreeSet;
+use std::collections::HashSet;
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::fmt::{Display, Formatter};
@@ -102,11 +103,14 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     }
 
     pub fn set_all_direct_candidates(&mut self) {
-        self.all_empty_positions().into_iter().for_each(|pos| {
-            let candidates = self.direct_candidates(pos);
+        self.grid()
+            .all_empty_positions()
+            .into_iter()
+            .for_each(|pos| {
+                let candidates = self.direct_candidates(pos);
 
-            self.set_candidates(pos, candidates);
-        });
+                self.set_candidates(pos, candidates);
+            });
     }
 
     pub fn fix_all_values(&mut self) {
@@ -136,32 +140,9 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     pub fn base(&self) -> usize {
         self.grid.base()
     }
-}
 
-/// Utility iterators
-impl<Cell: SudokuCell> Sudoku<Cell> {
-    pub(crate) fn all_positions(&self) -> impl Iterator<Item = Position> {
-        self.grid.all_positions()
-    }
-
-    pub(crate) fn all_block_positions(
-        &self,
-    ) -> impl Iterator<Item = impl Iterator<Item = Position>> {
-        self.grid.all_block_positions()
-    }
-
-    pub(crate) fn all_empty_positions(&self) -> Vec<Position> {
-        self.grid
-            .all_positions()
-            .filter(|pos| self.get(*pos).value().is_none())
-            .collect()
-    }
-
-    pub(crate) fn all_value_positions(&self) -> Vec<Position> {
-        self.grid
-            .all_positions()
-            .filter(|pos| self.get(*pos).value().is_some())
-            .collect()
+    pub fn grid(&self) -> &Grid<Cell> {
+        &self.grid
     }
 }
 
@@ -220,18 +201,12 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     }
 
     // TODO: conflict location pairs
-    fn has_duplicate<'a>(&'a self, cells: impl Iterator<Item = &'a Cell>) -> bool {
-        let mut cells: Vec<_> = cells.filter_map(|cell| cell.value()).collect();
+    pub fn has_duplicate<'a>(&'a self, cells: impl Iterator<Item = &'a Cell>) -> bool {
+        let mut uniq = HashSet::new();
 
-        cells.sort();
-
-        let cell_count = cells.len();
-
-        cells.dedup();
-
-        let cell_count_dedup = cells.len();
-
-        cell_count != cell_count_dedup
+        cells
+            .filter_map(|cell| cell.value())
+            .any(move |x| !uniq.insert(x))
     }
 }
 

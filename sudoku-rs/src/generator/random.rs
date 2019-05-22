@@ -60,7 +60,7 @@ impl RandomGenerator {
     }
 
     fn try_fill<Cell: SudokuCell>(sudoku: &mut Sudoku<Cell>) -> bool {
-        let mut positions = sudoku.all_empty_positions();
+        let mut positions = sudoku.grid().all_empty_positions();
 
         let mut rng = thread_rng();
 
@@ -96,7 +96,7 @@ mod tests {
         let generator = RandomGenerator::new(2, 1_000);
         let sudoku = generator.generate::<Cell>().unwrap();
 
-        assert!(sudoku.all_empty_positions().is_empty());
+        assert!(sudoku.grid().all_empty_positions().is_empty());
         assert!(!sudoku.has_conflict());
     }
 }

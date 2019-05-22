@@ -66,9 +66,9 @@ impl BacktrackingGenerator {
         mut sudoku: Sudoku<Cell>,
         distance: usize,
     ) -> Option<Sudoku<Cell>> {
-        assert!(sudoku.all_empty_positions().is_empty());
+        assert!(sudoku.grid().all_empty_positions().is_empty());
 
-        let mut all_positions: Vec<_> = sudoku.all_positions().collect();
+        let mut all_positions: Vec<_> = sudoku.grid().all_positions().collect();
 
         all_positions.shuffle(&mut rand::thread_rng());
 
@@ -104,7 +104,7 @@ impl BacktrackingGenerator {
         let mut sudoku = sudoku.clone();
 
         BacktrackingSolver::has_unique_solution(&sudoku)
-            && sudoku.all_value_positions().into_iter().all(|pos| {
+            && sudoku.grid().all_value_positions().into_iter().all(|pos| {
                 let prev_cell = sudoku.delete(pos);
                 let has_multiple_solutions = !BacktrackingSolver::has_unique_solution(&sudoku);
                 sudoku.set_value(pos, prev_cell.value().unwrap());

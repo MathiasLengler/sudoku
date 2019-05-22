@@ -21,7 +21,7 @@
 - criterion benchmark
   - [ ] sudoku
     - [X] has_conflict_at
-    - [ ] has_duplicate
+    - [X] has_duplicate
     - [ ] all_positions
     - [ ] update_candidates
     - [ ] direct_candidates

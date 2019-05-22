@@ -7,12 +7,14 @@ use criterion::{black_box, BatchSize};
 use criterion::{Criterion, ParameterizedBenchmark};
 
 use sudoku::cell::Cell;
+use sudoku::error::Result;
 use sudoku::generator::backtracking::{
     BacktrackingGenerator, BacktrackingGeneratorSettings, BacktrackingGeneratorTarget,
 };
 use sudoku::position::Position;
 use sudoku::samples::{base_2, base_3};
 use sudoku::solver::backtracking::BacktrackingSolver;
+use sudoku::Sudoku;
 
 fn criterion_benchmark(c: &mut Criterion) {
     c.bench(
@@ -66,16 +68,20 @@ fn criterion_benchmark(c: &mut Criterion) {
         .sample_size(20),
     );
 
+    fn sample_sudoku(base: usize) -> Sudoku<Cell> {
+        match base {
+            2 => base_2().unwrap().first().unwrap().clone(),
+            3 => base_3().unwrap().first().unwrap().clone(),
+            _ => panic!("unexpected base"),
+        }
+    }
+
     c.bench(
         "Sudoku",
         ParameterizedBenchmark::new(
             "has_conflict_at",
             |b, base| {
-                let sudoku = match base {
-                    2 => base_2().unwrap().first().unwrap().clone(),
-                    3 => base_3().unwrap().first().unwrap().clone(),
-                    _ => panic!("unexpected base"),
-                };
+                let sudoku = sample_sudoku(*base);
 
                 b.iter_batched(
                     || sudoku.clone(),
@@ -86,7 +92,18 @@ fn criterion_benchmark(c: &mut Criterion) {
                 )
             },
             vec![2, 3],
-        ),
+        )
+        .with_function("has_duplicate", |b, base| {
+            let sudoku = sample_sudoku(*base);
+
+            b.iter_batched(
+                || (&sudoku, sudoku.grid().row_cells(1)),
+                |(sudoku, row_cells)| {
+                    sudoku.has_duplicate(row_cells);
+                },
+                BatchSize::SmallInput,
+            )
+        }),
     );
 }
 

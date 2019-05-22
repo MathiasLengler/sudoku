@@ -49,7 +49,7 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
         sudoku: Sudoku<Cell>,
         settings: BacktrackingSolverSettings,
     ) -> BacktrackingSolver<Cell> {
-        let empty_positions = sudoku.all_empty_positions();
+        let empty_positions = sudoku.grid().all_empty_positions();
 
         let mut solver = BacktrackingSolver {
             sudoku,
@@ -233,7 +233,7 @@ mod tests {
     fn assert_solved_sudoku<Cell: SudokuCell>(sudoku: &Sudoku<Cell>) {
         assert!(!sudoku.has_conflict());
 
-        assert!(sudoku.all_empty_positions().is_empty());
+        assert!(sudoku.grid().all_empty_positions().is_empty());
     }
 
     fn assert_iter(solver: BacktrackingSolver<Cell>) {

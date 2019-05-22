@@ -10,7 +10,7 @@ use crate::error::{Error, Result};
 use crate::position::Position;
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
-pub(super) struct Grid<Cell: SudokuCell> {
+pub struct Grid<Cell: SudokuCell> {
     base: usize,
     cells: Vec<Cell>,
     fixed_cells: FixedBitSet,
@@ -146,66 +146,64 @@ impl<Cell: SudokuCell> Grid<Cell> {
         nested_positions.map(move |row_pos| row_pos.map(move |pos| self.get_pos(pos)))
     }
 
-    pub(super) fn row_cells(&self, row: usize) -> impl Iterator<Item = &Cell> {
+    pub fn row_cells(&self, row: usize) -> impl Iterator<Item = &Cell> {
         self.positions_to_cells(self.row_positions(row))
     }
 
-    pub(super) fn all_row_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell>> {
+    pub fn all_row_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell>> {
         self.nested_positions_to_nested_cells(self.all_row_positions())
     }
 
-    pub(super) fn column_cells(&self, column: usize) -> impl Iterator<Item = &Cell> {
+    pub fn column_cells(&self, column: usize) -> impl Iterator<Item = &Cell> {
         self.positions_to_cells(self.column_positions(column))
     }
 
-    pub(super) fn all_column_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell>> {
+    pub fn all_column_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell>> {
         self.nested_positions_to_nested_cells(self.all_column_positions())
     }
 
-    pub(super) fn block_cells(&self, pos: Position) -> impl Iterator<Item = &Cell> {
+    pub fn block_cells(&self, pos: Position) -> impl Iterator<Item = &Cell> {
         self.positions_to_cells(self.block_positions(pos))
     }
 
-    pub(super) fn all_block_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell>> {
+    pub fn all_block_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell>> {
         self.nested_positions_to_nested_cells(self.all_block_positions())
     }
 }
 
 /// Position iterators
 impl<Cell: SudokuCell> Grid<Cell> {
-    pub(super) fn all_positions(&self) -> impl Iterator<Item = Position> {
+    pub fn all_positions(&self) -> impl Iterator<Item = Position> {
         self.all_row_positions().flatten()
     }
 
-    pub(super) fn row_positions(&self, row: usize) -> impl Iterator<Item = Position> {
+    pub fn row_positions(&self, row: usize) -> impl Iterator<Item = Position> {
         self.assert_coordinate(row);
 
         (0..self.side_length()).map(move |column| Position { column, row })
     }
 
-    pub(super) fn all_row_positions(&self) -> impl Iterator<Item = impl Iterator<Item = Position>> {
+    pub fn all_row_positions(&self) -> impl Iterator<Item = impl Iterator<Item = Position>> {
         (0..self.side_length())
             .map(move |row_index| self.row_positions(row_index))
             .collect::<Vec<_>>()
             .into_iter()
     }
 
-    pub(super) fn column_positions(&self, column: usize) -> impl Iterator<Item = Position> {
+    pub fn column_positions(&self, column: usize) -> impl Iterator<Item = Position> {
         self.assert_coordinate(column);
 
         (0..self.side_length()).map(move |row| Position { column, row })
     }
 
-    pub(super) fn all_column_positions(
-        &self,
-    ) -> impl Iterator<Item = impl Iterator<Item = Position>> {
+    pub fn all_column_positions(&self) -> impl Iterator<Item = impl Iterator<Item = Position>> {
         (0..self.side_length())
             .map(move |column| self.column_positions(column))
             .collect::<Vec<_>>()
             .into_iter()
     }
 
-    pub(super) fn block_positions(&self, pos: Position) -> impl Iterator<Item = Position> {
+    pub fn block_positions(&self, pos: Position) -> impl Iterator<Item = Position> {
         self.assert_position(pos);
 
         let base = self.base;
@@ -220,9 +218,7 @@ impl<Cell: SudokuCell> Grid<Cell> {
         })
     }
 
-    pub(super) fn all_block_positions(
-        &self,
-    ) -> impl Iterator<Item = impl Iterator<Item = Position>> {
+    pub fn all_block_positions(&self) -> impl Iterator<Item = impl Iterator<Item = Position>> {
         let all_block_base_pos = (0..self.base)
             .flat_map(move |row| (0..self.base).map(move |column| Position { column, row }))
             .map(move |pos| pos * self.base);
@@ -231,6 +227,21 @@ impl<Cell: SudokuCell> Grid<Cell> {
             .map(|block_base_pos| self.block_positions(block_base_pos))
             .collect::<Vec<_>>()
             .into_iter()
+    }
+}
+
+/// Filtered Position iterators
+impl<Cell: SudokuCell> Grid<Cell> {
+    pub fn all_empty_positions(&self) -> Vec<Position> {
+        self.all_positions()
+            .filter(|pos| self.get_pos(*pos).value().is_none())
+            .collect()
+    }
+
+    pub fn all_value_positions(&self) -> Vec<Position> {
+        self.all_positions()
+            .filter(|pos| self.get_pos(*pos).value().is_some())
+            .collect()
     }
 }
 
