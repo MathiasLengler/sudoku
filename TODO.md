@@ -22,7 +22,7 @@
   - [ ] sudoku
     - [X] has_conflict_at
     - [X] has_duplicate
-    - [ ] all_positions
+    - [X] all_positions
     - [ ] update_candidates
     - [ ] direct_candidates
     - [ ] set_all_direct_candidates

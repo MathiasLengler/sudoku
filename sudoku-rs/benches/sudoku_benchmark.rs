@@ -1,13 +1,10 @@
 #[macro_use]
 extern crate criterion;
 
-use std::time::Duration;
-
-use criterion::{black_box, BatchSize};
+use criterion::BatchSize;
 use criterion::{Criterion, ParameterizedBenchmark};
 
 use sudoku::cell::Cell;
-use sudoku::error::Result;
 use sudoku::generator::backtracking::{
     BacktrackingGenerator, BacktrackingGeneratorSettings, BacktrackingGeneratorTarget,
 };
@@ -85,9 +82,7 @@ fn criterion_benchmark(c: &mut Criterion) {
 
                 b.iter_batched(
                     || sudoku.clone(),
-                    |sudoku| {
-                        sudoku.has_conflict_at(Position { column: 1, row: 1 });
-                    },
+                    |sudoku| sudoku.has_conflict_at(Position { column: 1, row: 1 }),
                     BatchSize::SmallInput,
                 )
             },
@@ -98,9 +93,16 @@ fn criterion_benchmark(c: &mut Criterion) {
 
             b.iter_batched(
                 || (&sudoku, sudoku.grid().row_cells(1)),
-                |(sudoku, row_cells)| {
-                    sudoku.has_duplicate(row_cells);
-                },
+                |(sudoku, row_cells)| sudoku.has_duplicate(row_cells),
+                BatchSize::SmallInput,
+            )
+        })
+        .with_function("all_positions", |b, base| {
+            let sudoku = sample_sudoku(*base);
+
+            b.iter_batched(
+                || sudoku.clone(),
+                |sudoku| sudoku.grid().all_positions().for_each(drop),
                 BatchSize::SmallInput,
             )
         }),
