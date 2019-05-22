@@ -18,15 +18,14 @@
     - eslint
     - clippy
 - evaluate useReducer
-- [x] add criterion benchmark
-  - [x] solver
-  - [x] generator
+- criterion benchmark
   - [ ] sudoku
     - [X] has_conflict_at
     - [ ] has_duplicate
     - [ ] all_positions
     - [ ] update_candidates
     - [ ] direct_candidates
+    - [ ] set_all_direct_candidates
 ## UX
 - save (local storage)
   - settings
