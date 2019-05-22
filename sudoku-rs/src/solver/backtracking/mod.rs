@@ -168,11 +168,12 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
         CROSSTERM
             .terminal()
             .write(format!(
-                "Solver at step {}:\n{}\n{:?}\nChoices = {:?}",
+                "Solver at step {}:\n{}\nStep result: {:?}\nChoices: {}\nCurrent Choice: {:?}",
                 self.step_count,
                 self.sudoku,
                 step_result,
                 self.choices.len(),
+                self.choices.last()
             ))
             .unwrap();
 
