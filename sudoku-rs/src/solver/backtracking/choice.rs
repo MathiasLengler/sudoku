@@ -10,7 +10,6 @@ use crate::Sudoku;
 pub struct Choice {
     pos: Position,
     candidates: Vec<usize>,
-    selection: usize,
 }
 
 impl Choice {
@@ -28,28 +27,17 @@ impl Choice {
             candidates.reverse();
         }
 
-        let selection = Self::next_selection(&mut candidates);
-
-        Self {
-            pos,
-            candidates,
-            selection,
-        }
-    }
-
-    fn next_selection(candidates: &mut Vec<usize>) -> usize {
-        match candidates.pop() {
-            Some(candidate) => candidate,
-            None => 0,
-        }
+        Self { pos, candidates }
     }
 
     pub fn set_next(&mut self) {
-        self.selection = Self::next_selection(&mut self.candidates)
+        let prev_selection = self.candidates.pop();
+
+        debug_assert!(prev_selection.is_some());
     }
 
     pub fn is_exhausted(&self) -> bool {
-        self.selection == 0
+        self.candidates.is_empty()
     }
 
     pub fn position(&self) -> Position {
@@ -57,12 +45,12 @@ impl Choice {
     }
 
     pub fn selection(&self) -> usize {
-        self.selection
+        self.candidates.last().copied().unwrap_or(0)
     }
 }
 
 impl Display for Choice {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}={} ({:?})", self.pos, self.selection, self.candidates)
+        write!(f, "{}=({:?})", self.pos, self.candidates)
     }
 }

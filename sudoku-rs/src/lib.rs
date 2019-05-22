@@ -1,11 +1,11 @@
 use std::collections::btree_set::BTreeSet;
+use std::collections::HashSet;
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
 use fixedbitset::FixedBitSet;
 
-use cell::Cell;
 use cell::SudokuCell;
 
 use crate::error::{Error, Result};
@@ -17,6 +17,8 @@ pub mod error;
 pub mod generator;
 mod grid;
 pub mod position;
+#[cfg(any(test, feature = "benchmark"))]
+pub mod samples;
 pub mod solver;
 pub mod transport;
 
@@ -100,11 +102,14 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     }
 
     pub fn set_all_direct_candidates(&mut self) {
-        self.all_empty_positions().into_iter().for_each(|pos| {
-            let candidates = self.direct_candidates(pos);
+        self.grid()
+            .all_empty_positions()
+            .into_iter()
+            .for_each(|pos| {
+                let candidates = self.direct_candidates(pos);
 
-            self.set_candidates(pos, candidates);
-        });
+                self.set_candidates(pos, candidates);
+            });
     }
 
     pub fn fix_all_values(&mut self) {
@@ -134,32 +139,9 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     pub fn base(&self) -> usize {
         self.grid.base()
     }
-}
 
-/// Utility iterators
-impl<Cell: SudokuCell> Sudoku<Cell> {
-    pub(crate) fn all_positions(&self) -> impl Iterator<Item = Position> {
-        self.grid.all_positions()
-    }
-
-    pub(crate) fn all_block_positions(
-        &self,
-    ) -> impl Iterator<Item = impl Iterator<Item = Position>> {
-        self.grid.all_block_positions()
-    }
-
-    pub(crate) fn all_empty_positions(&self) -> Vec<Position> {
-        self.grid
-            .all_positions()
-            .filter(|pos| self.get(*pos).value().is_none())
-            .collect()
-    }
-
-    pub(crate) fn all_value_positions(&self) -> Vec<Position> {
-        self.grid
-            .all_positions()
-            .filter(|pos| self.get(*pos).value().is_some())
-            .collect()
+    pub fn grid(&self) -> &Grid<Cell> {
+        &self.grid
     }
 }
 
@@ -183,7 +165,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
         }
     }
 
-    pub(crate) fn direct_candidates(&self, pos: Position) -> Vec<usize> {
+    pub fn direct_candidates(&self, pos: Position) -> Vec<usize> {
         // TODO: extract group_positions iterator
         let conflicting_values = self
             .grid
@@ -210,25 +192,20 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
                 .any(|block| self.has_duplicate(block))
     }
 
-    pub(crate) fn has_conflict_at(&self, pos: Position) -> bool {
+    // TODO: optimize: is value in group?
+    pub fn has_conflict_at(&self, pos: Position) -> bool {
         self.has_duplicate(self.grid.row_cells(pos.row))
             || self.has_duplicate(self.grid.column_cells(pos.column))
             || self.has_duplicate(self.grid.block_cells(pos))
     }
 
     // TODO: conflict location pairs
-    fn has_duplicate<'a>(&'a self, cells: impl Iterator<Item = &'a Cell>) -> bool {
-        let mut cells: Vec<_> = cells.filter_map(|cell| cell.value()).collect();
+    pub fn has_duplicate<'a>(&'a self, cells: impl Iterator<Item = &'a Cell>) -> bool {
+        let mut uniq = HashSet::new();
 
-        cells.sort();
-
-        let cell_count = cells.len();
-
-        cells.dedup();
-
-        let cell_count_dedup = cells.len();
-
-        cell_count != cell_count_dedup
+        cells
+            .filter_map(|cell| cell.value())
+            .any(move |x| !uniq.insert(x))
     }
 }
 
@@ -297,5 +274,14 @@ mod tests {
         sudoku.set_value(Position { column: 1, row: 1 }, 0);
 
         assert!(!sudoku.has_conflict());
+    }
+
+    #[test]
+    fn test_direct_candidates() {
+        let sudoku = samples::base_3().pop().unwrap();
+
+        let direct_candidates = sudoku.direct_candidates(Position { column: 1, row: 1 });
+
+        assert_eq!(direct_candidates, vec![1, 2, 4]);
     }
 }

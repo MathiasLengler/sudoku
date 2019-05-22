@@ -37,7 +37,6 @@ enum StepResult<Cell: SudokuCell> {
     /// Went through the whole solution space and marked all potential solutions on the way
     Finished,
     Backtrack,
-    NextCandidate,
     NextCell,
 }
 
@@ -50,7 +49,7 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
         sudoku: Sudoku<Cell>,
         settings: BacktrackingSolverSettings,
     ) -> BacktrackingSolver<Cell> {
-        let empty_positions = sudoku.all_empty_positions();
+        let empty_positions = sudoku.grid().all_empty_positions();
 
         let mut solver = BacktrackingSolver {
             sudoku,
@@ -117,10 +116,6 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
                     }
 
                     StepResult::Backtrack
-                } else if self.sudoku.has_conflict_at(choice.position()) {
-                    self.choices.last_mut().unwrap().set_next();
-
-                    StepResult::NextCandidate
                 } else {
                     match self.empty_positions.get(choices_len) {
                         Some(next_position) => {
@@ -173,15 +168,26 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
         CROSSTERM
             .terminal()
             .write(format!(
-                "Solver at step {}:\n{}\n{:?}\nChoices = {:?}",
+                "Solver at step {}:\n{}\nStep result: {:?}\nChoices: {}\nCurrent Choice: {:?}",
                 self.step_count,
                 self.sudoku,
                 step_result,
                 self.choices.len(),
+                self.choices.last()
             ))
             .unwrap();
 
         ::std::thread::sleep(Duration::from_nanos(1));
+    }
+}
+
+impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
+    pub fn has_unique_solution(sudoku: &Sudoku<Cell>) -> bool {
+        let mut solver = Self::new(sudoku.clone());
+
+        assert!(solver.next().is_some());
+
+        solver.next().is_none()
     }
 }
 
@@ -227,7 +233,7 @@ mod tests {
     fn assert_solved_sudoku<Cell: SudokuCell>(sudoku: &Sudoku<Cell>) {
         assert!(!sudoku.has_conflict());
 
-        assert!(sudoku.all_empty_positions().is_empty());
+        assert!(sudoku.grid().all_empty_positions().is_empty());
     }
 
     fn assert_iter(solver: BacktrackingSolver<Cell>) {
@@ -267,74 +273,28 @@ mod tests {
     }
 
     #[test]
-    fn test_base_2() -> Result<()> {
-        let sudokus = vec![
-            vec![
-                vec![0, 3, 4, 0],
-                vec![4, 0, 0, 2],
-                vec![1, 0, 0, 3],
-                vec![0, 2, 1, 0],
-            ],
-            vec![
-                vec![1, 0, 4, 0],
-                vec![0, 0, 0, 0],
-                vec![0, 0, 0, 0],
-                vec![0, 1, 0, 2],
-            ],
-            vec![
-                vec![0, 0, 1, 0],
-                vec![4, 0, 0, 0],
-                vec![0, 0, 0, 2],
-                vec![0, 3, 0, 0],
-            ],
-        ]
-        .into_iter()
-        .map(TryInto::<Sudoku<Cell>>::try_into)
-        .collect::<Result<Vec<_>>>()?;
+    fn test_base_2() {
+        let sudokus = crate::samples::base_2();
 
         for (sudoku_index, sudoku) in sudokus.into_iter().enumerate() {
-            eprintln!("sudoku_index = {:?}", sudoku_index);
-
             let mut solver = BacktrackingSolver::new(sudoku);
 
             let solve_result = solver.try_solve();
 
             assert_solve_result(solve_result);
         }
-
-        Ok(())
     }
 
     #[test]
-    fn test_base_3() -> Result<()> {
-        let sudokus = vec![
-            // 11 Star difficulty
-            vec![
-                vec![8, 0, 0, 0, 0, 0, 0, 0, 0],
-                vec![0, 0, 3, 6, 0, 0, 0, 0, 0],
-                vec![0, 7, 0, 0, 9, 0, 2, 0, 0],
-                vec![0, 5, 0, 0, 0, 7, 0, 0, 0],
-                vec![0, 0, 0, 0, 4, 5, 7, 0, 0],
-                vec![0, 0, 0, 1, 0, 0, 0, 3, 0],
-                vec![0, 0, 1, 0, 0, 0, 0, 6, 8],
-                vec![0, 0, 8, 5, 0, 0, 0, 1, 0],
-                vec![0, 9, 0, 0, 0, 0, 4, 0, 0],
-            ],
-        ]
-        .into_iter()
-        .map(TryInto::<Sudoku<Cell>>::try_into)
-        .collect::<Result<Vec<_>>>()?;
+    fn test_base_3() {
+        let sudokus = crate::samples::base_3();
 
         for (sudoku_index, sudoku) in sudokus.into_iter().enumerate() {
-            eprintln!("sudoku_index = {:?}", sudoku_index);
-
             let mut solver = BacktrackingSolver::new(sudoku);
 
             let solve_result = solver.try_solve();
 
             assert_solve_result(solve_result);
         }
-
-        Ok(())
     }
 }

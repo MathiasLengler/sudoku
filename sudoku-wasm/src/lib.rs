@@ -24,6 +24,7 @@ pub fn run() -> Result<(), JsValue> {
 
 #[wasm_bindgen]
 pub fn get_wasm_sudoku() -> WasmSudoku {
+    #[allow(unused_imports)]
     use std::convert::TryFrom;
 
     let [_base_1, _base_2, _base_3] = [

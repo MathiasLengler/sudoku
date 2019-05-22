@@ -19,6 +19,7 @@ impl<Cell: SudokuCell> From<&Sudoku<Cell>> for TransportSudoku {
     fn from(sudoku: &Sudoku<Cell>) -> Self {
         Self {
             blocks: sudoku
+                .grid()
                 .all_block_positions()
                 .map(|block| {
                     block
