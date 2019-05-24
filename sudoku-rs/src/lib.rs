@@ -237,6 +237,8 @@ impl<Cell: SudokuCell> Display for Sudoku<Cell> {
 
 #[cfg(test)]
 mod tests {
+    use std::num::NonZeroUsize;
+
     use crate::cell::Cell;
 
     use super::*;
@@ -283,5 +285,52 @@ mod tests {
         let direct_candidates = sudoku.direct_candidates(Position { column: 1, row: 1 });
 
         assert_eq!(direct_candidates, vec![1, 2, 4]);
+    }
+
+    #[test]
+    fn test_set_or_toggle_value() {
+        let mut sudoku: Sudoku<Cell<NonZeroUsize>> = samples::base_2().first().unwrap().clone();
+
+        sudoku.set_all_direct_candidates();
+
+        let sudoku = sudoku;
+
+        assert_eq!(
+            {
+                let mut sudoku = sudoku.clone();
+                sudoku.set_or_toggle_value(Position { column: 0, row: 3 }, 1);
+                sudoku.set_candidates(Position { column: 0, row: 3 }, vec![3]);
+                sudoku
+            },
+            { sudoku.clone() }
+        );
+
+        assert_eq!(
+            {
+                let mut sudoku = sudoku.clone();
+                sudoku.set_or_toggle_value(Position { column: 0, row: 3 }, 2);
+                sudoku.set_candidates(Position { column: 0, row: 3 }, vec![3]);
+                sudoku
+            },
+            {
+                let mut sudoku = sudoku.clone();
+                sudoku.delete(Position { column: 0, row: 0 });
+                sudoku
+            }
+        );
+        assert_eq!(
+            {
+                let mut sudoku = sudoku.clone();
+                sudoku.set_or_toggle_value(Position { column: 0, row: 3 }, 4);
+                sudoku.set_candidates(Position { column: 0, row: 3 }, vec![3]);
+                sudoku
+            },
+            {
+                let mut sudoku = sudoku.clone();
+                sudoku.delete(Position { column: 1, row: 2 });
+                sudoku.delete(Position { column: 3, row: 3 });
+                sudoku
+            }
+        );
     }
 }
