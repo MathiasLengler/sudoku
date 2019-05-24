@@ -60,7 +60,7 @@ where
     Candidates(FixedBitSet),
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "kind")]
 pub enum CellView {

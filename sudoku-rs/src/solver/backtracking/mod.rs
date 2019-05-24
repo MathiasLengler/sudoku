@@ -276,7 +276,7 @@ mod tests {
     fn test_base_2() {
         let sudokus = crate::samples::base_2();
 
-        for (sudoku_index, sudoku) in sudokus.into_iter().enumerate() {
+        for (_sudoku_index, sudoku) in sudokus.into_iter().enumerate() {
             let mut solver = BacktrackingSolver::new(sudoku);
 
             let solve_result = solver.try_solve();
@@ -289,7 +289,7 @@ mod tests {
     fn test_base_3() {
         let sudokus = crate::samples::base_3();
 
-        for (sudoku_index, sudoku) in sudokus.into_iter().enumerate() {
+        for (_sudoku_index, sudoku) in sudokus.into_iter().enumerate() {
             let mut solver = BacktrackingSolver::new(sudoku);
 
             let solve_result = solver.try_solve();

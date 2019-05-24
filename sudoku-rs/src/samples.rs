@@ -4,6 +4,7 @@ use crate::cell::Cell;
 use crate::error::Result;
 use crate::Sudoku;
 
+// TODO: rethink API (unwrap, clone for consumer of specific sudoku)
 pub fn base_2() -> Vec<Sudoku<Cell>> {
     vec![
         vec![
