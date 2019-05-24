@@ -4,6 +4,7 @@ use std::fmt::{Display, Formatter};
 
 use failure::ensure;
 use fixedbitset::FixedBitSet;
+use itertools::Itertools;
 
 use crate::cell::SudokuCell;
 use crate::error::{Error, Result};
@@ -230,7 +231,7 @@ impl<Cell: SudokuCell> Grid<Cell> {
     }
 }
 
-/// Filtered Position iterators
+/// Filtered position vec
 impl<Cell: SudokuCell> Grid<Cell> {
     pub fn all_empty_positions(&self) -> Vec<Position> {
         self.all_positions()
@@ -242,6 +243,22 @@ impl<Cell: SudokuCell> Grid<Cell> {
         self.all_positions()
             .filter(|pos| self.get_pos(*pos).value().is_some())
             .collect()
+    }
+}
+
+/// Group and neighbor iterators
+impl<Cell: SudokuCell> Grid<Cell> {
+    pub fn neighbor_positions_with_duplicates(
+        &self,
+        pos: Position,
+    ) -> impl Iterator<Item = Position> {
+        self.row_positions(pos.row)
+            .chain(self.column_positions(pos.column))
+            .chain(self.block_positions(pos))
+    }
+
+    pub fn neighbor_positions(&self, pos: Position) -> impl Iterator<Item = Position> {
+        self.neighbor_positions_with_duplicates(pos).unique()
     }
 }
 
@@ -275,9 +292,9 @@ impl<Cell: SudokuCell> TryFrom<Vec<usize>> for Grid<Cell> {
 }
 
 impl<Cell: SudokuCell> Display for Grid<Cell> {
+    // TODO: implement using prettytable-rs
+    // TODO: show candidates (compare with exchange formats)
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        use itertools::Itertools;
-
         const PADDING: usize = 3;
 
         let horizontal_block_separator = "-".repeat(self.base() + (PADDING * self.side_length()));

@@ -202,10 +202,8 @@ impl<Cell: SudokuCell> Iterator for BacktrackingSolver<Cell> {
 #[cfg(test)]
 mod tests {
     use std::collections::HashSet;
-    use std::convert::TryInto;
 
     use crate::cell::Cell;
-    use crate::error::Result;
 
     use super::*;
 

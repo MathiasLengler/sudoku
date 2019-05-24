@@ -1,4 +1,3 @@
-use std::collections::btree_set::BTreeSet;
 use std::collections::HashSet;
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
@@ -149,37 +148,30 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     fn update_candidates(&mut self, pos: Position, value: usize) {
         let max = self.grid.max_value();
 
-        // TODO: extract group_positions iterator
-        let unique_positions: BTreeSet<_> = self
-            .grid
-            .column_positions(pos.column)
-            .chain(self.grid.row_positions(pos.row))
-            .chain(self.grid.block_positions(pos))
-            .filter(|pos| self.grid.get_pos(*pos).candidates().is_some())
-            .collect();
+        self.grid
+            .neighbor_positions_with_duplicates(pos)
+            .for_each(|pos| {
+                if self.grid.get_pos(pos).candidates().is_some() {
+                    let cell = self.grid.get_pos_mut(pos);
 
-        for unique_position in unique_positions {
-            let cell = self.grid.get_pos_mut(unique_position);
-
-            cell.delete_candidate(value, max)
-        }
+                    cell.delete_candidate(value, max);
+                }
+            });
     }
 
     pub fn direct_candidates(&self, pos: Position) -> Vec<usize> {
-        // TODO: extract group_positions iterator
-        let conflicting_values = self
+        let conflicting_values: FixedBitSet = self
             .grid
-            .column_cells(pos.column)
-            .chain(self.grid.row_cells(pos.row))
-            .chain(self.grid.block_cells(pos))
-            .filter_map(|cell| cell.value())
-            .collect::<FixedBitSet>();
+            .neighbor_positions_with_duplicates(pos)
+            .filter_map(|pos| self.get(pos).value())
+            .collect();
 
         let values: FixedBitSet = self.grid.value_range().collect();
 
         values.difference(&conflicting_values).collect()
     }
 
+    #[allow(dead_code)]
     pub(crate) fn has_conflict(&self) -> bool {
         self.grid.all_row_cells().any(|row| self.has_duplicate(row))
             || self
