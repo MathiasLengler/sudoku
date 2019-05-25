@@ -21,6 +21,8 @@ pub mod samples;
 pub mod solver;
 pub mod transport;
 
+// TODO: remove prefix naming on types (generator and solver)
+
 // TODO: deref(mut) to grid
 //  check public API
 //   can invariants be broken? (cell max_value)
@@ -144,6 +146,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     }
 }
 
+// TODO: move &self methods to grid
 impl<Cell: SudokuCell> Sudoku<Cell> {
     fn update_candidates(&mut self, pos: Position, value: usize) {
         let max = self.grid.max_value();
@@ -198,6 +201,10 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
         cells
             .filter_map(|cell| cell.value())
             .any(move |x| !uniq.insert(x))
+    }
+
+    fn is_solved(&self) -> bool {
+        self.grid().all_empty_positions().is_empty() && !self.has_conflict()
     }
 }
 

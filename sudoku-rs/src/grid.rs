@@ -244,6 +244,12 @@ impl<Cell: SudokuCell> Grid<Cell> {
             .filter(|pos| self.get_pos(*pos).value().is_some())
             .collect()
     }
+
+    pub fn all_candidates_positions(&self) -> Vec<Position> {
+        self.all_positions()
+            .filter(|pos| self.get_pos(*pos).candidates().is_some())
+            .collect()
+    }
 }
 
 /// Group and neighbor iterators

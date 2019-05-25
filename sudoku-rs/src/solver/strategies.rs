@@ -16,5 +16,67 @@
 //! Swordfish | sf4 | 8000 | 6000
 
 // TODO: start implementing:
-//  single candidate in cell (Single Candidate)
 //  single candidate in group (Single Position)
+
+use crate::cell::SudokuCell;
+use crate::position::Position;
+use crate::Sudoku;
+
+// TODO: bench
+pub fn single_candidate<Cell: SudokuCell>(sudoku: &mut Sudoku<Cell>) -> Vec<Position> {
+    sudoku
+        .grid()
+        .all_candidates_positions()
+        .into_iter()
+        .filter_map(|candidate_pos| {
+            let candidates = sudoku.get(candidate_pos).candidates().unwrap();
+
+            if candidates.len() == 1 {
+                let single_candidate = candidates[0];
+
+                sudoku.set_value(candidate_pos, single_candidate);
+
+                Some(candidate_pos)
+            } else {
+                None
+            }
+        })
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use std::num::NonZeroUsize;
+
+    use crate::cell::Cell;
+    use crate::samples;
+
+    use super::*;
+
+    #[test]
+    fn test_single_candidate() {
+        let mut sudoku: Sudoku<Cell<NonZeroUsize>> = samples::base_2().first().unwrap().clone();
+
+        sudoku.set_all_direct_candidates();
+
+        let mut modified_positions = single_candidate(&mut sudoku);
+
+        modified_positions.sort();
+
+        assert_eq!(
+            modified_positions,
+            vec![
+                Position { row: 0, column: 0 },
+                Position { row: 0, column: 3 },
+                Position { row: 1, column: 1 },
+                Position { row: 1, column: 2 },
+                Position { row: 2, column: 1 },
+                Position { row: 2, column: 2 },
+                Position { row: 3, column: 0 },
+                Position { row: 3, column: 3 },
+            ]
+        );
+
+        assert!(sudoku.is_solved());
+    }
+}

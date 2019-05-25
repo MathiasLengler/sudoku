@@ -225,13 +225,7 @@ mod tests {
 
         let sudoku = solve_result.unwrap();
 
-        assert_solved_sudoku(&sudoku);
-    }
-
-    fn assert_solved_sudoku<Cell: SudokuCell>(sudoku: &Sudoku<Cell>) {
-        assert!(!sudoku.has_conflict());
-
-        assert!(sudoku.grid().all_empty_positions().is_empty());
+        assert!(sudoku.is_solved());
     }
 
     fn assert_iter(solver: BacktrackingSolver<Cell>) {
@@ -243,7 +237,7 @@ mod tests {
 
         solutions
             .iter()
-            .for_each(|solution| assert_solved_sudoku(solution));
+            .for_each(|solution| assert!(solution.is_solved()));
 
         let unique_solutions = solutions.into_iter().collect::<HashSet<_>>();
 
