@@ -203,6 +203,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
             .any(move |x| !unique.insert(x))
     }
 
+    #[allow(dead_code)]
     fn is_solved(&self) -> bool {
         self.grid().all_candidates_positions().is_empty() && !self.has_conflict()
     }

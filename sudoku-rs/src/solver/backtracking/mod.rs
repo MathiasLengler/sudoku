@@ -53,7 +53,7 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
 
         let mut solver = BacktrackingSolver {
             sudoku,
-            choices: vec![],
+            choices: Vec::with_capacity(empty_positions.len()),
             empty_positions,
             step_count: 0,
             settings,
