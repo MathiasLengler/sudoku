@@ -104,7 +104,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
 
     pub fn set_all_direct_candidates(&mut self) {
         self.grid()
-            .all_empty_positions()
+            .all_candidates_positions()
             .into_iter()
             .for_each(|pos| {
                 let candidates = self.direct_candidates(pos);
@@ -204,7 +204,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     }
 
     fn is_solved(&self) -> bool {
-        self.grid().all_empty_positions().is_empty() && !self.has_conflict()
+        self.grid().all_candidates_positions().is_empty() && !self.has_conflict()
     }
 }
 

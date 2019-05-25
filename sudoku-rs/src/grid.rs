@@ -233,12 +233,6 @@ impl<Cell: SudokuCell> Grid<Cell> {
 
 /// Filtered position vec
 impl<Cell: SudokuCell> Grid<Cell> {
-    pub fn all_empty_positions(&self) -> Vec<Position> {
-        self.all_positions()
-            .filter(|pos| self.get_pos(*pos).value().is_none())
-            .collect()
-    }
-
     pub fn all_value_positions(&self) -> Vec<Position> {
         self.all_positions()
             .filter(|pos| self.get_pos(*pos).value().is_some())

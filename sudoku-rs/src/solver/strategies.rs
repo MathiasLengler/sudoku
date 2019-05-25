@@ -58,6 +58,7 @@ mod tests {
         let mut sudoku: Sudoku<Cell<NonZeroUsize>> = samples::base_2().first().unwrap().clone();
 
         sudoku.set_all_direct_candidates();
+        sudoku.fix_all_values();
 
         let mut modified_positions = single_candidate(&mut sudoku);
 

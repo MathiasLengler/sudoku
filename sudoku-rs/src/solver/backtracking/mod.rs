@@ -49,7 +49,7 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
         sudoku: Sudoku<Cell>,
         settings: BacktrackingSolverSettings,
     ) -> BacktrackingSolver<Cell> {
-        let empty_positions = sudoku.grid().all_empty_positions();
+        let empty_positions = sudoku.grid().all_candidates_positions();
 
         let mut solver = BacktrackingSolver {
             sudoku,

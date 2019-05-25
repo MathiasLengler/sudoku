@@ -66,7 +66,7 @@ impl BacktrackingGenerator {
         mut sudoku: Sudoku<Cell>,
         distance: usize,
     ) -> Option<Sudoku<Cell>> {
-        assert!(sudoku.grid().all_empty_positions().is_empty());
+        assert!(sudoku.grid().all_candidates_positions().is_empty());
 
         let mut all_positions: Vec<_> = sudoku.grid().all_positions().collect();
 
