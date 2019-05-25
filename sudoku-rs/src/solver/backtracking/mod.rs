@@ -49,11 +49,11 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
         sudoku: Sudoku<Cell>,
         settings: BacktrackingSolverSettings,
     ) -> BacktrackingSolver<Cell> {
-        let empty_positions = sudoku.grid().all_empty_positions();
+        let empty_positions = sudoku.grid().all_candidates_positions();
 
         let mut solver = BacktrackingSolver {
             sudoku,
-            choices: vec![],
+            choices: Vec::with_capacity(empty_positions.len()),
             empty_positions,
             step_count: 0,
             settings,
@@ -202,10 +202,8 @@ impl<Cell: SudokuCell> Iterator for BacktrackingSolver<Cell> {
 #[cfg(test)]
 mod tests {
     use std::collections::HashSet;
-    use std::convert::TryInto;
 
     use crate::cell::Cell;
-    use crate::error::Result;
 
     use super::*;
 
@@ -227,13 +225,7 @@ mod tests {
 
         let sudoku = solve_result.unwrap();
 
-        assert_solved_sudoku(&sudoku);
-    }
-
-    fn assert_solved_sudoku<Cell: SudokuCell>(sudoku: &Sudoku<Cell>) {
-        assert!(!sudoku.has_conflict());
-
-        assert!(sudoku.grid().all_empty_positions().is_empty());
+        assert!(sudoku.is_solved());
     }
 
     fn assert_iter(solver: BacktrackingSolver<Cell>) {
@@ -245,7 +237,7 @@ mod tests {
 
         solutions
             .iter()
-            .for_each(|solution| assert_solved_sudoku(solution));
+            .for_each(|solution| assert!(solution.is_solved()));
 
         let unique_solutions = solutions.into_iter().collect::<HashSet<_>>();
 
@@ -276,7 +268,7 @@ mod tests {
     fn test_base_2() {
         let sudokus = crate::samples::base_2();
 
-        for (sudoku_index, sudoku) in sudokus.into_iter().enumerate() {
+        for (_sudoku_index, sudoku) in sudokus.into_iter().enumerate() {
             let mut solver = BacktrackingSolver::new(sudoku);
 
             let solve_result = solver.try_solve();
@@ -289,7 +281,7 @@ mod tests {
     fn test_base_3() {
         let sudokus = crate::samples::base_3();
 
-        for (sudoku_index, sudoku) in sudokus.into_iter().enumerate() {
+        for (_sudoku_index, sudoku) in sudokus.into_iter().enumerate() {
             let mut solver = BacktrackingSolver::new(sudoku);
 
             let solve_result = solver.try_solve();

@@ -4,6 +4,7 @@ use std::fmt::{Display, Formatter};
 
 use failure::ensure;
 use fixedbitset::FixedBitSet;
+use itertools::Itertools;
 
 use crate::cell::SudokuCell;
 use crate::error::{Error, Result};
@@ -87,6 +88,12 @@ impl<Cell: SudokuCell> Grid<Cell> {
 
     pub(super) fn value_range(&self) -> impl Iterator<Item = usize> {
         (1..=self.side_length())
+    }
+
+    pub(super) fn value_range_bit_set(&self) -> FixedBitSet {
+        let mut bit_set = FixedBitSet::with_capacity(self.side_length() + 1);
+        bit_set.set_range(1.., true);
+        bit_set
     }
 
     pub(super) fn base(&self) -> usize {
@@ -230,18 +237,35 @@ impl<Cell: SudokuCell> Grid<Cell> {
     }
 }
 
-/// Filtered Position iterators
+/// Filtered position vec
 impl<Cell: SudokuCell> Grid<Cell> {
-    pub fn all_empty_positions(&self) -> Vec<Position> {
-        self.all_positions()
-            .filter(|pos| self.get_pos(*pos).value().is_none())
-            .collect()
-    }
-
     pub fn all_value_positions(&self) -> Vec<Position> {
         self.all_positions()
             .filter(|pos| self.get_pos(*pos).value().is_some())
             .collect()
+    }
+
+    pub fn all_candidates_positions(&self) -> Vec<Position> {
+        self.all_positions()
+            .filter(|pos| self.get_pos(*pos).candidates().is_some())
+            .collect()
+    }
+}
+
+/// Group and neighbor iterators
+impl<Cell: SudokuCell> Grid<Cell> {
+    pub fn neighbor_positions_with_duplicates(
+        &self,
+        pos: Position,
+    ) -> impl Iterator<Item = Position> {
+        // TODO: reimplement without chain (VTune: bad speculation + unique version)
+        self.row_positions(pos.row)
+            .chain(self.column_positions(pos.column))
+            .chain(self.block_positions(pos))
+    }
+
+    pub fn neighbor_positions(&self, pos: Position) -> impl Iterator<Item = Position> {
+        self.neighbor_positions_with_duplicates(pos).unique()
     }
 }
 
@@ -275,9 +299,9 @@ impl<Cell: SudokuCell> TryFrom<Vec<usize>> for Grid<Cell> {
 }
 
 impl<Cell: SudokuCell> Display for Grid<Cell> {
+    // TODO: implement using prettytable-rs
+    // TODO: show candidates (compare with exchange formats)
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        use itertools::Itertools;
-
         const PADDING: usize = 3;
 
         let horizontal_block_separator = "-".repeat(self.base() + (PADDING * self.side_length()));
@@ -307,5 +331,30 @@ impl<Cell: SudokuCell> Display for Grid<Cell> {
             .join("\n");
 
         f.write_str(&output_string)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::cell::Cell;
+
+    use super::*;
+
+    #[test]
+    fn test_value_range() {
+        let grid = Grid::<Cell>::new(3);
+
+        let value_range: Vec<_> = grid.value_range().collect();
+
+        assert_eq!(value_range, vec![1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    }
+
+    #[test]
+    fn test_value_range_bit_set() {
+        let grid = Grid::<Cell>::new(3);
+
+        let value_range_bit_set: Vec<_> = grid.value_range_bit_set().ones().collect();
+
+        assert_eq!(value_range_bit_set, vec![1, 2, 3, 4, 5, 6, 7, 8, 9]);
     }
 }

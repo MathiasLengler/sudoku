@@ -110,6 +110,26 @@ fn criterion_benchmark(c: &mut Criterion) {
                 |sudoku| sudoku.direct_candidates(Position { column: 1, row: 1 }),
                 BatchSize::SmallInput,
             )
+        })
+        .with_function("update_candidates", |b, base| {
+            let mut sudoku = sample_sudoku(*base);
+
+            sudoku.set_all_direct_candidates();
+
+            b.iter_batched(
+                || sudoku.clone(),
+                |mut sudoku| sudoku.set_or_toggle_value(Position { column: 1, row: 1 }, 2),
+                BatchSize::SmallInput,
+            )
+        })
+        .with_function("set_all_direct_candidates", |b, base| {
+            let sudoku = sample_sudoku(*base);
+
+            b.iter_batched(
+                || sudoku.clone(),
+                |mut sudoku| sudoku.set_all_direct_candidates(),
+                BatchSize::SmallInput,
+            )
         }),
     );
 }

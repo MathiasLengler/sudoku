@@ -1,4 +1,3 @@
-use std::collections::btree_set::BTreeSet;
 use std::collections::HashSet;
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
@@ -21,6 +20,8 @@ pub mod position;
 pub mod samples;
 pub mod solver;
 pub mod transport;
+
+// TODO: remove prefix naming on types (generator and solver)
 
 // TODO: deref(mut) to grid
 //  check public API
@@ -103,7 +104,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
 
     pub fn set_all_direct_candidates(&mut self) {
         self.grid()
-            .all_empty_positions()
+            .all_candidates_positions()
             .into_iter()
             .for_each(|pos| {
                 let candidates = self.direct_candidates(pos);
@@ -145,41 +146,39 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     }
 }
 
+// TODO: move &self methods to grid
 impl<Cell: SudokuCell> Sudoku<Cell> {
     fn update_candidates(&mut self, pos: Position, value: usize) {
         let max = self.grid.max_value();
 
-        // TODO: extract group_positions iterator
-        let unique_positions: BTreeSet<_> = self
-            .grid
-            .column_positions(pos.column)
-            .chain(self.grid.row_positions(pos.row))
-            .chain(self.grid.block_positions(pos))
-            .filter(|pos| self.grid.get_pos(*pos).candidates().is_some())
-            .collect();
+        self.grid
+            .neighbor_positions_with_duplicates(pos)
+            .for_each(|pos| {
+                if self.grid.get_pos(pos).candidates().is_some() {
+                    let cell = self.grid.get_pos_mut(pos);
 
-        for unique_position in unique_positions {
-            let cell = self.grid.get_pos_mut(unique_position);
-
-            cell.delete_candidate(value, max)
-        }
+                    cell.delete_candidate(value, max);
+                }
+            });
     }
 
     pub fn direct_candidates(&self, pos: Position) -> Vec<usize> {
-        // TODO: extract group_positions iterator
-        let conflicting_values = self
+        let conflicting_values: FixedBitSet = self
             .grid
-            .column_cells(pos.column)
-            .chain(self.grid.row_cells(pos.row))
-            .chain(self.grid.block_cells(pos))
-            .filter_map(|cell| cell.value())
-            .collect::<FixedBitSet>();
+            .neighbor_positions_with_duplicates(pos)
+            .filter_map(|pos| self.get(pos).value())
+            .collect();
 
-        let values: FixedBitSet = self.grid.value_range().collect();
+        let values = self.grid.value_range_bit_set();
 
-        values.difference(&conflicting_values).collect()
+        let mut candidates = Vec::with_capacity(self.side_length());
+
+        candidates.extend(values.difference(&conflicting_values));
+
+        candidates
     }
 
+    #[allow(dead_code)]
     pub(crate) fn has_conflict(&self) -> bool {
         self.grid.all_row_cells().any(|row| self.has_duplicate(row))
             || self
@@ -201,11 +200,16 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
 
     // TODO: conflict location pairs
     pub fn has_duplicate<'a>(&'a self, cells: impl Iterator<Item = &'a Cell>) -> bool {
-        let mut uniq = HashSet::new();
+        let mut unique = HashSet::with_capacity(self.grid.side_length());
 
         cells
             .filter_map(|cell| cell.value())
-            .any(move |x| !uniq.insert(x))
+            .any(move |x| !unique.insert(x))
+    }
+
+    #[allow(dead_code)]
+    fn is_solved(&self) -> bool {
+        self.grid().all_candidates_positions().is_empty() && !self.has_conflict()
     }
 }
 
@@ -237,6 +241,8 @@ impl<Cell: SudokuCell> Display for Sudoku<Cell> {
 
 #[cfg(test)]
 mod tests {
+    use std::num::NonZeroUsize;
+
     use crate::cell::Cell;
 
     use super::*;
@@ -283,5 +289,52 @@ mod tests {
         let direct_candidates = sudoku.direct_candidates(Position { column: 1, row: 1 });
 
         assert_eq!(direct_candidates, vec![1, 2, 4]);
+    }
+
+    #[test]
+    fn test_set_or_toggle_value() {
+        let mut sudoku: Sudoku<Cell<NonZeroUsize>> = samples::base_2().first().unwrap().clone();
+
+        sudoku.set_all_direct_candidates();
+
+        let sudoku = sudoku;
+
+        assert_eq!(
+            {
+                let mut sudoku = sudoku.clone();
+                sudoku.set_or_toggle_value(Position { column: 0, row: 3 }, 1);
+                sudoku.set_candidates(Position { column: 0, row: 3 }, vec![3]);
+                sudoku
+            },
+            { sudoku.clone() }
+        );
+
+        assert_eq!(
+            {
+                let mut sudoku = sudoku.clone();
+                sudoku.set_or_toggle_value(Position { column: 0, row: 3 }, 2);
+                sudoku.set_candidates(Position { column: 0, row: 3 }, vec![3]);
+                sudoku
+            },
+            {
+                let mut sudoku = sudoku.clone();
+                sudoku.delete(Position { column: 0, row: 0 });
+                sudoku
+            }
+        );
+        assert_eq!(
+            {
+                let mut sudoku = sudoku.clone();
+                sudoku.set_or_toggle_value(Position { column: 0, row: 3 }, 4);
+                sudoku.set_candidates(Position { column: 0, row: 3 }, vec![3]);
+                sudoku
+            },
+            {
+                let mut sudoku = sudoku.clone();
+                sudoku.delete(Position { column: 1, row: 2 });
+                sudoku.delete(Position { column: 3, row: 3 });
+                sudoku
+            }
+        );
     }
 }

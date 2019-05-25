@@ -1,7 +1,8 @@
+#![allow(unused_imports)]
+
 use std::cell::RefCell;
 
 use log::debug;
-use wasm_bindgen::prelude::*;
 
 use sudoku::cell::Cell;
 use sudoku::generator::backtracking::{
@@ -10,6 +11,7 @@ use sudoku::generator::backtracking::{
 use sudoku::position::Position;
 use sudoku::transport::TransportSudoku;
 use sudoku::Sudoku;
+use wasm_bindgen::prelude::*;
 
 #[cfg(feature = "wee_alloc")]
 #[global_allocator]
@@ -24,7 +26,6 @@ pub fn run() -> Result<(), JsValue> {
 
 #[wasm_bindgen]
 pub fn get_wasm_sudoku() -> WasmSudoku {
-    #[allow(unused_imports)]
     use std::convert::TryFrom;
 
     let [_base_1, _base_2, _base_3] = [
@@ -48,7 +49,7 @@ pub fn get_wasm_sudoku() -> WasmSudoku {
         ],
     ];
 
-    //    let mut sudoku = Sudoku::<Cell>::try_from(_base_3).unwrap();
+    let mut sudoku = Sudoku::<Cell>::try_from(_base_2).unwrap();
     //    let mut sudoku = Sudoku::<Cell>::new(4);
 
     //    let mut sudoku = BacktrackingGenerator::new(BacktrackingGeneratorSettings {
@@ -58,12 +59,12 @@ pub fn get_wasm_sudoku() -> WasmSudoku {
     //    .generate()
     //    .unwrap();
 
-    let mut sudoku = BacktrackingGenerator::new(BacktrackingGeneratorSettings {
-        base: 3,
-        target: BacktrackingGeneratorTarget::Critical,
-    })
-    .generate()
-    .unwrap();
+    //    let mut sudoku = BacktrackingGenerator::new(BacktrackingGeneratorSettings {
+    //        base: 2,
+    //        target: BacktrackingGeneratorTarget::Critical,
+    //    })
+    //    .generate()
+    //    .unwrap();
 
     sudoku.fix_all_values();
 
