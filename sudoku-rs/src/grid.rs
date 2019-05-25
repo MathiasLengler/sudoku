@@ -258,6 +258,7 @@ impl<Cell: SudokuCell> Grid<Cell> {
         &self,
         pos: Position,
     ) -> impl Iterator<Item = Position> {
+        // TODO: reimplement without chain (VTune: bad speculation + unique version)
         self.row_positions(pos.row)
             .chain(self.column_positions(pos.column))
             .chain(self.block_positions(pos))
