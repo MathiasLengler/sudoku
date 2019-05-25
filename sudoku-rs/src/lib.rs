@@ -169,9 +169,13 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
             .filter_map(|pos| self.get(pos).value())
             .collect();
 
-        let values: FixedBitSet = self.grid.value_range().collect();
+        let values = self.grid.value_range_bit_set();
 
-        values.difference(&conflicting_values).collect()
+        let mut candidates = Vec::with_capacity(self.side_length());
+
+        candidates.extend(values.difference(&conflicting_values));
+
+        candidates
     }
 
     #[allow(dead_code)]

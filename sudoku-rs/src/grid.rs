@@ -90,6 +90,12 @@ impl<Cell: SudokuCell> Grid<Cell> {
         (1..=self.side_length())
     }
 
+    pub(super) fn value_range_bit_set(&self) -> FixedBitSet {
+        let mut bit_set = FixedBitSet::with_capacity(self.side_length() + 1);
+        bit_set.set_range(1.., true);
+        bit_set
+    }
+
     pub(super) fn base(&self) -> usize {
         self.base
     }
@@ -324,5 +330,30 @@ impl<Cell: SudokuCell> Display for Grid<Cell> {
             .join("\n");
 
         f.write_str(&output_string)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::cell::Cell;
+
+    use super::*;
+
+    #[test]
+    fn test_value_range() {
+        let grid = Grid::<Cell>::new(3);
+
+        let value_range: Vec<_> = grid.value_range().collect();
+
+        assert_eq!(value_range, vec![1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    }
+
+    #[test]
+    fn test_value_range_bit_set() {
+        let grid = Grid::<Cell>::new(3);
+
+        let value_range_bit_set: Vec<_> = grid.value_range_bit_set().ones().collect();
+
+        assert_eq!(value_range_bit_set, vec![1, 2, 3, 4, 5, 6, 7, 8, 9]);
     }
 }
