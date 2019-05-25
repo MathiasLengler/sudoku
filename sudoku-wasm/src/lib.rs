@@ -49,22 +49,15 @@ pub fn get_wasm_sudoku() -> WasmSudoku {
         ],
     ];
 
-    let mut sudoku = Sudoku::<Cell>::try_from(_base_2).unwrap();
+    //    let mut sudoku = Sudoku::<Cell>::try_from(_base_2).unwrap();
     //    let mut sudoku = Sudoku::<Cell>::new(4);
 
-    //    let mut sudoku = BacktrackingGenerator::new(BacktrackingGeneratorSettings {
-    //        base: 3,
-    //        target: Default::default(),
-    //    })
-    //    .generate()
-    //    .unwrap();
-
-    //    let mut sudoku = BacktrackingGenerator::new(BacktrackingGeneratorSettings {
-    //        base: 2,
-    //        target: BacktrackingGeneratorTarget::Critical,
-    //    })
-    //    .generate()
-    //    .unwrap();
+    let mut sudoku = BacktrackingGenerator::new(BacktrackingGeneratorSettings {
+        base: 3,
+        target: BacktrackingGeneratorTarget::Critical,
+    })
+    .generate()
+    .unwrap();
 
     sudoku.fix_all_values();
 
