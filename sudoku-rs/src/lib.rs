@@ -196,11 +196,11 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
 
     // TODO: conflict location pairs
     pub fn has_duplicate<'a>(&'a self, cells: impl Iterator<Item = &'a Cell>) -> bool {
-        let mut uniq = HashSet::new();
+        let mut unique = HashSet::with_capacity(self.grid.side_length());
 
         cells
             .filter_map(|cell| cell.value())
-            .any(move |x| !uniq.insert(x))
+            .any(move |x| !unique.insert(x))
     }
 
     fn is_solved(&self) -> bool {
