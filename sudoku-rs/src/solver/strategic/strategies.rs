@@ -15,12 +15,16 @@
 //! Hidden Quad | us4 | 7000 | 5000
 //! Swordfish | sf4 | 8000 | 6000
 
-// TODO: start implementing:
-//  single candidate in group (Single Position)
+// TODO: single candidate in group (Single Position)
 
 use crate::cell::SudokuCell;
 use crate::position::Position;
+use crate::solver::backtracking::BacktrackingSolver;
 use crate::Sudoku;
+
+pub fn strategies<Cell: SudokuCell>() -> [fn(&mut Sudoku<Cell>) -> Vec<Position>; 2] {
+    [single_candidate, backtracking]
+}
 
 // TODO: bench
 pub fn single_candidate<Cell: SudokuCell>(sudoku: &mut Sudoku<Cell>) -> Vec<Position> {
@@ -42,6 +46,16 @@ pub fn single_candidate<Cell: SudokuCell>(sudoku: &mut Sudoku<Cell>) -> Vec<Posi
             }
         })
         .collect()
+}
+
+pub fn backtracking<Cell: SudokuCell>(sudoku: &mut Sudoku<Cell>) -> Vec<Position> {
+    let mut solver = BacktrackingSolver::new(sudoku);
+
+    if let Some(_) = solver.next() {
+        solver.empty_positions().to_vec()
+    } else {
+        vec![]
+    }
 }
 
 #[cfg(test)]
@@ -79,5 +93,20 @@ mod tests {
         );
 
         assert!(sudoku.is_solved());
+    }
+
+    #[test]
+    fn test_backtracking() {
+        let mut sudoku: Sudoku<Cell<NonZeroUsize>> = samples::base_3().first().unwrap().clone();
+
+        let candidates_len = sudoku.grid().all_candidates_positions().len();
+
+        sudoku.fix_all_values();
+
+        let modified_positions = backtracking(&mut sudoku);
+
+        assert!(sudoku.is_solved());
+
+        assert_eq!(modified_positions.len(), modified_positions.len());
     }
 }

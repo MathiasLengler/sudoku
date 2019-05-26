@@ -64,6 +64,10 @@ impl<'s, Cell: SudokuCell> BacktrackingSolver<'s, Cell> {
         solver
     }
 
+    pub fn empty_positions(&self) -> &[Position] {
+        &self.empty_positions
+    }
+
     fn init(&mut self) {
         if let Some(first_pos) = self.empty_positions.first() {
             self.choices.push(Choice::new(
