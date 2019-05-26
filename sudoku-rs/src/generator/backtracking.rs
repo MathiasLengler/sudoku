@@ -50,8 +50,10 @@ impl BacktrackingGenerator {
     }
 
     fn filled_sudoku<Cell: SudokuCell>(&self) -> Sudoku<Cell> {
+        let mut sudoku = Sudoku::<Cell>::new(self.settings.base);
+
         let mut solver = BacktrackingSolver::new_with_settings(
-            Sudoku::<Cell>::new(self.settings.base),
+            &mut sudoku,
             BacktrackingSolverSettings {
                 shuffle_candidates: true,
                 ..Default::default()
