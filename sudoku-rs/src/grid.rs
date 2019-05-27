@@ -86,6 +86,7 @@ impl<Cell: SudokuCell> Grid<Cell> {
         pos.column + pos.row * self.side_length()
     }
 
+    #[allow(dead_code)]
     pub(super) fn value_range(&self) -> impl Iterator<Item = usize> {
         (1..=self.side_length())
     }
