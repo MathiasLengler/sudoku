@@ -64,8 +64,8 @@ impl<'s, Cell: SudokuCell> BacktrackingSolver<'s, Cell> {
         solver
     }
 
-    pub fn empty_positions(&self) -> &[Position] {
-        &self.empty_positions
+    pub fn into_empty_positions(self) -> Vec<Position> {
+        self.empty_positions
     }
 
     fn init(&mut self) {
@@ -130,6 +130,7 @@ impl<'s, Cell: SudokuCell> BacktrackingSolver<'s, Cell> {
                         None => {
                             choice.set_next();
 
+                            // TODO: move clone to iterator (streaming iterator problem)
                             StepResult::Solution(Box::new(self.sudoku.clone()))
                         }
                     }

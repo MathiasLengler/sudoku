@@ -4,7 +4,7 @@ use crate::Sudoku;
 
 use super::Strategy;
 
-pub(in crate::solver::strategic) struct SingleCandidate;
+pub(in super::super) struct SingleCandidate;
 
 impl<Cell: SudokuCell> Strategy<Cell> for SingleCandidate {
     fn name(&self) -> &'static str {

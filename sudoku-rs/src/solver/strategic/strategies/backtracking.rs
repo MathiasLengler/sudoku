@@ -5,7 +5,7 @@ use crate::Sudoku;
 
 use super::Strategy;
 
-pub(in crate::solver::strategic) struct Backtracking;
+pub(in super::super) struct Backtracking;
 
 impl<Cell: SudokuCell> Strategy<Cell> for Backtracking {
     fn name(&self) -> &'static str {
@@ -16,7 +16,7 @@ impl<Cell: SudokuCell> Strategy<Cell> for Backtracking {
         let mut solver = BacktrackingSolver::new(sudoku);
 
         if let Some(_) = solver.next() {
-            solver.empty_positions().to_vec()
+            solver.into_empty_positions()
         } else {
             vec![]
         }
