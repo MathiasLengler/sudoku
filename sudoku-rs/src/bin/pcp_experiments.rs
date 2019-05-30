@@ -8,18 +8,12 @@ use pcp::concept::*;
 use interval::ops::Range;
 use interval::interval_set::*;
 use gcollections::ops::*;
-use pcp::search::engine::all_solution::AllSolution;
-use pcp::search::monitor::Monitor;
-use pcp::search::engine::one_solution::OneSolution;
-use pcp::search::propagation::Propagation;
-use pcp::search::branching::{Brancher, FirstSmallestVar, MiddleVal, BinarySplit};
-use pcp::search::statistics::Statistics;
-use gcollections::VectorStack;
+use fixedbitset::FixedBitSet;
 
 // TODO: candidate reduction
 // TODO: sudoku solver/strategy
 
-pub fn candidate_reduction(base: usize, list_of_candidates: Vec<Vec<i32>>) {
+pub fn candidate_reduction(max_value: usize, list_of_candidates: Vec<Vec<i32>>) -> Vec<Vec<usize>> {
     let mut space = FDSpace::empty();
 
     let mut values = vec![];
@@ -37,90 +31,58 @@ pub fn candidate_reduction(base: usize, list_of_candidates: Vec<Vec<i32>>) {
     space.cstore.alloc(Box::new(Distinct::new(values)));
 
     // Search step.
-    // let mut search = one_solution_engine();
-
-    let mut statistics = Statistics::new();
-    let mut search: AllSolution<Monitor<Statistics,
-    OneSolution<_, VectorStack<_>, FDSpace>>> = AllSolution::new(Monitor::new(&mut statistics,
-                                                   OneSolution::new(Propagation::new(Brancher::new(FirstSmallestVar, MiddleVal, BinarySplit)))));
-
-    search.start(&space);
-    let (frozen_space, status) = search.enter(space);
-    let space = frozen_space.unfreeze();
-
-    // Print result.
-
-    dbg!(statistics.num_solution);
-
-    match status {
-        Satisfiable => {
-            println!("Satisfiable");
-            eprintln!("{:#?}", space.vstore.iter().collect::<Vec<_>>());
-            /*                // At this stage, dom.lower() == dom.upper().
-                            print!("{}, ", dom.lower());*/
-        }
-        Unsatisfiable => println!("Unsatisfiable"),
-        EndOfSearch => println!("Search terminated or was interrupted."),
-        Unknown(_) => unreachable!(
-            "After the search step, the problem instance should be either satisfiable or unsatisfiable.")
-    }
-}
-
-pub fn nqueens(n: usize) {
-    let mut space = FDSpace::empty();
-
-    let mut queens = vec![];
-    // 2 queens can't share the same line.
-    for _ in 0..n {
-        queens.push(Box::new(space.vstore.alloc(IntervalSet::new(1, n as i32))) as Var<VStore>);
-    }
-    for i in 0..n - 1 {
-        for j in i + 1..n {
-            // 2 queens can't share the same diagonal.
-            let q1 = (i + 1) as i32;
-            let q2 = (j + 1) as i32;
-            // Xi + i != Xj + j reformulated as: Xi != Xj + j - i
-            space.cstore.alloc(Box::new(XNeqY::new(
-                queens[i].bclone(), Box::new(Addition::new(queens[j].bclone(), q2 - q1)) as Var<VStore>)));
-            // Xi - i != Xj - j reformulated as: Xi != Xj - j + i
-            space.cstore.alloc(Box::new(XNeqY::new(
-                queens[i].bclone(), Box::new(Addition::new(queens[j].bclone(), -q2 + q1)) as Var<VStore>)));
-        }
-    }
-    // 2 queens can't share the same column.
-    // join_distinct(&mut space.vstore, &mut space.cstore, queens);
-    space.cstore.alloc(Box::new(Distinct::new(queens)));
-
-    // Search step.
     let mut search = one_solution_engine();
-    search.start(&space);
-    let (frozen_space, status) = search.enter(space);
-    let space = frozen_space.unfreeze();
 
-    // Print result.
-    match status {
-        Satisfiable => {
-            print!("{}-queens problem is satisfiable. The first solution is:\n[", n);
-            for dom in space.vstore.iter() {
-                // At this stage, dom.lower() == dom.upper().
-                print!("{}, ", dom.lower());
+//    let mut statistics = Statistics::new();
+//    let mut search: AllSolution<Monitor<Statistics,
+//    OneSolution<_, VectorStack<_>, FDSpace>>> = AllSolution::new(Monitor::new(&mut statistics,
+//                                                   OneSolution::new(Propagation::new(Brancher::new(FirstSmallestVar, MiddleVal, BinarySplit)))));
+
+    let mut new_list_of_candidates: Vec<FixedBitSet> = std::iter::repeat(FixedBitSet::with_capacity(max_value + 1)).take(list_of_candidates.len()).collect();
+
+    search.start(&space);
+    loop {
+        let (frozen_space, status) = search.enter(space);
+        space = frozen_space.unfreeze();
+
+        // Print result.
+
+        //dbg!(statistics.num_solution);
+
+        match status {
+            Satisfiable => {
+                println!("Satisfiable");
+                eprintln!("{:?}", space.vstore.iter().map(|dom| dom.lower()).collect::<Vec<_>>());
+
+                space.vstore.iter().zip(&mut new_list_of_candidates)
+                    .for_each(|(dom, bit_set)| {
+                        let value = dom.lower();
+
+                        bit_set.insert(value as usize);
+                    });
+                /*                // At this stage, dom.lower() == dom.upper().
+                                print!("{}, ", dom.lower());*/
             }
-            println!("]");
+            Unsatisfiable => println!("Unsatisfiable"),
+            EndOfSearch => {
+                println!("Search terminated or was interrupted.");
+                break;
+            }
+            Unknown(_) => unreachable!(
+                "After the search step, the problem instance should be either satisfiable or unsatisfiable.")
         }
-        Unsatisfiable => println!("{}-queens problem is unsatisfiable.", n),
-        EndOfSearch => println!("Search terminated or was interrupted."),
-        Unknown(_) => unreachable!(
-            "After the search step, the problem instance should be either satisfiable or unsatisfiable.")
     }
+
+    new_list_of_candidates.into_iter().map(|bit_set| bit_set.ones().collect()).collect()
 }
 
 fn main() {
-    // nqueens(12);
-
-    candidate_reduction(2, vec![
+    let new_list_of_candidates = candidate_reduction(4, vec![
+        vec![3, 4],
+        vec![1, 3, 4],
         vec![1, 2, 3, 4],
-        vec![1, 2],
-        vec![1, 2, 3],
-        vec![1, 2],
-    ])
+        vec![3, 4],
+    ]);
+
+    eprintln!("new_list_of_candidates = {:?}", new_list_of_candidates);
 }
