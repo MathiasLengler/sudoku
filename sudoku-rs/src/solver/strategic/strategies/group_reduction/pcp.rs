@@ -1,31 +1,15 @@
 use fixedbitset::FixedBitSet;
 use gcollections::ops::*;
-use gcollections::VectorStack;
 use interval::interval::ToInterval;
 use pcp::concept::*;
 use pcp::kernel::*;
-use pcp::propagation::CStoreFD;
 use pcp::propagators::*;
-use pcp::search::branching::{BinarySplit, Brancher, FirstSmallestVar, MiddleVal};
-use pcp::search::engine::one_solution::OneSolution;
-use pcp::search::propagation::Propagation;
 use pcp::search::search_tree_visitor::Status::*;
 use pcp::search::*;
 use pcp::term::*;
 use pcp::variable::ops::*;
-use pcp::variable::VStoreFD;
 
-type VStore = VStoreFD;
-type CStore = CStoreFD<VStore>;
-type FDSpace = Space<VStore, CStore, NoRecomputation<VStore, CStore>>;
-
-fn one_solution_engine_interval() -> impl SearchTreeVisitor<FDSpace> {
-    OneSolution::<_, VectorStack<_>, FDSpace>::new(Propagation::new(Brancher::new(
-        FirstSmallestVar,
-        MiddleVal,
-        BinarySplit,
-    )))
-}
+use crate::solver::constraint::pcp_utils::{one_solution_engine_interval, FDSpace, VStore};
 
 // TODO: return result
 // TODO: optimize by using 0 indexed values and returning Vec<FixedBitSet>
