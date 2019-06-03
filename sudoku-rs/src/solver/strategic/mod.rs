@@ -16,6 +16,9 @@ pub struct Solver<'s, Cell: SudokuCell> {
 
 impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
     pub fn new(sudoku: &'s mut Sudoku<Cell>) -> Solver<'s, Cell> {
+        sudoku.fix_all_values();
+        sudoku.set_all_direct_candidates();
+
         Self {
             sudoku,
             strategies: strategies::strategies(),
@@ -24,9 +27,6 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
 
     // TODO: unique solution?
     pub fn try_solve(&mut self) -> bool {
-        self.sudoku.fix_all_values();
-        self.sudoku.set_all_direct_candidates();
-
         loop {
             if self.sudoku.is_solved() {
                 return true;
@@ -73,7 +73,7 @@ mod tests {
     fn test_base_2() {
         let mut sudokus = crate::samples::base_2();
 
-        for (sudoku_index, mut sudoku) in sudokus.drain(1..2).enumerate() {
+        for (sudoku_index, mut sudoku) in sudokus.drain(..).enumerate() {
             println!("#{}:\n{}", sudoku_index, sudoku);
 
             let mut solver = Solver::new(&mut sudoku);

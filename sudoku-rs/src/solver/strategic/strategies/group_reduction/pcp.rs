@@ -26,7 +26,7 @@ pub(super) fn group_candidates_reduction(
 
     let mut values = vec![];
 
-    // values must be in range
+    // Define values constrained to range
     for _candidates in group_candidates {
         values
             .push(Box::new(space.vstore.alloc((1, max_value as i32).to_interval())) as Var<VStore>);
@@ -104,7 +104,6 @@ pub(super) fn group_candidates_reduction(
         .map(|bit_set| bit_set.ones().collect())
         .collect()
 }
-// TODO: complete sudoku solver in PCP
 
 #[cfg(test)]
 mod tests {
@@ -114,7 +113,7 @@ mod tests {
     fn test_single_candidates() {
         let mut test_cases = vec![vec![vec![1, 5]]];
 
-        for group_candidates in test_cases.drain(0..=0) {
+        for group_candidates in test_cases.drain(..) {
             let reduced_group_candidates = group_candidates_reduction(&group_candidates, 5);
 
             eprintln!("group_candidates         = {:?}", group_candidates);
@@ -144,7 +143,7 @@ mod tests {
             ),
         ];
 
-        for (group_candidates, expected) in test_cases.drain(4..) {
+        for (group_candidates, expected) in test_cases.drain(..) {
             let reduced_group_candidates = group_candidates_reduction(&group_candidates, 4);
 
             eprintln!("group_candidates         = {:?}", group_candidates);
