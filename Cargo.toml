@@ -9,6 +9,6 @@ members = [
 debug = true
 
 [patch.crates-io]
-gcollections = { path = "../gcollections" }
-intervallum = { path = "../intervallum" }
-pcp = { path = "../pcp" }
+gcollections = { git = "https://github.com/MathiasLengler/gcollections" }
+intervallum = { git = "https://github.com/MathiasLengler/intervallum" }
+pcp = { git = "https://github.com/MathiasLengler/pcp" }
