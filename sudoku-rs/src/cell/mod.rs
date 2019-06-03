@@ -11,7 +11,8 @@ use crate::cell::value::SudokuValue;
 
 pub mod value;
 
-// TODO: is_editable cell
+// TODO: set_candidates_bit_set optimization
+//  assert len
 pub trait SudokuCell<Value = NonZeroUsize>:
     Clone + Display + Debug + Ord + Eq + Hash + Send
 where

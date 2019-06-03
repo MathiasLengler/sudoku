@@ -5,9 +5,6 @@ use crate::Sudoku;
 
 mod strategies;
 
-// TODO: implement strategic solver
-//  loop from beginning after each find
-
 // TODO: bench
 //  Solver
 //  strategies
@@ -26,8 +23,6 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
     }
 
     pub fn try_solve(&mut self) -> bool {
-        println!("{}", self.sudoku);
-
         self.sudoku.fix_all_values();
         self.sudoku.set_all_direct_candidates();
 
@@ -42,8 +37,6 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
                 let modified_positions = strategy.execute(&mut self.sudoku);
 
                 if !modified_positions.is_empty() {
-                    println!("{}", self.sudoku);
-
                     println!(
                         "{}: {:?}",
                         strategy.name(),
@@ -52,6 +45,8 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
                             .map(|pos| pos.to_string())
                             .collect::<Vec<_>>()
                     );
+
+                    println!("{}", self.sudoku);
 
                     modified = true;
 
@@ -75,9 +70,11 @@ mod tests {
 
     #[test]
     fn test_base_2() {
-        let sudokus = crate::samples::base_2();
+        let mut sudokus = crate::samples::base_2();
 
-        for (_sudoku_index, mut sudoku) in sudokus.into_iter().enumerate() {
+        for (sudoku_index, mut sudoku) in sudokus.drain(1..2).enumerate() {
+            println!("#{}:\n{}", sudoku_index, sudoku);
+
             let mut solver = Solver::new(&mut sudoku);
 
             assert!(solver.try_solve());
@@ -90,12 +87,26 @@ mod tests {
     fn test_base_3() {
         let sudokus = crate::samples::base_3();
 
-        for (_sudoku_index, mut sudoku) in sudokus.into_iter().enumerate() {
+        for (sudoku_index, mut sudoku) in sudokus.into_iter().enumerate() {
+            println!("#{}:\n{}", sudoku_index, sudoku);
+
             let mut solver = Solver::new(&mut sudoku);
 
             assert!(solver.try_solve());
 
             assert!(sudoku.is_solved());
         }
+    }
+
+    #[ignore]
+    #[test]
+    fn test_critical() {
+        let mut sudoku = crate::samples::critical();
+
+        let mut solver = Solver::new(&mut sudoku);
+
+        assert!(solver.try_solve());
+
+        assert!(sudoku.is_solved());
     }
 }

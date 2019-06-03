@@ -253,7 +253,7 @@ impl<Cell: SudokuCell> Grid<Cell> {
     }
 }
 
-/// Group and neighbor iterators
+/// Neighbor iterators
 impl<Cell: SudokuCell> Grid<Cell> {
     pub fn neighbor_positions_with_duplicates(
         &self,

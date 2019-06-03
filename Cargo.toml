@@ -7,3 +7,8 @@ members = [
 
 [profile.release]
 debug = true
+
+[patch.crates-io]
+gcollections = { path = "../gcollections" }
+intervallum = { path = "../intervallum" }
+pcp = { path = "../pcp" }

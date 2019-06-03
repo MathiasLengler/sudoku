@@ -17,9 +17,8 @@
 //! Hidden Quad | us4 | 7000 | 5000
 //! Swordfish | sf4 | 8000 | 6000
 
-// TODO: single candidate in group (Single Position)
-
 use backtracking::Backtracking;
+use group_reduction::GroupReduction;
 use single_candidate::SingleCandidate;
 
 use crate::cell::SudokuCell;
@@ -27,7 +26,15 @@ use crate::position::Position;
 use crate::Sudoku;
 
 mod backtracking;
+mod group_reduction;
 mod single_candidate;
+
+// TODO: use
+enum StrategyExecutionReturn {
+    Modified { cell_positions: Vec<Position> },
+    Unsolvable,
+    MultipleSolutions,
+}
 
 pub(super) trait Strategy<Cell: SudokuCell> {
     /// Name of the strategy
@@ -38,5 +45,9 @@ pub(super) trait Strategy<Cell: SudokuCell> {
 }
 
 pub(super) fn strategies<Cell: SudokuCell>() -> Vec<Box<dyn Strategy<Cell>>> {
-    vec![Box::new(SingleCandidate), Box::new(Backtracking)]
+    vec![
+        Box::new(SingleCandidate),
+        Box::new(GroupReduction),
+        Box::new(Backtracking),
+    ]
 }

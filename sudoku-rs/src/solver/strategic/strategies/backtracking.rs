@@ -36,8 +36,6 @@ mod tests {
     fn test_backtracking() {
         let mut sudoku: Sudoku<Cell<NonZeroUsize>> = samples::base_3().first().unwrap().clone();
 
-        let candidates_len = sudoku.grid().all_candidates_positions().len();
-
         sudoku.fix_all_values();
 
         let modified_positions = Backtracking.execute(&mut sudoku);
