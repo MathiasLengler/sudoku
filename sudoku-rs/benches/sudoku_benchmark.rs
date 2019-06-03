@@ -5,9 +5,7 @@ use criterion::BatchSize;
 use criterion::{Criterion, ParameterizedBenchmark};
 
 use sudoku::cell::Cell;
-use sudoku::generator::backtracking::{
-    BacktrackingGenerator, BacktrackingGeneratorSettings, BacktrackingGeneratorTarget,
-};
+use sudoku::generator::backtracking::{Generator, Settings, Target};
 use sudoku::position::Position;
 use sudoku::samples::{base_2, base_3};
 use sudoku::solver::backtracking::BacktrackingSolver;
@@ -28,9 +26,9 @@ fn criterion_benchmark(c: &mut Criterion) {
             "critical",
             |b, base| {
                 b.iter(|| {
-                    BacktrackingGenerator::new(BacktrackingGeneratorSettings {
+                    Generator::new(Settings {
                         base: *base,
-                        target: BacktrackingGeneratorTarget::Critical,
+                        target: Target::Critical,
                     })
                     .generate::<Cell>()
                     .unwrap()
@@ -40,9 +38,9 @@ fn criterion_benchmark(c: &mut Criterion) {
         )
         .with_function("filled", |b, base| {
             b.iter(|| {
-                BacktrackingGenerator::new(BacktrackingGeneratorSettings {
+                Generator::new(Settings {
                     base: *base,
-                    target: BacktrackingGeneratorTarget::Filled,
+                    target: Target::Filled,
                 })
                 .generate::<Cell>()
                 .unwrap()

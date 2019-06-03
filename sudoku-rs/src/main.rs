@@ -1,15 +1,13 @@
 use sudoku::cell::Cell;
 use sudoku::error::Result;
-use sudoku::generator::backtracking::{
-    BacktrackingGenerator, BacktrackingGeneratorSettings, BacktrackingGeneratorTarget,
-};
+use sudoku::generator::backtracking::{Generator, Settings, Target};
 
 fn main() -> Result<()> {
     for i in 0..20 {
         dbg!(i);
-        BacktrackingGenerator::new(BacktrackingGeneratorSettings {
+        Generator::new(Settings {
             base: 3,
-            target: BacktrackingGeneratorTarget::Minimal,
+            target: Target::Minimal,
         })
         .generate::<Cell>()
         .unwrap();

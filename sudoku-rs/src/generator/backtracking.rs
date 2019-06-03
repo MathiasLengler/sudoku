@@ -6,36 +6,36 @@ use crate::solver::backtracking::{BacktrackingSolver, BacktrackingSolverSettings
 use crate::Sudoku;
 
 // TODO: replace with separate generate methods (return type)
-pub enum BacktrackingGeneratorTarget {
+pub enum Target {
     Filled,
     FromFilled { distance: usize },
     Minimal,
     FromMinimal { distance: usize },
 }
 
-impl Default for BacktrackingGeneratorTarget {
+impl Default for Target {
     fn default() -> Self {
-        BacktrackingGeneratorTarget::Filled
+        Target::Filled
     }
 }
 
-pub struct BacktrackingGeneratorSettings {
+pub struct Settings {
     pub base: usize,
-    pub target: BacktrackingGeneratorTarget,
+    pub target: Target,
 }
 
-pub struct BacktrackingGenerator {
-    settings: BacktrackingGeneratorSettings,
+pub struct Generator {
+    settings: Settings,
 }
 
-impl BacktrackingGenerator {
+impl Generator {
     // TODO: change parameter back to base
-    pub fn new(settings: BacktrackingGeneratorSettings) -> Self {
+    pub fn new(settings: Settings) -> Self {
         Self { settings }
     }
 
     pub fn generate<Cell: SudokuCell>(&self) -> Option<Sudoku<Cell>> {
-        use self::BacktrackingGeneratorTarget::*;
+        use self::Target::*;
 
         let filled_sudoku = self.filled_sudoku();
 
@@ -124,9 +124,9 @@ mod tests {
 
     #[test]
     fn test_minimal() {
-        let generator = BacktrackingGenerator::new(BacktrackingGeneratorSettings {
+        let generator = Generator::new(Settings {
             base: 2,
-            target: BacktrackingGeneratorTarget::Minimal,
+            target: Target::Minimal,
         });
 
         let sudoku = generator.generate::<Cell>().unwrap();
