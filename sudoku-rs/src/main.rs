@@ -9,7 +9,7 @@ fn main() -> Result<()> {
         dbg!(i);
         BacktrackingGenerator::new(BacktrackingGeneratorSettings {
             base: 3,
-            target: BacktrackingGeneratorTarget::Critical,
+            target: BacktrackingGeneratorTarget::Minimal,
         })
         .generate::<Cell>()
         .unwrap();

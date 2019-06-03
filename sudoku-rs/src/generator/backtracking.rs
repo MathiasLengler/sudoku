@@ -5,14 +5,12 @@ use crate::position::Position;
 use crate::solver::backtracking::{BacktrackingSolver, BacktrackingSolverSettings};
 use crate::Sudoku;
 
-// TODO: naming: critical => minimal
-
 // TODO: replace with separate generate methods (return type)
 pub enum BacktrackingGeneratorTarget {
     Filled,
     FromFilled { distance: usize },
-    Critical,
-    FromCritical { distance: usize },
+    Minimal,
+    FromMinimal { distance: usize },
 }
 
 impl Default for BacktrackingGeneratorTarget {
@@ -46,8 +44,8 @@ impl BacktrackingGenerator {
             FromFilled {
                 distance: _distance,
             } => unimplemented!(),
-            Critical => Self::critical(filled_sudoku, 0),
-            FromCritical { distance } => Self::critical(filled_sudoku, distance),
+            Minimal => Self::minimal(filled_sudoku, 0),
+            FromMinimal { distance } => Self::minimal(filled_sudoku, distance),
         }
     }
 
@@ -66,7 +64,7 @@ impl BacktrackingGenerator {
     }
 
     // TODO: optimize performance for base >= 3
-    fn critical<Cell: SudokuCell>(
+    fn minimal<Cell: SudokuCell>(
         mut sudoku: Sudoku<Cell>,
         distance: usize,
     ) -> Option<Sudoku<Cell>> {
@@ -112,7 +110,7 @@ mod tests {
 
     use super::*;
 
-    fn is_critical<Cell: SudokuCell>(sudoku: &Sudoku<Cell>) -> bool {
+    fn is_minimal<Cell: SudokuCell>(sudoku: &Sudoku<Cell>) -> bool {
         let mut sudoku = sudoku.clone();
 
         BacktrackingSolver::has_unique_solution(&sudoku)
@@ -125,16 +123,16 @@ mod tests {
     }
 
     #[test]
-    fn test_critical() {
+    fn test_minimal() {
         let generator = BacktrackingGenerator::new(BacktrackingGeneratorSettings {
             base: 2,
-            target: BacktrackingGeneratorTarget::Critical,
+            target: BacktrackingGeneratorTarget::Minimal,
         });
 
         let sudoku = generator.generate::<Cell>().unwrap();
 
         println!("{}", sudoku);
 
-        assert!(is_critical(&sudoku));
+        assert!(is_minimal(&sudoku));
     }
 }

@@ -56,10 +56,10 @@ pub fn base_3() -> Vec<Sudoku<Cell>> {
     .unwrap()
 }
 
-pub fn critical(base: usize) -> Sudoku<Cell> {
+pub fn minimal(base: usize) -> Sudoku<Cell> {
     BacktrackingGenerator::new(BacktrackingGeneratorSettings {
         base,
-        target: BacktrackingGeneratorTarget::Critical,
+        target: BacktrackingGeneratorTarget::Minimal,
     })
     .generate()
     .unwrap()

@@ -100,8 +100,8 @@ mod tests {
     }
 
     #[test]
-    fn test_critical() {
-        let mut sudoku = crate::samples::critical(2);
+    fn test_minimal() {
+        let mut sudoku = crate::samples::minimal(2);
 
         let mut solver = Solver::new(&mut sudoku);
 
