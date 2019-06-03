@@ -13,10 +13,7 @@ pub struct Position {
 
 impl Display for Position {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_tuple("Pos")
-            .field(&self.row)
-            .field(&self.column)
-            .finish()
+        write!(f, "r{}c{}", self.row, self.column)
     }
 }
 

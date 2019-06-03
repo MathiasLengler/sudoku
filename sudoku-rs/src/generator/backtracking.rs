@@ -5,6 +5,8 @@ use crate::position::Position;
 use crate::solver::backtracking::{BacktrackingSolver, BacktrackingSolverSettings};
 use crate::Sudoku;
 
+// TODO: naming: critical => minimal
+
 // TODO: replace with separate generate methods (return type)
 pub enum BacktrackingGeneratorTarget {
     Filled,
@@ -50,8 +52,10 @@ impl BacktrackingGenerator {
     }
 
     fn filled_sudoku<Cell: SudokuCell>(&self) -> Sudoku<Cell> {
+        let mut sudoku = Sudoku::<Cell>::new(self.settings.base);
+
         let mut solver = BacktrackingSolver::new_with_settings(
-            Sudoku::<Cell>::new(self.settings.base),
+            &mut sudoku,
             BacktrackingSolverSettings {
                 shuffle_candidates: true,
                 ..Default::default()
@@ -82,6 +86,7 @@ impl BacktrackingGenerator {
 
                 deleted.push((pos, value));
 
+                // TODO: use strategic solver
                 if !BacktrackingSolver::has_unique_solution(&sudoku) {
                     // current position is necessary for unique solution
                     sudoku.set_value(pos, value);

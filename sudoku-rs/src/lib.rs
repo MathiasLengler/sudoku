@@ -10,14 +10,15 @@ use cell::SudokuCell;
 use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::position::Position;
+use crate::settings::Settings;
 
 pub mod cell;
 pub mod error;
 pub mod generator;
 mod grid;
 pub mod position;
-#[cfg(any(test, feature = "benchmark"))]
 pub mod samples;
+pub mod settings;
 pub mod solver;
 pub mod transport;
 
@@ -32,12 +33,6 @@ pub mod transport;
 pub struct Sudoku<Cell: SudokuCell> {
     grid: Grid<Cell>,
     settings: Settings,
-}
-
-// TODO: add public settings API
-#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
-struct Settings {
-    update_candidates_on_set_value: bool,
 }
 
 // TODO: make sudoku fully generic over cell
@@ -55,9 +50,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     fn new_with_grid(grid: Grid<Cell>) -> Self {
         Sudoku {
             grid,
-            settings: Settings {
-                update_candidates_on_set_value: true,
-            },
+            settings: Default::default(),
         }
     }
 
@@ -65,6 +58,10 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
         let max_value = self.grid.max_value();
 
         self.grid.get_pos_mut(pos).set_value(value, max_value);
+
+        if self.settings.update_candidates_on_set_value {
+            self.update_candidates(pos, value);
+        }
     }
 
     pub fn set_or_toggle_value(&mut self, pos: Position, value: usize) {
@@ -149,6 +146,10 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
 // TODO: move &self methods to grid
 impl<Cell: SudokuCell> Sudoku<Cell> {
     fn update_candidates(&mut self, pos: Position, value: usize) {
+        if value == 0 {
+            return;
+        }
+
         let max = self.grid.max_value();
 
         self.grid

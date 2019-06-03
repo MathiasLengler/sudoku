@@ -7,3 +7,8 @@ members = [
 
 [profile.release]
 debug = true
+
+[patch.crates-io]
+gcollections = { git = "https://github.com/MathiasLengler/gcollections" }
+intervallum = { git = "https://github.com/MathiasLengler/intervallum" }
+pcp = { git = "https://github.com/MathiasLengler/pcp" }

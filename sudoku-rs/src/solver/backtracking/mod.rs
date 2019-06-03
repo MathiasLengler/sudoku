@@ -11,8 +11,8 @@ mod choice;
 //  make step into an iterator over step results
 //  common Solver trait?
 
-pub struct BacktrackingSolver<Cell: SudokuCell> {
-    sudoku: Sudoku<Cell>,
+pub struct BacktrackingSolver<'s, Cell: SudokuCell> {
+    sudoku: &'s mut Sudoku<Cell>,
     /// Cached
     empty_positions: Vec<Position>,
     /// Choices stack
@@ -40,15 +40,15 @@ enum StepResult<Cell: SudokuCell> {
     NextCell,
 }
 
-impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
-    pub fn new(sudoku: Sudoku<Cell>) -> BacktrackingSolver<Cell> {
+impl<'s, Cell: SudokuCell> BacktrackingSolver<'s, Cell> {
+    pub fn new(sudoku: &'s mut Sudoku<Cell>) -> BacktrackingSolver<'s, Cell> {
         Self::new_with_settings(sudoku, Default::default())
     }
 
     pub fn new_with_settings(
-        sudoku: Sudoku<Cell>,
+        sudoku: &'s mut Sudoku<Cell>,
         settings: BacktrackingSolverSettings,
-    ) -> BacktrackingSolver<Cell> {
+    ) -> BacktrackingSolver<'s, Cell> {
         let empty_positions = sudoku.grid().all_candidates_positions();
 
         let mut solver = BacktrackingSolver {
@@ -64,8 +64,8 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
         solver
     }
 
-    pub fn into_sudoku(self) -> Sudoku<Cell> {
-        self.sudoku
+    pub fn into_empty_positions(self) -> Vec<Position> {
+        self.empty_positions
     }
 
     fn init(&mut self) {
@@ -130,6 +130,7 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
                         None => {
                             choice.set_next();
 
+                            // TODO: move clone to iterator (streaming iterator problem)
                             StepResult::Solution(Box::new(self.sudoku.clone()))
                         }
                     }
@@ -181,9 +182,10 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
     }
 }
 
-impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
+impl<'s, Cell: SudokuCell> BacktrackingSolver<'s, Cell> {
     pub fn has_unique_solution(sudoku: &Sudoku<Cell>) -> bool {
-        let mut solver = Self::new(sudoku.clone());
+        let mut sudoku = sudoku.clone();
+        let mut solver = BacktrackingSolver::new(&mut sudoku);
 
         assert!(solver.next().is_some());
 
@@ -191,7 +193,7 @@ impl<Cell: SudokuCell> BacktrackingSolver<Cell> {
     }
 }
 
-impl<Cell: SudokuCell> Iterator for BacktrackingSolver<Cell> {
+impl<'s, Cell: SudokuCell> Iterator for BacktrackingSolver<'s, Cell> {
     type Item = Sudoku<Cell>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -246,15 +248,17 @@ mod tests {
 
     #[test]
     fn test_iter_all_solutions() {
-        let solver = BacktrackingSolver::new(Sudoku::<Cell>::new(2));
+        let mut sudoku = Sudoku::<Cell>::new(2);
+        let solver = BacktrackingSolver::new(&mut sudoku);
 
         assert_iter(solver);
     }
 
     #[test]
     fn test_test_iter_all_solutions_shuffle_candidates() {
+        let mut sudoku = Sudoku::<Cell>::new(2);
         let solver = BacktrackingSolver::new_with_settings(
-            Sudoku::<Cell>::new(2),
+            &mut sudoku,
             BacktrackingSolverSettings {
                 shuffle_candidates: true,
                 step_limit: Default::default(),
@@ -268,8 +272,8 @@ mod tests {
     fn test_base_2() {
         let sudokus = crate::samples::base_2();
 
-        for (_sudoku_index, sudoku) in sudokus.into_iter().enumerate() {
-            let mut solver = BacktrackingSolver::new(sudoku);
+        for (_sudoku_index, mut sudoku) in sudokus.into_iter().enumerate() {
+            let mut solver = BacktrackingSolver::new(&mut sudoku);
 
             let solve_result = solver.try_solve();
 
@@ -281,8 +285,8 @@ mod tests {
     fn test_base_3() {
         let sudokus = crate::samples::base_3();
 
-        for (_sudoku_index, sudoku) in sudokus.into_iter().enumerate() {
-            let mut solver = BacktrackingSolver::new(sudoku);
+        for (_sudoku_index, mut sudoku) in sudokus.into_iter().enumerate() {
+            let mut solver = BacktrackingSolver::new(&mut sudoku);
 
             let solve_result = solver.try_solve();
 

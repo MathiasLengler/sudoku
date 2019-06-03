@@ -25,10 +25,10 @@ fn main() -> Result<()> {
     .map(TryInto::<Sudoku<Cell>>::try_into)
     .collect::<Result<Vec<_>>>()?;
 
-    for (sudoku_index, sudoku) in sudokus.into_iter().enumerate() {
+    for (sudoku_index, mut sudoku) in sudokus.into_iter().enumerate() {
         eprintln!("sudoku_index = {:?}", sudoku_index);
 
-        let mut solver = BacktrackingSolver::new(sudoku);
+        let mut solver = BacktrackingSolver::new(&mut sudoku);
 
         let before = Instant::now();
 
