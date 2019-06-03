@@ -2,7 +2,7 @@ use rand::seq::SliceRandom;
 
 use crate::cell::SudokuCell;
 use crate::position::Position;
-use crate::solver::backtracking::{BacktrackingSolver, BacktrackingSolverSettings};
+use crate::solver::backtracking::{Settings, Solver};
 use crate::Sudoku;
 
 // TODO: replace with separate generate methods (return type)
@@ -52,9 +52,9 @@ impl Generator {
     fn filled_sudoku<Cell: SudokuCell>(&self) -> Sudoku<Cell> {
         let mut sudoku = Sudoku::<Cell>::new(self.settings.base);
 
-        let mut solver = BacktrackingSolver::new_with_settings(
+        let mut solver = Solver::new_with_settings(
             &mut sudoku,
-            BacktrackingSolverSettings {
+            Settings {
                 shuffle_candidates: true,
                 ..Default::default()
             },
@@ -85,7 +85,7 @@ impl Generator {
                 deleted.push((pos, value));
 
                 // TODO: use strategic solver
-                if !BacktrackingSolver::has_unique_solution(&sudoku) {
+                if !Solver::has_unique_solution(&sudoku) {
                     // current position is necessary for unique solution
                     sudoku.set_value(pos, value);
 
@@ -113,10 +113,10 @@ mod tests {
     fn is_minimal<Cell: SudokuCell>(sudoku: &Sudoku<Cell>) -> bool {
         let mut sudoku = sudoku.clone();
 
-        BacktrackingSolver::has_unique_solution(&sudoku)
+        Solver::has_unique_solution(&sudoku)
             && sudoku.grid().all_value_positions().into_iter().all(|pos| {
                 let prev_cell = sudoku.delete(pos);
-                let has_multiple_solutions = !BacktrackingSolver::has_unique_solution(&sudoku);
+                let has_multiple_solutions = !Solver::has_unique_solution(&sudoku);
                 sudoku.set_value(pos, prev_cell.value().unwrap());
                 has_multiple_solutions
             })

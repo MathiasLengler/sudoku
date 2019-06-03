@@ -11,7 +11,7 @@ mod choice;
 //  make step into an iterator over step results
 //  common Solver trait?
 
-pub struct BacktrackingSolver<'s, Cell: SudokuCell> {
+pub struct Solver<'s, Cell: SudokuCell> {
     sudoku: &'s mut Sudoku<Cell>,
     /// Cached
     empty_positions: Vec<Position>,
@@ -20,11 +20,11 @@ pub struct BacktrackingSolver<'s, Cell: SudokuCell> {
     /// Step limit checking
     step_count: usize,
     /// Settings
-    settings: BacktrackingSolverSettings,
+    settings: Settings,
 }
 
 #[derive(Debug, Default)]
-pub struct BacktrackingSolverSettings {
+pub struct Settings {
     pub step_limit: Option<NonZeroUsize>,
     pub shuffle_candidates: bool,
 }
@@ -40,18 +40,15 @@ enum StepResult<Cell: SudokuCell> {
     NextCell,
 }
 
-impl<'s, Cell: SudokuCell> BacktrackingSolver<'s, Cell> {
-    pub fn new(sudoku: &'s mut Sudoku<Cell>) -> BacktrackingSolver<'s, Cell> {
+impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
+    pub fn new(sudoku: &'s mut Sudoku<Cell>) -> Solver<'s, Cell> {
         Self::new_with_settings(sudoku, Default::default())
     }
 
-    pub fn new_with_settings(
-        sudoku: &'s mut Sudoku<Cell>,
-        settings: BacktrackingSolverSettings,
-    ) -> BacktrackingSolver<'s, Cell> {
+    pub fn new_with_settings(sudoku: &'s mut Sudoku<Cell>, settings: Settings) -> Solver<'s, Cell> {
         let empty_positions = sudoku.grid().all_candidates_positions();
 
-        let mut solver = BacktrackingSolver {
+        let mut solver = Solver {
             sudoku,
             choices: Vec::with_capacity(empty_positions.len()),
             empty_positions,
@@ -182,10 +179,10 @@ impl<'s, Cell: SudokuCell> BacktrackingSolver<'s, Cell> {
     }
 }
 
-impl<'s, Cell: SudokuCell> BacktrackingSolver<'s, Cell> {
+impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
     pub fn has_unique_solution(sudoku: &Sudoku<Cell>) -> bool {
         let mut sudoku = sudoku.clone();
-        let mut solver = BacktrackingSolver::new(&mut sudoku);
+        let mut solver = Solver::new(&mut sudoku);
 
         assert!(solver.next().is_some());
 
@@ -193,7 +190,7 @@ impl<'s, Cell: SudokuCell> BacktrackingSolver<'s, Cell> {
     }
 }
 
-impl<'s, Cell: SudokuCell> Iterator for BacktrackingSolver<'s, Cell> {
+impl<'s, Cell: SudokuCell> Iterator for Solver<'s, Cell> {
     type Item = Sudoku<Cell>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -230,7 +227,7 @@ mod tests {
         assert!(sudoku.is_solved());
     }
 
-    fn assert_iter(solver: BacktrackingSolver<Cell>) {
+    fn assert_iter(solver: Solver<Cell>) {
         const NUMBER_OF_2X2_SOLUTIONS: usize = 288;
 
         let solutions = solver.collect::<Vec<_>>();
@@ -249,7 +246,7 @@ mod tests {
     #[test]
     fn test_iter_all_solutions() {
         let mut sudoku = Sudoku::<Cell>::new(2);
-        let solver = BacktrackingSolver::new(&mut sudoku);
+        let solver = Solver::new(&mut sudoku);
 
         assert_iter(solver);
     }
@@ -257,9 +254,9 @@ mod tests {
     #[test]
     fn test_test_iter_all_solutions_shuffle_candidates() {
         let mut sudoku = Sudoku::<Cell>::new(2);
-        let solver = BacktrackingSolver::new_with_settings(
+        let solver = Solver::new_with_settings(
             &mut sudoku,
-            BacktrackingSolverSettings {
+            Settings {
                 shuffle_candidates: true,
                 step_limit: Default::default(),
             },
@@ -273,7 +270,7 @@ mod tests {
         let sudokus = crate::samples::base_2();
 
         for (_sudoku_index, mut sudoku) in sudokus.into_iter().enumerate() {
-            let mut solver = BacktrackingSolver::new(&mut sudoku);
+            let mut solver = Solver::new(&mut sudoku);
 
             let solve_result = solver.try_solve();
 
@@ -286,7 +283,7 @@ mod tests {
         let sudokus = crate::samples::base_3();
 
         for (_sudoku_index, mut sudoku) in sudokus.into_iter().enumerate() {
-            let mut solver = BacktrackingSolver::new(&mut sudoku);
+            let mut solver = Solver::new(&mut sudoku);
 
             let solve_result = solver.try_solve();
 

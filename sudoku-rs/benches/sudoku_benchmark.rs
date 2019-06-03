@@ -8,7 +8,7 @@ use sudoku::cell::Cell;
 use sudoku::generator::backtracking::{Generator, Settings, Target};
 use sudoku::position::Position;
 use sudoku::samples::{base_2, base_3};
-use sudoku::solver::backtracking::BacktrackingSolver;
+use sudoku::solver::backtracking::Solver;
 use sudoku::Sudoku;
 
 fn sample_sudoku(base: usize) -> Sudoku<Cell> {
@@ -58,7 +58,7 @@ fn criterion_benchmark(c: &mut Criterion) {
 
                 b.iter_batched(
                     || sudoku.clone(),
-                    |sudoku| BacktrackingSolver::new(sudoku).next(),
+                    |sudoku| Solver::new(sudoku).next(),
                     BatchSize::SmallInput,
                 )
             },
