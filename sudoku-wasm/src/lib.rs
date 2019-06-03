@@ -23,9 +23,7 @@ pub fn run() -> Result<(), JsValue> {
 
 #[wasm_bindgen]
 pub fn get_wasm_sudoku() -> WasmSudoku {
-    //    let mut sudoku = Sudoku::<Cell>::new(4);
-
-    let mut sudoku = sudoku::samples::base_2()[1].clone();
+    let mut sudoku = sudoku::samples::critical(3);
 
     sudoku.fix_all_values();
 

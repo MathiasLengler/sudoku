@@ -99,10 +99,9 @@ mod tests {
         }
     }
 
-    //    #[ignore]
     #[test]
     fn test_critical() {
-        let mut sudoku = crate::samples::critical();
+        let mut sudoku = crate::samples::critical(2);
 
         let mut solver = Solver::new(&mut sudoku);
 
