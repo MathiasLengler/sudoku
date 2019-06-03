@@ -84,6 +84,7 @@ impl BacktrackingGenerator {
 
                 deleted.push((pos, value));
 
+                // TODO: use strategic solver
                 if !BacktrackingSolver::has_unique_solution(&sudoku) {
                     // current position is necessary for unique solution
                     sudoku.set_value(pos, value);

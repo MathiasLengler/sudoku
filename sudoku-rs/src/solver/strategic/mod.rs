@@ -22,6 +22,7 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
         }
     }
 
+    // TODO: unique solution?
     pub fn try_solve(&mut self) -> bool {
         self.sudoku.fix_all_values();
         self.sudoku.set_all_direct_candidates();
@@ -98,7 +99,7 @@ mod tests {
         }
     }
 
-    #[ignore]
+    //    #[ignore]
     #[test]
     fn test_critical() {
         let mut sudoku = crate::samples::critical();

@@ -30,7 +30,7 @@ mod group_reduction;
 mod single_candidate;
 
 // TODO: use
-enum StrategyExecutionReturn {
+enum StrategyResult {
     Modified { cell_positions: Vec<Position> },
     Unsolvable,
     MultipleSolutions,
