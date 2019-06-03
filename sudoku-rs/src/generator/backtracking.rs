@@ -5,6 +5,8 @@ use crate::position::Position;
 use crate::solver::backtracking::{BacktrackingSolver, BacktrackingSolverSettings};
 use crate::Sudoku;
 
+// TODO: naming: critical => minimal
+
 // TODO: replace with separate generate methods (return type)
 pub enum BacktrackingGeneratorTarget {
     Filled,
