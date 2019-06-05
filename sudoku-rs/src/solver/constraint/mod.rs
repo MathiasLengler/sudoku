@@ -68,6 +68,7 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
             })
             .collect();
 
+        // TODO: model as (x == 1) || (x == 2) ...
         // Variables must be one of the given candidates
         for (variable, candidates) in pos_to_variable_and_candidates.values() {
             for candidate in 1..=max_value {
