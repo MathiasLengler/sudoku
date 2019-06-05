@@ -5,10 +5,6 @@ use crate::Sudoku;
 
 mod strategies;
 
-// TODO: bench
-//  Solver
-//  strategies
-
 pub struct Solver<'s, Cell: SudokuCell> {
     sudoku: &'s mut Sudoku<Cell>,
     strategies: Vec<Box<dyn Strategy<Cell>>>,
@@ -38,16 +34,16 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
                 let modified_positions = strategy.execute(&mut self.sudoku);
 
                 if !modified_positions.is_empty() {
-                    println!(
-                        "{}: {:?}",
-                        strategy.name(),
-                        modified_positions
-                            .into_iter()
-                            .map(|pos| pos.to_string())
-                            .collect::<Vec<_>>()
-                    );
-
-                    println!("{}", self.sudoku);
+                    //                    println!(
+                    //                        "{}: {:?}",
+                    //                        strategy.name(),
+                    //                        modified_positions
+                    //                            .into_iter()
+                    //                            .map(|pos| pos.to_string())
+                    //                            .collect::<Vec<_>>()
+                    //                    );
+                    //
+                    //                    println!("{}", self.sudoku);
 
                     modified = true;
 

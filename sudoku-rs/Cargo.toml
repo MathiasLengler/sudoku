@@ -27,7 +27,6 @@ criterion = "0.2.11"
 [[bench]]
 name = "sudoku_benchmark"
 harness = false
-required-features = ["benchmark"]
 
 [features]
 default = []

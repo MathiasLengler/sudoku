@@ -20,8 +20,6 @@ use crate::Sudoku;
 
 pub(super) mod pcp_utils;
 
-// TODO: bench
-
 pub struct Solver<'s, Cell: SudokuCell> {
     sudoku: &'s mut Sudoku<Cell>,
 
@@ -107,14 +105,14 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
         (space, variable_positions)
     }
 
-    fn try_solve(&mut self) -> bool {
+    pub fn try_solve(&mut self) -> bool {
         let space = replace(&mut self.space, FDSpace::empty());
         let (frozen_space, status) = self.search.enter(space);
         self.space = frozen_space.unfreeze();
 
         match status {
             Satisfiable => {
-                eprintln!("space.vstore = {:?}", self.space.vstore.iter().map(|dom| (dom.lower(), dom.upper())).collect::<Vec<_>>());
+//                eprintln!("space.vstore = {:?}", self.space.vstore.iter().map(|dom| (dom.lower(), dom.upper())).collect::<Vec<_>>());
 
                 // apply solution to sudoku
                 for (dom, pos) in self.space.vstore.iter().zip(&self.variable_positions) {
