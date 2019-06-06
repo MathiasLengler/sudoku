@@ -5,6 +5,9 @@ use indexmap::IndexMap;
 use interval::interval::ToInterval;
 use pcp::concept::*;
 use pcp::kernel::*;
+use pcp::logic::Disjunction;
+use pcp::propagation::events::FDEvent;
+use pcp::propagation::PropagatorConcept;
 use pcp::propagators::*;
 use pcp::search::search_tree_visitor::Status::*;
 use pcp::search::SearchTreeVisitor;
@@ -50,6 +53,9 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
     }
 
     fn constrain(sudoku: &Sudoku<Cell>) -> (FDSpace, Vec<Position>) {
+        // TODO: constrain all cells, not only the candidates
+        //  simpler constraints could be faster
+
         let max_value = sudoku.grid().max_value() as i32;
 
         let mut space = FDSpace::empty();
@@ -68,7 +74,6 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
             })
             .collect();
 
-        // TODO: model as (x == 1) || (x == 2) ...
         // Variables must be one of the given candidates
         for (variable, candidates) in pos_to_variable_and_candidates.values() {
             for candidate in 1..=max_value {
