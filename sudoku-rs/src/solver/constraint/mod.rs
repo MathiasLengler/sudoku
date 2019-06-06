@@ -23,6 +23,8 @@ use crate::Sudoku;
 
 pub(super) mod pcp_utils;
 
+// TODO: compare perf with python Z3 implementation
+
 pub struct Solver<'s, Cell: SudokuCell> {
     sudoku: &'s mut Sudoku<Cell>,
 
