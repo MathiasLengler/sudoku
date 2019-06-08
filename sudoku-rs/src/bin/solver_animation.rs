@@ -3,7 +3,7 @@ use std::time::Instant;
 
 use sudoku::cell::Cell;
 use sudoku::error::Result;
-use sudoku::solver::backtracking::BacktrackingSolver;
+use sudoku::solver::backtracking::Solver;
 use sudoku::Sudoku;
 
 fn main() -> Result<()> {
@@ -28,7 +28,7 @@ fn main() -> Result<()> {
     for (sudoku_index, mut sudoku) in sudokus.into_iter().enumerate() {
         eprintln!("sudoku_index = {:?}", sudoku_index);
 
-        let mut solver = BacktrackingSolver::new(&mut sudoku);
+        let mut solver = Solver::new(&mut sudoku);
 
         let before = Instant::now();
 

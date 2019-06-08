@@ -1,31 +1,15 @@
 use fixedbitset::FixedBitSet;
 use gcollections::ops::*;
-use gcollections::VectorStack;
 use interval::interval::ToInterval;
 use pcp::concept::*;
 use pcp::kernel::*;
-use pcp::propagation::CStoreFD;
 use pcp::propagators::*;
-use pcp::search::branching::{BinarySplit, Brancher, FirstSmallestVar, MiddleVal};
-use pcp::search::engine::one_solution::OneSolution;
-use pcp::search::propagation::Propagation;
 use pcp::search::search_tree_visitor::Status::*;
 use pcp::search::*;
 use pcp::term::*;
 use pcp::variable::ops::*;
-use pcp::variable::VStoreFD;
 
-type VStore = VStoreFD;
-type CStore = CStoreFD<VStore>;
-type FDSpace = Space<VStore, CStore, NoRecomputation<VStore, CStore>>;
-
-fn one_solution_engine_interval() -> impl SearchTreeVisitor<FDSpace> {
-    OneSolution::<_, VectorStack<_>, FDSpace>::new(Propagation::new(Brancher::new(
-        FirstSmallestVar,
-        MiddleVal,
-        BinarySplit,
-    )))
-}
+use crate::solver::constraint::pcp_utils::{one_solution_engine_interval, FDSpace, VStore};
 
 // TODO: return result
 // TODO: optimize by using 0 indexed values and returning Vec<FixedBitSet>
@@ -42,7 +26,7 @@ pub(super) fn group_candidates_reduction(
 
     let mut values = vec![];
 
-    // values must be in range
+    // Define values constrained to range
     for _candidates in group_candidates {
         values
             .push(Box::new(space.vstore.alloc((1, max_value as i32).to_interval())) as Var<VStore>);
@@ -120,7 +104,6 @@ pub(super) fn group_candidates_reduction(
         .map(|bit_set| bit_set.ones().collect())
         .collect()
 }
-// TODO: complete sudoku solver in PCP
 
 #[cfg(test)]
 mod tests {
@@ -130,7 +113,7 @@ mod tests {
     fn test_single_candidates() {
         let mut test_cases = vec![vec![vec![1, 5]]];
 
-        for group_candidates in test_cases.drain(0..=0) {
+        for group_candidates in test_cases.drain(..) {
             let reduced_group_candidates = group_candidates_reduction(&group_candidates, 5);
 
             eprintln!("group_candidates         = {:?}", group_candidates);
@@ -160,7 +143,7 @@ mod tests {
             ),
         ];
 
-        for (group_candidates, expected) in test_cases.drain(4..) {
+        for (group_candidates, expected) in test_cases.drain(..) {
             let reduced_group_candidates = group_candidates_reduction(&group_candidates, 4);
 
             eprintln!("group_candidates         = {:?}", group_candidates);

@@ -5,10 +5,6 @@ use crate::Sudoku;
 
 mod strategies;
 
-// TODO: bench
-//  Solver
-//  strategies
-
 pub struct Solver<'s, Cell: SudokuCell> {
     sudoku: &'s mut Sudoku<Cell>,
     strategies: Vec<Box<dyn Strategy<Cell>>>,
@@ -16,6 +12,9 @@ pub struct Solver<'s, Cell: SudokuCell> {
 
 impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
     pub fn new(sudoku: &'s mut Sudoku<Cell>) -> Solver<'s, Cell> {
+        sudoku.fix_all_values();
+        sudoku.set_all_direct_candidates();
+
         Self {
             sudoku,
             strategies: strategies::strategies(),
@@ -24,9 +23,6 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
 
     // TODO: unique solution?
     pub fn try_solve(&mut self) -> bool {
-        self.sudoku.fix_all_values();
-        self.sudoku.set_all_direct_candidates();
-
         loop {
             if self.sudoku.is_solved() {
                 return true;
@@ -38,16 +34,16 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
                 let modified_positions = strategy.execute(&mut self.sudoku);
 
                 if !modified_positions.is_empty() {
-                    println!(
-                        "{}: {:?}",
-                        strategy.name(),
-                        modified_positions
-                            .into_iter()
-                            .map(|pos| pos.to_string())
-                            .collect::<Vec<_>>()
-                    );
-
-                    println!("{}", self.sudoku);
+                    //                    println!(
+                    //                        "{}: {:?}",
+                    //                        strategy.name(),
+                    //                        modified_positions
+                    //                            .into_iter()
+                    //                            .map(|pos| pos.to_string())
+                    //                            .collect::<Vec<_>>()
+                    //                    );
+                    //
+                    //                    println!("{}", self.sudoku);
 
                     modified = true;
 
@@ -73,7 +69,7 @@ mod tests {
     fn test_base_2() {
         let mut sudokus = crate::samples::base_2();
 
-        for (sudoku_index, mut sudoku) in sudokus.drain(1..2).enumerate() {
+        for (sudoku_index, mut sudoku) in sudokus.drain(..).enumerate() {
             println!("#{}:\n{}", sudoku_index, sudoku);
 
             let mut solver = Solver::new(&mut sudoku);
@@ -100,8 +96,8 @@ mod tests {
     }
 
     #[test]
-    fn test_critical() {
-        let mut sudoku = crate::samples::critical(2);
+    fn test_minimal() {
+        let mut sudoku = crate::samples::minimal(2);
 
         let mut solver = Solver::new(&mut sudoku);
 

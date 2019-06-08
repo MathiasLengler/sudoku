@@ -25,6 +25,7 @@ use crate::cell::SudokuCell;
 use crate::position::Position;
 use crate::Sudoku;
 
+// TODO: bench
 mod backtracking;
 mod group_reduction;
 mod single_candidate;

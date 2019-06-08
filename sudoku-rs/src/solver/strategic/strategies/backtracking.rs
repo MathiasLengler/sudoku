@@ -1,6 +1,6 @@
 use crate::cell::SudokuCell;
 use crate::position::Position;
-use crate::solver::backtracking::BacktrackingSolver;
+use crate::solver::backtracking::Solver;
 use crate::Sudoku;
 
 use super::Strategy;
@@ -13,7 +13,7 @@ impl<Cell: SudokuCell> Strategy<Cell> for Backtracking {
     }
 
     fn execute(&self, sudoku: &mut Sudoku<Cell>) -> Vec<Position> {
-        let mut solver = BacktrackingSolver::new(sudoku);
+        let mut solver = Solver::new(sudoku);
 
         if let Some(_) = solver.next() {
             solver.into_empty_positions()

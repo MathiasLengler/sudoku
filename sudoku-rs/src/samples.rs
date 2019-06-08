@@ -2,9 +2,7 @@ use std::convert::TryInto;
 
 use crate::cell::Cell;
 use crate::error::Result;
-use crate::generator::backtracking::{
-    BacktrackingGenerator, BacktrackingGeneratorSettings, BacktrackingGeneratorTarget,
-};
+use crate::generator::backtracking::{Generator, Settings, Target};
 use crate::Sudoku;
 
 // TODO: rethink API (unwrap, clone for consumer of specific sudoku)
@@ -56,10 +54,10 @@ pub fn base_3() -> Vec<Sudoku<Cell>> {
     .unwrap()
 }
 
-pub fn critical(base: usize) -> Sudoku<Cell> {
-    BacktrackingGenerator::new(BacktrackingGeneratorSettings {
+pub fn minimal(base: usize) -> Sudoku<Cell> {
+    Generator::new(Settings {
         base,
-        target: BacktrackingGeneratorTarget::Critical,
+        target: Target::Minimal,
     })
     .generate()
     .unwrap()

@@ -5,12 +5,10 @@ use criterion::BatchSize;
 use criterion::{Criterion, ParameterizedBenchmark};
 
 use sudoku::cell::Cell;
-use sudoku::generator::backtracking::{
-    BacktrackingGenerator, BacktrackingGeneratorSettings, BacktrackingGeneratorTarget,
-};
+use sudoku::generator::backtracking::{Generator, Settings, Target};
 use sudoku::position::Position;
 use sudoku::samples::{base_2, base_3};
-use sudoku::solver::backtracking::BacktrackingSolver;
+use sudoku::solver::{backtracking, constraint, strategic};
 use sudoku::Sudoku;
 
 fn sample_sudoku(base: usize) -> Sudoku<Cell> {
@@ -23,14 +21,14 @@ fn sample_sudoku(base: usize) -> Sudoku<Cell> {
 
 fn criterion_benchmark(c: &mut Criterion) {
     c.bench(
-        "BacktrackingGenerator",
+        "Generator",
         ParameterizedBenchmark::new(
-            "critical",
+            "minimal",
             |b, base| {
                 b.iter(|| {
-                    BacktrackingGenerator::new(BacktrackingGeneratorSettings {
+                    Generator::new(Settings {
                         base: *base,
-                        target: BacktrackingGeneratorTarget::Critical,
+                        target: Target::Minimal,
                     })
                     .generate::<Cell>()
                     .unwrap()
@@ -40,9 +38,9 @@ fn criterion_benchmark(c: &mut Criterion) {
         )
         .with_function("filled", |b, base| {
             b.iter(|| {
-                BacktrackingGenerator::new(BacktrackingGeneratorSettings {
+                Generator::new(Settings {
                     base: *base,
-                    target: BacktrackingGeneratorTarget::Filled,
+                    target: Target::Filled,
                 })
                 .generate::<Cell>()
                 .unwrap()
@@ -52,20 +50,38 @@ fn criterion_benchmark(c: &mut Criterion) {
     );
 
     c.bench(
-        "BacktrackingSolver",
+        "Solver",
         ParameterizedBenchmark::new(
-            "next",
+            "backtracking",
             |b, base| {
                 let sudoku = sample_sudoku(*base);
 
                 b.iter_batched(
                     || sudoku.clone(),
-                    |sudoku| BacktrackingSolver::new(sudoku).next(),
+                    |mut sudoku| backtracking::Solver::new(&mut sudoku).next(),
                     BatchSize::SmallInput,
                 )
             },
             vec![2, 3],
         )
+        .with_function("constraint", |b, base| {
+            let sudoku = sample_sudoku(*base);
+
+            b.iter_batched(
+                || sudoku.clone(),
+                |mut sudoku| constraint::Solver::new(&mut sudoku).try_solve(),
+                BatchSize::SmallInput,
+            )
+        })
+        .with_function("strategic", |b, base| {
+            let sudoku = sample_sudoku(*base);
+
+            b.iter_batched(
+                || sudoku.clone(),
+                |mut sudoku| strategic::Solver::new(&mut sudoku).try_solve(),
+                BatchSize::SmallInput,
+            )
+        })
         .sample_size(20),
     );
 

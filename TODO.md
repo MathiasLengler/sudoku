@@ -3,8 +3,8 @@
 ## UI
 - guide highlighting
   - [x] value
-    - [ ] with/without their groups
-    - candidates?
+    - [x] with/without their groups
+    - [ ] candidates
 - mark conflicting cells
 
 ## Tooling

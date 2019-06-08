@@ -19,6 +19,18 @@ export const Grid: React.FunctionComponent<GridProps> = (props) => {
     selectedCell,
   } = props;
 
+  let selectedValuePositions: CellPosition[];
+  if (selectedCell.kind === "value") {
+    selectedValuePositions = blocks.flatMap((block) =>
+      block.filter((cell) =>
+        cell.kind === "value" && cell.value === selectedCell.value
+      ).map((cell) => cell.position)
+    );
+  } else {
+    selectedValuePositions = [];
+  }
+  console.log(selectedValuePositions);
+
   return <div className='grid'>
     {
       blocks
@@ -31,10 +43,10 @@ export const Grid: React.FunctionComponent<GridProps> = (props) => {
             selectedPos={selectedPos}
             setSelectedPos={setSelectedPos}
             selectedCell={selectedCell}
+            selectedValuePositions={selectedValuePositions}
           />
         )
     }
-
   </div>
 };
 
@@ -45,6 +57,7 @@ interface BlockProps {
   selectedPos: CellPosition;
   setSelectedPos: React.Dispatch<React.SetStateAction<CellPosition>>;
   selectedCell: TransportCell;
+  selectedValuePositions: CellPosition[];
 }
 
 const Block: React.FunctionComponent<BlockProps> = (props) => {
@@ -54,7 +67,8 @@ const Block: React.FunctionComponent<BlockProps> = (props) => {
     base,
     selectedPos,
     setSelectedPos,
-    selectedCell
+    selectedCell,
+    selectedValuePositions
   } = props;
 
   const blockPosition = indexToPosition(blockIndex, base);
@@ -68,6 +82,11 @@ const Block: React.FunctionComponent<BlockProps> = (props) => {
 
   const containsSelectedPos = isEqual(blockPosition, selectedBlockPosition);
 
+  const containsSelectedValue = selectedValuePositions.some(pos => {
+    const selectedValueBlockPosition = cellPositionToBlockPosition(pos, base);
+    return isEqual(selectedValueBlockPosition, blockPosition);
+  });
+
   return <div className={'block'} style={style}>
     {block.map((cell, blockCellIndex) => {
       const selected = containsSelectedPos && isEqual(selectedPos, cell.position);
@@ -80,6 +99,9 @@ const Block: React.FunctionComponent<BlockProps> = (props) => {
         && cell.kind === "value"
         && selectedCell.value === cell.value;
 
+      const guideValueGroup = containsSelectedValue
+        || selectedValuePositions.some(pos => pos.column === cell.position.column || pos.row === cell.position.row);
+
       return <MemoCell
         key={blockCellIndex}
         blockCellIndex={blockCellIndex}
@@ -89,7 +111,7 @@ const Block: React.FunctionComponent<BlockProps> = (props) => {
         setSelectedPos={setSelectedPos}
         guideValue={guideValue}
         guideGroup={guideGroup}
-      />
+        guideValueGroup={guideValueGroup}/>
     })}
   </div>
 };

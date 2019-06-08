@@ -2,42 +2,40 @@ use rand::seq::SliceRandom;
 
 use crate::cell::SudokuCell;
 use crate::position::Position;
-use crate::solver::backtracking::{BacktrackingSolver, BacktrackingSolverSettings};
+use crate::solver::backtracking;
 use crate::Sudoku;
 
-// TODO: naming: critical => minimal
-
 // TODO: replace with separate generate methods (return type)
-pub enum BacktrackingGeneratorTarget {
+pub enum Target {
     Filled,
     FromFilled { distance: usize },
-    Critical,
-    FromCritical { distance: usize },
+    Minimal,
+    FromMinimal { distance: usize },
 }
 
-impl Default for BacktrackingGeneratorTarget {
+impl Default for Target {
     fn default() -> Self {
-        BacktrackingGeneratorTarget::Filled
+        Target::Filled
     }
 }
 
-pub struct BacktrackingGeneratorSettings {
+pub struct Settings {
     pub base: usize,
-    pub target: BacktrackingGeneratorTarget,
+    pub target: Target,
 }
 
-pub struct BacktrackingGenerator {
-    settings: BacktrackingGeneratorSettings,
+pub struct Generator {
+    settings: Settings,
 }
 
-impl BacktrackingGenerator {
+impl Generator {
     // TODO: change parameter back to base
-    pub fn new(settings: BacktrackingGeneratorSettings) -> Self {
+    pub fn new(settings: Settings) -> Self {
         Self { settings }
     }
 
     pub fn generate<Cell: SudokuCell>(&self) -> Option<Sudoku<Cell>> {
-        use self::BacktrackingGeneratorTarget::*;
+        use self::Target::*;
 
         let filled_sudoku = self.filled_sudoku();
 
@@ -46,17 +44,17 @@ impl BacktrackingGenerator {
             FromFilled {
                 distance: _distance,
             } => unimplemented!(),
-            Critical => Self::critical(filled_sudoku, 0),
-            FromCritical { distance } => Self::critical(filled_sudoku, distance),
+            Minimal => Self::minimal(filled_sudoku, 0),
+            FromMinimal { distance } => Self::minimal(filled_sudoku, distance),
         }
     }
 
     fn filled_sudoku<Cell: SudokuCell>(&self) -> Sudoku<Cell> {
         let mut sudoku = Sudoku::<Cell>::new(self.settings.base);
 
-        let mut solver = BacktrackingSolver::new_with_settings(
+        let mut solver = backtracking::Solver::new_with_settings(
             &mut sudoku,
-            BacktrackingSolverSettings {
+            backtracking::Settings {
                 shuffle_candidates: true,
                 ..Default::default()
             },
@@ -66,7 +64,7 @@ impl BacktrackingGenerator {
     }
 
     // TODO: optimize performance for base >= 3
-    fn critical<Cell: SudokuCell>(
+    fn minimal<Cell: SudokuCell>(
         mut sudoku: Sudoku<Cell>,
         distance: usize,
     ) -> Option<Sudoku<Cell>> {
@@ -87,7 +85,7 @@ impl BacktrackingGenerator {
                 deleted.push((pos, value));
 
                 // TODO: use strategic solver
-                if !BacktrackingSolver::has_unique_solution(&sudoku) {
+                if !backtracking::Solver::has_unique_solution(&sudoku) {
                     // current position is necessary for unique solution
                     sudoku.set_value(pos, value);
 
@@ -112,29 +110,29 @@ mod tests {
 
     use super::*;
 
-    fn is_critical<Cell: SudokuCell>(sudoku: &Sudoku<Cell>) -> bool {
+    fn is_minimal<Cell: SudokuCell>(sudoku: &Sudoku<Cell>) -> bool {
         let mut sudoku = sudoku.clone();
 
-        BacktrackingSolver::has_unique_solution(&sudoku)
+        backtracking::Solver::has_unique_solution(&sudoku)
             && sudoku.grid().all_value_positions().into_iter().all(|pos| {
                 let prev_cell = sudoku.delete(pos);
-                let has_multiple_solutions = !BacktrackingSolver::has_unique_solution(&sudoku);
+                let has_multiple_solutions = !backtracking::Solver::has_unique_solution(&sudoku);
                 sudoku.set_value(pos, prev_cell.value().unwrap());
                 has_multiple_solutions
             })
     }
 
     #[test]
-    fn test_critical() {
-        let generator = BacktrackingGenerator::new(BacktrackingGeneratorSettings {
+    fn test_minimal() {
+        let generator = Generator::new(Settings {
             base: 2,
-            target: BacktrackingGeneratorTarget::Critical,
+            target: Target::Minimal,
         });
 
         let sudoku = generator.generate::<Cell>().unwrap();
 
         println!("{}", sudoku);
 
-        assert!(is_critical(&sudoku));
+        assert!(is_minimal(&sudoku));
     }
 }
