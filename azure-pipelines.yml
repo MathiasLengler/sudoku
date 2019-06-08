@@ -12,7 +12,7 @@ pool:
 container: 'rust:latest'
 steps:
   - script: |
-      RUST_BACKTRACE=1 cargo test --verbose -- --test-threads=1
+      RUST_BACKTRACE=1 cargo test
     displayName: 'Test rust'
 
   - task: NodeTool@0
