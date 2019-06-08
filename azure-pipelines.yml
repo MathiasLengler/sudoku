@@ -10,7 +10,9 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-  - script: curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
+  - script: |
+      curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
+      rustup show
     displayName: 'Install rustc'
 
   - script: |
