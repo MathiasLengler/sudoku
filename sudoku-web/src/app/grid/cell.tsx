@@ -5,7 +5,7 @@ import isEqual from "lodash/isEqual";
 import classnames from 'classnames'
 import {indexToPosition, valueToString} from "../utils";
 
-function cellBackgroundClass(selected: boolean, guideValue: boolean, guideGroup: boolean) {
+function cellBackgroundClass(selected: boolean, guideValue: boolean, guideGroup: boolean, guideValueGroup: boolean) {
   if (selected) {
     return "cell--selected";
   }
@@ -14,6 +14,9 @@ function cellBackgroundClass(selected: boolean, guideValue: boolean, guideGroup:
   }
   if (guideGroup) {
     return "cell--guide-group";
+  }
+  if (guideValueGroup) {
+    return "cell--guide-value-group";
   }
 }
 
@@ -33,6 +36,7 @@ interface CellProps {
   setSelectedPos: React.Dispatch<React.SetStateAction<CellPosition>>;
   guideGroup: boolean;
   guideValue: boolean;
+  guideValueGroup: boolean;
 }
 
 const Cell: React.FunctionComponent<CellProps> = (props) => {
@@ -44,6 +48,7 @@ const Cell: React.FunctionComponent<CellProps> = (props) => {
     setSelectedPos,
     guideGroup,
     guideValue,
+    guideValueGroup
   } = props;
 
   const {position: gridPosition} = cell;
@@ -57,7 +62,7 @@ const Cell: React.FunctionComponent<CellProps> = (props) => {
 
   let cellClassNames = classnames(
     "cell",
-    cellBackgroundClass(selected, guideValue, guideGroup),
+    cellBackgroundClass(selected, guideValue, guideGroup, guideValueGroup),
     cellColorClass(cell.fixed),
   );
 

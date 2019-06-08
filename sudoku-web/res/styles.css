@@ -21,22 +21,23 @@ button {
     --base: 0;
     --outer-grid-size: 100vmin;
 
-    /* TODO: define as calculated colors from base colors (hsl/material-ui?) */
     /*Style Variables*/
-    --block-border-color: #606266;
+    --hue: 213;
+    --block-border-color: hsl(var(--hue), 0%, 39%);
     --block-border-size: 2px;
-    --cell-border-color: #bec6d4;
+    --cell-border-color: hsl(var(--hue), 20%, 79%);
     --cell-border-size: 1px;
     --cell-padding: 0.2rem;
-    --cell-bg-color-selected: #bbdefb;
-    --cell-bg-color-guide-group: #e2e7ed;
-    --cell-bg-color-guide-value: #c8d0de;
-    --cell-bg-color-fixed-conflict: #fdc0cb;
-    --cell-value-color-fixed: #212121;
-    --cell-value-color-user: #0d47a1;
-    --cell-value-color-user-conflict: #ff0000;
-    --candiate-color: #606266;
-    --bg-color: #ffffff;
+    --cell-bg-color-selected: hsl(var(--hue), 89%, 86%);
+    --cell-bg-color-guide-group: hsl(var(--hue), 25%, 91%);
+    --cell-bg-color-guide-value: hsl(var(--hue), 25%, 83%);
+    --cell-bg-color-guide-value-group: hsl(var(--hue), 25%, 91%);
+    --cell-bg-color-fixed-conflict: hsl(349, 94%, 87%);
+    --cell-value-color-fixed: hsl(0, 0%, 13%);
+    --cell-value-color-user: hsl(var(--hue), 85%, 34%);
+    --cell-value-color-user-conflict: hsl(0, 100%, 50%);
+    --candiate-color: hsl(var(--hue), 3%, 39%);
+    --bg-color: hsl(0, 0%, 100%);
 
     /*No Select*/
     user-select: none; /* supported by Chrome and Opera */
@@ -130,6 +131,10 @@ button {
 
 .cell--guide-value {
     background-color: var(--cell-bg-color-guide-value);
+}
+
+.cell--guide-value-group {
+    background-color: var(--cell-bg-color-guide-value-group);
 }
 
 .cell--fixed {
