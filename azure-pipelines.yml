@@ -9,14 +9,9 @@ pr: none
 pool:
   vmImage: 'ubuntu-latest'
 
+container: 'rust:latest'
 steps:
   - script: |
-      curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
-      rustup show
-    displayName: 'Install rustc'
-
-  - script: |
-      export PATH=$PATH:$HOME/.cargo/bin
       RUST_BACKTRACE=1 cargo test --verbose -- --test-threads=1
     displayName: 'Test rust'
 
@@ -26,7 +21,6 @@ steps:
     displayName: 'Install Node.js'
 
   - script: |
-      export PATH=$PATH:$HOME/.cargo/bin
       npm install
       npm run build
     workingDirectory: sudoku-web
