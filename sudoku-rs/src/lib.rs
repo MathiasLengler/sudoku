@@ -22,8 +22,6 @@ pub mod settings;
 pub mod solver;
 pub mod transport;
 
-// TODO: remove prefix naming on types (generator and solver)
-
 // TODO: deref(mut) to grid
 //  check public API
 //   can invariants be broken? (cell max_value)
