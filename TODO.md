@@ -7,18 +7,6 @@
     - [ ] candidates
 - mark conflicting cells
 
-## Tooling
-- PWA
-  - offline
-  - add to home
-  - fullscreen
-  - Framework?
-- azure pipelines
-  - run linting
-    - eslint
-    - clippy
-- evaluate useReducer
-
 ## UX
 - save (local storage)
   - settings
@@ -31,6 +19,7 @@
   - guide for all values equal to sticky value
 - [ ] undo/redo buttons
   - sudokuCan{Undo|Redo}
+
 ### New sudoku:
 - Generate with difficulty
   - by number of empty cells
@@ -46,12 +35,17 @@
       - Empty cell as `[\.\-0]`
       - optional spaces between values
       - optional newline between rows
+
 ### Gameplay Options
 - fill direct candidates on new sudoku
 - remove direct candidates on set value (is implemented and hardcoded true)
 - highlight incorrect value
   - Sudoku needs a solved grid
   - add flag to TransportSudoku
+  - Model State Diagram of Sudoku
+    - Edit Mode
+    - Play Mode
+
 ### Solver Controls
 - Solve button?
 - Solver selector
@@ -61,3 +55,15 @@
 - Options
     - animation / speed
     - select strategies
+
+## Tooling
+- PWA
+  - offline
+  - add to home
+  - fullscreen
+  - Framework?
+- azure pipelines
+  - run linting
+    - eslint
+    - clippy
+- evaluate useReducer

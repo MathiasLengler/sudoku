@@ -4,9 +4,8 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 const dist = path.resolve(__dirname, "dist");
 const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
-// noinspection JSUnusedLocalSymbols
-const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 const webpack = require('webpack');
+// const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
 module.exports = {
   entry: "./src/index.tsx",
@@ -24,13 +23,14 @@ module.exports = {
   },
   plugins: [
     new HtmlWebpackPlugin({
-      template: 'index.html'
+      template: path.resolve(__dirname, "res", "index.html")
     }),
     new WasmPackPlugin({
       crateDirectory: path.resolve(__dirname, "../sudoku-wasm"),
       watchDirectories: [
         path.resolve(__dirname, "../sudoku-rs")
       ],
+      outDir: path.resolve(__dirname, "../sudoku-wasm/pkg")
     }),
     // new BundleAnalyzerPlugin(),
     new webpack.HotModuleReplacementPlugin()

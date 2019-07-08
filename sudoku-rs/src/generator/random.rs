@@ -8,14 +8,14 @@ use crate::Sudoku;
 
 /// Naive completed sudoku generator by inserting candidates at random positions.
 /// Clears the sudoku if a deadlock is encountered and tries again.
-pub struct RandomGenerator {
+pub struct Generator {
     try_limit: usize,
     base: usize,
 }
 
-impl RandomGenerator {
-    pub fn new(base: usize, try_limit: usize) -> RandomGenerator {
-        RandomGenerator { try_limit, base }
+impl Generator {
+    pub fn new(base: usize, try_limit: usize) -> Generator {
+        Generator { try_limit, base }
     }
 
     pub fn generate<Cell: SudokuCell>(&self) -> Option<Sudoku<Cell>> {
@@ -93,7 +93,7 @@ mod tests {
 
     #[test]
     fn test_generate() {
-        let generator = RandomGenerator::new(2, 1_000);
+        let generator = Generator::new(2, 1_000);
         let sudoku = generator.generate::<Cell>().unwrap();
 
         assert!(sudoku.grid().all_candidates_positions().is_empty());
