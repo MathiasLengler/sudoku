@@ -2,21 +2,26 @@ import * as React from "react";
 import IconButton from "@material-ui/core/IconButton";
 import DeleteIcon from '@material-ui/icons/Delete';
 import InfoIcon from '@material-ui/icons/Info';
-import NoteIcon from '@material-ui/icons/Note';
-import {WasmSudokuController} from "../wasmSudokuController";
+import CreateIcon from '@material-ui/icons/Create';
+import GestureIcon from '@material-ui/icons/Gesture';
+import {Input, WasmSudokuController} from "../wasmSudokuController";
 import Tooltip from "@material-ui/core/Tooltip";
 import {ElementRef} from "../useResponsiveGridSize";
 
 
 interface ToolbarProps {
   sudokuController: WasmSudokuController;
-  candidateMode: boolean;
-  setCandidateMode: React.Dispatch<React.SetStateAction<boolean>>;
+  input: Input;
   toolbarRef: ElementRef;
 }
 
 export const Toolbar: React.FunctionComponent<ToolbarProps> = (props) => {
-  const {sudokuController, candidateMode, setCandidateMode, toolbarRef} = props;
+  const {
+    sudokuController, input: {
+      candidateMode,
+      stickyMode
+    }, toolbarRef
+  } = props;
 
   const enterDelay = 500;
   const leaveDelay = 200;
@@ -24,8 +29,14 @@ export const Toolbar: React.FunctionComponent<ToolbarProps> = (props) => {
   return (
     <div className="toolbar" ref={toolbarRef}>
       <Tooltip title="Toggle candidate mode" enterDelay={enterDelay} leaveDelay={leaveDelay}>
-        <IconButton color={candidateMode ? "primary": "default"} onClick={() => setCandidateMode(!candidateMode)}>
-          <NoteIcon fontSize="large"/>
+        <IconButton color={candidateMode ? "primary" : "default"}
+                    onClick={() => sudokuController.toggleCandidateMode()}>
+          <CreateIcon fontSize="large"/>
+        </IconButton>
+      </Tooltip>
+      <Tooltip title="Toggle sticky mode" enterDelay={enterDelay} leaveDelay={leaveDelay}>
+        <IconButton color={stickyMode ? "primary" : "default"} onClick={() => sudokuController.toggleStickyMode()}>
+          <GestureIcon fontSize="large"/>
         </IconButton>
       </Tooltip>
       <Tooltip title="Delete selected cell" enterDelay={enterDelay} leaveDelay={leaveDelay}>

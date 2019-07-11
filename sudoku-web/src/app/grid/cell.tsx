@@ -2,8 +2,9 @@ import * as React from "react";
 import {PointerEventHandler} from "react";
 import * as CSS from "csstype";
 import isEqual from "lodash/isEqual";
-import classnames from 'classnames'
+import classnames from "classnames";
 import {indexToPosition, valueToString} from "../utils";
+import {WasmSudokuController} from "../wasmSudokuController";
 
 function cellBackgroundClass(selected: boolean, guideValue: boolean, guideGroup: boolean, guideValueGroup: boolean) {
   if (selected) {
@@ -33,7 +34,7 @@ interface CellProps {
   cell: TransportCell;
   base: TransportSudoku['base'];
   selected: boolean;
-  setSelectedPos: React.Dispatch<React.SetStateAction<CellPosition>>;
+  sudokuController: WasmSudokuController;
   guideGroup: boolean;
   guideValue: boolean;
   guideValueGroup: boolean;
@@ -45,7 +46,7 @@ const Cell: React.FunctionComponent<CellProps> = (props) => {
     cell,
     base,
     selected,
-    setSelectedPos,
+    sudokuController,
     guideGroup,
     guideValue,
     guideValueGroup
@@ -72,7 +73,7 @@ const Cell: React.FunctionComponent<CellProps> = (props) => {
       return;
     }
 
-    setSelectedPos(gridPosition);
+    sudokuController.handlePosition(gridPosition, true);
 
     // Workaround for touch drag cell selection
     if (e.pointerType !== "mouse") {
@@ -92,7 +93,7 @@ const Cell: React.FunctionComponent<CellProps> = (props) => {
   return (
     <div className={cellClassNames}
          style={style}
-         onPointerDown={() => setSelectedPos(gridPosition)}
+         onPointerDown={() => sudokuController.handlePosition(gridPosition)}
          onPointerMove={onPointerMove}
     >
       {

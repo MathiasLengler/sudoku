@@ -209,6 +209,10 @@ button {
     min-height: 0;
 }
 
+.selectorValue--selected {
+    background-color: var(--cell-bg-color-selected) !important;
+}
+
 .selectorValueText {
     color: var(--cell-value-color-fixed);
     line-height: 1;

@@ -14,9 +14,6 @@
   - highscore
 
 ### Selector Control Panel:
-- [ ] sticky value toggle
-  - no selected cell when active
-  - guide for all values equal to sticky value
 - [ ] undo/redo buttons
   - sudokuCan{Undo|Redo}
 

@@ -26,7 +26,7 @@ export function valueToString(value: ValueCell['value']): string {
   return value.toString(36);
 }
 
-export function cellFromBlocks(blocks: TransportSudoku['blocks'], pos: CellPosition, base: TransportSudoku['base']): TransportCell {
+export function blocksToCell(blocks: TransportSudoku['blocks'], pos: CellPosition, base: TransportSudoku['base']): TransportCell {
   const blockPosition = cellPositionToBlockPosition(pos, base);
   const blockIndex = positionToIndex(blockPosition, base);
   const block = blocks[blockIndex];
