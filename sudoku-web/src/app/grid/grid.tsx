@@ -3,33 +3,39 @@ import * as CSS from 'csstype';
 import isEqual from "lodash/isEqual";
 import {MemoCell} from "./cell";
 import {cellPositionToBlockPosition, indexToPosition} from "../utils";
+import {Input, WasmSudokuController} from "../wasmSudokuController";
 
 interface GridProps {
+  sudokuController: WasmSudokuController;
   sudoku: TransportSudoku;
-  selectedPos: CellPosition;
-  setSelectedPos: React.Dispatch<React.SetStateAction<CellPosition>>;
-  selectedCell: TransportCell;
+  input: Input;
 }
 
 export const Grid: React.FunctionComponent<GridProps> = (props) => {
   const {
+    sudokuController,
     sudoku: {base, blocks},
-    selectedPos,
-    setSelectedPos,
-    selectedCell,
+    input,
   } = props;
 
+  const {
+    selectedCell,
+    selectedValue,
+    stickyMode
+  } = input;
+
+  const guideValue = stickyMode ? selectedValue : selectedCell.kind === "value" ? selectedCell.value : undefined;
+
   let selectedValuePositions: CellPosition[];
-  if (selectedCell.kind === "value") {
+  if (guideValue) {
     selectedValuePositions = blocks.flatMap((block) =>
       block.filter((cell) =>
-        cell.kind === "value" && cell.value === selectedCell.value
+        cell.kind === "value" && cell.value === guideValue
       ).map((cell) => cell.position)
     );
   } else {
     selectedValuePositions = [];
   }
-  console.log(selectedValuePositions);
 
   return <div className='grid'>
     {
@@ -40,11 +46,9 @@ export const Grid: React.FunctionComponent<GridProps> = (props) => {
             block={block}
             blockIndex={blockIndex}
             base={base}
-            selectedPos={selectedPos}
-            setSelectedPos={setSelectedPos}
-            selectedCell={selectedCell}
             selectedValuePositions={selectedValuePositions}
-          />
+            input={input}
+            sudokuController={sudokuController}/>
         )
     }
   </div>
@@ -54,9 +58,8 @@ interface BlockProps {
   block: Block;
   blockIndex: number;
   base: TransportSudoku['base'];
-  selectedPos: CellPosition;
-  setSelectedPos: React.Dispatch<React.SetStateAction<CellPosition>>;
-  selectedCell: TransportCell;
+  input: Input;
+  sudokuController: WasmSudokuController;
   selectedValuePositions: CellPosition[];
 }
 
@@ -65,9 +68,13 @@ const Block: React.FunctionComponent<BlockProps> = (props) => {
     block,
     blockIndex,
     base,
-    selectedPos,
-    setSelectedPos,
-    selectedCell,
+    input: {
+      selectedPos,
+      selectedCell,
+      selectedValue,
+      stickyMode
+    },
+    sudokuController,
     selectedValuePositions
   } = props;
 
@@ -89,15 +96,19 @@ const Block: React.FunctionComponent<BlockProps> = (props) => {
 
   return <div className={'block'} style={style}>
     {block.map((cell, blockCellIndex) => {
-      const selected = containsSelectedPos && isEqual(selectedPos, cell.position);
+      const selected = !stickyMode && containsSelectedPos && isEqual(selectedPos, cell.position);
 
-      const guideGroup = containsSelectedPos
+      const guideGroup = !stickyMode && (
+        containsSelectedPos
         || selectedPos.column == cell.position.column
-        || selectedPos.row == cell.position.row;
+        || selectedPos.row == cell.position.row
+      );
 
-      const guideValue = selectedCell.kind === "value"
-        && cell.kind === "value"
-        && selectedCell.value === cell.value;
+      const guideValue = cell.kind === "value" && (
+        stickyMode
+          ? cell.value === selectedValue
+          : selectedCell.kind === "value" && selectedCell.value === cell.value
+      );
 
       const guideValueGroup = containsSelectedValue
         || selectedValuePositions.some(pos => pos.column === cell.position.column || pos.row === cell.position.row);
@@ -108,7 +119,7 @@ const Block: React.FunctionComponent<BlockProps> = (props) => {
         cell={cell}
         base={base}
         selected={selected}
-        setSelectedPos={setSelectedPos}
+        sudokuController={sudokuController}
         guideValue={guideValue}
         guideGroup={guideGroup}
         guideValueGroup={guideValueGroup}/>

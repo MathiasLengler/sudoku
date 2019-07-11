@@ -2,13 +2,13 @@ import * as React from "react";
 import {useState} from "react";
 import {Grid} from "./grid/grid";
 import * as CSS from "csstype";
-import {WasmSudokuController} from "./wasmSudokuController";
+import {Input, WasmSudokuController} from "./wasmSudokuController";
 import {useKeyboardInput} from "./useKeyboardInput";
 import {ControlPanel} from "./controlPanel/controlPanel";
 import {TypedWasmSudoku} from "../typedWasmSudoku";
 import {useClientHeight, useResponsiveGridSize} from "./useResponsiveGridSize";
 import CssBaseline from '@material-ui/core/CssBaseline';
-import {cellFromBlocks} from "./utils";
+import {blocksToCell} from "./utils";
 
 interface AppProps {
   wasmSudoku: TypedWasmSudoku;
@@ -22,32 +22,37 @@ export const App: React.FunctionComponent<AppProps> = (props) => {
     return sudoku;
   });
 
-  const [selectedPos, setSelectedPos] = useState<CellPosition>(() => {
-    return {column: 0, row: 0}
-  });
-
-  const [candidateMode, setCandidateMode] = useState(false);
-
-  // Responsive Grid
-  const [toolbarHeight, toolbarRef] = useClientHeight();
-
   const {blocks, base, sideLength} = sudoku;
 
-  const gridSize = useResponsiveGridSize(toolbarHeight, sideLength);
+  const [inputWithoutSelectedCell, setInput] = useState<Omit<Input, "selectedCell">>(() => {
+    const selectedPos = {column: 0, row: 0};
 
-  // Dependent on state
-  const selectedCell = cellFromBlocks(blocks, selectedPos, base);
+    return {
+      selectedPos,
+      selectedValue: 1,
+      stickyMode: false,
+      candidateMode: false,
+    };
+  });
+
+  const selectedCell = blocksToCell(blocks, inputWithoutSelectedCell.selectedPos, base);
+
+  const input = {...inputWithoutSelectedCell, selectedCell};
 
   const sudokuController = new WasmSudokuController(
     props.wasmSudoku,
+    sudoku,
     (sudoku) => setSudoku(sudoku),
-    candidateMode,
-    selectedPos,
-    selectedCell,
-    sideLength
+    input,
+    setInput,
+    sideLength,
   );
 
-  useKeyboardInput(sudokuController, selectedPos, setSelectedPos, sideLength, candidateMode, setCandidateMode);
+  useKeyboardInput(sudokuController, input, sideLength);
+
+  // Responsive Grid
+  const [toolbarHeight, toolbarRef] = useClientHeight();
+  const gridSize = useResponsiveGridSize(toolbarHeight, sideLength);
 
   const style: CSS.Properties = {
     '--sideLength': sideLength,
@@ -60,15 +65,14 @@ export const App: React.FunctionComponent<AppProps> = (props) => {
       <CssBaseline/>
       <div className='sudoku' style={style}>
         <Grid
+          sudokuController={sudokuController}
+          input={input}
           sudoku={sudoku}
-          selectedPos={selectedPos}
-          setSelectedPos={setSelectedPos}
-          selectedCell={selectedCell}/>
+        />
         <ControlPanel
           sudokuController={sudokuController}
+          input={input}
           sideLength={sideLength}
-          candidateMode={candidateMode}
-          setCandidateMode={setCandidateMode}
           toolbarRef={toolbarRef}
         />
       </div>
