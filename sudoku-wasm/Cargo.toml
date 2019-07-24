@@ -16,9 +16,9 @@ console_log = { version = "0.1.2", optional = true }
 js-sys = "0.3.22"
 
 # own
-log = "0.4.6"
+log = "0.4.7"
 sudoku = { path = "../sudoku-rs", features= ["wasm-bindgen"]}
-serde = "1.0.91"
+serde = "1.0.97"
 
 # wasm
 [dependencies.web-sys]
