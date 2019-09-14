@@ -6,7 +6,7 @@
     - [x] with/without their groups
     - [ ] candidates
 - mark conflicting cells
-
+- show shortcuts
 ## UX
 - save (local storage)
   - settings
