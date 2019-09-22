@@ -40,14 +40,19 @@ impl Generator {
 
         let filled_sudoku = self.filled_sudoku();
 
-        match self.settings.target {
+        let sudoku = match self.settings.target {
             Filled => Some(filled_sudoku),
             FromFilled {
                 distance: _distance,
             } => unimplemented!(),
             Minimal => Self::minimal(filled_sudoku, 0),
             FromMinimal { distance } => Self::minimal(filled_sudoku, distance),
-        }
+        };
+
+        sudoku.map(|mut sudoku| {
+            sudoku.update_settings(SudokuSettings::default());
+            sudoku
+        })
     }
 
     fn filled_sudoku<Cell: SudokuCell>(&self) -> Sudoku<Cell> {
@@ -106,8 +111,6 @@ impl Generator {
         for (deleted_pos, deleted_value) in deleted.into_iter().take(distance) {
             sudoku.set_value(deleted_pos, deleted_value);
         }
-
-        sudoku.update_settings(SudokuSettings::default());
 
         Some(sudoku)
     }
