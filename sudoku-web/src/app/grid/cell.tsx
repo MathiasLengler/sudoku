@@ -61,7 +61,7 @@ const Cell: React.FunctionComponent<CellProps> = (props) => {
     '--cell-row': blockCellPosition.row,
   };
 
-  let cellClassNames = classnames(
+  const cellClassNames = classnames(
     "cell",
     cellBackgroundClass(selected, guideValue, guideGroup, guideValueGroup),
     cellColorClass(cell.fixed),

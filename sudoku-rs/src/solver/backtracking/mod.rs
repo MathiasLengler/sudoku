@@ -141,7 +141,7 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
             }
         }
     }
-
+    // TODO: if cfg
     #[cfg(not(feature = "debug_print"))]
     fn debug_print(&self, _step_result: &StepResult<Cell>) {
         // Do nothing

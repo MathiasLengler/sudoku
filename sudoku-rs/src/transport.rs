@@ -38,6 +38,7 @@ impl<Cell: SudokuCell> From<&Sudoku<Cell>> for TransportSudoku {
 
 // TODO:
 //  is_correct
+//  conflicts_with
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransportCell {

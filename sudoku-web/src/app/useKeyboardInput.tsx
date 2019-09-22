@@ -2,7 +2,7 @@ import {Input, WasmSudokuController} from "./wasmSudokuController";
 import * as React from "react";
 import {useEffect} from "react";
 import clamp from "lodash/clamp";
-import {assertNever} from "./utils";
+import {assertNever} from "assert-never";
 
 function keyToValue(key: string): number | undefined {
   if (key.length === 1) {
@@ -39,7 +39,7 @@ function keyToNewPos(key: string, selectedPos: CellPosition, sideLength: Transpo
   return {row: row, column: column};
 }
 
-type ToolbarAction = "toggleCandidateMode" | "toggleStickyMode" | "delete" | "setAllDirectCandidates";
+type ToolbarAction = "toggleCandidateMode" | "toggleStickyMode" | "delete" | "setAllDirectCandidates" | "undo";
 
 function keyToToolbarAction(key: string): ToolbarAction | undefined {
   switch (key) {
@@ -51,6 +51,8 @@ function keyToToolbarAction(key: string): ToolbarAction | undefined {
       return "setAllDirectCandidates";
     case "+":
       return "toggleStickyMode";
+    case "Backspace":
+      return "undo";
     default:
       return;
   }
@@ -99,6 +101,9 @@ export function useKeyboardInput(
             break;
           case "toggleStickyMode":
             sudokuController.toggleStickyMode();
+            break;
+          case "undo":
+            sudokuController.undo();
             break;
           default:
             assertNever(toolbarAction);

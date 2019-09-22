@@ -29,7 +29,7 @@ export class WasmSudokuController {
   }
 
   private withSudokuUpdate<T>(f: () => T): T {
-    let ret = f();
+    const ret = f();
 
     this.updateSudoku();
 
@@ -46,9 +46,7 @@ export class WasmSudokuController {
     }
   }
 
-  public handlePosition(newSelectedPosition: CellPosition, move: boolean = false) {
-    console.log("WasmSudokuController", "handlePosition", newSelectedPosition, move);
-
+  public handlePosition(newSelectedPosition: CellPosition, move = false) {
     const {stickyMode, selectedPos, selectedValue} = this.input;
 
     if (move && isEqual(selectedPos, newSelectedPosition)) {
@@ -72,8 +70,6 @@ export class WasmSudokuController {
   }
 
   public handleValue(value: number) {
-    console.log("WasmSudokuController", "handleValue", value);
-
     const {stickyMode} = this.input;
 
     if (value > this.sideLength) {
@@ -123,6 +119,12 @@ export class WasmSudokuController {
     this.withSudokuUpdate(() => {
       this.wasmSudoku.setAllDirectCandidates();
     });
+  }
+
+  public undo() {
+    this.withSudokuUpdate(() => {
+      this.wasmSudoku.undo();
+    })
   }
 
   public toggleCandidateMode() {

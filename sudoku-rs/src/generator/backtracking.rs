@@ -2,6 +2,7 @@ use rand::seq::SliceRandom;
 
 use crate::cell::SudokuCell;
 use crate::position::Position;
+use crate::settings::Settings as SudokuSettings;
 use crate::solver::backtracking;
 use crate::Sudoku;
 
@@ -39,18 +40,29 @@ impl Generator {
 
         let filled_sudoku = self.filled_sudoku();
 
-        match self.settings.target {
+        let sudoku = match self.settings.target {
             Filled => Some(filled_sudoku),
             FromFilled {
                 distance: _distance,
             } => unimplemented!(),
             Minimal => Self::minimal(filled_sudoku, 0),
             FromMinimal { distance } => Self::minimal(filled_sudoku, distance),
-        }
+        };
+
+        sudoku.map(|mut sudoku| {
+            sudoku.update_settings(SudokuSettings::default());
+            sudoku
+        })
     }
 
     fn filled_sudoku<Cell: SudokuCell>(&self) -> Sudoku<Cell> {
-        let mut sudoku = Sudoku::<Cell>::new(self.settings.base);
+        let mut sudoku = Sudoku::<Cell>::new_with_settings(
+            self.settings.base,
+            SudokuSettings {
+                update_candidates_on_set_value: false,
+                history_limit: 0,
+            },
+        );
 
         let mut solver = backtracking::Solver::new_with_settings(
             &mut sudoku,
