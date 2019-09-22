@@ -337,6 +337,11 @@ mod tests {
     fn test_set_or_toggle_value() {
         let mut sudoku: Sudoku<Cell<NonZeroUsize>> = samples::base_2().first().unwrap().clone();
 
+        sudoku.update_settings(Settings {
+            update_candidates_on_set_value: true,
+            history_limit: 0,
+        });
+
         sudoku.set_all_direct_candidates();
 
         let sudoku = sudoku;
