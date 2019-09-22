@@ -48,6 +48,14 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
         Self::new_with_grid(Grid::new(base))
     }
 
+    fn new_with_settings(base: usize, settings: Settings) -> Self {
+        Sudoku {
+            grid: Grid::new(base),
+            history: Default::default(),
+            settings,
+        }
+    }
+
     fn new_with_grid(grid: Grid<Cell>) -> Self {
         Sudoku {
             grid,
@@ -132,6 +140,10 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
         if let Some(grid) = self.history.pop() {
             self.grid = grid;
         }
+    }
+
+    fn update_settings(&mut self, settings: Settings) {
+        self.settings = settings;
     }
 
     pub fn fix_all_values(&mut self) {

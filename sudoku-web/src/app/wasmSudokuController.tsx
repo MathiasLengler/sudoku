@@ -47,8 +47,6 @@ export class WasmSudokuController {
   }
 
   public handlePosition(newSelectedPosition: CellPosition, move = false) {
-    console.log("WasmSudokuController", "handlePosition", newSelectedPosition, move);
-
     const {stickyMode, selectedPos, selectedValue} = this.input;
 
     if (move && isEqual(selectedPos, newSelectedPosition)) {
@@ -72,8 +70,6 @@ export class WasmSudokuController {
   }
 
   public handleValue(value: number) {
-    console.log("WasmSudokuController", "handleValue", value);
-
     const {stickyMode} = this.input;
 
     if (value > this.sideLength) {

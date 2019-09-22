@@ -42,8 +42,6 @@ function keyToNewPos(key: string, selectedPos: CellPosition, sideLength: Transpo
 type ToolbarAction = "toggleCandidateMode" | "toggleStickyMode" | "delete" | "setAllDirectCandidates" | "undo";
 
 function keyToToolbarAction(key: string): ToolbarAction | undefined {
-  console.log(key);
-
   switch (key) {
     case " ":
       return "toggleCandidateMode";

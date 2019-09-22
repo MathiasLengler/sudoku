@@ -33,17 +33,7 @@ export function useResponsiveGridSize(toolbarHeight: number, sideLength: Transpo
 
     const gridHeight = (sideLength * gridAndSelectorHeight) / (sideLength + 1);
 
-    const gridSize = Math.min(gridHeight, windowSize.width);
-
-    console.debug("useResponsiveGridSize", {
-      toolbarHeight,
-      windowSize,
-      gridAndSelectorHeight,
-      gridHeight,
-      gridSize
-    });
-
-    return gridSize;
+    return Math.min(gridHeight, windowSize.width);
   }, [sideLength, toolbarHeight, windowSize]);
 }
 
