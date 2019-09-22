@@ -2,7 +2,7 @@ import {Input, WasmSudokuController} from "./wasmSudokuController";
 import * as React from "react";
 import {useEffect} from "react";
 import clamp from "lodash/clamp";
-import {assertNever} from "./utils";
+import {assertNever} from "assert-never";
 
 function keyToValue(key: string): number | undefined {
   if (key.length === 1) {

@@ -29,7 +29,7 @@ export class WasmSudokuController {
   }
 
   private withSudokuUpdate<T>(f: () => T): T {
-    let ret = f();
+    const ret = f();
 
     this.updateSudoku();
 
@@ -46,7 +46,7 @@ export class WasmSudokuController {
     }
   }
 
-  public handlePosition(newSelectedPosition: CellPosition, move: boolean = false) {
+  public handlePosition(newSelectedPosition: CellPosition, move = false) {
     console.log("WasmSudokuController", "handlePosition", newSelectedPosition, move);
 
     const {stickyMode, selectedPos, selectedValue} = this.input;

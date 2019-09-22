@@ -37,7 +37,3 @@ export function blocksToCell(blocks: TransportSudoku['blocks'], pos: CellPositio
   const cellIndexInBlock = positionToIndex(cellPositionInBlock, base);
   return block[cellIndexInBlock];
 }
-
-// noinspection JSUnusedLocalSymbols
-export function assertNever(param: never) {
-}
