@@ -35,4 +35,8 @@ export class TypedWasmSudoku {
   public setAllDirectCandidates() {
     return this.rustSudoku.set_all_direct_candidates();
   }
+
+  public undo() {
+    return this.rustSudoku.undo();
+  }
 }

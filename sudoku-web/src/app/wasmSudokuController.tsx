@@ -125,6 +125,12 @@ export class WasmSudokuController {
     });
   }
 
+  public undo() {
+    this.withSudokuUpdate(() => {
+      this.wasmSudoku.undo();
+    })
+  }
+
   public toggleCandidateMode() {
     this.setInput((prevInput) => ({...prevInput, candidateMode: !prevInput.candidateMode}))
   }

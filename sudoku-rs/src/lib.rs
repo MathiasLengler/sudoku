@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashSet, VecDeque};
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::fmt::{Display, Formatter};
@@ -9,6 +9,7 @@ use cell::SudokuCell;
 
 use crate::error::{Error, Result};
 use crate::grid::Grid;
+use crate::history::GridHistory;
 use crate::position::Position;
 use crate::settings::Settings;
 
@@ -16,6 +17,7 @@ pub mod cell;
 pub mod error;
 pub mod generator;
 mod grid;
+mod history;
 pub mod position;
 pub mod samples;
 pub mod settings;
@@ -30,6 +32,7 @@ pub mod transport;
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 pub struct Sudoku<Cell: SudokuCell> {
     grid: Grid<Cell>,
+    history: GridHistory<Cell>,
     settings: Settings,
 }
 
@@ -48,11 +51,14 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     fn new_with_grid(grid: Grid<Cell>) -> Self {
         Sudoku {
             grid,
+            history: Default::default(),
             settings: Default::default(),
         }
     }
 
     pub fn set_value(&mut self, pos: Position, value: usize) {
+        self.push_history();
+
         let max_value = self.grid.max_value();
 
         self.grid.get_pos_mut(pos).set_value(value, max_value);
@@ -63,6 +69,8 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     }
 
     pub fn set_or_toggle_value(&mut self, pos: Position, value: usize) {
+        self.push_history();
+
         let max_value = self.grid.max_value();
 
         let set_value = self
@@ -76,6 +84,12 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     }
 
     pub fn set_candidates(&mut self, pos: Position, candidates: Vec<usize>) {
+        self.push_history();
+
+        self.set_candidates_without_history(pos, candidates);
+    }
+
+    fn set_candidates_without_history(&mut self, pos: Position, candidates: Vec<usize>) {
         let max_value = self.grid.max_value();
 
         self.grid
@@ -84,6 +98,8 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     }
 
     pub fn toggle_candidate(&mut self, pos: Position, candidate: usize) {
+        self.push_history();
+
         let max_value = self.grid.max_value();
 
         self.grid
@@ -92,20 +108,30 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     }
 
     pub fn delete(&mut self, pos: Position) -> Cell {
+        self.push_history();
+
         let max_value = self.grid.max_value();
 
         self.grid.get_pos_mut(pos).delete(max_value)
     }
 
     pub fn set_all_direct_candidates(&mut self) {
+        self.push_history();
+
         self.grid()
             .all_candidates_positions()
             .into_iter()
             .for_each(|pos| {
                 let candidates = self.direct_candidates(pos);
 
-                self.set_candidates(pos, candidates);
+                self.set_candidates_without_history(pos, candidates);
             });
+    }
+
+    pub fn undo(&mut self) {
+        if let Some(grid) = self.history.pop() {
+            self.grid = grid;
+        }
     }
 
     pub fn fix_all_values(&mut self) {
@@ -209,6 +235,11 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     #[allow(dead_code)]
     fn is_solved(&self) -> bool {
         self.grid().all_candidates_positions().is_empty() && !self.has_conflict()
+    }
+
+    fn push_history(&mut self) {
+        self.history
+            .push(self.grid.clone(), self.settings.history_limit)
     }
 }
 

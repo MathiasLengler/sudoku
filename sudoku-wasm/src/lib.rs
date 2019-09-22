@@ -3,12 +3,12 @@
 use std::cell::RefCell;
 
 use log::debug;
+use wasm_bindgen::prelude::*;
 
 use sudoku::cell::Cell;
 use sudoku::position::Position;
 use sudoku::transport::TransportSudoku;
 use sudoku::Sudoku;
-use wasm_bindgen::prelude::*;
 
 #[cfg(feature = "wee_alloc")]
 #[global_allocator]
@@ -83,6 +83,10 @@ impl WasmSudoku {
 
     pub fn set_all_direct_candidates(&mut self) {
         self.sudoku.borrow_mut().set_all_direct_candidates();
+    }
+
+    pub fn undo(&mut self) {
+        self.sudoku.borrow_mut().undo();
     }
 }
 

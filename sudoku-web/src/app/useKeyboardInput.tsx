@@ -39,9 +39,11 @@ function keyToNewPos(key: string, selectedPos: CellPosition, sideLength: Transpo
   return {row: row, column: column};
 }
 
-type ToolbarAction = "toggleCandidateMode" | "toggleStickyMode" | "delete" | "setAllDirectCandidates";
+type ToolbarAction = "toggleCandidateMode" | "toggleStickyMode" | "delete" | "setAllDirectCandidates" | "undo";
 
 function keyToToolbarAction(key: string): ToolbarAction | undefined {
+  console.log(key);
+
   switch (key) {
     case " ":
       return "toggleCandidateMode";
@@ -51,6 +53,8 @@ function keyToToolbarAction(key: string): ToolbarAction | undefined {
       return "setAllDirectCandidates";
     case "+":
       return "toggleStickyMode";
+    case "Backspace":
+      return "undo";
     default:
       return;
   }
@@ -99,6 +103,9 @@ export function useKeyboardInput(
             break;
           case "toggleStickyMode":
             sudokuController.toggleStickyMode();
+            break;
+          case "undo":
+            sudokuController.undo();
             break;
           default:
             assertNever(toolbarAction);
