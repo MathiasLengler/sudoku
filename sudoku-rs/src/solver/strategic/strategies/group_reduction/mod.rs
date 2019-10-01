@@ -10,13 +10,10 @@ use self::pcp::group_candidates_reduction;
 
 mod pcp;
 
+#[derive(Debug)]
 pub(in super::super) struct GroupReduction;
 
 impl<Cell: SudokuCell> Strategy<Cell> for GroupReduction {
-    fn name(&self) -> &'static str {
-        "GroupReduction"
-    }
-
     fn execute(&self, sudoku: &mut Sudoku<Cell>) -> Vec<Position> {
         let mut modified_positions = vec![];
 

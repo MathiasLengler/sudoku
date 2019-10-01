@@ -17,6 +17,8 @@
 //! Hidden Quad | us4 | 7000 | 5000
 //! Swordfish | sf4 | 8000 | 6000
 
+use std::fmt::Debug;
+
 use backtracking::Backtracking;
 use group_reduction::GroupReduction;
 use single_candidate::SingleCandidate;
@@ -37,10 +39,7 @@ enum StrategyResult {
     MultipleSolutions,
 }
 
-pub(super) trait Strategy<Cell: SudokuCell> {
-    /// Name of the strategy
-    fn name(&self) -> &'static str;
-
+pub(super) trait Strategy<Cell: SudokuCell>: Debug {
     /// Execute this strategy on the given sudoku. Returns the list of modified positions.
     fn execute(&self, sudoku: &mut Sudoku<Cell>) -> Vec<Position>;
 }

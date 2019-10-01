@@ -5,6 +5,7 @@ use crate::Sudoku;
 
 mod strategies;
 
+#[derive(Debug)]
 pub struct Solver<'s, Cell: SudokuCell> {
     sudoku: &'s mut Sudoku<Cell>,
     strategies: Vec<Box<dyn Strategy<Cell>>>,

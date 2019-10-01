@@ -8,6 +8,7 @@ use crate::Sudoku;
 
 /// Naive completed sudoku generator by inserting candidates at random positions.
 /// Clears the sudoku if a deadlock is encountered and tries again.
+#[derive(Debug)]
 pub struct Generator {
     try_limit: usize,
     base: usize,

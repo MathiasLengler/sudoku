@@ -10,6 +10,7 @@ mod choice;
 // TODO: how to externally drive and visualize solver (steps)
 //  make step into an iterator over step results
 
+#[derive(Debug)]
 pub struct Solver<'s, Cell: SudokuCell> {
     sudoku: &'s mut Sudoku<Cell>,
     /// Cached

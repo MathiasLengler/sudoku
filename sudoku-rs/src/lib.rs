@@ -1,3 +1,6 @@
+#![warn(missing_debug_implementations)]
+#![warn(unsafe_code)]
+
 use std::collections::{HashSet, VecDeque};
 use std::convert::{TryFrom, TryInto};
 use std::fmt;

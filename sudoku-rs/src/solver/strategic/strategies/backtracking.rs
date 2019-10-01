@@ -5,13 +5,10 @@ use crate::Sudoku;
 
 use super::Strategy;
 
+#[derive(Debug)]
 pub(in super::super) struct Backtracking;
 
 impl<Cell: SudokuCell> Strategy<Cell> for Backtracking {
-    fn name(&self) -> &'static str {
-        "Backtracking"
-    }
-
     fn execute(&self, sudoku: &mut Sudoku<Cell>) -> Vec<Position> {
         let mut solver = Solver::new(sudoku);
 

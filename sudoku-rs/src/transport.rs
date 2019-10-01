@@ -6,7 +6,7 @@ use crate::Sudoku;
 
 // TODO:
 //  conflicting cells (groups?)
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransportSudoku {
     blocks: Vec<Vec<TransportCell>>,
@@ -39,7 +39,7 @@ impl<Cell: SudokuCell> From<&Sudoku<Cell>> for TransportSudoku {
 // TODO:
 //  is_correct
 //  conflicts_with
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransportCell {
     #[serde(flatten)]

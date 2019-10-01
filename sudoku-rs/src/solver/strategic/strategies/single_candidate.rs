@@ -4,13 +4,10 @@ use crate::Sudoku;
 
 use super::Strategy;
 
+#[derive(Debug)]
 pub(in super::super) struct SingleCandidate;
 
 impl<Cell: SudokuCell> Strategy<Cell> for SingleCandidate {
-    fn name(&self) -> &'static str {
-        "SingleCandidate"
-    }
-
     fn execute(&self, sudoku: &mut Sudoku<Cell>) -> Vec<Position> {
         sudoku
             .grid()

@@ -25,6 +25,7 @@ pub(super) mod pcp_utils;
 
 // TODO: compare perf with python Z3 implementation
 
+#[allow(missing_debug_implementations)]
 pub struct Solver<'s, Cell: SudokuCell> {
     sudoku: &'s mut Sudoku<Cell>,
 

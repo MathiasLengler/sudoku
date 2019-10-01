@@ -7,6 +7,7 @@ use crate::solver::backtracking;
 use crate::Sudoku;
 
 // TODO: replace with separate generate methods (return type)
+#[derive(Debug)]
 pub enum Target {
     Filled,
     FromFilled { distance: usize },
@@ -20,11 +21,13 @@ impl Default for Target {
     }
 }
 
+#[derive(Debug)]
 pub struct Settings {
     pub base: usize,
     pub target: Target,
 }
 
+#[derive(Debug)]
 pub struct Generator {
     settings: Settings,
 }
