@@ -104,8 +104,8 @@ impl WasmSudoku {
 fn init() {
     use log::Level;
     use std::panic;
-    use std::sync::{Once, ONCE_INIT};
-    static SET_HOOK: Once = ONCE_INIT;
+    use std::sync::Once;
+    static SET_HOOK: Once = Once::new();
 
     #[cfg(feature = "console")]
     SET_HOOK.call_once(|| {
