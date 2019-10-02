@@ -4,10 +4,10 @@ use rand::seq::SliceRandom;
 use rand::thread_rng;
 
 use crate::cell::SudokuCell;
-use crate::Sudoku;
+use crate::grid::Grid;
 
 /// Naive completed sudoku generator by inserting candidates at random positions.
-/// Clears the sudoku if a deadlock is encountered and tries again.
+/// Clears the sudoku if a deadlock is encountered and tries again until the limit is reached.
 #[derive(Debug)]
 pub struct Generator {
     try_limit: usize,
@@ -19,14 +19,14 @@ impl Generator {
         Generator { try_limit, base }
     }
 
-    pub fn generate<Cell: SudokuCell>(&self) -> Option<Sudoku<Cell>> {
+    pub fn generate<Cell: SudokuCell>(&self) -> Option<Grid<Cell>> {
         let tries: Range<usize> = 0..self.try_limit;
 
         let filter_function = |_try_count| {
-            let mut sudoku = Sudoku::<Cell>::new(self.base);
+            let mut grid = Grid::<Cell>::new(self.base);
 
-            if Self::try_fill(&mut sudoku) {
-                Some(sudoku)
+            if Self::try_fill(&mut grid) {
+                Some(grid)
             } else {
                 None
             }
@@ -39,16 +39,16 @@ impl Generator {
     fn run<Cell: SudokuCell>(
         &self,
         tries: Range<usize>,
-        filter_function: impl Fn(usize) -> Option<Sudoku<Cell>>,
-    ) -> Option<Sudoku<Cell>> {
+        filter_function: impl Fn(usize) -> Option<Grid<Cell>>,
+    ) -> Option<Grid<Cell>> {
         tries.filter_map(filter_function).next()
     }
 
     #[cfg(feature = "parallel")]
-    fn run<Cell, F>(&self, tries: Range<usize>, filter_function: F) -> Option<Sudoku<Cell>>
+    fn run<Cell, F>(&self, tries: Range<usize>, filter_function: F) -> Option<Grid<Cell>>
     where
         Cell: SudokuCell,
-        F: Fn(usize) -> Option<Sudoku<Cell>>,
+        F: Fn(usize) -> Option<Grid<Cell>>,
         F: Send + Sync,
     {
         use rayon::prelude::ParallelIterator;
@@ -60,8 +60,8 @@ impl Generator {
             .find_any(|_| true)
     }
 
-    fn try_fill<Cell: SudokuCell>(sudoku: &mut Sudoku<Cell>) -> bool {
-        let mut positions = sudoku.grid().all_candidates_positions();
+    fn try_fill<Cell: SudokuCell>(grid: &mut Grid<Cell>) -> bool {
+        let mut positions = grid.all_candidates_positions();
 
         let mut rng = thread_rng();
 
@@ -70,10 +70,10 @@ impl Generator {
         let mut no_deadlock = true;
 
         'outer: for pos in positions {
-            for value in sudoku.direct_candidates(pos) {
-                sudoku.set_value(pos, value);
+            for value in grid.direct_candidates(pos) {
+                grid.set_value(pos, value);
 
-                if !sudoku.has_conflict_at(pos) {
+                if !grid.has_conflict_at(pos) {
                     continue 'outer;
                 }
             }
@@ -95,9 +95,8 @@ mod tests {
     #[test]
     fn test_generate() {
         let generator = Generator::new(2, 1_000);
-        let sudoku = generator.generate::<Cell>().unwrap();
+        let grid = generator.generate::<Cell>().unwrap();
 
-        assert!(sudoku.grid().all_candidates_positions().is_empty());
-        assert!(!sudoku.has_conflict());
+        assert!(grid.is_solved());
     }
 }

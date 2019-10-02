@@ -5,21 +5,17 @@ use indexmap::IndexMap;
 use interval::interval::ToInterval;
 use pcp::concept::*;
 use pcp::kernel::*;
-use pcp::logic::Disjunction;
-use pcp::propagation::events::FDEvent;
-use pcp::propagation::PropagatorConcept;
 use pcp::propagators::*;
 use pcp::search::search_tree_visitor::Status::*;
 use pcp::search::SearchTreeVisitor;
-use pcp::search::*;
 use pcp::term::*;
 use pcp::variable::ops::*;
 
 use pcp_utils::{boxed_one_solution_engine_interval, FDSpace, VStore};
 
 use crate::cell::SudokuCell;
+use crate::grid::Grid;
 use crate::position::Position;
-use crate::Sudoku;
 
 pub(super) mod pcp_utils;
 
@@ -27,7 +23,7 @@ pub(super) mod pcp_utils;
 
 #[allow(missing_debug_implementations)]
 pub struct Solver<'s, Cell: SudokuCell> {
-    sudoku: &'s mut Sudoku<Cell>,
+    grid: &'s mut Grid<Cell>,
 
     variable_positions: Vec<Position>,
 
@@ -37,37 +33,36 @@ pub struct Solver<'s, Cell: SudokuCell> {
 }
 
 impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
-    pub fn new(sudoku: &'s mut Sudoku<Cell>) -> Solver<'s, Cell> {
-        sudoku.fix_all_values();
-        sudoku.set_all_direct_candidates();
+    pub fn new(grid: &'s mut Grid<Cell>) -> Solver<'s, Cell> {
+        grid.fix_all_values();
+        grid.set_all_direct_candidates();
 
-        let (space, variable_positions) = Self::constrain(sudoku);
+        let (space, variable_positions) = Self::constrain(grid);
 
         let mut search = boxed_one_solution_engine_interval();
 
         search.start(&space);
 
         Self {
-            sudoku,
+            grid,
             variable_positions,
             search,
             space,
         }
     }
 
-    fn constrain(sudoku: &Sudoku<Cell>) -> (FDSpace, Vec<Position>) {
+    fn constrain(grid: &Grid<Cell>) -> (FDSpace, Vec<Position>) {
         // TODO: constrain all cells, not only the candidates
         //  simpler constraints could be faster
 
-        let max_value = sudoku.grid().max_value() as i32;
+        let max_value = grid.max_value() as i32;
 
         let mut space = FDSpace::empty();
 
-        let pos_to_variable_and_candidates: IndexMap<_, _> = sudoku
-            .grid()
+        let pos_to_variable_and_candidates: IndexMap<_, _> = grid
             .all_positions()
             .filter_map(|pos| {
-                sudoku.get(pos).candidates().map(|candidates| {
+                grid.get(pos).candidates().map(|candidates| {
                     // Define variable constrained to range
                     let variable =
                         Box::new(space.vstore.alloc((1, max_value).to_interval())) as Var<VStore>;
@@ -91,17 +86,17 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
 
         // Group constraints:
         constrain_groups(
-            sudoku.grid().all_row_positions(),
+            grid.all_row_positions(),
             &mut space,
             &pos_to_variable_and_candidates,
         );
         constrain_groups(
-            sudoku.grid().all_column_positions(),
+            grid.all_column_positions(),
             &mut space,
             &pos_to_variable_and_candidates,
         );
         constrain_groups(
-            sudoku.grid().all_block_positions(),
+            grid.all_block_positions(),
             &mut space,
             &pos_to_variable_and_candidates,
         );
@@ -130,7 +125,7 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
 
                     assert_eq!(lower, upper);
 
-                    self.sudoku.set_value(*pos, lower as usize);
+                    self.grid.set_value(*pos, lower as usize);
                 }
 
                 true
@@ -203,12 +198,12 @@ mod tests {
 
     #[test]
     fn test_minimal() {
-        let mut sudoku = crate::samples::minimal(2);
+        let mut grid = crate::samples::minimal(2);
 
-        let mut solver = Solver::new(&mut sudoku);
+        let mut solver = Solver::new(&mut grid);
 
         assert!(solver.try_solve());
 
-        assert!(sudoku.is_solved());
+        assert!(grid.is_solved());
     }
 }

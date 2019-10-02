@@ -1,5 +1,4 @@
 use std::collections::VecDeque;
-use std::num::NonZeroUsize;
 
 use crate::cell::SudokuCell;
 use crate::grid::Grid;

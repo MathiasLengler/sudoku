@@ -25,10 +25,10 @@ pub fn run() -> Result<(), JsValue> {
 pub fn get_wasm_sudoku() -> WasmSudoku {
     let mut sudoku = sudoku::samples::minimal(3);
 
-    sudoku.fix_all_values();
+    grid.fix_all_values();
 
     WasmSudoku {
-        sudoku: RefCell::new(sudoku),
+        sudoku: RefCell::new(Sudoku::new_with_grid(grid)),
     }
 }
 

@@ -3,8 +3,8 @@ use std::fmt::{self, Display};
 use rand::seq::SliceRandom;
 
 use crate::cell::SudokuCell;
+use crate::grid::Grid;
 use crate::position::Position;
-use crate::Sudoku;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Choice {
@@ -14,11 +14,11 @@ pub struct Choice {
 
 impl Choice {
     pub fn new<Cell: SudokuCell>(
-        sudoku: &Sudoku<Cell>,
+        grid: &Grid<Cell>,
         pos: Position,
         shuffle_candidates: bool,
     ) -> Choice {
-        let mut candidates = sudoku.direct_candidates(pos);
+        let mut candidates = grid.direct_candidates(pos);
 
         if shuffle_candidates {
             candidates.shuffle(&mut rand::thread_rng())

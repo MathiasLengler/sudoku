@@ -24,8 +24,8 @@ use group_reduction::GroupReduction;
 use single_candidate::SingleCandidate;
 
 use crate::cell::SudokuCell;
+use crate::grid::Grid;
 use crate::position::Position;
-use crate::Sudoku;
 
 // TODO: bench
 mod backtracking;
@@ -33,6 +33,7 @@ mod group_reduction;
 mod single_candidate;
 
 // TODO: use
+#[allow(dead_code)]
 enum StrategyResult {
     Modified { cell_positions: Vec<Position> },
     Unsolvable,
@@ -40,8 +41,8 @@ enum StrategyResult {
 }
 
 pub(super) trait Strategy<Cell: SudokuCell>: Debug {
-    /// Execute this strategy on the given sudoku. Returns the list of modified positions.
-    fn execute(&self, sudoku: &mut Sudoku<Cell>) -> Vec<Position>;
+    /// Execute this strategy on the given grid. Returns the list of modified positions.
+    fn execute(&self, grid: &mut Grid<Cell>) -> Vec<Position>;
 }
 
 pub(super) fn strategies<Cell: SudokuCell>() -> Vec<Box<dyn Strategy<Cell>>> {

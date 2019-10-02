@@ -1,6 +1,6 @@
 use crate::cell::SudokuCell;
+use crate::grid::Grid;
 use crate::position::Position;
-use crate::Sudoku;
 
 use super::Strategy;
 
@@ -8,18 +8,16 @@ use super::Strategy;
 pub(in super::super) struct SingleCandidate;
 
 impl<Cell: SudokuCell> Strategy<Cell> for SingleCandidate {
-    fn execute(&self, sudoku: &mut Sudoku<Cell>) -> Vec<Position> {
-        sudoku
-            .grid()
-            .all_candidates_positions()
+    fn execute(&self, grid: &mut Grid<Cell>) -> Vec<Position> {
+        grid.all_candidates_positions()
             .into_iter()
             .filter_map(|candidate_pos| {
-                let candidates = sudoku.get(candidate_pos).candidates().unwrap();
+                let candidates = grid.get(candidate_pos).candidates().unwrap();
 
                 if candidates.len() == 1 {
                     let single_candidate = candidates[0];
 
-                    sudoku.set_value(candidate_pos, single_candidate);
+                    grid.set_value(candidate_pos, single_candidate);
 
                     Some(candidate_pos)
                 } else {
@@ -32,21 +30,18 @@ impl<Cell: SudokuCell> Strategy<Cell> for SingleCandidate {
 
 #[cfg(test)]
 mod tests {
-    use std::num::NonZeroUsize;
-
-    use crate::cell::Cell;
     use crate::samples;
 
     use super::*;
 
     #[test]
     fn test_single_candidate() {
-        let mut sudoku: Sudoku<Cell<NonZeroUsize>> = samples::base_2().first().unwrap().clone();
+        let mut grid = samples::base_2().first().unwrap().clone();
 
-        sudoku.set_all_direct_candidates();
-        sudoku.fix_all_values();
+        grid.set_all_direct_candidates();
+        grid.fix_all_values();
 
-        let mut modified_positions = SingleCandidate.execute(&mut sudoku);
+        let mut modified_positions = SingleCandidate.execute(&mut grid);
 
         modified_positions.sort();
 
@@ -64,6 +59,6 @@ mod tests {
             ]
         );
 
-        assert!(sudoku.is_solved());
+        assert!(grid.is_solved());
     }
 }

@@ -1,10 +1,9 @@
 use rand::seq::SliceRandom;
 
 use crate::cell::SudokuCell;
+use crate::grid::Grid;
 use crate::position::Position;
-use crate::settings::Settings as SudokuSettings;
 use crate::solver::backtracking;
-use crate::Sudoku;
 
 // TODO: replace with separate generate methods (return type)
 #[derive(Debug)]
@@ -38,38 +37,27 @@ impl Generator {
         Self { settings }
     }
 
-    pub fn generate<Cell: SudokuCell>(&self) -> Option<Sudoku<Cell>> {
+    // TODO: also return solution for checking
+    pub fn generate<Cell: SudokuCell>(&self) -> Option<Grid<Cell>> {
         use self::Target::*;
 
-        let filled_sudoku = self.filled_sudoku();
+        let filled_sudoku = self.filled_grid();
 
-        let sudoku = match self.settings.target {
+        match self.settings.target {
             Filled => Some(filled_sudoku),
             FromFilled {
                 distance: _distance,
             } => unimplemented!(),
             Minimal => Self::minimal(filled_sudoku, 0),
             FromMinimal { distance } => Self::minimal(filled_sudoku, distance),
-        };
-
-        // TODO: replace settings juggling with grid refactor
-        sudoku.map(|mut sudoku| {
-            sudoku.update_settings(SudokuSettings::default());
-            sudoku
-        })
+        }
     }
 
-    fn filled_sudoku<Cell: SudokuCell>(&self) -> Sudoku<Cell> {
-        let mut sudoku = Sudoku::<Cell>::new_with_settings(
-            self.settings.base,
-            SudokuSettings {
-                update_candidates_on_set_value: false,
-                history_limit: 0,
-            },
-        );
+    fn filled_grid<Cell: SudokuCell>(&self) -> Grid<Cell> {
+        let mut grid = Grid::<Cell>::new(self.settings.base);
 
         let mut solver = backtracking::Solver::new_with_settings(
-            &mut sudoku,
+            &mut grid,
             backtracking::Settings {
                 shuffle_candidates: true,
                 ..Default::default()
@@ -80,30 +68,27 @@ impl Generator {
     }
 
     // TODO: optimize performance for base >= 3
-    fn minimal<Cell: SudokuCell>(
-        mut sudoku: Sudoku<Cell>,
-        distance: usize,
-    ) -> Option<Sudoku<Cell>> {
-        assert!(sudoku.grid().all_candidates_positions().is_empty());
+    fn minimal<Cell: SudokuCell>(mut grid: Grid<Cell>, distance: usize) -> Option<Grid<Cell>> {
+        assert!(grid.all_candidates_positions().is_empty());
 
-        let mut all_positions: Vec<_> = sudoku.grid().all_positions().collect();
+        let mut all_positions: Vec<_> = grid.all_positions().collect();
 
         all_positions.shuffle(&mut rand::thread_rng());
 
         let mut deleted: Vec<(Position, usize)> = vec![];
 
         for pos in all_positions {
-            let cell: &Cell = sudoku.get(pos);
+            let cell: &Cell = grid.get(pos);
 
             if let Some(value) = cell.value() {
-                sudoku.delete(pos);
+                grid.delete(pos);
 
                 deleted.push((pos, value));
 
                 // TODO: use strategic solver
-                if !backtracking::Solver::has_unique_solution(&sudoku) {
+                if !backtracking::Solver::has_unique_solution(&grid) {
                     // current position is necessary for unique solution
-                    sudoku.set_value(pos, value);
+                    grid.set_value(pos, value);
 
                     deleted.pop();
                 }
@@ -113,10 +98,10 @@ impl Generator {
         }
 
         for (deleted_pos, deleted_value) in deleted.into_iter().take(distance) {
-            sudoku.set_value(deleted_pos, deleted_value);
+            grid.set_value(deleted_pos, deleted_value);
         }
 
-        Some(sudoku)
+        Some(grid)
     }
 }
 
@@ -126,14 +111,14 @@ mod tests {
 
     use super::*;
 
-    fn is_minimal<Cell: SudokuCell>(sudoku: &Sudoku<Cell>) -> bool {
-        let mut sudoku = sudoku.clone();
+    fn is_minimal<Cell: SudokuCell>(grid: &Grid<Cell>) -> bool {
+        let mut grid = grid.clone();
 
-        backtracking::Solver::has_unique_solution(&sudoku)
-            && sudoku.grid().all_value_positions().into_iter().all(|pos| {
-                let prev_cell = sudoku.delete(pos);
-                let has_multiple_solutions = !backtracking::Solver::has_unique_solution(&sudoku);
-                sudoku.set_value(pos, prev_cell.value().unwrap());
+        backtracking::Solver::has_unique_solution(&grid)
+            && grid.all_value_positions().into_iter().all(|pos| {
+                let prev_cell = grid.delete(pos);
+                let has_multiple_solutions = !backtracking::Solver::has_unique_solution(&grid);
+                grid.set_value(pos, prev_cell.value().unwrap());
                 has_multiple_solutions
             })
     }
