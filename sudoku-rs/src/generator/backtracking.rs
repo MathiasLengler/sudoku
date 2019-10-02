@@ -52,6 +52,7 @@ impl Generator {
             FromMinimal { distance } => Self::minimal(filled_sudoku, distance),
         };
 
+        // TODO: replace settings juggling with grid refactor
         sudoku.map(|mut sudoku| {
             sudoku.update_settings(SudokuSettings::default());
             sudoku

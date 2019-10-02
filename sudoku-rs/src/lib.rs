@@ -27,10 +27,17 @@ pub mod settings;
 pub mod solver;
 pub mod transport;
 
-// TODO: deref(mut) to grid
-//  check public API
-//   can invariants be broken? (cell max_value)
-//  grid seems to be a leaky abstraction if multiple wrapper methods are needed
+// TODO: clean up Sudoku/Grid distinction
+//  Sudoku = public game API
+//  Internal logic should be written against Grid.
+//  A generator or solver should not be concerned with Settings or History.
+//  Features of Sudoku which are used internally should be moved to the Grid.
+//  Sudoku can have a second solved Grid for win state/incorrect values checking.
+//  A Solver produces a solved Grid.
+//  A Generator produces a Grid.
+//  A Parser produces a Grid.
+//  The grid provides an API where no invariants of the grid can be broken
+//   (max_value of cells, get_pos_mut is private)
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 pub struct Sudoku<Cell: SudokuCell> {
