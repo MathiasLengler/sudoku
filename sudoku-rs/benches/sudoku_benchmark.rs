@@ -22,142 +22,141 @@ fn sample_sudoku(base: usize) -> Sudoku<Cell> {
 fn criterion_benchmark(c: &mut Criterion) {
     let mut generator_group = c.benchmark_group("Generator");
 
-    generator_group.sample_size(10);
+    //    generator_group.sample_size(10);
 
-    for base in &[2, 3] {
-        for target in &[Target::Minimal, Target::Filled] {}
+    for base in &[2] {
+        for target in &[Target::Minimal, Target::Filled] {
+            let parameter_string = format!("Base={} Target={:?}", base, target);
+            let generator = Generator::new(Settings {
+                base: *base,
+                target: Target::Minimal,
+            });
 
-        let parameter_string = format!("Base: {}", base);
-        generator_group.bench_with_input(
-            BenchmarkId::new("minimal", parameter_string),
-            base,
-            |b, base| {
-                b.iter(|| {
-                    Generator::new(Settings {
-                        base: *base,
-                        target: Target::Minimal,
+            generator_group.bench_with_input(
+                BenchmarkId::new("generate", parameter_string),
+                &generator,
+                |b, generator| {
+                    b.iter(|| {
+                        generator.generate::<Cell>().unwrap();
                     })
-                    .generate::<Cell>()
-                    .unwrap();
-                })
-            },
-        );
-        generator_group.bench_with_input(
-            BenchmarkId::new("filled", parameter_string),
-            base,
-            |b, base| {
-                b.iter(|| {
-                    Generator::new(Settings {
-                        base: *base,
-                        target: Target::Filled,
-                    })
-                    .generate::<Cell>()
-                    .unwrap()
-                })
-            },
-        );
+                },
+            );
+        }
     }
     generator_group.finish();
 
-    //    c.bench(
-    //        "Solver",
-    //        ParameterizedBenchmark::new(
-    //            "backtracking",
-    //            |b, base| {
-    //                let sudoku = sample_sudoku(*base);
-    //
-    //                b.iter_batched(
-    //                    || sudoku.clone(),
-    //                    |mut sudoku| backtracking::Solver::new(&mut sudoku).next(),
-    //                    BatchSize::SmallInput,
-    //                )
-    //            },
-    //            vec![2, 3],
-    //        )
-    //        .with_function("constraint", |b, base| {
-    //            let sudoku = sample_sudoku(*base);
-    //
-    //            b.iter_batched(
-    //                || sudoku.clone(),
-    //                |mut sudoku| constraint::Solver::new(&mut sudoku).try_solve(),
-    //                BatchSize::SmallInput,
-    //            )
-    //        })
-    //        .with_function("strategic", |b, base| {
-    //            let sudoku = sample_sudoku(*base);
-    //
-    //            b.iter_batched(
-    //                || sudoku.clone(),
-    //                |mut sudoku| strategic::Solver::new(&mut sudoku).try_solve(),
-    //                BatchSize::SmallInput,
-    //            )
-    //        })
-    //        .sample_size(20),
-    //    );
-    //
-    //    c.bench(
-    //        "Sudoku",
-    //        ParameterizedBenchmark::new(
-    //            "has_conflict_at",
-    //            |b, base| {
-    //                let sudoku = sample_sudoku(*base);
-    //
-    //                b.iter_batched(
-    //                    || sudoku.clone(),
-    //                    |sudoku| sudoku.has_conflict_at(Position { column: 1, row: 1 }),
-    //                    BatchSize::SmallInput,
-    //                )
-    //            },
-    //            vec![2, 3],
-    //        )
-    //        .with_function("has_duplicate", |b, base| {
-    //            let sudoku = sample_sudoku(*base);
-    //
-    //            b.iter_batched(
-    //                || (&sudoku, sudoku.grid().row_cells(1)),
-    //                |(sudoku, row_cells)| sudoku.has_duplicate(row_cells),
-    //                BatchSize::SmallInput,
-    //            )
-    //        })
-    //        .with_function("all_positions", |b, base| {
-    //            let sudoku = sample_sudoku(*base);
-    //
-    //            b.iter_batched(
-    //                || sudoku.clone(),
-    //                |sudoku| sudoku.grid().all_positions().for_each(drop),
-    //                BatchSize::SmallInput,
-    //            )
-    //        })
-    //        .with_function("direct_candidates", |b, base| {
-    //            let sudoku = sample_sudoku(*base);
-    //
-    //            b.iter_batched(
-    //                || sudoku.clone(),
-    //                |sudoku| sudoku.direct_candidates(Position { column: 1, row: 1 }),
-    //                BatchSize::SmallInput,
-    //            )
-    //        })
-    //        .with_function("update_candidates", |b, base| {
-    //            let mut sudoku = sample_sudoku(*base);
-    //
-    //            sudoku.set_all_direct_candidates();
-    //
-    //            b.iter_batched(
-    //                || sudoku.clone(),
-    //                |mut sudoku| sudoku.set_or_toggle_value(Position { column: 1, row: 1 }, 2),
-    //                BatchSize::SmallInput,
-    //            )
-    //        })
-    //        .with_function("set_all_direct_candidates", |b, base| {
-    //            let sudoku = sample_sudoku(*base);
-    //
-    //            b.iter_batched(
-    //                || sudoku.clone(),
-    //                |mut sudoku| sudoku.set_all_direct_candidates(),
-    //                BatchSize::SmallInput,
-    //            )
-    //        }),
-    //    );
+    let mut solver_group = c.benchmark_group("Solver");
+    solver_group.sample_size(20);
+
+    for base in &[2, 3] {
+        let parameter_string = format!("Base={}", base);
+
+        let sudoku = sample_sudoku(*base);
+
+        solver_group.bench_with_input(
+            BenchmarkId::new("backtracking", &parameter_string),
+            &sudoku,
+            |b, sudoku| {
+                b.iter_batched(
+                    || sudoku.clone(),
+                    |mut sudoku| backtracking::Solver::new(&mut sudoku).next(),
+                    BatchSize::SmallInput,
+                )
+            },
+        );
+
+        solver_group.bench_with_input(
+            BenchmarkId::new("constraint", &parameter_string),
+            &sudoku,
+            |b, sudoku| {
+                b.iter_batched(
+                    || sudoku.clone(),
+                    |mut sudoku| constraint::Solver::new(&mut sudoku).try_solve(),
+                    BatchSize::SmallInput,
+                )
+            },
+        );
+
+        solver_group.bench_with_input(
+            BenchmarkId::new("strategic", &parameter_string),
+            &sudoku,
+            |b, sudoku| {
+                b.iter_batched(
+                    || sudoku.clone(),
+                    |mut sudoku| strategic::Solver::new(&mut sudoku).try_solve(),
+                    BatchSize::SmallInput,
+                )
+            },
+        );
+    }
+    solver_group.finish();
+
+    let mut sudoku_group = c.benchmark_group("Sudoku");
+
+    for base in &[2, 3] {
+        let parameter_string = format!("Base={}", base);
+
+        let sudoku = sample_sudoku(*base);
+
+        sudoku_group.bench_with_input(
+            BenchmarkId::new("has_conflict_at", &parameter_string),
+            &sudoku,
+            |b, sudoku| b.iter(|| sudoku.has_conflict_at(Position { column: 1, row: 1 })),
+        );
+
+        sudoku_group.bench_with_input(
+            BenchmarkId::new("has_duplicate", &parameter_string),
+            &sudoku,
+            |b, sudoku| {
+                b.iter_batched(
+                    || (&sudoku, sudoku.grid().row_cells(1)),
+                    |(sudoku, row_cells)| sudoku.has_duplicate(row_cells),
+                    BatchSize::SmallInput,
+                )
+            },
+        );
+
+        sudoku_group.bench_with_input(
+            BenchmarkId::new("all_positions", &parameter_string),
+            &sudoku,
+            |b, sudoku| b.iter(|| sudoku.grid().all_positions().for_each(drop)),
+        );
+
+        sudoku_group.bench_with_input(
+            BenchmarkId::new("direct_candidates", &parameter_string),
+            &sudoku,
+            |b, sudoku| b.iter(|| sudoku.direct_candidates(Position { column: 1, row: 1 })),
+        );
+
+        sudoku_group.bench_with_input(
+            BenchmarkId::new("update_candidates", &parameter_string),
+            &sudoku,
+            |b, sudoku| {
+                let mut sudoku = sudoku.clone();
+
+                sudoku.set_all_direct_candidates();
+
+                b.iter_batched(
+                    || sudoku.clone(),
+                    |mut sudoku| sudoku.set_or_toggle_value(Position { column: 1, row: 1 }, 2),
+                    BatchSize::SmallInput,
+                )
+            },
+        );
+
+        sudoku_group.bench_with_input(
+            BenchmarkId::new("set_all_direct_candidates", &parameter_string),
+            &sudoku,
+            |b, sudoku| {
+                b.iter_batched(
+                    || sudoku.clone(),
+                    |mut sudoku| sudoku.set_all_direct_candidates(),
+                    BatchSize::SmallInput,
+                )
+            },
+        );
+    }
+    sudoku_group.finish();
 }
 
 criterion_group!(benches, criterion_benchmark);
