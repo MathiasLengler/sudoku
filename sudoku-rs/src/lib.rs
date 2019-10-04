@@ -18,6 +18,7 @@ pub mod error;
 pub mod generator;
 pub mod grid;
 mod history;
+pub mod parser;
 pub mod position;
 pub mod samples;
 pub mod settings;
