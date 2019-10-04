@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::cell::{CellView, SudokuCell};
+use crate::cell::{view::CellView, SudokuCell};
 use crate::position::Position;
 use crate::Sudoku;
 

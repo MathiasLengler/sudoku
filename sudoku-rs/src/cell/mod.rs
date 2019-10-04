@@ -5,11 +5,12 @@ use std::num::NonZeroUsize;
 
 use fixedbitset::FixedBitSet;
 use num::{cast, PrimInt, ToPrimitive, Unsigned};
-use serde::{Deserialize, Serialize};
 
 use crate::cell::value::SudokuValue;
+use crate::cell::view::CellView;
 
 pub mod value;
+pub mod view;
 
 // TODO: set_candidates_bit_set optimization
 //  assert len
@@ -59,14 +60,6 @@ where
 {
     Value(Value),
     Candidates(FixedBitSet),
-}
-
-#[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
-#[serde(tag = "kind")]
-pub enum CellView {
-    Value { value: usize },
-    Candidates { candidates: Vec<usize> },
 }
 
 impl<Value> SudokuCell<Value> for Cell<Value>
@@ -188,6 +181,7 @@ where
     Value::Primitive: PrimInt + Unsigned,
 {
     fn import_candidates<I: IntoIterator<Item = usize>>(candidates: I, max: usize) -> FixedBitSet {
+        // TODO: rewrite with extend
         let mut candidates: FixedBitSet = candidates
             .into_iter()
             .map(|candidate| Self::import_candidate(candidate, max))
@@ -231,6 +225,8 @@ where
         primitive.to_usize().unwrap()
     }
 }
+
+// TODO: From<CellView>
 
 impl<Value> Display for Cell<Value>
 where

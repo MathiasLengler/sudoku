@@ -7,9 +7,12 @@ use failure::ensure;
 use fixedbitset::FixedBitSet;
 use itertools::Itertools;
 
+use crate::cell::view::CellView;
 use crate::cell::SudokuCell;
 use crate::error::{Error, Result};
 use crate::position::Position;
+
+mod parser;
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 pub struct Grid<Cell: SudokuCell> {
@@ -217,6 +220,7 @@ impl<Cell: SudokuCell> Grid<Cell> {
         Self::base_to_cell_count(self.base)
     }
 
+    // TODO: grid stats abstraction for method/function
     fn base_to_side_length(base: usize) -> usize {
         base.pow(2)
     }
@@ -386,6 +390,28 @@ impl<Cell: SudokuCell> Grid<Cell> {
     }
 }
 
+impl<Cell: SudokuCell, CView: Into<CellView>> TryFrom<Vec<Vec<CView>>> for Grid<Cell> {
+    type Error = Error;
+
+    fn try_from(nested_views: Vec<Vec<CView>>) -> Result<Self> {
+        nested_views
+            .into_iter()
+            .flatten()
+            .collect::<Vec<_>>()
+            .try_into()
+    }
+}
+
+impl<Cell: SudokuCell, CView: Into<CellView>> TryFrom<Vec<CView>> for Grid<Cell> {
+    type Error = Error;
+
+    fn try_from(views: Vec<CView>) -> Result<Self> {
+        // TODO: implement
+        unimplemented!()
+    }
+}
+
+// TODO: replace with generic impl
 impl<Cell: SudokuCell> TryFrom<Vec<Vec<usize>>> for Grid<Cell> {
     type Error = Error;
 
@@ -398,13 +424,14 @@ impl<Cell: SudokuCell> TryFrom<Vec<Vec<usize>>> for Grid<Cell> {
     }
 }
 
+// TODO: replace with generic impl
 impl<Cell: SudokuCell> TryFrom<Vec<usize>> for Grid<Cell> {
     type Error = Error;
 
     fn try_from(values: Vec<usize>) -> Result<Self> {
         let base = Self::cell_count_to_base(values.len())?;
 
-        let max = Self::base_to_side_length(base);
+        let max = Self::base_to_max_value(base);
 
         let cells = values
             .into_iter()
