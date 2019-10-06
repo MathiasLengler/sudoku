@@ -1,25 +1,18 @@
 use std::fmt::{self, Debug, Display, Formatter};
 use std::hash::Hash;
 use std::mem::replace;
-use std::num::NonZeroUsize;
+use std::num::NonZeroU8;
 
 use fixedbitset::FixedBitSet;
-use num::{cast, PrimInt, ToPrimitive, Unsigned};
+use num::{cast, ToPrimitive};
 
-use crate::cell::value::SudokuValue;
 use crate::cell::view::CellView;
 
-pub mod value;
 pub mod view;
 
 // TODO: set_candidates_bit_set optimization
 //  assert len
-pub trait SudokuCell<Value = NonZeroUsize>:
-    Clone + Display + Debug + Ord + Eq + Hash + Send
-where
-    Value: SudokuValue,
-    Value::Primitive: PrimInt + Unsigned,
-{
+pub trait SudokuCell: Clone + Display + Debug + Ord + Eq + Hash + Send {
     /// Constructs new empty cell (empty candidates and no value)
     fn new(max: usize) -> Self;
     /// Constructs a new cell with a set value
@@ -53,20 +46,12 @@ where
 }
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
-pub enum Cell<Value = NonZeroUsize>
-where
-    Value: SudokuValue,
-    Value::Primitive: PrimInt + Unsigned,
-{
-    Value(Value),
+pub enum Cell {
+    Value(NonZeroU8),
     Candidates(FixedBitSet),
 }
 
-impl<Value> SudokuCell<Value> for Cell<Value>
-where
-    Value: SudokuValue,
-    Value::Primitive: PrimInt + Unsigned,
-{
+impl SudokuCell for Cell {
     fn new(max: usize) -> Self {
         Self::new_with_candidates(std::iter::empty(), max)
     }
@@ -175,11 +160,7 @@ where
 }
 
 /// Conversion Helpers
-impl<Value> Cell<Value>
-where
-    Value: SudokuValue,
-    Value::Primitive: PrimInt + Unsigned,
-{
+impl Cell {
     fn import_candidates<I: IntoIterator<Item = usize>>(candidates: I, max: usize) -> FixedBitSet {
         // TODO: rewrite with extend
         let mut candidates: FixedBitSet = candidates
@@ -191,13 +172,13 @@ where
 
         candidates
     }
-    fn import_value(value: usize, max: usize) -> Value {
+    fn import_value(value: usize, max: usize) -> NonZeroU8 {
         assert!(value <= max);
 
-        let value_as_primitive: Value::Primitive =
+        let value_as_primitive: u8 =
             cast(value).expect("Could not convert value to cell value primitive");
 
-        let value = Value::new(value_as_primitive).expect("Value can't be 0");
+        let value = NonZeroU8::new(value_as_primitive).expect("Value can't be 0");
 
         value
     }
@@ -208,8 +189,8 @@ where
         candidate - 1
     }
 
-    fn export_value(value: Value) -> usize {
-        Self::primitive_as_usize(value.get())
+    fn export_value(value: NonZeroU8) -> usize {
+        value.get().to_usize().unwrap()
     }
 
     fn export_candidates(candidates: &FixedBitSet) -> Vec<usize> {
@@ -219,20 +200,9 @@ where
     fn export_candidate(candidate: usize) -> usize {
         candidate + 1
     }
-
-    fn primitive_as_usize(primitive: Value::Primitive) -> usize {
-        // Unwrap should be safe.
-        primitive.to_usize().unwrap()
-    }
 }
 
-// TODO: From<CellView>
-
-impl<Value> Display for Cell<Value>
-where
-    Value: SudokuValue,
-    Value::Primitive: PrimInt + Unsigned,
-{
+impl Display for Cell {
     fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
         f.write_str(&if let Some(value) = self.value() {
             value.to_string()

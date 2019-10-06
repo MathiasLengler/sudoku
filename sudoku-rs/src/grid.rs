@@ -10,6 +10,7 @@ use itertools::Itertools;
 use crate::cell::view::CellView;
 use crate::cell::SudokuCell;
 use crate::error::{Error, Result};
+use crate::grid::parser::from_givens;
 use crate::position::Position;
 
 mod parser;
@@ -23,7 +24,6 @@ pub struct Grid<Cell: SudokuCell> {
 
 /// Public API
 impl<Cell: SudokuCell> Grid<Cell> {
-    // TODO: check internal usages which rely on update_candidates
     pub fn set_value(&mut self, pos: Position, value: usize) {
         let max_value = self.max_value();
 
@@ -220,7 +220,6 @@ impl<Cell: SudokuCell> Grid<Cell> {
         Self::base_to_cell_count(self.base)
     }
 
-    // TODO: grid stats abstraction for method/function
     fn base_to_side_length(base: usize) -> usize {
         base.pow(2)
     }
@@ -406,39 +405,32 @@ impl<Cell: SudokuCell, CView: Into<CellView>> TryFrom<Vec<CView>> for Grid<Cell>
     type Error = Error;
 
     fn try_from(views: Vec<CView>) -> Result<Self> {
-        // TODO: implement
-        unimplemented!()
-    }
-}
-
-// TODO: replace with generic impl
-impl<Cell: SudokuCell> TryFrom<Vec<Vec<usize>>> for Grid<Cell> {
-    type Error = Error;
-
-    fn try_from(nested_values: Vec<Vec<usize>>) -> Result<Self> {
-        nested_values
-            .into_iter()
-            .flatten()
-            .collect::<Vec<_>>()
-            .try_into()
-    }
-}
-
-// TODO: replace with generic impl
-impl<Cell: SudokuCell> TryFrom<Vec<usize>> for Grid<Cell> {
-    type Error = Error;
-
-    fn try_from(values: Vec<usize>) -> Result<Self> {
-        let base = Self::cell_count_to_base(values.len())?;
+        let base = Self::cell_count_to_base(views.len())?;
 
         let max = Self::base_to_max_value(base);
 
-        let cells = values
+        let cells = views
             .into_iter()
-            .map(|value| Cell::new_with_value(value, max))
+            .map(|view| view.into().into_cell(max))
             .collect();
 
         Ok(Self::new_with_cells(base, cells))
+    }
+}
+
+impl<Cell: SudokuCell> TryFrom<&str> for Grid<Cell> {
+    type Error = Error;
+
+    fn try_from(input: &str) -> Result<Self> {
+        use crate::grid::parser::from_candidates;
+
+        let input = input.trim();
+
+        if input.contains('\n') {
+            from_candidates(input)
+        } else {
+            from_givens(input)
+        }
     }
 }
 
@@ -590,5 +582,34 @@ mod tests {
                 grid
             }
         );
+    }
+
+    #[test]
+    fn test_try_from_str() -> Result<()> {
+        // TODO: use include
+
+        let inputs = [
+            ".--------------.----------------.------------.
+| 6   7    89  | 189  19   2    | 3   5   4  |
+| 1   2    5   | .    3    4    | 9   8   7  |
+| 3   89   4   | 7    58   59   | 6   2   1  |
+:--------------+----------------+------------:
+| 7   3    29  | 19   25   1569 | 8   4   69 |
+| 5   1    289 | 89   0    679  | 27  69  3  |
+| 89  4    6   | 3    28   79   | 27  1   5  |
+:--------------+----------------+------------:
+| 2   5    3   | 4    7    8    | X   69  69 |
+| 89  689  1   | 5    69   3    | 4   x   2  |
+| 4   69   7   | 2    169  169  | 5   3   8  |
+'--------------'----------------'------------'",
+            "6....23..1256.......47...2.73....84...........46....15.5...81.......3472..72....8",
+        ];
+
+        inputs
+            .into_iter()
+            .map(|input| Grid::<Cell>::try_from(*input))
+            .collect::<Result<Vec<_>>>()?;
+
+        Ok(())
     }
 }

@@ -1,84 +1,32 @@
 use std::convert::TryInto;
 
-use failure::bail;
-
+use crate::cell::view::CellView;
 use crate::cell::SudokuCell;
 use crate::error::Result;
 use crate::grid::Grid;
 
-fn is_empty_cell_char(c: char) -> bool {
-    match c {
-        '.' | '-' | '0' | 'x' | 'X' => true,
-        _ => false,
-    }
-}
-
-fn char_value_to_usize(c: char) -> Result<usize> {
-    if is_empty_cell_char(c) {
-        Ok(0)
-    } else {
-        match c.to_digit(36) {
-            Some(digit) => Ok(digit.try_into()?),
-            None => bail!("Unable to convert character into number: {}", c),
-        }
-    }
-}
-
-fn candidates_str_to_cell<Cell: SudokuCell>(candidates: &str, max: usize) -> Result<Cell> {
-    match candidates.len() {
-        0 => bail!("Unexpected empty string while parsing candidates"),
-        1 => Ok(Cell::new_with_value(
-            char_value_to_usize(candidates.chars().next().unwrap())?,
-            max,
-        )),
-        _ => Ok(Cell::new_with_candidates(
-            candidates
-                .chars()
-                .map(|candidate| {
-                    let candidate = char_value_to_usize(candidate)?;
-                    if candidate == 0 {
-                        bail!("A candidate can't be 0")
-                    } else {
-                        Ok(candidate)
-                    }
-                })
-                .collect::<Result<Vec<_>>>()?,
-            max,
-        )),
-    }
-}
-
-fn from_givens<Cell: SudokuCell>(input: &str) -> Result<Grid<Cell>> {
+pub(crate) fn from_givens<Cell: SudokuCell>(input: &str) -> Result<Grid<Cell>> {
     input
         .chars()
-        .map(char_value_to_usize)
+        .map(TryInto::<CellView>::try_into)
         .collect::<Result<Vec<_>>>()?
         .try_into()
 }
 
-fn from_candidates<Cell: SudokuCell>(input: &str) -> Result<Grid<Cell>> {
-    let vec_candidates_str = input
+pub(crate) fn from_candidates<Cell: SudokuCell>(input: &str) -> Result<Grid<Cell>> {
+    let cell_views = input
         .lines()
         // Filter horizontal separator lines
         .filter(|line| line.contains(|c: char| c.is_digit(36)))
+        // Filter vertical separators
         .flat_map(|line| line.split(['-', '|', ':', '+', '\'', '\n', '*'].as_ref()))
         .filter(|s| *s != "")
+        // Split and trim groups of numbers
         .flat_map(|s| s.split_whitespace())
-        .collect::<Vec<_>>();
+        .map(TryInto::<CellView>::try_into)
+        .collect::<Result<Vec<_>>>()?;
 
-    let base = Grid::<Cell>::cell_count_to_base(vec_candidates_str.len())?;
-    let max = Grid::<Cell>::base_to_max_value(base);
-
-    println!("{:#?}", vec_candidates_str);
-    println!("{}", vec_candidates_str.len());
-
-    Ok(Grid::new_with_cells(
-        base,
-        vec_candidates_str
-            .into_iter()
-            .map(|candidates_str| candidates_str_to_cell(candidates_str, max))
-            .collect::<Result<_>>()?,
-    ))
+    cell_views.try_into()
 }
 
 #[cfg(test)]
@@ -108,6 +56,8 @@ mod tests {
 
     #[test]
     fn test_candidates() -> Result<()> {
+        use crate::cell::view::{c, v};
+
         let input = ".--------------.----------------.------------.
 | 6   7    89  | 189  19   2    | 3   5   4  |
 | 1   2    5   | .    3    4    | 9   8   7  |
@@ -124,9 +74,100 @@ mod tests {
 
         let grid = from_candidates::<Cell>(input)?;
 
-        // TODO: assert (nested CellView vec)
+        let expected_grid = vec![
+            vec![
+                v(6),
+                v(7),
+                c(vec![8, 9]),
+                c(vec![1, 8, 9]),
+                c(vec![1, 9]),
+                v(2),
+                v(3),
+                v(5),
+                v(4),
+            ],
+            vec![v(1), v(2), v(5), v(0), v(3), v(4), v(9), v(8), v(7)],
+            vec![
+                v(3),
+                c(vec![8, 9]),
+                v(4),
+                v(7),
+                c(vec![5, 8]),
+                c(vec![5, 9]),
+                v(6),
+                v(2),
+                v(1),
+            ],
+            vec![
+                v(7),
+                v(3),
+                c(vec![2, 9]),
+                c(vec![1, 9]),
+                c(vec![2, 5]),
+                c(vec![1, 5, 6, 9]),
+                v(8),
+                v(4),
+                c(vec![6, 9]),
+            ],
+            vec![
+                v(5),
+                v(1),
+                c(vec![2, 8, 9]),
+                c(vec![8, 9]),
+                v(0),
+                c(vec![6, 7, 9]),
+                c(vec![2, 7]),
+                c(vec![6, 9]),
+                v(3),
+            ],
+            vec![
+                c(vec![8, 9]),
+                v(4),
+                v(6),
+                v(3),
+                c(vec![2, 8]),
+                c(vec![7, 9]),
+                c(vec![2, 7]),
+                v(1),
+                v(5),
+            ],
+            vec![
+                v(2),
+                v(5),
+                v(3),
+                v(4),
+                v(7),
+                v(8),
+                v(0),
+                c(vec![6, 9]),
+                c(vec![6, 9]),
+            ],
+            vec![
+                c(vec![8, 9]),
+                c(vec![6, 8, 9]),
+                v(1),
+                v(5),
+                c(vec![6, 9]),
+                v(3),
+                v(4),
+                v(0),
+                v(2),
+            ],
+            vec![
+                v(4),
+                c(vec![6, 9]),
+                v(7),
+                v(2),
+                c(vec![1, 6, 9]),
+                c(vec![1, 6, 9]),
+                v(5),
+                v(3),
+                v(8),
+            ],
+        ]
+        .try_into()?;
 
-        println!("{}", grid);
+        assert_eq!(grid, expected_grid);
 
         Ok(())
     }
