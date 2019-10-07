@@ -25,7 +25,7 @@ pub fn run() -> Result<(), JsValue> {
 
 #[wasm_bindgen]
 pub fn get_wasm_sudoku() -> WasmSudoku {
-    let mut grid = sudoku::samples::minimal(2);
+    let mut grid = sudoku::samples::minimal(3);
 
     grid.fix_all_values();
 
@@ -94,6 +94,14 @@ impl WasmSudoku {
             .generate(Self::import_generator_settings(generator_settings))
             .map_err(Self::export_error)?)
     }
+
+    pub fn import(&mut self, input: &str) -> Result<(), JsValue> {
+        Ok(self
+            .sudoku
+            .borrow_mut()
+            .import(input)
+            .map_err(Self::export_error)?)
+    }
 }
 
 /// Conversion Helpers
@@ -111,7 +119,7 @@ impl WasmSudoku {
     }
 
     fn export_error(error: Error) -> JsValue {
-        format!("{:?}", error).into()
+        format!("{0}\n{0:?}", error).into()
     }
 }
 

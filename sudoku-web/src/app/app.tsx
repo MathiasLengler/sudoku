@@ -3,12 +3,12 @@ import {useState} from "react";
 import {Grid} from "./grid/grid";
 import * as CSS from "csstype";
 import {Input, WasmSudokuController} from "./wasmSudokuController";
-import {useKeyboardInput} from "./useKeyboardInput";
 import {ControlPanel} from "./controlPanel/controlPanel";
 import {TypedWasmSudoku} from "../typedWasmSudoku";
 import {useClientHeight, useResponsiveGridSize} from "./useResponsiveGridSize";
 import CssBaseline from '@material-ui/core/CssBaseline';
 import {blocksToCell} from "./utils";
+import {makeKeyDownListener} from "./useKeyboardInput";
 
 interface AppProps {
   wasmSudoku: TypedWasmSudoku;
@@ -48,8 +48,6 @@ export const App: React.FunctionComponent<AppProps> = (props) => {
     sideLength,
   );
 
-  useKeyboardInput(sudokuController, input, sideLength);
-
   // Responsive Grid
   const [toolbarHeight, toolbarRef] = useClientHeight();
   const gridSize = useResponsiveGridSize(toolbarHeight, sideLength);
@@ -63,7 +61,12 @@ export const App: React.FunctionComponent<AppProps> = (props) => {
   return (
     <>
       <CssBaseline/>
-      <div className='sudoku' style={style}>
+      <div
+        className='sudoku'
+        style={style}
+        onKeyDown={makeKeyDownListener(sudokuController, input, sideLength)}
+        tabIndex={0}
+      >
         <Grid
           sudokuController={sudokuController}
           input={input}

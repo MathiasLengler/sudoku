@@ -5,6 +5,7 @@ import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
 import {GenerateForm} from "./generateForm";
 import {WasmSudokuController} from "../../wasmSudokuController";
+import {ImportForm} from "./importForm";
 
 interface NewGameTabsProps {
   sudokuController: WasmSudokuController;
@@ -40,9 +41,7 @@ export const NewGameTabs: React.FunctionComponent<NewGameTabsProps> = (props) =>
         disabled
       >
         <GenerateForm onClose={onClose} sudokuController={sudokuController}/>
-        <div>
-          TODO: Import Options
-        </div>
+        <ImportForm onClose={onClose} sudokuController={sudokuController}/>
       </SwipeableViews>
     </div>
   );

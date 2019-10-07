@@ -4,7 +4,7 @@
 use std::convert::TryFrom;
 use std::fmt::{self, Display, Formatter};
 
-use failure::format_err;
+use failure::{bail, format_err};
 
 use cell::SudokuCell;
 

@@ -39,4 +39,8 @@ export class TypedWasmSudoku {
   public generate(settings: GeneratorSettings) {
     return this.wasmSudoku.generate(settings);
   }
+
+  public import(input: string) {
+    return this.wasmSudoku.import(input);
+  }
 }

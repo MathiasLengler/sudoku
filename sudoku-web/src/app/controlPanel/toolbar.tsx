@@ -55,7 +55,11 @@ export const Toolbar: React.FunctionComponent<ToolbarProps> = (props) => {
           <UndoIcon fontSize="large"/>
         </IconButton>
       </Tooltip>
-      <ToolbarMenu enterDelay={enterDelay} leaveDelay={leaveDelay} sudokuController={sudokuController}/>
+      <ToolbarMenu
+        enterDelay={enterDelay}
+        leaveDelay={leaveDelay}
+        sudokuController={sudokuController}
+      />
     </div>
   )
 };

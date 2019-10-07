@@ -20,7 +20,8 @@ export const ToolbarMenu: React.FunctionComponent<ToolbarMenuProps> = (props) =>
 
   const [newGameOpen, setNewGameOpen] = React.useState(false);
 
-  const makeHandleMenuClose = (action: () => void) => () => {
+  const makeHandleMenuClose = (action: () => void = () => {
+  }) => () => {
     setMenuAnchorEl(null);
     action();
   };
@@ -35,13 +36,16 @@ export const ToolbarMenu: React.FunctionComponent<ToolbarMenuProps> = (props) =>
       open={!!menuAnchorEl}
       anchorEl={menuAnchorEl}
       keepMounted
-      onClose={makeHandleMenuClose(() => {
-      })}
+      onClose={makeHandleMenuClose()}
     >
       <MenuItem onClick={makeHandleMenuClose(() => setNewGameOpen(true))}>New Game</MenuItem>
-      <MenuItem onClick={makeHandleMenuClose(() => {
-      })}>Solve (TODO)</MenuItem>
+      <MenuItem onClick={makeHandleMenuClose()}>Solve (TODO)</MenuItem>
     </Menu>
-    <NewGameDialog open={newGameOpen} onClose={() => setNewGameOpen(false)} sudokuController={sudokuController}/>
+    <div id="dialogs" tabIndex={0} onKeyDown={(e) => {
+      // Disable global game shortcuts in dialog boxes.
+      e.stopPropagation();
+    }}>
+      <NewGameDialog open={newGameOpen} onClose={() => setNewGameOpen(false)} sudokuController={sudokuController}/>
+    </div>
   </>
 };
