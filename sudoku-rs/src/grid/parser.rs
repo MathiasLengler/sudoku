@@ -37,8 +37,7 @@ mod tests {
 
     #[test]
     fn test_givens_base_3() -> Result<()> {
-        let input =
-            "6....23..1256.......47...2.73....84...........46....15.5...81.......3472..72....8";
+        let input = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/res/givens.txt"));
 
         let grid = from_givens::<Cell>(input)?;
 
@@ -58,19 +57,10 @@ mod tests {
     fn test_candidates() -> Result<()> {
         use crate::cell::view::{c, v};
 
-        let input = ".--------------.----------------.------------.
-| 6   7    89  | 189  19   2    | 3   5   4  |
-| 1   2    5   | .    3    4    | 9   8   7  |
-| 3   89   4   | 7    58   59   | 6   2   1  |
-:--------------+----------------+------------:
-| 7   3    29  | 19   25   1569 | 8   4   69 |
-| 5   1    289 | 89   0    679  | 27  69  3  |
-| 89  4    6   | 3    28   79   | 27  1   5  |
-:--------------+----------------+------------:
-| 2   5    3   | 4    7    8    | X   69  69 |
-| 89  689  1   | 5    69   3    | 4   x   2  |
-| 4   69   7   | 2    169  169  | 5   3   8  |
-'--------------'----------------'------------'";
+        let input = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/res/candidates.txt"
+        ));
 
         let grid = from_candidates::<Cell>(input)?;
 
