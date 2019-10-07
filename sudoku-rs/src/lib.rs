@@ -1,13 +1,16 @@
 #![warn(missing_debug_implementations)]
 #![warn(unsafe_code)]
 
-use std::convert::{TryFrom, TryInto};
-use std::fmt;
-use std::fmt::{Display, Formatter};
+use std::convert::TryFrom;
+use std::fmt::{self, Display, Formatter};
+
+use failure::format_err;
 
 use cell::SudokuCell;
 
-use crate::error::{Error, Result};
+use crate::error::Result;
+use crate::generator::backtracking::Generator;
+use crate::generator::backtracking::Settings as GeneratorSettings;
 use crate::grid::Grid;
 use crate::history::GridHistory;
 use crate::position::Position;
@@ -109,36 +112,31 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
         }
     }
 
+    // TODO: wasm integration
     pub fn update_settings(&mut self, settings: Settings) {
         self.settings = settings;
     }
 
-    pub fn fix_all_values(&mut self) {
-        self.grid.fix_all_values()
+    pub fn generate(&mut self, generator_settings: GeneratorSettings) -> Result<()> {
+        let grid = Generator::new(generator_settings)
+            .generate()
+            .ok_or(format_err!("Unable to generate grid"))?;
+
+        self.replace_grid(grid);
+
+        Ok(())
     }
 
-    pub fn unfix(&mut self) {
-        self.grid.unfix()
+    pub fn import(&mut self, input: &str) -> Result<()> {
+        let grid = Grid::try_from(input)?;
+
+        self.replace_grid(grid);
+
+        Ok(())
     }
 
-    pub fn is_fixed(&self, pos: Position) -> bool {
-        self.grid.is_fixed(pos)
-    }
-
-    pub fn get(&self, pos: Position) -> &Cell {
-        self.grid.get(pos)
-    }
-
-    pub fn side_length(&self) -> usize {
-        self.grid.side_length()
-    }
-
-    pub fn cell_count(&self) -> usize {
-        self.grid.cell_count()
-    }
-
-    pub fn base(&self) -> usize {
-        self.grid.base()
+    pub fn export(&self) -> String {
+        self.grid.to_string()
     }
 
     pub fn grid(&self) -> &Grid<Cell> {
@@ -151,13 +149,11 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
         self.history
             .push(self.grid.clone(), self.settings.history_limit)
     }
-}
 
-impl<Cell: SudokuCell> TryFrom<Vec<usize>> for Sudoku<Cell> {
-    type Error = Error;
-
-    fn try_from(values: Vec<usize>) -> Result<Self> {
-        Ok(Self::new_with_grid(values.try_into()?))
+    fn replace_grid(&mut self, new_grid: Grid<Cell>) {
+        self.grid = new_grid;
+        self.grid.fix_all_values();
+        self.history = Default::default();
     }
 }
 

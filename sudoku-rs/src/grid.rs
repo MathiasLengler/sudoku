@@ -4,6 +4,7 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 
 use failure::ensure;
+// TODO: replace with bitvec
 use fixedbitset::FixedBitSet;
 use itertools::Itertools;
 
@@ -179,6 +180,7 @@ impl<Cell: SudokuCell> Grid<Cell> {
             .collect();
     }
 
+    #[allow(dead_code)]
     pub(super) fn unfix(&mut self) {
         self.fixed_cells = Default::default()
     }

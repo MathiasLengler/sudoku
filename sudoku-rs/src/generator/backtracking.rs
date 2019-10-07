@@ -1,4 +1,5 @@
 use rand::seq::SliceRandom;
+use serde::{Deserialize, Serialize};
 
 use crate::cell::SudokuCell;
 use crate::grid::Grid;
@@ -6,7 +7,8 @@ use crate::position::Position;
 use crate::solver::backtracking;
 
 // TODO: replace with separate generate methods (return type)
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub enum Target {
     Filled,
     FromFilled { distance: usize },
@@ -20,7 +22,8 @@ impl Default for Target {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Settings {
     pub base: usize,
     pub target: Target,

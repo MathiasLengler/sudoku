@@ -6,6 +6,7 @@ use crate::Sudoku;
 
 // TODO:
 //  conflicting cells (groups?)
+// TODO: can_undo
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransportSudoku {
@@ -17,21 +18,22 @@ pub struct TransportSudoku {
 
 impl<Cell: SudokuCell> From<&Sudoku<Cell>> for TransportSudoku {
     fn from(sudoku: &Sudoku<Cell>) -> Self {
+        let grid = sudoku.grid();
+
         Self {
-            blocks: sudoku
-                .grid()
+            blocks: grid
                 .all_block_positions()
                 .map(|block| {
                     block
                         .map(|pos| {
-                            TransportCell::new(sudoku.get(pos).view(), pos, sudoku.is_fixed(pos))
+                            TransportCell::new(grid.get(pos).view(), pos, grid.is_fixed(pos))
                         })
                         .collect()
                 })
                 .collect(),
-            base: sudoku.base(),
-            side_length: sudoku.side_length(),
-            cell_count: sudoku.cell_count(),
+            base: grid.base(),
+            side_length: grid.side_length(),
+            cell_count: grid.cell_count(),
         }
     }
 }

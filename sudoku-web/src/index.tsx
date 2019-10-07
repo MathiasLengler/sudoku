@@ -9,7 +9,5 @@ import("../../sudoku-wasm/pkg").then(module => {
 
   const typedWasmSudoku = new TypedWasmSudoku(module.get_wasm_sudoku());
 
-  typedWasmSudoku.sayHello();
-
   ReactDOM.render(<App wasmSudoku={typedWasmSudoku}/>, document.getElementById('root'));
 });

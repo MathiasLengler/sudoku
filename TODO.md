@@ -12,6 +12,9 @@
   - settings
   - current board
   - highscore
+- Share Sudoku
+  - export as string
+  - provide link / sync with url search param
 
 ### Selector Control Panel:
 - [ ] undo/redo buttons

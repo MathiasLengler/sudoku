@@ -127,6 +127,12 @@ export class WasmSudokuController {
     })
   }
 
+  public generate(settings: GeneratorSettings) {
+    this.withSudokuUpdate(() => {
+      this.wasmSudoku.generate(settings);
+    })
+  }
+
   public toggleCandidateMode() {
     this.setInput((prevInput) => ({...prevInput, candidateMode: !prevInput.candidateMode}))
   }

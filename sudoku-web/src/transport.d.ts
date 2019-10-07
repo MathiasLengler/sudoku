@@ -28,3 +28,18 @@ interface CandidatesCell extends BaseCell {
 }
 
 type TransportCell = ValueCell | CandidatesCell;
+
+interface GeneratorSettings {
+  base: number;
+  target: GeneratorTarget;
+}
+
+type GeneratorTarget = "minimal" | "filled" | {
+  fromMinimal: {
+    distance: number;
+  };
+} | {
+  fromFilled: {
+    distance: number;
+  };
+};
