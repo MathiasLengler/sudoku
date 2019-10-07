@@ -27,24 +27,12 @@ pub mod settings;
 pub mod solver;
 pub mod transport;
 
-// TODO:
-//  Sudoku can have a solved Grid for win state/incorrect values checking.
-//  A Parser produces a Grid.
-//  The grid provides an API where no invariants of the grid can be broken
-//   (max_value of cells, get_pos_mut is private)
-
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 pub struct Sudoku<Cell: SudokuCell> {
     grid: Grid<Cell>,
     history: GridHistory<Cell>,
     settings: Settings,
 }
-
-// TODO: make sudoku fully generic over cell
-//  Sudoku<Cell<u8>>
-//   find solution for repeated SudokuValue trait bound constraints
-//  Alternative: sudoku decides cell type based on base at runtime
-//   is this possible without dynamic dispatch?
 
 // TODO: provide redo API
 // TODO: return result in all asserts

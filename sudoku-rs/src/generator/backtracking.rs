@@ -72,6 +72,11 @@ impl Generator {
 
     // TODO: optimize performance for base >= 3
     fn minimal<Cell: SudokuCell>(mut grid: Grid<Cell>, distance: usize) -> Option<Grid<Cell>> {
+        // If the distance results in a filled sudoku, return it directly.
+        if grid.cell_count() <= distance {
+            return Some(grid);
+        }
+
         assert!(grid.all_candidates_positions().is_empty());
 
         let mut all_positions: Vec<_> = grid.all_positions().collect();
