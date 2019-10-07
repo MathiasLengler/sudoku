@@ -180,9 +180,9 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
 }
 
 impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
-    pub fn has_unique_solution(sudoku: &Grid<Cell>) -> bool {
-        let mut sudoku = sudoku.clone();
-        let mut solver = Solver::new(&mut sudoku);
+    pub fn has_unique_solution(grid: &Grid<Cell>) -> bool {
+        let mut grid = grid.clone();
+        let mut solver = Solver::new(&mut grid);
 
         assert!(solver.next().is_some());
 
