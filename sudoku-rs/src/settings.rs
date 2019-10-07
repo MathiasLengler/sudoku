@@ -1,4 +1,3 @@
-use std::num::NonZeroUsize;
 use std::usize;
 
 // TODO: add public settings API
@@ -12,7 +11,7 @@ impl Default for Settings {
     fn default() -> Self {
         Settings {
             update_candidates_on_set_value: true,
-            history_limit: usize::MAX,
+            history_limit: 256,
         }
     }
 }

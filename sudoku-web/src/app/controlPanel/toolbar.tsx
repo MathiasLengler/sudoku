@@ -8,7 +8,7 @@ import UndoIcon from '@material-ui/icons/Undo';
 import {Input, WasmSudokuController} from "../wasmSudokuController";
 import Tooltip from "@material-ui/core/Tooltip";
 import {ElementRef} from "../useResponsiveGridSize";
-
+import {ToolbarMenu} from "./toolbarMenu";
 
 interface ToolbarProps {
   sudokuController: WasmSudokuController;
@@ -55,6 +55,11 @@ export const Toolbar: React.FunctionComponent<ToolbarProps> = (props) => {
           <UndoIcon fontSize="large"/>
         </IconButton>
       </Tooltip>
+      <ToolbarMenu
+        enterDelay={enterDelay}
+        leaveDelay={leaveDelay}
+        sudokuController={sudokuController}
+      />
     </div>
   )
 };

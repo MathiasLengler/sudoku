@@ -1,22 +1,23 @@
 use strategies::Strategy;
 
 use crate::cell::SudokuCell;
-use crate::Sudoku;
+use crate::grid::Grid;
 
 mod strategies;
 
+#[derive(Debug)]
 pub struct Solver<'s, Cell: SudokuCell> {
-    sudoku: &'s mut Sudoku<Cell>,
+    grid: &'s mut Grid<Cell>,
     strategies: Vec<Box<dyn Strategy<Cell>>>,
 }
 
 impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
-    pub fn new(sudoku: &'s mut Sudoku<Cell>) -> Solver<'s, Cell> {
-        sudoku.fix_all_values();
-        sudoku.set_all_direct_candidates();
+    pub fn new(grid: &'s mut Grid<Cell>) -> Solver<'s, Cell> {
+        grid.fix_all_values();
+        grid.set_all_direct_candidates();
 
         Self {
-            sudoku,
+            grid,
             strategies: strategies::strategies(),
         }
     }
@@ -24,14 +25,14 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
     // TODO: unique solution?
     pub fn try_solve(&mut self) -> bool {
         loop {
-            if self.sudoku.is_solved() {
+            if self.grid.is_solved() {
                 return true;
             }
 
             let mut modified = false;
 
             for strategy in &self.strategies {
-                let modified_positions = strategy.execute(&mut self.sudoku);
+                let modified_positions = strategy.execute(&mut self.grid);
 
                 if !modified_positions.is_empty() {
                     //                    println!(
@@ -67,42 +68,42 @@ mod tests {
 
     #[test]
     fn test_base_2() {
-        let mut sudokus = crate::samples::base_2();
+        let mut grids = crate::samples::base_2();
 
-        for (sudoku_index, mut sudoku) in sudokus.drain(..).enumerate() {
-            println!("#{}:\n{}", sudoku_index, sudoku);
+        for (grid_index, mut grid) in grids.drain(..).enumerate() {
+            println!("#{}:\n{}", grid_index, grid);
 
-            let mut solver = Solver::new(&mut sudoku);
+            let mut solver = Solver::new(&mut grid);
 
             assert!(solver.try_solve());
 
-            assert!(sudoku.is_solved());
+            assert!(grid.is_solved());
         }
     }
 
     #[test]
     fn test_base_3() {
-        let sudokus = crate::samples::base_3();
+        let grids = crate::samples::base_3();
 
-        for (sudoku_index, mut sudoku) in sudokus.into_iter().enumerate() {
-            println!("#{}:\n{}", sudoku_index, sudoku);
+        for (grid_index, mut grid) in grids.into_iter().enumerate() {
+            println!("#{}:\n{}", grid_index, grid);
 
-            let mut solver = Solver::new(&mut sudoku);
+            let mut solver = Solver::new(&mut grid);
 
             assert!(solver.try_solve());
 
-            assert!(sudoku.is_solved());
+            assert!(grid.is_solved());
         }
     }
 
     #[test]
     fn test_minimal() {
-        let mut sudoku = crate::samples::minimal(2);
+        let mut grid = crate::samples::minimal(2);
 
-        let mut solver = Solver::new(&mut sudoku);
+        let mut solver = Solver::new(&mut grid);
 
         assert!(solver.try_solve());
 
-        assert!(sudoku.is_solved());
+        assert!(grid.is_solved());
     }
 }

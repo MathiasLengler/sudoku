@@ -3,10 +3,10 @@ use std::convert::TryInto;
 use crate::cell::Cell;
 use crate::error::Result;
 use crate::generator::backtracking::{Generator, Settings, Target};
-use crate::Sudoku;
+use crate::grid::Grid;
 
 // TODO: rethink API (unwrap, clone for consumer of specific sudoku)
-pub fn base_2() -> Vec<Sudoku<Cell>> {
+pub fn base_2() -> Vec<Grid<Cell>> {
     vec![
         vec![
             vec![0, 3, 4, 0],
@@ -28,12 +28,12 @@ pub fn base_2() -> Vec<Sudoku<Cell>> {
         ],
     ]
     .into_iter()
-    .map(TryInto::<Sudoku<Cell>>::try_into)
+    .map(TryInto::<Grid<Cell>>::try_into)
     .collect::<Result<Vec<_>>>()
     .unwrap()
 }
 
-pub fn base_3() -> Vec<Sudoku<Cell>> {
+pub fn base_3() -> Vec<Grid<Cell>> {
     vec![
         // 11 Star difficulty
         vec![
@@ -49,12 +49,12 @@ pub fn base_3() -> Vec<Sudoku<Cell>> {
         ],
     ]
     .into_iter()
-    .map(TryInto::<Sudoku<Cell>>::try_into)
+    .map(TryInto::<Grid<Cell>>::try_into)
     .collect::<Result<Vec<_>>>()
     .unwrap()
 }
 
-pub fn minimal(base: usize) -> Sudoku<Cell> {
+pub fn minimal(base: usize) -> Grid<Cell> {
     Generator::new(Settings {
         base,
         target: Target::Minimal,

@@ -6,6 +6,8 @@ use log::debug;
 use wasm_bindgen::prelude::*;
 
 use sudoku::cell::Cell;
+use sudoku::error::Error;
+use sudoku::generator::backtracking::Settings;
 use sudoku::position::Position;
 use sudoku::transport::TransportSudoku;
 use sudoku::Sudoku;
@@ -23,12 +25,12 @@ pub fn run() -> Result<(), JsValue> {
 
 #[wasm_bindgen]
 pub fn get_wasm_sudoku() -> WasmSudoku {
-    let mut sudoku = sudoku::samples::minimal(3);
+    let mut grid = sudoku::samples::minimal(3);
 
-    sudoku.fix_all_values();
+    grid.fix_all_values();
 
     WasmSudoku {
-        sudoku: RefCell::new(sudoku),
+        sudoku: RefCell::new(Sudoku::new_with_grid(grid)),
     }
 }
 
@@ -39,10 +41,6 @@ pub struct WasmSudoku {
 
 #[wasm_bindgen]
 impl WasmSudoku {
-    pub fn say_hello(&self) {
-        debug!("Hello!");
-    }
-
     pub fn get_sudoku(&self) -> JsValue {
         let transport_sudoku = {
             let sudoku = self.sudoku.borrow();
@@ -88,6 +86,22 @@ impl WasmSudoku {
     pub fn undo(&mut self) {
         self.sudoku.borrow_mut().undo();
     }
+
+    pub fn generate(&mut self, generator_settings: JsValue) -> Result<(), JsValue> {
+        Ok(self
+            .sudoku
+            .borrow_mut()
+            .generate(Self::import_generator_settings(generator_settings))
+            .map_err(Self::export_error)?)
+    }
+
+    pub fn import(&mut self, input: &str) -> Result<(), JsValue> {
+        Ok(self
+            .sudoku
+            .borrow_mut()
+            .import(input)
+            .map_err(Self::export_error)?)
+    }
 }
 
 /// Conversion Helpers
@@ -99,13 +113,21 @@ impl WasmSudoku {
     fn import_candidates(candidates: JsValue) -> Vec<usize> {
         candidates.into_serde().unwrap()
     }
+
+    fn import_generator_settings(generator_settings: JsValue) -> Settings {
+        generator_settings.into_serde().unwrap()
+    }
+
+    fn export_error(error: Error) -> JsValue {
+        format!("{0}\n{0:?}", error).into()
+    }
 }
 
 fn init() {
     use log::Level;
     use std::panic;
-    use std::sync::{Once, ONCE_INIT};
-    static SET_HOOK: Once = ONCE_INIT;
+    use std::sync::Once;
+    static SET_HOOK: Once = Once::new();
 
     #[cfg(feature = "console")]
     SET_HOOK.call_once(|| {

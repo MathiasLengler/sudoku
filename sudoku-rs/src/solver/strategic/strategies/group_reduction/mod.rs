@@ -1,8 +1,8 @@
 use itertools::izip;
 
 use crate::cell::SudokuCell;
+use crate::grid::Grid;
 use crate::position::Position;
-use crate::Sudoku;
 
 use super::Strategy;
 
@@ -10,31 +10,16 @@ use self::pcp::group_candidates_reduction;
 
 mod pcp;
 
+#[derive(Debug)]
 pub(in super::super) struct GroupReduction;
 
 impl<Cell: SudokuCell> Strategy<Cell> for GroupReduction {
-    fn name(&self) -> &'static str {
-        "GroupReduction"
-    }
-
-    fn execute(&self, sudoku: &mut Sudoku<Cell>) -> Vec<Position> {
+    fn execute(&self, grid: &mut Grid<Cell>) -> Vec<Position> {
         let mut modified_positions = vec![];
 
-        Self::reduce_groups(
-            sudoku.grid().all_row_positions(),
-            sudoku,
-            &mut modified_positions,
-        );
-        Self::reduce_groups(
-            sudoku.grid().all_column_positions(),
-            sudoku,
-            &mut modified_positions,
-        );
-        Self::reduce_groups(
-            sudoku.grid().all_block_positions(),
-            sudoku,
-            &mut modified_positions,
-        );
+        Self::reduce_groups(grid.all_row_positions(), grid, &mut modified_positions);
+        Self::reduce_groups(grid.all_column_positions(), grid, &mut modified_positions);
+        Self::reduce_groups(grid.all_block_positions(), grid, &mut modified_positions);
 
         modified_positions.sort();
         modified_positions.dedup();
@@ -45,19 +30,19 @@ impl<Cell: SudokuCell> Strategy<Cell> for GroupReduction {
 impl GroupReduction {
     fn reduce_groups<Cell: SudokuCell>(
         groups: impl Iterator<Item = impl Iterator<Item = Position>>,
-        sudoku: &mut Sudoku<Cell>,
+        grid: &mut Grid<Cell>,
         modified_positions: &mut Vec<Position>,
     ) {
         for group in groups {
             let (positions, group_candidates): (Vec<Position>, Vec<Vec<usize>>) = group
                 .filter_map(|pos| {
-                    let cell = sudoku.get(pos);
+                    let cell = grid.get(pos);
                     cell.candidates().map(|candidates| (pos, candidates))
                 })
                 .unzip();
 
             let reduced_group_candidates =
-                group_candidates_reduction(&group_candidates, sudoku.grid().max_value());
+                group_candidates_reduction(&group_candidates, grid.max_value());
 
             for zipped in izip!(
                 positions.clone(),
@@ -78,7 +63,7 @@ impl GroupReduction {
                     //                        positions, group_candidates, reduced_group_candidates
                     //                    );
 
-                    sudoku.set_candidates(pos, reduced_candidates);
+                    grid.set_candidates(pos, reduced_candidates);
 
                     modified_positions.push(pos)
                 }

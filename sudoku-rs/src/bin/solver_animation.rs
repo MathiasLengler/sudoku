@@ -1,11 +1,8 @@
-use std::convert::TryInto;
 use std::time::Instant;
 
-use sudoku::cell::Cell;
 use sudoku::error::Result;
 use sudoku::samples::base_3;
 use sudoku::solver::backtracking::Solver;
-use sudoku::Sudoku;
 
 // TODO: fix animation
 

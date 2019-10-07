@@ -17,13 +17,15 @@
 //! Hidden Quad | us4 | 7000 | 5000
 //! Swordfish | sf4 | 8000 | 6000
 
+use std::fmt::Debug;
+
 use backtracking::Backtracking;
 use group_reduction::GroupReduction;
 use single_candidate::SingleCandidate;
 
 use crate::cell::SudokuCell;
+use crate::grid::Grid;
 use crate::position::Position;
-use crate::Sudoku;
 
 // TODO: bench
 mod backtracking;
@@ -31,18 +33,16 @@ mod group_reduction;
 mod single_candidate;
 
 // TODO: use
+#[allow(dead_code)]
 enum StrategyResult {
     Modified { cell_positions: Vec<Position> },
     Unsolvable,
     MultipleSolutions,
 }
 
-pub(super) trait Strategy<Cell: SudokuCell> {
-    /// Name of the strategy
-    fn name(&self) -> &'static str;
-
-    /// Execute this strategy on the given sudoku. Returns the list of modified positions.
-    fn execute(&self, sudoku: &mut Sudoku<Cell>) -> Vec<Position>;
+pub(super) trait Strategy<Cell: SudokuCell>: Debug {
+    /// Execute this strategy on the given grid. Returns the list of modified positions.
+    fn execute(&self, grid: &mut Grid<Cell>) -> Vec<Position>;
 }
 
 pub(super) fn strategies<Cell: SudokuCell>() -> Vec<Box<dyn Strategy<Cell>>> {

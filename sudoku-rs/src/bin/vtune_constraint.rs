@@ -1,4 +1,3 @@
-use sudoku::cell::Cell;
 use sudoku::error::Result;
 use sudoku::solver::constraint::Solver;
 

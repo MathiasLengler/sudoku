@@ -1,6 +1,6 @@
 import {Input, WasmSudokuController} from "./wasmSudokuController";
 import * as React from "react";
-import {useEffect} from "react";
+import {KeyboardEvent} from "react";
 import clamp from "lodash/clamp";
 import {assertNever} from "assert-never";
 
@@ -58,63 +58,55 @@ function keyToToolbarAction(key: string): ToolbarAction | undefined {
   }
 }
 
-export function useKeyboardInput(
+export function makeKeyDownListener(
   sudokuController: WasmSudokuController,
   inputState: Input,
   sideLength: TransportSudoku["sideLength"],
 ) {
-  useEffect(() => {
-    const keyDownListener = (ev: KeyboardEvent) => {
-      const {key, altKey, ctrlKey, metaKey, shiftKey} = ev;
+  return (ev: KeyboardEvent) => {
+    const {key, altKey, ctrlKey, metaKey, shiftKey} = ev;
 
-      if (altKey || ctrlKey || metaKey || shiftKey) {
-        return;
+    if (altKey || ctrlKey || metaKey || shiftKey) {
+      return;
+    }
+
+    const value = keyToValue(key);
+    if (value !== undefined) {
+      ev.preventDefault();
+      return sudokuController.handleValue(value);
+    }
+
+    const {selectedPos} = inputState;
+
+    const newPos = keyToNewPos(key, selectedPos, sideLength);
+    if (newPos !== undefined) {
+      ev.preventDefault();
+      return sudokuController.handlePosition(newPos);
+    }
+
+    const toolbarAction = keyToToolbarAction(key);
+    if (toolbarAction !== undefined) {
+      ev.preventDefault();
+
+      switch (toolbarAction) {
+        case "toggleCandidateMode":
+          sudokuController.toggleCandidateMode();
+          break;
+        case "setAllDirectCandidates":
+          sudokuController.setAllDirectCandidates();
+          break;
+        case "delete":
+          sudokuController.delete();
+          break;
+        case "toggleStickyMode":
+          sudokuController.toggleStickyMode();
+          break;
+        case "undo":
+          sudokuController.undo();
+          break;
+        default:
+          assertNever(toolbarAction);
       }
-
-      const value = keyToValue(key);
-      if (value !== undefined) {
-        ev.preventDefault();
-        return sudokuController.handleValue(value);
-      }
-
-      const {selectedPos} = inputState;
-
-      const newPos = keyToNewPos(key, selectedPos, sideLength);
-      if (newPos !== undefined) {
-        ev.preventDefault();
-        return sudokuController.handlePosition(newPos);
-      }
-
-      const toolbarAction = keyToToolbarAction(key);
-      if (toolbarAction !== undefined) {
-        ev.preventDefault();
-
-        switch (toolbarAction) {
-          case "toggleCandidateMode":
-            sudokuController.toggleCandidateMode();
-            break;
-          case "setAllDirectCandidates":
-            sudokuController.setAllDirectCandidates();
-            break;
-          case "delete":
-            sudokuController.delete();
-            break;
-          case "toggleStickyMode":
-            sudokuController.toggleStickyMode();
-            break;
-          case "undo":
-            sudokuController.undo();
-            break;
-          default:
-            assertNever(toolbarAction);
-        }
-      }
-    };
-
-    document.addEventListener('keydown', keyDownListener);
-
-    return () => {
-      document.removeEventListener('keydown', keyDownListener);
-    };
-  }, [sudokuController, sideLength, inputState]);
+    }
+  }
 }

@@ -1,17 +1,17 @@
 #[macro_use]
 extern crate criterion;
 
-use criterion::BatchSize;
-use criterion::{Criterion, ParameterizedBenchmark};
+use criterion::Criterion;
+use criterion::{BatchSize, BenchmarkId};
 
 use sudoku::cell::Cell;
 use sudoku::generator::backtracking::{Generator, Settings, Target};
+use sudoku::grid::Grid;
 use sudoku::position::Position;
 use sudoku::samples::{base_2, base_3};
 use sudoku::solver::{backtracking, constraint, strategic};
-use sudoku::Sudoku;
 
-fn sample_sudoku(base: usize) -> Sudoku<Cell> {
+fn sample_grid(base: usize) -> Grid<Cell> {
     match base {
         2 => base_2().first().unwrap().clone(),
         3 => base_3().first().unwrap().clone(),
@@ -20,134 +20,143 @@ fn sample_sudoku(base: usize) -> Sudoku<Cell> {
 }
 
 fn criterion_benchmark(c: &mut Criterion) {
-    c.bench(
-        "Generator",
-        ParameterizedBenchmark::new(
-            "minimal",
-            |b, base| {
-                b.iter(|| {
-                    Generator::new(Settings {
-                        base: *base,
-                        target: Target::Minimal,
+    let mut generator_group = c.benchmark_group("Generator");
+
+    //    generator_group.sample_size(10);
+
+    for base in &[2] {
+        for target in &[Target::Minimal, Target::Filled] {
+            let parameter_string = format!("Base={} Target={:?}", base, target);
+            let generator = Generator::new(Settings {
+                base: *base,
+                target: Target::Minimal,
+            });
+
+            generator_group.bench_with_input(
+                BenchmarkId::new("generate", parameter_string),
+                &generator,
+                |b, generator| {
+                    b.iter(|| {
+                        generator.generate::<Cell>().unwrap();
                     })
-                    .generate::<Cell>()
-                    .unwrap()
-                })
-            },
-            vec![2, 3],
-        )
-        .with_function("filled", |b, base| {
-            b.iter(|| {
-                Generator::new(Settings {
-                    base: *base,
-                    target: Target::Filled,
-                })
-                .generate::<Cell>()
-                .unwrap()
-            })
-        })
-        .sample_size(10),
-    );
+                },
+            );
+        }
+    }
+    generator_group.finish();
 
-    c.bench(
-        "Solver",
-        ParameterizedBenchmark::new(
-            "backtracking",
-            |b, base| {
-                let sudoku = sample_sudoku(*base);
+    let mut solver_group = c.benchmark_group("Solver");
+    solver_group.sample_size(20);
 
+    for base in &[2, 3] {
+        let parameter_string = format!("Base={}", base);
+
+        let grid = sample_grid(*base);
+
+        solver_group.bench_with_input(
+            BenchmarkId::new("backtracking", &parameter_string),
+            &grid,
+            |b, grid| {
                 b.iter_batched(
-                    || sudoku.clone(),
-                    |mut sudoku| backtracking::Solver::new(&mut sudoku).next(),
+                    || grid.clone(),
+                    |mut grid| backtracking::Solver::new(&mut grid).next(),
                     BatchSize::SmallInput,
                 )
             },
-            vec![2, 3],
-        )
-        .with_function("constraint", |b, base| {
-            let sudoku = sample_sudoku(*base);
+        );
 
-            b.iter_batched(
-                || sudoku.clone(),
-                |mut sudoku| constraint::Solver::new(&mut sudoku).try_solve(),
-                BatchSize::SmallInput,
-            )
-        })
-        .with_function("strategic", |b, base| {
-            let sudoku = sample_sudoku(*base);
-
-            b.iter_batched(
-                || sudoku.clone(),
-                |mut sudoku| strategic::Solver::new(&mut sudoku).try_solve(),
-                BatchSize::SmallInput,
-            )
-        })
-        .sample_size(20),
-    );
-
-    c.bench(
-        "Sudoku",
-        ParameterizedBenchmark::new(
-            "has_conflict_at",
-            |b, base| {
-                let sudoku = sample_sudoku(*base);
-
+        solver_group.bench_with_input(
+            BenchmarkId::new("constraint", &parameter_string),
+            &grid,
+            |b, grid| {
                 b.iter_batched(
-                    || sudoku.clone(),
-                    |sudoku| sudoku.has_conflict_at(Position { column: 1, row: 1 }),
+                    || grid.clone(),
+                    |mut grid| constraint::Solver::new(&mut grid).try_solve(),
                     BatchSize::SmallInput,
                 )
             },
-            vec![2, 3],
-        )
-        .with_function("has_duplicate", |b, base| {
-            let sudoku = sample_sudoku(*base);
+        );
 
-            b.iter_batched(
-                || (&sudoku, sudoku.grid().row_cells(1)),
-                |(sudoku, row_cells)| sudoku.has_duplicate(row_cells),
-                BatchSize::SmallInput,
-            )
-        })
-        .with_function("all_positions", |b, base| {
-            let sudoku = sample_sudoku(*base);
+        solver_group.bench_with_input(
+            BenchmarkId::new("strategic", &parameter_string),
+            &grid,
+            |b, grid| {
+                b.iter_batched(
+                    || grid.clone(),
+                    |mut grid| strategic::Solver::new(&mut grid).try_solve(),
+                    BatchSize::SmallInput,
+                )
+            },
+        );
+    }
+    solver_group.finish();
 
-            b.iter_batched(
-                || sudoku.clone(),
-                |sudoku| sudoku.grid().all_positions().for_each(drop),
-                BatchSize::SmallInput,
-            )
-        })
-        .with_function("direct_candidates", |b, base| {
-            let sudoku = sample_sudoku(*base);
+    let mut grid_group = c.benchmark_group("Grid");
 
-            b.iter_batched(
-                || sudoku.clone(),
-                |sudoku| sudoku.direct_candidates(Position { column: 1, row: 1 }),
-                BatchSize::SmallInput,
-            )
-        })
-        .with_function("update_candidates", |b, base| {
-            let mut sudoku = sample_sudoku(*base);
+    for base in &[2, 3] {
+        let parameter_string = format!("Base={}", base);
 
-            sudoku.set_all_direct_candidates();
+        let grid = sample_grid(*base);
 
-            b.iter_batched(
-                || sudoku.clone(),
-                |mut sudoku| sudoku.set_or_toggle_value(Position { column: 1, row: 1 }, 2),
-                BatchSize::SmallInput,
-            )
-        })
-        .with_function("set_all_direct_candidates", |b, base| {
-            let sudoku = sample_sudoku(*base);
+        grid_group.bench_with_input(
+            BenchmarkId::new("has_conflict_at", &parameter_string),
+            &grid,
+            |b, grid| b.iter(|| grid.has_conflict_at(Position { column: 1, row: 1 })),
+        );
 
-            b.iter_batched(
-                || sudoku.clone(),
-                |mut sudoku| sudoku.set_all_direct_candidates(),
-                BatchSize::SmallInput,
-            )
-        }),
-    );
+        grid_group.bench_with_input(
+            BenchmarkId::new("has_duplicate", &parameter_string),
+            &grid,
+            |b, grid| {
+                b.iter_batched(
+                    || (&grid, grid.row_cells(1)),
+                    |(grid, row_cells)| grid.has_duplicate(row_cells),
+                    BatchSize::SmallInput,
+                )
+            },
+        );
+
+        grid_group.bench_with_input(
+            BenchmarkId::new("all_positions", &parameter_string),
+            &grid,
+            |b, grid| b.iter(|| grid.all_positions().for_each(drop)),
+        );
+
+        grid_group.bench_with_input(
+            BenchmarkId::new("direct_candidates", &parameter_string),
+            &grid,
+            |b, grid| b.iter(|| grid.direct_candidates(Position { column: 1, row: 1 })),
+        );
+
+        grid_group.bench_with_input(
+            BenchmarkId::new("update_candidates", &parameter_string),
+            &grid,
+            |b, grid| {
+                let mut grid = grid.clone();
+
+                grid.set_all_direct_candidates();
+
+                b.iter_batched(
+                    || grid.clone(),
+                    |mut grid| grid.set_or_toggle_value(Position { column: 1, row: 1 }, 2),
+                    BatchSize::SmallInput,
+                )
+            },
+        );
+
+        grid_group.bench_with_input(
+            BenchmarkId::new("set_all_direct_candidates", &parameter_string),
+            &grid,
+            |b, grid| {
+                b.iter_batched(
+                    || grid.clone(),
+                    |mut grid| grid.set_all_direct_candidates(),
+                    BatchSize::SmallInput,
+                )
+            },
+        );
+    }
+    grid_group.finish();
 }
 
 criterion_group!(benches, criterion_benchmark);
