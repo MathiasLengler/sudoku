@@ -5,7 +5,7 @@ use crate::cell::SudokuCell;
 use crate::error::Result;
 use crate::grid::Grid;
 
-pub(crate) fn from_givens<Cell: SudokuCell>(input: &str) -> Result<Grid<Cell>> {
+pub(crate) fn from_givens_line<Cell: SudokuCell>(input: &str) -> Result<Grid<Cell>> {
     input
         .chars()
         .map(TryInto::<CellView>::try_into)
@@ -13,8 +13,17 @@ pub(crate) fn from_givens<Cell: SudokuCell>(input: &str) -> Result<Grid<Cell>> {
         .try_into()
 }
 
+pub(crate) fn from_givens_grid<Cell: SudokuCell>(input: &str) -> Result<Grid<Cell>> {
+    input
+        .chars()
+        .map(TryInto::<CellView>::try_into)
+        .filter_map(Result::ok)
+        .collect::<Vec<_>>()
+        .try_into()
+}
+
 pub(crate) fn from_candidates<Cell: SudokuCell>(input: &str) -> Result<Grid<Cell>> {
-    let cell_views = input
+    input
         .lines()
         // Filter horizontal separator lines
         .filter(|line| line.contains(|c: char| c.is_digit(36)))
@@ -24,9 +33,8 @@ pub(crate) fn from_candidates<Cell: SudokuCell>(input: &str) -> Result<Grid<Cell
         // Split and trim groups of numbers
         .flat_map(|s| s.split_whitespace())
         .map(TryInto::<CellView>::try_into)
-        .collect::<Result<Vec<_>>>()?;
-
-    cell_views.try_into()
+        .collect::<Result<Vec<_>>>()?
+        .try_into()
 }
 
 #[cfg(test)]
@@ -36,15 +44,39 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_givens_base_3() -> Result<()> {
-        let input = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/res/givens.txt"));
+    fn test_givens_line_base_3() -> Result<()> {
+        let input = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/res/givens_line.txt"
+        ));
 
-        let grid = from_givens::<Cell>(input)?;
+        let grid = from_givens_line::<Cell>(input)?;
 
         let expected_grid = vec![
             6, 0, 0, 0, 0, 2, 3, 0, 0, 1, 2, 5, 6, 0, 0, 0, 0, 0, 0, 0, 4, 7, 0, 0, 0, 2, 0, 7, 3,
             0, 0, 0, 0, 8, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 6, 0, 0, 0, 0, 1, 5, 0, 5, 0, 0,
             0, 8, 1, 0, 0, 0, 0, 0, 0, 0, 3, 4, 7, 2, 0, 0, 7, 2, 0, 0, 0, 0, 8,
+        ]
+        .try_into()?;
+
+        assert_eq!(grid, expected_grid);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_givens_grid_base_3() -> Result<()> {
+        let input = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/res/givens_grid.txt"
+        ));
+
+        let grid = from_givens_grid::<Cell>(input)?;
+
+        let expected_grid = vec![
+            0, 8, 0, 5, 0, 3, 0, 7, 0, 0, 2, 7, 0, 0, 0, 3, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            5, 0, 9, 0, 6, 0, 0, 0, 0, 0, 1, 0, 2, 0, 0, 0, 0, 0, 4, 0, 6, 0, 9, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 3, 2, 0, 0, 0, 4, 5, 0, 0, 5, 0, 9, 0, 7, 0, 2, 0,
         ]
         .try_into()?;
 

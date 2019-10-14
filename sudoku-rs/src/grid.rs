@@ -11,7 +11,7 @@ use itertools::Itertools;
 use crate::cell::view::CellView;
 use crate::cell::SudokuCell;
 use crate::error::{Error, Result};
-use crate::grid::parser::from_givens;
+use crate::grid::parser::{from_givens_grid, from_givens_line};
 use crate::position::Position;
 
 mod parser;
@@ -429,9 +429,9 @@ impl<Cell: SudokuCell> TryFrom<&str> for Grid<Cell> {
         let input = input.trim();
 
         if input.contains('\n') {
-            from_candidates(input)
+            from_candidates(input).or_else(|_| from_givens_grid(input))
         } else {
-            from_givens(input)
+            from_givens_line(input)
         }
     }
 }
@@ -593,7 +593,10 @@ mod tests {
                 env!("CARGO_MANIFEST_DIR"),
                 "/tests/res/candidates.txt"
             )),
-            include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/res/givens.txt")),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/res/givens_line.txt"
+            )),
         ];
 
         inputs

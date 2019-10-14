@@ -42,7 +42,7 @@ pub fn c(candidates: Vec<usize>) -> CellView {
 
 fn char_value_to_usize(c: char) -> Result<usize> {
     match c {
-        '.' | '-' | '0' | 'x' | 'X' => Ok(0),
+        '.' | '0' => Ok(0),
         _ => match c.to_digit(36) {
             Some(digit) => Ok(digit.try_into()?),
             None => bail!("Unable to convert character into number: {}", c),
@@ -78,7 +78,7 @@ impl TryFrom<char> for CellView {
     type Error = Error;
 
     fn try_from(c: char) -> Result<Self> {
-        Ok(char_value_to_usize(c)?.try_into()?)
+        Ok(char_value_to_usize(c)?.into())
     }
 }
 
