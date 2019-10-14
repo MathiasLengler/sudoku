@@ -5,7 +5,7 @@ use crate::position::Position;
 use super::Strategy;
 
 #[derive(Debug)]
-pub(in super::super) struct SingleCandidate;
+pub struct SingleCandidate;
 
 impl<Cell: SudokuCell> Strategy<Cell> for SingleCandidate {
     fn execute(&self, grid: &mut Grid<Cell>) -> Vec<Position> {
@@ -18,6 +18,7 @@ impl<Cell: SudokuCell> Strategy<Cell> for SingleCandidate {
                     let single_candidate = candidates[0];
 
                     grid.set_value(candidate_pos, single_candidate);
+                    grid.update_candidates(candidate_pos, single_candidate);
 
                     Some(candidate_pos)
                 } else {

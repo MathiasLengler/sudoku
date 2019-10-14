@@ -39,7 +39,9 @@ export const ToolbarMenu: React.FunctionComponent<ToolbarMenuProps> = (props) =>
       onClose={makeHandleMenuClose()}
     >
       <MenuItem onClick={makeHandleMenuClose(() => setNewGameOpen(true))}>New Game</MenuItem>
-      <MenuItem onClick={makeHandleMenuClose()}>Solve (Unimplemented)</MenuItem>
+      <MenuItem onClick={makeHandleMenuClose(() => sudokuController.solveSingleCandidates())}>
+        Solve single candidates
+      </MenuItem>
     </Menu>
     <div id="dialogs" tabIndex={0} onKeyDown={(e) => {
       // Disable global game shortcuts in dialog boxes.

@@ -11,7 +11,7 @@ use self::pcp::group_candidates_reduction;
 mod pcp;
 
 #[derive(Debug)]
-pub(in super::super) struct GroupReduction;
+pub struct GroupReduction;
 
 impl<Cell: SudokuCell> Strategy<Cell> for GroupReduction {
     fn execute(&self, grid: &mut Grid<Cell>) -> Vec<Position> {

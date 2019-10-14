@@ -43,4 +43,8 @@ export class TypedWasmSudoku {
   public import(input: string) {
     return this.wasmSudoku.import(input);
   }
+
+  public solveSingleCandidates() {
+    return this.wasmSudoku.solve_single_candidates();
+  }
 }

@@ -11,7 +11,8 @@ use crate::grid::Grid;
 use crate::history::GridHistory;
 use crate::position::Position;
 use crate::settings::Settings;
-use crate::solver::backtracking::Solver;
+use crate::solver::backtracking::Solver as BacktrackingSolver;
+use crate::solver::strategic::{strategies::SingleCandidate, Solver as StrategicSolver};
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 pub struct Sudoku<Cell: SudokuCell> {
@@ -37,7 +38,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
         grid.fix_all_values();
 
         Sudoku {
-            solved_grid: Solver::unique_solution(&grid),
+            solved_grid: BacktrackingSolver::unique_solution(&grid),
             grid,
             settings,
             history: Default::default(),
@@ -88,6 +89,15 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
         self.grid.set_all_direct_candidates();
     }
 
+    pub fn solve_single_candidates(&mut self) {
+        self.push_history();
+
+        let mut solver =
+            StrategicSolver::new_with_strategies(&mut self.grid, vec![Box::new(SingleCandidate)]);
+
+        solver.try_strategies();
+    }
+
     pub fn undo(&mut self) {
         if let Some(grid) = self.history.pop() {
             self.grid = grid;
@@ -117,6 +127,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
         Ok(())
     }
 
+    // TODO: expose in UI (clipboard?)
     pub fn export(&self) -> String {
         self.grid.to_string()
     }
