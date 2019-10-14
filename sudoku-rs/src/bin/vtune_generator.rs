@@ -1,6 +1,7 @@
 #[cfg(feature = "flame_it")]
 extern crate flame;
 
+#[cfg(feature = "flame_it")]
 use std::fs::File;
 
 use sudoku::cell::Cell;
