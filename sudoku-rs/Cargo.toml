@@ -7,7 +7,7 @@ edition = "2018"
 [dependencies]
 itertools = "0.8.0"
 rand = "0.7.2"
-failure = "0.1.5"
+failure = "0.1.6"
 lazy_static = "1.4.0"
 serde = { version = "1.0.101", features = ["derive"] }
 fixedbitset = "0.2.0"
