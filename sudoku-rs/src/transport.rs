@@ -19,6 +19,7 @@ pub struct TransportSudoku {
 impl<Cell: SudokuCell> From<&Sudoku<Cell>> for TransportSudoku {
     fn from(sudoku: &Sudoku<Cell>) -> Self {
         let grid = sudoku.grid();
+        let solved_grid = sudoku.solved_grid();
 
         Self {
             blocks: grid
@@ -26,7 +27,16 @@ impl<Cell: SudokuCell> From<&Sudoku<Cell>> for TransportSudoku {
                 .map(|block| {
                     block
                         .map(|pos| {
-                            TransportCell::new(grid.get(pos).view(), pos, grid.is_fixed(pos))
+                            let cell_view = grid.get(pos).view();
+                            let incorrect_value = if cell_view.is_value() {
+                                solved_grid
+                                    .as_ref()
+                                    .map(|solved_grid| solved_grid.get(pos).view() != cell_view)
+                                    .unwrap_or(false)
+                            } else {
+                                false
+                            };
+                            TransportCell::new(cell_view, pos, grid.is_fixed(pos), incorrect_value)
                         })
                         .collect()
                 })
@@ -39,8 +49,7 @@ impl<Cell: SudokuCell> From<&Sudoku<Cell>> for TransportSudoku {
 }
 
 // TODO:
-//  is_correct
-//  conflicts_with
+//  conflicts_with (via all_conflict_pairs)
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransportCell {
@@ -48,14 +57,16 @@ pub struct TransportCell {
     cell_view: CellView,
     position: Position,
     fixed: bool,
+    incorrect_value: bool,
 }
 
 impl TransportCell {
-    fn new(cell_view: CellView, position: Position, fixed: bool) -> Self {
+    fn new(cell_view: CellView, position: Position, fixed: bool, incorrect_value: bool) -> Self {
         Self {
             cell_view,
             position,
             fixed,
+            incorrect_value,
         }
     }
 }

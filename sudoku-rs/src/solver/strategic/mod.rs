@@ -2,8 +2,9 @@ use strategies::Strategy;
 
 use crate::cell::SudokuCell;
 use crate::grid::Grid;
+use crate::position::Position;
 
-mod strategies;
+pub mod strategies;
 
 #[derive(Debug)]
 pub struct Solver<'s, Cell: SudokuCell> {
@@ -13,13 +14,14 @@ pub struct Solver<'s, Cell: SudokuCell> {
 
 impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
     pub fn new(grid: &'s mut Grid<Cell>) -> Solver<'s, Cell> {
-        grid.fix_all_values();
-        grid.set_all_direct_candidates();
+        Self::new_with_strategies(grid, strategies::all_strategies())
+    }
 
-        Self {
-            grid,
-            strategies: strategies::strategies(),
-        }
+    pub fn new_with_strategies(
+        grid: &'s mut Grid<Cell>,
+        strategies: Vec<Box<dyn Strategy<Cell>>>,
+    ) -> Solver<'s, Cell> {
+        Self { grid, strategies }
     }
 
     // TODO: unique solution?
@@ -29,36 +31,36 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
                 return true;
             }
 
-            let mut modified = false;
-
-            for strategy in &self.strategies {
-                let modified_positions = strategy.execute(&mut self.grid);
-
-                if !modified_positions.is_empty() {
-                    //                    println!(
-                    //                        "{}: {:?}",
-                    //                        strategy.name(),
-                    //                        modified_positions
-                    //                            .into_iter()
-                    //                            .map(|pos| pos.to_string())
-                    //                            .collect::<Vec<_>>()
-                    //                    );
-                    //
-                    //                    println!("{}", self.sudoku);
-
-                    modified = true;
-
-                    break;
-                }
-            }
-
-            if modified {
+            if let Some(_modified_positions) = self.try_strategies() {
                 // Continue with strategy execution
             } else {
                 // All strategies have failed.
                 return false;
             }
         }
+    }
+
+    /// Tries strategies until a strategy is able to modify the grid.
+    pub fn try_strategies(&mut self) -> Option<Vec<Position>> {
+        for strategy in self.strategies.iter() {
+            let modified_positions = strategy.execute(&mut self.grid);
+
+            if !modified_positions.is_empty() {
+                println!(
+                    "{:?}: {:?}\n{}",
+                    strategy,
+                    modified_positions
+                        .iter()
+                        .map(|pos| pos.to_string())
+                        .collect::<Vec<_>>(),
+                    self.grid
+                );
+
+                return Some(modified_positions);
+            }
+        }
+
+        None
     }
 }
 
@@ -71,6 +73,9 @@ mod tests {
         let mut grids = crate::samples::base_2();
 
         for (grid_index, mut grid) in grids.drain(..).enumerate() {
+            grid.set_all_direct_candidates();
+            grid.fix_all_values();
+
             println!("#{}:\n{}", grid_index, grid);
 
             let mut solver = Solver::new(&mut grid);
@@ -86,6 +91,9 @@ mod tests {
         let grids = crate::samples::base_3();
 
         for (grid_index, mut grid) in grids.into_iter().enumerate() {
+            grid.set_all_direct_candidates();
+            grid.fix_all_values();
+
             println!("#{}:\n{}", grid_index, grid);
 
             let mut solver = Solver::new(&mut grid);
@@ -99,6 +107,9 @@ mod tests {
     #[test]
     fn test_minimal() {
         let mut grid = crate::samples::minimal(2);
+
+        grid.set_all_direct_candidates();
+        grid.fix_all_values();
 
         let mut solver = Solver::new(&mut grid);
 

@@ -15,6 +15,7 @@ interface CellPosition {
 interface BaseCell {
   position: CellPosition;
   fixed: boolean;
+  incorrectValue: boolean;
 }
 
 interface ValueCell extends BaseCell {

@@ -22,19 +22,12 @@
 
 ### New sudoku:
 - Generate with difficulty
-  - by number of empty cells
   - by needed strategies
 - Editable mode
   - freeze button
   - use cases:
     - input for solver
     - interactive import
-- Import
-  - Does a sudoku exchange format exist?
-    - String of values
-      - Empty cell as `[\.\-0]`
-      - optional spaces between values
-      - optional newline between rows
 
 ### Gameplay Options
 - fill direct candidates on new sudoku

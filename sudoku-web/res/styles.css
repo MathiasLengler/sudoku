@@ -35,7 +35,7 @@ button {
     --cell-bg-color-fixed-conflict: hsl(349, 94%, 87%);
     --cell-value-color-fixed: hsl(0, 0%, 13%);
     --cell-value-color-user: hsl(var(--hue), 85%, 34%);
-    --cell-value-color-user-conflict: hsl(0, 100%, 50%);
+    --cell-value-color-incorrect-value: hsl(0, 100%, 50%);
     --candiate-color: hsl(var(--hue), 3%, 39%);
     --bg-color: hsl(0, 0%, 100%);
 
@@ -143,6 +143,10 @@ button {
 
 .cell--user {
     color: var(--cell-value-color-user);
+}
+
+.cell--incorrect-value {
+    color: var(--cell-value-color-incorrect-value);
 }
 
 .cellValue {

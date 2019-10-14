@@ -6,7 +6,7 @@ use crate::solver::backtracking::Solver;
 use super::Strategy;
 
 #[derive(Debug)]
-pub(in super::super) struct Backtracking;
+pub struct Backtracking;
 
 impl<Cell: SudokuCell> Strategy<Cell> for Backtracking {
     fn execute(&self, grid: &mut Grid<Cell>) -> Vec<Position> {

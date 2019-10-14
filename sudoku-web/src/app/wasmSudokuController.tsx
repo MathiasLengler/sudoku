@@ -139,6 +139,18 @@ export class WasmSudokuController {
     })
   }
 
+  public solveSingleCandidates() {
+    this.withSudokuUpdate(() => {
+      this.wasmSudoku.solveSingleCandidates();
+    })
+  }
+
+  public groupReduction() {
+    this.withSudokuUpdate(() => {
+      this.wasmSudoku.groupReduction();
+    })
+  }
+
   public toggleCandidateMode() {
     this.setInput((prevInput) => ({...prevInput, candidateMode: !prevInput.candidateMode}))
   }

@@ -102,6 +102,14 @@ impl WasmSudoku {
             .import(input)
             .map_err(Self::export_error)?)
     }
+
+    pub fn solve_single_candidates(&mut self) {
+        self.sudoku.borrow_mut().solve_single_candidates();
+    }
+
+    pub fn group_reduction(&mut self) {
+        self.sudoku.borrow_mut().group_reduction();
+    }
 }
 
 /// Conversion Helpers
