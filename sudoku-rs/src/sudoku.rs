@@ -11,10 +11,12 @@ use crate::grid::Grid;
 use crate::history::GridHistory;
 use crate::position::Position;
 use crate::settings::Settings;
+use crate::solver::backtracking::Solver;
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 pub struct Sudoku<Cell: SudokuCell> {
     grid: Grid<Cell>,
+    solved_grid: Option<Grid<Cell>>,
     history: GridHistory<Cell>,
     settings: Settings,
 }
@@ -28,10 +30,17 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     }
 
     pub fn new_with_grid(grid: Grid<Cell>) -> Self {
+        Self::new_with_grid_and_settings(grid, Default::default())
+    }
+
+    pub fn new_with_grid_and_settings(mut grid: Grid<Cell>, settings: Settings) -> Self {
+        grid.fix_all_values();
+
         Sudoku {
+            solved_grid: Solver::unique_solution(&grid),
             grid,
+            settings,
             history: Default::default(),
-            settings: Default::default(),
         }
     }
 
@@ -115,6 +124,10 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     pub fn grid(&self) -> &Grid<Cell> {
         &self.grid
     }
+
+    pub fn solved_grid(&self) -> &Option<Grid<Cell>> {
+        &self.solved_grid
+    }
 }
 
 impl<Cell: SudokuCell> Sudoku<Cell> {
@@ -124,9 +137,7 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
     }
 
     fn replace_grid(&mut self, new_grid: Grid<Cell>) {
-        self.grid = new_grid;
-        self.grid.fix_all_values();
-        self.history = Default::default();
+        *self = Self::new_with_grid_and_settings(new_grid, self.settings);
     }
 }
 

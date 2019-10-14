@@ -21,9 +21,12 @@ function cellBackgroundClass(selected: boolean, guideValue: boolean, guideGroup:
   }
 }
 
-function cellColorClass(fixed: boolean) {
+function cellColorClass(fixed: boolean, incorrectValue: boolean) {
   if (fixed) {
     return "cell--fixed";
+  }
+  if (incorrectValue) {
+    return "cell--incorrect-value"
   } else {
     return "cell--user";
   }
@@ -64,7 +67,7 @@ const Cell: React.FunctionComponent<CellProps> = (props) => {
   const cellClassNames = classnames(
     "cell",
     cellBackgroundClass(selected, guideValue, guideGroup, guideValueGroup),
-    cellColorClass(cell.fixed),
+    cellColorClass(cell.fixed, cell.incorrectValue),
   );
 
   const onPointerMove: PointerEventHandler = (e) => {

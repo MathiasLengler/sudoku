@@ -1,7 +1,7 @@
 use std::usize;
 
 // TODO: add public settings API
-#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
+#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug, Copy)]
 pub struct Settings {
     pub update_candidates_on_set_value: bool,
     pub history_limit: usize,

@@ -30,8 +30,8 @@ pub struct Settings {
 }
 
 #[derive(Debug)]
-enum StepResult<Cell: SudokuCell> {
-    Solution(Box<Grid<Cell>>),
+enum StepResult {
+    Solution,
     /// Sudoku was filled completely
     Filled,
     /// Went through the whole solution space and marked all potential solutions on the way
@@ -68,7 +68,7 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
     fn init(&mut self) {
         if let Some(first_pos) = self.empty_positions.first() {
             self.choices.push(Choice::new(
-                &self.grid,
+                self.grid.direct_candidates(*first_pos),
                 *first_pos,
                 self.settings.shuffle_candidates,
             ))
@@ -81,10 +81,11 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
 
             self.step_count += 1;
 
+            #[cfg(feature = "debug_print")]
             self.debug_print(&step_result);
 
             match step_result {
-                StepResult::Solution(sudoku) => return Some(*sudoku),
+                StepResult::Solution => return Some(self.grid.clone()),
                 StepResult::Filled | StepResult::Finished => return None,
                 _ => {}
             }
@@ -97,7 +98,7 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
         }
     }
 
-    fn step(&mut self) -> StepResult<Cell> {
+    fn step(&mut self) -> StepResult {
         let choices_len = self.choices.len();
 
         match self.choices.last_mut() {
@@ -117,7 +118,7 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
                     match self.empty_positions.get(choices_len) {
                         Some(next_position) => {
                             self.choices.push(Choice::new(
-                                &self.grid,
+                                self.grid.direct_candidates(*next_position),
                                 *next_position,
                                 self.settings.shuffle_candidates,
                             ));
@@ -128,7 +129,7 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
                             choice.set_next();
 
                             // TODO: move clone to iterator (streaming iterator problem)
-                            StepResult::Solution(Box::new(self.grid.clone()))
+                            StepResult::Solution
                         }
                     }
                 }
@@ -142,14 +143,9 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
             }
         }
     }
-    // TODO: if cfg
-    #[cfg(not(feature = "debug_print"))]
-    fn debug_print(&self, _step_result: &StepResult<Cell>) {
-        // Do nothing
-    }
 
     #[cfg(feature = "debug_print")]
-    fn debug_print(&self, step_result: &StepResult<Cell>) {
+    fn debug_print(&self, step_result: &StepResult) {
         use crossterm::Crossterm;
         use lazy_static::lazy_static;
         use std::time::Duration;
@@ -180,6 +176,7 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
 }
 
 impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
+    /// Panics if the grid has no solution
     pub fn has_unique_solution(grid: &Grid<Cell>) -> bool {
         let mut grid = grid.clone();
         let mut solver = Solver::new(&mut grid);
@@ -187,6 +184,19 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
         assert!(solver.next().is_some());
 
         solver.next().is_none()
+    }
+
+    /// Returns the solution to the grid only if it is the only possible solution
+    pub fn unique_solution(grid: &Grid<Cell>) -> Option<Grid<Cell>> {
+        let mut grid = grid.clone();
+        let mut solver = Solver::new(&mut grid);
+        let first_solution = solver.next();
+        let second_solution = solver.next();
+
+        match (first_solution, second_solution) {
+            (Some(solution), None) => Some(solution),
+            _ => None,
+        }
     }
 }
 

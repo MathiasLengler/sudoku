@@ -24,6 +24,13 @@ impl CellView {
         CellView::Candidates { candidates }
     }
 
+    pub fn is_value(&self) -> bool {
+        match self {
+            CellView::Value { .. } => true,
+            CellView::Candidates { .. } => false,
+        }
+    }
+
     pub fn into_cell<Cell: SudokuCell>(self, max: usize) -> Cell {
         match self {
             CellView::Value { value } => Cell::new_with_value(value, max),

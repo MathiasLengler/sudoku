@@ -19,6 +19,7 @@ mod parser;
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 pub struct Grid<Cell: SudokuCell> {
     base: usize,
+    // TODO: replace with ndarray
     cells: Vec<Cell>,
     fixed_cells: FixedBitSet,
 }
