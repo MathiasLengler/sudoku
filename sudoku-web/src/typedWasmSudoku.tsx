@@ -47,4 +47,8 @@ export class TypedWasmSudoku {
   public solveSingleCandidates() {
     return this.wasmSudoku.solve_single_candidates();
   }
+
+  public groupReduction() {
+    return this.wasmSudoku.group_reduction();
+  }
 }

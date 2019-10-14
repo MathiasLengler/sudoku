@@ -106,6 +106,10 @@ impl WasmSudoku {
     pub fn solve_single_candidates(&mut self) {
         self.sudoku.borrow_mut().solve_single_candidates();
     }
+
+    pub fn group_reduction(&mut self) {
+        self.sudoku.borrow_mut().group_reduction();
+    }
 }
 
 /// Conversion Helpers

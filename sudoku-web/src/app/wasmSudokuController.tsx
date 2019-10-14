@@ -145,6 +145,12 @@ export class WasmSudokuController {
     })
   }
 
+  public groupReduction() {
+    this.withSudokuUpdate(() => {
+      this.wasmSudoku.groupReduction();
+    })
+  }
+
   public toggleCandidateMode() {
     this.setInput((prevInput) => ({...prevInput, candidateMode: !prevInput.candidateMode}))
   }

@@ -12,7 +12,10 @@ use crate::history::GridHistory;
 use crate::position::Position;
 use crate::settings::Settings;
 use crate::solver::backtracking::Solver as BacktrackingSolver;
-use crate::solver::strategic::{strategies::SingleCandidate, Solver as StrategicSolver};
+use crate::solver::strategic::{
+    strategies::{GroupReduction, SingleCandidate},
+    Solver as StrategicSolver,
+};
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 pub struct Sudoku<Cell: SudokuCell> {
@@ -94,6 +97,15 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
 
         let mut solver =
             StrategicSolver::new_with_strategies(&mut self.grid, vec![Box::new(SingleCandidate)]);
+
+        solver.try_strategies();
+    }
+
+    pub fn group_reduction(&mut self) {
+        self.push_history();
+
+        let mut solver =
+            StrategicSolver::new_with_strategies(&mut self.grid, vec![Box::new(GroupReduction)]);
 
         solver.try_strategies();
     }

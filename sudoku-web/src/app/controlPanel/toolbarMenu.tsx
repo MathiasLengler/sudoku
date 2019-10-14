@@ -40,7 +40,10 @@ export const ToolbarMenu: React.FunctionComponent<ToolbarMenuProps> = (props) =>
     >
       <MenuItem onClick={makeHandleMenuClose(() => setNewGameOpen(true))}>New Game</MenuItem>
       <MenuItem onClick={makeHandleMenuClose(() => sudokuController.solveSingleCandidates())}>
-        Solve single candidates
+        Solver: single candidates
+      </MenuItem>
+      <MenuItem onClick={makeHandleMenuClose(() => sudokuController.groupReduction())}>
+        Solver: group reduction
       </MenuItem>
     </Menu>
     <div id="dialogs" tabIndex={0} onKeyDown={(e) => {
