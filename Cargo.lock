@@ -390,6 +390,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "generic-array"
+version = "0.13.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "typenum 1.11.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "getrandom"
 version = "0.1.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -824,6 +832,7 @@ dependencies = [
  "flame 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "flamer 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "gcollections 1.4.0 (git+https://github.com/MathiasLengler/gcollections)",
+ "generic-array 0.13.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "indexmap 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "intervallum 1.3.0 (git+https://github.com/MathiasLengler/intervallum)",
  "itertools 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -836,6 +845,7 @@ dependencies = [
  "rand 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "rayon 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.101 (registry+https://github.com/rust-lang/crates.io-index)",
+ "typenum 1.11.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -904,6 +914,11 @@ dependencies = [
 [[package]]
 name = "trilean"
 version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "typenum"
+version = "1.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -1115,6 +1130,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum flame 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "1fc2706461e1ee94f55cab2ed2e3d34ae9536cfa830358ef80acff1a3dacab30"
 "checksum flamer 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "36b732da54fd4ea34452f2431cf464ac7be94ca4b339c9cd3d3d12eb06fe7aab"
 "checksum gcollections 1.4.0 (git+https://github.com/MathiasLengler/gcollections)" = "<none>"
+"checksum generic-array 0.13.2 (registry+https://github.com/rust-lang/crates.io-index)" = "0ed1e761351b56f54eb9dcd0cfaca9fd0daecf93918e1cfc01c8a3d26ee7adcd"
 "checksum getrandom 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)" = "473a1265acc8ff1e808cd0a1af8cee3c2ee5200916058a2ca113c29f2d903571"
 "checksum heck 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "20564e78d53d2bb135c343b3f47714a56af2061f1c928fdb541dc7b9fdd94205"
 "checksum indexmap 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "a61202fbe46c4a951e9404a720a0180bcf3212c750d735cb5c4ba4dc551299f3"
@@ -1174,6 +1190,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum thread-id 3.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "c7fbf4c9d56b320106cd64fd024dadfa0be7cb4706725fc44a7d7ce952d820c1"
 "checksum tinytemplate 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)" = "4574b75faccaacddb9b284faecdf0b544b80b6b294f3d062d325c5726a209c20"
 "checksum trilean 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)" = "75545c04b8a3674dff403d19d21a26e4d50958a6b417a75d50a724872ac59dd9"
+"checksum typenum 1.11.2 (registry+https://github.com/rust-lang/crates.io-index)" = "6d2783fe2d6b8c1101136184eb41be8b1ad379e4657050b8aaff0c79ee7575f9"
 "checksum unicode-segmentation 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "1967f4cdfc355b37fd76d2a954fb2ed3871034eb4f26d60537d88795cfc332a9"
 "checksum unicode-width 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "7007dbd421b92cc6e28410fe7362e2e0a2503394908f417b68ec8d1c364c4e20"
 "checksum unicode-xid 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "826e7639553986605ec5979c7dd957c7895e93eabed50ab2ffa7f6128a75097c"

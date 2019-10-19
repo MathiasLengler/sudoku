@@ -211,3 +211,27 @@ impl Display for Cell {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bitvec::vec::BitVec;
+    use generic_array::{ArrayLength, GenericArray};
+    use std::ops::Div;
+    use typenum::{Pow, U2};
+
+    #[test]
+    fn test_cell_size() {
+        #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
+        pub enum TestCell<N: ArrayLength<u8>> {
+            Value(NonZeroU8),
+            Candidates(GenericArray<u8, Pow<N, U2>>),
+        }
+
+        struct Foo<T, N: ArrayLength<T>> {
+            data: GenericArray<T, N>,
+        }
+
+        assert_eq!(std::mem::size_of::<Foo<u8, U2>>(), 0);
+    }
+}
