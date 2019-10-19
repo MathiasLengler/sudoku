@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use crate::cell::SudokuCell;
 use crate::grid::Grid;
 
-#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
+#[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub struct GridHistory<Cell: SudokuCell> {
     records: VecDeque<Grid<Cell>>,
 }

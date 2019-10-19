@@ -8,19 +8,20 @@ use failure::ensure;
 use fixedbitset::FixedBitSet;
 use itertools::Itertools;
 
-use crate::cell::view::CellView;
+use crate::cell::view::{CellView, c};
 use crate::cell::SudokuCell;
 use crate::error::{Error, Result};
 use crate::grid::parser::{from_givens_grid, from_givens_line};
 use crate::position::Position;
+use ndarray::{Array2, Axis};
 
 mod parser;
 
-#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
+#[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub struct Grid<Cell: SudokuCell> {
     base: usize,
     // TODO: replace with ndarray
-    cells: Vec<Cell>,
+    cells: Array2<Cell>,
     fixed_cells: FixedBitSet,
 }
 
@@ -139,19 +140,19 @@ impl<Cell: SudokuCell> Grid<Cell> {
     }
 
     fn new_with_cells(base: usize, cells: Vec<Cell>) -> Self {
+        let side_length = Self::base_to_side_length(base);
+
         Grid {
             base,
             fixed_cells: Default::default(),
-            cells,
+            cells: Array2::from_shape_vec((side_length, side_length), cells).unwrap(),
         }
     }
 
     pub(super) fn get(&self, pos: Position) -> &Cell {
         self.assert_position(pos);
 
-        let index = self.index_at(pos);
-
-        &self.cells[index]
+        &self.cells[pos.index_tuple()]
     }
 
     fn get_mut(&mut self, pos: Position) -> &mut Cell {
@@ -165,7 +166,7 @@ impl<Cell: SudokuCell> Grid<Cell> {
             pos
         );
 
-        &mut self.cells[index]
+        &mut self.cells[pos.index_tuple()]
     }
 
     pub fn fix_all_values(&mut self) {
@@ -248,6 +249,9 @@ impl<Cell: SudokuCell> Grid<Cell> {
     }
 }
 
+// TODO: rewrite with ndarray slice
+// TODO: zip position + cell
+
 /// Cell iterators
 impl<Cell: SudokuCell> Grid<Cell> {
     fn positions_to_cells(
@@ -284,6 +288,7 @@ impl<Cell: SudokuCell> Grid<Cell> {
         self.positions_to_cells(self.block_positions(pos))
     }
 
+    // TODO: exact chunks
     pub fn all_block_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell>> {
         self.nested_positions_to_nested_cells(self.all_block_positions())
     }
@@ -447,9 +452,9 @@ impl<Cell: SudokuCell> Display for Grid<Cell> {
 
         let output_string = self
             .cells
-            .chunks(self.side_length())
+            .genrows().into_iter()
             .map(|row| {
-                row.chunks(self.base())
+                row.axis_chunks_iter(Axis(0), self.base())
                     .map(|block_row| {
                         block_row
                             .iter()

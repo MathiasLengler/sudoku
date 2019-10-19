@@ -17,7 +17,7 @@ use crate::solver::strategic::{
     Solver as StrategicSolver,
 };
 
-#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
+#[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub struct Sudoku<Cell: SudokuCell> {
     grid: Grid<Cell>,
     solved_grid: Option<Grid<Cell>>,

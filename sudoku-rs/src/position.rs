@@ -11,6 +11,13 @@ pub struct Position {
     pub column: usize,
 }
 
+impl Position {
+    pub fn index_tuple(&self) -> (usize, usize) {
+        let &Position { row, column } = self;
+        (row, column)
+    }
+}
+
 impl Display for Position {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "r{}c{}", self.row, self.column)
