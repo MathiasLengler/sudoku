@@ -2,20 +2,16 @@ use std::cmp::Eq;
 use std::convert::TryInto;
 use std::fmt::{self, Debug, Display, Formatter};
 use std::hash::Hash;
-use std::mem::{align_of, replace, size_of, swap};
+use std::mem::replace;
 use std::num::NonZeroU8;
-use std::ops::*;
 
 use bitvec::prelude::*;
-use failure::_core::intrinsics::write_bytes;
-use fixedbitset::FixedBitSet;
-use generic_array::{ArrayLength, GenericArray};
-use typenum::{assert_type, bit::B1, consts::*, op, Prod, Quot, Sub1, Sum, Unsigned};
+use generic_array::GenericArray;
+use typenum::Unsigned;
 
 use sudoku_base::SudokuBase;
 
 use crate::cell::view::CellView;
-use crate::cell::SudokuCell;
 
 use super::sudoku_base;
 
@@ -310,7 +306,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::cell::Cell as OldCell;
+    use std::mem::size_of;
+
+    use typenum::consts::*;
 
     use super::*;
 
@@ -353,29 +351,11 @@ mod tests {
     }
 
     #[test]
-    fn test_compact_cell_size() {
-        type Base = U3;
-        dbg!(size_of::<CellState<Base>>());
-        dbg!(align_of::<CellState<Base>>());
-        dbg!(size_of::<[CellState<Base>; 2]>());
-        dbg!(size_of::<OldCell>());
-        dbg!(size_of::<FixedBitSet>());
-        dbg!(size_of::<Vec<u32>>());
-        dbg!(size_of::<usize>());
-
-        const TRANSMUTE_SIZE: usize = 3;
-
-        //        let cell = CompactCell::<Base>::Value(NonZeroU8::new(255).unwrap());
-        //        println!("{:02X?}", unsafe {
-        //            std::mem::transmute::<_, [u8; TRANSMUTE_SIZE]>(cell)
-        //        });
-        //        let cell = CompactCell::<Base>::FixedValue(NonZeroU8::new(0xab).unwrap());
-        //        println!("{:02X?}", unsafe {
-        //            std::mem::transmute::<_, [u8; TRANSMUTE_SIZE]>(cell)
-        //        });
-        //        let cell = CompactCell::<Base>::Candidates([0b1010_0101; 2].into());
-        //        println!("{:02X?}", unsafe {
-        //            std::mem::transmute::<_, [u8; TRANSMUTE_SIZE]>(cell)
-        //        });
+    fn test_cell_state_size() {
+        assert_eq!(size_of::<CellState<U1>>(), 2);
+        assert_eq!(size_of::<CellState<U2>>(), 2);
+        assert_eq!(size_of::<CellState<U3>>(), 3);
+        assert_eq!(size_of::<CellState<U4>>(), 3);
+        assert_eq!(size_of::<CellState<U5>>(), 5);
     }
 }

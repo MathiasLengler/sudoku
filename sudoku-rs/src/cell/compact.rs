@@ -1,22 +1,9 @@
-use std::cmp::Eq;
-use std::convert::TryInto;
 use std::fmt::{self, Debug, Display, Formatter};
-use std::hash::Hash;
-use std::mem::{align_of, replace, size_of, swap};
-use std::num::NonZeroU8;
-use std::ops::*;
-
-use bitvec::prelude::*;
-use failure::_core::intrinsics::write_bytes;
-use fixedbitset::FixedBitSet;
-use generic_array::{ArrayLength, GenericArray};
-use typenum::{assert_type, bit::B1, consts::*, op, Prod, Quot, Sub1, Sum, Unsigned};
 
 use cell_state::CellState;
 use sudoku_base::SudokuBase;
 
 use crate::cell::view::CellView;
-use crate::cell::SudokuCell;
 
 mod cell_state;
 pub mod sudoku_base;

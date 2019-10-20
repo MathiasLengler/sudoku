@@ -1,4 +1,9 @@
-use super::*;
+use std::fmt::Debug;
+use std::hash::Hash;
+use std::ops::*;
+
+use generic_array::ArrayLength;
+use typenum::{bit::B1, consts::*, Prod, Quot, Sub1, Sum};
 
 type DivCeil<A, B> = Quot<Sub1<Sum<A, B>>, B>;
 // (A + B - 1) / B;
@@ -47,6 +52,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use typenum::Unsigned;
+
     use super::*;
 
     #[test]
