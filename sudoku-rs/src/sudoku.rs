@@ -17,6 +17,13 @@ use crate::solver::strategic::{
     Solver as StrategicSolver,
 };
 
+// TODO: allow runtime update of base
+//  <Base: SudokuBase> needs to be erased
+//  Grid as a trait object?
+//   Grid trait should not have generic parameters
+//  hardcoded Grid instances?
+//   how to interact with them dynamically?
+//    enum for runtime decision?
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub struct Sudoku<Cell: SudokuCell> {
     grid: Grid<Cell>,

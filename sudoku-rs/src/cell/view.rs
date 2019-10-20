@@ -7,12 +7,18 @@ use serde::{Deserialize, Serialize};
 use crate::cell::SudokuCell;
 use crate::error::{Error, Result};
 
+// TODO: usize -> u8
+// TODO: remove max parameters
 #[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "kind")]
 pub enum CellView {
-    Value { value: usize },
-    Candidates { candidates: Vec<usize> },
+    Value {
+        value: usize, // TODO: fixed: bool
+    },
+    Candidates {
+        candidates: Vec<usize>,
+    },
 }
 
 impl CellView {

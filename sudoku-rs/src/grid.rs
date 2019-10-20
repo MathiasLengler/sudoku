@@ -7,21 +7,25 @@ use failure::ensure;
 // TODO: replace with bitvec
 use fixedbitset::FixedBitSet;
 use itertools::Itertools;
+use ndarray::{Array2, Axis};
 
-use crate::cell::view::{CellView, c};
+use crate::cell::view::CellView;
 use crate::cell::SudokuCell;
 use crate::error::{Error, Result};
 use crate::grid::parser::{from_givens_grid, from_givens_line};
 use crate::position::Position;
-use ndarray::{Array2, Axis};
 
 mod parser;
 
+// TODO: update:
+//  Grid<Base: SudokuBase> {
+//      cells: Array2<CompactCell<Base>>
+//  }
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub struct Grid<Cell: SudokuCell> {
     base: usize,
-    // TODO: replace with ndarray
     cells: Array2<Cell>,
+    // TODO: move into value of cell
     fixed_cells: FixedBitSet,
 }
 
@@ -251,6 +255,7 @@ impl<Cell: SudokuCell> Grid<Cell> {
 
 // TODO: rewrite with ndarray slice
 // TODO: zip position + cell
+//  => impl Iterator<Item = &mut Cell>
 
 /// Cell iterators
 impl<Cell: SudokuCell> Grid<Cell> {
@@ -452,7 +457,8 @@ impl<Cell: SudokuCell> Display for Grid<Cell> {
 
         let output_string = self
             .cells
-            .genrows().into_iter()
+            .genrows()
+            .into_iter()
             .map(|row| {
                 row.axis_chunks_iter(Axis(0), self.base())
                     .map(|block_row| {
