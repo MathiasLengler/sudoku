@@ -25,6 +25,7 @@ mod parser;
 pub struct Grid<Cell: SudokuCell> {
     base: usize,
     cells: Array2<Cell>,
+    //        cells: Array2<Cell<Base>>,
     // TODO: move into value of cell
     fixed_cells: FixedBitSet,
 }

@@ -8,34 +8,31 @@ use num::{cast, ToPrimitive};
 
 use crate::cell::view::CellView;
 
-mod compact;
+pub mod compact;
 pub mod view;
+
+//pub use compact::sudoku_base::SudokuBase;
+//pub use compact::Cell;
 
 // TODO: set_candidates_bit_set optimization
 //  assert len
 pub trait SudokuCell: Clone + Display + Debug + Ord + Eq + Hash + Send {
-    /// Constructs new empty cell (empty candidates and no value)
     fn new(max: usize) -> Self;
-    /// Constructs a new cell with a set value
     fn new_with_value(value: usize, max: usize) -> Self;
-    /// Constructs a new cell with the provided candidates
     fn new_with_candidates<I>(candidates: I, max: usize) -> Self
     where
         I: IntoIterator<Item = usize>;
 
     fn view(&self) -> CellView;
 
-    /// Value if any.
     fn value(&self) -> Option<usize>;
 
-    /// Candidates if any
     fn candidates(&self) -> Option<Vec<usize>>;
 
     fn delete(&mut self, max: usize) -> Self;
 
     fn set_value(&mut self, value: usize, max: usize);
 
-    /// Returns true if a new value has been set.
     fn set_or_toggle_value(&mut self, value: usize, max: usize) -> bool;
     fn set_candidates<I>(&mut self, candidates: I, max: usize)
     where
