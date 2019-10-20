@@ -1,7 +1,8 @@
 use std::cmp::Eq;
+use std::convert::TryInto;
 use std::fmt::{self, Debug, Display, Formatter};
 use std::hash::Hash;
-use std::mem::{align_of, size_of};
+use std::mem::{align_of, replace, size_of, swap};
 use std::num::NonZeroU8;
 use std::ops::*;
 
@@ -18,7 +19,6 @@ use crate::cell::SudokuCell;
 
 mod sudoku_base;
 
-// TODO: Copy?
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 pub enum Cell<Base: SudokuBase> {
     Value(NonZeroU8),
@@ -28,7 +28,7 @@ pub enum Cell<Base: SudokuBase> {
 
 impl<Base: SudokuBase> Cell<Base> {
     fn new() -> Self {
-        Self::new_with_candidates(std::iter::empty())
+        Self::with_candidates(std::iter::empty())
     }
 
     fn with_value(value: u8, fixed: bool) -> Self {
@@ -44,7 +44,7 @@ impl<Base: SudokuBase> Cell<Base> {
         }
     }
 
-    fn new_with_candidates<I>(candidates: I) -> Self
+    fn with_candidates<I>(candidates: I) -> Self
     where
         I: IntoIterator<Item = u8>,
     {
@@ -52,57 +52,196 @@ impl<Base: SudokuBase> Cell<Base> {
     }
 
     fn view(&self) -> CellView {
-        unimplemented!()
+        // TODO: remove extra conversions
+        match self {
+            Cell::Value(value) => CellView::Value {
+                // TODO: fixed
+                value: Self::export_value(*value).into(),
+            },
+            Cell::FixedValue(value) => CellView::Value {
+                // TODO: fixed
+                value: Self::export_value(*value).into(),
+            },
+            Cell::Candidates(candidates) => CellView::Candidates {
+                candidates: Self::export_candidates(candidates)
+                    .into_iter()
+                    .map(Into::into)
+                    .collect(),
+            },
+        }
+    }
+    fn is_value(&self) -> bool {
+        match self {
+            Cell::Value(_) => true,
+            Cell::FixedValue(_) => true,
+            Cell::Candidates(_) => false,
+        }
+    }
+    fn is_unfixed_value(&self) -> bool {
+        match self {
+            Cell::Value(_) => true,
+            Cell::FixedValue(_) => false,
+            Cell::Candidates(_) => false,
+        }
+    }
+    fn is_fixed_value(&self) -> bool {
+        match self {
+            Cell::Value(_) => false,
+            Cell::FixedValue(_) => true,
+            Cell::Candidates(_) => false,
+        }
+    }
+    fn is_candidates(&self) -> bool {
+        match self {
+            Cell::Value(_) => false,
+            Cell::FixedValue(_) => false,
+            Cell::Candidates(_) => true,
+        }
+    }
+
+    fn fix(&mut self) {
+        replace(
+            self,
+            match self {
+                &mut Cell::Value(value) => Cell::FixedValue(value),
+                &mut Cell::FixedValue(value) => Cell::FixedValue(value),
+                &mut Cell::Candidates(_) => panic!("Candidates can't be fixed: {}", self),
+            },
+        );
+    }
+
+    fn unfix(&mut self) {
+        replace(
+            self,
+            match &*self {
+                &Cell::Value(value) => Cell::Value(value),
+                &Cell::FixedValue(value) => Cell::Value(value),
+                Cell::Candidates(candidates) => Cell::Candidates(candidates.clone()),
+            },
+        );
     }
 
     fn value(&self) -> Option<u8> {
-        unimplemented!()
+        match self {
+            &Cell::Value(value) => Some(Self::export_value(value)),
+            &Cell::FixedValue(value) => Some(Self::export_value(value)),
+            Cell::Candidates(_) => None,
+        }
     }
 
     fn candidates(&self) -> Option<Vec<u8>> {
-        unimplemented!()
+        match self {
+            Cell::Candidates(candidates) => Some(Self::export_candidates(candidates)),
+            _ => None,
+        }
     }
 
     fn delete(&mut self) -> Self {
-        unimplemented!()
+        self.assert_unfixed();
+
+        replace(self, Self::new())
     }
 
     fn set_value(&mut self, value: u8) {
-        unimplemented!()
+        self.assert_unfixed();
+
+        replace(self, Self::with_value(value, false));
     }
 
     fn set_or_toggle_value(&mut self, value: u8) -> bool {
-        unimplemented!()
+        self.assert_unfixed();
+
+        match self {
+            Cell::Value(current_value) => {
+                if Self::export_value(*current_value) == value {
+                    self.delete();
+                    false
+                } else {
+                    self.set_value(value);
+                    true
+                }
+            }
+            Cell::Candidates(_) => {
+                self.set_value(value);
+                true
+            }
+            _ => unreachable!(),
+        }
     }
 
     fn set_candidates<I>(&mut self, candidates: I)
     where
         I: IntoIterator<Item = u8>,
     {
+        self.assert_unfixed();
+
+        replace(self, Self::with_candidates(candidates));
     }
 
     fn toggle_candidate(&mut self, candidate: u8) {
-        unimplemented!()
+        self.assert_unfixed();
+
+        let imported_candidate = Self::import_candidate(candidate);
+
+        match self {
+            Cell::Candidates(candidates) => {
+                let bs = Self::candidates_as_mut_bitslice(candidates);
+
+                bs.set(imported_candidate, !bs[imported_candidate]);
+            }
+            Cell::Value(_) => {
+                replace(self, Self::with_candidates(std::iter::once(candidate)));
+            }
+            _ => unreachable!(),
+        }
     }
 
     fn delete_candidate(&mut self, candidate: u8) {
-        unimplemented!()
+        self.assert_unfixed();
+
+        let imported_candidate = Self::import_candidate(candidate);
+
+        match self {
+            Cell::Candidates(candidates) => {
+                let bs = Self::candidates_as_mut_bitslice(candidates);
+
+                bs.set(imported_candidate, false);
+            }
+            Cell::Value(_) => {}
+            _ => unreachable!(),
+        }
+    }
+}
+
+/// Private helpers
+impl<Base: SudokuBase> Cell<Base> {
+    fn assert_unfixed(&self) {
+        match self {
+            Cell::FixedValue(_) => panic!("Fixed cell can't be modified: {}", self),
+            _ => {}
+        }
     }
 }
 
 // TODO: Update trait SudokuCell and impl
 //  alternative: remove SudokuCell (leaky)
 
-impl<Base> Cell<Base>
-where
-    Base: SudokuBase,
-{
+/// Conversion Helpers
+impl<Base: SudokuBase> Cell<Base> {
+    fn candidates_as_bitslice(candidates: &[u8]) -> &BitSlice<LittleEndian> {
+        candidates.as_bitslice::<LittleEndian>()
+    }
+
+    fn candidates_as_mut_bitslice(candidates: &mut [u8]) -> &mut BitSlice<LittleEndian> {
+        candidates.as_mut_bitslice::<LittleEndian>()
+    }
+
     fn import_candidates<I: IntoIterator<Item = u8>>(
         candidates: I,
     ) -> GenericArray<u8, Base::CandidatesCapacity> {
         let mut arr = GenericArray::<u8, Base::CandidatesCapacity>::default();
 
-        let bs = arr.as_mut_bitslice::<LittleEndian>();
+        let bs = Self::candidates_as_mut_bitslice(&mut arr);
 
         for candidate in candidates {
             bs.set(Self::import_candidate(candidate), true);
@@ -128,10 +267,28 @@ where
         value
     }
 
-    // TODO:
-    //  export_value
-    //  export_candidates
-    //  export_candidate
+    fn export_value(value: NonZeroU8) -> u8 {
+        value.get()
+    }
+
+    fn export_candidates(candidates: &[u8]) -> Vec<u8> {
+        let bs = Self::candidates_as_bitslice(candidates);
+
+        bs.iter()
+            .enumerate()
+            .filter_map(|(i, is_set)| {
+                if is_set {
+                    Some(Self::export_candidate(i))
+                } else {
+                    None
+                }
+            })
+            .collect()
+    }
+
+    fn export_candidate(candidate: usize) -> u8 {
+        (candidate + 1).try_into().unwrap()
+    }
 }
 
 impl<Base> Display for Cell<Base>

@@ -166,7 +166,7 @@ impl<Cell: SudokuCell> Grid<Cell> {
 
         assert!(
             !self.fixed_cells[index],
-            "Frozen cell at {} can't be modified",
+            "Fixed cell at {} can't be modified",
             pos
         );
 
