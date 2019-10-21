@@ -27,7 +27,7 @@ pub fn run() -> Result<(), JsValue> {
 
 #[wasm_bindgen]
 pub fn get_wasm_sudoku() -> WasmSudoku {
-    let mut grid = sudoku::samples::minimal(3);
+    let mut grid: Grid<U3> = sudoku::samples::minimal();
 
     WasmSudoku {
         sudoku: RefCell::new(DynamicSudoku::with_sudoku(Sudoku::with_grid(grid))),
