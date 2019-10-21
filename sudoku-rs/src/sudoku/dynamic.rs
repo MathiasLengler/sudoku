@@ -1,5 +1,4 @@
 use std::any::{Any, TypeId};
-use std::ops::Deref;
 
 use typenum::consts::*;
 
@@ -10,8 +9,6 @@ use DynamicSudoku::*;
 use crate::base::SudokuBase;
 use crate::error::Result;
 use crate::generator::backtracking::RuntimeSettings as GeneratorSettings;
-use crate::grid::Grid;
-use crate::position::Position;
 use crate::sudoku::Sudoku;
 
 // TODO: use enum_dispatch to impl Game for DynamicSudoku
@@ -42,6 +39,7 @@ mod game {
 
     /// A game of Sudoku which is able to change the size of the board at runtime.
     #[enum_dispatch(Game)]
+    #[derive(Eq, PartialEq, Hash, Clone, Debug)]
     pub enum DynamicSudoku {
         Base2(Sudoku<U2>),
         Base3(Sudoku<U3>),
@@ -69,15 +67,15 @@ impl DynamicSudoku {
             id if id == TypeId::of::<U3>() => Base3(*(any_sudoku.downcast().unwrap())),
             id if id == TypeId::of::<U4>() => Base4(*(any_sudoku.downcast().unwrap())),
             id if id == TypeId::of::<U5>() => Base5(*(any_sudoku.downcast().unwrap())),
-            unexpected_base => Self::bail_unexpected_base(Base::to_u8()),
+            _ => Self::bail_unexpected_base(Base::to_u8()),
         }
     }
 
-    pub fn generate(&mut self, generator_settings: GeneratorSettings) -> Result<()> {
+    pub fn generate(&mut self, _generator_settings: GeneratorSettings) -> Result<()> {
         // TODO: match generator_settings.base and use generic generator
         unimplemented!()
     }
-    pub fn import(&mut self, input: &str) -> Result<()> {
+    pub fn import(&mut self, _input: &str) -> Result<()> {
         // TODO: use split up parser to infer base from Vec<CellView>
         unimplemented!()
     }

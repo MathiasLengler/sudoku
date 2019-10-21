@@ -117,8 +117,6 @@ impl Generator {
 mod tests {
     use typenum::consts::*;
 
-    use crate::cell::Cell;
-
     use super::*;
 
     fn is_minimal<Base: SudokuBase>(grid: &Grid<Base>) -> bool {

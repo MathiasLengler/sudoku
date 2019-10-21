@@ -45,8 +45,6 @@ pub(crate) fn from_candidates<Base: SudokuBase>(input: &str) -> Result<Grid<Base
 mod tests {
     use typenum::consts::*;
 
-    use crate::cell::Cell;
-
     use super::*;
 
     #[test]

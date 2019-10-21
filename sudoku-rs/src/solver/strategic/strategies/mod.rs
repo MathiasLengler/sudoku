@@ -24,7 +24,6 @@ pub use group_reduction::GroupReduction;
 pub use single_candidate::SingleCandidate;
 
 use crate::base::SudokuBase;
-use crate::cell::SudokuCell;
 use crate::grid::Grid;
 use crate::position::Position;
 

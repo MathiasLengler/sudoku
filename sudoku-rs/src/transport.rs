@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::base::SudokuBase;
-use crate::cell::{view::CellView, SudokuCell};
+use crate::cell::view::CellView;
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::sudoku::DynamicSudoku;
@@ -75,14 +75,4 @@ pub struct TransportCell {
     cell_view: CellView,
     position: Position,
     incorrect_value: bool,
-}
-
-impl TransportCell {
-    fn new(cell_view: CellView, position: Position, incorrect_value: bool) -> Self {
-        Self {
-            cell_view,
-            position,
-            incorrect_value,
-        }
-    }
 }

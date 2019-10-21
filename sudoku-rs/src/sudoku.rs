@@ -6,9 +6,7 @@ use failure::format_err;
 pub use dynamic::{DynamicSudoku, Game};
 
 use crate::base::SudokuBase;
-use crate::cell::SudokuCell;
 use crate::error::Result;
-use crate::generator::backtracking::RuntimeSettings as GeneratorSettings;
 use crate::generator::backtracking::{Generator, Target};
 use crate::grid::Grid;
 use crate::history::History;
@@ -175,7 +173,7 @@ impl<Base: SudokuBase> Sudoku<Base> {
 
 impl<Base: SudokuBase> Display for Sudoku<Base> {
     // TODO: show history and settings
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.grid)
     }
 }

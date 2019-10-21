@@ -216,8 +216,6 @@ mod tests {
 
     use typenum::consts::*;
 
-    use crate::cell::Cell;
-
     use super::*;
 
     // Input space (
@@ -241,7 +239,7 @@ mod tests {
         assert!(sudoku.is_solved());
     }
 
-    fn assert_iter<Base: SudokuBase>(solver: Solver<Base>) {
+    fn assert_iter<Base: SudokuBase>(solver: Solver<'_, Base>) {
         const NUMBER_OF_2X2_SOLUTIONS: usize = 288;
 
         let solutions = solver.collect::<Vec<_>>();

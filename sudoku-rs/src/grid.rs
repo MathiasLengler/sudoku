@@ -13,34 +13,11 @@ use typenum::Unsigned;
 use crate::base::SudokuBase;
 use crate::cell::view::CellView;
 use crate::cell::Cell;
-use crate::cell::SudokuCell;
 use crate::error::{Error, Result};
 use crate::grid::parser::{from_givens_grid, from_givens_line};
 use crate::position::Position;
 
 mod parser;
-
-//use static_assertions as sa;
-//sa::assert_obj_safe!(SudokuGrid);
-
-// TODO: decide if this abstraction is useful
-trait SudokuGrid {
-    type Cell: SudokuCell;
-
-    // Dimensions
-    fn base() -> u8;
-    fn side_length() -> u8;
-    fn max_value() -> u8 {
-        Self::side_length()
-    }
-    fn cell_count() -> usize;
-
-    // Cell accessors
-    fn get(&self, pos: Position) -> &Self::Cell;
-    fn get_mut(&mut self, pos: Position) -> &mut Self::Cell;
-
-    // Helper
-}
 
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub struct Grid<Base: SudokuBase> {
@@ -161,10 +138,6 @@ impl<Base: SudokuBase> Grid<Base> {
         }
     }
 
-    fn index_at(&self, pos: Position) -> usize {
-        usize::from(pos.column) + usize::from(pos.row) * usize::from(Self::side_length())
-    }
-
     #[allow(dead_code)]
     pub(super) fn value_range(&self) -> impl Iterator<Item = u8> {
         (1..=Self::side_length())
@@ -197,18 +170,12 @@ impl<Base: SudokuBase> Grid<Base> {
         Base::MaxValue::to_usize()
     }
 
-    fn base_to_side_length(base: usize) -> usize {
-        base.pow(2)
-    }
-
-    fn base_to_max_value(base: usize) -> usize {
-        Self::base_to_side_length(base)
-    }
-
     fn base_to_cell_count(base: usize) -> usize {
         base.pow(4)
     }
 
+    // TODO: use detection in import
+    #[allow(dead_code)]
     fn cell_count_to_base(cell_count: usize) -> Result<usize> {
         let approx_base = (cell_count as f64).sqrt().sqrt().round() as usize;
 
@@ -415,7 +382,7 @@ impl<Base: SudokuBase> TryFrom<&str> for Grid<Base> {
 impl<Base: SudokuBase> Display for Grid<Base> {
     // TODO: implement using prettytable-rs
     // TODO: show candidates (compare with exchange formats)
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         const PADDING: usize = 3;
 
         let horizontal_block_separator =
@@ -454,7 +421,6 @@ impl<Base: SudokuBase> Display for Grid<Base> {
 mod tests {
     use typenum::consts::*;
 
-    use crate::cell::Cell;
     use crate::samples;
 
     use super::*;

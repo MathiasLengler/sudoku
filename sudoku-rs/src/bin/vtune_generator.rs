@@ -6,9 +6,8 @@ use std::fs::File;
 
 use typenum::U2;
 
-use sudoku::cell::Cell;
 use sudoku::error::Result;
-use sudoku::generator::backtracking::{Generator, RuntimeSettings, Target};
+use sudoku::generator::backtracking::{Generator, Target};
 
 // add in lib
 // #[cfg_attr(feature = "flame_it", flame)]
