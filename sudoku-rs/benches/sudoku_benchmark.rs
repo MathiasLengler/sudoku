@@ -1,11 +1,12 @@
 #[macro_use]
 extern crate criterion;
 
-use criterion::Criterion;
+use criterion::measurement::WallTime;
 use criterion::{BatchSize, BenchmarkId};
+use criterion::{BenchmarkGroup, Criterion};
 
-use sudoku::cell::Cell;
-use sudoku::generator::backtracking::{Generator, Settings, Target};
+use sudoku::cell::{Cell, SudokuBase};
+use sudoku::generator::backtracking::{Generator, RuntimeSettings, Target};
 use sudoku::grid::Grid;
 use sudoku::position::Position;
 use sudoku::samples::{base_2, base_3};
@@ -19,30 +20,32 @@ fn sample_grid(base: usize) -> Grid<Cell> {
     }
 }
 
-fn criterion_benchmark(c: &mut Criterion) {
-    let mut generator_group = c.benchmark_group("Generator");
+fn bench_generator_group<Base: SudokuBase>(generator_group: &mut BenchmarkGroup<WallTime>) {
+    let base = Base::to_u8();
 
-    //    generator_group.sample_size(10);
+    for target in &[Target::Minimal, Target::Filled] {
+        let parameter_string = format!("Base={} Target={:?}", base, target);
+        let generator = Generator::with_target(RuntimeSettings {
+            base: *base,
+            target: *target,
+        });
 
-    for base in &[2] {
-        for target in &[Target::Minimal, Target::Filled] {
-            let parameter_string = format!("Base={} Target={:?}", base, target);
-            let generator = Generator::new(Settings {
-                base: *base,
-                target: Target::Minimal,
-            });
-
-            generator_group.bench_with_input(
-                BenchmarkId::new("generate", parameter_string),
-                &generator,
-                |b, generator| {
-                    b.iter(|| {
-                        generator.generate::<Cell>().unwrap();
-                    })
-                },
-            );
-        }
+        generator_group.bench_with_input(
+            BenchmarkId::new("generate", parameter_string),
+            &generator,
+            |b, generator| {
+                b.iter(|| {
+                    generator.generate::<Base>().unwrap();
+                })
+            },
+        );
     }
+}
+
+fn criterion_benchmark(c: &mut Criterion) {
+    let mut generator_group: BenchmarkGroup<WallTime> = c.benchmark_group("Generator");
+    //    generator_group.sample_size(10);
+    bench_generator_group::<U2>(&mut generator_group);
     generator_group.finish();
 
     let mut solver_group = c.benchmark_group("Solver");

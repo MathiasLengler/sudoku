@@ -1,3 +1,4 @@
+use std::convert::TryInto;
 use std::mem::replace;
 
 use gcollections::ops::*;
@@ -13,7 +14,7 @@ use pcp::variable::ops::*;
 
 use pcp_utils::{boxed_one_solution_engine_interval, FDSpace, VStore};
 
-use crate::cell::SudokuCell;
+use crate::cell::SudokuBase;
 use crate::grid::Grid;
 use crate::position::Position;
 
@@ -22,8 +23,8 @@ pub(super) mod pcp_utils;
 // TODO: compare perf with python Z3 implementation
 
 #[allow(missing_debug_implementations)]
-pub struct Solver<'s, Cell: SudokuCell> {
-    grid: &'s mut Grid<Cell>,
+pub struct Solver<'s, Base: SudokuBase> {
+    grid: &'s mut Grid<Base>,
 
     variable_positions: Vec<Position>,
 
@@ -32,8 +33,8 @@ pub struct Solver<'s, Cell: SudokuCell> {
     space: FDSpace,
 }
 
-impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
-    pub fn new(grid: &'s mut Grid<Cell>) -> Solver<'s, Cell> {
+impl<'s, Base: SudokuBase> Solver<'s, Base> {
+    pub fn new(grid: &'s mut Grid<Base>) -> Solver<'s, Base> {
         grid.fix_all_values();
         grid.set_all_direct_candidates();
 
@@ -51,11 +52,11 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
         }
     }
 
-    fn constrain(grid: &Grid<Cell>) -> (FDSpace, Vec<Position>) {
+    fn constrain(grid: &Grid<Base>) -> (FDSpace, Vec<Position>) {
         // TODO: constrain all cells, not only the candidates
         //  simpler constraints could be faster
 
-        let max_value = grid.max_value() as i32;
+        let max_value = Grid::<Base>::max_value() as i32;
 
         let mut space = FDSpace::empty();
 
@@ -75,7 +76,7 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
         // Variables must be one of the given candidates
         for (variable, candidates) in pos_to_variable_and_candidates.values() {
             for candidate in 1..=max_value {
-                if !candidates.contains(&(candidate as usize)) {
+                if !candidates.contains(&(candidate as u8)) {
                     space.cstore.alloc(Box::new(XNeqY::new(
                         variable.bclone(),
                         Box::new(Constant::new(candidate)),
@@ -125,7 +126,7 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
 
                     assert_eq!(lower, upper);
 
-                    self.grid.set_value(*pos, lower as usize);
+                    self.grid.get_mut(*pos).set_value(lower.try_into().unwrap());
                 }
 
                 true
@@ -145,7 +146,7 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
 fn constrain_groups(
     groups: impl Iterator<Item = impl Iterator<Item = Position>>,
     space: &mut FDSpace,
-    pos_to_variable_and_candidates: &IndexMap<Position, (Var<VStore>, Vec<usize>)>,
+    pos_to_variable_and_candidates: &IndexMap<Position, (Var<VStore>, Vec<u8>)>,
 ) {
     for group in groups {
         let group_variables: Vec<_> = group

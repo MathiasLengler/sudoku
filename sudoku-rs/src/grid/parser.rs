@@ -1,11 +1,15 @@
 use std::convert::TryInto;
 
 use crate::cell::view::CellView;
-use crate::cell::SudokuCell;
+use crate::cell::SudokuBase;
 use crate::error::Result;
 use crate::grid::Grid;
 
-pub(crate) fn from_givens_line<Cell: SudokuCell>(input: &str) -> Result<Grid<Cell>> {
+// TODO: split into:
+//  &str -> Result<Vec<CellView>>
+//  Vec<CellView> -> Result<Grid<Base>> (TryFrom impl in Grid)
+
+pub(crate) fn from_givens_line<Base: SudokuBase>(input: &str) -> Result<Grid<Base>> {
     input
         .chars()
         .map(TryInto::<CellView>::try_into)
@@ -13,7 +17,7 @@ pub(crate) fn from_givens_line<Cell: SudokuCell>(input: &str) -> Result<Grid<Cel
         .try_into()
 }
 
-pub(crate) fn from_givens_grid<Cell: SudokuCell>(input: &str) -> Result<Grid<Cell>> {
+pub(crate) fn from_givens_grid<Base: SudokuBase>(input: &str) -> Result<Grid<Base>> {
     input
         .chars()
         .map(TryInto::<CellView>::try_into)
@@ -22,7 +26,7 @@ pub(crate) fn from_givens_grid<Cell: SudokuCell>(input: &str) -> Result<Grid<Cel
         .try_into()
 }
 
-pub(crate) fn from_candidates<Cell: SudokuCell>(input: &str) -> Result<Grid<Cell>> {
+pub(crate) fn from_candidates<Base: SudokuBase>(input: &str) -> Result<Grid<Base>> {
     input
         .lines()
         // Filter horizontal separator lines

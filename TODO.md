@@ -32,22 +32,12 @@
 ### Gameplay Options
 - fill direct candidates on new sudoku
 - remove direct candidates on set value (is implemented and hardcoded true)
-- highlight incorrect value
-  - Sudoku needs a solved grid
-  - add flag to TransportSudoku
-  - Model State Diagram of Sudoku
-    - Edit Mode
-    - Play Mode
+- Edit Mode
 
 ### Solver Controls
-- Solve button?
-- Solver selector
-  - Backtracking
-  - Strategic
-  - Hybrid
-- Options
-    - animation / speed
-    - select strategies
+- Solve all
+- animation / speed
+- select strategies until stuck
 
 ## Tooling
 - PWA

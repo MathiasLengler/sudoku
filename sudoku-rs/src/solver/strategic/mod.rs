@@ -1,26 +1,26 @@
 use strategies::Strategy;
 
-use crate::cell::SudokuCell;
+use crate::cell::SudokuBase;
 use crate::grid::Grid;
 use crate::position::Position;
 
 pub mod strategies;
 
 #[derive(Debug)]
-pub struct Solver<'s, Cell: SudokuCell> {
-    grid: &'s mut Grid<Cell>,
-    strategies: Vec<Box<dyn Strategy<Cell>>>,
+pub struct Solver<'s, Base: SudokuBase> {
+    grid: &'s mut Grid<Base>,
+    strategies: Vec<Box<dyn Strategy<Base>>>,
 }
 
-impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
-    pub fn new(grid: &'s mut Grid<Cell>) -> Solver<'s, Cell> {
+impl<'s, Base: SudokuBase> Solver<'s, Base> {
+    pub fn new(grid: &'s mut Grid<Base>) -> Solver<'s, Base> {
         Self::new_with_strategies(grid, strategies::all_strategies())
     }
 
     pub fn new_with_strategies(
-        grid: &'s mut Grid<Cell>,
-        strategies: Vec<Box<dyn Strategy<Cell>>>,
-    ) -> Solver<'s, Cell> {
+        grid: &'s mut Grid<Base>,
+        strategies: Vec<Box<dyn Strategy<Base>>>,
+    ) -> Solver<'s, Base> {
         Self { grid, strategies }
     }
 

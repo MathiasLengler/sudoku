@@ -8,96 +8,86 @@ use failure::ensure;
 use fixedbitset::FixedBitSet;
 use itertools::Itertools;
 use ndarray::{Array2, Axis};
+use typenum::Unsigned;
 
 use crate::cell::view::CellView;
 use crate::cell::SudokuCell;
+use crate::cell::{Cell, SudokuBase};
 use crate::error::{Error, Result};
 use crate::grid::parser::{from_givens_grid, from_givens_line};
 use crate::position::Position;
 
 mod parser;
 
-// TODO: update:
-//  Grid<Base: SudokuBase> {
-//      cells: Array2<CompactCell<Base>>
-//  }
+//use static_assertions as sa;
+//sa::assert_obj_safe!(SudokuGrid);
+
+// TODO: decide if this abstraction is useful
+trait SudokuGrid {
+    type Cell: SudokuCell;
+
+    // Dimensions
+    fn base() -> u8;
+    fn side_length() -> u8;
+    fn max_value() -> u8 {
+        Self::side_length()
+    }
+    fn cell_count() -> usize;
+
+    // Cell accessors
+    fn get(&self, pos: Position) -> &Self::Cell;
+    fn get_mut(&mut self, pos: Position) -> &mut Self::Cell;
+
+    // Helper
+}
+
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
-pub struct Grid<Cell: SudokuCell> {
-    base: usize,
-    cells: Array2<Cell>,
-    //        cells: Array2<Cell<Base>>,
-    // TODO: move into value of cell
-    fixed_cells: FixedBitSet,
+pub struct Grid<Base: SudokuBase> {
+    cells: Array2<Cell<Base>>,
 }
 
 /// Public API
-impl<Cell: SudokuCell> Grid<Cell> {
-    pub fn set_value(&mut self, pos: Position, value: usize) {
-        let max_value = self.max_value();
-
-        self.get_mut(pos).set_value(value, max_value);
-    }
-
-    /// Returns true if a new value has been set.
-    pub fn set_or_toggle_value(&mut self, pos: Position, value: usize) -> bool {
-        let max_value = self.max_value();
-
-        self.get_mut(pos).set_or_toggle_value(value, max_value)
-    }
-
-    pub fn set_candidates(&mut self, pos: Position, candidates: Vec<usize>) {
-        let max_value = self.max_value();
-
-        self.get_mut(pos).set_candidates(candidates, max_value);
-    }
-
-    pub fn toggle_candidate(&mut self, pos: Position, candidate: usize) {
-        let max_value = self.max_value();
-
-        self.get_mut(pos).toggle_candidate(candidate, max_value);
-    }
-
-    pub fn delete(&mut self, pos: Position) -> Cell {
-        let max_value = self.max_value();
-
-        self.get_mut(pos).delete(max_value)
-    }
+impl<Base: SudokuBase> Grid<Base> {
     pub fn set_all_direct_candidates(&mut self) {
         self.all_candidates_positions().into_iter().for_each(|pos| {
             let candidates = self.direct_candidates(pos);
 
-            self.set_candidates(pos, candidates);
+            self.get_mut(pos).set_candidates(candidates);
         });
     }
-    pub fn update_candidates(&mut self, pos: Position, value: usize) {
+    pub fn update_candidates(&mut self, pos: Position, value: u8) {
         if value == 0 {
             return;
         }
-
-        let max = self.max_value();
 
         self.neighbor_positions_with_duplicates(pos)
             .for_each(|pos| {
                 if self.get(pos).candidates().is_some() {
                     let cell = self.get_mut(pos);
 
-                    cell.delete_candidate(value, max);
+                    cell.delete_candidate(value);
                 }
             });
     }
-    pub fn direct_candidates(&self, pos: Position) -> Vec<usize> {
+    pub fn direct_candidates(&self, pos: Position) -> Vec<u8> {
+        // TODO: implement with bitvec (XOR?)
+        // TODO: bitslice u8 index iterator
+
         let conflicting_values: FixedBitSet = self
             .neighbor_positions_with_duplicates(pos)
-            .filter_map(|pos| self.get(pos).value())
+            .filter_map(|pos| self.get(pos).value().map(|value| value.into()))
             .collect();
 
         let values = self.value_range_bit_set();
 
-        let mut candidates = Vec::with_capacity(self.side_length());
+        let mut candidates = Vec::with_capacity(Self::side_length().into());
 
         candidates.extend(values.difference(&conflicting_values));
 
         candidates
+            .into_iter()
+            .map(|candidate| candidate.try_into().unwrap())
+            .collect()
     }
 
     #[allow(dead_code)]
@@ -119,8 +109,8 @@ impl<Cell: SudokuCell> Grid<Cell> {
     }
 
     // TODO: conflict location pairs
-    pub fn has_duplicate<'a>(&'a self, cells: impl Iterator<Item = &'a Cell>) -> bool {
-        let mut unique = HashSet::with_capacity(self.side_length());
+    pub fn has_duplicate<'a>(&'a self, cells: impl Iterator<Item = &'a Cell<Base>>) -> bool {
+        let mut unique = HashSet::with_capacity(Self::side_length() as usize);
 
         cells
             .filter_map(|cell| cell.value())
@@ -135,98 +125,75 @@ impl<Cell: SudokuCell> Grid<Cell> {
 // TODO: rethink indexing story (internal/cell position/block position)
 //  => use Index/IndexMut with custom index type:
 //     Cell, Row, Column, Block
-impl<Cell: SudokuCell> Grid<Cell> {
-    pub fn new(base: usize) -> Self {
-        let cell_count = Self::base_to_cell_count(base);
+impl<Base: SudokuBase> Grid<Base> {
+    pub fn new() -> Self {
+        let cells = vec![Cell::new(); Self::cell_count()];
 
-        let cells = vec![Cell::new(Self::base_to_max_value(base)); cell_count];
-
-        Self::new_with_cells(base, cells)
+        Self::with_cells(cells)
     }
 
-    fn new_with_cells(base: usize, cells: Vec<Cell>) -> Self {
-        let side_length = Self::base_to_side_length(base);
+    fn with_cells(cells: Vec<Cell<Base>>) -> Self {
+        assert_eq!(cells.len(), Self::cell_count());
+
+        let side_length = Self::side_length() as usize;
 
         Grid {
-            base,
-            fixed_cells: Default::default(),
             cells: Array2::from_shape_vec((side_length, side_length), cells).unwrap(),
         }
     }
 
-    pub(super) fn get(&self, pos: Position) -> &Cell {
-        self.assert_position(pos);
+    pub fn get(&self, pos: Position) -> &Cell<Base> {
+        Self::assert_position(pos);
 
         &self.cells[pos.index_tuple()]
     }
 
-    fn get_mut(&mut self, pos: Position) -> &mut Cell {
-        self.assert_position(pos);
-
-        let index = self.index_at(pos);
-
-        assert!(
-            !self.fixed_cells[index],
-            "Fixed cell at {} can't be modified",
-            pos
-        );
+    pub fn get_mut(&mut self, pos: Position) -> &mut Cell<Base> {
+        Self::assert_position(pos);
 
         &mut self.cells[pos.index_tuple()]
     }
 
     pub fn fix_all_values(&mut self) {
-        self.fixed_cells = self
-            .all_positions()
-            .filter_map(|pos| {
-                if self.get(pos).value().is_some() {
-                    Some(self.index_at(pos))
-                } else {
-                    None
-                }
-            })
-            .collect();
-    }
-
-    #[allow(dead_code)]
-    pub(super) fn unfix(&mut self) {
-        self.fixed_cells = Default::default()
-    }
-
-    pub(super) fn is_fixed(&self, pos: Position) -> bool {
-        let index = self.index_at(pos);
-
-        self.fixed_cells[index]
+        for pos in self.all_value_positions() {
+            self.get_mut(pos).fix();
+        }
     }
 
     fn index_at(&self, pos: Position) -> usize {
-        pos.column + pos.row * self.side_length()
+        usize::from(pos.column) + usize::from(pos.row) * usize::from(Self::side_length())
     }
 
     #[allow(dead_code)]
-    pub(super) fn value_range(&self) -> impl Iterator<Item = usize> {
-        (1..=self.side_length())
+    pub(super) fn value_range(&self) -> impl Iterator<Item = u8> {
+        (1..=Self::side_length())
     }
 
     pub(super) fn value_range_bit_set(&self) -> FixedBitSet {
-        let mut bit_set = FixedBitSet::with_capacity(self.side_length() + 1);
+        let mut bit_set = FixedBitSet::with_capacity((Self::side_length() + 1).into());
         bit_set.set_range(1.., true);
         bit_set
     }
-
-    pub(super) fn base(&self) -> usize {
-        self.base
+    pub fn base() -> u8 {
+        Base::to_u8()
     }
-
-    pub(super) fn side_length(&self) -> usize {
-        Self::base_to_side_length(self.base)
+    pub fn side_length() -> u8 {
+        Base::SideLength::to_u8()
     }
-
-    pub(super) fn max_value(&self) -> usize {
-        Self::base_to_max_value(self.base)
+    pub fn max_value() -> u8 {
+        Base::MaxValue::to_u8()
     }
-
-    pub(super) fn cell_count(&self) -> usize {
-        Self::base_to_cell_count(self.base)
+    pub fn cell_count() -> usize {
+        Base::CellCount::to_usize()
+    }
+    pub fn base_usize() -> usize {
+        Base::to_usize()
+    }
+    pub fn side_length_usize() -> usize {
+        Base::SideLength::to_usize()
+    }
+    pub fn max_value_usize() -> usize {
+        Base::MaxValue::to_usize()
     }
 
     fn base_to_side_length(base: usize) -> usize {
@@ -259,83 +226,83 @@ impl<Cell: SudokuCell> Grid<Cell> {
 //  => impl Iterator<Item = &mut Cell>
 
 /// Cell iterators
-impl<Cell: SudokuCell> Grid<Cell> {
+impl<Base: SudokuBase> Grid<Base> {
     fn positions_to_cells(
         &self,
         positions: impl Iterator<Item = Position>,
-    ) -> impl Iterator<Item = &Cell> {
+    ) -> impl Iterator<Item = &Cell<Base>> {
         positions.map(move |pos| self.get(pos))
     }
 
     fn nested_positions_to_nested_cells(
         &self,
         nested_positions: impl Iterator<Item = impl Iterator<Item = Position>>,
-    ) -> impl Iterator<Item = impl Iterator<Item = &Cell>> {
+    ) -> impl Iterator<Item = impl Iterator<Item = &Cell<Base>>> {
         nested_positions.map(move |row_pos| row_pos.map(move |pos| self.get(pos)))
     }
 
-    pub fn row_cells(&self, row: usize) -> impl Iterator<Item = &Cell> {
+    pub fn row_cells(&self, row: u8) -> impl Iterator<Item = &Cell<Base>> {
         self.positions_to_cells(self.row_positions(row))
     }
 
-    pub fn all_row_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell>> {
+    pub fn all_row_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell<Base>>> {
         self.nested_positions_to_nested_cells(self.all_row_positions())
     }
 
-    pub fn column_cells(&self, column: usize) -> impl Iterator<Item = &Cell> {
+    pub fn column_cells(&self, column: u8) -> impl Iterator<Item = &Cell<Base>> {
         self.positions_to_cells(self.column_positions(column))
     }
 
-    pub fn all_column_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell>> {
+    pub fn all_column_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell<Base>>> {
         self.nested_positions_to_nested_cells(self.all_column_positions())
     }
 
-    pub fn block_cells(&self, pos: Position) -> impl Iterator<Item = &Cell> {
+    pub fn block_cells(&self, pos: Position) -> impl Iterator<Item = &Cell<Base>> {
         self.positions_to_cells(self.block_positions(pos))
     }
 
     // TODO: exact chunks
-    pub fn all_block_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell>> {
+    pub fn all_block_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell<Base>>> {
         self.nested_positions_to_nested_cells(self.all_block_positions())
     }
 }
 
 /// Position iterators
-impl<Cell: SudokuCell> Grid<Cell> {
+impl<Base: SudokuBase> Grid<Base> {
     pub fn all_positions(&self) -> impl Iterator<Item = Position> {
         self.all_row_positions().flatten()
     }
 
-    pub fn row_positions(&self, row: usize) -> impl Iterator<Item = Position> {
-        self.assert_coordinate(row);
+    pub fn row_positions(&self, row: u8) -> impl Iterator<Item = Position> {
+        Self::assert_coordinate(row);
 
-        (0..self.side_length()).map(move |column| Position { column, row })
+        (0..Self::side_length()).map(move |column| Position { column, row })
     }
 
     pub fn all_row_positions(&self) -> impl Iterator<Item = impl Iterator<Item = Position>> {
-        (0..self.side_length())
+        (0..Self::side_length())
             .map(move |row_index| self.row_positions(row_index))
             .collect::<Vec<_>>()
             .into_iter()
     }
 
-    pub fn column_positions(&self, column: usize) -> impl Iterator<Item = Position> {
-        self.assert_coordinate(column);
+    pub fn column_positions(&self, column: u8) -> impl Iterator<Item = Position> {
+        Self::assert_coordinate(column);
 
-        (0..self.side_length()).map(move |row| Position { column, row })
+        (0..Self::side_length()).map(move |row| Position { column, row })
     }
 
     pub fn all_column_positions(&self) -> impl Iterator<Item = impl Iterator<Item = Position>> {
-        (0..self.side_length())
+        (0..Self::side_length())
             .map(move |column| self.column_positions(column))
             .collect::<Vec<_>>()
             .into_iter()
     }
 
     pub fn block_positions(&self, pos: Position) -> impl Iterator<Item = Position> {
-        self.assert_position(pos);
+        Self::assert_position(pos);
 
-        let base = self.base;
+        let base = Self::base();
 
         let Position {
             column: base_column,
@@ -348,9 +315,9 @@ impl<Cell: SudokuCell> Grid<Cell> {
     }
 
     pub fn all_block_positions(&self) -> impl Iterator<Item = impl Iterator<Item = Position>> {
-        let all_block_base_pos = (0..self.base)
-            .flat_map(move |row| (0..self.base).map(move |column| Position { column, row }))
-            .map(move |pos| pos * self.base);
+        let all_block_base_pos = (0..Self::base())
+            .flat_map(move |row| (0..Self::base()).map(move |column| Position { column, row }))
+            .map(move |pos| pos * Self::base());
 
         all_block_base_pos
             .map(|block_base_pos| self.block_positions(block_base_pos))
@@ -360,7 +327,7 @@ impl<Cell: SudokuCell> Grid<Cell> {
 }
 
 /// Filtered position vec
-impl<Cell: SudokuCell> Grid<Cell> {
+impl<Base: SudokuBase> Grid<Base> {
     pub fn all_value_positions(&self) -> Vec<Position> {
         self.all_positions()
             .filter(|pos| self.get(*pos).value().is_some())
@@ -375,7 +342,7 @@ impl<Cell: SudokuCell> Grid<Cell> {
 }
 
 /// Neighbor iterators
-impl<Cell: SudokuCell> Grid<Cell> {
+impl<Base: SudokuBase> Grid<Base> {
     pub fn neighbor_positions_with_duplicates(
         &self,
         pos: Position,
@@ -392,18 +359,18 @@ impl<Cell: SudokuCell> Grid<Cell> {
 }
 
 /// Asserts
-impl<Cell: SudokuCell> Grid<Cell> {
-    fn assert_coordinate(&self, coordinate: usize) {
-        assert!(coordinate < self.side_length())
+impl<Base: SudokuBase> Grid<Base> {
+    fn assert_coordinate(coordinate: u8) {
+        assert!(coordinate < Self::side_length())
     }
 
-    fn assert_position(&self, pos: Position) {
-        self.assert_coordinate(pos.column);
-        self.assert_coordinate(pos.row);
+    fn assert_position(pos: Position) {
+        Self::assert_coordinate(pos.column);
+        Self::assert_coordinate(pos.row);
     }
 }
 
-impl<Cell: SudokuCell, CView: Into<CellView>> TryFrom<Vec<Vec<CView>>> for Grid<Cell> {
+impl<Base: SudokuBase, CView: Into<CellView>> TryFrom<Vec<Vec<CView>>> for Grid<Base> {
     type Error = Error;
 
     fn try_from(nested_views: Vec<Vec<CView>>) -> Result<Self> {
@@ -415,24 +382,20 @@ impl<Cell: SudokuCell, CView: Into<CellView>> TryFrom<Vec<Vec<CView>>> for Grid<
     }
 }
 
-impl<Cell: SudokuCell, CView: Into<CellView>> TryFrom<Vec<CView>> for Grid<Cell> {
+impl<Base: SudokuBase, CView: Into<CellView>> TryFrom<Vec<CView>> for Grid<Base> {
     type Error = Error;
 
     fn try_from(views: Vec<CView>) -> Result<Self> {
-        let base = Self::cell_count_to_base(views.len())?;
-
-        let max = Self::base_to_max_value(base);
-
         let cells = views
             .into_iter()
-            .map(|view| view.into().into_cell(max))
+            .map(|view| view.into().into_cell())
             .collect();
 
-        Ok(Self::new_with_cells(base, cells))
+        Ok(Self::with_cells(cells))
     }
 }
 
-impl<Cell: SudokuCell> TryFrom<&str> for Grid<Cell> {
+impl<Base: SudokuBase> TryFrom<&str> for Grid<Base> {
     type Error = Error;
 
     fn try_from(input: &str) -> Result<Self> {
@@ -448,20 +411,21 @@ impl<Cell: SudokuCell> TryFrom<&str> for Grid<Cell> {
     }
 }
 
-impl<Cell: SudokuCell> Display for Grid<Cell> {
+impl<Base: SudokuBase> Display for Grid<Base> {
     // TODO: implement using prettytable-rs
     // TODO: show candidates (compare with exchange formats)
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         const PADDING: usize = 3;
 
-        let horizontal_block_separator = "-".repeat(self.base() + (PADDING * self.side_length()));
+        let horizontal_block_separator =
+            "-".repeat(Self::base_usize() + (PADDING * Self::side_length_usize()));
 
         let output_string = self
             .cells
             .genrows()
             .into_iter()
             .map(|row| {
-                row.axis_chunks_iter(Axis(0), self.base())
+                row.axis_chunks_iter(Axis(0), Self::base_usize())
                     .map(|block_row| {
                         block_row
                             .iter()
@@ -474,7 +438,7 @@ impl<Cell: SudokuCell> Display for Grid<Cell> {
                     .join("|")
             })
             .collect::<Vec<String>>()
-            .chunks(self.base())
+            .chunks(Self::base_usize())
             .intersperse(&[horizontal_block_separator])
             .flatten()
             .cloned()
@@ -487,6 +451,8 @@ impl<Cell: SudokuCell> Display for Grid<Cell> {
 
 #[cfg(test)]
 mod tests {
+    use typenum::consts::*;
+
     use crate::cell::Cell;
     use crate::samples;
 
@@ -494,7 +460,7 @@ mod tests {
 
     #[test]
     fn test_value_range() {
-        let grid = Grid::<Cell>::new(3);
+        let grid = Grid::<U3>::new();
 
         let value_range: Vec<_> = grid.value_range().collect();
 
@@ -503,7 +469,7 @@ mod tests {
 
     #[test]
     fn test_value_range_bit_set() {
-        let grid = Grid::<Cell>::new(3);
+        let grid = Grid::<Base>::new(3);
 
         let value_range_bit_set: Vec<_> = grid.value_range_bit_set().ones().collect();
 
@@ -512,7 +478,7 @@ mod tests {
 
     #[test]
     fn test_has_conflict() {
-        let mut grid = Grid::<Cell>::new(3);
+        let mut grid = Grid::<Base>::new(3);
 
         assert!(!grid.has_conflict());
 
@@ -614,7 +580,7 @@ mod tests {
 
         inputs
             .into_iter()
-            .map(|input| Grid::<Cell>::try_from(*input))
+            .map(|input| Grid::<Base>::try_from(*input))
             .collect::<Result<Vec<_>>>()?;
 
         Ok(())

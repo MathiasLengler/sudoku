@@ -4,29 +4,23 @@ use failure::_core::convert::TryFrom;
 use failure::bail;
 use serde::{Deserialize, Serialize};
 
-use crate::cell::SudokuCell;
+use crate::cell::{Cell, SudokuBase};
 use crate::error::{Error, Result};
 
-// TODO: usize -> u8
-// TODO: remove max parameters
 #[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "kind")]
 pub enum CellView {
-    Value {
-        value: usize, // TODO: fixed: bool
-    },
-    Candidates {
-        candidates: Vec<usize>,
-    },
+    Value { value: u8, fixed: bool },
+    Candidates { candidates: Vec<u8> },
 }
 
 impl CellView {
-    pub fn value(value: usize) -> Self {
-        CellView::Value { value }
+    pub fn value(value: u8, fixed: bool) -> Self {
+        CellView::Value { value, fixed }
     }
 
-    pub fn candidates(candidates: Vec<usize>) -> Self {
+    pub fn candidates(candidates: Vec<u8>) -> Self {
         CellView::Candidates { candidates }
     }
 
@@ -37,23 +31,23 @@ impl CellView {
         }
     }
 
-    pub fn into_cell<Cell: SudokuCell>(self, max: usize) -> Cell {
+    pub fn into_cell<Base: SudokuBase>(self) -> Cell<Base> {
         match self {
-            CellView::Value { value } => Cell::new_with_value(value, max),
-            CellView::Candidates { candidates } => Cell::new_with_candidates(candidates, max),
+            CellView::Value { value, fixed } => Cell::with_value(value, fixed),
+            CellView::Candidates { candidates } => Cell::with_candidates(candidates),
         }
     }
 }
 
-pub fn v(value: usize) -> CellView {
-    CellView::value(value)
+pub fn v(value: u8) -> CellView {
+    CellView::value(value, false)
 }
 
-pub fn c(candidates: Vec<usize>) -> CellView {
+pub fn c(candidates: Vec<u8>) -> CellView {
     CellView::candidates(candidates)
 }
 
-fn char_value_to_usize(c: char) -> Result<usize> {
+fn char_value_to_u8(c: char) -> Result<u8> {
     match c {
         '.' | '0' => Ok(0),
         _ => match c.to_digit(36) {
@@ -74,7 +68,7 @@ impl TryFrom<&str> for CellView {
                 candidates
                     .chars()
                     .map(|candidate| {
-                        let candidate = char_value_to_usize(candidate)?;
+                        let candidate = char_value_to_u8(candidate)?;
                         if candidate == 0 {
                             bail!("A candidate can't be 0")
                         } else {
@@ -91,18 +85,18 @@ impl TryFrom<char> for CellView {
     type Error = Error;
 
     fn try_from(c: char) -> Result<Self> {
-        Ok(char_value_to_usize(c)?.into())
+        Ok(char_value_to_u8(c)?.into())
     }
 }
 
-impl From<usize> for CellView {
-    fn from(value: usize) -> Self {
-        CellView::value(value)
+impl From<u8> for CellView {
+    fn from(value: u8) -> Self {
+        CellView::value(value, false)
     }
 }
 
-impl<Cell: SudokuCell> From<Cell> for CellView {
-    fn from(cell: Cell) -> Self {
+impl<Base: SudokuBase> From<Cell<Base>> for CellView {
+    fn from(cell: Cell<Base>) -> Self {
         cell.view()
     }
 }

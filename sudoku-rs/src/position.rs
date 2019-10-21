@@ -7,14 +7,14 @@ use serde::{Deserialize, Serialize};
 //  compare with euclid (except x, y bad for clarity)
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub struct Position {
-    pub row: usize,
-    pub column: usize,
+    pub row: u8,
+    pub column: u8,
 }
 
 impl Position {
     pub fn index_tuple(&self) -> (usize, usize) {
         let &Position { row, column } = self;
-        (row, column)
+        (row.into(), column.into())
     }
 }
 
@@ -35,10 +35,10 @@ impl Div for Position {
     }
 }
 
-impl Div<usize> for Position {
+impl Div<u8> for Position {
     type Output = Position;
 
-    fn div(self, rhs: usize) -> Self::Output {
+    fn div(self, rhs: u8) -> Self::Output {
         self / Position {
             row: rhs,
             column: rhs,
@@ -57,10 +57,10 @@ impl Mul for Position {
     }
 }
 
-impl Mul<usize> for Position {
+impl Mul<u8> for Position {
     type Output = Position;
 
-    fn mul(self, rhs: usize) -> Self::Output {
+    fn mul(self, rhs: u8) -> Self::Output {
         self * Position {
             row: rhs,
             column: rhs,

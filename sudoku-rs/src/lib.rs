@@ -7,7 +7,8 @@ extern crate flame;
 #[macro_use]
 extern crate flamer;
 
-pub use sudoku::*;
+//pub use sudoku::*;
+pub use sudoku::dynamic::DynamicSudoku as Sudoku;
 
 pub mod cell;
 pub mod error;
@@ -16,7 +17,6 @@ pub mod grid;
 mod history;
 pub mod position;
 pub mod samples;
-pub mod settings;
 pub mod solver;
 mod sudoku;
 pub mod transport;

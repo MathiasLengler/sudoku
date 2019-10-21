@@ -51,18 +51,15 @@ impl<Base: SudokuBase> CellState<Base> {
         // TODO: remove extra conversions
         match self {
             CellState::Value(value) => CellView::Value {
-                // TODO: fixed
-                value: Self::export_value(*value).into(),
+                value: Self::export_value(*value),
+                fixed: false,
             },
             CellState::FixedValue(value) => CellView::Value {
-                // TODO: fixed
-                value: Self::export_value(*value).into(),
+                value: Self::export_value(*value),
+                fixed: true,
             },
             CellState::Candidates(candidates) => CellView::Candidates {
-                candidates: Self::export_candidates(candidates)
-                    .into_iter()
-                    .map(Into::into)
-                    .collect(),
+                candidates: Self::export_candidates(candidates),
             },
         }
     }
@@ -132,10 +129,10 @@ impl<Base: SudokuBase> CellState<Base> {
         }
     }
 
-    pub(super) fn delete(&mut self) -> Self {
+    pub(super) fn delete(&mut self) {
         self.assert_unfixed();
 
-        replace(self, Self::new())
+        replace(self, Self::new());
     }
 
     pub(super) fn set_value(&mut self, value: u8) {

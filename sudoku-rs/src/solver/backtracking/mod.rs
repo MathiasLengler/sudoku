@@ -1,6 +1,6 @@
 use std::num::NonZeroUsize;
 
-use crate::cell::SudokuCell;
+use crate::cell::SudokuBase;
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::solver::backtracking::choice::Choice;
@@ -11,8 +11,8 @@ mod choice;
 //  make step into an iterator over step results
 
 #[derive(Debug)]
-pub struct Solver<'s, Cell: SudokuCell> {
-    grid: &'s mut Grid<Cell>,
+pub struct Solver<'s, Base: SudokuBase> {
+    grid: &'s mut Grid<Base>,
     /// Cached
     empty_positions: Vec<Position>,
     /// Choices stack
@@ -40,12 +40,12 @@ enum StepResult {
     NextCell,
 }
 
-impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
-    pub fn new(grid: &'s mut Grid<Cell>) -> Solver<'s, Cell> {
+impl<'s, Base: SudokuBase> Solver<'s, Base> {
+    pub fn new(grid: &'s mut Grid<Base>) -> Solver<'s, Base> {
         Self::new_with_settings(grid, Default::default())
     }
 
-    pub fn new_with_settings(grid: &'s mut Grid<Cell>, settings: Settings) -> Solver<'s, Cell> {
+    pub fn new_with_settings(grid: &'s mut Grid<Base>, settings: Settings) -> Solver<'s, Base> {
         let empty_positions = grid.all_candidates_positions();
 
         let mut solver = Solver {
@@ -75,7 +75,7 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
         };
     }
 
-    fn try_solve(&mut self) -> Option<Grid<Cell>> {
+    fn try_solve(&mut self) -> Option<Grid<Base>> {
         loop {
             let step_result = self.step();
 
@@ -103,7 +103,9 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
 
         match self.choices.last_mut() {
             Some(choice) => {
-                self.grid.set_value(choice.position(), choice.selection());
+                self.grid
+                    .get_mut(choice.position())
+                    .set_value(choice.selection());
 
                 if choice.is_exhausted() {
                     // Backtrack
@@ -175,9 +177,9 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
     }
 }
 
-impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
+impl<'s, Base: SudokuBase> Solver<'s, Base> {
     /// Panics if the grid has no solution
-    pub fn has_unique_solution(grid: &Grid<Cell>) -> bool {
+    pub fn has_unique_solution(grid: &Grid<Base>) -> bool {
         let mut grid = grid.clone();
         let mut solver = Solver::new(&mut grid);
 
@@ -187,7 +189,7 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
     }
 
     /// Returns the solution to the grid only if it is the only possible solution
-    pub fn unique_solution(grid: &Grid<Cell>) -> Option<Grid<Cell>> {
+    pub fn unique_solution(grid: &Grid<Base>) -> Option<Grid<Base>> {
         let mut grid = grid.clone();
         let mut solver = Solver::new(&mut grid);
         let first_solution = solver.next();
@@ -200,8 +202,8 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
     }
 }
 
-impl<'s, Cell: SudokuCell> Iterator for Solver<'s, Cell> {
-    type Item = Grid<Cell>;
+impl<'s, Base: SudokuBase> Iterator for Solver<'s, Base> {
+    type Item = Grid<Base>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.try_solve()
@@ -229,7 +231,7 @@ mod tests {
     // TODO: test partial filled sudoku without conflict and multiple possible solutions
     // TODO: test partial filled sudoku with conflict (implies no solutions)
 
-    fn assert_solve_result<Cell: SudokuCell>(solve_result: Option<Grid<Cell>>) {
+    fn assert_solve_result<Base: SudokuBase>(solve_result: Option<Grid>) {
         assert!(solve_result.is_some());
 
         let sudoku = solve_result.unwrap();

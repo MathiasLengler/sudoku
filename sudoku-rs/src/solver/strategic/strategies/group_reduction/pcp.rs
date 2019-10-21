@@ -1,3 +1,5 @@
+use std::convert::TryInto;
+
 use fixedbitset::FixedBitSet;
 use gcollections::ops::*;
 use interval::interval::ToInterval;
@@ -14,9 +16,9 @@ use crate::solver::constraint::pcp_utils::{one_solution_engine_interval, FDSpace
 // TODO: return result
 // TODO: optimize by using 0 indexed values and returning Vec<FixedBitSet>
 pub(super) fn group_candidates_reduction(
-    group_candidates: &[Vec<usize>],
-    max_value: usize,
-) -> Vec<Vec<usize>> {
+    group_candidates: &[Vec<u8>],
+    max_value: u8,
+) -> Vec<Vec<u8>> {
     match group_candidates.len() {
         0 | 1 => return group_candidates.to_vec(),
         _ => {}
@@ -54,7 +56,7 @@ pub(super) fn group_candidates_reduction(
     let mut search = one_solution_engine_interval();
 
     let mut reduced_group_candidates: Vec<FixedBitSet> =
-        std::iter::repeat(FixedBitSet::with_capacity(max_value + 1))
+        std::iter::repeat(FixedBitSet::with_capacity(usize::from(max_value) + 1))
             .take(group_candidates.len())
             .collect();
 
@@ -101,7 +103,12 @@ pub(super) fn group_candidates_reduction(
 
     reduced_group_candidates
         .into_iter()
-        .map(|bit_set| bit_set.ones().collect())
+        .map(|bit_set| {
+            bit_set
+                .ones()
+                .map(|candidate| candidate.try_into().unwrap())
+                .collect()
+        })
         .collect()
 }
 

@@ -78,8 +78,8 @@ impl<Base: SudokuBase> Cell<Base> {
     /// # Panics
     ///
     /// Panics it the cell is fixed.
-    pub fn delete(&mut self) -> Self {
-        Self(self.0.delete())
+    pub fn delete(&mut self) {
+        self.0.delete()
     }
 
     /// Set the cell to a unfixed value.

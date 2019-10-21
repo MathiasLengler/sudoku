@@ -4,9 +4,11 @@ extern crate flame;
 #[cfg(feature = "flame_it")]
 use std::fs::File;
 
+use typenum::U2;
+
 use sudoku::cell::Cell;
 use sudoku::error::Result;
-use sudoku::generator::backtracking::{Generator, Settings, Target};
+use sudoku::generator::backtracking::{Generator, RuntimeSettings, Target};
 
 // add in lib
 // #[cfg_attr(feature = "flame_it", flame)]
@@ -17,12 +19,9 @@ fn main() -> Result<()> {
 
     for i in 0..1 {
         dbg!(i);
-        Generator::new(Settings {
-            base: 2,
-            target: Target::Minimal,
-        })
-        .generate::<Cell>()
-        .unwrap();
+        Generator::with_target(Target::Minimal)
+            .generate::<U2>()
+            .unwrap();
     }
 
     #[cfg(feature = "flame_it")]

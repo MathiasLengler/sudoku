@@ -1,15 +1,12 @@
 use std::collections::VecDeque;
 
-use crate::cell::SudokuCell;
-use crate::grid::Grid;
-
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
-pub struct GridHistory<Cell: SudokuCell> {
-    records: VecDeque<Grid<Cell>>,
+pub struct History<T> {
+    records: VecDeque<T>,
 }
 
-impl<Cell: SudokuCell> GridHistory<Cell> {
-    pub fn push(&mut self, grid: Grid<Cell>, history_limit: usize) {
+impl<T> History<T> {
+    pub fn push(&mut self, grid: T, history_limit: usize) {
         if history_limit == 0 {
             return;
         }
@@ -19,12 +16,12 @@ impl<Cell: SudokuCell> GridHistory<Cell> {
         self.records.push_back(grid);
     }
 
-    pub fn pop(&mut self) -> Option<Grid<Cell>> {
+    pub fn pop(&mut self) -> Option<T> {
         self.records.pop_back()
     }
 }
 
-impl<Cell: SudokuCell> Default for GridHistory<Cell> {
+impl<T> Default for History<T> {
     fn default() -> Self {
         Self {
             records: Default::default(),

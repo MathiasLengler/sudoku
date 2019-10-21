@@ -1,4 +1,4 @@
-use crate::cell::SudokuCell;
+use crate::cell::{SudokuBase, SudokuCell};
 use crate::grid::Grid;
 use crate::position::Position;
 
@@ -7,8 +7,8 @@ use super::Strategy;
 #[derive(Debug)]
 pub struct SingleCandidate;
 
-impl<Cell: SudokuCell> Strategy<Cell> for SingleCandidate {
-    fn execute(&self, grid: &mut Grid<Cell>) -> Vec<Position> {
+impl<Base: SudokuBase> Strategy<Base> for SingleCandidate {
+    fn execute(&self, grid: &mut Grid<Base>) -> Vec<Position> {
         grid.all_candidates_positions()
             .into_iter()
             .filter_map(|candidate_pos| {
@@ -17,7 +17,7 @@ impl<Cell: SudokuCell> Strategy<Cell> for SingleCandidate {
                 if candidates.len() == 1 {
                     let single_candidate = candidates[0];
 
-                    grid.set_value(candidate_pos, single_candidate);
+                    grid.get_mut(candidate_pos).set_value(single_candidate);
                     grid.update_candidates(candidate_pos, single_candidate);
 
                     Some(candidate_pos)

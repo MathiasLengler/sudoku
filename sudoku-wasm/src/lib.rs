@@ -7,7 +7,7 @@ use wasm_bindgen::prelude::*;
 
 use sudoku::cell::Cell;
 use sudoku::error::Error;
-use sudoku::generator::backtracking::Settings;
+use sudoku::generator::backtracking::RuntimeSettings;
 use sudoku::position::Position;
 use sudoku::transport::TransportSudoku;
 use sudoku::Sudoku;
@@ -36,7 +36,7 @@ pub fn get_wasm_sudoku() -> WasmSudoku {
 
 #[wasm_bindgen]
 pub struct WasmSudoku {
-    sudoku: RefCell<Sudoku<Cell>>,
+    sudoku: RefCell<Sudoku>,
 }
 
 #[wasm_bindgen]
@@ -122,7 +122,7 @@ impl WasmSudoku {
         candidates.into_serde().unwrap()
     }
 
-    fn import_generator_settings(generator_settings: JsValue) -> Settings {
+    fn import_generator_settings(generator_settings: JsValue) -> RuntimeSettings {
         generator_settings.into_serde().unwrap()
     }
 
