@@ -7,7 +7,7 @@ use crate::position::Position;
 use crate::solver::backtracking;
 
 // TODO: replace with separate generate methods (return type)
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Copy, Clone)]
 #[serde(rename_all = "camelCase")]
 pub enum Target {
     Filled,
