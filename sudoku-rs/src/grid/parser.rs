@@ -43,6 +43,8 @@ pub(crate) fn from_candidates<Base: SudokuBase>(input: &str) -> Result<Grid<Base
 
 #[cfg(test)]
 mod tests {
+    use typenum::consts::*;
+
     use crate::cell::Cell;
 
     use super::*;
@@ -54,7 +56,7 @@ mod tests {
             "/tests/res/givens_line.txt"
         ));
 
-        let grid = from_givens_line::<Cell>(input)?;
+        let grid = from_givens_line::<U3>(input)?;
 
         let expected_grid = vec![
             6, 0, 0, 0, 0, 2, 3, 0, 0, 1, 2, 5, 6, 0, 0, 0, 0, 0, 0, 0, 4, 7, 0, 0, 0, 2, 0, 7, 3,
@@ -75,7 +77,7 @@ mod tests {
             "/tests/res/givens_grid.txt"
         ));
 
-        let grid = from_givens_grid::<Cell>(input)?;
+        let grid = from_givens_grid::<U3>(input)?;
 
         let expected_grid = vec![
             0, 8, 0, 5, 0, 3, 0, 7, 0, 0, 2, 7, 0, 0, 0, 3, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -98,7 +100,7 @@ mod tests {
             "/tests/res/candidates.txt"
         ));
 
-        let grid = from_candidates::<Cell>(input)?;
+        let grid = from_candidates::<U3>(input)?;
 
         let expected_grid = vec![
             vec![

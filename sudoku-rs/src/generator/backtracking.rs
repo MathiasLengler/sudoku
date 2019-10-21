@@ -115,6 +115,8 @@ impl Generator {
 
 #[cfg(test)]
 mod tests {
+    use typenum::consts::*;
+
     use crate::cell::Cell;
 
     use super::*;
@@ -124,21 +126,20 @@ mod tests {
 
         backtracking::Solver::has_unique_solution(&grid)
             && grid.all_value_positions().into_iter().all(|pos| {
-                let prev_cell = grid.delete(pos);
+                let cell = grid.get_mut(pos);
+                let prev_value = cell.value().unwrap();
+                cell.delete();
                 let has_multiple_solutions = !backtracking::Solver::has_unique_solution(&grid);
-                grid.set_value(pos, prev_cell.value().unwrap());
+                grid.get_mut(pos).set_value(prev_value);
                 has_multiple_solutions
             })
     }
 
     #[test]
     fn test_minimal() {
-        let generator = Generator::with_target(RuntimeSettings {
-            base: 2,
-            target: Target::Minimal,
-        });
+        let generator = Generator::with_target(Target::Minimal);
 
-        let sudoku = generator.generate::<Cell>().unwrap();
+        let sudoku = generator.generate::<U2>().unwrap();
 
         println!("{}", sudoku);
 

@@ -12,7 +12,7 @@ use sudoku::generator::backtracking::RuntimeSettings;
 use sudoku::grid::Grid;
 use sudoku::position::Position;
 use sudoku::transport::TransportSudoku;
-use sudoku::{DynamicSudoku, Sudoku};
+use sudoku::{DynamicSudoku, Game, Sudoku};
 
 #[cfg(feature = "wee_alloc")]
 #[global_allocator]
@@ -51,13 +51,13 @@ impl WasmSudoku {
         JsValue::from_serde(&transport_sudoku).unwrap()
     }
 
-    pub fn set_value(&self, pos: JsValue, value: usize) {
+    pub fn set_value(&self, pos: JsValue, value: u8) {
         self.sudoku
             .borrow_mut()
             .set_value(Self::import_pos(pos), value);
     }
 
-    pub fn set_or_toggle_value(&self, pos: JsValue, value: usize) {
+    pub fn set_or_toggle_value(&self, pos: JsValue, value: u8) {
         self.sudoku
             .borrow_mut()
             .set_or_toggle_value(Self::import_pos(pos), value);
@@ -69,7 +69,7 @@ impl WasmSudoku {
             .set_candidates(Self::import_pos(pos), Self::import_candidates(candidates));
     }
 
-    pub fn toggle_candidate(&mut self, pos: JsValue, candidate: usize) {
+    pub fn toggle_candidate(&mut self, pos: JsValue, candidate: u8) {
         self.sudoku
             .borrow_mut()
             .toggle_candidate(Self::import_pos(pos), candidate);
@@ -118,7 +118,7 @@ impl WasmSudoku {
         pos.into_serde().unwrap()
     }
 
-    fn import_candidates(candidates: JsValue) -> Vec<usize> {
+    fn import_candidates(candidates: JsValue) -> Vec<u8> {
         candidates.into_serde().unwrap()
     }
 

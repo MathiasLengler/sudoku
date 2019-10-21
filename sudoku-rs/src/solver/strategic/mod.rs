@@ -66,6 +66,8 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
 
 #[cfg(test)]
 mod tests {
+    use typenum::consts::*;
+
     use super::*;
 
     #[test]
@@ -106,7 +108,7 @@ mod tests {
 
     #[test]
     fn test_minimal() {
-        let mut grid = crate::samples::minimal(2);
+        let mut grid = crate::samples::minimal::<U2>();
 
         grid.set_all_direct_candidates();
         grid.fix_all_values();

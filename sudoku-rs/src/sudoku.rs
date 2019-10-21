@@ -3,6 +3,8 @@ use std::fmt::{self, Display, Formatter};
 
 use failure::format_err;
 
+pub use dynamic::{DynamicSudoku, Game};
+
 use crate::base::SudokuBase;
 use crate::cell::SudokuCell;
 use crate::error::Result;
@@ -16,11 +18,10 @@ use crate::solver::strategic::{
     strategies::{GroupReduction, SingleCandidate},
     Solver as StrategicSolver,
 };
-use crate::sudoku::dynamic::Game;
 
 use self::settings::Settings;
 
-pub mod dynamic;
+mod dynamic;
 pub mod settings;
 
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]

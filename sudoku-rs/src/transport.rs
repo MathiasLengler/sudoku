@@ -4,8 +4,8 @@ use crate::base::SudokuBase;
 use crate::cell::{view::CellView, SudokuCell};
 use crate::grid::Grid;
 use crate::position::Position;
+use crate::sudoku::DynamicSudoku;
 use crate::sudoku::Sudoku;
-use crate::DynamicSudoku;
 
 // TODO:
 //  conflicting cells (groups?)

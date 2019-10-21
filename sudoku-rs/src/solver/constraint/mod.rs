@@ -165,6 +165,8 @@ fn constrain_groups(
 
 #[cfg(test)]
 mod tests {
+    use typenum::consts::*;
+
     use super::*;
 
     #[test]
@@ -199,7 +201,7 @@ mod tests {
 
     #[test]
     fn test_minimal() {
-        let mut grid = crate::samples::minimal(2);
+        let mut grid = crate::samples::minimal::<U2>();
 
         let mut solver = Solver::new(&mut grid);
 

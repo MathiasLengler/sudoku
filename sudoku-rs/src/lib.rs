@@ -8,9 +8,7 @@ extern crate flame;
 #[macro_use]
 extern crate flamer;
 
-//pub use sudoku::*;
-pub use sudoku::dynamic::DynamicSudoku;
-pub use sudoku::Sudoku;
+pub use sudoku::*;
 
 pub mod base;
 pub mod cell;

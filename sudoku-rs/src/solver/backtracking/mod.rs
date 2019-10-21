@@ -214,6 +214,8 @@ impl<'s, Base: SudokuBase> Iterator for Solver<'s, Base> {
 mod tests {
     use std::collections::HashSet;
 
+    use typenum::consts::*;
+
     use crate::cell::Cell;
 
     use super::*;
@@ -231,7 +233,7 @@ mod tests {
     // TODO: test partial filled sudoku without conflict and multiple possible solutions
     // TODO: test partial filled sudoku with conflict (implies no solutions)
 
-    fn assert_solve_result<Base: SudokuBase>(solve_result: Option<Grid>) {
+    fn assert_solve_result<Base: SudokuBase>(solve_result: Option<Grid<Base>>) {
         assert!(solve_result.is_some());
 
         let sudoku = solve_result.unwrap();
@@ -239,7 +241,7 @@ mod tests {
         assert!(sudoku.is_solved());
     }
 
-    fn assert_iter(solver: Solver<Cell>) {
+    fn assert_iter<Base: SudokuBase>(solver: Solver<Base>) {
         const NUMBER_OF_2X2_SOLUTIONS: usize = 288;
 
         let solutions = solver.collect::<Vec<_>>();
@@ -257,7 +259,7 @@ mod tests {
 
     #[test]
     fn test_iter_all_solutions() {
-        let mut grid = Grid::<Cell>::new(2);
+        let mut grid = Grid::<U2>::new();
         let solver = Solver::new(&mut grid);
 
         assert_iter(solver);
@@ -265,7 +267,7 @@ mod tests {
 
     #[test]
     fn test_test_iter_all_solutions_shuffle_candidates() {
-        let mut grid = Grid::<Cell>::new(2);
+        let mut grid = Grid::<U2>::new();
         let solver = Solver::new_with_settings(
             &mut grid,
             Settings {
