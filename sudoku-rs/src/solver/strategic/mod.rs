@@ -46,6 +46,7 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
             let modified_positions = strategy.execute(&mut self.grid);
 
             if !modified_positions.is_empty() {
+                #[cfg(feature = "debug_print")]
                 println!(
                     "{:?}: {:?}\n{}",
                     strategy,
