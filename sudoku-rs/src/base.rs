@@ -5,6 +5,10 @@ use std::ops::*;
 use generic_array::ArrayLength;
 use typenum::{bit::B1, consts::*, Prod, Quot, Sub1, Sum};
 
+pub mod consts {
+    pub use typenum::consts::*;
+}
+
 type DivCeil<A, B> = Quot<Sub1<Sum<A, B>>, B>;
 // (A + B - 1) / B;
 type SideLength<Base> = Prod<Base, Base>;

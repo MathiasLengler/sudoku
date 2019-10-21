@@ -1,12 +1,11 @@
 use std::fmt::{self, Debug, Display, Formatter};
 
 use cell_state::CellState;
-use sudoku_base::SudokuBase;
 
+use crate::base::SudokuBase;
 use crate::cell::view::CellView;
 
 mod cell_state;
-pub mod sudoku_base;
 
 /// Memory efficient representation of a single Sudoku cell.
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]

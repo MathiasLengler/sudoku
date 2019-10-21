@@ -10,9 +10,10 @@ use itertools::Itertools;
 use ndarray::{Array2, Axis};
 use typenum::Unsigned;
 
+use crate::base::SudokuBase;
 use crate::cell::view::CellView;
+use crate::cell::Cell;
 use crate::cell::SudokuCell;
-use crate::cell::{Cell, SudokuBase};
 use crate::error::{Error, Result};
 use crate::grid::parser::{from_givens_grid, from_givens_line};
 use crate::position::Position;

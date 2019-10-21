@@ -1,6 +1,7 @@
 use itertools::izip;
 
-use crate::cell::{SudokuBase, SudokuCell};
+use crate::base::SudokuBase;
+use crate::cell::SudokuCell;
 use crate::grid::Grid;
 use crate::position::Position;
 

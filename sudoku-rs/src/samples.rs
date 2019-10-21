@@ -2,7 +2,8 @@ use std::convert::TryInto;
 
 use typenum::consts::*;
 
-use crate::cell::{Cell, SudokuBase};
+use crate::base::SudokuBase;
+use crate::cell::Cell;
 use crate::error::Result;
 use crate::generator::backtracking::{Generator, RuntimeSettings, Target};
 use crate::grid::Grid;
@@ -56,6 +57,6 @@ pub fn base_3() -> Vec<Grid<U3>> {
     .unwrap()
 }
 
-pub fn minimal<Base: SudokuBase>(base: usize) -> Grid<Base> {
+pub fn minimal<Base: SudokuBase>() -> Grid<Base> {
     Generator::with_target(Target::Minimal).generate().unwrap()
 }

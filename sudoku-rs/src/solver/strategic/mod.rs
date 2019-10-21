@@ -1,6 +1,6 @@
 use strategies::Strategy;
 
-use crate::cell::SudokuBase;
+use crate::base::SudokuBase;
 use crate::grid::Grid;
 use crate::position::Position;
 

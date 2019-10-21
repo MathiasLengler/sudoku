@@ -9,11 +9,8 @@ use bitvec::prelude::*;
 use generic_array::GenericArray;
 use typenum::Unsigned;
 
-use sudoku_base::SudokuBase;
-
+use crate::base::SudokuBase;
 use crate::cell::view::CellView;
-
-use super::sudoku_base;
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 pub(super) enum CellState<Base: SudokuBase> {

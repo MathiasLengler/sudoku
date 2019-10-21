@@ -1,3 +1,4 @@
+#![warn(rust_2018_idioms)]
 #![warn(missing_debug_implementations)]
 #![deny(unsafe_code)]
 
@@ -8,8 +9,10 @@ extern crate flame;
 extern crate flamer;
 
 //pub use sudoku::*;
-pub use sudoku::dynamic::DynamicSudoku as Sudoku;
+pub use sudoku::dynamic::DynamicSudoku;
+pub use sudoku::Sudoku;
 
+pub mod base;
 pub mod cell;
 pub mod error;
 pub mod generator;

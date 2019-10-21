@@ -1,7 +1,7 @@
 use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
 
-use crate::cell::SudokuBase;
+use crate::base::SudokuBase;
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::solver::backtracking;

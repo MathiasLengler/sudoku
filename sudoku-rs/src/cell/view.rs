@@ -4,7 +4,8 @@ use failure::_core::convert::TryFrom;
 use failure::bail;
 use serde::{Deserialize, Serialize};
 
-use crate::cell::{Cell, SudokuBase};
+use crate::base::SudokuBase;
+use crate::cell::Cell;
 use crate::error::{Error, Result};
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]

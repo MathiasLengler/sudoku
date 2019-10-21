@@ -14,7 +14,7 @@ use pcp::variable::ops::*;
 
 use pcp_utils::{boxed_one_solution_engine_interval, FDSpace, VStore};
 
-use crate::cell::SudokuBase;
+use crate::base::SudokuBase;
 use crate::grid::Grid;
 use crate::position::Position;
 

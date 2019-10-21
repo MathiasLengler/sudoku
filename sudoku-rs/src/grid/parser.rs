@@ -1,7 +1,7 @@
 use std::convert::TryInto;
 
+use crate::base::SudokuBase;
 use crate::cell::view::CellView;
-use crate::cell::SudokuBase;
 use crate::error::Result;
 use crate::grid::Grid;
 

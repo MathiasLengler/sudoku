@@ -6,7 +6,6 @@ use std::num::NonZeroU8;
 use fixedbitset::FixedBitSet;
 use num::{cast, ToPrimitive};
 
-pub use compact::sudoku_base::SudokuBase;
 pub use compact::Cell;
 
 use crate::cell::view::CellView;
@@ -14,4 +13,5 @@ use crate::cell::view::CellView;
 pub mod compact;
 pub mod view;
 
+// TODO: decide if useful
 pub trait SudokuCell {}

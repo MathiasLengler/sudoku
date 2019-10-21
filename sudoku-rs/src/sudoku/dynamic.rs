@@ -1,9 +1,14 @@
+use std::any::{Any, TypeId};
+use std::ops::Deref;
+
 use typenum::consts::*;
 
 use DynamicSudoku::*;
 
+use crate::base::SudokuBase;
 use crate::error::Result;
 use crate::generator::backtracking::RuntimeSettings as GeneratorSettings;
+use crate::grid::Grid;
 use crate::position::Position;
 use crate::sudoku::settings::Settings as SudokuSettings;
 use crate::sudoku::Sudoku;
@@ -43,6 +48,18 @@ impl DynamicSudoku {
             unexpected_base => Self::bail_unexpected_base(unexpected_base),
         }
     }
+    pub fn with_sudoku<Base: SudokuBase + 'static>(sudoku: Sudoku<Base>) -> Self {
+        let any_sudoku: Box<dyn Any> = Box::new(sudoku);
+
+        match TypeId::of::<Base>() {
+            id if id == TypeId::of::<U2>() => Base2(*(any_sudoku.downcast().unwrap())),
+            id if id == TypeId::of::<U3>() => Base3(*(any_sudoku.downcast().unwrap())),
+            id if id == TypeId::of::<U4>() => Base4(*(any_sudoku.downcast().unwrap())),
+            id if id == TypeId::of::<U5>() => Base5(*(any_sudoku.downcast().unwrap())),
+            unexpected_base => Self::bail_unexpected_base(Base::to_u8()),
+        }
+    }
+
     fn generate(&mut self, generator_settings: GeneratorSettings) -> Result<()> {
         // TODO: match generator_settings.base and use generic generator
         unimplemented!()
@@ -55,6 +72,6 @@ impl DynamicSudoku {
 
 impl DynamicSudoku {
     fn bail_unexpected_base(unexpected_base: u8) -> ! {
-        panic!("Unexpected base in DynamicSudoku: {}", unexpected_base)
+        panic!("Unexpected dynamic base: {}", unexpected_base)
     }
 }

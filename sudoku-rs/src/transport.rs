@@ -1,9 +1,11 @@
 use serde::{Deserialize, Serialize};
 
-use crate::cell::{view::CellView, SudokuBase, SudokuCell};
+use crate::base::SudokuBase;
+use crate::cell::{view::CellView, SudokuCell};
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::sudoku::Sudoku;
+use crate::DynamicSudoku;
 
 // TODO:
 //  conflicting cells (groups?)
@@ -49,6 +51,17 @@ impl<Base: SudokuBase> From<&Sudoku<Base>> for TransportSudoku {
             base: Grid::<Base>::base(),
             side_length: Grid::<Base>::side_length(),
             cell_count: Grid::<Base>::cell_count(),
+        }
+    }
+}
+
+impl From<&DynamicSudoku> for TransportSudoku {
+    fn from(dynamic_sudoku: &DynamicSudoku) -> Self {
+        match dynamic_sudoku {
+            DynamicSudoku::Base2(sudoku) => Self::from(sudoku),
+            DynamicSudoku::Base3(sudoku) => Self::from(sudoku),
+            DynamicSudoku::Base4(sudoku) => Self::from(sudoku),
+            DynamicSudoku::Base5(sudoku) => Self::from(sudoku),
         }
     }
 }

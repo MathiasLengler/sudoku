@@ -3,7 +3,8 @@ use std::fmt::{self, Display, Formatter};
 
 use failure::format_err;
 
-use crate::cell::{SudokuBase, SudokuCell};
+use crate::base::SudokuBase;
+use crate::cell::SudokuCell;
 use crate::error::Result;
 use crate::generator::backtracking::RuntimeSettings as GeneratorSettings;
 use crate::generator::backtracking::{Generator, Target};
@@ -35,14 +36,14 @@ pub struct Sudoku<Base: SudokuBase> {
 //  sudoku::Error as JSValue (JS Exception)?
 impl<Base: SudokuBase> Sudoku<Base> {
     pub fn new() -> Self {
-        Self::new_with_grid(Grid::new())
+        Self::with_grid(Grid::new())
     }
 
-    pub fn new_with_grid(grid: Grid<Base>) -> Self {
-        Self::new_with_grid_and_settings(grid, Default::default())
+    pub fn with_grid(grid: Grid<Base>) -> Self {
+        Self::with_grid_and_settings(grid, Default::default())
     }
 
-    pub fn new_with_grid_and_settings(mut grid: Grid<Base>, settings: Settings) -> Self {
+    pub fn with_grid_and_settings(mut grid: Grid<Base>, settings: Settings) -> Self {
         grid.fix_all_values();
 
         Sudoku {
@@ -167,7 +168,7 @@ impl<Base: SudokuBase> Sudoku<Base> {
     }
 
     fn replace_grid(&mut self, new_grid: Grid<Base>) {
-        *self = Self::new_with_grid_and_settings(new_grid, self.settings);
+        *self = Self::with_grid_and_settings(new_grid, self.settings);
     }
 }
 

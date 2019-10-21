@@ -5,12 +5,14 @@ use std::cell::RefCell;
 use log::debug;
 use wasm_bindgen::prelude::*;
 
+use sudoku::base::consts::*;
 use sudoku::cell::Cell;
 use sudoku::error::Error;
 use sudoku::generator::backtracking::RuntimeSettings;
+use sudoku::grid::Grid;
 use sudoku::position::Position;
 use sudoku::transport::TransportSudoku;
-use sudoku::Sudoku;
+use sudoku::{DynamicSudoku, Sudoku};
 
 #[cfg(feature = "wee_alloc")]
 #[global_allocator]
@@ -27,16 +29,14 @@ pub fn run() -> Result<(), JsValue> {
 pub fn get_wasm_sudoku() -> WasmSudoku {
     let mut grid = sudoku::samples::minimal(3);
 
-    grid.fix_all_values();
-
     WasmSudoku {
-        sudoku: RefCell::new(Sudoku::new_with_grid(grid)),
+        sudoku: RefCell::new(DynamicSudoku::with_sudoku(Sudoku::with_grid(grid))),
     }
 }
 
 #[wasm_bindgen]
 pub struct WasmSudoku {
-    sudoku: RefCell<Sudoku>,
+    sudoku: RefCell<DynamicSudoku>,
 }
 
 #[wasm_bindgen]
