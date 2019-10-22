@@ -50,6 +50,7 @@ impl<Base: SudokuBase> Grid<Base> {
     pub fn direct_candidates(&self, pos: Position) -> Vec<u8> {
         // TODO: implement with bitvec (XOR?)
         // TODO: bitslice u8 index iterator
+        // TODO: neighbor_values optimization
 
         let conflicting_values: FixedBitSet = self
             .neighbor_positions_with_duplicates(pos)
@@ -86,6 +87,7 @@ impl<Base: SudokuBase> Grid<Base> {
             || self.has_duplicate(self.block_cells(pos))
     }
 
+    // TODO: bit_slice set optimization
     // TODO: conflict location pairs
     pub fn has_duplicate<'a>(&'a self, cells: impl Iterator<Item = &'a Cell<Base>>) -> bool {
         let mut unique = HashSet::with_capacity(Self::side_length() as usize);
