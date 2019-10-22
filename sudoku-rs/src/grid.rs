@@ -48,9 +48,14 @@ impl<Base: SudokuBase> Grid<Base> {
             });
     }
     pub fn direct_candidates(&self, pos: Position) -> Vec<u8> {
-        // TODO: implement with bitvec (XOR?)
+        // TODO: wait for bitvec 0.16.0
         // TODO: bitslice u8 index iterator
-        // TODO: neighbor_values optimization
+        // TODO:
+        //  neighbor_values as bits
+        //  Bitwise NOT ~ / ones' complement
+        //   or
+        //  FFFF ^ neighbor_values
+        // TODO: decide between bitvec and fixed-bitset
 
         let conflicting_values: FixedBitSet = self
             .neighbor_positions_with_duplicates(pos)

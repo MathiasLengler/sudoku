@@ -9,9 +9,12 @@ pub mod consts {
     pub use typenum::consts::*;
 }
 
+// TODO: compare with: fixed-bitset
+// TODO: type alias for u8 generic array storage type
 type DivCeil<A, B> = Quot<Sub1<Sum<A, B>>, B>;
 // (A + B - 1) / B;
 type SideLength<Base> = Prod<Base, Base>;
+// TODO: as well as storage size (U8)
 type CandidatesCapacity<Base> = DivCeil<SideLength<Base>, U8>;
 type CellCount<Base> = Prod<SideLength<Base>, SideLength<Base>>;
 
