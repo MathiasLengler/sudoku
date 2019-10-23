@@ -40,10 +40,8 @@ impl<Base: SudokuBase> Grid<Base> {
 
         self.neighbor_positions_with_duplicates(pos)
             .for_each(|pos| {
-                if self.get(pos).candidates().is_some() {
-                    let cell = self.get_mut(pos);
-
-                    cell.delete_candidate(value);
+                if self.get(pos).is_candidates() {
+                    self.get_mut(pos).delete_candidate(value);
                 }
             });
     }
