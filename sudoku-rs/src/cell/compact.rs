@@ -1,10 +1,13 @@
 use std::fmt::{self, Debug, Display, Formatter};
 
+use generic_array::GenericArray;
+
 use cell_state::CellState;
 
 use crate::base::SudokuBase;
 use crate::cell::view::CellView;
 
+pub mod candidates;
 mod cell_state;
 
 /// Memory efficient representation of a single Sudoku cell.

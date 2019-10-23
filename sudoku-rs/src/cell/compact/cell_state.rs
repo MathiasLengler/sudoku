@@ -10,13 +10,14 @@ use generic_array::GenericArray;
 use typenum::Unsigned;
 
 use crate::base::SudokuBase;
+use crate::cell::compact::candidates::Candidates;
 use crate::cell::view::CellView;
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 pub(super) enum CellState<Base: SudokuBase> {
     Value(NonZeroU8),
     FixedValue(NonZeroU8),
-    Candidates(GenericArray<u8, Base::CandidatesCapacity>),
+    Candidates(Candidates<Base>),
 }
 
 impl<Base: SudokuBase> CellState<Base> {
@@ -41,7 +42,7 @@ impl<Base: SudokuBase> CellState<Base> {
     where
         I: IntoIterator<Item = u8>,
     {
-        CellState::Candidates(Self::import_candidates(candidates))
+        CellState::Candidates(candidates.into_iter().collect())
     }
 
     pub(super) fn view(&self) -> CellView {
@@ -56,7 +57,7 @@ impl<Base: SudokuBase> CellState<Base> {
                 fixed: true,
             },
             CellState::Candidates(candidates) => CellView::Candidates {
-                candidates: Self::export_candidates(candidates),
+                candidates: candidates.to_vec(),
             },
         }
     }
@@ -119,9 +120,10 @@ impl<Base: SudokuBase> CellState<Base> {
         }
     }
 
+    // TODO: expose candidates directly
     pub(super) fn candidates(&self) -> Option<Vec<u8>> {
         match self {
-            CellState::Candidates(candidates) => Some(Self::export_candidates(candidates)),
+            CellState::Candidates(candidates) => Some(candidates.to_vec()),
             _ => None,
         }
     }
@@ -171,13 +173,9 @@ impl<Base: SudokuBase> CellState<Base> {
     pub(super) fn toggle_candidate(&mut self, candidate: u8) {
         self.assert_unfixed();
 
-        let imported_candidate = Self::import_candidate(candidate);
-
         match self {
             CellState::Candidates(candidates) => {
-                let bs = Self::candidates_as_mut_bitslice(candidates);
-
-                bs.set(imported_candidate, !bs[imported_candidate]);
+                candidates.toggle(candidate);
             }
             CellState::Value(_) => {
                 replace(self, Self::with_candidates(std::iter::once(candidate)));
@@ -189,17 +187,11 @@ impl<Base: SudokuBase> CellState<Base> {
     pub(super) fn delete_candidate(&mut self, candidate: u8) {
         self.assert_unfixed();
 
-        let imported_candidate = Self::import_candidate(candidate);
-
         match self {
-            CellState::Candidates(candidates) => {
-                let bs = Self::candidates_as_mut_bitslice(candidates);
-
-                bs.set(imported_candidate, false);
-            }
+            CellState::Candidates(candidates) => candidates.delete(candidate),
             CellState::Value(_) => {}
             _ => unreachable!(),
-        }
+        };
     }
 }
 
@@ -218,37 +210,6 @@ impl<Base: SudokuBase> CellState<Base> {
 
 /// Conversion Helpers
 impl<Base: SudokuBase> CellState<Base> {
-    fn candidates_as_bitslice(candidates: &[u8]) -> &BitSlice<LittleEndian> {
-        candidates.as_bitslice::<LittleEndian>()
-    }
-
-    fn candidates_as_mut_bitslice(candidates: &mut [u8]) -> &mut BitSlice<LittleEndian> {
-        candidates.as_mut_bitslice::<LittleEndian>()
-    }
-
-    fn import_candidates<I: IntoIterator<Item = u8>>(
-        candidates: I,
-    ) -> GenericArray<u8, Base::CandidatesCapacity> {
-        let mut arr = GenericArray::<u8, Base::CandidatesCapacity>::default();
-
-        let bs = Self::candidates_as_mut_bitslice(&mut arr);
-
-        for candidate in candidates {
-            bs.set(Self::import_candidate(candidate), true);
-        }
-
-        debug_assert!(bs[Base::MaxValue::to_usize()..].not_any());
-
-        arr
-    }
-
-    fn import_candidate(candidate: u8) -> usize {
-        assert_ne!(candidate, 0);
-        assert!(candidate <= Base::MaxValue::to_u8());
-
-        (candidate - 1).into()
-    }
-
     fn import_value(value: u8) -> NonZeroU8 {
         assert!(value <= Base::MaxValue::to_u8());
 
@@ -259,25 +220,6 @@ impl<Base: SudokuBase> CellState<Base> {
 
     fn export_value(value: NonZeroU8) -> u8 {
         value.get()
-    }
-
-    fn export_candidates(candidates: &[u8]) -> Vec<u8> {
-        let bs = Self::candidates_as_bitslice(candidates);
-
-        bs.iter()
-            .enumerate()
-            .filter_map(|(i, is_set)| {
-                if is_set {
-                    Some(Self::export_candidate(i))
-                } else {
-                    None
-                }
-            })
-            .collect()
-    }
-
-    fn export_candidate(candidate: usize) -> u8 {
-        (candidate + 1).try_into().unwrap()
     }
 }
 
@@ -305,31 +247,6 @@ mod tests {
     use typenum::consts::*;
 
     use super::*;
-
-    #[test]
-    fn test_import_candidates() {
-        use generic_array::arr;
-
-        let array = CellState::<U3>::import_candidates(vec![1, 2, 4, 8, 9]);
-
-        assert_eq!(array, arr![u8; 0b1000_1011, 0b0000_0001]);
-
-        let array = CellState::<U3>::import_candidates(std::iter::empty());
-
-        assert_eq!(array, arr![u8; 0, 0]);
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_import_candidates_panic_max() {
-        CellState::<U3>::import_candidates(vec![10]);
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_import_candidates_panic_zero() {
-        CellState::<U3>::import_candidates(vec![0]);
-    }
 
     #[test]
     fn test_import_value() {

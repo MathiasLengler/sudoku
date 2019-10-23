@@ -30,20 +30,20 @@ type CellCount<Base> = Prod<SideLength<Base>, SideLength<Base>>;
 /// This is a workaround for [RFC 2089: Implied bounds](https://github.com/rust-lang/rust/issues/44491).
 pub trait SudokuBase
 where
-    Self: ArrayLength<u8> + Ord + Hash + Clone + Copy + Debug,
+    Self: ArrayLength<u8> + Ord + Hash + Clone + Copy + Debug + Default,
 {
-    type SideLength: ArrayLength<u8> + Ord + Hash + Clone + Copy + Debug;
-    type MaxValue: ArrayLength<u8> + Ord + Hash + Clone + Copy + Debug;
-    type CandidatesCapacity: ArrayLength<u8> + Ord + Hash + Clone + Copy + Debug;
-    type CellCount: ArrayLength<u8> + Ord + Hash + Clone + Copy + Debug;
+    type SideLength: ArrayLength<u8> + Ord + Hash + Clone + Copy + Debug + Default;
+    type MaxValue: ArrayLength<u8> + Ord + Hash + Clone + Copy + Debug + Default;
+    type CandidatesCapacity: ArrayLength<u8> + Ord + Hash + Clone + Copy + Debug + Default;
+    type CellCount: ArrayLength<u8> + Ord + Hash + Clone + Copy + Debug + Default;
 }
 
 impl<Base> SudokuBase for Base
 where
-    Base: ArrayLength<u8> + Ord + Hash + Clone + Copy + Debug,
-    SideLength<Base>: ArrayLength<u8> + Ord + Hash + Clone + Copy + Debug,
-    CandidatesCapacity<Base>: ArrayLength<u8> + Ord + Hash + Clone + Copy + Debug,
-    CellCount<Base>: ArrayLength<u8> + Ord + Hash + Clone + Copy + Debug,
+    Base: ArrayLength<u8> + Ord + Hash + Clone + Copy + Debug + Default,
+    SideLength<Base>: ArrayLength<u8> + Ord + Hash + Clone + Copy + Debug + Default,
+    CandidatesCapacity<Base>: ArrayLength<u8> + Ord + Hash + Clone + Copy + Debug + Default,
+    CellCount<Base>: ArrayLength<u8> + Ord + Hash + Clone + Copy + Debug + Default,
     Base: Mul<Base>,
     SideLength<Base>: Add<U8>,
     Sum<SideLength<Base>, U8>: Sub<B1>,
