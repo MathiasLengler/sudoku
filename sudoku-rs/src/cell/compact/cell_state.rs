@@ -1,12 +1,9 @@
 use std::cmp::Eq;
-use std::convert::TryInto;
 use std::fmt::{self, Debug, Display, Formatter};
 use std::hash::Hash;
 use std::mem::replace;
 use std::num::NonZeroU8;
 
-use bitvec::prelude::*;
-use generic_array::GenericArray;
 use typenum::Unsigned;
 
 use crate::base::SudokuBase;
@@ -46,7 +43,6 @@ impl<Base: SudokuBase> CellState<Base> {
     }
 
     pub(super) fn view(&self) -> CellView {
-        // TODO: remove extra conversions
         match self {
             CellState::Value(value) => CellView::Value {
                 value: Self::export_value(*value),
@@ -204,9 +200,6 @@ impl<Base: SudokuBase> CellState<Base> {
         }
     }
 }
-
-// TODO: Update trait SudokuCell and impl
-//  alternative: remove SudokuCell (leaky)
 
 /// Conversion Helpers
 impl<Base: SudokuBase> CellState<Base> {

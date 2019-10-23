@@ -1,7 +1,5 @@
 use std::fmt::{self, Debug, Display, Formatter};
 
-use generic_array::GenericArray;
-
 use cell_state::CellState;
 
 use crate::base::SudokuBase;
