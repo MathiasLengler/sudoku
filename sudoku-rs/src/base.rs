@@ -9,13 +9,15 @@ pub mod consts {
     pub use typenum::consts::*;
 }
 
+pub type ArrayElement = u8;
+type ArrayElementBitSize = U8;
+
 // TODO: compare with: fixed-bitset
-// TODO: type alias for u8 generic array storage type
 type DivCeil<A, B> = Quot<Sub1<Sum<A, B>>, B>;
 // (A + B - 1) / B;
 type SideLength<Base> = Prod<Base, Base>;
 // TODO: as well as storage size (U8)
-type CandidatesCapacity<Base> = DivCeil<SideLength<Base>, U8>;
+type CandidatesCapacity<Base> = DivCeil<SideLength<Base>, ArrayElementBitSize>;
 type CellCount<Base> = Prod<SideLength<Base>, SideLength<Base>>;
 
 /// Trait "alias" for Sudoku Base typenum.
@@ -30,24 +32,25 @@ type CellCount<Base> = Prod<SideLength<Base>, SideLength<Base>>;
 /// This is a workaround for [RFC 2089: Implied bounds](https://github.com/rust-lang/rust/issues/44491).
 pub trait SudokuBase
 where
-    Self: ArrayLength<u8> + Ord + Hash + Clone + Copy + Debug + Default,
+    Self: ArrayLength<ArrayElement> + Ord + Hash + Clone + Copy + Debug + Default,
 {
-    type SideLength: ArrayLength<u8> + Ord + Hash + Clone + Copy + Debug + Default;
-    type MaxValue: ArrayLength<u8> + Ord + Hash + Clone + Copy + Debug + Default;
-    type CandidatesCapacity: ArrayLength<u8> + Ord + Hash + Clone + Copy + Debug + Default;
-    type CellCount: ArrayLength<u8> + Ord + Hash + Clone + Copy + Debug + Default;
+    type SideLength: ArrayLength<ArrayElement> + Ord + Hash + Clone + Copy + Debug + Default;
+    type MaxValue: ArrayLength<ArrayElement> + Ord + Hash + Clone + Copy + Debug + Default;
+    type CandidatesCapacity: ArrayLength<ArrayElement> + Ord + Hash + Clone + Copy + Debug + Default;
+    type CellCount: ArrayLength<ArrayElement> + Ord + Hash + Clone + Copy + Debug + Default;
 }
 
 impl<Base> SudokuBase for Base
 where
-    Base: ArrayLength<u8> + Ord + Hash + Clone + Copy + Debug + Default,
-    SideLength<Base>: ArrayLength<u8> + Ord + Hash + Clone + Copy + Debug + Default,
-    CandidatesCapacity<Base>: ArrayLength<u8> + Ord + Hash + Clone + Copy + Debug + Default,
-    CellCount<Base>: ArrayLength<u8> + Ord + Hash + Clone + Copy + Debug + Default,
+    Base: ArrayLength<ArrayElement> + Ord + Hash + Clone + Copy + Debug + Default,
+    SideLength<Base>: ArrayLength<ArrayElement> + Ord + Hash + Clone + Copy + Debug + Default,
+    CandidatesCapacity<Base>:
+        ArrayLength<ArrayElement> + Ord + Hash + Clone + Copy + Debug + Default,
+    CellCount<Base>: ArrayLength<ArrayElement> + Ord + Hash + Clone + Copy + Debug + Default,
     Base: Mul<Base>,
-    SideLength<Base>: Add<U8>,
-    Sum<SideLength<Base>, U8>: Sub<B1>,
-    Sub1<Sum<SideLength<Base>, U8>>: Div<U8>,
+    SideLength<Base>: Add<ArrayElementBitSize>,
+    Sum<SideLength<Base>, ArrayElementBitSize>: Sub<B1>,
+    Sub1<Sum<SideLength<Base>, ArrayElementBitSize>>: Div<ArrayElementBitSize>,
     SideLength<Base>: Mul<Base>,
     SideLength<Base>: Mul<SideLength<Base>>,
 {

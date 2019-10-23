@@ -7,11 +7,11 @@ use bitvec::prelude::*;
 use generic_array::GenericArray;
 use typenum::Unsigned;
 
-use crate::base::SudokuBase;
+use crate::base::{ArrayElement, SudokuBase};
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug, Default)]
 pub struct Candidates<Base: SudokuBase> {
-    arr: GenericArray<u8, Base::CandidatesCapacity>,
+    arr: GenericArray<ArrayElement, Base::CandidatesCapacity>,
 }
 
 impl<Base: SudokuBase> Candidates<Base> {
@@ -64,11 +64,11 @@ impl<Base: SudokuBase> Candidates<Base> {
 }
 
 impl<Base: SudokuBase> Candidates<Base> {
-    fn as_bits(&self) -> &BitSlice<LittleEndian> {
+    fn as_bits(&self) -> &BitSlice<LittleEndian, ArrayElement> {
         self.arr.as_bitslice::<LittleEndian>()
     }
 
-    fn as_mut_bits(&mut self) -> &mut BitSlice<LittleEndian> {
+    fn as_mut_bits(&mut self) -> &mut BitSlice<LittleEndian, ArrayElement> {
         self.arr.as_mut_bitslice::<LittleEndian>()
     }
 
@@ -129,13 +129,15 @@ mod tests {
     fn test_from_u8_iter() {
         use generic_array::arr;
 
-        let candidates = Candidates::<U3>::from_iter(vec![1, 2, 4, 8, 9]);
+        let vec_candidates = vec![1, 2, 4, 8, 9];
 
-        assert_eq!(candidates.arr, arr![u8; 0b1000_1011, 0b0000_0001]);
+        let candidates = Candidates::<U3>::from_iter(vec_candidates.clone());
+
+        assert_eq!(candidates.to_vec(), vec_candidates);
 
         let candidates = Candidates::<U3>::from_iter(std::iter::empty());
 
-        assert_eq!(candidates.arr, arr![u8; 0, 0]);
+        assert_eq!(candidates.to_vec(), vec![]);
     }
 
     #[test]
