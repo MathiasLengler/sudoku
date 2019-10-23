@@ -13,12 +13,26 @@ pub struct Candidates<Base: SudokuBase> {
 }
 
 impl<Base: SudokuBase> Candidates<Base> {
+    pub fn all() -> Self {
+        let mut this = Self::default();
+
+        let bits = this.as_mut_bits();
+
+        bits[0..Base::MaxValue::to_usize()].set_all(true);
+
+        this.debug_assert();
+
+        this
+    }
+
     pub fn toggle(&mut self, candidate: u8) {
         let imported_candidate = Self::import(candidate);
 
         let bits = self.as_mut_bits();
 
         bits.set(imported_candidate, !bits[imported_candidate]);
+
+        self.debug_assert();
     }
 
     pub fn delete(&mut self, candidate: u8) {
@@ -27,6 +41,8 @@ impl<Base: SudokuBase> Candidates<Base> {
         let bits = self.as_mut_bits();
 
         bits.set(imported_candidate, false);
+
+        self.debug_assert();
     }
 
     pub fn to_vec(&self) -> Vec<u8> {

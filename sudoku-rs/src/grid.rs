@@ -3,14 +3,17 @@ use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
+use bitvec::prelude::*;
 use failure::ensure;
 // TODO: replace with bitvec
 use fixedbitset::FixedBitSet;
+use generic_array::GenericArray;
 use itertools::Itertools;
 use ndarray::{Array2, Axis};
 use typenum::Unsigned;
 
 use crate::base::SudokuBase;
+use crate::cell::compact::candidates::Candidates;
 use crate::cell::view::CellView;
 use crate::cell::Cell;
 use crate::error::{Error, Result};
@@ -45,31 +48,17 @@ impl<Base: SudokuBase> Grid<Base> {
                 }
             });
     }
+
     pub fn direct_candidates(&self, pos: Position) -> Vec<u8> {
-        // TODO: wait for bitvec 0.16.0
-        // TODO: bitslice u8 index iterator
-        // TODO:
-        //  neighbor_values as bits
-        //  Bitwise NOT ~ / ones' complement
-        //   or
-        //  FFFF ^ neighbor_values
-        // TODO: decide between bitvec and fixed-bitset
+        let mut candidates = Candidates::<Base>::all();
 
-        let conflicting_values: FixedBitSet = self
-            .neighbor_positions_with_duplicates(pos)
-            .filter_map(|pos| self.get(pos).value().map(|value| value.into()))
-            .collect();
+        for pos in self.neighbor_positions_with_duplicates(pos) {
+            if let Some(value) = self.get(pos).value() {
+                candidates.delete(value);
+            }
+        }
 
-        let values = self.value_range_bit_set();
-
-        let mut candidates = Vec::with_capacity(Self::side_length().into());
-
-        candidates.extend(values.difference(&conflicting_values));
-
-        candidates
-            .into_iter()
-            .map(|candidate| candidate.try_into().unwrap())
-            .collect()
+        candidates.to_vec()
     }
 
     #[allow(dead_code)]
