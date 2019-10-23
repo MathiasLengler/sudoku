@@ -127,8 +127,6 @@ mod tests {
 
     #[test]
     fn test_from_u8_iter() {
-        use generic_array::arr;
-
         let vec_candidates = vec![1, 2, 4, 8, 9];
 
         let candidates = Candidates::<U3>::from_iter(vec_candidates.clone());

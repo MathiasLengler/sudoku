@@ -8,8 +8,7 @@ use criterion::{BatchSize, BenchmarkId};
 use criterion::{BenchmarkGroup, Criterion};
 
 use sudoku::base::{consts::*, SudokuBase};
-use sudoku::cell::Cell;
-use sudoku::generator::backtracking::{Generator, RuntimeSettings, Target};
+use sudoku::generator::backtracking::{Generator, Target};
 use sudoku::grid::Grid;
 use sudoku::position::Position;
 use sudoku::samples::{base_2, base_3};
