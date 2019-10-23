@@ -1,4 +1,6 @@
 use std::convert::TryInto;
+use std::fmt;
+use std::fmt::{Display, Formatter};
 use std::iter::FromIterator;
 
 use bitvec::prelude::*;
@@ -82,8 +84,10 @@ impl<Base: SudokuBase> Candidates<Base> {
     }
 
     fn debug_assert(&self) {
-        let bits = self.as_bits();
-        debug_assert!(bits[Base::MaxValue::to_usize()..].not_any());
+        debug_assert!({
+            let bits = self.as_bits();
+            bits[Base::MaxValue::to_usize()..].not_any()
+        });
     }
 }
 
@@ -100,6 +104,18 @@ impl<Base: SudokuBase> FromIterator<u8> for Candidates<Base> {
         this.debug_assert();
 
         this
+    }
+}
+
+impl<Base: SudokuBase, I: IntoIterator<Item = u8>> From<I> for Candidates<Base> {
+    fn from(into_iter: I) -> Self {
+        Self::from_iter(into_iter)
+    }
+}
+
+impl<Base: SudokuBase> Display for Candidates<Base> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
+        write!(f, "{:?}", self.to_vec())
     }
 }
 

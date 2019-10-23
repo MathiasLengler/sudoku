@@ -68,7 +68,7 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
     fn init(&mut self) {
         if let Some(first_pos) = self.empty_positions.first() {
             self.choices.push(Choice::new(
-                self.grid.direct_candidates(*first_pos),
+                self.grid.direct_candidates(*first_pos).to_vec(),
                 *first_pos,
                 self.settings.shuffle_candidates,
             ))
@@ -98,6 +98,11 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
         }
     }
 
+    // TODO: fix performance regression:
+    //  Solver/backtracking/Base=3
+    //   Additional Statistics:
+    //   Lower bound	Estimate	Upper bound
+    //   Change in time	+123.65%	+123.92%	+124.19%	(p = 0.00 < 0.05)Performance has regressed.
     fn step(&mut self) -> StepResult {
         let choices_len = self.choices.len();
 
@@ -120,7 +125,7 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
                     match self.empty_positions.get(choices_len) {
                         Some(next_position) => {
                             self.choices.push(Choice::new(
-                                self.grid.direct_candidates(*next_position),
+                                self.grid.direct_candidates(*next_position).to_vec(),
                                 *next_position,
                                 self.settings.shuffle_candidates,
                             ));

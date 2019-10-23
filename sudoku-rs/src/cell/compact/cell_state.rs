@@ -35,11 +35,8 @@ impl<Base: SudokuBase> CellState<Base> {
         }
     }
 
-    pub(super) fn with_candidates<I>(candidates: I) -> Self
-    where
-        I: IntoIterator<Item = u8>,
-    {
-        CellState::Candidates(candidates.into_iter().collect())
+    pub(super) fn with_candidates<I: Into<Candidates<Base>>>(candidates: I) -> Self {
+        CellState::Candidates(candidates.into())
     }
 
     pub(super) fn view(&self) -> CellView {
@@ -57,28 +54,28 @@ impl<Base: SudokuBase> CellState<Base> {
             },
         }
     }
-    pub(super) fn is_value(&self) -> bool {
+    pub(super) fn has_value(&self) -> bool {
         match self {
             CellState::Value(_) => true,
             CellState::FixedValue(_) => true,
             CellState::Candidates(_) => false,
         }
     }
-    pub(super) fn is_unfixed_value(&self) -> bool {
+    pub(super) fn has_unfixed_value(&self) -> bool {
         match self {
             CellState::Value(_) => true,
             CellState::FixedValue(_) => false,
             CellState::Candidates(_) => false,
         }
     }
-    pub(super) fn is_fixed_value(&self) -> bool {
+    pub(super) fn has_fixed_value(&self) -> bool {
         match self {
             CellState::Value(_) => false,
             CellState::FixedValue(_) => true,
             CellState::Candidates(_) => false,
         }
     }
-    pub(super) fn is_candidates(&self) -> bool {
+    pub(super) fn has_candidates(&self) -> bool {
         match self {
             CellState::Value(_) => false,
             CellState::FixedValue(_) => false,
@@ -157,10 +154,7 @@ impl<Base: SudokuBase> CellState<Base> {
         }
     }
 
-    pub(super) fn set_candidates<I>(&mut self, candidates: I)
-    where
-        I: IntoIterator<Item = u8>,
-    {
+    pub(super) fn set_candidates<I: Into<Candidates<Base>>>(&mut self, candidates: I) {
         self.assert_unfixed();
 
         replace(self, Self::with_candidates(candidates));

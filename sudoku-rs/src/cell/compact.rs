@@ -3,6 +3,7 @@ use std::fmt::{self, Debug, Display, Formatter};
 use cell_state::CellState;
 
 use crate::base::SudokuBase;
+use crate::cell::compact::candidates::Candidates;
 use crate::cell::view::CellView;
 
 pub mod candidates;
@@ -36,17 +37,17 @@ impl<Base: SudokuBase> Cell<Base> {
         self.0.view()
     }
     /// If the cell contains a fixed or unfixed value.
-    pub fn is_value(&self) -> bool {
-        self.0.is_value()
+    pub fn has_value(&self) -> bool {
+        self.0.has_value()
     }
-    pub fn is_unfixed_value(&self) -> bool {
-        self.0.is_unfixed_value()
+    pub fn has_unfixed_value(&self) -> bool {
+        self.0.has_unfixed_value()
     }
-    pub fn is_fixed_value(&self) -> bool {
-        self.0.is_fixed_value()
+    pub fn has_fixed_value(&self) -> bool {
+        self.0.has_fixed_value()
     }
-    pub fn is_candidates(&self) -> bool {
-        self.0.is_candidates()
+    pub fn has_candidates(&self) -> bool {
+        self.0.has_candidates()
     }
 
     /// Fix the cell to the current value if it was unfixed.
@@ -108,13 +109,14 @@ impl<Base: SudokuBase> Cell<Base> {
     /// Set the cell to the given candidates.
     /// Deletes value if present.
     ///
+    /// Candidates can be anything convertible into the `Candidates` struct.
+    /// This is commonly a `Vec<u8>` via its implementation of `IntoIterator<Item = u8>`
+    /// or a `Candidates` struct directly.
+    ///
     /// # Panics
     ///
     /// Panics it the cell is fixed.
-    pub fn set_candidates<I>(&mut self, candidates: I)
-    where
-        I: IntoIterator<Item = u8>,
-    {
+    pub fn set_candidates<I: Into<Candidates<Base>>>(&mut self, candidates: I) {
         self.0.set_candidates(candidates)
     }
 

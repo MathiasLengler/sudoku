@@ -3,11 +3,7 @@ use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
-use bitvec::prelude::*;
 use failure::ensure;
-// TODO: replace with bitvec
-use fixedbitset::FixedBitSet;
-use generic_array::GenericArray;
 use itertools::Itertools;
 use ndarray::{Array2, Axis};
 use typenum::Unsigned;
@@ -43,13 +39,13 @@ impl<Base: SudokuBase> Grid<Base> {
 
         self.neighbor_positions_with_duplicates(pos)
             .for_each(|pos| {
-                if self.get(pos).is_candidates() {
+                if self.get(pos).has_candidates() {
                     self.get_mut(pos).delete_candidate(value);
                 }
             });
     }
 
-    pub fn direct_candidates(&self, pos: Position) -> Vec<u8> {
+    pub fn direct_candidates(&self, pos: Position) -> Candidates<Base> {
         let mut candidates = Candidates::<Base>::all();
 
         for pos in self.neighbor_positions_with_duplicates(pos) {
@@ -58,7 +54,7 @@ impl<Base: SudokuBase> Grid<Base> {
             }
         }
 
-        candidates.to_vec()
+        candidates
     }
 
     #[allow(dead_code)]
@@ -132,16 +128,6 @@ impl<Base: SudokuBase> Grid<Base> {
         }
     }
 
-    #[allow(dead_code)]
-    pub(super) fn value_range(&self) -> impl Iterator<Item = u8> {
-        (1..=Self::side_length())
-    }
-
-    pub(super) fn value_range_bit_set(&self) -> FixedBitSet {
-        let mut bit_set = FixedBitSet::with_capacity((Self::side_length() + 1).into());
-        bit_set.set_range(1.., true);
-        bit_set
-    }
     pub fn base() -> u8 {
         Base::to_u8()
     }
@@ -420,24 +406,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_value_range() {
-        let grid = Grid::<U3>::new();
-
-        let value_range: Vec<_> = grid.value_range().collect();
-
-        assert_eq!(value_range, vec![1, 2, 3, 4, 5, 6, 7, 8, 9]);
-    }
-
-    #[test]
-    fn test_value_range_bit_set() {
-        let grid = Grid::<U3>::new();
-
-        let value_range_bit_set: Vec<_> = grid.value_range_bit_set().ones().collect();
-
-        assert_eq!(value_range_bit_set, vec![1, 2, 3, 4, 5, 6, 7, 8, 9]);
-    }
-
-    #[test]
     fn test_has_conflict() {
         let mut grid = Grid::<U3>::new();
 
@@ -478,7 +446,7 @@ mod tests {
 
         let direct_candidates = grid.direct_candidates(Position { column: 1, row: 1 });
 
-        assert_eq!(direct_candidates, vec![1, 2, 4]);
+        assert_eq!(direct_candidates, vec![1, 2, 4].into());
     }
 
     #[test]
