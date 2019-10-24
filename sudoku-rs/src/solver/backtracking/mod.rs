@@ -135,7 +135,6 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
                         None => {
                             choice.set_next();
 
-                            // TODO: move clone to iterator (streaming iterator problem)
                             StepResult::Solution
                         }
                     }
