@@ -369,6 +369,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "fixed-bitset"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "generic-array 0.13.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "num-traits 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "typenum 1.11.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "fixedbitset"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -932,6 +942,7 @@ dependencies = [
  "crossterm 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "enum_dispatch 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "fixed-bitset 0.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "fixedbitset 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "flame 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "flamer 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1251,6 +1262,7 @@ dependencies = [
 "checksum enum_dispatch 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "21fba44fbe7e65032c483dfc8f21ee229d77a49e3b7032a8058088af50511111"
 "checksum failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "f8273f13c977665c5db7eb2b99ae520952fe5ac831ae4cd09d80c4c7042b5ed9"
 "checksum failure_derive 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "0bc225b78e0391e4b8683440bf2e63c2deeeb2ce5189eab46e2b68c6d3725d08"
+"checksum fixed-bitset 0.0.1 (registry+https://github.com/rust-lang/crates.io-index)" = "43dbc3481340d2a9b27227b880f3f32c4e92fa5d84715813057021b5d1ab179e"
 "checksum fixedbitset 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "37ab347416e802de484e4d03c7316c48f1ecb56574dfd4a46a80f173ce1de04d"
 "checksum flame 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "1fc2706461e1ee94f55cab2ed2e3d34ae9536cfa830358ef80acff1a3dacab30"
 "checksum flamer 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "36b732da54fd4ea34452f2431cf464ac7be94ca4b339c9cd3d3d12eb06fe7aab"
