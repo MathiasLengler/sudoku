@@ -50,3 +50,4 @@
     - eslint
     - clippy
 - evaluate useReducer
+- wrap wasm sudoku in [comlink](https://github.com/GoogleChromeLabs/comlink)
