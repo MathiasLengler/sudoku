@@ -134,12 +134,10 @@ mod tests {
 
     #[test]
     fn test_minimal() {
-        let generator = Generator::with_target(Target::Minimal);
+        let grid = Generator::with_target(Target::Minimal)
+            .generate::<U2>()
+            .unwrap();
 
-        let sudoku = generator.generate::<U2>().unwrap();
-
-        println!("{}", sudoku);
-
-        assert!(is_minimal(&sudoku));
+        assert!(is_minimal(&grid));
     }
 }
