@@ -1,6 +1,7 @@
-use failure::ensure;
 use std::any::{Any, TypeId};
+use std::convert::{TryFrom, TryInto};
 
+use failure::ensure;
 use typenum::consts::*;
 
 pub use game::DynamicSudoku;
@@ -13,7 +14,6 @@ use crate::cell::view::CellView;
 use crate::error::{Error, Result};
 use crate::generator::backtracking::RuntimeSettings as GeneratorSettings;
 use crate::sudoku::Sudoku;
-use std::convert::{TryFrom, TryInto};
 
 mod game {
     use typenum::consts::*;
@@ -132,7 +132,6 @@ impl DynamicSudoku {
         panic!("Unexpected dynamic base: {}", unexpected_base)
     }
 
-    // TODO: use pow probing
     fn cell_count_to_base(cell_count: usize) -> Result<u8> {
         let approx_base = (cell_count as f64).sqrt().sqrt().round() as u8;
 
