@@ -25,7 +25,7 @@ impl Default for Target {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RuntimeSettings {
-    pub base: usize,
+    pub base: u8,
     pub target: Target,
 }
 
@@ -35,7 +35,6 @@ pub struct Generator {
 }
 
 impl Generator {
-    // TODO: change parameter back to base
     pub fn with_target(target: Target) -> Self {
         Self { target }
     }

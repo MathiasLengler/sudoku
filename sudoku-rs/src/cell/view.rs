@@ -8,6 +8,8 @@ use crate::base::SudokuBase;
 use crate::cell::Cell;
 use crate::error::{Error, Result};
 
+pub(crate) mod parser;
+
 #[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "kind")]

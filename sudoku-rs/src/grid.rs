@@ -3,20 +3,17 @@ use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
-use failure::ensure;
 use itertools::Itertools;
 use ndarray::{Array2, Axis};
 use typenum::Unsigned;
 
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
+use crate::cell::view::parser::parse_cells;
 use crate::cell::view::CellView;
 use crate::cell::Cell;
 use crate::error::{Error, Result};
-use crate::grid::parser::{from_givens_grid, from_givens_line};
 use crate::position::Position;
-
-mod parser;
 
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub struct Grid<Base: SudokuBase> {
@@ -57,7 +54,6 @@ impl<Base: SudokuBase> Grid<Base> {
         candidates
     }
 
-    #[allow(dead_code)]
     pub(crate) fn has_conflict(&self) -> bool {
         self.all_row_cells().any(|row| self.has_duplicate(row))
             || self
@@ -148,24 +144,6 @@ impl<Base: SudokuBase> Grid<Base> {
     }
     pub fn max_value_usize() -> usize {
         Base::MaxValue::to_usize()
-    }
-
-    fn base_to_cell_count(base: usize) -> usize {
-        base.pow(4)
-    }
-
-    // TODO: use detection in import
-    #[allow(dead_code)]
-    fn cell_count_to_base(cell_count: usize) -> Result<usize> {
-        let approx_base = (cell_count as f64).sqrt().sqrt().round() as usize;
-
-        ensure!(
-            Self::base_to_cell_count(approx_base) == cell_count,
-            "Cell count {} has no valid sudoku base",
-            cell_count
-        );
-
-        Ok(approx_base)
     }
 }
 
@@ -347,15 +325,7 @@ impl<Base: SudokuBase> TryFrom<&str> for Grid<Base> {
     type Error = Error;
 
     fn try_from(input: &str) -> Result<Self> {
-        use crate::grid::parser::from_candidates;
-
-        let input = input.trim();
-
-        if input.contains('\n') {
-            from_candidates(input).or_else(|_| from_givens_grid(input))
-        } else {
-            from_givens_line(input)
-        }
+        Ok(parse_cells(input)?.try_into()?)
     }
 }
 
@@ -492,28 +462,5 @@ mod tests {
                 grid
             }
         );
-    }
-
-    // TODO: enable when the new place for the dynamic base parser is found
-    #[test]
-    #[ignore]
-    fn test_try_from_str() -> Result<()> {
-        //        let inputs = [
-        //            include_str!(concat!(
-        //                env!("CARGO_MANIFEST_DIR"),
-        //                "/tests/res/candidates.txt"
-        //            )),
-        //            include_str!(concat!(
-        //                env!("CARGO_MANIFEST_DIR"),
-        //                "/tests/res/givens_line.txt"
-        //            )),
-        //        ];
-        //
-        //        inputs
-        //            .into_iter()
-        //            .map(|input| Grid::<Base>::try_from(*input))
-        //            .collect::<Result<Vec<_>>>()?;
-        //
-        Ok(())
     }
 }

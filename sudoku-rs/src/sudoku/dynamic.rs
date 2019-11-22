@@ -1,3 +1,4 @@
+use failure::ensure;
 use std::any::{Any, TypeId};
 
 use typenum::consts::*;
@@ -7,11 +8,12 @@ pub use game::Game;
 use DynamicSudoku::*;
 
 use crate::base::SudokuBase;
-use crate::error::Result;
+use crate::cell::view::parser::parse_cells;
+use crate::cell::view::CellView;
+use crate::error::{Error, Result};
 use crate::generator::backtracking::RuntimeSettings as GeneratorSettings;
 use crate::sudoku::Sudoku;
-
-// TODO: use enum_dispatch to impl Game for DynamicSudoku
+use std::convert::{TryFrom, TryInto};
 
 mod game {
     use typenum::consts::*;
@@ -33,6 +35,7 @@ mod game {
         fn solve_single_candidates(&mut self);
         fn group_reduction(&mut self);
         fn undo(&mut self);
+        fn settings(&self) -> SudokuSettings;
         fn update_settings(&mut self, settings: SudokuSettings);
         fn export(&self) -> String;
     }
@@ -70,19 +73,132 @@ impl DynamicSudoku {
             _ => Self::bail_unexpected_base(Base::to_u8()),
         }
     }
+    pub fn generate(&mut self, generator_settings: GeneratorSettings) -> Result<()> {
+        let GeneratorSettings { base, target } = generator_settings;
 
-    pub fn generate(&mut self, _generator_settings: GeneratorSettings) -> Result<()> {
-        // TODO: match generator_settings.base and use generic generator
-        unimplemented!()
+        *self = match base {
+            2 => Base2(Sudoku::<U2>::with_target_and_settings(
+                target,
+                self.settings(),
+            )?),
+            3 => Base3(Sudoku::<U3>::with_target_and_settings(
+                target,
+                self.settings(),
+            )?),
+            4 => Base4(Sudoku::<U4>::with_target_and_settings(
+                target,
+                self.settings(),
+            )?),
+            5 => Base5(Sudoku::<U5>::with_target_and_settings(
+                target,
+                self.settings(),
+            )?),
+            unexpected_base => Self::bail_unexpected_base(unexpected_base),
+        };
+
+        Ok(())
     }
-    pub fn import(&mut self, _input: &str) -> Result<()> {
-        // TODO: use split up parser to infer base from Vec<CellView>
-        unimplemented!()
+    pub fn import(&mut self, input: &str) -> Result<()> {
+        *self = input.try_into()?;
+
+        Ok(())
+    }
+}
+
+impl TryFrom<Vec<CellView>> for DynamicSudoku {
+    type Error = Error;
+
+    fn try_from(views: Vec<CellView>) -> Result<Self> {
+        Ok(match Self::cell_count_to_base(views.len())? {
+            2 => Base2(Sudoku::<U2>::with_grid(views.try_into()?)),
+            3 => Base3(Sudoku::<U3>::with_grid(views.try_into()?)),
+            4 => Base4(Sudoku::<U4>::with_grid(views.try_into()?)),
+            5 => Base5(Sudoku::<U5>::with_grid(views.try_into()?)),
+            unexpected_base => Self::bail_unexpected_base(unexpected_base),
+        })
+    }
+}
+
+impl TryFrom<&str> for DynamicSudoku {
+    type Error = Error;
+
+    fn try_from(input: &str) -> Result<Self> {
+        Ok(parse_cells(input)?.try_into()?)
     }
 }
 
 impl DynamicSudoku {
     fn bail_unexpected_base(unexpected_base: u8) -> ! {
         panic!("Unexpected dynamic base: {}", unexpected_base)
+    }
+
+    // TODO: use pow probing
+    fn cell_count_to_base(cell_count: usize) -> Result<u8> {
+        let approx_base = (cell_count as f64).sqrt().sqrt().round() as u8;
+
+        ensure!(
+            Self::base_to_cell_count(approx_base) == cell_count,
+            "Cell count {} has no valid sudoku base",
+            cell_count
+        );
+
+        Ok(approx_base)
+    }
+
+    fn base_to_cell_count(base: u8) -> usize {
+        (base as usize).pow(4)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_cell_count_to_base() -> Result<()> {
+        let test_cases = vec![(0, 0), (1, 1), (16, 2), (81, 3), (256, 4), (625, 5)];
+
+        for &(cell_count, expected_base) in &test_cases {
+            let base = DynamicSudoku::cell_count_to_base(cell_count)?;
+
+            assert_eq!(base, expected_base);
+        }
+
+        let legal_cell_counts: Vec<_> = test_cases
+            .into_iter()
+            .map(|(cell_count, _)| cell_count)
+            .collect();
+
+        for cell_count in (0..=1000).filter(|x| !legal_cell_counts.contains(x)) {
+            let res_base = DynamicSudoku::cell_count_to_base(cell_count);
+            assert!(
+                res_base.is_err(),
+                "Expected err, got {:?} for cell_count: {}",
+                res_base,
+                cell_count
+            );
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_try_from_str() -> Result<()> {
+        let inputs = [
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/res/candidates.txt"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/res/givens_line.txt"
+            )),
+        ];
+
+        inputs
+            .into_iter()
+            .map(|input| DynamicSudoku::try_from(*input))
+            .collect::<Result<Vec<_>>>()?;
+
+        Ok(())
     }
 }
