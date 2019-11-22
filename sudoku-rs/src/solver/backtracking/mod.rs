@@ -152,32 +152,26 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
 
     #[cfg(feature = "debug_print")]
     fn debug_print(&self, step_result: &StepResult) {
-        use crossterm::Crossterm;
-        use lazy_static::lazy_static;
-        use std::time::Duration;
+        use crossterm::{cursor, terminal, Output, QueueableCommand};
+        use std::io::{prelude::*, stdout};
 
-        lazy_static! {
-            static ref CROSSTERM: Crossterm = Crossterm::new();
-        }
-
-        CROSSTERM
-            .terminal()
-            .clear(crossterm::ClearType::All)
+        let mut stdout = stdout();
+        stdout
+            .queue(terminal::Clear(terminal::ClearType::All))
             .unwrap();
-
-        CROSSTERM
-            .terminal()
-            .write(format!(
+        stdout.queue(cursor::MoveTo(0, 0)).unwrap();
+        stdout
+            .queue(Output(format!(
                 "Solver at step {}:\n{}\nStep result: {:?}\nChoices: {}\nCurrent Choice: {:?}",
                 self.step_count,
                 self.grid,
                 step_result,
                 self.choices.len(),
                 self.choices.last()
-            ))
+            )))
             .unwrap();
 
-        ::std::thread::sleep(Duration::from_nanos(1));
+        stdout.flush().unwrap();
     }
 }
 
