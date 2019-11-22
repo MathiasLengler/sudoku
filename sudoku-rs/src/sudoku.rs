@@ -53,22 +53,20 @@ impl<Base: SudokuBase> Sudoku<Base> {
         }
     }
 
+    pub fn with_target_and_settings(target: Target, settings: Settings) -> Result<Self> {
+        let grid = Generator::with_target(target)
+            .generate()
+            .ok_or(format_err!("Unable to generate grid"))?;
+
+        Ok(Self::with_grid_and_settings(grid, settings))
+    }
+
     pub fn grid(&self) -> &Grid<Base> {
         &self.grid
     }
 
     pub fn solved_grid(&self) -> &Option<Grid<Base>> {
         &self.solved_grid
-    }
-
-    pub fn generate(&mut self, target: Target) -> Result<()> {
-        let grid = Generator::with_target(target)
-            .generate()
-            .ok_or(format_err!("Unable to generate grid"))?;
-
-        self.replace_grid(grid);
-
-        Ok(())
     }
 
     pub fn import(&mut self, input: &str) -> Result<()> {
@@ -147,6 +145,10 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
         if let Some(grid) = self.history.pop() {
             self.grid = grid;
         }
+    }
+
+    fn settings(&self) -> Settings {
+        self.settings
     }
 
     // TODO: wasm integration

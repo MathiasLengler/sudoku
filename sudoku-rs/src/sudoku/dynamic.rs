@@ -11,8 +11,6 @@ use crate::error::Result;
 use crate::generator::backtracking::RuntimeSettings as GeneratorSettings;
 use crate::sudoku::Sudoku;
 
-// TODO: use enum_dispatch to impl Game for DynamicSudoku
-
 mod game {
     use typenum::consts::*;
 
@@ -33,6 +31,7 @@ mod game {
         fn solve_single_candidates(&mut self);
         fn group_reduction(&mut self);
         fn undo(&mut self);
+        fn settings(&self) -> SudokuSettings;
         fn update_settings(&mut self, settings: SudokuSettings);
         fn export(&self) -> String;
     }
@@ -70,10 +69,30 @@ impl DynamicSudoku {
             _ => Self::bail_unexpected_base(Base::to_u8()),
         }
     }
+    pub fn generate(&mut self, generator_settings: GeneratorSettings) -> Result<()> {
+        let GeneratorSettings { base, target } = generator_settings;
 
-    pub fn generate(&mut self, _generator_settings: GeneratorSettings) -> Result<()> {
-        // TODO: match generator_settings.base and use generic generator
-        unimplemented!()
+        *self = match base {
+            2 => Base2(Sudoku::<U2>::with_target_and_settings(
+                target,
+                self.settings(),
+            )?),
+            3 => Base3(Sudoku::<U3>::with_target_and_settings(
+                target,
+                self.settings(),
+            )?),
+            4 => Base4(Sudoku::<U4>::with_target_and_settings(
+                target,
+                self.settings(),
+            )?),
+            5 => Base5(Sudoku::<U5>::with_target_and_settings(
+                target,
+                self.settings(),
+            )?),
+            unexpected_base => Self::bail_unexpected_base(unexpected_base),
+        };
+
+        Ok(())
     }
     pub fn import(&mut self, _input: &str) -> Result<()> {
         // TODO: use split up parser to infer base from Vec<CellView>
