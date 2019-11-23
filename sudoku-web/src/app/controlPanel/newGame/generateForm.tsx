@@ -64,8 +64,9 @@ export const GenerateForm: React.FunctionComponent<GenerateFormProps> = (props) 
       <Button onClick={onClose}>
         Cancel
       </Button>
-      <Button onClick={() => {
-        sudokuController.generate({
+      <Button onClick={async () => {
+        // TODO: show spinner
+        await sudokuController.generate({
           base,
           target: {
             fromMinimal: {

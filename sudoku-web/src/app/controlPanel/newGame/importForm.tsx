@@ -123,9 +123,10 @@ export const ImportForm: React.FunctionComponent<ImportFormProps> = (props) => {
       <Button onClick={onClose}>
         Cancel
       </Button>
-      <Button onClick={() => {
+      <Button onClick={async () => {
         try {
-          sudokuController.import(input);
+          // TODO: show spinner
+          await sudokuController.import(input);
           onClose();
         } catch (e) {
           console.error("Unable to parse input sudoku string:", input, e);

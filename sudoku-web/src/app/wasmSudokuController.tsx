@@ -2,6 +2,7 @@ import {TypedWasmSudoku} from "../typedWasmSudoku";
 import * as React from "react";
 import {blocksToCell} from "./utils";
 import isEqual from "lodash/isEqual";
+import * as Comlink from "comlink";
 
 export type onSudokuUpdate = (this: void, sudoku: TransportSudoku) => void;
 
@@ -15,7 +16,7 @@ export interface Input {
 
 export class WasmSudokuController {
   public constructor(
-    private readonly wasmSudoku: TypedWasmSudoku,
+    private readonly wasmSudokuProxy: Comlink.Remote<TypedWasmSudoku>,
     private readonly sudoku: TransportSudoku,
     private readonly onSudokuUpdate: onSudokuUpdate,
     private readonly input: Input,
@@ -24,14 +25,15 @@ export class WasmSudokuController {
   ) {
   }
 
-  private updateSudoku() {
-    this.onSudokuUpdate(this.wasmSudoku.getSudoku())
+  private async updateSudoku() {
+    const transportSudoku = await this.wasmSudokuProxy.getSudoku();
+    this.onSudokuUpdate(transportSudoku)
   }
 
-  private withSudokuUpdate<T>(f: () => T): T {
-    const ret = f();
+  private async withSudokuUpdate<T>(f: () => Promise<T>): Promise<T> {
+    const ret = await f();
 
-    this.updateSudoku();
+    await this.updateSudoku();
 
     return ret;
   }
@@ -92,14 +94,14 @@ export class WasmSudokuController {
       return;
     }
 
-    this.withSudokuUpdate(() => {
+    this.withSudokuUpdate(async () => {
       if (value === 0) {
-        this.wasmSudoku.delete(selectedPos);
+        await this.wasmSudokuProxy.delete(selectedPos);
       } else {
         if (candidateMode) {
-          this.wasmSudoku.toggleCandidate(selectedPos, value);
+          await this.wasmSudokuProxy.toggleCandidate(selectedPos, value);
         } else {
-          this.wasmSudoku.setOrToggleValue(selectedPos, value);
+          await this.wasmSudokuProxy.setOrToggleValue(selectedPos, value);
         }
       }
     });
@@ -110,44 +112,44 @@ export class WasmSudokuController {
       return;
     }
 
-    this.withSudokuUpdate(() => {
-      this.wasmSudoku.delete(this.input.selectedPos);
+    this.withSudokuUpdate(async () => {
+      await this.wasmSudokuProxy.delete(this.input.selectedPos);
     });
   }
 
   public setAllDirectCandidates() {
-    this.withSudokuUpdate(() => {
-      this.wasmSudoku.setAllDirectCandidates();
+    this.withSudokuUpdate(async () => {
+      await this.wasmSudokuProxy.setAllDirectCandidates();
     });
   }
 
   public undo() {
-    this.withSudokuUpdate(() => {
-      this.wasmSudoku.undo();
+    this.withSudokuUpdate(async () => {
+      await this.wasmSudokuProxy.undo();
     })
   }
 
-  public generate(settings: GeneratorSettings) {
-    this.withSudokuUpdate(() => {
-      this.wasmSudoku.generate(settings);
-    })
+  public async generate(settings: GeneratorSettings) {
+    await this.withSudokuUpdate(async () => {
+      await this.wasmSudokuProxy.generate(settings);
+    });
   }
 
-  public import(input: string) {
-    this.withSudokuUpdate(() => {
-      this.wasmSudoku.import(input);
-    })
+  public async import(input: string) {
+    await this.withSudokuUpdate(async () => {
+      await this.wasmSudokuProxy.import(input);
+    });
   }
 
   public solveSingleCandidates() {
-    this.withSudokuUpdate(() => {
-      this.wasmSudoku.solveSingleCandidates();
+    this.withSudokuUpdate(async () => {
+      await this.wasmSudokuProxy.solveSingleCandidates();
     })
   }
 
   public groupReduction() {
-    this.withSudokuUpdate(() => {
-      this.wasmSudoku.groupReduction();
+    this.withSudokuUpdate(async () => {
+      await this.wasmSudokuProxy.groupReduction();
     })
   }
 

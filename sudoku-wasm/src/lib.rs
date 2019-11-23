@@ -2,7 +2,7 @@
 
 use std::cell::RefCell;
 
-use log::debug;
+use log::info;
 use wasm_bindgen::prelude::*;
 
 use sudoku::base::consts::*;
@@ -21,6 +21,8 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 #[wasm_bindgen]
 pub fn run() -> Result<(), JsValue> {
     init();
+
+    info!("Hello WASM");
 
     Ok(())
 }
