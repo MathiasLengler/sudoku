@@ -7,7 +7,10 @@ const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
 const webpack = require('webpack');
 // const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
-const browserConfig = {
+// TODO: fix duplicate WasmPackPlugin (gets executed twice)
+
+const appConfig = {
+  name: "app",
   entry: "./src/index.tsx",
   output: {
     path: dist,
@@ -50,6 +53,7 @@ const browserConfig = {
 };
 
 const workerConfig = {
+  name: "worker",
   target: 'webworker',
   entry: "./src/worker.tsx",
   output: {
@@ -59,6 +63,15 @@ const workerConfig = {
   resolve: {
     extensions: [".ts", ".tsx", ".js", ".wasm"]
   },
+  plugins: [
+    new WasmPackPlugin({
+      crateDirectory: path.resolve(__dirname, "../sudoku-wasm"),
+      watchDirectories: [
+        path.resolve(__dirname, "../sudoku-rs")
+      ],
+      outDir: path.resolve(__dirname, "../sudoku-wasm/pkg")
+    })
+  ],
   module: {
     rules: [
       {
@@ -70,4 +83,4 @@ const workerConfig = {
 };
 
 
-module.exports = [browserConfig, workerConfig];
+module.exports = [appConfig, workerConfig];
