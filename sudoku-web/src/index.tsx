@@ -6,7 +6,7 @@ import * as Comlink from "comlink";
 import {WorkerApi} from "./worker";
 
 (async () => {
-  const worker = new Worker('./worker.js');
+  const worker = new Worker('./worker.tsx', {name: 'worker', type: 'module'});
 
   const workerApi = Comlink.wrap<WorkerApi>(worker);
 

@@ -6,8 +6,7 @@ const dist = path.resolve(__dirname, "dist");
 const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
 const webpack = require('webpack');
 // const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
-
-// TODO: fix duplicate WasmPackPlugin (gets executed twice)
+const WorkerPlugin = require('worker-plugin');
 
 const appConfig = {
   name: "app",
@@ -27,6 +26,9 @@ const appConfig = {
   plugins: [
     new HtmlWebpackPlugin({
       template: path.resolve(__dirname, "res", "index.html")
+    }),
+    new WorkerPlugin({
+      globalObject: false
     }),
     new WasmPackPlugin({
       crateDirectory: path.resolve(__dirname, "../sudoku-wasm"),
@@ -52,35 +54,4 @@ const appConfig = {
   },
 };
 
-const workerConfig = {
-  name: "worker",
-  target: 'webworker',
-  entry: "./src/worker.tsx",
-  output: {
-    path: dist,
-    filename: "worker.js"
-  },
-  resolve: {
-    extensions: [".ts", ".tsx", ".js", ".wasm"]
-  },
-  plugins: [
-    new WasmPackPlugin({
-      crateDirectory: path.resolve(__dirname, "../sudoku-wasm"),
-      watchDirectories: [
-        path.resolve(__dirname, "../sudoku-rs")
-      ],
-      outDir: path.resolve(__dirname, "../sudoku-wasm/pkg")
-    })
-  ],
-  module: {
-    rules: [
-      {
-        test: /\.tsx?$/,
-        loader: "ts-loader"
-      }
-    ]
-  }
-};
-
-
-module.exports = [appConfig, workerConfig];
+module.exports = appConfig;
