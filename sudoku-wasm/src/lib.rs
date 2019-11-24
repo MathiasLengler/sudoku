@@ -2,7 +2,7 @@
 
 use std::cell::RefCell;
 
-use log::info;
+use log::trace;
 use wasm_bindgen::prelude::*;
 
 use sudoku::base::consts::*;
@@ -22,7 +22,7 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 pub fn run() -> Result<(), JsValue> {
     init();
 
-    info!("Hello WASM");
+    trace!("Wasm initialized");
 
     Ok(())
 }
@@ -142,6 +142,6 @@ fn init() {
     #[cfg(feature = "console")]
     SET_HOOK.call_once(|| {
         panic::set_hook(Box::new(console_error_panic_hook::hook));
-        console_log::init_with_level(Level::Debug).unwrap();
+        console_log::init_with_level(Level::Trace).unwrap();
     });
 }
