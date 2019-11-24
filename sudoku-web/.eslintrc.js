@@ -24,6 +24,7 @@ module.exports = {
     "@typescript-eslint/no-parameter-properties": "off",
     // False positives + Intellij
     "@typescript-eslint/no-unused-vars": "off",
+    "@typescript-eslint/no-use-before-define": ["error", {"functions": false}],
     "react-hooks/rules-of-hooks": "error",
     "react-hooks/exhaustive-deps": "warn",
     "react/prop-types": "off"

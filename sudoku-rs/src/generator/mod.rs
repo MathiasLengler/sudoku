@@ -1,5 +1,4 @@
 pub mod backtracking;
-pub mod random;
 
 // TODO: strategic
 //  needed strategies to solve

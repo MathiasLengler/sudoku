@@ -10,7 +10,8 @@
     "moduleResolution": "node",
     "esModuleInterop": true,
     "sourceMap": true,
-    "jsx": "react"
+    "jsx": "react",
+    "target": "es2017"
   },
   "include": [
     "src/**/*"

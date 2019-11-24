@@ -1,3 +1,4 @@
+#![warn(rust_2018_idioms)]
 #![warn(missing_debug_implementations)]
 #![deny(unsafe_code)]
 
@@ -9,6 +10,7 @@ extern crate flamer;
 
 pub use sudoku::*;
 
+pub mod base;
 pub mod cell;
 pub mod error;
 pub mod generator;
@@ -16,7 +18,6 @@ pub mod grid;
 mod history;
 pub mod position;
 pub mod samples;
-pub mod settings;
 pub mod solver;
 mod sudoku;
 pub mod transport;

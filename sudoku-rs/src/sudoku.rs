@@ -3,41 +3,46 @@ use std::fmt::{self, Display, Formatter};
 
 use failure::format_err;
 
-use crate::cell::SudokuCell;
+pub use dynamic::{DynamicSudoku, Game};
+
+use crate::base::SudokuBase;
 use crate::error::Result;
-use crate::generator::backtracking::Generator;
-use crate::generator::backtracking::Settings as GeneratorSettings;
+use crate::generator::backtracking::{Generator, Target};
 use crate::grid::Grid;
-use crate::history::GridHistory;
+use crate::history::History;
 use crate::position::Position;
-use crate::settings::Settings;
 use crate::solver::backtracking::Solver as BacktrackingSolver;
 use crate::solver::strategic::{
     strategies::{GroupReduction, SingleCandidate},
     Solver as StrategicSolver,
 };
 
-#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
-pub struct Sudoku<Cell: SudokuCell> {
-    grid: Grid<Cell>,
-    solved_grid: Option<Grid<Cell>>,
-    history: GridHistory<Cell>,
+use self::settings::Settings;
+
+mod dynamic;
+pub mod settings;
+
+#[derive(Eq, PartialEq, Hash, Clone, Debug)]
+pub struct Sudoku<Base: SudokuBase> {
+    grid: Grid<Base>,
+    solved_grid: Option<Grid<Base>>,
+    history: History<Grid<Base>>,
     settings: Settings,
 }
 
 // TODO: provide redo API
 // TODO: return result in all asserts
 //  sudoku::Error as JSValue (JS Exception)?
-impl<Cell: SudokuCell> Sudoku<Cell> {
-    pub fn new(base: usize) -> Self {
-        Self::new_with_grid(Grid::new(base))
+impl<Base: SudokuBase> Sudoku<Base> {
+    pub fn new() -> Self {
+        Self::with_grid(Grid::new())
     }
 
-    pub fn new_with_grid(grid: Grid<Cell>) -> Self {
-        Self::new_with_grid_and_settings(grid, Default::default())
+    pub fn with_grid(grid: Grid<Base>) -> Self {
+        Self::with_grid_and_settings(grid, Default::default())
     }
 
-    pub fn new_with_grid_and_settings(mut grid: Grid<Cell>, settings: Settings) -> Self {
+    pub fn with_grid_and_settings(mut grid: Grid<Base>, settings: Settings) -> Self {
         grid.fix_all_values();
 
         Sudoku {
@@ -48,87 +53,20 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
         }
     }
 
-    pub fn set_value(&mut self, pos: Position, value: usize) {
-        self.push_history();
-
-        self.grid.set_value(pos, value);
-
-        if self.settings.update_candidates_on_set_value {
-            self.grid.update_candidates(pos, value);
-        }
-    }
-
-    pub fn set_or_toggle_value(&mut self, pos: Position, value: usize) {
-        self.push_history();
-
-        let set_value = self.grid.set_or_toggle_value(pos, value);
-
-        if self.settings.update_candidates_on_set_value && set_value {
-            self.grid.update_candidates(pos, value);
-        }
-    }
-
-    pub fn set_candidates(&mut self, pos: Position, candidates: Vec<usize>) {
-        self.push_history();
-
-        self.grid.set_candidates(pos, candidates);
-    }
-
-    pub fn toggle_candidate(&mut self, pos: Position, candidate: usize) {
-        self.push_history();
-
-        self.grid.toggle_candidate(pos, candidate);
-    }
-
-    pub fn delete(&mut self, pos: Position) -> Cell {
-        self.push_history();
-
-        self.grid.delete(pos)
-    }
-
-    pub fn set_all_direct_candidates(&mut self) {
-        self.push_history();
-
-        self.grid.set_all_direct_candidates();
-    }
-
-    pub fn solve_single_candidates(&mut self) {
-        self.push_history();
-
-        let mut solver =
-            StrategicSolver::new_with_strategies(&mut self.grid, vec![Box::new(SingleCandidate)]);
-
-        solver.try_strategies();
-    }
-
-    pub fn group_reduction(&mut self) {
-        self.push_history();
-
-        let mut solver =
-            StrategicSolver::new_with_strategies(&mut self.grid, vec![Box::new(GroupReduction)]);
-
-        solver.try_strategies();
-    }
-
-    pub fn undo(&mut self) {
-        if let Some(grid) = self.history.pop() {
-            self.grid = grid;
-        }
-    }
-
-    // TODO: wasm integration
-    pub fn update_settings(&mut self, settings: Settings) {
-        self.settings = settings;
-    }
-
-    pub fn generate(&mut self, generator_settings: GeneratorSettings) -> Result<()> {
-        let grid = Generator::new(generator_settings)
+    pub fn with_target_and_settings(target: Target, settings: Settings) -> Result<Self> {
+        let grid = Generator::with_target(target)
             .generate()
             .ok_or(format_err!("Unable to generate grid"))?;
 
-        self.replace_grid(grid);
+        Ok(Self::with_grid_and_settings(grid, settings))
+    }
 
-        Ok(())
+    pub fn grid(&self) -> &Grid<Base> {
+        &self.grid
+    }
+
+    pub fn solved_grid(&self) -> &Option<Grid<Base>> {
+        &self.solved_grid
     }
 
     pub fn import(&mut self, input: &str) -> Result<()> {
@@ -138,35 +76,106 @@ impl<Cell: SudokuCell> Sudoku<Cell> {
 
         Ok(())
     }
+}
+
+impl<Base: SudokuBase> Game for Sudoku<Base> {
+    fn set_value(&mut self, pos: Position, value: u8) {
+        self.push_history();
+
+        self.grid.get_mut(pos).set_value(value);
+
+        if self.settings.update_candidates_on_set_value {
+            self.grid.update_candidates(pos, value);
+        }
+    }
+
+    fn set_or_toggle_value(&mut self, pos: Position, value: u8) {
+        self.push_history();
+
+        let set_value = self.grid.get_mut(pos).set_or_toggle_value(value);
+
+        if self.settings.update_candidates_on_set_value && set_value {
+            self.grid.update_candidates(pos, value);
+        }
+    }
+
+    fn set_candidates(&mut self, pos: Position, candidates: Vec<u8>) {
+        self.push_history();
+
+        self.grid.get_mut(pos).set_candidates(candidates);
+    }
+
+    fn toggle_candidate(&mut self, pos: Position, candidate: u8) {
+        self.push_history();
+
+        self.grid.get_mut(pos).toggle_candidate(candidate);
+    }
+
+    fn delete(&mut self, pos: Position) {
+        self.push_history();
+
+        self.grid.get_mut(pos).delete();
+    }
+
+    fn set_all_direct_candidates(&mut self) {
+        self.push_history();
+
+        self.grid.set_all_direct_candidates();
+    }
+
+    fn solve_single_candidates(&mut self) {
+        self.push_history();
+
+        let mut solver =
+            StrategicSolver::new_with_strategies(&mut self.grid, vec![Box::new(SingleCandidate)]);
+
+        solver.try_strategies();
+    }
+
+    fn group_reduction(&mut self) {
+        self.push_history();
+
+        let mut solver =
+            StrategicSolver::new_with_strategies(&mut self.grid, vec![Box::new(GroupReduction)]);
+
+        solver.try_strategies();
+    }
+
+    fn undo(&mut self) {
+        if let Some(grid) = self.history.pop() {
+            self.grid = grid;
+        }
+    }
+
+    fn settings(&self) -> Settings {
+        self.settings
+    }
+
+    // TODO: wasm integration
+    fn update_settings(&mut self, settings: Settings) {
+        self.settings = settings;
+    }
 
     // TODO: expose in UI (clipboard?)
-    pub fn export(&self) -> String {
+    fn export(&self) -> String {
         self.grid.to_string()
-    }
-
-    pub fn grid(&self) -> &Grid<Cell> {
-        &self.grid
-    }
-
-    pub fn solved_grid(&self) -> &Option<Grid<Cell>> {
-        &self.solved_grid
     }
 }
 
-impl<Cell: SudokuCell> Sudoku<Cell> {
+impl<Base: SudokuBase> Sudoku<Base> {
     fn push_history(&mut self) {
         self.history
             .push(self.grid.clone(), self.settings.history_limit)
     }
 
-    fn replace_grid(&mut self, new_grid: Grid<Cell>) {
-        *self = Self::new_with_grid_and_settings(new_grid, self.settings);
+    fn replace_grid(&mut self, new_grid: Grid<Base>) {
+        *self = Self::with_grid_and_settings(new_grid, self.settings);
     }
 }
 
-impl<Cell: SudokuCell> Display for Sudoku<Cell> {
+impl<Base: SudokuBase> Display for Sudoku<Base> {
     // TODO: show history and settings
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.grid)
     }
 }

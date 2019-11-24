@@ -1,4 +1,4 @@
-use crate::cell::SudokuCell;
+use crate::base::SudokuBase;
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::solver::backtracking::Solver;
@@ -8,8 +8,8 @@ use super::Strategy;
 #[derive(Debug)]
 pub struct Backtracking;
 
-impl<Cell: SudokuCell> Strategy<Cell> for Backtracking {
-    fn execute(&self, grid: &mut Grid<Cell>) -> Vec<Position> {
+impl<Base: SudokuBase> Strategy<Base> for Backtracking {
+    fn execute(&self, grid: &mut Grid<Base>) -> Vec<Position> {
         let mut solver = Solver::new(grid);
 
         if let Some(_) = solver.next() {

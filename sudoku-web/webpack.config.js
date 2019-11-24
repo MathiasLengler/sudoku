@@ -7,11 +7,11 @@ const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
 const webpack = require('webpack');
 // const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
-module.exports = {
+const browserConfig = {
   entry: "./src/index.tsx",
   output: {
     path: dist,
-    filename: "bundle.js"
+    filename: "app.js"
   },
   devServer: {
     contentBase: dist,
@@ -48,3 +48,26 @@ module.exports = {
     ]
   },
 };
+
+const workerConfig = {
+  target: 'webworker',
+  entry: "./src/worker.tsx",
+  output: {
+    path: dist,
+    filename: "worker.js"
+  },
+  resolve: {
+    extensions: [".ts", ".tsx", ".js", ".wasm"]
+  },
+  module: {
+    rules: [
+      {
+        test: /\.tsx?$/,
+        loader: "ts-loader"
+      }
+    ]
+  }
+};
+
+
+module.exports = [browserConfig, workerConfig];

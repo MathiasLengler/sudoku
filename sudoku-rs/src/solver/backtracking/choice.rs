@@ -7,11 +7,11 @@ use crate::position::Position;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Choice {
     pos: Position,
-    candidates: Vec<usize>,
+    candidates: Vec<u8>,
 }
 
 impl Choice {
-    pub fn new(mut candidates: Vec<usize>, pos: Position, shuffle_candidates: bool) -> Choice {
+    pub fn new(mut candidates: Vec<u8>, pos: Position, shuffle_candidates: bool) -> Choice {
         if shuffle_candidates {
             candidates.shuffle(&mut rand::thread_rng())
         } else {
@@ -36,13 +36,13 @@ impl Choice {
         self.pos
     }
 
-    pub fn selection(&self) -> usize {
+    pub fn selection(&self) -> u8 {
         self.candidates.last().copied().unwrap_or(0)
     }
 }
 
 impl Display for Choice {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}=({:?})", self.pos, self.candidates)
     }
 }

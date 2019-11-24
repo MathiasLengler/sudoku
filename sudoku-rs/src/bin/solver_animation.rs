@@ -4,8 +4,6 @@ use sudoku::error::Result;
 use sudoku::samples::base_3;
 use sudoku::solver::backtracking::Solver;
 
-// TODO: fix animation
-
 fn main() -> Result<()> {
     let sudokus = base_3();
 

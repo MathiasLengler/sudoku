@@ -2,12 +2,19 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import {App} from './app/app';
 import "../res/styles.css";
-import {TypedWasmSudoku} from "./typedWasmSudoku";
+import * as Comlink from "comlink";
+import {WorkerApi} from "./worker";
 
-import("../../sudoku-wasm/pkg").then(module => {
-  module.run();
+(async () => {
+  const worker = new Worker('./worker.js');
 
-  const typedWasmSudoku = new TypedWasmSudoku(module.get_wasm_sudoku());
+  const workerApi = Comlink.wrap<WorkerApi>(worker);
 
-  ReactDOM.render(<App wasmSudoku={typedWasmSudoku}/>, document.getElementById('root'));
-});
+  console.debug(await workerApi.init());
+
+  if (workerApi.typedWasmSudoku) {
+    ReactDOM.render(<App wasmSudokuProxy={workerApi.typedWasmSudoku}/>, document.getElementById('root'));
+  } else {
+    throw new Error("Race condition while initializing wasm sudoku worker");
+  }
+})();

@@ -10,6 +10,7 @@ import ExpansionPanel from "@material-ui/core/ExpansionPanel";
 import ExpansionPanelSummary from "@material-ui/core/ExpansionPanelSummary";
 import ExpansionPanelDetails from "@material-ui/core/ExpansionPanelDetails";
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import CircularProgress from "@material-ui/core/CircularProgress";
 
 interface CodeProps {
   text: string;
@@ -87,6 +88,7 @@ interface ImportFormProps {
 export const ImportForm: React.FunctionComponent<ImportFormProps> = (props) => {
   const {sudokuController, onClose} = props;
 
+  const [loading, setLoading] = useState(false);
   const [input, setInput] = useState("");
   const [inputError, setInputError] = useState(false);
 
@@ -116,22 +118,32 @@ export const ImportForm: React.FunctionComponent<ImportFormProps> = (props) => {
         InputProps={{
           classes: {input: classes.input}
         }}
+        disabled={loading}
       />
       {supportedFormatsPanel}
     </Box>
     <DialogActions>
-      <Button onClick={onClose}>
+      {loading && <CircularProgress/>}
+      <Button onClick={onClose} disabled={loading}>
         Cancel
       </Button>
-      <Button onClick={() => {
-        try {
-          sudokuController.import(input);
-          onClose();
-        } catch (e) {
-          console.error("Unable to parse input sudoku string:", input, e);
-          setInputError(true);
-        }
-      }} color="primary">
+      <Button
+        color="primary"
+        disabled={loading}
+        onClick={async () => {
+          setLoading(true);
+
+          try {
+            await sudokuController.import(input);
+            onClose();
+          } catch (e) {
+            console.error("Unable to parse input sudoku string:", input, e);
+            setInputError(true);
+          } finally {
+            setLoading(false);
+          }
+        }}
+      >
         Import
       </Button>
     </DialogActions>

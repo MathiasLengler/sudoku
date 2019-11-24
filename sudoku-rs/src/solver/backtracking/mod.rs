@@ -1,6 +1,6 @@
 use std::num::NonZeroUsize;
 
-use crate::cell::SudokuCell;
+use crate::base::SudokuBase;
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::solver::backtracking::choice::Choice;
@@ -11,8 +11,8 @@ mod choice;
 //  make step into an iterator over step results
 
 #[derive(Debug)]
-pub struct Solver<'s, Cell: SudokuCell> {
-    grid: &'s mut Grid<Cell>,
+pub struct Solver<'s, Base: SudokuBase> {
+    grid: &'s mut Grid<Base>,
     /// Cached
     empty_positions: Vec<Position>,
     /// Choices stack
@@ -40,12 +40,12 @@ enum StepResult {
     NextCell,
 }
 
-impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
-    pub fn new(grid: &'s mut Grid<Cell>) -> Solver<'s, Cell> {
+impl<'s, Base: SudokuBase> Solver<'s, Base> {
+    pub fn new(grid: &'s mut Grid<Base>) -> Solver<'s, Base> {
         Self::new_with_settings(grid, Default::default())
     }
 
-    pub fn new_with_settings(grid: &'s mut Grid<Cell>, settings: Settings) -> Solver<'s, Cell> {
+    pub fn new_with_settings(grid: &'s mut Grid<Base>, settings: Settings) -> Solver<'s, Base> {
         let empty_positions = grid.all_candidates_positions();
 
         let mut solver = Solver {
@@ -68,14 +68,14 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
     fn init(&mut self) {
         if let Some(first_pos) = self.empty_positions.first() {
             self.choices.push(Choice::new(
-                self.grid.direct_candidates(*first_pos),
+                self.grid.direct_candidates(*first_pos).to_vec(),
                 *first_pos,
                 self.settings.shuffle_candidates,
             ))
         };
     }
 
-    fn try_solve(&mut self) -> Option<Grid<Cell>> {
+    fn try_solve(&mut self) -> Option<Grid<Base>> {
         loop {
             let step_result = self.step();
 
@@ -98,12 +98,19 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
         }
     }
 
+    // TODO: fix performance regression:
+    //  Solver/backtracking/Base=3
+    //   Additional Statistics:
+    //   Lower bound	Estimate	Upper bound
+    //   Change in time	+123.65%	+123.92%	+124.19%	(p = 0.00 < 0.05)Performance has regressed.
     fn step(&mut self) -> StepResult {
         let choices_len = self.choices.len();
 
         match self.choices.last_mut() {
             Some(choice) => {
-                self.grid.set_value(choice.position(), choice.selection());
+                self.grid
+                    .get_mut(choice.position())
+                    .set_value(choice.selection());
 
                 if choice.is_exhausted() {
                     // Backtrack
@@ -118,7 +125,7 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
                     match self.empty_positions.get(choices_len) {
                         Some(next_position) => {
                             self.choices.push(Choice::new(
-                                self.grid.direct_candidates(*next_position),
+                                self.grid.direct_candidates(*next_position).to_vec(),
                                 *next_position,
                                 self.settings.shuffle_candidates,
                             ));
@@ -128,7 +135,6 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
                         None => {
                             choice.set_next();
 
-                            // TODO: move clone to iterator (streaming iterator problem)
                             StepResult::Solution
                         }
                     }
@@ -146,38 +152,32 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
 
     #[cfg(feature = "debug_print")]
     fn debug_print(&self, step_result: &StepResult) {
-        use crossterm::Crossterm;
-        use lazy_static::lazy_static;
-        use std::time::Duration;
+        use crossterm::{cursor, terminal, Output, QueueableCommand};
+        use std::io::{prelude::*, stdout};
 
-        lazy_static! {
-            static ref CROSSTERM: Crossterm = Crossterm::new();
-        }
-
-        CROSSTERM
-            .terminal()
-            .clear(crossterm::ClearType::All)
+        let mut stdout = stdout();
+        stdout
+            .queue(terminal::Clear(terminal::ClearType::All))
             .unwrap();
-
-        CROSSTERM
-            .terminal()
-            .write(format!(
+        stdout.queue(cursor::MoveTo(0, 0)).unwrap();
+        stdout
+            .queue(Output(format!(
                 "Solver at step {}:\n{}\nStep result: {:?}\nChoices: {}\nCurrent Choice: {:?}",
                 self.step_count,
                 self.grid,
                 step_result,
                 self.choices.len(),
                 self.choices.last()
-            ))
+            )))
             .unwrap();
 
-        ::std::thread::sleep(Duration::from_nanos(1));
+        stdout.flush().unwrap();
     }
 }
 
-impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
+impl<'s, Base: SudokuBase> Solver<'s, Base> {
     /// Panics if the grid has no solution
-    pub fn has_unique_solution(grid: &Grid<Cell>) -> bool {
+    pub fn has_unique_solution(grid: &Grid<Base>) -> bool {
         let mut grid = grid.clone();
         let mut solver = Solver::new(&mut grid);
 
@@ -187,7 +187,7 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
     }
 
     /// Returns the solution to the grid only if it is the only possible solution
-    pub fn unique_solution(grid: &Grid<Cell>) -> Option<Grid<Cell>> {
+    pub fn unique_solution(grid: &Grid<Base>) -> Option<Grid<Base>> {
         let mut grid = grid.clone();
         let mut solver = Solver::new(&mut grid);
         let first_solution = solver.next();
@@ -200,8 +200,8 @@ impl<'s, Cell: SudokuCell> Solver<'s, Cell> {
     }
 }
 
-impl<'s, Cell: SudokuCell> Iterator for Solver<'s, Cell> {
-    type Item = Grid<Cell>;
+impl<'s, Base: SudokuBase> Iterator for Solver<'s, Base> {
+    type Item = Grid<Base>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.try_solve()
@@ -212,7 +212,7 @@ impl<'s, Cell: SudokuCell> Iterator for Solver<'s, Cell> {
 mod tests {
     use std::collections::HashSet;
 
-    use crate::cell::Cell;
+    use typenum::consts::*;
 
     use super::*;
 
@@ -229,7 +229,7 @@ mod tests {
     // TODO: test partial filled sudoku without conflict and multiple possible solutions
     // TODO: test partial filled sudoku with conflict (implies no solutions)
 
-    fn assert_solve_result<Cell: SudokuCell>(solve_result: Option<Grid<Cell>>) {
+    fn assert_solve_result<Base: SudokuBase>(solve_result: Option<Grid<Base>>) {
         assert!(solve_result.is_some());
 
         let sudoku = solve_result.unwrap();
@@ -237,7 +237,7 @@ mod tests {
         assert!(sudoku.is_solved());
     }
 
-    fn assert_iter(solver: Solver<Cell>) {
+    fn assert_iter<Base: SudokuBase>(solver: Solver<'_, Base>) {
         const NUMBER_OF_2X2_SOLUTIONS: usize = 288;
 
         let solutions = solver.collect::<Vec<_>>();
@@ -255,7 +255,7 @@ mod tests {
 
     #[test]
     fn test_iter_all_solutions() {
-        let mut grid = Grid::<Cell>::new(2);
+        let mut grid = Grid::<U2>::new();
         let solver = Solver::new(&mut grid);
 
         assert_iter(solver);
@@ -263,7 +263,7 @@ mod tests {
 
     #[test]
     fn test_test_iter_all_solutions_shuffle_candidates() {
-        let mut grid = Grid::<Cell>::new(2);
+        let mut grid = Grid::<U2>::new();
         let solver = Solver::new_with_settings(
             &mut grid,
             Settings {

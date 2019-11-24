@@ -23,7 +23,7 @@ pub use backtracking::Backtracking;
 pub use group_reduction::GroupReduction;
 pub use single_candidate::SingleCandidate;
 
-use crate::cell::SudokuCell;
+use crate::base::SudokuBase;
 use crate::grid::Grid;
 use crate::position::Position;
 
@@ -40,12 +40,12 @@ enum StrategyResult {
     MultipleSolutions,
 }
 
-pub trait Strategy<Cell: SudokuCell>: Debug {
+pub trait Strategy<Base: SudokuBase>: Debug {
     /// Execute this strategy on the given grid. Returns the list of modified positions.
-    fn execute(&self, grid: &mut Grid<Cell>) -> Vec<Position>;
+    fn execute(&self, grid: &mut Grid<Base>) -> Vec<Position>;
 }
 
-pub(super) fn all_strategies<Cell: SudokuCell>() -> Vec<Box<dyn Strategy<Cell>>> {
+pub(super) fn all_strategies<Base: SudokuBase>() -> Vec<Box<dyn Strategy<Base>>> {
     vec![
         Box::new(SingleCandidate),
         Box::new(GroupReduction),

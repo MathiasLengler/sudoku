@@ -2,15 +2,17 @@
 
 use std::cell::RefCell;
 
-use log::debug;
+use log::trace;
 use wasm_bindgen::prelude::*;
 
+use sudoku::base::consts::*;
 use sudoku::cell::Cell;
 use sudoku::error::Error;
-use sudoku::generator::backtracking::Settings;
+use sudoku::generator::backtracking::RuntimeSettings;
+use sudoku::grid::Grid;
 use sudoku::position::Position;
 use sudoku::transport::TransportSudoku;
-use sudoku::Sudoku;
+use sudoku::{DynamicSudoku, Game, Sudoku};
 
 #[cfg(feature = "wee_alloc")]
 #[global_allocator]
@@ -20,23 +22,23 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 pub fn run() -> Result<(), JsValue> {
     init();
 
+    trace!("Wasm initialized");
+
     Ok(())
 }
 
 #[wasm_bindgen]
 pub fn get_wasm_sudoku() -> WasmSudoku {
-    let mut grid = sudoku::samples::minimal(3);
-
-    grid.fix_all_values();
+    let grid: Grid<U3> = sudoku::samples::minimal();
 
     WasmSudoku {
-        sudoku: RefCell::new(Sudoku::new_with_grid(grid)),
+        sudoku: RefCell::new(DynamicSudoku::with_sudoku(Sudoku::with_grid(grid))),
     }
 }
 
 #[wasm_bindgen]
 pub struct WasmSudoku {
-    sudoku: RefCell<Sudoku<Cell>>,
+    sudoku: RefCell<DynamicSudoku>,
 }
 
 #[wasm_bindgen]
@@ -51,13 +53,13 @@ impl WasmSudoku {
         JsValue::from_serde(&transport_sudoku).unwrap()
     }
 
-    pub fn set_value(&self, pos: JsValue, value: usize) {
+    pub fn set_value(&self, pos: JsValue, value: u8) {
         self.sudoku
             .borrow_mut()
             .set_value(Self::import_pos(pos), value);
     }
 
-    pub fn set_or_toggle_value(&self, pos: JsValue, value: usize) {
+    pub fn set_or_toggle_value(&self, pos: JsValue, value: u8) {
         self.sudoku
             .borrow_mut()
             .set_or_toggle_value(Self::import_pos(pos), value);
@@ -69,7 +71,7 @@ impl WasmSudoku {
             .set_candidates(Self::import_pos(pos), Self::import_candidates(candidates));
     }
 
-    pub fn toggle_candidate(&mut self, pos: JsValue, candidate: usize) {
+    pub fn toggle_candidate(&mut self, pos: JsValue, candidate: u8) {
         self.sudoku
             .borrow_mut()
             .toggle_candidate(Self::import_pos(pos), candidate);
@@ -118,11 +120,11 @@ impl WasmSudoku {
         pos.into_serde().unwrap()
     }
 
-    fn import_candidates(candidates: JsValue) -> Vec<usize> {
+    fn import_candidates(candidates: JsValue) -> Vec<u8> {
         candidates.into_serde().unwrap()
     }
 
-    fn import_generator_settings(generator_settings: JsValue) -> Settings {
+    fn import_generator_settings(generator_settings: JsValue) -> RuntimeSettings {
         generator_settings.into_serde().unwrap()
     }
 
@@ -140,6 +142,6 @@ fn init() {
     #[cfg(feature = "console")]
     SET_HOOK.call_once(|| {
         panic::set_hook(Box::new(console_error_panic_hook::hook));
-        console_log::init_with_level(Level::Debug).unwrap();
+        console_log::init_with_level(Level::Trace).unwrap();
     });
 }

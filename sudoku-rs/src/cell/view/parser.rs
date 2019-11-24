@@ -1,28 +1,34 @@
 use std::convert::TryInto;
 
 use crate::cell::view::CellView;
-use crate::cell::SudokuCell;
 use crate::error::Result;
-use crate::grid::Grid;
 
-pub(crate) fn from_givens_line<Cell: SudokuCell>(input: &str) -> Result<Grid<Cell>> {
+pub(crate) fn parse_cells(input: &str) -> Result<Vec<CellView>> {
+    let input = input.trim();
+
+    Ok(if input.contains('\n') {
+        from_candidates(input).unwrap_or_else(|_| from_givens_grid(input))
+    } else {
+        from_givens_line(input)?
+    })
+}
+
+fn from_givens_line(input: &str) -> Result<Vec<CellView>> {
     input
         .chars()
         .map(TryInto::<CellView>::try_into)
-        .collect::<Result<Vec<_>>>()?
-        .try_into()
+        .collect::<Result<Vec<CellView>>>()
 }
 
-pub(crate) fn from_givens_grid<Cell: SudokuCell>(input: &str) -> Result<Grid<Cell>> {
+fn from_givens_grid(input: &str) -> Vec<CellView> {
     input
         .chars()
         .map(TryInto::<CellView>::try_into)
         .filter_map(Result::ok)
         .collect::<Vec<_>>()
-        .try_into()
 }
 
-pub(crate) fn from_candidates<Cell: SudokuCell>(input: &str) -> Result<Grid<Cell>> {
+fn from_candidates(input: &str) -> Result<Vec<CellView>> {
     input
         .lines()
         // Filter horizontal separator lines
@@ -33,14 +39,11 @@ pub(crate) fn from_candidates<Cell: SudokuCell>(input: &str) -> Result<Grid<Cell
         // Split and trim groups of numbers
         .flat_map(|s| s.split_whitespace())
         .map(TryInto::<CellView>::try_into)
-        .collect::<Result<Vec<_>>>()?
-        .try_into()
+        .collect::<Result<Vec<_>>>()
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::cell::Cell;
-
     use super::*;
 
     #[test]
@@ -50,16 +53,18 @@ mod tests {
             "/tests/res/givens_line.txt"
         ));
 
-        let grid = from_givens_line::<Cell>(input)?;
+        let cells = from_givens_line(input)?;
 
-        let expected_grid = vec![
+        let expected_cells = vec![
             6, 0, 0, 0, 0, 2, 3, 0, 0, 1, 2, 5, 6, 0, 0, 0, 0, 0, 0, 0, 4, 7, 0, 0, 0, 2, 0, 7, 3,
             0, 0, 0, 0, 8, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 6, 0, 0, 0, 0, 1, 5, 0, 5, 0, 0,
             0, 8, 1, 0, 0, 0, 0, 0, 0, 0, 3, 4, 7, 2, 0, 0, 7, 2, 0, 0, 0, 0, 8,
         ]
-        .try_into()?;
+        .into_iter()
+        .map(crate::cell::view::v)
+        .collect::<Vec<_>>();
 
-        assert_eq!(grid, expected_grid);
+        assert_eq!(cells, expected_cells);
 
         Ok(())
     }
@@ -71,16 +76,18 @@ mod tests {
             "/tests/res/givens_grid.txt"
         ));
 
-        let grid = from_givens_grid::<Cell>(input)?;
+        let cells = from_givens_grid(input);
 
-        let expected_grid = vec![
+        let expected_cells = vec![
             0, 8, 0, 5, 0, 3, 0, 7, 0, 0, 2, 7, 0, 0, 0, 3, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             5, 0, 9, 0, 6, 0, 0, 0, 0, 0, 1, 0, 2, 0, 0, 0, 0, 0, 4, 0, 6, 0, 9, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 3, 2, 0, 0, 0, 4, 5, 0, 0, 5, 0, 9, 0, 7, 0, 2, 0,
         ]
-        .try_into()?;
+        .into_iter()
+        .map(crate::cell::view::v)
+        .collect::<Vec<_>>();
 
-        assert_eq!(grid, expected_grid);
+        assert_eq!(cells, expected_cells);
 
         Ok(())
     }
@@ -94,9 +101,9 @@ mod tests {
             "/tests/res/candidates.txt"
         ));
 
-        let grid = from_candidates::<Cell>(input)?;
+        let cells = from_candidates(input)?;
 
-        let expected_grid = vec![
+        let expected_cells = vec![
             vec![
                 v(6),
                 v(7),
@@ -187,9 +194,11 @@ mod tests {
                 v(8),
             ],
         ]
-        .try_into()?;
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>();
 
-        assert_eq!(grid, expected_grid);
+        assert_eq!(cells, expected_cells);
 
         Ok(())
     }
