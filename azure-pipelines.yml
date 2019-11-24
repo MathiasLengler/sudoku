@@ -21,6 +21,10 @@ steps:
     displayName: 'Install Node.js'
 
   - script: |
+      curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+    displayName: 'Install wasm-pack'
+
+  - script: |
       npm install
       npm run build
     workingDirectory: sudoku-web
