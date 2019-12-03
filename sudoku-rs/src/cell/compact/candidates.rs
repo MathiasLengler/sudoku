@@ -52,7 +52,7 @@ impl<Base: SudokuBase> Candidates<Base> {
 
         bits.iter()
             .enumerate()
-            .filter_map(|(i, is_set)| {
+            .filter_map(|(i, &is_set)| {
                 if is_set {
                     Some(Self::export_candidate(i))
                 } else {
@@ -64,12 +64,12 @@ impl<Base: SudokuBase> Candidates<Base> {
 }
 
 impl<Base: SudokuBase> Candidates<Base> {
-    fn as_bits(&self) -> &BitSlice<LittleEndian, ArrayElement> {
-        self.arr.as_bitslice::<LittleEndian>()
+    fn as_bits(&self) -> &BitSlice<Local, ArrayElement> {
+        self.arr.bits()
     }
 
-    fn as_mut_bits(&mut self) -> &mut BitSlice<LittleEndian, ArrayElement> {
-        self.arr.as_mut_bitslice::<LittleEndian>()
+    fn as_mut_bits(&mut self) -> &mut BitSlice<Local, ArrayElement> {
+        self.arr.bits_mut()
     }
 
     fn import(candidate: u8) -> usize {
