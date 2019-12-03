@@ -2,6 +2,7 @@ use std::convert::TryInto;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::iter::FromIterator;
+use std::marker::PhantomData;
 
 use bitvec::prelude::*;
 use generic_array::GenericArray;
@@ -61,6 +62,14 @@ impl<Base: SudokuBase> Candidates<Base> {
             })
             .collect()
     }
+
+    /// Optimization to allow multiple modifications to candidates without recreating `BitSlice` wrapper.
+    pub fn as_mut(&mut self) -> CandidatesMut<'_, Base> {
+        CandidatesMut {
+            bits: self.as_mut_bits(),
+            phantom: PhantomData::default(),
+        }
+    }
 }
 
 impl<Base: SudokuBase> Candidates<Base> {
@@ -116,6 +125,32 @@ impl<Base: SudokuBase, I: IntoIterator<Item = u8>> From<I> for Candidates<Base> 
 impl<Base: SudokuBase> Display for Candidates<Base> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         write!(f, "{:?}", self.to_vec())
+    }
+}
+
+#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
+pub struct CandidatesMut<'a, Base: SudokuBase> {
+    bits: &'a mut BitSlice<Local, ArrayElement>,
+    phantom: PhantomData<Base>,
+}
+
+// TODO: move other methods / use internally?
+//  could require CandidatesRef for shared mutability methods
+impl<'a, Base: SudokuBase> CandidatesMut<'a, Base> {
+    pub fn delete(&mut self, candidate: u8) {
+        let imported_candidate = Candidates::<Base>::import(candidate);
+
+        self.bits.set(imported_candidate, false);
+    }
+
+    fn debug_assert(&self) {
+        debug_assert!(self.bits[Base::MaxValue::to_usize()..].not_any());
+    }
+}
+
+impl<'a, Base: SudokuBase> Drop for CandidatesMut<'a, Base> {
+    fn drop(&mut self) {
+        self.debug_assert();
     }
 }
 
