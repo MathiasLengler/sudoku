@@ -98,11 +98,6 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
         }
     }
 
-    // TODO: fix performance regression:
-    //  Solver/backtracking/Base=3
-    //   Additional Statistics:
-    //   Lower bound	Estimate	Upper bound
-    //   Change in time	+123.65%	+123.92%	+124.19%	(p = 0.00 < 0.05)Performance has regressed.
     fn step(&mut self) -> StepResult {
         let choices_len = self.choices.len();
 

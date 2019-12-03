@@ -20,10 +20,9 @@ export const ToolbarMenu: React.FunctionComponent<ToolbarMenuProps> = (props) =>
 
   const [newGameOpen, setNewGameOpen] = React.useState(false);
 
-  const makeHandleMenuClose = (action: () => void = () => {
-  }) => () => {
+  const makeHandleMenuClose = (action?: () => void) => () => {
     setMenuAnchorEl(null);
-    action();
+    action?.();
   };
 
   return <>

@@ -45,9 +45,13 @@ impl<Base: SudokuBase> Grid<Base> {
     pub fn direct_candidates(&self, pos: Position) -> Candidates<Base> {
         let mut candidates = Candidates::<Base>::all();
 
-        for pos in self.neighbor_positions_with_duplicates(pos) {
-            if let Some(value) = self.get(pos).value() {
-                candidates.delete(value);
+        {
+            let mut candidates_mut = candidates.as_mut();
+
+            for pos in self.neighbor_positions_with_duplicates(pos) {
+                if let Some(value) = self.get(pos).value() {
+                    candidates_mut.delete(value);
+                }
             }
         }
 

@@ -7,6 +7,7 @@ use crate::position::Position;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Choice {
     pos: Position,
+    // TODO: use Candidates directly
     candidates: Vec<u8>,
 }
 
@@ -44,5 +45,30 @@ impl Choice {
 impl Display for Choice {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}=({:?})", self.pos, self.candidates)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_choice() {
+        let mut choice = Choice::new(vec![1, 2, 4], Position { row: 0, column: 0 }, false);
+
+        assert_eq!(choice.selection(), 1);
+        assert_eq!(choice.is_exhausted(), false);
+
+        choice.set_next();
+        assert_eq!(choice.selection(), 2);
+        assert_eq!(choice.is_exhausted(), false);
+
+        choice.set_next();
+        assert_eq!(choice.selection(), 4);
+        assert_eq!(choice.is_exhausted(), false);
+
+        choice.set_next();
+        assert_eq!(choice.selection(), 0);
+        assert_eq!(choice.is_exhausted(), true);
     }
 }
