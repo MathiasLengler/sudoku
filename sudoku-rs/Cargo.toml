@@ -15,7 +15,7 @@ fixed-bitset = "0.0.1"
 bitvec = { version = "0.16.1", default-features = false, features = ["std"] }
 num = "0.2.0"
 nonzero_ext = "0.1.5"
-log = "0.4.8"
+log = "0.4.10"
 pcp = { git = "https://github.com/MathiasLengler/pcp" }
 intervallum = { git = "https://github.com/MathiasLengler/intervallum" }
 gcollections = { git = "https://github.com/MathiasLengler/gcollections" }
