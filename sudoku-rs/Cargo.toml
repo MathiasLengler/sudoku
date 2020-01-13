@@ -13,7 +13,7 @@ serde = { version = "1.0.104", features = ["derive"] }
 fixedbitset = "0.2.0"
 fixed-bitset = "0.0.1"
 bitvec = { version = "0.16.1", default-features = false, features = ["std"] }
-num = "0.2.0"
+num = "0.2.1"
 nonzero_ext = "0.1.5"
 log = "0.4.10"
 pcp = { git = "https://github.com/MathiasLengler/pcp" }
