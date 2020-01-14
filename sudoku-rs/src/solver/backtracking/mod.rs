@@ -147,7 +147,7 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
 
     #[cfg(feature = "debug_print")]
     fn debug_print(&self, step_result: &StepResult) {
-        use crossterm::{cursor, terminal, Output, QueueableCommand};
+        use crossterm::{cursor, style::Print, terminal, QueueableCommand};
         use std::io::{prelude::*, stdout};
 
         let mut stdout = stdout();
@@ -156,8 +156,12 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
             .unwrap();
         stdout.queue(cursor::MoveTo(0, 0)).unwrap();
         stdout
-            .queue(Output(format!(
-                "Solver at step {}:\n{}\nStep result: {:?}\nChoices: {}\nCurrent Choice: {:?}",
+            .queue(Print(format!(
+                "Solver at step {}:
+{}
+Step result: {:?}
+Choices: {}
+Current Choice: {:?}",
                 self.step_count,
                 self.grid,
                 step_result,
