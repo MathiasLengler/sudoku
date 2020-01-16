@@ -136,7 +136,7 @@ impl DynamicSudoku {
         let approx_base = (cell_count as f64).sqrt().sqrt().round() as u8;
 
         ensure!(
-            Self::base_to_cell_count(approx_base) == cell_count,
+            Self::base_to_cell_count(approx_base) == cell_count && approx_base >= 2,
             "Cell count {} has no valid sudoku base",
             cell_count
         );
@@ -155,7 +155,7 @@ mod tests {
 
     #[test]
     fn test_cell_count_to_base() -> Result<()> {
-        let test_cases = vec![(0, 0), (1, 1), (16, 2), (81, 3), (256, 4), (625, 5)];
+        let test_cases = vec![(16, 2), (81, 3), (256, 4), (625, 5)];
 
         for &(cell_count, expected_base) in &test_cases {
             let base = DynamicSudoku::cell_count_to_base(cell_count)?;
