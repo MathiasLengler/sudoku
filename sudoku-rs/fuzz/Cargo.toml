@@ -1,0 +1,30 @@
+
+[package]
+name = "sudoku-fuzz"
+version = "0.0.0"
+authors = ["Automatically generated"]
+publish = false
+edition = "2018"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.2"
+
+[dependencies.sudoku]
+path = ".."
+features = ["fuzz"]
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "fuzz_target_1"
+path = "fuzz_targets/fuzz_target_1.rs"
+
+[patch.crates-io]
+gcollections = { git = "https://github.com/MathiasLengler/gcollections" }
+intervallum = { git = "https://github.com/MathiasLengler/intervallum" }
+pcp = { git = "https://github.com/MathiasLengler/pcp" }
