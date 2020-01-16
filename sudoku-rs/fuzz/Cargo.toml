@@ -21,8 +21,8 @@ features = ["fuzz"]
 members = ["."]
 
 [[bin]]
-name = "fuzz_target_1"
-path = "fuzz_targets/fuzz_target_1.rs"
+name = "dynamic_sudoku_parse"
+path = "fuzz_targets/dynamic_sudoku_parse.rs"
 
 [patch.crates-io]
 gcollections = { git = "https://github.com/MathiasLengler/gcollections" }
