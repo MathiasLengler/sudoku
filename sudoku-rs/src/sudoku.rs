@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 use std::fmt::{self, Display, Formatter};
 
-use failure::format_err;
+use anyhow::format_err;
 
 pub use dynamic::{DynamicSudoku, Game};
 

@@ -1,7 +1,7 @@
 use std::any::{Any, TypeId};
 use std::convert::{TryFrom, TryInto};
 
-use failure::ensure;
+use anyhow::ensure;
 use typenum::consts::*;
 
 pub use game::DynamicSudoku;
@@ -194,7 +194,7 @@ mod tests {
         ];
 
         inputs
-            .into_iter()
+            .iter()
             .map(|input| DynamicSudoku::try_from(*input))
             .collect::<Result<Vec<_>>>()?;
 

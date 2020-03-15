@@ -1,8 +1,9 @@
+use std::convert::TryFrom;
 use std::convert::TryInto;
 
-use failure::_core::convert::TryFrom;
-use failure::bail;
 use serde::{Deserialize, Serialize};
+
+use anyhow::bail;
 
 use crate::base::SudokuBase;
 use crate::cell::Cell;
