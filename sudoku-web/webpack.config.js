@@ -54,4 +54,15 @@ const appConfig = {
   },
 };
 
-module.exports = appConfig;
+module.exports = (env, argv) => {
+  const mode = argv.mode;
+  if (mode === 'development') {
+    appConfig.devtool = 'eval-source-map';
+  } else if (mode === 'production') {
+    appConfig.devtool = 'source-map'
+  } else {
+    throw new Error(`Unexpected mode: ${mode}`);
+  }
+
+  return appConfig;
+};
