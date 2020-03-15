@@ -5,6 +5,7 @@ use cell_state::CellState;
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
 use crate::cell::view::CellView;
+use crate::error::Result;
 
 pub mod candidates;
 mod cell_state;
@@ -20,15 +21,12 @@ impl<Base: SudokuBase> Cell<Base> {
     }
 
     /// Constructs a new cell with a value and if it should be fixed.
-    pub fn with_value(value: u8, fixed: bool) -> Self {
-        Self(CellState::with_value(value, fixed))
+    pub fn with_value(value: u8, fixed: bool) -> Result<Self> {
+        Ok(Self(CellState::with_value(value, fixed)?))
     }
 
     /// Constructs a new cell with the provided candidates
-    pub fn with_candidates<I>(candidates: I) -> Self
-    where
-        I: IntoIterator<Item = u8>,
-    {
+    pub fn with_candidates(candidates: Candidates<Base>) -> Self {
         Self(CellState::with_candidates(candidates))
     }
 
@@ -89,7 +87,7 @@ impl<Base: SudokuBase> Cell<Base> {
     /// # Panics
     ///
     /// Panics it the cell is fixed.
-    pub fn set_value(&mut self, value: u8) {
+    pub fn set_value(&mut self, value: u8) -> Result<()> {
         self.0.set_value(value)
     }
 
@@ -102,7 +100,7 @@ impl<Base: SudokuBase> Cell<Base> {
     /// # Panics
     ///
     /// Panics it the cell is fixed.
-    pub fn set_or_toggle_value(&mut self, value: u8) -> bool {
+    pub fn set_or_toggle_value(&mut self, value: u8) -> Result<bool> {
         self.0.set_or_toggle_value(value)
     }
 
@@ -116,7 +114,7 @@ impl<Base: SudokuBase> Cell<Base> {
     /// # Panics
     ///
     /// Panics it the cell is fixed.
-    pub fn set_candidates<I: Into<Candidates<Base>>>(&mut self, candidates: I) {
+    pub fn set_candidates(&mut self, candidates: Candidates<Base>) {
         self.0.set_candidates(candidates)
     }
 
@@ -126,7 +124,7 @@ impl<Base: SudokuBase> Cell<Base> {
     /// # Panics
     ///
     /// Panics it the cell is fixed.
-    pub fn toggle_candidate(&mut self, candidate: u8) {
+    pub fn toggle_candidate(&mut self, candidate: u8) -> Result<()> {
         self.0.toggle_candidate(candidate)
     }
 
@@ -135,7 +133,7 @@ impl<Base: SudokuBase> Cell<Base> {
     /// # Panics
     ///
     /// Panics it the cell is fixed.
-    pub fn delete_candidate(&mut self, candidate: u8) {
+    pub fn delete_candidate(&mut self, candidate: u8) -> Result<()> {
         self.0.delete_candidate(candidate)
     }
 }

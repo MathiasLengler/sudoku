@@ -260,13 +260,13 @@ impl<Base: SudokuBase> Grid<Base> {
 impl<Base: SudokuBase> Grid<Base> {
     pub fn all_value_positions(&self) -> Vec<Position> {
         self.all_positions()
-            .filter(|pos| self.get(*pos).value().is_some())
+            .filter(|pos| self.get(*pos).has_value())
             .collect()
     }
 
     pub fn all_candidates_positions(&self) -> Vec<Position> {
         self.all_positions()
-            .filter(|pos| self.get(*pos).candidates().is_some())
+            .filter(|pos| self.get(*pos).has_candidates())
             .collect()
     }
 }
@@ -318,8 +318,8 @@ impl<Base: SudokuBase, CView: Into<CellView>> TryFrom<Vec<CView>> for Grid<Base>
     fn try_from(views: Vec<CView>) -> Result<Self> {
         let cells = views
             .into_iter()
-            .map(|view| view.into().into_cell())
-            .collect();
+            .map(|view| view.into().try_into_cell())
+            .collect::<Result<_>>()?;
 
         Ok(Self::with_cells(cells))
     }
@@ -415,12 +415,14 @@ mod tests {
     }
 
     #[test]
-    fn test_direct_candidates() {
+    fn test_direct_candidates() -> Result<()> {
         let grid = samples::base_3().pop().unwrap();
 
         let direct_candidates = grid.direct_candidates(Position { column: 1, row: 1 });
 
-        assert_eq!(direct_candidates, vec![1, 2, 4].into());
+        assert_eq!(direct_candidates, vec![1, 2, 4].try_into()?);
+
+        Ok(())
     }
 
     #[test]

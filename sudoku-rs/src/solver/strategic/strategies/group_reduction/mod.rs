@@ -1,3 +1,5 @@
+use std::convert::TryInto;
+
 use itertools::izip;
 
 use crate::base::SudokuBase;
@@ -62,7 +64,9 @@ impl GroupReduction {
                     //                        positions, group_candidates, reduced_group_candidates
                     //                    );
 
-                    grid.get_mut(pos).set_candidates(reduced_candidates);
+                    // TODO: fix unwrap
+                    grid.get_mut(pos)
+                        .set_candidates(reduced_candidates.try_into().unwrap());
 
                     modified_positions.push(pos)
                 }

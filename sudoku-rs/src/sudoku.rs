@@ -1,4 +1,4 @@
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 use std::fmt::{self, Display, Formatter};
 
 use anyhow::format_err;
@@ -79,7 +79,7 @@ impl<Base: SudokuBase> Sudoku<Base> {
 }
 
 impl<Base: SudokuBase> Game for Sudoku<Base> {
-    fn set_value(&mut self, pos: Position, value: u8) {
+    fn set_value(&mut self, pos: Position, value: u8) -> Result<()> {
         self.push_history();
 
         self.grid.get_mut(pos).set_value(value);
@@ -87,28 +87,38 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
         if self.settings.update_candidates_on_set_value {
             self.grid.update_candidates(pos, value);
         }
+
+        Ok(())
     }
 
-    fn set_or_toggle_value(&mut self, pos: Position, value: u8) {
+    fn set_or_toggle_value(&mut self, pos: Position, value: u8) -> Result<()> {
         self.push_history();
 
-        let set_value = self.grid.get_mut(pos).set_or_toggle_value(value);
+        let set_value = self.grid.get_mut(pos).set_or_toggle_value(value)?;
 
         if self.settings.update_candidates_on_set_value && set_value {
             self.grid.update_candidates(pos, value);
         }
+
+        Ok(())
     }
 
-    fn set_candidates(&mut self, pos: Position, candidates: Vec<u8>) {
+    fn set_candidates(&mut self, pos: Position, candidates: Vec<u8>) -> Result<()> {
         self.push_history();
 
-        self.grid.get_mut(pos).set_candidates(candidates);
+        self.grid
+            .get_mut(pos)
+            .set_candidates(candidates.try_into()?);
+
+        Ok(())
     }
 
-    fn toggle_candidate(&mut self, pos: Position, candidate: u8) {
+    fn toggle_candidate(&mut self, pos: Position, candidate: u8) -> Result<()> {
         self.push_history();
 
         self.grid.get_mut(pos).toggle_candidate(candidate);
+
+        Ok(())
     }
 
     fn delete(&mut self, pos: Position) {

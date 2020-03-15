@@ -1,14 +1,15 @@
-use std::convert::TryInto;
+use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::fmt::{Display, Formatter};
-use std::iter::FromIterator;
 use std::marker::PhantomData;
 
+use anyhow::ensure;
 use bitvec::prelude::*;
 use generic_array::GenericArray;
 use typenum::Unsigned;
 
 use crate::base::{ArrayElement, SudokuBase};
+use crate::error::{Error, Result};
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug, Default)]
 pub struct Candidates<Base: SudokuBase> {
@@ -16,6 +17,10 @@ pub struct Candidates<Base: SudokuBase> {
 }
 
 impl<Base: SudokuBase> Candidates<Base> {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     pub fn all() -> Self {
         let mut this = Self::default();
 
@@ -28,24 +33,28 @@ impl<Base: SudokuBase> Candidates<Base> {
         this
     }
 
-    pub fn toggle(&mut self, candidate: u8) {
-        let imported_candidate = Self::import(candidate);
+    pub fn toggle(&mut self, candidate: u8) -> Result<()> {
+        let imported_candidate = Self::import(candidate)?;
 
         let bits = self.as_mut_bits();
 
         bits.set(imported_candidate, !bits[imported_candidate]);
 
         self.debug_assert();
+
+        Ok(())
     }
 
-    pub fn delete(&mut self, candidate: u8) {
-        let imported_candidate = Self::import(candidate);
+    pub fn delete(&mut self, candidate: u8) -> Result<()> {
+        let imported_candidate = Self::import(candidate)?;
 
         let bits = self.as_mut_bits();
 
         bits.set(imported_candidate, false);
 
         self.debug_assert();
+
+        Ok(())
     }
 
     pub fn to_vec(&self) -> Vec<u8> {
@@ -81,11 +90,17 @@ impl<Base: SudokuBase> Candidates<Base> {
         self.arr.bits_mut()
     }
 
-    fn import(candidate: u8) -> usize {
-        assert_ne!(candidate, 0);
-        assert!(candidate <= Base::MaxValue::to_u8());
+    fn import(candidate: u8) -> Result<usize> {
+        ensure!(candidate != 0, "Candidate can't be 0");
 
-        (candidate - 1).into()
+        let limit = Base::MaxValue::to_u8();
+        ensure!(
+            candidate <= limit,
+            "Candidate can't be greater than {}",
+            limit
+        );
+
+        Ok((candidate - 1).into())
     }
 
     fn export_candidate(candidate: usize) -> u8 {
@@ -100,30 +115,26 @@ impl<Base: SudokuBase> Candidates<Base> {
     }
 }
 
-impl<Base: SudokuBase> FromIterator<u8> for Candidates<Base> {
-    fn from_iter<T: IntoIterator<Item = u8>>(candidates: T) -> Self {
+impl<Base: SudokuBase> TryFrom<Vec<u8>> for Candidates<Base> {
+    type Error = Error;
+
+    fn try_from(candidates: Vec<u8>) -> Result<Self> {
         let mut this = Self::default();
 
         let bits = this.as_mut_bits();
 
         for candidate in candidates {
-            bits.set(Self::import(candidate), true);
+            bits.set(Self::import(candidate)?, true);
         }
 
         this.debug_assert();
 
-        this
-    }
-}
-
-impl<Base: SudokuBase, I: IntoIterator<Item = u8>> From<I> for Candidates<Base> {
-    fn from(into_iter: I) -> Self {
-        Self::from_iter(into_iter)
+        Ok(this)
     }
 }
 
 impl<Base: SudokuBase> Display for Candidates<Base> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{:?}", self.to_vec())
     }
 }
@@ -137,10 +148,12 @@ pub struct CandidatesMut<'a, Base: SudokuBase> {
 // TODO: move other methods / use internally?
 //  could require CandidatesRef for shared mutability methods
 impl<'a, Base: SudokuBase> CandidatesMut<'a, Base> {
-    pub fn delete(&mut self, candidate: u8) {
-        let imported_candidate = Candidates::<Base>::import(candidate);
+    pub fn delete(&mut self, candidate: u8) -> Result<()> {
+        let imported_candidate = Candidates::<Base>::import(candidate)?;
 
         self.bits.set(imported_candidate, false);
+
+        Ok(())
     }
 
     fn debug_assert(&self) {
@@ -158,30 +171,26 @@ impl<'a, Base: SudokuBase> Drop for CandidatesMut<'a, Base> {
 mod tests {
     use typenum::consts::*;
 
+    use crate::error::Result;
+
     use super::*;
 
     #[test]
-    fn test_from_u8_iter() {
+    fn test_try_from_vec_u8() -> Result<()> {
         let vec_candidates = vec![1, 2, 4, 8, 9];
 
-        let candidates = Candidates::<U3>::from_iter(vec_candidates.clone());
-
+        let candidates: Candidates<U3> = vec_candidates.clone().try_into()?;
         assert_eq!(candidates.to_vec(), vec_candidates);
 
-        let candidates = Candidates::<U3>::from_iter(std::iter::empty());
-
+        let candidates: Candidates<U3> = vec![].try_into()?;
         assert_eq!(candidates.to_vec(), vec![]);
-    }
 
-    #[test]
-    #[should_panic]
-    fn test_from_u8_iter_panic_max() {
-        Candidates::<U3>::from_iter(vec![10]);
-    }
+        let candidates: Result<Candidates<U3>> = vec![0].try_into();
+        assert!(candidates.is_err());
 
-    #[test]
-    #[should_panic]
-    fn test_from_u8_iter_panic_zero() {
-        Candidates::<U3>::from_iter(vec![0]);
+        let candidates: Result<Candidates<U3>> = vec![10].try_into();
+        assert!(candidates.is_err());
+
+        Ok(())
     }
 }

@@ -20,16 +20,17 @@ mod game {
 
     use enum_dispatch::enum_dispatch;
 
+    use crate::error::Result;
     use crate::position::Position;
     use crate::sudoku::settings::Settings as SudokuSettings;
     use crate::Sudoku;
 
     #[enum_dispatch]
     pub trait Game {
-        fn set_value(&mut self, pos: Position, value: u8);
-        fn set_or_toggle_value(&mut self, pos: Position, value: u8);
-        fn set_candidates(&mut self, pos: Position, candidates: Vec<u8>);
-        fn toggle_candidate(&mut self, pos: Position, candidate: u8);
+        fn set_value(&mut self, pos: Position, value: u8) -> Result<()>;
+        fn set_or_toggle_value(&mut self, pos: Position, value: u8) -> Result<()>;
+        fn set_candidates(&mut self, pos: Position, candidates: Vec<u8>) -> Result<()>;
+        fn toggle_candidate(&mut self, pos: Position, candidate: u8) -> Result<()>;
         fn delete(&mut self, pos: Position);
         fn set_all_direct_candidates(&mut self);
         fn solve_single_candidates(&mut self);
