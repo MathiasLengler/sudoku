@@ -7,7 +7,7 @@ use wasm_bindgen::prelude::*;
 
 use sudoku::base::consts::*;
 use sudoku::cell::Cell;
-use sudoku::error::Error;
+use sudoku::error::Error as SudokuError;
 use sudoku::generator::backtracking::RuntimeSettings;
 use sudoku::grid::Grid;
 use sudoku::position::Position;
@@ -128,8 +128,8 @@ impl WasmSudoku {
         generator_settings.into_serde().unwrap()
     }
 
-    fn export_error(error: Error) -> JsValue {
-        format!("{0}\n{0:?}", error).into()
+    fn export_error(error: SudokuError) -> js_sys::Error {
+        js_sys::Error::new(&error.to_string())
     }
 }
 
