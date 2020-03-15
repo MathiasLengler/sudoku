@@ -1,7 +1,7 @@
 use std::any::{Any, TypeId};
 use std::convert::{TryFrom, TryInto};
 
-use anyhow::ensure;
+use anyhow::{bail, ensure, format_err};
 use typenum::consts::*;
 
 pub use game::DynamicSudoku;
@@ -53,25 +53,25 @@ mod game {
 
 // Requires runtime base
 impl DynamicSudoku {
-    pub fn new(base: u8) -> Self {
-        match base {
+    pub fn new(base: u8) -> Result<Self> {
+        Ok(match base {
             2 => Base2(Sudoku::<U2>::new()),
             3 => Base3(Sudoku::<U3>::new()),
             4 => Base4(Sudoku::<U4>::new()),
             5 => Base5(Sudoku::<U5>::new()),
-            unexpected_base => Self::bail_unexpected_base(unexpected_base),
-        }
+            unexpected_base => bail!(Self::unexpected_base_err(unexpected_base)),
+        })
     }
-    pub fn with_sudoku<Base: SudokuBase + 'static>(sudoku: Sudoku<Base>) -> Self {
+    pub fn with_sudoku<Base: SudokuBase + 'static>(sudoku: Sudoku<Base>) -> Result<Self> {
         let any_sudoku: Box<dyn Any> = Box::new(sudoku);
 
-        match TypeId::of::<Base>() {
+        Ok(match TypeId::of::<Base>() {
             id if id == TypeId::of::<U2>() => Base2(*(any_sudoku.downcast().unwrap())),
             id if id == TypeId::of::<U3>() => Base3(*(any_sudoku.downcast().unwrap())),
             id if id == TypeId::of::<U4>() => Base4(*(any_sudoku.downcast().unwrap())),
             id if id == TypeId::of::<U5>() => Base5(*(any_sudoku.downcast().unwrap())),
-            _ => Self::bail_unexpected_base(Base::to_u8()),
-        }
+            _ => bail!(Self::unexpected_base_err(Base::to_u8())),
+        })
     }
     pub fn generate(&mut self, generator_settings: GeneratorSettings) -> Result<()> {
         let GeneratorSettings { base, target } = generator_settings;
@@ -93,7 +93,7 @@ impl DynamicSudoku {
                 target,
                 self.settings(),
             )?),
-            unexpected_base => Self::bail_unexpected_base(unexpected_base),
+            unexpected_base => bail!(Self::unexpected_base_err(unexpected_base)),
         };
 
         Ok(())
@@ -114,7 +114,7 @@ impl TryFrom<Vec<CellView>> for DynamicSudoku {
             3 => Base3(Sudoku::<U3>::with_grid(views.try_into()?)),
             4 => Base4(Sudoku::<U4>::with_grid(views.try_into()?)),
             5 => Base5(Sudoku::<U5>::with_grid(views.try_into()?)),
-            unexpected_base => Self::bail_unexpected_base(unexpected_base),
+            unexpected_base => bail!(Self::unexpected_base_err(unexpected_base)),
         })
     }
 }
@@ -128,8 +128,8 @@ impl TryFrom<&str> for DynamicSudoku {
 }
 
 impl DynamicSudoku {
-    fn bail_unexpected_base(unexpected_base: u8) -> ! {
-        panic!("Unexpected dynamic base: {}", unexpected_base)
+    fn unexpected_base_err(base: u8) -> Error {
+        format_err!("Unexpected dynamic base: {}", base)
     }
 
     fn cell_count_to_base(cell_count: usize) -> Result<u8> {

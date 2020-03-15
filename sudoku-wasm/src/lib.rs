@@ -32,7 +32,7 @@ pub fn get_wasm_sudoku() -> WasmSudoku {
     let grid: Grid<U3> = sudoku::samples::minimal();
 
     WasmSudoku {
-        sudoku: RefCell::new(DynamicSudoku::with_sudoku(Sudoku::with_grid(grid))),
+        sudoku: RefCell::new(DynamicSudoku::with_sudoku(Sudoku::with_grid(grid)).unwrap()),
     }
 }
 
