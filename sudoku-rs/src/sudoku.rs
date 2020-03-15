@@ -82,7 +82,14 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
     fn set_value(&mut self, pos: Position, value: u8) -> Result<()> {
         self.push_history();
 
-        self.grid.get_mut(pos).set_value(value);
+        // TODO: delete if value == 0
+        let cell = self.grid.get_mut(pos);
+
+        if value != 0 {
+            cell.set_value(value.try_into()?);
+        } else {
+            cell.delete();
+        }
 
         if self.settings.update_candidates_on_set_value {
             self.grid.update_candidates(pos, value);
@@ -94,7 +101,15 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
     fn set_or_toggle_value(&mut self, pos: Position, value: u8) -> Result<()> {
         self.push_history();
 
-        let set_value = self.grid.get_mut(pos).set_or_toggle_value(value)?;
+        // TODO: delete if value == 0
+        let cell = self.grid.get_mut(pos);
+
+        let set_value = if value != 0 {
+            cell.set_or_toggle_value(value.try_into()?)
+        } else {
+            cell.delete();
+            false
+        };
 
         if self.settings.update_candidates_on_set_value && set_value {
             self.grid.update_candidates(pos, value);

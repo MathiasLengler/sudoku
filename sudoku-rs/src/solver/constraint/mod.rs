@@ -1,4 +1,4 @@
-use std::convert::TryInto;
+use std::convert::{TryFrom, TryInto};
 use std::mem::replace;
 
 use gcollections::ops::*;
@@ -68,7 +68,7 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
                     let variable =
                         Box::new(space.vstore.alloc((1, max_value).to_interval())) as Var<VStore>;
 
-                    (pos, (variable, candidates))
+                    (pos, (variable, candidates.to_vec_u8()))
                 })
             })
             .collect();
@@ -126,7 +126,7 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
 
                     assert_eq!(lower, upper);
 
-                    self.grid.get_mut(*pos).set_value(lower.try_into().unwrap());
+                    self.grid.get_mut(*pos).set_value(u8::try_from(lower).unwrap().try_into().unwrap());
                 }
 
                 true

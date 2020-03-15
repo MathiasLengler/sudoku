@@ -9,6 +9,7 @@ use generic_array::GenericArray;
 use typenum::Unsigned;
 
 use crate::base::{ArrayElement, SudokuBase};
+use crate::cell::compact::value::Value;
 use crate::error::{Error, Result};
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug, Default)]
@@ -57,17 +58,27 @@ impl<Base: SudokuBase> Candidates<Base> {
         Ok(())
     }
 
-    pub fn to_vec(&self) -> Vec<u8> {
+    fn iter_u8<'a>(&'a self) -> impl Iterator<Item = u8> + 'a {
         let bits = self.as_bits();
 
-        bits.iter()
-            .enumerate()
-            .filter_map(|(i, &is_set)| {
-                if is_set {
-                    Some(Self::export_candidate(i))
-                } else {
-                    None
-                }
+        bits.iter().enumerate().filter_map(|(i, &is_set)| {
+            if is_set {
+                Some(Self::export_candidate(i))
+            } else {
+                None
+            }
+        })
+    }
+
+    pub fn to_vec_u8(&self) -> Vec<u8> {
+        self.iter_u8().collect()
+    }
+
+    pub fn to_vec_value(&self) -> Vec<Value<Base>> {
+        self.iter_u8()
+            .map(|value| {
+                // should never fail as every candidate is a valid value
+                Value::try_from(value).unwrap()
             })
             .collect()
     }
@@ -76,7 +87,7 @@ impl<Base: SudokuBase> Candidates<Base> {
     pub fn as_mut(&mut self) -> CandidatesMut<'_, Base> {
         CandidatesMut {
             bits: self.as_mut_bits(),
-            phantom: PhantomData::default(),
+            base: PhantomData::default(),
         }
     }
 }
@@ -135,14 +146,14 @@ impl<Base: SudokuBase> TryFrom<Vec<u8>> for Candidates<Base> {
 
 impl<Base: SudokuBase> Display for Candidates<Base> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self.to_vec())
+        write!(f, "{:?}", self.to_vec_u8())
     }
 }
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
 pub struct CandidatesMut<'a, Base: SudokuBase> {
     bits: &'a mut BitSlice<Local, ArrayElement>,
-    phantom: PhantomData<Base>,
+    base: PhantomData<Base>,
 }
 
 // TODO: move other methods / use internally?
@@ -180,10 +191,10 @@ mod tests {
         let vec_candidates = vec![1, 2, 4, 8, 9];
 
         let candidates: Candidates<U3> = vec_candidates.clone().try_into()?;
-        assert_eq!(candidates.to_vec(), vec_candidates);
+        assert_eq!(candidates.to_vec_u8(), vec_candidates);
 
         let candidates: Candidates<U3> = vec![].try_into()?;
-        assert_eq!(candidates.to_vec(), vec![]);
+        assert_eq!(candidates.to_vec_u8(), vec![]);
 
         let candidates: Result<Candidates<U3>> = vec![0].try_into();
         assert!(candidates.is_err());

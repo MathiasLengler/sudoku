@@ -16,7 +16,7 @@ pub struct Solver<'s, Base: SudokuBase> {
     /// Cached
     empty_positions: Vec<Position>,
     /// Choices stack
-    choices: Vec<Choice>,
+    choices: Vec<Choice<Base>>,
     /// Step limit checking
     step_count: usize,
     /// Settings
@@ -68,7 +68,7 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
     fn init(&mut self) {
         if let Some(first_pos) = self.empty_positions.first() {
             self.choices.push(Choice::new(
-                self.grid.direct_candidates(*first_pos).to_vec(),
+                self.grid.direct_candidates(*first_pos).to_vec_value(),
                 *first_pos,
                 self.settings.shuffle_candidates,
             ))
@@ -103,9 +103,13 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
 
         match self.choices.last_mut() {
             Some(choice) => {
-                self.grid
-                    .get_mut(choice.position())
-                    .set_value(choice.selection());
+                let cell = self.grid.get_mut(choice.position());
+
+                if let Some(value) = choice.selection() {
+                    cell.set_value(value);
+                } else {
+                    cell.delete();
+                }
 
                 if choice.is_exhausted() {
                     // Backtrack
@@ -120,7 +124,7 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
                     match self.empty_positions.get(choices_len) {
                         Some(next_position) => {
                             self.choices.push(Choice::new(
-                                self.grid.direct_candidates(*next_position).to_vec(),
+                                self.grid.direct_candidates(*next_position).to_vec_value(),
                                 *next_position,
                                 self.settings.shuffle_candidates,
                             ));

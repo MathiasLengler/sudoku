@@ -3,20 +3,17 @@ use std::convert::TryInto;
 use std::fmt::{self, Debug, Display, Formatter};
 use std::hash::Hash;
 use std::mem::replace;
-use std::num::NonZeroU8;
-
-use anyhow::{ensure, format_err};
-use typenum::Unsigned;
 
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
+use crate::cell::compact::value::Value;
 use crate::cell::view::CellView;
 use crate::error::Result;
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 pub(super) enum CellState<Base: SudokuBase> {
-    Value(NonZeroU8),
-    FixedValue(NonZeroU8),
+    Value(Value<Base>),
+    FixedValue(Value<Base>),
     Candidates(Candidates<Base>),
 }
 
@@ -25,17 +22,12 @@ impl<Base: SudokuBase> CellState<Base> {
         Self::with_candidates(Candidates::new())
     }
 
-    pub(super) fn with_value(value: u8, fixed: bool) -> Result<Self> {
-        Ok(if value == 0 {
-            Self::new()
+    pub(super) fn with_value(value: Value<Base>, fixed: bool) -> Self {
+        if fixed {
+            CellState::FixedValue(value)
         } else {
-            let value = Self::import_value(value)?;
-            if fixed {
-                CellState::FixedValue(value)
-            } else {
-                CellState::Value(value)
-            }
-        })
+            CellState::Value(value)
+        }
     }
 
     pub(super) fn with_candidates(candidates: Candidates<Base>) -> Self {
@@ -45,15 +37,15 @@ impl<Base: SudokuBase> CellState<Base> {
     pub(super) fn view(&self) -> CellView {
         match self {
             CellState::Value(value) => CellView::Value {
-                value: Self::export_value(*value),
+                value: value.into_u8(),
                 fixed: false,
             },
             CellState::FixedValue(value) => CellView::Value {
-                value: Self::export_value(*value),
+                value: value.into_u8(),
                 fixed: true,
             },
             CellState::Candidates(candidates) => CellView::Candidates {
-                candidates: candidates.to_vec(),
+                candidates: candidates.to_vec_u8(),
             },
         }
     }
@@ -108,18 +100,16 @@ impl<Base: SudokuBase> CellState<Base> {
         );
     }
 
-    pub(super) fn value(&self) -> Option<u8> {
+    pub(super) fn value(&self) -> Option<Value<Base>> {
         match self {
-            &CellState::Value(value) => Some(Self::export_value(value)),
-            &CellState::FixedValue(value) => Some(Self::export_value(value)),
+            &CellState::Value(value) | &CellState::FixedValue(value) => Some(value),
             CellState::Candidates(_) => None,
         }
     }
 
-    // TODO: expose candidates directly
-    pub(super) fn candidates(&self) -> Option<Vec<u8>> {
+    pub(super) fn candidates(&self) -> Option<Candidates<Base>> {
         match self {
-            CellState::Candidates(candidates) => Some(candidates.to_vec()),
+            CellState::Candidates(candidates) => Some(candidates.clone()),
             _ => None,
         }
     }
@@ -130,33 +120,31 @@ impl<Base: SudokuBase> CellState<Base> {
         replace(self, Self::new());
     }
 
-    pub(super) fn set_value(&mut self, value: u8) -> Result<()> {
+    pub(super) fn set_value(&mut self, value: Value<Base>) {
         self.assert_unfixed();
 
-        replace(self, Self::with_value(value, false)?);
-
-        Ok(())
+        replace(self, Self::with_value(value, false));
     }
 
-    pub(super) fn set_or_toggle_value(&mut self, value: u8) -> Result<bool> {
+    pub(super) fn set_or_toggle_value(&mut self, value: Value<Base>) -> bool {
         self.assert_unfixed();
 
-        Ok(match self {
+        match self {
             CellState::Value(current_value) => {
-                if Self::export_value(*current_value) == value {
+                if current_value == &value {
                     self.delete();
                     false
                 } else {
-                    self.set_value(value)?;
+                    self.set_value(value);
                     true
                 }
             }
             CellState::Candidates(_) => {
-                self.set_value(value)?;
+                self.set_value(value);
                 true
             }
             _ => unreachable!(),
-        })
+        }
     }
 
     pub(super) fn set_candidates(&mut self, candidates: Candidates<Base>) {
@@ -207,23 +195,6 @@ impl<Base: SudokuBase> CellState<Base> {
     }
 }
 
-/// Conversion Helpers
-impl<Base: SudokuBase> CellState<Base> {
-    fn import_value(value: u8) -> Result<NonZeroU8> {
-        let limit = Base::MaxValue::to_u8();
-
-        ensure!(value <= limit, "Value can't be greater than {}", limit);
-
-        let value = NonZeroU8::new(value).ok_or_else(|| format_err!("Value can't be 0"))?;
-
-        Ok(value)
-    }
-
-    fn export_value(value: NonZeroU8) -> u8 {
-        value.get()
-    }
-}
-
 impl<Base> Display for CellState<Base>
 where
     Base: SudokuBase,
@@ -244,6 +215,7 @@ where
 #[cfg(test)]
 mod tests {
     use std::mem::size_of;
+    use std::num::NonZeroU8;
 
     use typenum::consts::*;
 

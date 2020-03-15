@@ -12,13 +12,13 @@ impl<Base: SudokuBase> Strategy<Base> for SingleCandidate {
         grid.all_candidates_positions()
             .into_iter()
             .filter_map(|candidate_pos| {
-                let candidates = grid.get(candidate_pos).candidates().unwrap();
+                let candidates = grid.get(candidate_pos).candidates().unwrap().to_vec_value();
 
                 if candidates.len() == 1 {
                     let single_candidate = candidates[0];
 
                     grid.get_mut(candidate_pos).set_value(single_candidate);
-                    grid.update_candidates(candidate_pos, single_candidate);
+                    grid.update_candidates(candidate_pos, single_candidate.into_u8());
 
                     Some(candidate_pos)
                 } else {

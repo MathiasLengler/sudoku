@@ -39,7 +39,8 @@ impl GroupReduction {
             let (positions, group_candidates): (Vec<Position>, Vec<Vec<u8>>) = group
                 .filter_map(|pos| {
                     let cell = grid.get(pos);
-                    cell.candidates().map(|candidates| (pos, candidates))
+                    cell.candidates()
+                        .map(|candidates| (pos, candidates.to_vec_u8()))
                 })
                 .unzip();
 

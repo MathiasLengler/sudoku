@@ -36,8 +36,10 @@ impl<Base: SudokuBase> Grid<Base> {
 
         self.neighbor_positions_with_duplicates(pos)
             .for_each(|pos| {
-                if self.get(pos).has_candidates() {
-                    self.get_mut(pos).delete_candidate(value);
+                let cell = self.get_mut(pos);
+                if cell.has_candidates() {
+                    // TODO: remove unwrap by changing value: u8 to value: Value<Base>
+                    cell.delete_candidate(value).unwrap();
                 }
             });
     }
@@ -50,7 +52,7 @@ impl<Base: SudokuBase> Grid<Base> {
 
             for pos in self.neighbor_positions_with_duplicates(pos) {
                 if let Some(value) = self.get(pos).value() {
-                    candidates_mut.delete(value);
+                    candidates_mut.delete(value.into_u8());
                 }
             }
         }

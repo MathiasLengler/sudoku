@@ -2,6 +2,7 @@ use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
 
 use crate::base::SudokuBase;
+use crate::cell::compact::value::Value;
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::solver::backtracking;
@@ -82,7 +83,7 @@ impl Generator {
 
         all_positions.shuffle(&mut rand::thread_rng());
 
-        let mut deleted: Vec<(Position, u8)> = vec![];
+        let mut deleted: Vec<(Position, Value<Base>)> = vec![];
 
         for pos in all_positions {
             let cell = grid.get(pos);

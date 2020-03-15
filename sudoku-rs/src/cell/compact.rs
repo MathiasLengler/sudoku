@@ -4,11 +4,13 @@ use cell_state::CellState;
 
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
+use crate::cell::compact::value::Value;
 use crate::cell::view::CellView;
 use crate::error::Result;
 
 pub mod candidates;
 mod cell_state;
+pub mod value;
 
 /// Memory efficient representation of a single Sudoku cell.
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
@@ -21,8 +23,8 @@ impl<Base: SudokuBase> Cell<Base> {
     }
 
     /// Constructs a new cell with a value and if it should be fixed.
-    pub fn with_value(value: u8, fixed: bool) -> Result<Self> {
-        Ok(Self(CellState::with_value(value, fixed)?))
+    pub fn with_value(value: Value<Base>, fixed: bool) -> Self {
+        Self(CellState::with_value(value, fixed))
     }
 
     /// Constructs a new cell with the provided candidates
@@ -63,12 +65,12 @@ impl<Base: SudokuBase> Cell<Base> {
     }
 
     /// Value if any, either fixed or unfixed.
-    pub fn value(&self) -> Option<u8> {
+    pub fn value(&self) -> Option<Value<Base>> {
         self.0.value()
     }
 
     /// Candidates if any
-    pub fn candidates(&self) -> Option<Vec<u8>> {
+    pub fn candidates(&self) -> Option<Candidates<Base>> {
         self.0.candidates()
     }
 
@@ -87,7 +89,7 @@ impl<Base: SudokuBase> Cell<Base> {
     /// # Panics
     ///
     /// Panics it the cell is fixed.
-    pub fn set_value(&mut self, value: u8) -> Result<()> {
+    pub fn set_value(&mut self, value: Value<Base>) {
         self.0.set_value(value)
     }
 
@@ -100,7 +102,7 @@ impl<Base: SudokuBase> Cell<Base> {
     /// # Panics
     ///
     /// Panics it the cell is fixed.
-    pub fn set_or_toggle_value(&mut self, value: u8) -> Result<bool> {
+    pub fn set_or_toggle_value(&mut self, value: Value<Base>) -> bool {
         self.0.set_or_toggle_value(value)
     }
 
@@ -118,6 +120,7 @@ impl<Base: SudokuBase> Cell<Base> {
         self.0.set_candidates(candidates)
     }
 
+    // TODO: replace candidate: u8 with candidate: Value<Base>
     /// Toggle the given candidate.
     /// Deletes value if present and sets the single candidate.
     ///
