@@ -18,7 +18,7 @@ impl<Base: SudokuBase> Strategy<Base> for SingleCandidate {
                     let single_candidate = candidates[0];
 
                     grid.get_mut(candidate_pos).set_value(single_candidate);
-                    grid.update_candidates(candidate_pos, single_candidate.into_u8());
+                    grid.update_candidates(candidate_pos, single_candidate);
 
                     Some(candidate_pos)
                 } else {

@@ -21,6 +21,20 @@ pub struct Value<Base: SudokuBase> {
 }
 
 impl<Base: SudokuBase> Value<Base> {
+    /// Ok(Some(value)) => value in legal range
+    /// Ok(None) => 0
+    /// Err(err) => value too big
+    pub fn new(value: u8) -> Result<Option<Self>> {
+        let limit = Base::MaxValue::to_u8();
+
+        ensure!(value <= limit, "Value can't be greater than {}", limit);
+
+        Ok(NonZeroU8::new(value).map(|value| Self {
+            value,
+            base: Default::default(),
+        }))
+    }
+
     pub fn into_u8(self) -> u8 {
         self.value.get()
     }
@@ -30,16 +44,7 @@ impl<Base: SudokuBase> TryFrom<u8> for Value<Base> {
     type Error = Error;
 
     fn try_from(value: u8) -> Result<Self> {
-        let limit = Base::MaxValue::to_u8();
-
-        ensure!(value <= limit, "Value can't be greater than {}", limit);
-
-        let value = NonZeroU8::new(value).ok_or_else(|| format_err!("Value can't be 0"))?;
-
-        Ok(Self {
-            value,
-            base: Default::default(),
-        })
+        Self::new(value)?.ok_or_else(|| format_err!("Value can't be 0"))
     }
 }
 

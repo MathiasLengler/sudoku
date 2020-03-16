@@ -3,7 +3,6 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::marker::PhantomData;
 
-use anyhow::ensure;
 use bitvec::prelude::*;
 use generic_array::GenericArray;
 use typenum::Unsigned;
@@ -34,53 +33,46 @@ impl<Base: SudokuBase> Candidates<Base> {
         this
     }
 
-    pub fn toggle(&mut self, candidate: u8) -> Result<()> {
-        let imported_candidate = Self::import(candidate)?;
+    pub fn toggle(&mut self, candidate: Value<Base>) {
+        let imported_candidate = Self::import(candidate);
 
         let bits = self.as_mut_bits();
 
         bits.set(imported_candidate, !bits[imported_candidate]);
 
         self.debug_assert();
-
-        Ok(())
     }
 
-    pub fn delete(&mut self, candidate: u8) -> Result<()> {
-        let imported_candidate = Self::import(candidate)?;
+    pub fn delete(&mut self, candidate: Value<Base>) {
+        let imported_candidate = Self::import(candidate);
 
         let bits = self.as_mut_bits();
 
         bits.set(imported_candidate, false);
 
         self.debug_assert();
-
-        Ok(())
     }
 
-    fn iter_u8<'a>(&'a self) -> impl Iterator<Item = u8> + 'a {
+    fn iter<'a>(&'a self) -> impl Iterator<Item = Value<Base>> + 'a {
         let bits = self.as_bits();
 
-        bits.iter().enumerate().filter_map(|(i, &is_set)| {
-            if is_set {
-                Some(Self::export_candidate(i))
-            } else {
-                None
-            }
-        })
+        bits.iter().enumerate().filter_map(
+            |(i, &is_set)| {
+                if is_set {
+                    Some(Self::export(i))
+                } else {
+                    None
+                }
+            },
+        )
     }
 
     pub fn to_vec_u8(&self) -> Vec<u8> {
-        self.iter_u8().collect()
+        self.iter().map(|value| value.into_u8()).collect()
     }
 
     pub fn to_vec_value(&self) -> Vec<Value<Base>> {
-        self.iter_u8()
-            .map(|value| {
-                // should never fail as every candidate is a valid value
-                Value::try_from(value).unwrap()
-            })
-            .collect()
+        self.iter().collect()
     }
 
     /// Optimization to allow multiple modifications to candidates without recreating `BitSlice` wrapper.
@@ -101,21 +93,12 @@ impl<Base: SudokuBase> Candidates<Base> {
         self.arr.bits_mut()
     }
 
-    fn import(candidate: u8) -> Result<usize> {
-        ensure!(candidate != 0, "Candidate can't be 0");
-
-        let limit = Base::MaxValue::to_u8();
-        ensure!(
-            candidate <= limit,
-            "Candidate can't be greater than {}",
-            limit
-        );
-
-        Ok((candidate - 1).into())
+    fn import(candidate: Value<Base>) -> usize {
+        (candidate.into_u8() - 1).into()
     }
 
-    fn export_candidate(candidate: usize) -> u8 {
-        (candidate + 1).try_into().unwrap()
+    fn export(candidate: usize) -> Value<Base> {
+        u8::try_from(candidate + 1).unwrap().try_into().unwrap()
     }
 
     fn debug_assert(&self) {
@@ -123,6 +106,22 @@ impl<Base: SudokuBase> Candidates<Base> {
             let bits = self.as_bits();
             bits[Base::MaxValue::to_usize()..].not_any()
         });
+    }
+}
+
+impl<Base: SudokuBase> From<Vec<Value<Base>>> for Candidates<Base> {
+    fn from(candidates: Vec<Value<Base>>) -> Self {
+        let mut this = Self::default();
+
+        let bits = this.as_mut_bits();
+
+        for candidate in candidates {
+            bits.set(Self::import(candidate), true);
+        }
+
+        this.debug_assert();
+
+        this
     }
 }
 
@@ -135,7 +134,7 @@ impl<Base: SudokuBase> TryFrom<Vec<u8>> for Candidates<Base> {
         let bits = this.as_mut_bits();
 
         for candidate in candidates {
-            bits.set(Self::import(candidate)?, true);
+            bits.set(Self::import(candidate.try_into()?), true);
         }
 
         this.debug_assert();
@@ -159,12 +158,10 @@ pub struct CandidatesMut<'a, Base: SudokuBase> {
 // TODO: move other methods / use internally?
 //  could require CandidatesRef for shared mutability methods
 impl<'a, Base: SudokuBase> CandidatesMut<'a, Base> {
-    pub fn delete(&mut self, candidate: u8) -> Result<()> {
-        let imported_candidate = Candidates::<Base>::import(candidate)?;
+    pub fn delete(&mut self, candidate: Value<Base>) {
+        let imported_candidate = Candidates::<Base>::import(candidate);
 
         self.bits.set(imported_candidate, false);
-
-        Ok(())
     }
 
     fn debug_assert(&self) {

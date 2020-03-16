@@ -1,5 +1,4 @@
 use std::cmp::Eq;
-use std::convert::TryInto;
 use std::fmt::{self, Debug, Display, Formatter};
 use std::hash::Hash;
 use std::mem::replace;
@@ -8,7 +7,6 @@ use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
 use crate::cell::compact::value::Value;
 use crate::cell::view::CellView;
-use crate::error::Result;
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 pub(super) enum CellState<Base: SudokuBase> {
@@ -153,33 +151,29 @@ impl<Base: SudokuBase> CellState<Base> {
         replace(self, Self::with_candidates(candidates));
     }
 
-    pub(super) fn toggle_candidate(&mut self, candidate: u8) -> Result<()> {
+    pub(super) fn toggle_candidate(&mut self, candidate: Value<Base>) {
         self.assert_unfixed();
 
         match self {
             CellState::Candidates(candidates) => {
-                candidates.toggle(candidate)?;
+                candidates.toggle(candidate);
             }
             CellState::Value(_) => {
                 // TODO: optimize with Candidate::single
-                replace(self, Self::with_candidates(vec![candidate].try_into()?));
+                replace(self, Self::with_candidates(vec![candidate].into()));
             }
             _ => unreachable!(),
         }
-
-        Ok(())
     }
 
-    pub(super) fn delete_candidate(&mut self, candidate: u8) -> Result<()> {
+    pub(super) fn delete_candidate(&mut self, candidate: Value<Base>) {
         self.assert_unfixed();
 
         match self {
-            CellState::Candidates(candidates) => candidates.delete(candidate)?,
+            CellState::Candidates(candidates) => candidates.delete(candidate),
             CellState::Value(_) => {}
             _ => unreachable!(),
         };
-
-        Ok(())
     }
 }
 

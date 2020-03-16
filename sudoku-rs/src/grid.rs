@@ -9,6 +9,7 @@ use typenum::Unsigned;
 
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
+use crate::cell::compact::value::Value;
 use crate::cell::view::parser::parse_cells;
 use crate::cell::view::CellView;
 use crate::cell::Cell;
@@ -29,17 +30,12 @@ impl<Base: SudokuBase> Grid<Base> {
             self.get_mut(pos).set_candidates(candidates);
         });
     }
-    pub fn update_candidates(&mut self, pos: Position, value: u8) {
-        if value == 0 {
-            return;
-        }
-
+    pub fn update_candidates(&mut self, pos: Position, value: Value<Base>) {
         self.neighbor_positions_with_duplicates(pos)
             .for_each(|pos| {
                 let cell = self.get_mut(pos);
                 if cell.has_candidates() {
-                    // TODO: remove unwrap by changing value: u8 to value: Value<Base>
-                    cell.delete_candidate(value).unwrap();
+                    cell.delete_candidate(value);
                 }
             });
     }
@@ -52,7 +48,7 @@ impl<Base: SudokuBase> Grid<Base> {
 
             for pos in self.neighbor_positions_with_duplicates(pos) {
                 if let Some(value) = self.get(pos).value() {
-                    candidates_mut.delete(value.into_u8());
+                    candidates_mut.delete(value);
                 }
             }
         }

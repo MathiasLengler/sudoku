@@ -6,7 +6,6 @@ use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
 use crate::cell::compact::value::Value;
 use crate::cell::view::CellView;
-use crate::error::Result;
 
 pub mod candidates;
 mod cell_state;
@@ -127,7 +126,7 @@ impl<Base: SudokuBase> Cell<Base> {
     /// # Panics
     ///
     /// Panics it the cell is fixed.
-    pub fn toggle_candidate(&mut self, candidate: u8) -> Result<()> {
+    pub fn toggle_candidate(&mut self, candidate: Value<Base>) {
         self.0.toggle_candidate(candidate)
     }
 
@@ -136,7 +135,7 @@ impl<Base: SudokuBase> Cell<Base> {
     /// # Panics
     ///
     /// Panics it the cell is fixed.
-    pub fn delete_candidate(&mut self, candidate: u8) -> Result<()> {
+    pub fn delete_candidate(&mut self, candidate: Value<Base>) {
         self.0.delete_candidate(candidate)
     }
 }
