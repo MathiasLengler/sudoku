@@ -57,11 +57,13 @@ impl<Base: SudokuBase> Display for Choice<Base> {
 mod tests {
     use std::convert::TryInto;
 
+    use typenum::consts::*;
+
     use super::*;
 
     #[test]
     fn test_choice() {
-        let mut choice = Choice::new(
+        let mut choice = Choice::<U2>::new(
             vec![1, 2, 4]
                 .into_iter()
                 .map(|v| v.try_into().unwrap())

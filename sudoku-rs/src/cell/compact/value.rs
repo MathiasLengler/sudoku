@@ -53,3 +53,38 @@ impl<Base: SudokuBase> Display for Value<Base> {
         write!(f, "{}", self.value)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use typenum::consts::*;
+
+    use super::*;
+
+    #[test]
+    fn test_new() -> Result<()> {
+        let value = Value::<U3>::new(0)?;
+        assert!(value.is_none());
+
+        let value = Value::<U3>::new(9)?;
+        assert_eq!(value.map(|value| value.into_u8()), Some(9));
+
+        let value = Value::<U3>::new(10);
+        assert!(value.is_err());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_try_from() -> Result<()> {
+        let value = Value::<U3>::try_from(0);
+        assert!(value.is_err());
+
+        let value = Value::<U3>::try_from(9)?;
+        assert_eq!(value.into_u8(), 9);
+
+        let value = Value::<U3>::try_from(10);
+        assert!(value.is_err());
+
+        Ok(())
+    }
+}

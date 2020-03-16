@@ -378,38 +378,36 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_has_conflict() {
+    fn test_has_conflict() -> Result<()> {
         let mut grid = Grid::<U3>::new();
-
         assert!(!grid.has_conflict());
 
-        grid.get_mut(Position { column: 0, row: 0 }).set_value(1);
-
+        grid.get_mut(Position { column: 0, row: 0 })
+            .set_value(1.try_into()?);
         assert!(!grid.has_conflict());
 
-        grid.get_mut(Position { column: 1, row: 0 }).set_value(1);
-
+        grid.get_mut(Position { column: 1, row: 0 })
+            .set_value(1.try_into()?);
         assert!(grid.has_conflict());
 
-        grid.get_mut(Position { column: 1, row: 0 }).set_value(0);
-
+        grid.get_mut(Position { column: 1, row: 0 }).delete();
         assert!(!grid.has_conflict());
 
-        grid.get_mut(Position { column: 0, row: 1 }).set_value(1);
-
+        grid.get_mut(Position { column: 0, row: 1 })
+            .set_value(1.try_into()?);
         assert!(grid.has_conflict());
 
-        grid.get_mut(Position { column: 0, row: 1 }).set_value(0);
-
+        grid.get_mut(Position { column: 0, row: 1 }).delete();
         assert!(!grid.has_conflict());
 
-        grid.get_mut(Position { column: 1, row: 1 }).set_value(1);
-
+        grid.get_mut(Position { column: 1, row: 1 })
+            .set_value(1.try_into()?);
         assert!(grid.has_conflict());
 
-        grid.get_mut(Position { column: 1, row: 1 }).set_value(0);
-
+        grid.get_mut(Position { column: 1, row: 1 }).delete();
         assert!(!grid.has_conflict());
+
+        Ok(())
     }
 
     #[test]
@@ -424,7 +422,7 @@ mod tests {
     }
 
     #[test]
-    fn test_update_candidates() {
+    fn test_update_candidates() -> Result<()> {
         let mut grid = samples::base_2().first().unwrap().clone();
 
         grid.set_all_direct_candidates();
@@ -433,7 +431,7 @@ mod tests {
             {
                 let mut grid = grid.clone();
                 let pos = Position { column: 0, row: 3 };
-                grid.update_candidates(pos, 1);
+                grid.update_candidates(pos, 1.try_into()?);
                 grid
             },
             { grid.clone() }
@@ -443,7 +441,7 @@ mod tests {
             {
                 let mut grid = grid.clone();
                 let pos = Position { column: 0, row: 3 };
-                grid.update_candidates(pos, 2);
+                grid.update_candidates(pos, 2.try_into()?);
                 grid
             },
             {
@@ -456,7 +454,7 @@ mod tests {
             {
                 let mut grid = grid.clone();
                 let pos = Position { column: 0, row: 3 };
-                grid.update_candidates(pos, 4);
+                grid.update_candidates(pos, 4.try_into()?);
                 grid
             },
             {
@@ -466,5 +464,7 @@ mod tests {
                 grid
             }
         );
+
+        Ok(())
     }
 }

@@ -209,27 +209,10 @@ where
 #[cfg(test)]
 mod tests {
     use std::mem::size_of;
-    use std::num::NonZeroU8;
 
     use typenum::consts::*;
 
-    use crate::error::Result;
-
     use super::*;
-
-    #[test]
-    fn test_import_value() -> Result<()> {
-        let value = CellState::<U3>::import_value(9)?;
-        assert_eq!(value, NonZeroU8::new(9).unwrap());
-
-        let value = CellState::<U3>::import_value(0);
-        assert!(value.is_err());
-
-        let value = CellState::<U3>::import_value(10);
-        assert!(value.is_err());
-
-        Ok(())
-    }
 
     #[test]
     fn test_cell_state_size() {

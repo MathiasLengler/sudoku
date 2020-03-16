@@ -187,16 +187,16 @@ mod tests {
     fn test_try_from_vec_u8() -> Result<()> {
         let vec_candidates = vec![1, 2, 4, 8, 9];
 
-        let candidates: Candidates<U3> = vec_candidates.clone().try_into()?;
+        let candidates = Candidates::<U3>::try_from(vec_candidates.clone())?;
         assert_eq!(candidates.to_vec_u8(), vec_candidates);
 
-        let candidates: Candidates<U3> = vec![].try_into()?;
+        let candidates = Candidates::<U3>::try_from(Vec::<u8>::new())?;
         assert_eq!(candidates.to_vec_u8(), vec![]);
 
-        let candidates: Result<Candidates<U3>> = vec![0].try_into();
+        let candidates = Candidates::<U3>::try_from(vec![0]);
         assert!(candidates.is_err());
 
-        let candidates: Result<Candidates<U3>> = vec![10].try_into();
+        let candidates = Candidates::<U3>::try_from(vec![10]);
         assert!(candidates.is_err());
 
         Ok(())

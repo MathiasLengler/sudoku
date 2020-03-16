@@ -5,6 +5,7 @@ use anyhow::bail;
 use serde::{Deserialize, Serialize};
 
 use crate::base::SudokuBase;
+use crate::cell::compact::value::Value;
 use crate::cell::Cell;
 use crate::error::{Error, Result};
 
@@ -37,7 +38,15 @@ impl CellView {
     // TODO: replace with TryFrom<CellView> for Cell
     pub fn try_into_cell<Base: SudokuBase>(self) -> Result<Cell<Base>> {
         Ok(match self {
-            CellView::Value { value, fixed } => Cell::with_value(value.try_into()?, fixed),
+            CellView::Value { value, fixed } => {
+                if let Some(value) = Value::new(value)? {
+                    Cell::with_value(value.try_into()?, fixed)
+                } else if !fixed {
+                    Cell::new()
+                } else {
+                    bail!("An empty cell can't be fixed")
+                }
+            }
             CellView::Candidates { candidates } => Cell::with_candidates(candidates.try_into()?),
         })
     }

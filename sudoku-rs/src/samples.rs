@@ -59,3 +59,18 @@ pub fn base_3() -> Vec<Grid<U3>> {
 pub fn minimal<Base: SudokuBase>() -> Grid<Base> {
     Generator::with_target(Target::Minimal).generate().unwrap()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_base_2() {
+        base_2();
+    }
+
+    #[test]
+    fn test_base_3() {
+        base_3();
+    }
+}
