@@ -53,28 +53,36 @@ impl WasmSudoku {
         JsValue::from_serde(&transport_sudoku).unwrap()
     }
 
-    pub fn set_value(&self, pos: JsValue, value: u8) {
-        self.sudoku
+    pub fn set_value(&self, pos: JsValue, value: u8) -> Result<(), JsValue> {
+        Ok(self
+            .sudoku
             .borrow_mut()
-            .set_value(Self::import_pos(pos), value);
+            .set_value(Self::import_pos(pos), value)
+            .map_err(Self::export_error)?)
     }
 
-    pub fn set_or_toggle_value(&self, pos: JsValue, value: u8) {
-        self.sudoku
+    pub fn set_or_toggle_value(&self, pos: JsValue, value: u8) -> Result<(), JsValue> {
+        Ok(self
+            .sudoku
             .borrow_mut()
-            .set_or_toggle_value(Self::import_pos(pos), value);
+            .set_or_toggle_value(Self::import_pos(pos), value)
+            .map_err(Self::export_error)?)
     }
 
-    pub fn set_candidates(&mut self, pos: JsValue, candidates: JsValue) {
-        self.sudoku
+    pub fn set_candidates(&mut self, pos: JsValue, candidates: JsValue) -> Result<(), JsValue> {
+        Ok(self
+            .sudoku
             .borrow_mut()
-            .set_candidates(Self::import_pos(pos), Self::import_candidates(candidates));
+            .set_candidates(Self::import_pos(pos), Self::import_candidates(candidates))
+            .map_err(Self::export_error)?)
     }
 
-    pub fn toggle_candidate(&mut self, pos: JsValue, candidate: u8) {
-        self.sudoku
+    pub fn toggle_candidate(&mut self, pos: JsValue, candidate: u8) -> Result<(), JsValue> {
+        Ok(self
+            .sudoku
             .borrow_mut()
-            .toggle_candidate(Self::import_pos(pos), candidate);
+            .toggle_candidate(Self::import_pos(pos), candidate)
+            .map_err(Self::export_error)?)
     }
 
     pub fn delete(&mut self, pos: JsValue) {
@@ -114,6 +122,7 @@ impl WasmSudoku {
     }
 }
 
+// TODO: remove unwraps
 /// Conversion Helpers
 impl WasmSudoku {
     fn import_pos(pos: JsValue) -> Position {
