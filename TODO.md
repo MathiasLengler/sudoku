@@ -49,4 +49,7 @@
   - run linting
     - eslint
     - clippy
-- evaluate useReducer
+- fix select cell performance
+  - evaluate useReduce
+  - profile
+
