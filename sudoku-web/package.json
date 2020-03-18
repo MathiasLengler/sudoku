@@ -6,6 +6,7 @@
   "repository": "https://github.com/MathiasLengler/sudoku",
   "scripts": {
     "start": "webpack-dev-server -d",
+    "profiling": "webpack-dev-server --mode production --env.reactProfiling=true",
     "build": "webpack --mode=production",
     "lint": "eslint src/**",
     "deploy": "gh-pages -d dist -r git@github.com:MathiasLengler/sudoku.git"
