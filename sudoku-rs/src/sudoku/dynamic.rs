@@ -1,7 +1,7 @@
 use std::any::{Any, TypeId};
 use std::convert::{TryFrom, TryInto};
 
-use failure::ensure;
+use anyhow::{bail, ensure, format_err};
 use typenum::consts::*;
 
 pub use game::DynamicSudoku;
@@ -20,16 +20,17 @@ mod game {
 
     use enum_dispatch::enum_dispatch;
 
+    use crate::error::Result;
     use crate::position::Position;
     use crate::sudoku::settings::Settings as SudokuSettings;
     use crate::Sudoku;
 
     #[enum_dispatch]
     pub trait Game {
-        fn set_value(&mut self, pos: Position, value: u8);
-        fn set_or_toggle_value(&mut self, pos: Position, value: u8);
-        fn set_candidates(&mut self, pos: Position, candidates: Vec<u8>);
-        fn toggle_candidate(&mut self, pos: Position, candidate: u8);
+        fn set_value(&mut self, pos: Position, value: u8) -> Result<()>;
+        fn set_or_toggle_value(&mut self, pos: Position, value: u8) -> Result<()>;
+        fn set_candidates(&mut self, pos: Position, candidates: Vec<u8>) -> Result<()>;
+        fn toggle_candidate(&mut self, pos: Position, candidate: u8) -> Result<()>;
         fn delete(&mut self, pos: Position);
         fn set_all_direct_candidates(&mut self);
         fn solve_single_candidates(&mut self);
@@ -53,25 +54,25 @@ mod game {
 
 // Requires runtime base
 impl DynamicSudoku {
-    pub fn new(base: u8) -> Self {
-        match base {
+    pub fn new(base: u8) -> Result<Self> {
+        Ok(match base {
             2 => Base2(Sudoku::<U2>::new()),
             3 => Base3(Sudoku::<U3>::new()),
             4 => Base4(Sudoku::<U4>::new()),
             5 => Base5(Sudoku::<U5>::new()),
-            unexpected_base => Self::bail_unexpected_base(unexpected_base),
-        }
+            unexpected_base => bail!(Self::unexpected_base_err(unexpected_base)),
+        })
     }
-    pub fn with_sudoku<Base: SudokuBase + 'static>(sudoku: Sudoku<Base>) -> Self {
+    pub fn with_sudoku<Base: SudokuBase + 'static>(sudoku: Sudoku<Base>) -> Result<Self> {
         let any_sudoku: Box<dyn Any> = Box::new(sudoku);
 
-        match TypeId::of::<Base>() {
+        Ok(match TypeId::of::<Base>() {
             id if id == TypeId::of::<U2>() => Base2(*(any_sudoku.downcast().unwrap())),
             id if id == TypeId::of::<U3>() => Base3(*(any_sudoku.downcast().unwrap())),
             id if id == TypeId::of::<U4>() => Base4(*(any_sudoku.downcast().unwrap())),
             id if id == TypeId::of::<U5>() => Base5(*(any_sudoku.downcast().unwrap())),
-            _ => Self::bail_unexpected_base(Base::to_u8()),
-        }
+            _ => bail!(Self::unexpected_base_err(Base::to_u8())),
+        })
     }
     pub fn generate(&mut self, generator_settings: GeneratorSettings) -> Result<()> {
         let GeneratorSettings { base, target } = generator_settings;
@@ -93,7 +94,7 @@ impl DynamicSudoku {
                 target,
                 self.settings(),
             )?),
-            unexpected_base => Self::bail_unexpected_base(unexpected_base),
+            unexpected_base => bail!(Self::unexpected_base_err(unexpected_base)),
         };
 
         Ok(())
@@ -114,7 +115,7 @@ impl TryFrom<Vec<CellView>> for DynamicSudoku {
             3 => Base3(Sudoku::<U3>::with_grid(views.try_into()?)),
             4 => Base4(Sudoku::<U4>::with_grid(views.try_into()?)),
             5 => Base5(Sudoku::<U5>::with_grid(views.try_into()?)),
-            unexpected_base => Self::bail_unexpected_base(unexpected_base),
+            unexpected_base => bail!(Self::unexpected_base_err(unexpected_base)),
         })
     }
 }
@@ -128,15 +129,15 @@ impl TryFrom<&str> for DynamicSudoku {
 }
 
 impl DynamicSudoku {
-    fn bail_unexpected_base(unexpected_base: u8) -> ! {
-        panic!("Unexpected dynamic base: {}", unexpected_base)
+    fn unexpected_base_err(base: u8) -> Error {
+        format_err!("Unexpected dynamic base: {}", base)
     }
 
     fn cell_count_to_base(cell_count: usize) -> Result<u8> {
         let approx_base = (cell_count as f64).sqrt().sqrt().round() as u8;
 
         ensure!(
-            Self::base_to_cell_count(approx_base) == cell_count,
+            Self::base_to_cell_count(approx_base) == cell_count && approx_base >= 2,
             "Cell count {} has no valid sudoku base",
             cell_count
         );
@@ -155,7 +156,7 @@ mod tests {
 
     #[test]
     fn test_cell_count_to_base() -> Result<()> {
-        let test_cases = vec![(0, 0), (1, 1), (16, 2), (81, 3), (256, 4), (625, 5)];
+        let test_cases = vec![(16, 2), (81, 3), (256, 4), (625, 5)];
 
         for &(cell_count, expected_base) in &test_cases {
             let base = DynamicSudoku::cell_count_to_base(cell_count)?;
@@ -194,7 +195,7 @@ mod tests {
         ];
 
         inputs
-            .into_iter()
+            .iter()
             .map(|input| DynamicSudoku::try_from(*input))
             .collect::<Result<Vec<_>>>()?;
 

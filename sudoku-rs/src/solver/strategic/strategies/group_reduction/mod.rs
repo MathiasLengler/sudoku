@@ -1,3 +1,5 @@
+use std::convert::TryInto;
+
 use itertools::izip;
 
 use crate::base::SudokuBase;
@@ -37,7 +39,8 @@ impl GroupReduction {
             let (positions, group_candidates): (Vec<Position>, Vec<Vec<u8>>) = group
                 .filter_map(|pos| {
                     let cell = grid.get(pos);
-                    cell.candidates().map(|candidates| (pos, candidates))
+                    cell.candidates()
+                        .map(|candidates| (pos, candidates.to_vec_u8()))
                 })
                 .unzip();
 
@@ -62,7 +65,9 @@ impl GroupReduction {
                     //                        positions, group_candidates, reduced_group_candidates
                     //                    );
 
-                    grid.get_mut(pos).set_candidates(reduced_candidates);
+                    // TODO: fix unwrap
+                    grid.get_mut(pos)
+                        .set_candidates(reduced_candidates.try_into().unwrap());
 
                     modified_positions.push(pos)
                 }

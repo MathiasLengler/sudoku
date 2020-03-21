@@ -9,6 +9,7 @@ use typenum::Unsigned;
 
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
+use crate::cell::compact::value::Value;
 use crate::cell::view::parser::parse_cells;
 use crate::cell::view::CellView;
 use crate::cell::Cell;
@@ -29,15 +30,12 @@ impl<Base: SudokuBase> Grid<Base> {
             self.get_mut(pos).set_candidates(candidates);
         });
     }
-    pub fn update_candidates(&mut self, pos: Position, value: u8) {
-        if value == 0 {
-            return;
-        }
-
+    pub fn update_candidates(&mut self, pos: Position, value: Value<Base>) {
         self.neighbor_positions_with_duplicates(pos)
             .for_each(|pos| {
-                if self.get(pos).has_candidates() {
-                    self.get_mut(pos).delete_candidate(value);
+                let cell = self.get_mut(pos);
+                if cell.has_candidates() {
+                    cell.delete_candidate(value);
                 }
             });
     }
@@ -260,13 +258,13 @@ impl<Base: SudokuBase> Grid<Base> {
 impl<Base: SudokuBase> Grid<Base> {
     pub fn all_value_positions(&self) -> Vec<Position> {
         self.all_positions()
-            .filter(|pos| self.get(*pos).value().is_some())
+            .filter(|pos| self.get(*pos).has_value())
             .collect()
     }
 
     pub fn all_candidates_positions(&self) -> Vec<Position> {
         self.all_positions()
-            .filter(|pos| self.get(*pos).candidates().is_some())
+            .filter(|pos| self.get(*pos).has_candidates())
             .collect()
     }
 }
@@ -318,8 +316,8 @@ impl<Base: SudokuBase, CView: Into<CellView>> TryFrom<Vec<CView>> for Grid<Base>
     fn try_from(views: Vec<CView>) -> Result<Self> {
         let cells = views
             .into_iter()
-            .map(|view| view.into().into_cell())
-            .collect();
+            .map(|view| view.into().try_into_cell())
+            .collect::<Result<_>>()?;
 
         Ok(Self::with_cells(cells))
     }
@@ -380,51 +378,51 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_has_conflict() {
+    fn test_has_conflict() -> Result<()> {
         let mut grid = Grid::<U3>::new();
-
         assert!(!grid.has_conflict());
 
-        grid.get_mut(Position { column: 0, row: 0 }).set_value(1);
-
+        grid.get_mut(Position { column: 0, row: 0 })
+            .set_value(1.try_into()?);
         assert!(!grid.has_conflict());
 
-        grid.get_mut(Position { column: 1, row: 0 }).set_value(1);
-
+        grid.get_mut(Position { column: 1, row: 0 })
+            .set_value(1.try_into()?);
         assert!(grid.has_conflict());
 
-        grid.get_mut(Position { column: 1, row: 0 }).set_value(0);
-
+        grid.get_mut(Position { column: 1, row: 0 }).delete();
         assert!(!grid.has_conflict());
 
-        grid.get_mut(Position { column: 0, row: 1 }).set_value(1);
-
+        grid.get_mut(Position { column: 0, row: 1 })
+            .set_value(1.try_into()?);
         assert!(grid.has_conflict());
 
-        grid.get_mut(Position { column: 0, row: 1 }).set_value(0);
-
+        grid.get_mut(Position { column: 0, row: 1 }).delete();
         assert!(!grid.has_conflict());
 
-        grid.get_mut(Position { column: 1, row: 1 }).set_value(1);
-
+        grid.get_mut(Position { column: 1, row: 1 })
+            .set_value(1.try_into()?);
         assert!(grid.has_conflict());
 
-        grid.get_mut(Position { column: 1, row: 1 }).set_value(0);
-
+        grid.get_mut(Position { column: 1, row: 1 }).delete();
         assert!(!grid.has_conflict());
+
+        Ok(())
     }
 
     #[test]
-    fn test_direct_candidates() {
+    fn test_direct_candidates() -> Result<()> {
         let grid = samples::base_3().pop().unwrap();
 
         let direct_candidates = grid.direct_candidates(Position { column: 1, row: 1 });
 
-        assert_eq!(direct_candidates, vec![1, 2, 4].into());
+        assert_eq!(direct_candidates, vec![1, 2, 4].try_into()?);
+
+        Ok(())
     }
 
     #[test]
-    fn test_update_candidates() {
+    fn test_update_candidates() -> Result<()> {
         let mut grid = samples::base_2().first().unwrap().clone();
 
         grid.set_all_direct_candidates();
@@ -433,7 +431,7 @@ mod tests {
             {
                 let mut grid = grid.clone();
                 let pos = Position { column: 0, row: 3 };
-                grid.update_candidates(pos, 1);
+                grid.update_candidates(pos, 1.try_into()?);
                 grid
             },
             { grid.clone() }
@@ -443,7 +441,7 @@ mod tests {
             {
                 let mut grid = grid.clone();
                 let pos = Position { column: 0, row: 3 };
-                grid.update_candidates(pos, 2);
+                grid.update_candidates(pos, 2.try_into()?);
                 grid
             },
             {
@@ -456,7 +454,7 @@ mod tests {
             {
                 let mut grid = grid.clone();
                 let pos = Position { column: 0, row: 3 };
-                grid.update_candidates(pos, 4);
+                grid.update_candidates(pos, 4.try_into()?);
                 grid
             },
             {
@@ -466,5 +464,7 @@ mod tests {
                 grid
             }
         );
+
+        Ok(())
     }
 }

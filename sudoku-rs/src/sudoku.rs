@@ -1,11 +1,12 @@
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 use std::fmt::{self, Display, Formatter};
 
-use failure::format_err;
+use anyhow::format_err;
 
 pub use dynamic::{DynamicSudoku, Game};
 
 use crate::base::SudokuBase;
+use crate::cell::compact::value::Value;
 use crate::error::Result;
 use crate::generator::backtracking::{Generator, Target};
 use crate::grid::Grid;
@@ -79,36 +80,60 @@ impl<Base: SudokuBase> Sudoku<Base> {
 }
 
 impl<Base: SudokuBase> Game for Sudoku<Base> {
-    fn set_value(&mut self, pos: Position, value: u8) {
+    fn set_value(&mut self, pos: Position, value: u8) -> Result<()> {
         self.push_history();
 
-        self.grid.get_mut(pos).set_value(value);
+        let cell = self.grid.get_mut(pos);
 
-        if self.settings.update_candidates_on_set_value {
-            self.grid.update_candidates(pos, value);
+        if let Some(value) = Value::new(value)? {
+            cell.set_value(value);
+
+            if self.settings.update_candidates {
+                self.grid.update_candidates(pos, value);
+            }
+        } else {
+            cell.delete();
         }
+
+        Ok(())
     }
 
-    fn set_or_toggle_value(&mut self, pos: Position, value: u8) {
+    fn set_or_toggle_value(&mut self, pos: Position, value: u8) -> Result<()> {
         self.push_history();
 
-        let set_value = self.grid.get_mut(pos).set_or_toggle_value(value);
+        let cell = self.grid.get_mut(pos);
 
-        if self.settings.update_candidates_on_set_value && set_value {
-            self.grid.update_candidates(pos, value);
+        if let Some(value) = Value::new(value)? {
+            let set_value = cell.set_or_toggle_value(value);
+
+            if self.settings.update_candidates && set_value {
+                self.grid.update_candidates(pos, value);
+            }
+        } else {
+            cell.delete();
         }
+
+        Ok(())
     }
 
-    fn set_candidates(&mut self, pos: Position, candidates: Vec<u8>) {
+    fn set_candidates(&mut self, pos: Position, candidates: Vec<u8>) -> Result<()> {
         self.push_history();
 
-        self.grid.get_mut(pos).set_candidates(candidates);
+        self.grid
+            .get_mut(pos)
+            .set_candidates(candidates.try_into()?);
+
+        Ok(())
     }
 
-    fn toggle_candidate(&mut self, pos: Position, candidate: u8) {
+    fn toggle_candidate(&mut self, pos: Position, candidate: u8) -> Result<()> {
         self.push_history();
 
-        self.grid.get_mut(pos).toggle_candidate(candidate);
+        self.grid
+            .get_mut(pos)
+            .toggle_candidate(candidate.try_into()?);
+
+        Ok(())
     }
 
     fn delete(&mut self, pos: Position) {

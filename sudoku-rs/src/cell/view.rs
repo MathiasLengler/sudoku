@@ -1,10 +1,11 @@
+use std::convert::TryFrom;
 use std::convert::TryInto;
 
-use failure::_core::convert::TryFrom;
-use failure::bail;
+use anyhow::bail;
 use serde::{Deserialize, Serialize};
 
 use crate::base::SudokuBase;
+use crate::cell::compact::value::Value;
 use crate::cell::Cell;
 use crate::error::{Error, Result};
 
@@ -34,11 +35,20 @@ impl CellView {
         }
     }
 
-    pub fn into_cell<Base: SudokuBase>(self) -> Cell<Base> {
-        match self {
-            CellView::Value { value, fixed } => Cell::with_value(value, fixed),
-            CellView::Candidates { candidates } => Cell::with_candidates(candidates),
-        }
+    // TODO: replace with TryFrom<CellView> for Cell
+    pub fn try_into_cell<Base: SudokuBase>(self) -> Result<Cell<Base>> {
+        Ok(match self {
+            CellView::Value { value, fixed } => {
+                if let Some(value) = Value::new(value)? {
+                    Cell::with_value(value, fixed)
+                } else if !fixed {
+                    Cell::new()
+                } else {
+                    bail!("An empty cell can't be fixed")
+                }
+            }
+            CellView::Candidates { candidates } => Cell::with_candidates(candidates.try_into()?),
+        })
     }
 }
 

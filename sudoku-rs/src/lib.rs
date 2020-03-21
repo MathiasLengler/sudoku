@@ -8,7 +8,7 @@ extern crate flame;
 #[macro_use]
 extern crate flamer;
 
-pub use sudoku::*;
+pub use crate::sudoku::*;
 
 pub mod base;
 pub mod cell;
