@@ -40,7 +40,7 @@ impl CellView {
         Ok(match self {
             CellView::Value { value, fixed } => {
                 if let Some(value) = Value::new(value)? {
-                    Cell::with_value(value.try_into()?, fixed)
+                    Cell::with_value(value, fixed)
                 } else if !fixed {
                     Cell::new()
                 } else {
