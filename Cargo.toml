@@ -2,7 +2,8 @@
 
 members = [
     "sudoku-rs",
-    "sudoku-wasm"
+    "sudoku-wasm",
+    "sudoku-afl"
 ]
 
 [profile.release]

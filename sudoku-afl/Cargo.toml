@@ -1,0 +1,14 @@
+[package]
+name = "sudoku-afl"
+version = "0.1.0"
+authors = ["Mathias Lengler <mathias@lengler.dev>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+sudoku = { path = "../sudoku-rs"}
+arbitrary = "0.4.1"
+
+[target.'cfg(unix)'.dependencies]
+afl = "0.6.0"
