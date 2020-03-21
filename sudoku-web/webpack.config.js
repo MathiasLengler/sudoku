@@ -9,9 +9,6 @@ const webpack = require('webpack');
 const WorkerPlugin = require('worker-plugin');
 
 module.exports = (env, argv) => {
-  console.log("env", env);
-  console.log("argv", argv);
-
   const {mode} = argv;
 
   let devtool;
@@ -23,12 +20,17 @@ module.exports = (env, argv) => {
     throw new Error(`Unexpected mode: ${mode}`);
   }
 
-  // TODO: disable mangle
-  const alias = env && env.reactProfiling ? {
+  const reactProfiling = !!(env && env.reactProfiling);
+
+  const alias = reactProfiling ? {
       'react-dom$': 'react-dom/profiling',
       'scheduler/tracing': 'scheduler/tracing-profiling',
     }
     : {};
+
+  const optimization = reactProfiling ? {
+    minimize: false
+  } : {};
 
   return {
     name: "app",
@@ -76,5 +78,6 @@ module.exports = (env, argv) => {
         },
       ]
     },
+    optimization
   };
 };
