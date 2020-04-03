@@ -12,10 +12,13 @@ module.exports = (env, argv) => {
   const {mode} = argv;
 
   let devtool;
+  let extraPlugins;
   if (mode === 'development') {
     devtool = 'eval-source-map';
+    extraPlugins = [new webpack.HotModuleReplacementPlugin()]
   } else if (mode === 'production') {
-    devtool = 'source-map'
+    devtool = 'source-map';
+    extraPlugins = [];
   } else {
     throw new Error(`Unexpected mode: ${mode}`);
   }
@@ -41,7 +44,7 @@ module.exports = (env, argv) => {
     },
     devServer: {
       contentBase: dist,
-      host: '0.0.0.0',
+      host: '127.0.0.1',
       hot: true
     },
     devtool,
@@ -64,7 +67,7 @@ module.exports = (env, argv) => {
         outDir: path.resolve(__dirname, "../sudoku-wasm/pkg")
       }),
       // new BundleAnalyzerPlugin(),
-      new webpack.HotModuleReplacementPlugin()
+      ...extraPlugins
     ],
     module: {
       rules: [
