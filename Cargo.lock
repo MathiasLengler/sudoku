@@ -2,11 +2,12 @@
 # It is not intended for manual editing.
 [[package]]
 name = "afl"
-version = "0.6.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "cc 1.0.50 (registry+https://github.com/rust-lang/crates.io-index)",
  "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.68 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "xdg 2.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -962,7 +963,7 @@ dependencies = [
 name = "sudoku-afl"
 version = "0.1.0"
 dependencies = [
- "afl 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "afl 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "arbitrary 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "sudoku 0.1.0",
 ]
@@ -1198,7 +1199,7 @@ version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [metadata]
-"checksum afl 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)" = "59206260f98d163b3ca42fb29fe551dbcda1d43cf70a244066b2a0666a8fb2a9"
+"checksum afl 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "f0cd5ef4244eb8b4b547f59fc02a1d867ba2ee48eadfedcb19fc98ca05e15d0d"
 "checksum ansi_term 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)" = "ee49baf6cb617b853aa8d93bf420db2383fab46d314482ca2803b40d5fde979b"
 "checksum anyhow 1.0.28 (registry+https://github.com/rust-lang/crates.io-index)" = "d9a60d744a80c30fcb657dfe2c1b22bcb3e814c1a1e3674f32bf5820b570fbff"
 "checksum arbitrary 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "491d5e42b1a073ff1fc1e0a02744b3f8bee9cf4bfd552053cac36c64b879795d"
