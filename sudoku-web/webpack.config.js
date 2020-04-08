@@ -73,7 +73,7 @@ module.exports = (env, argv) => {
       rules: [
         {
           test: /\.tsx?$/,
-          loader: "ts-loader"
+          use: [{loader: "ts-loader", options: {compilerOptions: {noEmit: false}}}]
         },
         {
           test: /\.css$/,
