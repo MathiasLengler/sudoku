@@ -13,16 +13,16 @@ crate-type = ["cdylib"]
 console_error_panic_hook = { version = "0.1.6", optional = true }
 wee_alloc = { version = "0.4.5", optional = true }
 console_log = { version = "0.1.2", optional = true }
-js-sys = "0.3.36"
+js-sys = "0.3.37"
 
 # own
 log = "0.4.8"
 sudoku = { path = "../sudoku-rs", features= ["wasm-bindgen"]}
-serde = "1.0.104"
+serde = "1.0.106"
 
 # wasm
 [dependencies.web-sys]
-version = "0.3.36"
+version = "0.3.37"
 features = [
   "Document",
   "Element",
@@ -32,7 +32,7 @@ features = [
 ]
 
 [dependencies.wasm-bindgen]
-version = "0.2.59"
+version = "0.2.60"
 features = ["serde-serialize"]
 
 [features]
