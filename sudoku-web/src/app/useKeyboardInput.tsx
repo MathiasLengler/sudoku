@@ -62,8 +62,8 @@ export function makeKeyDownListener(
   sudokuController: WasmSudokuController,
   inputState: Input,
   sideLength: TransportSudoku["sideLength"],
-) {
-  return (ev: KeyboardEvent) => {
+): (ev: React.KeyboardEvent) => void {
+  return (ev: KeyboardEvent): void => {
     const {key, altKey, ctrlKey, metaKey, shiftKey} = ev;
 
     if (altKey || ctrlKey || metaKey || shiftKey) {

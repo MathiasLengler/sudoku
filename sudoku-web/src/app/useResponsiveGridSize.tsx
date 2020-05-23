@@ -25,7 +25,7 @@ function useWindowSize() {
   return windowSize;
 }
 
-export function useResponsiveGridSize(toolbarHeight: number, sideLength: TransportSudoku['sideLength']) {
+export function useResponsiveGridSize(toolbarHeight: number, sideLength: TransportSudoku['sideLength']): number {
   const windowSize = useWindowSize();
 
   return useMemo(() => {

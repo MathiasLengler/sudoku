@@ -48,7 +48,7 @@ export class WasmSudokuController {
     }
   }
 
-  public handlePosition(newSelectedPosition: CellPosition, move = false) {
+  public handlePosition(newSelectedPosition: CellPosition, move = false): void {
     const {stickyMode, selectedPos, selectedValue} = this.input;
 
     if (move && isEqual(selectedPos, newSelectedPosition)) {
@@ -71,7 +71,7 @@ export class WasmSudokuController {
     this.input.selectedCell = selectedCell;
   }
 
-  public handleValue(value: number) {
+  public handleValue(value: number): void {
     const {stickyMode} = this.input;
 
     if (value > this.sideLength) {
@@ -107,7 +107,7 @@ export class WasmSudokuController {
     });
   }
 
-  public delete() {
+  public delete(): void {
     if (this.checkFixed()) {
       return;
     }
@@ -117,47 +117,47 @@ export class WasmSudokuController {
     });
   }
 
-  public setAllDirectCandidates() {
+  public setAllDirectCandidates(): void {
     this.withSudokuUpdate(async () => {
       await this.wasmSudokuProxy.setAllDirectCandidates();
     });
   }
 
-  public undo() {
+  public undo(): void {
     this.withSudokuUpdate(async () => {
       await this.wasmSudokuProxy.undo();
     })
   }
 
-  public async generate(settings: GeneratorSettings) {
+  public async generate(settings: GeneratorSettings): Promise<void> {
     await this.withSudokuUpdate(async () => {
       await this.wasmSudokuProxy.generate(settings);
     });
   }
 
-  public async import(input: string) {
+  public async import(input: string): Promise<void> {
     await this.withSudokuUpdate(async () => {
       await this.wasmSudokuProxy.import(input);
     });
   }
 
-  public solveSingleCandidates() {
+  public solveSingleCandidates(): void {
     this.withSudokuUpdate(async () => {
       await this.wasmSudokuProxy.solveSingleCandidates();
     })
   }
 
-  public groupReduction() {
+  public groupReduction(): void {
     this.withSudokuUpdate(async () => {
       await this.wasmSudokuProxy.groupReduction();
     })
   }
 
-  public toggleCandidateMode() {
+  public toggleCandidateMode(): void {
     this.setInput((prevInput) => ({...prevInput, candidateMode: !prevInput.candidateMode}))
   }
 
-  public toggleStickyMode() {
+  public toggleStickyMode(): void {
     this.setInput((prevInput) => ({...prevInput, stickyMode: !prevInput.stickyMode}))
   }
 }

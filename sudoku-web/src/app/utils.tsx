@@ -1,6 +1,6 @@
 // TODO: expose rust utility functions
 
-export function valuesFromSideLength(sideLength: TransportSudoku['sideLength']) {
+export function valuesFromSideLength(sideLength: TransportSudoku['sideLength']): number[] {
   return Array.from(Array(sideLength).keys()).map(value => value + 1);
 }
 
