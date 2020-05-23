@@ -17,7 +17,7 @@ export const NewGameTabs: React.FunctionComponent<NewGameTabsProps> = (props) =>
 
   const [tabIndex, setTabIndex] = React.useState(0);
 
-  const handleChange = (event: React.ChangeEvent<{}>, newValue: number) => {
+  const handleChange = (event: React.ChangeEvent<unknown>, newValue: number) => {
     setTabIndex(newValue);
   };
 
