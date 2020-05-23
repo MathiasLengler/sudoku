@@ -8,8 +8,7 @@
     "start": "webpack-dev-server -d",
     "profiling": "webpack-dev-server --mode production --env.reactProfiling=true",
     "build": "webpack --mode=production",
-    "lint": "eslint src/**",
-    "deploy": "gh-pages -d dist -r git@github.com:MathiasLengler/sudoku.git"
+    "lint": "eslint src/**"
   },
   "bin": {
     "create-rust-webpack": ".bin/create-rust-webpack.js"
@@ -28,7 +27,6 @@
     "eslint": "^7.1.0",
     "eslint-plugin-react": "^7.20.0",
     "eslint-plugin-react-hooks": "^4.0.2",
-    "gh-pages": "^2.2.0",
     "html-webpack-plugin": "^4.3.0",
     "style-loader": "^1.2.1",
     "ts-loader": "^7.0.4",
