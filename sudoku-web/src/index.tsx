@@ -4,6 +4,7 @@ import {App} from './app/app';
 import "../res/styles.css";
 import * as Comlink from "comlink";
 import {WorkerApi} from "./worker";
+import {TypedWasmSudoku} from "./typedWasmSudoku";
 
 (async () => {
   const worker = new Worker('./worker.tsx', {name: 'worker', type: 'module'});
@@ -13,7 +14,8 @@ import {WorkerApi} from "./worker";
   console.debug(await workerApi.init());
 
   if (workerApi.typedWasmSudoku) {
-    ReactDOM.render(<App wasmSudokuProxy={workerApi.typedWasmSudoku}/>, document.getElementById('root'));
+    ReactDOM.render(<App
+      wasmSudokuProxy={workerApi.typedWasmSudoku as unknown as Comlink.Remote<TypedWasmSudoku>}/>, document.getElementById('root'));
   } else {
     throw new Error("Race condition while initializing wasm sudoku worker");
   }
