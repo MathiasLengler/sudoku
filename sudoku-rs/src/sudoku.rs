@@ -47,7 +47,11 @@ impl<Base: SudokuBase> Sudoku<Base> {
         grid.fix_all_values();
 
         Sudoku {
-            solved_grid: BacktrackingSolver::unique_solution(&grid),
+            solved_grid: if settings.solve_grid {
+                BacktrackingSolver::unique_solution(&grid)
+            } else {
+                None
+            },
             grid,
             settings,
             history: Default::default(),

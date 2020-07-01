@@ -1,7 +1,6 @@
 use std::cmp::Eq;
 use std::fmt::{self, Debug, Display, Formatter};
 use std::hash::Hash;
-use std::mem::replace;
 
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
@@ -77,25 +76,19 @@ impl<Base: SudokuBase> CellState<Base> {
     }
 
     pub(super) fn fix(&mut self) {
-        replace(
-            self,
-            match self {
-                &mut CellState::Value(value) => CellState::FixedValue(value),
-                &mut CellState::FixedValue(value) => CellState::FixedValue(value),
-                &mut CellState::Candidates(_) => panic!("Candidates can't be fixed: {}", self),
-            },
-        );
+        *self = match self {
+            &mut CellState::Value(value) => CellState::FixedValue(value),
+            &mut CellState::FixedValue(value) => CellState::FixedValue(value),
+            &mut CellState::Candidates(_) => panic!("Candidates can't be fixed: {}", self),
+        };
     }
 
     pub(super) fn unfix(&mut self) {
-        replace(
-            self,
-            match &*self {
-                &CellState::Value(value) => CellState::Value(value),
-                &CellState::FixedValue(value) => CellState::Value(value),
-                CellState::Candidates(candidates) => CellState::Candidates(candidates.clone()),
-            },
-        );
+        *self = match self {
+            CellState::Value(value) => CellState::Value(*value),
+            CellState::FixedValue(value) => CellState::Value(*value),
+            CellState::Candidates(ref candidates) => CellState::Candidates(candidates.clone()),
+        };
     }
 
     pub(super) fn value(&self) -> Option<Value<Base>> {
@@ -115,13 +108,13 @@ impl<Base: SudokuBase> CellState<Base> {
     pub(super) fn delete(&mut self) {
         self.assert_unfixed();
 
-        replace(self, Self::new());
+        *self = Self::new();
     }
 
     pub(super) fn set_value(&mut self, value: Value<Base>) {
         self.assert_unfixed();
 
-        replace(self, Self::with_value(value, false));
+        *self = Self::with_value(value, false);
     }
 
     pub(super) fn set_or_toggle_value(&mut self, value: Value<Base>) -> bool {
@@ -148,7 +141,7 @@ impl<Base: SudokuBase> CellState<Base> {
     pub(super) fn set_candidates(&mut self, candidates: Candidates<Base>) {
         self.assert_unfixed();
 
-        replace(self, Self::with_candidates(candidates));
+        *self = Self::with_candidates(candidates);
     }
 
     pub(super) fn toggle_candidate(&mut self, candidate: Value<Base>) {
@@ -160,7 +153,7 @@ impl<Base: SudokuBase> CellState<Base> {
             }
             CellState::Value(_) => {
                 // TODO: optimize with Candidate::single
-                replace(self, Self::with_candidates(vec![candidate].into()));
+                *self = Self::with_candidates(vec![candidate].into());
             }
             _ => unreachable!(),
         }
@@ -182,7 +175,6 @@ impl<Base: SudokuBase> CellState<Base> {
     fn assert_unfixed(&self) {
         match self {
             // TODO: bail instead of panic
-            //
             CellState::FixedValue(_) => panic!("Fixed cell can't be modified: {}", self),
             _ => {}
         }

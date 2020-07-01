@@ -5,6 +5,10 @@ members = [
     "sudoku-wasm",
     "sudoku-afl"
 ]
+default-members = [
+    "sudoku-rs",
+    "sudoku-wasm"
+]
 
 [profile.release]
 debug = true

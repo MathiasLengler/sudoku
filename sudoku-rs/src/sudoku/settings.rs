@@ -5,6 +5,7 @@ use std::usize;
 pub struct Settings {
     pub update_candidates: bool,
     pub history_limit: usize,
+    pub solve_grid: bool,
 }
 
 impl Default for Settings {
@@ -12,6 +13,7 @@ impl Default for Settings {
         Settings {
             update_candidates: true,
             history_limit: 256,
+            solve_grid: true,
         }
     }
 }
