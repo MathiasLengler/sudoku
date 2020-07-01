@@ -11,5 +11,5 @@ fuzz_target!(|data: String| {
 });
 
 fn fuzz(data: String) {
-    let sudoku: Result<DynamicSudoku> = data.as_str().try_into();
+    let _sudoku: Result<DynamicSudoku> = data.as_str().try_into();
 }
