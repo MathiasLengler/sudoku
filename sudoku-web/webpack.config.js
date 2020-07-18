@@ -64,7 +64,8 @@ module.exports = (env, argv) => {
         watchDirectories: [
           path.resolve(__dirname, "../sudoku-rs")
         ],
-        outDir: path.resolve(__dirname, "../sudoku-wasm/pkg")
+        outDir: path.resolve(__dirname, "../sudoku-wasm/pkg"),
+        extraArgs: "--profiling"
       }),
       // new BundleAnalyzerPlugin(),
       ...extraPlugins
