@@ -18,7 +18,7 @@ intervallum = { git = "https://github.com/MathiasLengler/intervallum" }
 gcollections = { git = "https://github.com/MathiasLengler/gcollections" }
 indexmap = "1.4.0"
 ndarray = "0.13.1"
-generic-array = "0.14.2"
+generic-array = "0.14.4"
 typenum = "1.12.0"
 rayon = { version = "1.3.1", optional = true }
 crossterm = { version = "0.17.5", optional = true }
