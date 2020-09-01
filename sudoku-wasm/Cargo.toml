@@ -18,7 +18,7 @@ js-sys = "0.3.41"
 # own
 log = "0.4.8"
 sudoku = { path = "../sudoku-rs", features= ["wasm-bindgen"]}
-serde = "1.0.114"
+serde = "1.0.115"
 
 # wasm
 [dependencies.web-sys]
