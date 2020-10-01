@@ -16,7 +16,7 @@ num = "0.3.0"
 pcp = { git = "https://github.com/MathiasLengler/pcp" }
 intervallum = { git = "https://github.com/MathiasLengler/intervallum" }
 gcollections = { git = "https://github.com/MathiasLengler/gcollections" }
-indexmap = "1.4.0"
+indexmap = "1.6.0"
 ndarray = "0.13.1"
 generic-array = "0.14.2"
 typenum = "1.12.0"
