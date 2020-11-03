@@ -52,15 +52,12 @@ module.exports = (env, argv) => {
       alias
     },
     experiments: {
-      asyncWebAssembly: true
+      syncWebAssembly: true
     },
     plugins: [
       new HtmlWebpackPlugin({
         template: path.resolve(__dirname, "res", "index.html")
       }),
-      // new WorkerPlugin({
-      //   globalObject: false
-      // }),
       new WasmPackPlugin({
         crateDirectory: path.resolve(__dirname, "../sudoku-wasm"),
         watchDirectories: [
