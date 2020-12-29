@@ -32,6 +32,49 @@ function cellColorClass(fixed: boolean, incorrectValue: boolean) {
   }
 }
 
+
+interface CellValueProps {
+  value: ValueCell['value'];
+}
+
+const CellValue: React.FunctionComponent<CellValueProps> = (props) => {
+  const {value} = props;
+  return <div className='cellValue'><span className='cellValueText'>{valueToString(value)}</span></div>;
+};
+
+
+interface CandidatesProps {
+  candidates: CandidatesCell['candidates'];
+  base: TransportSudoku['base'];
+}
+
+const Candidates: React.FunctionComponent<CandidatesProps> = (props) => {
+  const {base} = props;
+
+  return (
+    <div className='candidates'>
+      {
+        props.candidates.map((candidate, i) => {
+          // Candidates are 1 based, grid calculations are 0 based.
+          const {column, row} = indexToPosition(candidate - 1, base);
+
+          const style: CSS.Properties = {
+            '--candidate-column': column,
+            '--candidate-row': row,
+          };
+
+          return <span key={i} className='candidate' style={style}>
+            {valueToString(candidate)}
+          </span>
+        })
+      }
+    </div>
+  )
+};
+
+export const MemoCandidates = React.memo(Candidates, isEqual);
+
+
 interface CellProps {
   blockCellIndex: number;
   cell: TransportCell;
@@ -108,44 +151,3 @@ const Cell: React.FunctionComponent<CellProps> = (props) => {
   )
 };
 export const MemoCell = React.memo(Cell, isEqual);
-
-interface CellValueProps {
-  value: ValueCell['value'];
-}
-
-const CellValue: React.FunctionComponent<CellValueProps> = (props) => {
-  const {value} = props;
-  return <div className='cellValue'><span className='cellValueText'>{valueToString(value)}</span></div>;
-};
-
-
-interface CandidatesProps {
-  candidates: CandidatesCell['candidates'];
-  base: TransportSudoku['base'];
-}
-
-const Candidates: React.FunctionComponent<CandidatesProps> = (props) => {
-  const {base} = props;
-
-  return (
-    <div className='candidates'>
-      {
-        props.candidates.map((candidate, i) => {
-          // Candidates are 1 based, grid calculations are 0 based.
-          const {column, row} = indexToPosition(candidate - 1, base);
-
-          const style: CSS.Properties = {
-            '--candidate-column': column,
-            '--candidate-row': row,
-          };
-
-          return <span key={i} className='candidate' style={style}>
-            {valueToString(candidate)}
-          </span>
-        })
-      }
-    </div>
-  )
-};
-
-export const MemoCandidates = React.memo(Candidates, isEqual);

@@ -4,25 +4,6 @@ import {Input, WasmSudokuController} from "../wasmSudokuController";
 import ButtonBase from '@material-ui/core/ButtonBase';
 import classnames from "classnames";
 
-interface SelectorProps {
-  sudokuController: WasmSudokuController;
-  sideLength: TransportSudoku['sideLength'];
-  input: Input;
-}
-
-export const Selector: React.FunctionComponent<SelectorProps> = (props) => {
-  const {sideLength, sudokuController, input: {stickyMode, selectedValue}} = props;
-
-  return (
-    <div className='selector'>
-      {valuesFromSideLength(sideLength)
-        .map(value =>
-          <SelectorValue key={value} value={value} sudokuController={sudokuController}
-                         selected={stickyMode && selectedValue === value}/>
-        )}
-    </div>
-  )
-};
 
 interface ValueProps {
   sudokuController: WasmSudokuController;
@@ -49,3 +30,24 @@ const SelectorValue: React.FunctionComponent<ValueProps> = (props) => {
     </ButtonBase>
   );
 };
+
+interface SelectorProps {
+  sudokuController: WasmSudokuController;
+  sideLength: TransportSudoku['sideLength'];
+  input: Input;
+}
+
+export const Selector: React.FunctionComponent<SelectorProps> = (props) => {
+  const {sideLength, sudokuController, input: {stickyMode, selectedValue}} = props;
+
+  return (
+    <div className='selector'>
+      {valuesFromSideLength(sideLength)
+        .map(value =>
+          <SelectorValue key={value} value={value} sudokuController={sudokuController}
+                         selected={stickyMode && selectedValue === value}/>
+        )}
+    </div>
+  )
+};
+

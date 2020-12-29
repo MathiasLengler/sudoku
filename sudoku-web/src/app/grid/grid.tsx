@@ -5,54 +5,6 @@ import {MemoCell} from "./cell";
 import {cellPositionToBlockPosition, indexToPosition} from "../utils";
 import {Input, WasmSudokuController} from "../wasmSudokuController";
 
-interface GridProps {
-  sudokuController: WasmSudokuController;
-  sudoku: TransportSudoku;
-  input: Input;
-}
-
-export const Grid: React.FunctionComponent<GridProps> = (props) => {
-  const {
-    sudokuController,
-    sudoku: {base, blocks},
-    input,
-  } = props;
-
-  const {
-    selectedCell,
-    selectedValue,
-    stickyMode
-  } = input;
-
-  const guideValue = stickyMode ? selectedValue : selectedCell.kind === "value" ? selectedCell.value : undefined;
-
-  let selectedValuePositions: CellPosition[];
-  if (guideValue) {
-    selectedValuePositions = blocks.flatMap((block) =>
-      block.filter((cell) =>
-        cell.kind === "value" && cell.value === guideValue
-      ).map((cell) => cell.position)
-    );
-  } else {
-    selectedValuePositions = [];
-  }
-
-  return <div className='grid'>
-    {
-      blocks
-        .map((block, blockIndex) =>
-          <Block
-            key={blockIndex}
-            block={block}
-            blockIndex={blockIndex}
-            base={base}
-            selectedValuePositions={selectedValuePositions}
-            input={input}
-            sudokuController={sudokuController}/>
-        )
-    }
-  </div>
-};
 
 interface BlockProps {
   block: Block;
@@ -124,6 +76,56 @@ const Block: React.FunctionComponent<BlockProps> = (props) => {
         guideGroup={guideGroup}
         guideValueGroup={guideValueGroup}/>
     })}
+  </div>
+};
+
+
+interface GridProps {
+  sudokuController: WasmSudokuController;
+  sudoku: TransportSudoku;
+  input: Input;
+}
+
+export const Grid: React.FunctionComponent<GridProps> = (props) => {
+  const {
+    sudokuController,
+    sudoku: {base, blocks},
+    input,
+  } = props;
+
+  const {
+    selectedCell,
+    selectedValue,
+    stickyMode
+  } = input;
+
+  const guideValue = stickyMode ? selectedValue : selectedCell.kind === "value" ? selectedCell.value : undefined;
+
+  let selectedValuePositions: CellPosition[];
+  if (guideValue) {
+    selectedValuePositions = blocks.flatMap((block) =>
+      block.filter((cell) =>
+        cell.kind === "value" && cell.value === guideValue
+      ).map((cell) => cell.position)
+    );
+  } else {
+    selectedValuePositions = [];
+  }
+
+  return <div className='grid'>
+    {
+      blocks
+        .map((block, blockIndex) =>
+          <Block
+            key={blockIndex}
+            block={block}
+            blockIndex={blockIndex}
+            base={base}
+            selectedValuePositions={selectedValuePositions}
+            input={input}
+            sudokuController={sudokuController}/>
+        )
+    }
   </div>
 };
 
