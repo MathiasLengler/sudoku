@@ -46,7 +46,7 @@ jobs:
       # Node
       - uses: actions/setup-node@v2-beta
         with:
-          node-version: '12'
+          node-version: '14'
 
       # https://github.com/actions/cache/blob/master/examples.md#macos-and-ubuntu
       - uses: actions/cache@v1
