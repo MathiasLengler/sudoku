@@ -6,9 +6,9 @@ import Button from "@material-ui/core/Button";
 import TextField from "@material-ui/core/TextField";
 import {Typography} from "@material-ui/core";
 import makeStyles from "@material-ui/core/styles/makeStyles";
-import ExpansionPanel from "@material-ui/core/ExpansionPanel";
-import ExpansionPanelSummary from "@material-ui/core/ExpansionPanelSummary";
-import ExpansionPanelDetails from "@material-ui/core/ExpansionPanelDetails";
+import Accordion from "@material-ui/core/Accordion";
+import AccordionSummary from "@material-ui/core/AccordionSummary";
+import AccordionDetails from "@material-ui/core/AccordionDetails";
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import CircularProgress from "@material-ui/core/CircularProgress";
 
@@ -94,16 +94,16 @@ export const ImportForm: React.FunctionComponent<ImportFormProps> = (props) => {
 
   const classes = useStyles();
 
-  const supportedFormatsPanel = <ExpansionPanel>
-    <ExpansionPanelSummary
+  const supportedFormatsPanel = <Accordion>
+    <AccordionSummary
       expandIcon={<ExpandMoreIcon/>}
     >
       <Typography>Supported formats</Typography>
-    </ExpansionPanelSummary>
-    <ExpansionPanelDetails classes={{root: classes.root}}>
+    </AccordionSummary>
+    <AccordionDetails classes={{root: classes.root}}>
       {supportedFormats}
-    </ExpansionPanelDetails>
-  </ExpansionPanel>;
+    </AccordionDetails>
+  </Accordion>;
 
   return <>
     <Box p={3}>
