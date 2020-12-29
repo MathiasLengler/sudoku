@@ -1,11 +1,11 @@
-use bitvec::prelude::*;
-use generic_array::GenericArray;
-use typenum::Unsigned;
-
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::marker::PhantomData;
+
+use bitvec::prelude::*;
+use generic_array::GenericArray;
+use typenum::Unsigned;
 
 use crate::base::{ArrayElement, SudokuBase};
 use crate::cell::compact::value::Value;
@@ -57,8 +57,8 @@ impl<Base: SudokuBase> Candidates<Base> {
         let bits = self.as_bits();
 
         bits.iter().enumerate().filter_map(
-            |(i, &is_set)| {
-                if is_set {
+            |(i, is_set)| {
+                if *is_set {
                     Some(Self::export(i))
                 } else {
                     None

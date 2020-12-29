@@ -5,23 +5,24 @@ authors = ["Mathias Lengler <mathias@lengler.dev>"]
 edition = "2018"
 
 [dependencies]
-itertools = "0.9.0"
-rand = "0.7.3"
-anyhow = "1.0.34"
+itertools = "0.10.0"
+rand = "0.8.0"
+getrandom = "0.2.0"
+anyhow = "1.0.37"
 lazy_static = "1.4.0"
-serde = { version = "1.0.117", features = ["derive"] }
+serde = { version = "1.0.118", features = ["derive"] }
 fixedbitset = "0.3.1"
-bitvec = { version = "0.19.4", default-features = false, features = ["std"] }
-num = "0.3.0"
+bitvec = { version = "0.20.1", default-features = false, features = ["std"] }
+num = "0.3.1"
 pcp = { git = "https://github.com/MathiasLengler/pcp" }
 intervallum = { git = "https://github.com/MathiasLengler/intervallum" }
 gcollections = { git = "https://github.com/MathiasLengler/gcollections" }
-indexmap = "1.6.0"
-ndarray = "0.13.1"
+indexmap = "1.6.1"
+ndarray = "0.14.0"
 generic-array = "0.14.4"
 typenum = "1.12.0"
 rayon = { version = "1.5.0", optional = true }
-crossterm = { version = "0.18.2", optional = true }
+crossterm = { version = "0.19.0", optional = true }
 flame = { version = "0.2.2", optional = true }
 flamer = { version = "0.4.0", optional = true }
 enum_dispatch = "0.3.4"
@@ -38,6 +39,6 @@ harness = false
 default = []
 debug_print = ["crossterm"]
 parallel = ["rayon"]
-wasm-bindgen = ["rand/wasm-bindgen"]
+wasm-bindgen = ["getrandom/js"]
 flame_it = ["flame", "flamer"]
 fuzz = ["arbitrary"]
