@@ -6,7 +6,6 @@ const dist = path.resolve(__dirname, "dist");
 const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
 const webpack = require('webpack');
 // const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
-const WorkerPlugin = require('worker-plugin');
 
 module.exports = (env, argv) => {
   const {mode} = argv;
@@ -52,12 +51,12 @@ module.exports = (env, argv) => {
       extensions: [".ts", ".tsx", ".js", ".wasm"],
       alias
     },
+    experiments: {
+      syncWebAssembly: true
+    },
     plugins: [
       new HtmlWebpackPlugin({
         template: path.resolve(__dirname, "res", "index.html")
-      }),
-      new WorkerPlugin({
-        globalObject: false
       }),
       new WasmPackPlugin({
         crateDirectory: path.resolve(__dirname, "../sudoku-wasm"),

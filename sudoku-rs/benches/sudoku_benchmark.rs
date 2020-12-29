@@ -8,6 +8,7 @@ use criterion::{BatchSize, BenchmarkId};
 use criterion::{BenchmarkGroup, Criterion};
 
 use sudoku::base::{consts::*, SudokuBase};
+use sudoku::cell::compact::value::Value;
 use sudoku::generator::backtracking::{Generator, Target};
 use sudoku::grid::Grid;
 use sudoku::position::Position;
@@ -130,7 +131,7 @@ fn bench_grid_group<Base: SudokuBase + 'static>(grid_group: &mut BenchmarkGroup<
                 || grid.clone(),
                 |mut grid| {
                     let pos = Position { column: 1, row: 1 };
-                    let value = 2;
+                    let value = Value::new(2).unwrap().unwrap();
                     grid.get_mut(pos).set_or_toggle_value(value);
                     grid.update_candidates(pos, value);
                 },

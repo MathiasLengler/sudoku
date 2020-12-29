@@ -7,8 +7,8 @@ import {WorkerApi} from "./worker";
 import {TypedWasmSudoku} from "./typedWasmSudoku";
 
 (async () => {
-  const worker = new Worker('./worker.tsx', {name: 'worker', type: 'module'});
-
+  // const worker = new Worker('./worker.tsx', {name: 'worker', type: 'module'});
+  const worker = new Worker(new URL("./worker.tsx", import.meta.url));
   const workerApi = Comlink.wrap<WorkerApi>(worker);
 
   console.debug(await workerApi.init());

@@ -57,8 +57,8 @@ impl<Base: SudokuBase> Candidates<Base> {
         let bits = self.as_bits();
 
         bits.iter().enumerate().filter_map(
-            |(i, &is_set)| {
-                if is_set {
+            |(i, is_set)| {
+                if *is_set {
                     Some(Self::export(i))
                 } else {
                     None
@@ -85,12 +85,12 @@ impl<Base: SudokuBase> Candidates<Base> {
 }
 
 impl<Base: SudokuBase> Candidates<Base> {
-    fn as_bits(&self) -> &BitSlice<Local, ArrayElement> {
-        self.arr.bits()
+    fn as_bits(&self) -> &BitSlice<Lsb0, ArrayElement> {
+        self.arr.view_bits()
     }
 
-    fn as_mut_bits(&mut self) -> &mut BitSlice<Local, ArrayElement> {
-        self.arr.bits_mut()
+    fn as_mut_bits(&mut self) -> &mut BitSlice<Lsb0, ArrayElement> {
+        self.arr.view_bits_mut()
     }
 
     fn import(candidate: Value<Base>) -> usize {
@@ -151,7 +151,7 @@ impl<Base: SudokuBase> Display for Candidates<Base> {
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
 pub struct CandidatesMut<'a, Base: SudokuBase> {
-    bits: &'a mut BitSlice<Local, ArrayElement>,
+    bits: &'a mut BitSlice<Lsb0, ArrayElement>,
     base: PhantomData<Base>,
 }
 
