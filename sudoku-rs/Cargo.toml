@@ -29,7 +29,7 @@ enum_dispatch = "0.3.4"
 arbitrary = { version = "0.4.7", features = ["derive"], optional = true }
 
 [dev-dependencies]
-criterion = "0.3.3"
+criterion = "0.3.4"
 
 [[bench]]
 name = "sudoku_benchmark"
