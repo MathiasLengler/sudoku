@@ -44,7 +44,7 @@ jobs:
           command: test
 
       # Node
-      - uses: actions/setup-node@v2-beta
+      - uses: actions/setup-node@v2
         with:
           node-version: '14'
 
