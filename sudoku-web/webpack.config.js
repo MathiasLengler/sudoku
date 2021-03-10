@@ -86,7 +86,8 @@ module.exports = (env, argv) => {
         icons: [
           {
             src: path.resolve('res/img/sudoku_icon_full_size.png'),
-            sizes: [96, 128, 192, 256, 384, 512] // multiple sizes
+            sizes: [96, 128, 192, 256, 384, 512],
+            destination: "assets",
           },
         ]
       }),
