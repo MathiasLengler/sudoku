@@ -1,10 +1,13 @@
 /* eslint-disable */
 const path = require("path");
+const webpack = require('webpack');
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const WebpackPwaManifest = require('webpack-pwa-manifest')
+const WorkboxPlugin = require('workbox-webpack-plugin');
+const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
+const FaviconsWebpackPlugin = require('favicons-webpack-plugin')
 
 const dist = path.resolve(__dirname, "dist");
-const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
-const webpack = require('webpack');
 // const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
 module.exports = (env, argv) => {
@@ -39,7 +42,9 @@ module.exports = (env, argv) => {
     entry: "./src/index.tsx",
     output: {
       path: dist,
-      filename: "app.js"
+      filename: "app.js",
+      publicPath: "",
+      clean: true,
     },
     devServer: {
       contentBase: dist,
@@ -56,7 +61,8 @@ module.exports = (env, argv) => {
     },
     plugins: [
       new HtmlWebpackPlugin({
-        template: path.resolve(__dirname, "res", "index.html")
+        template: path.resolve(__dirname, "res", "index.html"),
+        favicon: ""
       }),
       new WasmPackPlugin({
         crateDirectory: path.resolve(__dirname, "../sudoku-wasm"),
@@ -64,6 +70,41 @@ module.exports = (env, argv) => {
           path.resolve(__dirname, "../sudoku-rs")
         ],
         outDir: path.resolve(__dirname, "../sudoku-wasm/pkg")
+      }),
+      // PWA
+      new WorkboxPlugin.GenerateSW({
+        clientsClaim: true,
+        skipWaiting: true,
+        maximumFileSizeToCacheInBytes: Math.pow(10, 8)
+      }),
+      new WebpackPwaManifest({
+        name: 'Sudoku',
+        short_name: 'Sudoku',
+        description: 'Touch optimized sudoku built with Rust/WASM/TypeScript/React',
+        background_color: '#fafafa',
+        icons: [
+          {
+            src: path.resolve('res/img/sudoku_icon_full_size.png'),
+            sizes: [96, 128, 192, 256, 384, 512],
+            destination: "assets",
+          },
+        ]
+      }),
+      new FaviconsWebpackPlugin({
+        logo: './res/img/sudoku_icon_full_size.png',
+        cache: true,
+        favicons: {
+          icons: {
+            android: false,
+            appleIcon: false,
+            appleStartup: false,
+            coast: false,
+            favicons: true,
+            firefox: false,
+            windows: false,
+            yandex: false
+          }
+        }
       }),
       // new BundleAnalyzerPlugin(),
       ...extraPlugins

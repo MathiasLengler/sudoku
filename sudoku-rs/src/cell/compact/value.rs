@@ -1,11 +1,10 @@
 use std::convert::TryFrom;
 use std::fmt;
-use std::fmt::Display;
+use std::fmt::{Display, Formatter};
 use std::marker::PhantomData;
 use std::num::NonZeroU8;
 
 use anyhow::{ensure, format_err};
-use serde::export::Formatter;
 use typenum::Unsigned;
 
 use crate::base::SudokuBase;
