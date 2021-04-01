@@ -12,7 +12,7 @@ anyhow = "1.0.38"
 lazy_static = "1.4.0"
 serde = { version = "1.0.124", features = ["derive"] }
 fixedbitset = "0.3.2"
-bitvec = { version = "0.21.1", default-features = false, features = ["std"] }
+bitvec = { version = "0.22.1", default-features = false, features = ["std"] }
 num = "0.4.0"
 pcp = { git = "https://github.com/MathiasLengler/pcp" }
 intervallum = { git = "https://github.com/MathiasLengler/intervallum" }
