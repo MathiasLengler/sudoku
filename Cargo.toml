@@ -9,7 +9,7 @@ members = [
 default-members = [
     "sudoku-rs",
     "sudoku-wasm",
-    "sudoku-api"
+    "sudoku-api",
 ]
 
 [profile.release]
