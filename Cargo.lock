@@ -1536,6 +1536,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "rocket_contrib"
+version = "0.5.0-dev"
+source = "git+https://github.com/SergioBenitez/Rocket?rev=8e4ddc06f2e319eebd4fc2b106137d846c9c28cf#8e4ddc06f2e319eebd4fc2b106137d846c9c28cf"
+dependencies = [
+ "log",
+ "rocket",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "rocket_http"
 version = "0.5.0-dev"
 source = "git+https://github.com/SergioBenitez/Rocket?rev=8e4ddc06f2e319eebd4fc2b106137d846c9c28cf#8e4ddc06f2e319eebd4fc2b106137d846c9c28cf"
@@ -1865,6 +1877,7 @@ name = "sudoku-api"
 version = "0.1.0"
 dependencies = [
  "rocket",
+ "rocket_contrib",
 ]
 
 [[package]]

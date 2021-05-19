@@ -8,3 +8,9 @@ edition = "2018"
 
 [dependencies]
 rocket = { git = "https://github.com/SergioBenitez/Rocket", rev = "8e4ddc06f2e319eebd4fc2b106137d846c9c28cf" }
+
+[dependencies.rocket_contrib]
+git = "https://github.com/SergioBenitez/Rocket"
+rev = "8e4ddc06f2e319eebd4fc2b106137d846c9c28cf"
+default-features = false
+features = ["json"]
