@@ -3,7 +3,6 @@ use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
-use itertools::Itertools;
 use ndarray::{Array2, Axis};
 use typenum::Unsigned;
 
@@ -282,6 +281,8 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 
     pub fn neighbor_positions(&self, pos: Position) -> impl Iterator<Item = Position> {
+        use itertools::Itertools;
+
         self.neighbor_positions_with_duplicates(pos).unique()
     }
 }
@@ -335,35 +336,38 @@ impl<Base: SudokuBase> Display for Grid<Base> {
     // TODO: implement using prettytable-rs
     // TODO: show candidates (compare with exchange formats)
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        use itertools::Itertools;
+
         const PADDING: usize = 3;
 
         let horizontal_block_separator =
             "-".repeat(Self::base_usize() + (PADDING * Self::side_length_usize()));
 
-        let output_string = self
-            .cells
-            .genrows()
-            .into_iter()
-            .map(|row| {
-                row.axis_chunks_iter(Axis(0), Self::base_usize())
-                    .map(|block_row| {
-                        block_row
-                            .iter()
-                            .map(|cell| {
-                                format!("{:>PADDING$}", cell.to_string(), PADDING = PADDING)
-                            })
-                            .collect::<String>()
-                    })
-                    .collect::<Vec<_>>()
-                    .join("|")
-            })
-            .collect::<Vec<String>>()
-            .chunks(Self::base_usize())
-            .intersperse(&[horizontal_block_separator])
-            .flatten()
-            .cloned()
-            .collect::<Vec<String>>()
-            .join("\n");
+        let output_string = Itertools::intersperse(
+            self.cells
+                .genrows()
+                .into_iter()
+                .map(|row| {
+                    row.axis_chunks_iter(Axis(0), Self::base_usize())
+                        .map(|block_row| {
+                            block_row
+                                .iter()
+                                .map(|cell| {
+                                    format!("{:>PADDING$}", cell.to_string(), PADDING = PADDING)
+                                })
+                                .collect::<String>()
+                        })
+                        .collect::<Vec<_>>()
+                        .join("|")
+                })
+                .collect::<Vec<String>>()
+                .chunks(Self::base_usize()),
+            &[horizontal_block_separator],
+        )
+        .flatten()
+        .cloned()
+        .collect::<Vec<String>>()
+        .join("\n");
 
         f.write_str(&output_string)
     }
