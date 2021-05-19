@@ -345,7 +345,7 @@ impl<Base: SudokuBase> Display for Grid<Base> {
 
         let output_string = Itertools::intersperse(
             self.cells
-                .genrows()
+                .rows()
                 .into_iter()
                 .map(|row| {
                     row.axis_chunks_iter(Axis(0), Self::base_usize())
