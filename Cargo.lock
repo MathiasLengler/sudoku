@@ -1190,6 +1190,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "sudoku-api"
+version = "0.1.0"
+
+[[package]]
 name = "sudoku-wasm"
 version = "0.1.0"
 dependencies = [

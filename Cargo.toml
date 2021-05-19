@@ -3,11 +3,13 @@
 members = [
     "sudoku-rs",
     "sudoku-wasm",
+    "sudoku-api",
     "sudoku-afl"
 ]
 default-members = [
     "sudoku-rs",
-    "sudoku-wasm"
+    "sudoku-wasm",
+    "sudoku-api"
 ]
 
 [profile.release]
