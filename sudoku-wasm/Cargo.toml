@@ -32,7 +32,7 @@ features = [
 ]
 
 [dependencies.wasm-bindgen]
-version = "0.2.71"
+version = "0.2.74"
 features = ["serde-serialize"]
 
 [features]
