@@ -1,10 +1,7 @@
 #[macro_use]
 extern crate rocket;
-#[macro_use]
-extern crate rocket_contrib;
 
-use rocket::{Build, Rocket};
-use rocket_contrib::json::JsonValue;
+use rocket::{Build, Rocket, serde::json::{Value,json}};
 
 #[get("/")]
 fn hello() -> &'static str {
@@ -12,7 +9,7 @@ fn hello() -> &'static str {
 }
 
 #[get("/api")]
-fn get_test() -> JsonValue {
+fn get_test() -> Value {
     json!({"hello": "world"})
 }
 
