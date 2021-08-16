@@ -129,7 +129,7 @@ fn bench_grid_group<Base: SudokuBase + 'static>(grid_group: &mut BenchmarkGroup<
 
             b.iter_batched(
                 || grid.clone(),
-                |mut grid| {
+                |mut grid: Grid<Base>| {
                     let pos = Position { column: 1, row: 1 };
                     let value = Value::new(2).unwrap().unwrap();
                     grid.get_mut(pos).set_or_toggle_value(value);
