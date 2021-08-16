@@ -154,8 +154,8 @@ fn bench_grid_group<Base: SudokuBase + 'static>(grid_group: &mut BenchmarkGroup<
 
 fn criterion_benchmark(c: &mut Criterion) {
     let mut generator_group: BenchmarkGroup<WallTime> = c.benchmark_group("Generator");
-    //    generator_group.sample_size(10);
     bench_generator_group::<U2>(&mut generator_group);
+    bench_generator_group::<U3>(&mut generator_group);
     generator_group.finish();
 
     let mut solver_group = c.benchmark_group("Solver");
