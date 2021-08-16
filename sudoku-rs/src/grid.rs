@@ -87,14 +87,18 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 }
 
+impl<Base: SudokuBase> Default for Grid<Base> {
+    fn default() -> Self {
+        Self::with_cells(vec![Cell::new(); Self::cell_count()])
+    }
+}
+
 // TODO: rethink indexing story (internal/cell position/block position)
 //  => use Index/IndexMut with custom index type:
 //     Cell, Row, Column, Block
 impl<Base: SudokuBase> Grid<Base> {
     pub fn new() -> Self {
-        let cells = vec![Cell::new(); Self::cell_count()];
-
-        Self::with_cells(cells)
+        Default::default()
     }
 
     fn with_cells(cells: Vec<Cell<Base>>) -> Self {
@@ -328,7 +332,7 @@ impl<Base: SudokuBase> TryFrom<&str> for Grid<Base> {
     type Error = Error;
 
     fn try_from(input: &str) -> Result<Self> {
-        Ok(parse_cells(input)?.try_into()?)
+        parse_cells(input)?.try_into()
     }
 }
 

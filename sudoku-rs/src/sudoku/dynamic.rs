@@ -124,7 +124,7 @@ impl TryFrom<&str> for DynamicSudoku {
     type Error = Error;
 
     fn try_from(input: &str) -> Result<Self> {
-        Ok(parse_cells(input)?.try_into()?)
+        parse_cells(input)?.try_into()
     }
 }
 

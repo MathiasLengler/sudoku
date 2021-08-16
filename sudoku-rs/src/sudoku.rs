@@ -31,12 +31,18 @@ pub struct Sudoku<Base: SudokuBase> {
     settings: Settings,
 }
 
+impl<Base: SudokuBase> Default for Sudoku<Base> {
+    fn default() -> Self {
+        Self::with_grid(Grid::new())
+    }
+}
+
 // TODO: provide redo API
 // TODO: return result in all asserts
 //  sudoku::Error as JSValue (JS Exception)?
 impl<Base: SudokuBase> Sudoku<Base> {
     pub fn new() -> Self {
-        Self::with_grid(Grid::new())
+        Default::default()
     }
 
     pub fn with_grid(grid: Grid<Base>) -> Self {
@@ -61,7 +67,7 @@ impl<Base: SudokuBase> Sudoku<Base> {
     pub fn with_target_and_settings(target: Target, settings: Settings) -> Result<Self> {
         let grid = Generator::with_target(target)
             .generate()
-            .ok_or(format_err!("Unable to generate grid"))?;
+            .ok_or_else(|| format_err!("Unable to generate grid"))?;
 
         Ok(Self::with_grid_and_settings(grid, settings))
     }

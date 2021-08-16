@@ -12,7 +12,7 @@ impl<Base: SudokuBase> Strategy<Base> for Backtracking {
     fn execute(&self, grid: &mut Grid<Base>) -> Vec<Position> {
         let mut solver = Solver::new(grid);
 
-        if let Some(_) = solver.next() {
+        if solver.next().is_some() {
             solver.into_empty_positions()
         } else {
             vec![]

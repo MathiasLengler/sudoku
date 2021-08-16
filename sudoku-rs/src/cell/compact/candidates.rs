@@ -53,7 +53,7 @@ impl<Base: SudokuBase> Candidates<Base> {
         self.debug_assert();
     }
 
-    fn iter<'a>(&'a self) -> impl Iterator<Item = Value<Base>> + 'a {
+    fn iter(&self) -> impl Iterator<Item = Value<Base>> + '_ {
         let bits = self.as_bits();
 
         bits.iter().enumerate().filter_map(
