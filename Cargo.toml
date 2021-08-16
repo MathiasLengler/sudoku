@@ -12,8 +12,8 @@ default-members = [
     "sudoku-api",
 ]
 
-[profile.release]
-debug = true
+#[profile.release]
+#debug = true
 
 [patch.crates-io]
 gcollections = { git = "https://github.com/MathiasLengler/gcollections" }
