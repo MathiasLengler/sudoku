@@ -43,3 +43,7 @@ parallel = ["rayon", "indicatif", "indicatif/rayon"]
 wasm-bindgen = ["getrandom/js"]
 flame_it = ["flame", "flamer"]
 fuzz = ["arbitrary"]
+
+[[bin]]
+name = "generate_histogram"
+required-features = ["parallel"]
