@@ -39,7 +39,7 @@ fn bench_generator_group<Base: SudokuBase>(generator_group: &mut BenchmarkGroup<
             &generator,
             |b, generator| {
                 b.iter(|| {
-                    generator.generate::<Base>().unwrap();
+                    generator.generate::<Base>();
                 })
             },
         );
