@@ -191,7 +191,7 @@ mod tests {
         assert_eq!(candidates.to_vec_u8(), vec_candidates);
 
         let candidates = Candidates::<U3>::try_from(Vec::<u8>::new())?;
-        assert_eq!(candidates.to_vec_u8(), vec![]);
+        assert_eq!(candidates.to_vec_u8(), Vec::<u8>::new());
 
         let candidates = Candidates::<U3>::try_from(vec![0]);
         assert!(candidates.is_err());
