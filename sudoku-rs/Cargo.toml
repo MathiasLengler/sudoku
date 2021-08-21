@@ -10,7 +10,7 @@ rand = "0.8.4"
 getrandom = "0.2.3"
 anyhow = "1.0.43"
 lazy_static = "1.4.0"
-serde = { version = "1.0.127", features = ["derive"] }
+serde = { version = "1.0.128", features = ["derive"] }
 fixedbitset = "0.4.0"
 bitvec = { version = "0.22.3", default-features = false, features = ["std"] }
 num = "0.4.0"
