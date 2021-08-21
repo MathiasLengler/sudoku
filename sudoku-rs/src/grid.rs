@@ -3,8 +3,7 @@ use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
-use itertools::Itertools;
-use ndarray::{Array2, Axis};
+use ndarray::Array2;
 use typenum::Unsigned;
 
 use crate::base::SudokuBase;
@@ -14,7 +13,10 @@ use crate::cell::view::parser::parse_cells;
 use crate::cell::view::CellView;
 use crate::cell::Cell;
 use crate::error::{Error, Result};
+use crate::grid::serialization::GridFormat;
 use crate::position::Position;
+
+pub mod serialization;
 
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub struct Grid<Base: SudokuBase> {
@@ -88,14 +90,18 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 }
 
+impl<Base: SudokuBase> Default for Grid<Base> {
+    fn default() -> Self {
+        Self::with_cells(vec![Cell::new(); Self::cell_count()])
+    }
+}
+
 // TODO: rethink indexing story (internal/cell position/block position)
 //  => use Index/IndexMut with custom index type:
 //     Cell, Row, Column, Block
 impl<Base: SudokuBase> Grid<Base> {
     pub fn new() -> Self {
-        let cells = vec![Cell::new(); Self::cell_count()];
-
-        Self::with_cells(cells)
+        Default::default()
     }
 
     fn with_cells(cells: Vec<Cell<Base>>) -> Self {
@@ -282,6 +288,8 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 
     pub fn neighbor_positions(&self, pos: Position) -> impl Iterator<Item = Position> {
+        use itertools::Itertools;
+
         self.neighbor_positions_with_duplicates(pos).unique()
     }
 }
@@ -327,45 +335,13 @@ impl<Base: SudokuBase> TryFrom<&str> for Grid<Base> {
     type Error = Error;
 
     fn try_from(input: &str) -> Result<Self> {
-        Ok(parse_cells(input)?.try_into()?)
+        parse_cells(input)?.try_into()
     }
 }
 
 impl<Base: SudokuBase> Display for Grid<Base> {
-    // TODO: implement using prettytable-rs
-    // TODO: show candidates (compare with exchange formats)
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        const PADDING: usize = 3;
-
-        let horizontal_block_separator =
-            "-".repeat(Self::base_usize() + (PADDING * Self::side_length_usize()));
-
-        let output_string = self
-            .cells
-            .genrows()
-            .into_iter()
-            .map(|row| {
-                row.axis_chunks_iter(Axis(0), Self::base_usize())
-                    .map(|block_row| {
-                        block_row
-                            .iter()
-                            .map(|cell| {
-                                format!("{:>PADDING$}", cell.to_string(), PADDING = PADDING)
-                            })
-                            .collect::<String>()
-                    })
-                    .collect::<Vec<_>>()
-                    .join("|")
-            })
-            .collect::<Vec<String>>()
-            .chunks(Self::base_usize())
-            .intersperse(&[horizontal_block_separator])
-            .flatten()
-            .cloned()
-            .collect::<Vec<String>>()
-            .join("\n");
-
-        f.write_str(&output_string)
+        f.write_str(&GridFormat::GivensGrid.render(self))
     }
 }
 

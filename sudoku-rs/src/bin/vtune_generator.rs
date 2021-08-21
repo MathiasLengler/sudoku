@@ -17,9 +17,7 @@ fn main() -> Result<()> {
 
     for i in 0..20 {
         dbg!(i);
-        Generator::with_target(Target::Minimal)
-            .generate::<U3>()
-            .unwrap();
+        Generator::with_target(Target::Minimal).generate::<U3>();
     }
 
     #[cfg(feature = "flame_it")]

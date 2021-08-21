@@ -44,3 +44,5 @@ type GeneratorTarget = "minimal" | "filled" | {
     distance: number;
   };
 };
+
+type GridFormat = "givensLine" | "givensGrid" | "candidates"

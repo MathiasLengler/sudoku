@@ -141,6 +141,10 @@ export class WasmSudokuController {
     });
   }
 
+  public export(format: GridFormat): Promise<string> {
+    return this.wasmSudokuProxy.export(format);
+  }
+
   public solveSingleCandidates(): void {
     this.withSudokuUpdate(async () => {
       await this.wasmSudokuProxy.solveSingleCandidates();

@@ -1,21 +1,4 @@
-body {
-    overflow: hidden;
-}
-
-button {
-    font-family: "Roboto", "Helvetica", "Arial", sans-serif;
-}
-
-.sudoku {
-    width: 100vw;
-    height: 100vh;
-    display: grid;
-    place-items: center;
-    justify-content: center;
-    /*place-content: center;*/
-
-    grid-template-rows: min-content min-content min-content;
-
+:root {
     /*React Variables*/
     --sideLength: 0;
     --base: 0;
@@ -38,6 +21,46 @@ button {
     --cell-value-color-incorrect-value: hsl(0, 100%, 50%);
     --candiate-color: hsl(var(--hue), 3%, 39%);
     --bg-color: hsl(0, 0%, 100%);
+}
+
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --block-border-color: hsl(var(--hue), 0%, calc(100% - 39%));
+        --block-border-size: 2px;
+        --cell-border-color: hsl(var(--hue), 20%, calc(100% - 79%));
+        --cell-border-size: 1px;
+        --cell-padding: 0.2rem;
+        --cell-bg-color-selected: hsl(var(--hue), 89%, calc(100% - 86%));
+        --cell-bg-color-guide-group: hsl(var(--hue), 25%, calc(100% - 91%));
+        --cell-bg-color-guide-value: hsl(var(--hue), 25%, calc(100% - 83%));
+        --cell-bg-color-guide-value-group: hsl(var(--hue), 25%, calc(100% - 91%));
+        --cell-bg-color-fixed-conflict: hsl(349, 94%, calc(100% - 87%));
+        --cell-value-color-fixed: hsl(0, 0%, calc(100% - 13%));
+        --cell-value-color-user: hsl(var(--hue), 85%, calc(100% - 34%));
+        --cell-value-color-incorrect-value: hsl(0, 100%, calc(100% - 50%));
+        --candiate-color: hsl(var(--hue), 3%, calc(100% - 39%));
+        --bg-color: hsl(0, 0%, 0%);
+    }
+}
+
+body {
+    overflow: hidden;
+}
+
+button {
+    font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+}
+
+.sudoku {
+    width: 100vw;
+    height: 100vh;
+    display: grid;
+    place-items: center;
+    justify-content: center;
+    /*place-content: center;*/
+
+    grid-template-rows: min-content min-content min-content;
 
     /*No Select*/
     user-select: none; /* supported by Chrome and Opera */
