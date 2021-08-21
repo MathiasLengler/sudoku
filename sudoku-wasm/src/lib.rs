@@ -9,6 +9,7 @@ use sudoku::base::consts::*;
 use sudoku::cell::Cell;
 use sudoku::error::Error as SudokuError;
 use sudoku::generator::backtracking::RuntimeSettings;
+use sudoku::grid::serialization::GridFormat;
 use sudoku::grid::Grid;
 use sudoku::position::Position;
 use sudoku::transport::TransportSudoku;
@@ -113,6 +114,12 @@ impl WasmSudoku {
             .map_err(Self::export_error)?)
     }
 
+    pub fn export(&self, format: JsValue) -> String {
+        self.sudoku
+            .borrow_mut()
+            .export(&Self::import_grid_format(format))
+    }
+
     pub fn solve_single_candidates(&mut self) {
         self.sudoku.borrow_mut().solve_single_candidates();
     }
@@ -135,6 +142,10 @@ impl WasmSudoku {
 
     fn import_generator_settings(generator_settings: JsValue) -> RuntimeSettings {
         generator_settings.into_serde().unwrap()
+    }
+
+    fn import_grid_format(format: JsValue) -> GridFormat {
+        format.into_serde().unwrap()
     }
 
     fn export_error(error: SudokuError) -> js_sys::Error {

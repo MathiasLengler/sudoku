@@ -3,7 +3,7 @@ use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
-use ndarray::{Array2, Axis};
+use ndarray::Array2;
 use typenum::Unsigned;
 
 use crate::base::SudokuBase;
@@ -13,7 +13,10 @@ use crate::cell::view::parser::parse_cells;
 use crate::cell::view::CellView;
 use crate::cell::Cell;
 use crate::error::{Error, Result};
+use crate::grid::serialization::GridFormat;
 use crate::position::Position;
+
+pub mod serialization;
 
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub struct Grid<Base: SudokuBase> {
@@ -337,43 +340,8 @@ impl<Base: SudokuBase> TryFrom<&str> for Grid<Base> {
 }
 
 impl<Base: SudokuBase> Display for Grid<Base> {
-    // TODO: implement using prettytable-rs
-    // TODO: show candidates (compare with exchange formats)
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        use itertools::Itertools;
-
-        const PADDING: usize = 3;
-
-        let horizontal_block_separator =
-            "-".repeat(Self::base_usize() + (PADDING * Self::side_length_usize()));
-
-        let output_string = Itertools::intersperse(
-            self.cells
-                .rows()
-                .into_iter()
-                .map(|row| {
-                    row.axis_chunks_iter(Axis(0), Self::base_usize())
-                        .map(|block_row| {
-                            block_row
-                                .iter()
-                                .map(|cell| {
-                                    format!("{:>PADDING$}", cell.to_string(), PADDING = PADDING)
-                                })
-                                .collect::<String>()
-                        })
-                        .collect::<Vec<_>>()
-                        .join("|")
-                })
-                .collect::<Vec<String>>()
-                .chunks(Self::base_usize()),
-            &[horizontal_block_separator],
-        )
-        .flatten()
-        .cloned()
-        .collect::<Vec<String>>()
-        .join("\n");
-
-        f.write_str(&output_string)
+        f.write_str(&GridFormat::GivensGrid.render(self))
     }
 }
 

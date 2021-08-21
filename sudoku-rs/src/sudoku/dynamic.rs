@@ -21,6 +21,7 @@ mod game {
     use enum_dispatch::enum_dispatch;
 
     use crate::error::Result;
+    use crate::grid::serialization::GridFormat;
     use crate::position::Position;
     use crate::sudoku::settings::Settings as SudokuSettings;
     use crate::Sudoku;
@@ -38,7 +39,7 @@ mod game {
         fn undo(&mut self);
         fn settings(&self) -> SudokuSettings;
         fn update_settings(&mut self, settings: SudokuSettings);
-        fn export(&self) -> String;
+        fn export(&self, format: &GridFormat) -> String;
     }
 
     /// A game of Sudoku which is able to change the size of the board at runtime.

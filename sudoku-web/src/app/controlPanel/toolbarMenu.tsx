@@ -25,6 +25,7 @@ export const ToolbarMenu: React.FunctionComponent<ToolbarMenuProps> = (props) =>
     action?.();
   };
 
+  // TODO: refactor menu into AppBar
   return <>
     <Tooltip title="Menu" enterDelay={enterDelay} leaveDelay={leaveDelay}>
       <IconButton onClick={(e) => setMenuAnchorEl(e.currentTarget)}>
@@ -43,6 +44,20 @@ export const ToolbarMenu: React.FunctionComponent<ToolbarMenuProps> = (props) =>
       </MenuItem>
       <MenuItem onClick={makeHandleMenuClose(() => sudokuController.groupReduction())}>
         Solver: group reduction
+      </MenuItem>
+      <MenuItem onClick={makeHandleMenuClose(async () => {
+        const givensLine = await sudokuController.export("givensLine");
+        const url = new URL("https://www.sudokuwiki.org/sudoku.htm");
+        url.searchParams.set("bd", givensLine);
+        window.open(url.toString(), "_blank", 'noopener');
+      })}>
+        Export to SudokuWiki
+      </MenuItem>
+      <MenuItem onClick={makeHandleMenuClose(async () => {
+        const givensGrid = await sudokuController.export("givensGrid");
+        await window.navigator.clipboard.writeText(givensGrid);
+      })}>
+        Export to Clipboard
       </MenuItem>
     </Menu>
     <div id="dialogs" tabIndex={0} onKeyDown={(e) => {

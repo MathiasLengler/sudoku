@@ -17,6 +17,7 @@ use crate::solver::strategic::{
 };
 
 use self::settings::Settings;
+use crate::grid::serialization::GridFormat;
 
 mod dynamic;
 pub mod settings;
@@ -187,9 +188,8 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
         self.settings = settings;
     }
 
-    // TODO: expose in UI (clipboard?)
-    fn export(&self) -> String {
-        self.grid.to_string()
+    fn export(&self, format: &GridFormat) -> String {
+        format.render(&self.grid)
     }
 }
 
