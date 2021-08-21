@@ -16,8 +16,6 @@ export const Theme: React.FunctionComponent = ({children}) => {
     [prefersDarkMode],
   );
 
-  console.log(theme);
-
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline/>
