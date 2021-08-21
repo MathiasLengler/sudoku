@@ -41,13 +41,13 @@ impl Generator {
     }
 
     // TODO: also return solution for checking
-    pub fn generate<Base: SudokuBase>(&self) -> Option<Grid<Base>> {
+    pub fn generate<Base: SudokuBase>(&self) -> Grid<Base> {
         use self::Target::*;
 
         let filled_sudoku = self.filled_grid();
 
         match self.target {
-            Filled => Some(filled_sudoku),
+            Filled => filled_sudoku,
             FromFilled {
                 distance: _distance,
             } => unimplemented!(),
@@ -71,10 +71,10 @@ impl Generator {
     }
 
     // TODO: optimize performance for base >= 3
-    fn minimal<Base: SudokuBase>(mut grid: Grid<Base>, distance: usize) -> Option<Grid<Base>> {
+    fn minimal<Base: SudokuBase>(mut grid: Grid<Base>, distance: usize) -> Grid<Base> {
         // If the distance results in a filled sudoku, return it directly.
         if Grid::<Base>::cell_count() <= distance {
-            return Some(grid);
+            return grid;
         }
 
         assert!(grid.all_candidates_positions().is_empty());
@@ -109,7 +109,7 @@ impl Generator {
             grid.get_mut(deleted_pos).set_value(deleted_value);
         }
 
-        Some(grid)
+        grid
     }
 }
 
@@ -135,9 +135,7 @@ mod tests {
 
     #[test]
     fn test_minimal() {
-        let grid = Generator::with_target(Target::Minimal)
-            .generate::<U2>()
-            .unwrap();
+        let grid = Generator::with_target(Target::Minimal).generate::<U2>();
 
         assert!(is_minimal(&grid));
     }

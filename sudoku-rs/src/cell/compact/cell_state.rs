@@ -14,9 +14,15 @@ pub(super) enum CellState<Base: SudokuBase> {
     Candidates(Candidates<Base>),
 }
 
+impl<Base: SudokuBase> Default for CellState<Base> {
+    fn default() -> Self {
+        Self::with_candidates(Candidates::new())
+    }
+}
+
 impl<Base: SudokuBase> CellState<Base> {
     pub(super) fn new() -> Self {
-        Self::with_candidates(Candidates::new())
+        Default::default()
     }
 
     pub(super) fn with_value(value: Value<Base>, fixed: bool) -> Self {
@@ -76,10 +82,10 @@ impl<Base: SudokuBase> CellState<Base> {
     }
 
     pub(super) fn fix(&mut self) {
-        *self = match self {
-            &mut CellState::Value(value) => CellState::FixedValue(value),
-            &mut CellState::FixedValue(value) => CellState::FixedValue(value),
-            &mut CellState::Candidates(_) => panic!("Candidates can't be fixed: {}", self),
+        *self = match *self {
+            CellState::Value(value) => CellState::FixedValue(value),
+            CellState::FixedValue(value) => CellState::FixedValue(value),
+            CellState::Candidates(_) => panic!("Candidates can't be fixed: {}", self),
         };
     }
 
@@ -173,10 +179,9 @@ impl<Base: SudokuBase> CellState<Base> {
 /// Private helpers
 impl<Base: SudokuBase> CellState<Base> {
     fn assert_unfixed(&self) {
-        match self {
+        if let CellState::FixedValue(_) = self {
             // TODO: bail instead of panic
-            CellState::FixedValue(_) => panic!("Fixed cell can't be modified: {}", self),
-            _ => {}
+            panic!("Fixed cell can't be modified: {}", self)
         }
     }
 }
@@ -192,7 +197,7 @@ where
             if let Some(value) = self.value() {
                 value.to_string()
             } else {
-                "_".to_string()
+                "0".to_string()
             }
         )
     }

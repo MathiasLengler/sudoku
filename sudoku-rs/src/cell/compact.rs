@@ -12,7 +12,7 @@ mod cell_state;
 pub mod value;
 
 /// Memory efficient representation of a single Sudoku cell.
-#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
+#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug, Default)]
 pub struct Cell<Base: SudokuBase>(CellState<Base>);
 
 impl<Base: SudokuBase> Cell<Base> {

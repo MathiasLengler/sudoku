@@ -1,5 +1,5 @@
 [package]
-name = "sudoku-afl"
+name = "sudoku-api"
 version = "0.1.0"
 authors = ["Mathias Lengler <mathias@lengler.dev>"]
 edition = "2018"
@@ -7,8 +7,4 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-sudoku = { path = "../sudoku-rs" }
-arbitrary = "1.0.1"
-
-[target.'cfg(unix)'.dependencies]
-afl = "0.10.1"
+rocket = { version = "0.5.0-rc.1", features = ["json"] }

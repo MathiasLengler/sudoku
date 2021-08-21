@@ -35,7 +35,7 @@ fn from_candidates(input: &str) -> Result<Vec<CellView>> {
         .filter(|line| line.contains(|c: char| c.is_digit(36)))
         // Filter vertical separators
         .flat_map(|line| line.split(['-', '|', ':', '+', '\'', '\n', '*'].as_ref()))
-        .filter(|s| *s != "")
+        .filter(|s| !s.is_empty())
         // Split and trim groups of numbers
         .flat_map(|s| s.split_whitespace())
         .map(TryInto::<CellView>::try_into)

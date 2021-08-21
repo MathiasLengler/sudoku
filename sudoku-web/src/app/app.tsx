@@ -6,12 +6,12 @@ import {Input, WasmSudokuController} from "./wasmSudokuController";
 import {ControlPanel} from "./controlPanel/controlPanel";
 import {TypedWasmSudoku} from "../typedWasmSudoku";
 import {useClientHeight, useResponsiveGridSize} from "./useResponsiveGridSize";
-import CssBaseline from '@material-ui/core/CssBaseline';
 import {blocksToCell} from "./utils";
 import {makeKeyDownListener} from "./useKeyboardInput";
 import CircularProgress from "@material-ui/core/CircularProgress";
 import * as Comlink from "comlink";
 import isEqual from "lodash/isEqual";
+import {Theme} from "./theme";
 
 const defaultTransportSudoku: TransportSudoku = {
   blocks: [[]], base: 1, sideLength: 1, cellCount: 1
@@ -74,8 +74,7 @@ export const App: React.FunctionComponent<AppProps> = (props) => {
     return <CircularProgress/>
   } else {
     return (
-      <>
-        <CssBaseline/>
+      <Theme>
         <div
           className='sudoku'
           style={style}
@@ -94,7 +93,7 @@ export const App: React.FunctionComponent<AppProps> = (props) => {
             toolbarRef={toolbarRef}
           />
         </div>
-      </>
+      </Theme>
     )
   }
 };

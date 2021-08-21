@@ -1,8 +1,6 @@
 use std::convert::{TryFrom, TryInto};
 use std::fmt::{self, Display, Formatter};
 
-use anyhow::format_err;
-
 pub use dynamic::{DynamicSudoku, Game};
 
 use crate::base::SudokuBase;
@@ -19,6 +17,7 @@ use crate::solver::strategic::{
 };
 
 use self::settings::Settings;
+use crate::grid::serialization::GridFormat;
 
 mod dynamic;
 pub mod settings;
@@ -31,12 +30,18 @@ pub struct Sudoku<Base: SudokuBase> {
     settings: Settings,
 }
 
+impl<Base: SudokuBase> Default for Sudoku<Base> {
+    fn default() -> Self {
+        Self::with_grid(Grid::new())
+    }
+}
+
 // TODO: provide redo API
 // TODO: return result in all asserts
 //  sudoku::Error as JSValue (JS Exception)?
 impl<Base: SudokuBase> Sudoku<Base> {
     pub fn new() -> Self {
-        Self::with_grid(Grid::new())
+        Default::default()
     }
 
     pub fn with_grid(grid: Grid<Base>) -> Self {
@@ -59,9 +64,7 @@ impl<Base: SudokuBase> Sudoku<Base> {
     }
 
     pub fn with_target_and_settings(target: Target, settings: Settings) -> Result<Self> {
-        let grid = Generator::with_target(target)
-            .generate()
-            .ok_or(format_err!("Unable to generate grid"))?;
+        let grid = Generator::with_target(target).generate();
 
         Ok(Self::with_grid_and_settings(grid, settings))
     }
@@ -185,9 +188,8 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
         self.settings = settings;
     }
 
-    // TODO: expose in UI (clipboard?)
-    fn export(&self) -> String {
-        self.grid.to_string()
+    fn export(&self, format: &GridFormat) -> String {
+        format.render(&self.grid)
     }
 }
 
