@@ -197,7 +197,7 @@ where
             if let Some(value) = self.value() {
                 value.to_string()
             } else {
-                "_".to_string()
+                ".".to_string()
             }
         )
     }
