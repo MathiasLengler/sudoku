@@ -56,15 +56,7 @@ impl<Base: SudokuBase> Candidates<Base> {
     fn iter(&self) -> impl Iterator<Item = Value<Base>> + '_ {
         let bits = self.as_bits();
 
-        bits.iter().enumerate().filter_map(
-            |(i, is_set)| {
-                if *is_set {
-                    Some(Self::export(i))
-                } else {
-                    None
-                }
-            },
-        )
+        bits.iter_ones().map(|i| Self::export(i))
     }
 
     pub fn to_vec_u8(&self) -> Vec<u8> {
