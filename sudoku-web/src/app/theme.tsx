@@ -10,7 +10,14 @@ export const Theme: React.FunctionComponent = ({children}) => {
     () =>
       createTheme({
         palette: {
+          primary: {
+            main: prefersDarkMode ? "#5FA1F2FF" : "#0D4FA0"
+          },
           type: prefersDarkMode ? 'dark' : 'light',
+          background: prefersDarkMode ? {
+            default: "#121212",
+            paper: "#2C2C2C"
+          } : {}
         },
       }),
     [prefersDarkMode],
