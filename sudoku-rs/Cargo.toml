@@ -20,7 +20,7 @@ gcollections = { git = "https://github.com/MathiasLengler/gcollections" }
 indexmap = "1.7.0"
 ndarray = "0.15.3"
 generic-array = "0.14.4"
-typenum = "1.13.0"
+typenum = "1.14.0"
 enum_dispatch = "0.3.7"
 rayon = { version = "1.5.1", optional = true }
 indicatif = { version = "0.16.2", optional = true }
