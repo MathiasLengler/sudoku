@@ -15,7 +15,6 @@ use sudoku::generator::backtracking::{Generator, Target};
 use sudoku::grid::Grid;
 use sudoku::position::Position;
 use sudoku::samples::{base_2, base_3};
-use sudoku::solver::strategic::strategies::group_reduction::GroupReductionV2;
 use sudoku::solver::strategic::strategies::GroupReduction;
 use sudoku::solver::{backtracking, constraint, strategic};
 
@@ -170,16 +169,9 @@ fn bench_strategy_group(strategy_group: &mut BenchmarkGroup<WallTime>) {
     .collect();
 
     strategy_group.bench_with_input(
-        BenchmarkId::new("reduce_candidates_group", "V1"),
+        BenchmarkId::new("reduce_candidates_group", "basic"),
         &candidates_group,
         |b, candidates_group| b.iter(|| GroupReduction::reduce_candidates_group(&candidates_group)),
-    );
-    strategy_group.bench_with_input(
-        BenchmarkId::new("reduce_candidates_group", "V2"),
-        &candidates_group,
-        |b, candidates_group| {
-            b.iter(|| GroupReductionV2::reduce_candidates_group(&candidates_group))
-        },
     );
 }
 
