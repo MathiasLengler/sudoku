@@ -1,4 +1,5 @@
 use std::num::NonZeroUsize;
+use std::time::Duration;
 
 use crate::base::SudokuBase;
 use crate::grid::Grid;
@@ -175,6 +176,8 @@ Current Choice: {:?}",
             .unwrap();
 
         stdout.flush().unwrap();
+
+        std::thread::sleep(Duration::from_millis(50));
     }
 }
 

@@ -44,3 +44,7 @@ fuzz = ["arbitrary"]
 [[bin]]
 name = "generate_histogram"
 required-features = ["parallel"]
+
+[[bin]]
+name = "solver_animation"
+required-features = ["debug_print"]
