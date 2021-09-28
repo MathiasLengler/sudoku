@@ -16,7 +16,7 @@ use sudoku::grid::Grid;
 use sudoku::position::Position;
 use sudoku::samples::{base_2, base_3};
 use sudoku::solver::strategic::strategies::GroupReduction;
-use sudoku::solver::{backtracking, constraint, strategic};
+use sudoku::solver::{backtracking, strategic};
 
 fn cast_grid<Base: SudokuBase + 'static>(any_grid: Box<dyn Any>) -> Grid<Base> {
     *any_grid.downcast().unwrap()
@@ -61,18 +61,6 @@ fn bench_solver_group<Base: SudokuBase + 'static>(solver_group: &mut BenchmarkGr
             b.iter_batched(
                 || grid.clone(),
                 |mut grid| backtracking::Solver::new(&mut grid).next(),
-                BatchSize::SmallInput,
-            )
-        },
-    );
-
-    solver_group.bench_with_input(
-        BenchmarkId::new("constraint", &parameter_string),
-        &grid,
-        |b, grid| {
-            b.iter_batched(
-                || grid.clone(),
-                |mut grid| constraint::Solver::new(&mut grid).try_solve(),
                 BatchSize::SmallInput,
             )
         },

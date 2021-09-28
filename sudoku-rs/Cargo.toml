@@ -14,9 +14,6 @@ serde = { version = "1.0.130", features = ["derive"] }
 fixedbitset = "0.4.0"
 bitvec = { version = "0.22.3", default-features = false, features = ["std"] }
 num = "0.4.0"
-pcp = { git = "https://github.com/MathiasLengler/pcp" }
-intervallum = { git = "https://github.com/MathiasLengler/intervallum" }
-gcollections = { git = "https://github.com/MathiasLengler/gcollections" }
 indexmap = "1.7.0"
 ndarray = "0.15.3"
 generic-array = "0.14.4"
