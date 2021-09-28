@@ -65,7 +65,7 @@ impl GroupReductionV2 {
         }
     }
 
-    fn reduce_candidates_group<Base: SudokuBase>(
+    pub fn reduce_candidates_group<Base: SudokuBase>(
         candidates_group: &[Candidates<Base>],
     ) -> Vec<Candidates<Base>> {
         let mut values = vec![];
@@ -153,7 +153,7 @@ impl GroupReduction {
         }
     }
 
-    fn reduce_candidates_group<Base: SudokuBase>(
+    pub fn reduce_candidates_group<Base: SudokuBase>(
         candidates_group: &[Candidates<Base>],
     ) -> Vec<Candidates<Base>> {
         let candidates_group_u8 = candidates_group

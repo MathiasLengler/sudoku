@@ -29,7 +29,7 @@ use crate::position::Position;
 
 // TODO: bench
 mod backtracking;
-mod group_reduction;
+pub mod group_reduction;
 mod single_candidate;
 
 // TODO: use

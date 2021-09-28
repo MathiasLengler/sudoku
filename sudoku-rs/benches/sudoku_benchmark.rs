@@ -2,17 +2,21 @@
 extern crate criterion;
 
 use std::any::Any;
+use std::convert::TryInto;
 
 use criterion::measurement::WallTime;
 use criterion::{BatchSize, BenchmarkId};
 use criterion::{BenchmarkGroup, Criterion};
 
 use sudoku::base::{consts::*, SudokuBase};
+use sudoku::cell::compact::candidates::Candidates;
 use sudoku::cell::compact::value::Value;
 use sudoku::generator::backtracking::{Generator, Target};
 use sudoku::grid::Grid;
 use sudoku::position::Position;
 use sudoku::samples::{base_2, base_3};
+use sudoku::solver::strategic::strategies::group_reduction::GroupReductionV2;
+use sudoku::solver::strategic::strategies::GroupReduction;
 use sudoku::solver::{backtracking, constraint, strategic};
 
 fn cast_grid<Base: SudokuBase + 'static>(any_grid: Box<dyn Any>) -> Grid<Base> {
@@ -152,6 +156,33 @@ fn bench_grid_group<Base: SudokuBase + 'static>(grid_group: &mut BenchmarkGroup<
     );
 }
 
+fn bench_strategy_group(strategy_group: &mut BenchmarkGroup<WallTime>) {
+    let candidates_group: Vec<Candidates<U3>> = vec![
+        vec![1, 2],
+        vec![1, 3],
+        vec![2, 3],
+        vec![1, 2, 3, 4, 5, 6],
+        vec![1, 3, 4],
+        vec![2, 3, 4, 5, 6],
+    ]
+    .into_iter()
+    .map(|candidates_data| candidates_data.try_into().unwrap())
+    .collect();
+
+    strategy_group.bench_with_input(
+        BenchmarkId::new("reduce_candidates_group", "V1"),
+        &candidates_group,
+        |b, candidates_group| b.iter(|| GroupReduction::reduce_candidates_group(&candidates_group)),
+    );
+    strategy_group.bench_with_input(
+        BenchmarkId::new("reduce_candidates_group", "V2"),
+        &candidates_group,
+        |b, candidates_group| {
+            b.iter(|| GroupReductionV2::reduce_candidates_group(&candidates_group))
+        },
+    );
+}
+
 fn criterion_benchmark(c: &mut Criterion) {
     let mut generator_group: BenchmarkGroup<WallTime> = c.benchmark_group("Generator");
     bench_generator_group::<U2>(&mut generator_group);
@@ -168,6 +199,10 @@ fn criterion_benchmark(c: &mut Criterion) {
     bench_grid_group::<U2>(&mut grid_group);
     bench_grid_group::<U3>(&mut grid_group);
     grid_group.finish();
+
+    let mut strategy_group = c.benchmark_group("Strategies");
+    bench_strategy_group(&mut strategy_group);
+    strategy_group.finish()
 }
 
 criterion_group!(benches, criterion_benchmark);
