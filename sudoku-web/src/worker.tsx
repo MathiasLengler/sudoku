@@ -20,7 +20,12 @@ async function init() {
 }
 
 async function getWasmSudoku() {
+  console.log("Hello worker")
+
   const module = await import("../../sudoku-wasm/pkg");
+
+  console.log("Module loaded")
+
   module.run();
   return new TypedWasmSudoku(module.get_wasm_sudoku())
 }

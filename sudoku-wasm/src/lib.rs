@@ -30,7 +30,7 @@ pub fn run() -> Result<(), JsValue> {
 
 #[wasm_bindgen]
 pub fn get_wasm_sudoku() -> WasmSudoku {
-    let grid: Grid<U3> = sudoku::samples::minimal();
+    let grid: Grid<U2> = sudoku::samples::minimal();
 
     WasmSudoku {
         sudoku: RefCell::new(DynamicSudoku::with_sudoku(Sudoku::with_grid(grid)).unwrap()),

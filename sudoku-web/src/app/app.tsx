@@ -1,15 +1,11 @@
 import * as React from "react";
 import {useEffect, useState} from "react";
-import {Grid} from "./grid/grid";
-import * as CSS from "csstype";
-import {Input, WasmSudokuController} from "./wasmSudokuController";
-import {ControlPanel} from "./controlPanel/controlPanel";
 import {TypedWasmSudoku} from "../typedWasmSudoku";
-import {useClientHeight, useResponsiveGridSize} from "./useResponsiveGridSize";
-import {blocksToCell} from "./utils";
-import {makeKeyDownListener} from "./useKeyboardInput";
 import CircularProgress from "@mui/material/CircularProgress";
 import * as Comlink from "comlink";
+import {Theme} from "./theme";
+import {Sudoku} from "./sudoku";
+import {WorkerApi} from "../worker";
 import isEqual from "lodash/isEqual";
 import {MyTheme} from "./myTheme";
 
@@ -17,83 +13,45 @@ const defaultTransportSudoku: TransportSudoku = {
   blocks: [[]], base: 1, sideLength: 1, cellCount: 1
 };
 
-interface AppProps {
-  wasmSudokuProxy: Comlink.Remote<TypedWasmSudoku>;
-}
 
-export const App: React.FunctionComponent<AppProps> = (props) => {
-  const {wasmSudokuProxy} = props;
-
+export const App: React.FunctionComponent = () => {
   // State
-  const [sudoku, setSudoku] = useState<TransportSudoku>(defaultTransportSudoku);
+  const [loadingStatus, setLoadingStatus] = useState<string>("Startup");
+  const [sudoku, setSudoku] = useState<TransportSudoku | undefined>(undefined);
+  const [wasmSudokuProxy, setWasmSudokuProxy] = useState<Comlink.Remote<TypedWasmSudoku> | undefined>(undefined);
 
   useEffect(() => {
     (async () => {
+      setLoadingStatus("Creating worker");
+
+      const worker = new Worker(new URL("../worker.tsx", import.meta.url));
+      const workerApi = Comlink.wrap<WorkerApi>(worker);
+
+      setLoadingStatus("Initializing worker");
+      console.debug(await workerApi.init());
+      setLoadingStatus("Worker initialized");
+
+      if (!workerApi.typedWasmSudoku) {
+        throw new Error("Race condition while initializing wasm sudoku worker");
+      }
+
+      const wasmSudokuProxy = workerApi.typedWasmSudoku as unknown as Comlink.Remote<TypedWasmSudoku>;
+      setWasmSudokuProxy(wasmSudokuProxy);
+
       const transportSudoku = await wasmSudokuProxy.getSudoku();
       setSudoku(transportSudoku);
-    })()
-  }, [wasmSudokuProxy]);
+    })().catch(err => setLoadingStatus(`Unexpected error: ${err}`))
+  }, []);
 
-  const {blocks, base, sideLength} = sudoku;
+  let content;
 
-  const [inputWithoutSelectedCell, setInput] = useState<Omit<Input, "selectedCell">>(() => {
-    const selectedPos = {column: 0, row: 0};
-
-    return {
-      selectedPos,
-      selectedValue: 1,
-      stickyMode: false,
-      candidateMode: false,
-    };
-  });
-
-  const selectedCell = blocksToCell(blocks, inputWithoutSelectedCell.selectedPos, base);
-
-  const input = {...inputWithoutSelectedCell, selectedCell};
-
-  const sudokuController = new WasmSudokuController(
-    wasmSudokuProxy,
-    sudoku,
-    (sudoku) => setSudoku(sudoku),
-    input,
-    setInput,
-    sideLength,
-  );
-
-  // Responsive Grid
-  const [toolbarHeight, toolbarRef] = useClientHeight();
-  const gridSize = useResponsiveGridSize(toolbarHeight, sideLength);
-
-  const style: CSS.Properties = {
-    '--sideLength': sideLength,
-    '--base': base,
-    "--outer-grid-size": `${gridSize}px`
-  };
-
-  if (isEqual(sudoku, defaultTransportSudoku)) {
-    return <CircularProgress/>
+  if (!sudoku || !wasmSudokuProxy) {
+    content = <><CircularProgress/>{loadingStatus}</>
   } else {
-    return (
-      <MyTheme>
-        <div
-          className='sudoku'
-          style={style}
-          onKeyDown={makeKeyDownListener(sudokuController, input, sideLength)}
-          tabIndex={0}
-        >
-          <Grid
-            sudokuController={sudokuController}
-            input={input}
-            sudoku={sudoku}
-          />
-          <ControlPanel
-            sudokuController={sudokuController}
-            input={input}
-            sideLength={sideLength}
-            toolbarRef={toolbarRef}
-          />
-        </div>
-      </MyTheme>
-    )
+    content = <Sudoku sudoku={sudoku} setSudoku={setSudoku} wasmSudokuProxy={wasmSudokuProxy}/>
   }
+
+  return <MyTheme>
+    {content}
+  </MyTheme>
 };
