@@ -23,8 +23,3 @@ members = ["."]
 [[bin]]
 name = "dynamic_sudoku_parse"
 path = "fuzz_targets/dynamic_sudoku_parse.rs"
-
-[patch.crates-io]
-gcollections = { git = "https://github.com/MathiasLengler/gcollections" }
-intervallum = { git = "https://github.com/MathiasLengler/intervallum" }
-pcp = { git = "https://github.com/MathiasLengler/pcp" }
