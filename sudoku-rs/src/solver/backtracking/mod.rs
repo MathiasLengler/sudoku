@@ -1,5 +1,4 @@
 use std::num::NonZeroUsize;
-use std::time::Duration;
 
 use crate::base::SudokuBase;
 use crate::grid::Grid;
@@ -154,6 +153,7 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
     fn debug_print(&self, step_result: &StepResult) {
         use crossterm::{cursor, style::Print, terminal, QueueableCommand};
         use std::io::{prelude::*, stdout};
+        use std::time::Duration;
 
         let mut stdout = stdout();
         stdout
