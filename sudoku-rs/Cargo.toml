@@ -8,7 +8,7 @@ edition = "2018"
 itertools = "0.10.1"
 rand = "0.8.4"
 getrandom = "0.2.3"
-anyhow = "1.0.44"
+anyhow = "1.0.51"
 lazy_static = "1.4.0"
 serde = { version = "1.0.130", features = ["derive"] }
 fixedbitset = "0.4.0"
