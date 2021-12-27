@@ -1,14 +1,7 @@
 import React from 'react';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import {createTheme, StyledEngineProvider, Theme, ThemeProvider} from '@mui/material/styles';
+import {createTheme, StyledEngineProvider, ThemeProvider} from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-
-
-declare module '@mui/styles/defaultTheme' {
-  // eslint-disable-next-line @typescript-eslint/no-empty-interface
-  interface DefaultTheme extends Theme {
-  }
-}
 
 
 export const MyTheme: React.FunctionComponent = ({children}) => {
