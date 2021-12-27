@@ -7,6 +7,27 @@ import {GenerateForm} from "./generateForm";
 import {WasmSudokuController} from "../../wasmSudokuController";
 import {ImportForm} from "./importForm";
 
+interface TabPanelProps {
+  children: React.ReactNode;
+  index: number;
+  tabIndex: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const {tabIndex, index, children} = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={tabIndex !== index}
+    >
+      {tabIndex === index && (
+        children
+      )}
+    </div>
+  );
+}
+
 interface NewGameTabsProps {
   sudokuController: WasmSudokuController;
   onClose: () => void;
@@ -36,12 +57,17 @@ export const NewGameTabs: React.FunctionComponent<NewGameTabsProps> = (props) =>
           <Tab label="Import"/>
         </Tabs>
       </AppBar>
+      {/*TODO: replace with animation only lib */}
       <SwipeableViews
         index={tabIndex}
         disabled
       >
-        <GenerateForm onClose={onClose} sudokuController={sudokuController}/>
-        <ImportForm onClose={onClose} sudokuController={sudokuController}/>
+        <TabPanel index={0} tabIndex={tabIndex}>
+          <GenerateForm onClose={onClose} sudokuController={sudokuController}/>
+        </TabPanel>
+        <TabPanel index={1} tabIndex={tabIndex}>
+          <ImportForm onClose={onClose} sudokuController={sudokuController}/>
+        </TabPanel>
       </SwipeableViews>
     </div>
   );
