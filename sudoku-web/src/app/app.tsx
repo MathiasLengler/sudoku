@@ -7,13 +7,6 @@ import { Sudoku } from "./sudoku";
 import { WorkerApi } from "../worker";
 import { MyTheme } from "./myTheme";
 
-const defaultTransportSudoku: TransportSudoku = {
-    blocks: [[]],
-    base: 1,
-    sideLength: 1,
-    cellCount: 1,
-};
-
 export const App: React.FunctionComponent = () => {
     // State
     const [loadingStatus, setLoadingStatus] = useState<string>("Startup");
