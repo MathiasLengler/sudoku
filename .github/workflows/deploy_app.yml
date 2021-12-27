@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy
 
 on:
   push:
@@ -62,3 +62,9 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./sudoku-web/dist
+
+      - name: Deploy to Cloudflare Pages
+        uses: distributhor/workflow-webhook@v2
+        env:
+          webhook_url: ${{ secrets.CLOUDFLARE_WEBHOOK_URL }}
+          webhook_secret: ${{ secrets.CLOUDFLARE_WEBHOOK_SECRET }}
