@@ -1,33 +1,33 @@
 import * as Comlink from "comlink";
-import {TypedWasmSudoku} from "./typedWasmSudoku";
+import { TypedWasmSudoku } from "./typedWasmSudoku";
 
 export interface WorkerApi {
-  init: typeof init;
-  // We need to lie about the nullability of typedWasmSudoku
-  // or else Comlink.Remote<TypedWasmSudoku> doesn't narrow
-  typedWasmSudoku: TypedWasmSudoku;
+    init: typeof init;
+    // We need to lie about the nullability of typedWasmSudoku
+    // or else Comlink.Remote<TypedWasmSudoku> doesn't narrow
+    typedWasmSudoku: TypedWasmSudoku;
 }
 
 const workerApi: WorkerApi = {
-  init,
-  typedWasmSudoku: undefined as unknown as TypedWasmSudoku
+    init,
+    typedWasmSudoku: undefined as unknown as TypedWasmSudoku,
 };
 
 async function init() {
-  workerApi.typedWasmSudoku = await getWasmSudoku();
+    workerApi.typedWasmSudoku = await getWasmSudoku();
 
-  return "Worker initialized";
+    return "Worker initialized";
 }
 
 async function getWasmSudoku() {
-  console.log("Hello worker")
+    console.log("Hello worker");
 
-  const module = await import("../../sudoku-wasm/pkg");
+    const module = await import("../../sudoku-wasm/pkg");
 
-  console.log("Module loaded")
+    console.log("Module loaded");
 
-  module.run();
-  return new TypedWasmSudoku(module.get_wasm_sudoku())
+    module.run();
+    return new TypedWasmSudoku(module.get_wasm_sudoku());
 }
 
 Comlink.expose(workerApi);
