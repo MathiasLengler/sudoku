@@ -13,17 +13,20 @@ const dist = path.resolve(__dirname, "dist");
 module.exports = (env, argv) => {
   const {mode} = argv;
 
+  const isDevelopment = mode === 'development';
+  const isProduction = mode === 'production';
   let devtool;
   let extraPlugins;
-  if (mode === 'development') {
+  if (isDevelopment) {
     devtool = 'eval-source-map';
     extraPlugins = [new webpack.HotModuleReplacementPlugin()]
-  } else if (mode === 'production') {
+  } else if (isProduction) {
     devtool = 'source-map';
     extraPlugins = [];
   } else {
     throw new Error(`Unexpected mode: ${mode}`);
   }
+
 
   const reactProfiling = !!(env && env.reactProfiling);
 
@@ -72,11 +75,11 @@ module.exports = (env, argv) => {
         outDir: path.resolve(__dirname, "../sudoku-wasm/pkg")
       }),
       // PWA
-      new WorkboxPlugin.GenerateSW({
+      ...isProduction ? [new WorkboxPlugin.GenerateSW({
         clientsClaim: true,
         skipWaiting: true,
         maximumFileSizeToCacheInBytes: Math.pow(10, 8)
-      }),
+      })] : [],
       new WebpackPwaManifest({
         name: 'Sudoku',
         short_name: 'Sudoku',
