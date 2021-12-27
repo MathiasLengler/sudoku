@@ -43,6 +43,16 @@ impl<Base: SudokuBase> Candidates<Base> {
         self.debug_assert();
     }
 
+    pub fn set(&mut self, candidate: Value<Base>, value: bool) {
+        let imported_candidate = Self::import(candidate);
+
+        let bits = self.as_mut_bits();
+
+        bits.set(imported_candidate, value);
+
+        self.debug_assert();
+    }
+
     pub fn delete(&mut self, candidate: Value<Base>) {
         let imported_candidate = Self::import(candidate);
 
@@ -53,7 +63,7 @@ impl<Base: SudokuBase> Candidates<Base> {
         self.debug_assert();
     }
 
-    fn iter(&self) -> impl Iterator<Item = Value<Base>> + '_ {
+    pub fn iter(&self) -> impl Iterator<Item = Value<Base>> + '_ {
         let bits = self.as_bits();
 
         bits.iter_ones().map(|i| Self::export(i))

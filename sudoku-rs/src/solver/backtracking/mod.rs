@@ -153,6 +153,7 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
     fn debug_print(&self, step_result: &StepResult) {
         use crossterm::{cursor, style::Print, terminal, QueueableCommand};
         use std::io::{prelude::*, stdout};
+        use std::time::Duration;
 
         let mut stdout = stdout();
         stdout
@@ -175,6 +176,8 @@ Current Choice: {:?}",
             .unwrap();
 
         stdout.flush().unwrap();
+
+        std::thread::sleep(Duration::from_millis(50));
     }
 }
 

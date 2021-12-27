@@ -3,26 +3,26 @@ authors = ["Mathias Lengler <mathias@lengler.dev>"]
 name = "sudoku-wasm"
 readme = "./README.md"
 version = "0.1.0"
-edition = "2018"
+edition = "2021"
 
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
 # wasm
-console_error_panic_hook = { version = "0.1.6", optional = true }
+console_error_panic_hook = { version = "0.1.7", optional = true }
 wee_alloc = { version = "0.4.5", optional = true }
 console_log = { version = "0.2.0", optional = true }
-js-sys = "0.3.52"
+js-sys = "0.3.55"
 
 # own
 log = "0.4.14"
 sudoku = { path = "../sudoku-rs", features = ["wasm-bindgen"] }
-serde = "1.0.127"
+serde = "1.0.132"
 
 # wasm
 [dependencies.web-sys]
-version = "0.3.52"
+version = "0.3.55"
 features = [
     "Document",
     "Element",
@@ -32,7 +32,7 @@ features = [
 ]
 
 [dependencies.wasm-bindgen]
-version = "0.2.75"
+version = "0.2.78"
 features = ["serde-serialize"]
 
 [features]

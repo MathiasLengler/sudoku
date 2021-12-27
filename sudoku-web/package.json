@@ -11,6 +11,9 @@
     "lint": "eslint src/**",
     "serve": "npx serve -l 8080 dist"
   },
+  "engines": {
+    "node": "16"
+  },
   "devDependencies": {
     "@types/classnames": "^2.3.0",
     "@types/lodash": "^4.14.172",
