@@ -1,10 +1,10 @@
 import * as React from "react";
-import Menu from "@material-ui/core/Menu";
-import MenuItem from "@material-ui/core/MenuItem";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
 import {NewGameDialog} from "./newGame/newGameDialog";
-import IconButton from "@material-ui/core/IconButton";
-import MoreVertIcon from '@material-ui/icons/MoreVert';
-import Tooltip from "@material-ui/core/Tooltip";
+import IconButton from "@mui/material/IconButton";
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import Tooltip from "@mui/material/Tooltip";
 import {WasmSudokuController} from "../wasmSudokuController";
 
 interface ToolbarMenuProps {
@@ -28,7 +28,7 @@ export const ToolbarMenu: React.FunctionComponent<ToolbarMenuProps> = (props) =>
   // TODO: refactor menu into AppBar
   return <>
     <Tooltip title="Menu" enterDelay={enterDelay} leaveDelay={leaveDelay}>
-      <IconButton onClick={(e) => setMenuAnchorEl(e.currentTarget)}>
+      <IconButton onClick={(e) => setMenuAnchorEl(e.currentTarget)} size="large">
         <MoreVertIcon fontSize="large"/>
       </IconButton>
     </Tooltip>
@@ -66,5 +66,5 @@ export const ToolbarMenu: React.FunctionComponent<ToolbarMenuProps> = (props) =>
     }}>
       <NewGameDialog open={newGameOpen} onClose={() => setNewGameOpen(false)} sudokuController={sudokuController}/>
     </div>
-  </>
+  </>;
 };
