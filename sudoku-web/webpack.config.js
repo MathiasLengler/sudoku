@@ -1,6 +1,5 @@
 /* eslint-disable */
 const path = require("path");
-const webpack = require('webpack');
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const WebpackPwaManifest = require('webpack-pwa-manifest')
 const WorkboxPlugin = require('workbox-webpack-plugin');
@@ -15,18 +14,11 @@ module.exports = (env, argv) => {
 
   const isDevelopment = mode === 'development';
   const isProduction = mode === 'production';
-  let devtool;
-  let extraPlugins;
-  if (isDevelopment) {
-    devtool = 'eval-source-map';
-    extraPlugins = [new webpack.HotModuleReplacementPlugin()]
-  } else if (isProduction) {
-    devtool = 'source-map';
-    extraPlugins = [];
-  } else {
+  if (!isDevelopment && !isProduction) {
     throw new Error(`Unexpected mode: ${mode}`);
   }
 
+  const devtool = isProduction ? 'source-map' : 'eval-source-map';
 
   const reactProfiling = !!(env && env.reactProfiling);
 
@@ -50,7 +42,15 @@ module.exports = (env, argv) => {
       clean: true,
     },
     devServer: {
-      contentBase: dist,
+      static: {
+        directory: dist
+      },
+      client: {
+        overlay: {
+          errors: true,
+          warnings: false,
+        },
+      },
       host: '127.0.0.1',
       hot: true
     },
@@ -110,7 +110,6 @@ module.exports = (env, argv) => {
         }
       }),
       // new BundleAnalyzerPlugin(),
-      ...extraPlugins
     ],
     module: {
       rules: [
