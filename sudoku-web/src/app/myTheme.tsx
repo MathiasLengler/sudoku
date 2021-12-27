@@ -1,6 +1,6 @@
 import React from 'react';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import {adaptV4Theme, createTheme, StyledEngineProvider, Theme, ThemeProvider} from '@mui/material/styles';
+import {createTheme, StyledEngineProvider, Theme, ThemeProvider} from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 
 
@@ -16,18 +16,18 @@ export const MyTheme: React.FunctionComponent = ({children}) => {
 
   const theme = React.useMemo(
     () =>
-      createTheme(adaptV4Theme({
+      createTheme({
         palette: {
           primary: {
             main: prefersDarkMode ? "#5FA1F2FF" : "#0D4FA0"
           },
-          type: prefersDarkMode ? 'dark' : 'light',
+          mode: prefersDarkMode ? 'dark' : 'light',
           background: prefersDarkMode ? {
             default: "#121212",
             paper: "#2C2C2C"
           } : {}
         },
-      })),
+      }),
     [prefersDarkMode],
   );
 
