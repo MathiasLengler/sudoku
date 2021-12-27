@@ -1,16 +1,15 @@
 import {WasmSudokuController} from "../../wasmSudokuController";
 import React, {useState} from "react";
-import Box from "@material-ui/core/Box";
-import DialogActions from "@material-ui/core/DialogActions";
-import Button from "@material-ui/core/Button";
-import TextField from "@material-ui/core/TextField";
-import {Typography} from "@material-ui/core";
-import makeStyles from "@material-ui/core/styles/makeStyles";
-import Accordion from "@material-ui/core/Accordion";
-import AccordionSummary from "@material-ui/core/AccordionSummary";
-import AccordionDetails from "@material-ui/core/AccordionDetails";
-import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
-import CircularProgress from "@material-ui/core/CircularProgress";
+import Box from "@mui/material/Box";
+import DialogActions from "@mui/material/DialogActions";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import {Typography} from "@mui/material";
+import Accordion from "@mui/material/Accordion";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import CircularProgress from "@mui/material/CircularProgress";
 
 interface CodeProps {
   text: string;
@@ -26,60 +25,6 @@ const Code: React.FunctionComponent<CodeProps> = ({text}) => {
   </div>;
 };
 
-const supportedFormats = <>
-  <Typography variant="h6">
-    List of givens
-  </Typography>
-  <Code text="6....23..1256.......47...2.73....84...........46....15.5...81.......3472..72....8"/>
-  <Typography variant="h6">
-    Grid of givens
-  </Typography>
-  <Code text={`*-----------*
-|.8.|5.3|.7.|
-|.27|...|38.|
-|...|...|...|
-|---+---+---|
-|..5|.9.|6..|
-|...|1.2|...|
-|..4|.6.|9..|
-|---+---+---|
-|...|...|...|
-|.32|...|45.|
-|.5.|9.7|.2.|
-*-----------*`}/>
-  <Typography variant="h6">
-    Grid of candidates
-  </Typography>
-  <Code text={`.--------------.----------------.------------.
-| 6   7    89  | 189  19   2    | 3   5   4  |
-| 1   2    5   | .    3    4    | 9   8   7  |
-| 3   89   4   | 7    58   59   | 6   2   1  |
-:--------------+----------------+------------:
-| 7   3    29  | 19   25   1569 | 8   4   69 |
-| 5   1    289 | 89   0    679  | 27  69  3  |
-| 89  4    6   | 3    28   79   | 27  1   5  |
-:--------------+----------------+------------:
-| 2   5    3   | 4    7    8    | 0   69  69 |
-| 89  689  1   | 5    69   3    | 4   0   2  |
-| 4   69   7   | 2    169  169  | 5   3   8  |
-'--------------'----------------'------------'`}/>
-  <Typography variant="h6">
-    Empty cells can be expressed as
-  </Typography>
-  <Code text=". 0"/>
-</>;
-
-
-const useStyles = makeStyles({
-  input: {
-    fontFamily: "Monospace"
-  },
-  root: {
-    flexFlow: "column",
-    overflowX: "scroll"
-  }
-});
-
 interface ImportFormProps {
   sudokuController: WasmSudokuController;
   onClose: () => void;
@@ -92,16 +37,55 @@ export const ImportForm: React.FunctionComponent<ImportFormProps> = (props) => {
   const [input, setInput] = useState("");
   const [inputError, setInputError] = useState(false);
 
-  const classes = useStyles();
-
   const supportedFormatsPanel = <Accordion>
     <AccordionSummary
       expandIcon={<ExpandMoreIcon/>}
     >
       <Typography>Supported formats</Typography>
     </AccordionSummary>
-    <AccordionDetails classes={{root: classes.root}}>
-      {supportedFormats}
+    <AccordionDetails sx={{
+      overflowX: "scroll"
+    }}>
+      <Typography variant="h6">
+        List of givens
+      </Typography>
+      <Code text="6....23..1256.......47...2.73....84...........46....15.5...81.......3472..72....8"/>
+      <Typography variant="h6">
+        Grid of givens
+      </Typography>
+      <Code text={`*-----------*
+|.8.|5.3|.7.|
+|.27|...|38.|
+|...|...|...|
+|---+---+---|
+|..5|.9.|6..|
+|...|1.2|...|
+|..4|.6.|9..|
+|---+---+---|
+|...|...|...|
+|.32|...|45.|
+|.5.|9.7|.2.|
+*-----------*`}/>
+      <Typography variant="h6">
+        Grid of candidates
+      </Typography>
+      <Code text={`.--------------.----------------.------------.
+| 6   7    89  | 189  19   2    | 3   5   4  |
+| 1   2    5   | .    3    4    | 9   8   7  |
+| 3   89   4   | 7    58   59   | 6   2   1  |
+:--------------+----------------+------------:
+| 7   3    29  | 19   25   1569 | 8   4   69 |
+| 5   1    289 | 89   0    679  | 27  69  3  |
+| 89  4    6   | 3    28   79   | 27  1   5  |
+:--------------+----------------+------------:
+| 2   5    3   | 4    7    8    | 0   69  69 |
+| 89  689  1   | 5    69   3    | 4   0   2  |
+| 4   69   7   | 2    169  169  | 5   3   8  |
+'--------------'----------------'------------'`}/>
+      <Typography variant="h6">
+        Empty cells can be expressed as
+      </Typography>
+      <Code text=". 0"/>
     </AccordionDetails>
   </Accordion>;
 
@@ -115,9 +99,7 @@ export const ImportForm: React.FunctionComponent<ImportFormProps> = (props) => {
         margin="dense"
         value={input}
         onChange={e => setInput(e.target.value)}
-        InputProps={{
-          classes: {input: classes.input}
-        }}
+        sx={{fontFamily: "Monospace"}}
         disabled={loading}
       />
       {supportedFormatsPanel}

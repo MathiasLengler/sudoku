@@ -1,7 +1,7 @@
 import * as React from "react";
 import {valuesFromSideLength, valueToString} from "../utils";
 import {Input, WasmSudokuController} from "../wasmSudokuController";
-import ButtonBase from '@material-ui/core/ButtonBase';
+import ButtonBase from '@mui/material/ButtonBase';
 import classnames from "classnames";
 
 
