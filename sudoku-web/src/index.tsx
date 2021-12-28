@@ -2,7 +2,10 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { App } from "./app/app";
 import "../res/styles.css";
+
+// Dokku deployment hacks
 import "../res/mime.types";
+import "../res/.static";
 
 ReactDOM.render(<App />, document.getElementById("root"));
 
