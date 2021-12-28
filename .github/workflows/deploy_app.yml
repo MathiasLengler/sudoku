@@ -75,11 +75,17 @@ jobs:
           key: ${{ secrets.DOKKU_HETZNER_SSH_PRIVATE_KEY }}
           name: id_rsa-dokku
           known_hosts: ${{ secrets.DOKKU_HETZNER_SSH_HOST_KEY }}
+          config: |
+            Host dokku-hetzner
+              Hostname hetzner.lengler.dev
+              User dokku
+              IdentityFile ~/.ssh/id_rsa-dokku
+              IdentitiesOnly yes
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        with:
-          limit-access-to-actor: true
+#      - name: Setup tmate session
+#        uses: mxschmitt/action-tmate@v3
+#        with:
+#          limit-access-to-actor: true
 
       - name: Deploy to dokku
         working-directory: ./sudoku-web/dist
@@ -89,5 +95,5 @@ jobs:
           git config --global user.name "GitHub CI"
           git add .
           git commit -m "deploy: ${GITHUB_SHA}"
-          git remote add dokku ssh://dokku@hetzner.lengler.dev:22/sudoku
-          git push dokku master
+          git remote add dokku ssh://dokku-hetzner/sudoku
+          git push --force dokku master
