@@ -1,0 +1,23 @@
+name: Deploy to Dokku
+
+on:
+  push:
+    branches:
+      - gh-pages
+
+env:
+  CI: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Deploy to dokku
+        uses: dokku/github-action@master
+        with:
+          git_remote_url: 'ssh://dokku@hetzner.lengler.dev:22/sudoku'
+          git_push_flags: '--force'
+          ssh_host_key: ${{ secrets.DOKKU_HETZNER_SSH_HOST_KEY }}
+          ssh_private_key: ${{ secrets.DOKKU_HETZNER_SSH_PRIVATE_KEY }}
