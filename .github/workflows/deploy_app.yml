@@ -81,6 +81,6 @@ jobs:
         run: |
           git init
           git add .
-          git commit -m "deploy: ${{GITHUB_SHA}}"
+          git commit -m "deploy: ${GITHUB_SHA}"
           git remote add dokku ssh://dokku@hetzner.lengler.dev:22/sudoku
           git push dokku master
