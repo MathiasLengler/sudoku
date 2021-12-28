@@ -1,48 +1,66 @@
-import React from 'react';
-import SwipeableViews from 'react-swipeable-views';
-import AppBar from '@material-ui/core/AppBar';
-import Tabs from '@material-ui/core/Tabs';
-import Tab from '@material-ui/core/Tab';
-import {GenerateForm} from "./generateForm";
-import {WasmSudokuController} from "../../wasmSudokuController";
-import {ImportForm} from "./importForm";
+import React from "react";
+import SwipeableViews from "react-swipeable-views";
+import AppBar from "@mui/material/AppBar";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
+import { GenerateForm } from "./generateForm";
+import { WasmSudokuController } from "../../wasmSudokuController";
+import { ImportForm } from "./importForm";
 
-interface NewGameTabsProps {
-  sudokuController: WasmSudokuController;
-  onClose: () => void;
+interface TabPanelProps {
+    children: React.ReactNode;
+    index: number;
+    tabIndex: number;
 }
 
-export const NewGameTabs: React.FunctionComponent<NewGameTabsProps> = (props) => {
-  const {sudokuController, onClose} = props;
+function TabPanel(props: TabPanelProps) {
+    const { tabIndex, index, children } = props;
 
-  const [tabIndex, setTabIndex] = React.useState(0);
+    return (
+        <div role="tabpanel" hidden={tabIndex !== index}>
+            {tabIndex === index && children}
+        </div>
+    );
+}
 
-  const handleChange = (event: React.ChangeEvent<unknown>, newValue: number) => {
-    setTabIndex(newValue);
-  };
+interface NewGameTabsProps {
+    sudokuController: WasmSudokuController;
+    onClose: () => void;
+}
 
-  return (
-    <div>
-      <AppBar position="static" color="default">
-        <Tabs
-          value={tabIndex}
-          onChange={handleChange}
-          indicatorColor="primary"
-          textColor="primary"
-          variant="fullWidth"
-          centered
-        >
-          <Tab label="Generate"/>
-          <Tab label="Import"/>
-        </Tabs>
-      </AppBar>
-      <SwipeableViews
-        index={tabIndex}
-        disabled
-      >
-        <GenerateForm onClose={onClose} sudokuController={sudokuController}/>
-        <ImportForm onClose={onClose} sudokuController={sudokuController}/>
-      </SwipeableViews>
-    </div>
-  );
+export const NewGameTabs: React.FunctionComponent<NewGameTabsProps> = props => {
+    const { sudokuController, onClose } = props;
+
+    const [tabIndex, setTabIndex] = React.useState(0);
+
+    const handleChange = (event: React.ChangeEvent<unknown>, newValue: number) => {
+        setTabIndex(newValue);
+    };
+
+    return (
+        <div>
+            <AppBar position="static" color="default">
+                <Tabs
+                    value={tabIndex}
+                    onChange={handleChange}
+                    indicatorColor="primary"
+                    textColor="primary"
+                    variant="fullWidth"
+                    centered
+                >
+                    <Tab label="Generate" />
+                    <Tab label="Import" />
+                </Tabs>
+            </AppBar>
+            {/*TODO: replace with animation only lib */}
+            <SwipeableViews index={tabIndex} disabled>
+                <TabPanel index={0} tabIndex={tabIndex}>
+                    <GenerateForm onClose={onClose} sudokuController={sudokuController} />
+                </TabPanel>
+                <TabPanel index={1} tabIndex={tabIndex}>
+                    <ImportForm onClose={onClose} sudokuController={sudokuController} />
+                </TabPanel>
+            </SwipeableViews>
+        </div>
+    );
 };

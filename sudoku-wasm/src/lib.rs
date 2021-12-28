@@ -23,7 +23,7 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 pub fn run() -> Result<(), JsValue> {
     init();
 
-    trace!("Wasm initialized");
+    trace!("WASM initialized");
 
     Ok(())
 }

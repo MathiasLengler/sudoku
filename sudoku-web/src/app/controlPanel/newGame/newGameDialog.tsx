@@ -1,30 +1,25 @@
 import * as React from "react";
-import Dialog from '@material-ui/core/Dialog';
-import {NewGameTabs} from "./tabs";
-import useMediaQuery from '@material-ui/core/useMediaQuery';
-import useTheme from "@material-ui/core/styles/useTheme";
-import {WasmSudokuController} from "../../wasmSudokuController";
+import Dialog from "@mui/material/Dialog";
+import { NewGameTabs } from "./tabs";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { useTheme } from "@mui/material/styles";
+import { WasmSudokuController } from "../../wasmSudokuController";
 
 interface NewGameDialogProps {
-  open: boolean;
-  sudokuController: WasmSudokuController;
-  onClose: () => void;
+    open: boolean;
+    sudokuController: WasmSudokuController;
+    onClose: () => void;
 }
 
-export const NewGameDialog: React.FunctionComponent<NewGameDialogProps> = (props) => {
-  const {open, onClose, sudokuController} = props;
+export const NewGameDialog: React.FunctionComponent<NewGameDialogProps> = props => {
+    const { open, onClose, sudokuController } = props;
 
-  const theme = useTheme();
-  const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
+    const theme = useTheme();
+    const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
 
-  return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      fullWidth
-      fullScreen={fullScreen}
-    >
-      <NewGameTabs sudokuController={sudokuController} onClose={onClose}/>
-    </Dialog>
-  );
+    return (
+        <Dialog open={open} onClose={onClose} fullWidth fullScreen={fullScreen}>
+            <NewGameTabs sudokuController={sudokuController} onClose={onClose} />
+        </Dialog>
+    );
 };

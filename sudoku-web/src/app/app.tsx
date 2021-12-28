@@ -1,99 +1,70 @@
 import * as React from "react";
-import {useEffect, useState} from "react";
-import {Grid} from "./grid/grid";
-import * as CSS from "csstype";
-import {Input, WasmSudokuController} from "./wasmSudokuController";
-import {ControlPanel} from "./controlPanel/controlPanel";
-import {TypedWasmSudoku} from "../typedWasmSudoku";
-import {useClientHeight, useResponsiveGridSize} from "./useResponsiveGridSize";
-import {blocksToCell} from "./utils";
-import {makeKeyDownListener} from "./useKeyboardInput";
-import CircularProgress from "@material-ui/core/CircularProgress";
+import { useEffect, useState } from "react";
+import { TypedWasmSudoku } from "../typedWasmSudoku";
+import CircularProgress from "@mui/material/CircularProgress";
 import * as Comlink from "comlink";
-import isEqual from "lodash/isEqual";
-import {Theme} from "./theme";
+import { Sudoku } from "./sudoku";
+import { WorkerApi } from "../worker";
+import { MyTheme } from "./myTheme";
+import { Stack, Typography } from "@mui/material";
 
-const defaultTransportSudoku: TransportSudoku = {
-  blocks: [[]], base: 1, sideLength: 1, cellCount: 1
-};
+export const App: React.FunctionComponent = () => {
+    const [loadingStatus, setLoadingStatus] = useState<string>("Startup");
+    const [sudoku, setSudoku] = useState<TransportSudoku | undefined>(undefined);
+    const [wasmSudokuProxy, setWasmSudokuProxy] = useState<Comlink.Remote<TypedWasmSudoku> | undefined>(undefined);
 
-interface AppProps {
-  wasmSudokuProxy: Comlink.Remote<TypedWasmSudoku>;
-}
+    useEffect(() => {
+        async function loadSudoku() {
+            setLoadingStatus("Creating worker");
+            const worker = new Worker(new URL("../worker.tsx", import.meta.url));
+            if (process.env.NODE_ENV !== "production") {
+                worker.addEventListener("message", ev => {
+                    console.debug("Worker TX", ev.data);
+                });
+            }
+            const workerApi = Comlink.wrap<WorkerApi>(worker);
 
-export const App: React.FunctionComponent<AppProps> = (props) => {
-  const {wasmSudokuProxy} = props;
+            setLoadingStatus("Initializing worker");
+            await workerApi.init();
 
-  // State
-  const [sudoku, setSudoku] = useState<TransportSudoku>(defaultTransportSudoku);
+            setLoadingStatus("Connecting to worker");
+            const wasmSudokuProxy = workerApi.typedWasmSudoku as unknown as Comlink.Remote<TypedWasmSudoku>;
+            // Important: setState using setter function.
+            //  This ensures that React does not misinterpret the comlink proxy instance as a setter function itself.
+            //  Otherwise, a rejected promise of an attempt to call the proxy as a function would get set as the state.
+            setWasmSudokuProxy(() => wasmSudokuProxy);
 
-  useEffect(() => {
-    (async () => {
-      const transportSudoku = await wasmSudokuProxy.getSudoku();
-      setSudoku(transportSudoku);
-    })()
-  }, [wasmSudokuProxy]);
+            setLoadingStatus("Fetching initial sudoku");
+            const transportSudoku = await wasmSudokuProxy.getSudoku();
+            setSudoku(transportSudoku);
 
-  const {blocks, base, sideLength} = sudoku;
+            setLoadingStatus("Done");
+        }
 
-  const [inputWithoutSelectedCell, setInput] = useState<Omit<Input, "selectedCell">>(() => {
-    const selectedPos = {column: 0, row: 0};
+        (async () => {
+            try {
+                await loadSudoku();
+            } catch (err) {
+                console.error(err);
+                setLoadingStatus(`Unexpected error: ${err}`);
+            }
+        })();
+    }, []);
 
-    return {
-      selectedPos,
-      selectedValue: 1,
-      stickyMode: false,
-      candidateMode: false,
-    };
-  });
+    let content;
 
-  const selectedCell = blocksToCell(blocks, inputWithoutSelectedCell.selectedPos, base);
+    if (!sudoku || !wasmSudokuProxy) {
+        content = (
+            <div className="sudoku">
+                <Stack direction="column" justifyContent="center" alignItems="center" spacing={2}>
+                    <CircularProgress />
+                    <Typography>{loadingStatus}</Typography>
+                </Stack>
+            </div>
+        );
+    } else {
+        content = <Sudoku sudoku={sudoku} setSudoku={setSudoku} wasmSudokuProxy={wasmSudokuProxy} />;
+    }
 
-  const input = {...inputWithoutSelectedCell, selectedCell};
-
-  const sudokuController = new WasmSudokuController(
-    wasmSudokuProxy,
-    sudoku,
-    (sudoku) => setSudoku(sudoku),
-    input,
-    setInput,
-    sideLength,
-  );
-
-  // Responsive Grid
-  const [toolbarHeight, toolbarRef] = useClientHeight();
-  const gridSize = useResponsiveGridSize(toolbarHeight, sideLength);
-
-  const style: CSS.Properties = {
-    '--sideLength': sideLength,
-    '--base': base,
-    "--outer-grid-size": `${gridSize}px`
-  };
-
-  if (isEqual(sudoku, defaultTransportSudoku)) {
-    return <CircularProgress/>
-  } else {
-    return (
-      <Theme>
-        <div
-          className='sudoku'
-          style={style}
-          onKeyDown={makeKeyDownListener(sudokuController, input, sideLength)}
-          tabIndex={0}
-        >
-          <Grid
-            sudokuController={sudokuController}
-            input={input}
-            sudoku={sudoku}
-          />
-          <ControlPanel
-            sudokuController={sudokuController}
-            input={input}
-            sideLength={sideLength}
-            toolbarRef={toolbarRef}
-          />
-        </div>
-      </Theme>
-    )
-  }
+    return <MyTheme>{content}</MyTheme>;
 };
