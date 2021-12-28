@@ -7,7 +7,12 @@ import "../res/styles.css";
 import "../res/mime.types";
 import "../res/.static";
 
-ReactDOM.render(<App />, document.getElementById("root"));
+ReactDOM.render(
+    <React.StrictMode>
+        <App />
+    </React.StrictMode>,
+    document.getElementById("root")
+);
 
 if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
     window.addEventListener("load", () => {
