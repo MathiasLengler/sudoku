@@ -82,11 +82,6 @@ jobs:
               IdentityFile ~/.ssh/id_rsa-dokku
               IdentitiesOnly yes
 
-#      - name: Setup tmate session
-#        uses: mxschmitt/action-tmate@v3
-#        with:
-#          limit-access-to-actor: true
-
       - name: Deploy to dokku
         working-directory: ./sudoku-web/dist
         run: |
