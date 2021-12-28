@@ -64,6 +64,7 @@ module.exports = (env, argv) => {
         },
         experiments: {
             asyncWebAssembly: true,
+            topLevelAwait: true,
         },
         plugins: [
             new HtmlWebpackPlugin({
