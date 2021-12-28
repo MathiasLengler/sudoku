@@ -80,6 +80,8 @@ jobs:
         working-directory: ./sudoku-web/dist
         run: |
           git init
+          git config --global user.email "github-ci@lengler.dev"
+          git config --global user.name "GitHub CI"
           git add .
           git commit -m "deploy: ${GITHUB_SHA}"
           git remote add dokku ssh://dokku@hetzner.lengler.dev:22/sudoku
