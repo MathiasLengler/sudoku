@@ -2,6 +2,7 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { App } from "./app/app";
 import "../res/styles.css";
+import "../res/mime.types";
 
 ReactDOM.render(<App />, document.getElementById("root"));
 

@@ -127,6 +127,14 @@ module.exports = (env, argv) => {
                     test: /\.css$/,
                     use: [{ loader: "style-loader" }, { loader: "css-loader" }],
                 },
+                {
+                    test: /mime\.types/,
+                    type: "asset/resource",
+                    generator: {
+                        // Reference: https://webpack.js.org/configuration/output/#template-strings
+                        filename: "[base]",
+                    },
+                },
             ],
         },
         optimization,
