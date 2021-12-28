@@ -58,7 +58,7 @@ button {
     display: grid;
     place-items: center;
     justify-content: center;
-    /*place-content: center;*/
+    align-content: center;
 
     grid-template-rows: min-content min-content min-content;
 

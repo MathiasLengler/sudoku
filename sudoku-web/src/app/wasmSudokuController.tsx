@@ -1,167 +1,174 @@
-import {TypedWasmSudoku} from "../typedWasmSudoku";
+import { TypedWasmSudoku } from "../typedWasmSudoku";
 import * as React from "react";
-import {blocksToCell} from "./utils";
+import { blocksToCell } from "./utils";
 import isEqual from "lodash/isEqual";
 import * as Comlink from "comlink";
 
 export type onSudokuUpdate = (this: void, sudoku: TransportSudoku) => void;
 
 export interface Input {
-  stickyMode: boolean;
-  candidateMode: boolean;
-  selectedPos: CellPosition;
-  selectedCell: TransportCell;
-  selectedValue: number;
+    stickyMode: boolean;
+    candidateMode: boolean;
+    selectedPos: CellPosition;
+    selectedCell: TransportCell;
+    selectedValue: number;
 }
 
 export class WasmSudokuController {
-  public constructor(
-    private readonly wasmSudokuProxy: Comlink.Remote<TypedWasmSudoku>,
-    private readonly sudoku: TransportSudoku,
-    private readonly onSudokuUpdate: onSudokuUpdate,
-    private readonly input: Input,
-    private readonly setInput: React.Dispatch<React.SetStateAction<Omit<Input, "selectedCell">>>,
-    private readonly sideLength: TransportSudoku['sideLength'],
-  ) {
-  }
+    public constructor(
+        private readonly wasmSudokuProxy: Comlink.Remote<TypedWasmSudoku>,
+        private readonly sudoku: TransportSudoku,
+        private readonly onSudokuUpdate: onSudokuUpdate,
+        private readonly input: Input,
+        private readonly setInput: React.Dispatch<React.SetStateAction<Omit<Input, "selectedCell">>>,
+        private readonly sideLength: TransportSudoku["sideLength"]
+    ) {}
 
-  private async updateSudoku() {
-    const transportSudoku = await this.wasmSudokuProxy.getSudoku();
-    this.onSudokuUpdate(transportSudoku)
-  }
-
-  private async withSudokuUpdate<T>(f: () => Promise<T>): Promise<T> {
-    const ret = await f();
-
-    await this.updateSudoku();
-
-    return ret;
-  }
-
-  private checkFixed(): boolean {
-    if (this.input.selectedCell.fixed) {
-      console.warn("WasmSudokuController", "cannot modify a fixed cell", this.input.selectedCell);
-
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  public handlePosition(newSelectedPosition: CellPosition, move = false): void {
-    const {stickyMode, selectedPos, selectedValue} = this.input;
-
-    if (move && isEqual(selectedPos, newSelectedPosition)) {
-      return;
+    private async updateSudoku() {
+        const transportSudoku = await this.wasmSudokuProxy.getSudoku();
+        this.onSudokuUpdate(transportSudoku);
     }
 
-    this.setSelectedPosition(newSelectedPosition);
+    private async withSudokuUpdate<T>(f: () => Promise<T>): Promise<T> {
+        const ret = await f();
 
-    if (stickyMode) {
-      this.setSelectedCell(selectedValue);
-    }
-  }
+        await this.updateSudoku();
 
-  private setSelectedPosition(selectedPos: CellPosition) {
-    const {sudoku: {base, blocks}} = this;
-    const selectedCell = blocksToCell(blocks, selectedPos, base);
-
-    this.setInput((prevInput) => ({...prevInput, selectedPos}));
-    this.input.selectedPos = selectedPos;
-    this.input.selectedCell = selectedCell;
-  }
-
-  public handleValue(value: number): void {
-    const {stickyMode} = this.input;
-
-    if (value > this.sideLength) {
-      console.warn("WasmSudokuController", "tried to handle value greater than current sudoku allows:", value);
-
-      return;
+        return ret;
     }
 
-    if (stickyMode) {
-      this.setInput((prevInput) => ({...prevInput, selectedValue: value}));
-    } else {
-      this.setSelectedCell(value);
-    }
-  }
+    private checkFixed(): boolean {
+        if (this.input.selectedCell.fixed) {
+            console.warn("WasmSudokuController", "cannot modify a fixed cell", this.input.selectedCell);
 
-  private setSelectedCell(value: number) {
-    const {candidateMode, selectedPos} = this.input;
-
-    if (this.checkFixed()) {
-      return;
-    }
-
-    this.withSudokuUpdate(async () => {
-      if (value === 0) {
-        await this.wasmSudokuProxy.delete(selectedPos);
-      } else {
-        if (candidateMode) {
-          await this.wasmSudokuProxy.toggleCandidate(selectedPos, value);
+            return true;
         } else {
-          await this.wasmSudokuProxy.setOrToggleValue(selectedPos, value);
+            return false;
         }
-      }
-    });
-  }
-
-  public delete(): void {
-    if (this.checkFixed()) {
-      return;
     }
 
-    this.withSudokuUpdate(async () => {
-      await this.wasmSudokuProxy.delete(this.input.selectedPos);
-    });
-  }
+    public handlePosition(newSelectedPosition: CellPosition, move = false): void {
+        const { stickyMode, selectedPos, selectedValue } = this.input;
 
-  public setAllDirectCandidates(): void {
-    this.withSudokuUpdate(async () => {
-      await this.wasmSudokuProxy.setAllDirectCandidates();
-    });
-  }
+        if (move && isEqual(selectedPos, newSelectedPosition)) {
+            return;
+        }
 
-  public undo(): void {
-    this.withSudokuUpdate(async () => {
-      await this.wasmSudokuProxy.undo();
-    })
-  }
+        this.setSelectedPosition(newSelectedPosition);
 
-  public async generate(settings: GeneratorSettings): Promise<void> {
-    await this.withSudokuUpdate(async () => {
-      await this.wasmSudokuProxy.generate(settings);
-    });
-  }
+        if (stickyMode) {
+            this.setSelectedCell(selectedValue);
+        }
+    }
 
-  public async import(input: string): Promise<void> {
-    await this.withSudokuUpdate(async () => {
-      await this.wasmSudokuProxy.import(input);
-    });
-  }
+    private setSelectedPosition(selectedPos: CellPosition) {
+        const {
+            sudoku: { base, blocks },
+        } = this;
+        const selectedCell = blocksToCell(blocks, selectedPos, base);
 
-  public export(format: GridFormat): Promise<string> {
-    return this.wasmSudokuProxy.export(format);
-  }
+        this.setInput(prevInput => ({ ...prevInput, selectedPos }));
+        this.input.selectedPos = selectedPos;
+        this.input.selectedCell = selectedCell;
+    }
 
-  public solveSingleCandidates(): void {
-    this.withSudokuUpdate(async () => {
-      await this.wasmSudokuProxy.solveSingleCandidates();
-    })
-  }
+    public handleValue(value: number): void {
+        const { stickyMode } = this.input;
 
-  public groupReduction(): void {
-    this.withSudokuUpdate(async () => {
-      await this.wasmSudokuProxy.groupReduction();
-    })
-  }
+        if (value > this.sideLength) {
+            console.warn("WasmSudokuController", "tried to handle value greater than current sudoku allows:", value);
 
-  public toggleCandidateMode(): void {
-    this.setInput((prevInput) => ({...prevInput, candidateMode: !prevInput.candidateMode}))
-  }
+            return;
+        }
 
-  public toggleStickyMode(): void {
-    this.setInput((prevInput) => ({...prevInput, stickyMode: !prevInput.stickyMode}))
-  }
+        if (stickyMode) {
+            this.setInput(prevInput => ({ ...prevInput, selectedValue: value }));
+        } else {
+            this.setSelectedCell(value);
+        }
+    }
+
+    private setSelectedCell(value: number) {
+        const { candidateMode, selectedPos } = this.input;
+
+        if (this.checkFixed()) {
+            return;
+        }
+
+        this.withSudokuUpdate(async () => {
+            if (value === 0) {
+                await this.wasmSudokuProxy.delete(selectedPos);
+            } else {
+                if (candidateMode) {
+                    await this.wasmSudokuProxy.toggleCandidate(selectedPos, value);
+                } else {
+                    await this.wasmSudokuProxy.setOrToggleValue(selectedPos, value);
+                }
+            }
+        });
+    }
+
+    public delete(): void {
+        if (this.checkFixed()) {
+            return;
+        }
+
+        this.withSudokuUpdate(async () => {
+            await this.wasmSudokuProxy.delete(this.input.selectedPos);
+        });
+    }
+
+    public setAllDirectCandidates(): void {
+        this.withSudokuUpdate(async () => {
+            await this.wasmSudokuProxy.setAllDirectCandidates();
+        });
+    }
+
+    public undo(): void {
+        this.withSudokuUpdate(async () => {
+            await this.wasmSudokuProxy.undo();
+        });
+    }
+
+    public async generate(settings: GeneratorSettings): Promise<void> {
+        await this.withSudokuUpdate(async () => {
+            await this.wasmSudokuProxy.generate(settings);
+        });
+    }
+
+    public async import(input: string): Promise<void> {
+        await this.withSudokuUpdate(async () => {
+            await this.wasmSudokuProxy.import(input);
+        });
+    }
+
+    public export(format: GridFormat): Promise<string> {
+        return this.wasmSudokuProxy.export(format);
+    }
+
+    public solveSingleCandidates(): void {
+        this.withSudokuUpdate(async () => {
+            await this.wasmSudokuProxy.solveSingleCandidates();
+        });
+    }
+
+    public groupReduction(): void {
+        this.withSudokuUpdate(async () => {
+            await this.wasmSudokuProxy.groupReduction();
+        });
+    }
+
+    public toggleCandidateMode(): void {
+        this.setInput(prevInput => ({
+            ...prevInput,
+            candidateMode: !prevInput.candidateMode,
+        }));
+    }
+
+    public toggleStickyMode(): void {
+        this.setInput(prevInput => ({
+            ...prevInput,
+            stickyMode: !prevInput.stickyMode,
+        }));
+    }
 }
