@@ -57,6 +57,12 @@ const Block: React.FunctionComponent<BlockProps> = props => {
                         ? cell.value === selectedValue
                         : selectedCell.kind === "value" && selectedCell.value === cell.value);
 
+                const guideCandidate =
+                    cell.kind === "candidates" &&
+                    (stickyMode
+                        ? cell.candidates.includes(selectedValue)
+                        : selectedCell.kind === "value" && cell.candidates.includes(selectedCell.value));
+
                 const guideValueGroup =
                     containsSelectedValue ||
                     selectedValuePositions.some(
@@ -72,8 +78,11 @@ const Block: React.FunctionComponent<BlockProps> = props => {
                         selected={selected}
                         sudokuController={sudokuController}
                         guideValue={guideValue}
-                        guideGroup={guideGroup}
-                        guideValueGroup={guideValueGroup}
+                        guideGroup={false}
+                        guideValueGroup={false}
+                        guideCandidate={guideCandidate}
+                        selectedValue={selectedValue}
+                        stickyMode={stickyMode}
                     />
                 );
             })}

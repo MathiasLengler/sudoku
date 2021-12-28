@@ -20,9 +20,9 @@
     --cell-value-color-user: hsl(var(--hue), 85%, 34%);
     --cell-value-color-incorrect-value: hsl(0, 100%, 50%);
     --candiate-color: hsl(var(--hue), 3%, 39%);
+    --candiate-color-guide-value: hsl(var(--hue), 25%, 83%);
     --bg-color: hsl(0, 0%, 100%);
 }
-
 
 @media (prefers-color-scheme: dark) {
     :root {
@@ -160,6 +160,10 @@ button {
     background-color: var(--cell-bg-color-guide-value-group);
 }
 
+.cell--guide-candidate {
+    background-color: var(--cell-bg-color-guide-value);
+}
+
 .cell--fixed {
     color: var(--cell-value-color-fixed);
 }
@@ -204,12 +208,17 @@ button {
     min-height: 0;
 }
 
+.candidate--guide-value {
+    color: var(--cell-value-color-user);
+}
+
 .selector {
     --selector-size: var(--outer-grid-size);
     --selector-gutter: var(--cell-border-size);
     --selector-no-of-gutters: calc(var(--sideLength) - 1);
-    --selector-row-height: calc((var(--selector-size) - (var(--selector-no-of-gutters) * var(--selector-gutter))) / var(--sideLength));
-
+    --selector-row-height: calc(
+        (var(--selector-size) - (var(--selector-no-of-gutters) * var(--selector-gutter))) / var(--sideLength)
+    );
 
     width: var(--selector-size);
     height: var(--selector-row-height);
