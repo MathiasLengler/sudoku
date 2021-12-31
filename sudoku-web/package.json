@@ -6,7 +6,7 @@
     "repository": "https://github.com/MathiasLengler/sudoku",
     "scripts": {
         "start": "webpack serve --mode development",
-        "profiling": "webpack serve --mode production --env reactProfiling=true",
+        "start:profiling": "webpack serve --mode production --env reactProfiling=true",
         "build": "webpack --mode production",
         "lint": "eslint src/**",
         "serve": "npx serve -l 8080 dist"

@@ -4,20 +4,14 @@ import * as CSS from "csstype";
 import isEqual from "lodash/isEqual";
 import classnames from "classnames";
 import { indexToPosition, valueToString } from "../utils";
-import { WasmSudokuController } from "../wasmSudokuController";
+import { Input, WasmSudokuController } from "../wasmSudokuController";
 
-function cellBackgroundClass(selected: boolean, guideValue: boolean, guideGroup: boolean, guideValueGroup: boolean) {
-    if (selected) {
+function cellBackgroundClass(isSelected: boolean, isGuide: boolean) {
+    if (isSelected) {
         return "cell--selected";
     }
-    if (guideValue) {
-        return "cell--guide-value";
-    }
-    if (guideGroup) {
-        return "cell--guide-group";
-    }
-    if (guideValueGroup) {
-        return "cell--guide-value-group";
+    if (isGuide) {
+        return "cell--guide";
     }
 }
 
@@ -48,14 +42,14 @@ const CellValue: React.FunctionComponent<CellValueProps> = props => {
 interface CandidatesProps {
     candidates: CandidatesCell["candidates"];
     base: TransportSudoku["base"];
+    selectedValue: Input["selectedValue"];
+    stickyMode: Input["stickyMode"];
 }
 
-const Candidates: React.FunctionComponent<CandidatesProps> = props => {
-    const { base } = props;
-
+const Candidates: React.FunctionComponent<CandidatesProps> = ({ base, candidates, selectedValue, stickyMode }) => {
     return (
         <div className="candidates">
-            {props.candidates.map((candidate, i) => {
+            {candidates.map(candidate => {
                 // Candidates are 1 based, grid calculations are 0 based.
                 const { column, row } = indexToPosition(candidate - 1, base);
 
@@ -65,7 +59,13 @@ const Candidates: React.FunctionComponent<CandidatesProps> = props => {
                 };
 
                 return (
-                    <span key={i} className="candidate" style={style}>
+                    <span
+                        key={candidate}
+                        className={classnames("candidate", {
+                            "candidate--guide": stickyMode && selectedValue === candidate,
+                        })}
+                        style={style}
+                    >
                         {valueToString(candidate)}
                     </span>
                 );
@@ -80,15 +80,15 @@ interface CellProps {
     blockCellIndex: number;
     cell: TransportCell;
     base: TransportSudoku["base"];
-    selected: boolean;
+    isSelected: boolean;
+    isGuide: boolean;
     sudokuController: WasmSudokuController;
-    guideGroup: boolean;
-    guideValue: boolean;
-    guideValueGroup: boolean;
+    selectedValue: Input["selectedValue"];
+    stickyMode: Input["stickyMode"];
 }
 
 const Cell: React.FunctionComponent<CellProps> = props => {
-    const { blockCellIndex, cell, base, selected, sudokuController, guideGroup, guideValue, guideValueGroup } = props;
+    const { blockCellIndex, cell, base, isSelected, isGuide, sudokuController, selectedValue, stickyMode } = props;
 
     const { position: gridPosition } = cell;
 
@@ -101,7 +101,7 @@ const Cell: React.FunctionComponent<CellProps> = props => {
 
     const cellClassNames = classnames(
         "cell",
-        cellBackgroundClass(selected, guideValue, guideGroup, guideValueGroup),
+        cellBackgroundClass(isSelected, isGuide),
         cellColorClass(cell.fixed, cell.incorrectValue)
     );
 
@@ -138,7 +138,12 @@ const Cell: React.FunctionComponent<CellProps> = props => {
             {cell.kind === "value" ? (
                 <CellValue value={cell.value} />
             ) : (
-                <MemoCandidates candidates={cell.candidates} base={base} />
+                <MemoCandidates
+                    candidates={cell.candidates}
+                    base={base}
+                    selectedValue={selectedValue}
+                    stickyMode={stickyMode}
+                />
             )}
         </div>
     );
