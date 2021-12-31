@@ -7,8 +7,6 @@ use crate::position::Position;
 use crate::sudoku::DynamicSudoku;
 use crate::sudoku::Sudoku;
 
-// TODO:
-//  conflicting cells (groups?)
 // TODO: can_undo
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -66,8 +64,6 @@ impl From<&DynamicSudoku> for TransportSudoku {
     }
 }
 
-// TODO:
-//  conflicts_with (via all_conflict_pairs)
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransportCell {
