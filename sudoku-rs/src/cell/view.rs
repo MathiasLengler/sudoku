@@ -5,7 +5,6 @@ use anyhow::bail;
 use serde::{Deserialize, Serialize};
 
 use crate::base::SudokuBase;
-use crate::cell::compact::value::Value;
 use crate::cell::Cell;
 use crate::error::{Error, Result};
 
