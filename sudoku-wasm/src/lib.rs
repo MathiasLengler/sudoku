@@ -28,6 +28,8 @@ pub fn run() -> Result<(), JsValue> {
     Ok(())
 }
 
+// Intellij-rust false positive
+#[allow(unused_variables)]
 #[wasm_bindgen]
 pub fn get_wasm_sudoku() -> WasmSudoku {
     #[cfg(debug_assertions)]
