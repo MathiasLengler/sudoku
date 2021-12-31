@@ -1,11 +1,6 @@
 # TODOs
 
 ## UI
-- guide highlighting
-  - [x] value
-    - [x] with/without their groups
-    - [ ] candidates
-- mark conflicting cells
 - show shortcuts
 ## UX
 - save (local storage)
@@ -25,8 +20,8 @@
 - Single Candidates recursive until no further progress
 
 ### Selector Control Panel:
-- [ ] undo/redo buttons
-  - sudokuCan{Undo|Redo}
+- redo button
+- sudokuCan{Undo|Redo}
 
 ### New sudoku:
 - Generate with difficulty
@@ -48,16 +43,6 @@
 - select strategies until stuck
 
 ## Tooling
-- PWA
-  - offline
-  - add to home
-  - fullscreen
-  - Framework?
-- azure pipelines
-  - run linting
-    - eslint
-    - clippy
 - fix select cell performance
   - evaluate useReduce
   - profile
-
