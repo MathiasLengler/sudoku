@@ -12,15 +12,13 @@
     --cell-border-size: 1px;
     --cell-padding: 0.2rem;
     --cell-bg-color-selected: hsl(var(--hue), 89%, 86%);
-    --cell-bg-color-guide-group: hsl(var(--hue), 25%, 91%);
-    --cell-bg-color-guide-value: hsl(var(--hue), 25%, 83%);
-    --cell-bg-color-guide-value-group: hsl(var(--hue), 25%, 91%);
+    --cell-bg-color-guide: hsl(var(--hue), 25%, 91%);
     --cell-bg-color-fixed-conflict: hsl(349, 94%, 87%);
     --cell-value-color-fixed: hsl(0, 0%, 13%);
     --cell-value-color-user: hsl(var(--hue), 85%, 34%);
     --cell-value-color-incorrect-value: hsl(0, 100%, 50%);
     --candiate-color: hsl(var(--hue), 3%, 39%);
-    --candiate-color-guide-value: hsl(var(--hue), 25%, 83%);
+    --candiate-color-guide: hsl(var(--hue), 25%, 83%);
     --bg-color: hsl(0, 0%, 100%);
 }
 
@@ -32,9 +30,7 @@
         --cell-border-size: 1px;
         --cell-padding: 0.2rem;
         --cell-bg-color-selected: hsl(var(--hue), 89%, 14%);
-        --cell-bg-color-guide-group: hsl(var(--hue), 20%, 22%);
-        --cell-bg-color-guide-value-group: hsl(var(--hue), 20%, 22%);
-        --cell-bg-color-guide-value: hsl(var(--hue), 20%, 22%);
+        --cell-bg-color-guide: hsl(var(--hue), 20%, 22%);
         --cell-bg-color-fixed-conflict: hsl(349, 94%, 13%);
         --cell-value-color-fixed: hsl(0, 0%, 100%);
         --cell-value-color-user: hsl(var(--hue), 85%, 66%);
@@ -148,20 +144,8 @@ button {
     background-color: var(--cell-bg-color-selected);
 }
 
-.cell--guide-group {
-    background-color: var(--cell-bg-color-guide-group);
-}
-
-.cell--guide-value {
-    background-color: var(--cell-bg-color-guide-value);
-}
-
-.cell--guide-value-group {
-    background-color: var(--cell-bg-color-guide-value-group);
-}
-
-.cell--guide-candidate {
-    background-color: var(--cell-bg-color-guide-value);
+.cell--guide {
+    background-color: var(--cell-bg-color-guide);
 }
 
 .cell--fixed {

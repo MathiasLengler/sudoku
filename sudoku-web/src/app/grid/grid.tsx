@@ -11,7 +11,6 @@ interface BlockProps {
     base: TransportSudoku["base"];
     input: Input;
     sudokuController: WasmSudokuController;
-    selectedValuePositions: CellPosition[];
 }
 
 const Block: React.FunctionComponent<BlockProps> = props => {
@@ -19,9 +18,8 @@ const Block: React.FunctionComponent<BlockProps> = props => {
         block,
         blockIndex,
         base,
-        input: { selectedPos, selectedCell, selectedValue, stickyMode },
+        input: { selectedPos, selectedValue, stickyMode },
         sudokuController,
-        selectedValuePositions,
     } = props;
 
     const blockPosition = indexToPosition(blockIndex, base);
@@ -35,39 +33,22 @@ const Block: React.FunctionComponent<BlockProps> = props => {
 
     const containsSelectedPos = isEqual(blockPosition, selectedBlockPosition);
 
-    const containsSelectedValue = selectedValuePositions.some(pos => {
-        const selectedValueBlockPosition = cellPositionToBlockPosition(pos, base);
-        return isEqual(selectedValueBlockPosition, blockPosition);
-    });
-
     return (
         <div className={"block"} style={style}>
             {block.map((cell, blockCellIndex) => {
-                const selected = !stickyMode && containsSelectedPos && isEqual(selectedPos, cell.position);
+                let isSelected: boolean;
+                let isGuide: boolean;
 
-                const guideGroup =
-                    !stickyMode &&
-                    (containsSelectedPos ||
+                if (stickyMode) {
+                    isSelected = cell.kind === "value" && cell.value === selectedValue;
+                    isGuide = !(cell.kind === "candidates" && cell.candidates.includes(selectedValue));
+                } else {
+                    isSelected = containsSelectedPos && isEqual(selectedPos, cell.position);
+                    isGuide =
+                        containsSelectedPos ||
                         selectedPos.column == cell.position.column ||
-                        selectedPos.row == cell.position.row);
-
-                const guideValue =
-                    cell.kind === "value" &&
-                    (stickyMode
-                        ? cell.value === selectedValue
-                        : selectedCell.kind === "value" && selectedCell.value === cell.value);
-
-                const guideCandidate =
-                    cell.kind === "candidates" &&
-                    (stickyMode
-                        ? cell.candidates.includes(selectedValue)
-                        : selectedCell.kind === "value" && cell.candidates.includes(selectedCell.value));
-
-                const guideValueGroup =
-                    containsSelectedValue ||
-                    selectedValuePositions.some(
-                        pos => pos.column === cell.position.column || pos.row === cell.position.row
-                    );
+                        selectedPos.row == cell.position.row;
+                }
 
                 return (
                     <MemoCell
@@ -75,12 +56,9 @@ const Block: React.FunctionComponent<BlockProps> = props => {
                         blockCellIndex={blockCellIndex}
                         cell={cell}
                         base={base}
-                        selected={selected}
                         sudokuController={sudokuController}
-                        guideValue={guideValue}
-                        guideGroup={false}
-                        guideValueGroup={false}
-                        guideCandidate={guideCandidate}
+                        isSelected={isSelected}
+                        isGuide={isGuide}
                         selectedValue={selectedValue}
                         stickyMode={stickyMode}
                     />
@@ -103,19 +81,6 @@ export const Grid: React.FunctionComponent<GridProps> = props => {
         input,
     } = props;
 
-    const { selectedCell, selectedValue, stickyMode } = input;
-
-    const guideValue = stickyMode ? selectedValue : selectedCell.kind === "value" ? selectedCell.value : undefined;
-
-    let selectedValuePositions: CellPosition[];
-    if (guideValue) {
-        selectedValuePositions = blocks.flatMap(block =>
-            block.filter(cell => cell.kind === "value" && cell.value === guideValue).map(cell => cell.position)
-        );
-    } else {
-        selectedValuePositions = [];
-    }
-
     return (
         <div className="grid">
             {blocks.map((block, blockIndex) => (
@@ -124,7 +89,6 @@ export const Grid: React.FunctionComponent<GridProps> = props => {
                     block={block}
                     blockIndex={blockIndex}
                     base={base}
-                    selectedValuePositions={selectedValuePositions}
                     input={input}
                     sudokuController={sudokuController}
                 />

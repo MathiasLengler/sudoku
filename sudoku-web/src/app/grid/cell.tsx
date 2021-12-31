@@ -6,27 +6,12 @@ import classnames from "classnames";
 import { indexToPosition, valueToString } from "../utils";
 import { Input, WasmSudokuController } from "../wasmSudokuController";
 
-function cellBackgroundClass(
-    selected: boolean,
-    guideValue: boolean,
-    guideGroup: boolean,
-    guideValueGroup: boolean,
-    guideCandidate: boolean
-) {
-    if (selected) {
+function cellBackgroundClass(isSelected: boolean, isGuide: boolean) {
+    if (isSelected) {
         return "cell--selected";
     }
-    if (guideValue) {
-        return "cell--guide-value";
-    }
-    if (guideGroup) {
-        return "cell--guide-group";
-    }
-    if (guideValueGroup) {
-        return "cell--guide-value-group";
-    }
-    if (guideCandidate) {
-        return "cell--guide-candidate";
+    if (isGuide) {
+        return "cell--guide";
     }
 }
 
@@ -95,30 +80,15 @@ interface CellProps {
     blockCellIndex: number;
     cell: TransportCell;
     base: TransportSudoku["base"];
-    selected: boolean;
+    isSelected: boolean;
+    isGuide: boolean;
     sudokuController: WasmSudokuController;
-    guideGroup: boolean;
-    guideValue: boolean;
-    guideValueGroup: boolean;
-    guideCandidate: boolean;
     selectedValue: Input["selectedValue"];
     stickyMode: Input["stickyMode"];
 }
 
 const Cell: React.FunctionComponent<CellProps> = props => {
-    const {
-        blockCellIndex,
-        cell,
-        base,
-        selected,
-        sudokuController,
-        guideGroup,
-        guideValue,
-        guideValueGroup,
-        guideCandidate,
-        selectedValue,
-        stickyMode,
-    } = props;
+    const { blockCellIndex, cell, base, isSelected, isGuide, sudokuController, selectedValue, stickyMode } = props;
 
     const { position: gridPosition } = cell;
 
@@ -131,7 +101,7 @@ const Cell: React.FunctionComponent<CellProps> = props => {
 
     const cellClassNames = classnames(
         "cell",
-        cellBackgroundClass(selected, guideValue, guideGroup, guideValueGroup, guideCandidate),
+        cellBackgroundClass(isSelected, isGuide),
         cellColorClass(cell.fixed, cell.incorrectValue)
     );
 
