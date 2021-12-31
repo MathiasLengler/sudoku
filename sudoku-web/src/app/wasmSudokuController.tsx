@@ -11,6 +11,7 @@ export interface Input {
     candidateMode: boolean;
     selectedPos: CellPosition;
     selectedCell: TransportCell;
+    // FIXME: only useful if stickyMode is true
     selectedValue: number;
 }
 

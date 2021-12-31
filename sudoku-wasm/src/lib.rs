@@ -30,6 +30,10 @@ pub fn run() -> Result<(), JsValue> {
 
 #[wasm_bindgen]
 pub fn get_wasm_sudoku() -> WasmSudoku {
+    #[cfg(debug_assertions)]
+    let grid: Grid<U2> = sudoku::samples::minimal();
+
+    #[cfg(not(debug_assertions))]
     let grid: Grid<U3> = sudoku::samples::minimal();
 
     WasmSudoku {
