@@ -62,7 +62,7 @@ const Candidates: React.FunctionComponent<CandidatesProps> = ({ base, candidates
                     <span
                         key={candidate}
                         className={classnames("candidate", {
-                            "candidate--guide-value": stickyMode && selectedValue === candidate,
+                            "candidate--guide": stickyMode && selectedValue === candidate,
                         })}
                         style={style}
                     >

@@ -192,7 +192,7 @@ button {
     min-height: 0;
 }
 
-.candidate--guide-value {
+.candidate--guide {
     color: var(--cell-value-color-user);
 }
 
