@@ -15,6 +15,14 @@
 - Share Sudoku
   - export as string
   - provide link / sync with url search param
+- Candidates
+  - Sticky Drag
+    - Decide toggle direction based on first value
+    - Ignore dragged over values
+    - Never change values into candidates
+  - Sticky deletion
+    - delete icon acts as selectedValue
+- Single Candidates recursive until no further progress
 
 ### Selector Control Panel:
 - [ ] undo/redo buttons
