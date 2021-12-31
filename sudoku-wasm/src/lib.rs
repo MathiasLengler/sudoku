@@ -15,6 +15,9 @@ use sudoku::position::Position;
 use sudoku::transport::TransportSudoku;
 use sudoku::{DynamicSudoku, Game, Sudoku};
 
+// TODO: use wasm-bindgen "typescript_type" and replace typedWasmSudoku.tsx
+//  https://rustwasm.github.io/wasm-bindgen/reference/attributes/on-rust-exports/typescript_type.html
+
 #[cfg(feature = "wee_alloc")]
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
