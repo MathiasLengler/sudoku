@@ -51,11 +51,7 @@ pub struct WasmSudoku {
 #[wasm_bindgen]
 impl WasmSudoku {
     pub fn get_sudoku(&self) -> JsValue {
-        let transport_sudoku = {
-            let sudoku = self.sudoku.borrow();
-
-            TransportSudoku::from(&*sudoku)
-        };
+        let transport_sudoku = TransportSudoku::from(&*self.sudoku.borrow());
 
         JsValue::from_serde(&transport_sudoku).unwrap()
     }
