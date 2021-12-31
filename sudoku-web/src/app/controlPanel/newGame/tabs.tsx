@@ -1,5 +1,4 @@
 import React from "react";
-import SwipeableViews from "react-swipeable-views";
 import AppBar from "@mui/material/AppBar";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
@@ -52,15 +51,12 @@ export const NewGameTabs: React.FunctionComponent<NewGameTabsProps> = props => {
                     <Tab label="Import" />
                 </Tabs>
             </AppBar>
-            {/*TODO: replace with animation only lib */}
-            <SwipeableViews index={tabIndex} disabled>
-                <TabPanel index={0} tabIndex={tabIndex}>
-                    <GenerateForm onClose={onClose} sudokuController={sudokuController} />
-                </TabPanel>
-                <TabPanel index={1} tabIndex={tabIndex}>
-                    <ImportForm onClose={onClose} sudokuController={sudokuController} />
-                </TabPanel>
-            </SwipeableViews>
+            <TabPanel index={0} tabIndex={tabIndex}>
+                <GenerateForm onClose={onClose} sudokuController={sudokuController} />
+            </TabPanel>
+            <TabPanel index={1} tabIndex={tabIndex}>
+                <ImportForm onClose={onClose} sudokuController={sudokuController} />
+            </TabPanel>
         </div>
     );
 };
