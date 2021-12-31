@@ -30,7 +30,7 @@ async function init() {
     module.run();
 
     console.debug("Exposing typed WASM sudoku");
-    workerApi.typedWasmSudoku = new TypedWasmSudoku(module.get_wasm_sudoku());
+    workerApi.typedWasmSudoku = new TypedWasmSudoku(new module.WasmSudoku());
 
     console.debug("Worker init done");
 }

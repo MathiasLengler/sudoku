@@ -28,21 +28,6 @@ pub fn run() -> Result<(), JsValue> {
     Ok(())
 }
 
-// Intellij-rust false positive
-#[allow(unused_variables)]
-#[wasm_bindgen]
-pub fn get_wasm_sudoku() -> WasmSudoku {
-    #[cfg(debug_assertions)]
-    let grid: Grid<U2> = sudoku::samples::minimal();
-
-    #[cfg(not(debug_assertions))]
-    let grid: Grid<U3> = sudoku::samples::minimal();
-
-    WasmSudoku {
-        sudoku: RefCell::new(DynamicSudoku::with_sudoku(Sudoku::with_grid(grid)).unwrap()),
-    }
-}
-
 #[wasm_bindgen]
 pub struct WasmSudoku {
     sudoku: RefCell<DynamicSudoku>,
@@ -50,6 +35,21 @@ pub struct WasmSudoku {
 
 #[wasm_bindgen]
 impl WasmSudoku {
+    #[wasm_bindgen(constructor)]
+    pub fn new() -> Self {
+        // Intellij-rust false positive
+        #[allow(unused_variables)]
+        #[cfg(debug_assertions)]
+        let grid: Grid<U2> = sudoku::samples::minimal();
+
+        #[cfg(not(debug_assertions))]
+        let grid: Grid<U3> = sudoku::samples::minimal();
+
+        WasmSudoku {
+            sudoku: RefCell::new(DynamicSudoku::with_sudoku(Sudoku::with_grid(grid)).unwrap()),
+        }
+    }
+
     pub fn get_sudoku(&self) -> JsValue {
         let transport_sudoku = TransportSudoku::from(&*self.sudoku.borrow());
 
