@@ -324,7 +324,7 @@ impl<Base: SudokuBase, CView: Into<CellView>> TryFrom<Vec<CView>> for Grid<Base>
     fn try_from(views: Vec<CView>) -> Result<Self> {
         let cells = views
             .into_iter()
-            .map(|view| view.into().try_into_cell())
+            .map(|view| view.into().try_into())
             .collect::<Result<_>>()?;
 
         Ok(Self::with_cells(cells))
