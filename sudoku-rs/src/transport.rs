@@ -28,17 +28,17 @@ impl<Base: SudokuBase> From<&Sudoku<Base>> for TransportSudoku {
                 .map(|block| {
                     block
                         .map(|pos| {
-                            let cell_view = grid.get(pos).view();
-                            let incorrect_value = if cell_view.is_value() {
+                            let cell = grid.get(pos);
+                            let incorrect_value = if cell.has_value() {
                                 solved_grid
                                     .as_ref()
-                                    .map(|solved_grid| solved_grid.get(pos).view() != cell_view)
+                                    .map(|solved_grid| solved_grid.get(pos) != cell)
                                     .unwrap_or(false)
                             } else {
                                 false
                             };
                             TransportCell {
-                                cell_view,
+                                cell_view: cell.view(),
                                 position: pos,
                                 incorrect_value,
                             }
