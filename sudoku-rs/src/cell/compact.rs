@@ -1,11 +1,14 @@
 use std::fmt::{self, Debug, Display, Formatter};
 
+use anyhow::bail;
+
 use cell_state::CellState;
 
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
 use crate::cell::compact::value::Value;
 use crate::cell::view::CellView;
+use crate::error::Error;
 
 pub mod candidates;
 mod cell_state;
@@ -143,5 +146,24 @@ impl<Base: SudokuBase> Cell<Base> {
 impl<Base: SudokuBase> Display for Cell<Base> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
+    }
+}
+
+impl<Base: SudokuBase> TryFrom<CellView> for Cell<Base> {
+    type Error = Error;
+
+    fn try_from(cell_view: CellView) -> Result<Self, Self::Error> {
+        Ok(match cell_view {
+            CellView::Value { value, fixed } => {
+                if let Some(value) = Value::new(value)? {
+                    Cell::with_value(value, fixed)
+                } else if !fixed {
+                    Cell::new()
+                } else {
+                    bail!("An empty cell can't be fixed")
+                }
+            }
+            CellView::Candidates { candidates } => Cell::with_candidates(candidates.try_into()?),
+        })
     }
 }

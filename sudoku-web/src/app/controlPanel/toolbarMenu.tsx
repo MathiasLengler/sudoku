@@ -43,6 +43,10 @@ export const ToolbarMenu: React.FunctionComponent<ToolbarMenuProps> = props => {
                 </MenuItem>
                 <MenuItem
                     onClick={makeHandleMenuClose(async () => {
+                        // TODO: switch to candidates format:
+                        //  Givens format: https://www.sudokuwiki.org/sudoku.htm?bd=002105090140000670080002451063070010900000043010090520007200080026000035000409060
+                        //  Candidates format: https://www.sudokuwiki.org/sudoku.htm?bd=,102,68,2,1,172,16,134,256,130,1,8,274,388,132,132,32,64,130,116,128,272,356,36,2,8,16,1,154,32,4,144,64,136,384,1,392,256,80,154,176,187,169,192,8,4,200,1,136,164,256,172,16,2,232,28,276,64,2,53,37,257,128,265,136,2,32,192,129,193,321,4,16,148,20,145,8,149,256,67,32,67
+                        //   Candidates encoded in base 2, serialized in base 10.
                         const givensLine = await sudokuController.export("givensLine");
                         const url = new URL("https://www.sudokuwiki.org/sudoku.htm");
                         url.searchParams.set("bd", givensLine);

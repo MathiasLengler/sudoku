@@ -2,10 +2,11 @@
 
 use std::cell::RefCell;
 
-use log::trace;
+use log::{debug, trace};
 use wasm_bindgen::prelude::*;
 
 use sudoku::base::consts::*;
+use sudoku::cell::view::CellView;
 use sudoku::cell::Cell;
 use sudoku::error::Error as SudokuError;
 use sudoku::generator::backtracking::RuntimeSettings;
@@ -14,6 +15,9 @@ use sudoku::grid::Grid;
 use sudoku::position::Position;
 use sudoku::transport::TransportSudoku;
 use sudoku::{DynamicSudoku, Game, Sudoku};
+
+// TODO: use wasm-bindgen "typescript_type" and replace typedWasmSudoku.tsx
+//  https://rustwasm.github.io/wasm-bindgen/reference/attributes/on-rust-exports/typescript_type.html
 
 #[cfg(feature = "wee_alloc")]
 #[global_allocator]
@@ -29,31 +33,45 @@ pub fn run() -> Result<(), JsValue> {
 }
 
 #[wasm_bindgen]
-pub fn get_wasm_sudoku() -> WasmSudoku {
-    #[cfg(debug_assertions)]
-    let grid: Grid<U2> = sudoku::samples::minimal();
-
-    #[cfg(not(debug_assertions))]
-    let grid: Grid<U3> = sudoku::samples::minimal();
-
-    WasmSudoku {
-        sudoku: RefCell::new(DynamicSudoku::with_sudoku(Sudoku::with_grid(grid)).unwrap()),
-    }
-}
-
-#[wasm_bindgen]
 pub struct WasmSudoku {
     sudoku: RefCell<DynamicSudoku>,
 }
 
+impl From<DynamicSudoku> for WasmSudoku {
+    fn from(sudoku: DynamicSudoku) -> Self {
+        WasmSudoku {
+            sudoku: RefCell::new(sudoku),
+        }
+    }
+}
+
 #[wasm_bindgen]
 impl WasmSudoku {
-    pub fn get_sudoku(&self) -> JsValue {
-        let transport_sudoku = {
-            let sudoku = self.sudoku.borrow();
+    #[wasm_bindgen(constructor)]
+    pub fn new() -> Self {
+        // Intellij-rust false positive
+        #[allow(unused_variables)]
+        #[cfg(debug_assertions)]
+        let grid: Grid<U2> = sudoku::samples::minimal();
 
-            TransportSudoku::from(&*sudoku)
-        };
+        #[cfg(not(debug_assertions))]
+        let grid: Grid<U3> = sudoku::samples::minimal();
+
+        DynamicSudoku::with_sudoku(Sudoku::with_grid(grid))
+            .unwrap()
+            .into()
+    }
+
+    pub fn restore(cells: JsValue) -> Result<WasmSudoku, JsValue> {
+        let cells = Self::import_cells(cells);
+
+        Ok(DynamicSudoku::try_from(cells)
+            .map_err(Self::export_error)?
+            .into())
+    }
+
+    pub fn get_sudoku(&self) -> JsValue {
+        let transport_sudoku = TransportSudoku::from(&*self.sudoku.borrow());
 
         JsValue::from_serde(&transport_sudoku).unwrap()
     }
@@ -154,6 +172,10 @@ impl WasmSudoku {
 
     fn export_error(error: SudokuError) -> js_sys::Error {
         js_sys::Error::new(&error.to_string())
+    }
+
+    fn import_cells(cells: JsValue) -> Vec<CellView> {
+        cells.into_serde().unwrap()
     }
 }
 

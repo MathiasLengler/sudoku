@@ -1,4 +1,4 @@
-import { TypedWasmSudoku } from "../typedWasmSudoku";
+import type { TypedWasmSudoku } from "../typedWasmSudoku";
 import * as React from "react";
 import { blocksToCell } from "./utils";
 import isEqual from "lodash/isEqual";
@@ -39,8 +39,9 @@ export class WasmSudokuController {
     }
 
     private checkFixed(): boolean {
-        if (this.input.selectedCell.fixed) {
-            console.warn("WasmSudokuController", "cannot modify a fixed cell", this.input.selectedCell);
+        const selectedCell = this.input.selectedCell;
+        if (selectedCell.kind === "value" && selectedCell.fixed) {
+            console.warn("WasmSudokuController", "cannot modify a fixed cell", selectedCell);
 
             return true;
         } else {
@@ -48,7 +49,7 @@ export class WasmSudokuController {
         }
     }
 
-    public handlePosition(newSelectedPosition: CellPosition, move = false): void {
+    public async handlePosition(newSelectedPosition: CellPosition, move = false): Promise<void> {
         const { stickyMode, selectedPos, selectedValue } = this.input;
 
         if (move && isEqual(selectedPos, newSelectedPosition)) {
@@ -58,7 +59,7 @@ export class WasmSudokuController {
         this.setSelectedPosition(newSelectedPosition);
 
         if (stickyMode) {
-            this.setSelectedCell(selectedValue);
+            await this.setSelectedCell(selectedValue);
         }
     }
 
@@ -73,7 +74,7 @@ export class WasmSudokuController {
         this.input.selectedCell = selectedCell;
     }
 
-    public handleValue(value: number): void {
+    public async handleValue(value: number): Promise<void> {
         const { stickyMode } = this.input;
 
         if (value > this.sideLength) {
@@ -85,18 +86,18 @@ export class WasmSudokuController {
         if (stickyMode) {
             this.setInput(prevInput => ({ ...prevInput, selectedValue: value }));
         } else {
-            this.setSelectedCell(value);
+            await this.setSelectedCell(value);
         }
     }
 
-    private setSelectedCell(value: number) {
+    private async setSelectedCell(value: number): Promise<void> {
         const { candidateMode, selectedPos } = this.input;
 
         if (this.checkFixed()) {
             return;
         }
 
-        this.withSudokuUpdate(async () => {
+        await this.withSudokuUpdate(async () => {
             if (value === 0) {
                 await this.wasmSudokuProxy.delete(selectedPos);
             } else {
@@ -109,24 +110,24 @@ export class WasmSudokuController {
         });
     }
 
-    public delete(): void {
+    public async delete(): Promise<void> {
         if (this.checkFixed()) {
             return;
         }
 
-        this.withSudokuUpdate(async () => {
+        await this.withSudokuUpdate(async () => {
             await this.wasmSudokuProxy.delete(this.input.selectedPos);
         });
     }
 
-    public setAllDirectCandidates(): void {
-        this.withSudokuUpdate(async () => {
+    public async setAllDirectCandidates(): Promise<void> {
+        await this.withSudokuUpdate(async () => {
             await this.wasmSudokuProxy.setAllDirectCandidates();
         });
     }
 
-    public undo(): void {
-        this.withSudokuUpdate(async () => {
+    public async undo(): Promise<void> {
+        await this.withSudokuUpdate(async () => {
             await this.wasmSudokuProxy.undo();
         });
     }
@@ -143,18 +144,18 @@ export class WasmSudokuController {
         });
     }
 
-    public export(format: GridFormat): Promise<string> {
-        return this.wasmSudokuProxy.export(format);
+    public async export(format: GridFormat): Promise<string> {
+        return await this.wasmSudokuProxy.export(format);
     }
 
-    public solveSingleCandidates(): void {
-        this.withSudokuUpdate(async () => {
+    public async solveSingleCandidates(): Promise<void> {
+        await this.withSudokuUpdate(async () => {
             await this.wasmSudokuProxy.solveSingleCandidates();
         });
     }
 
-    public groupReduction(): void {
-        this.withSudokuUpdate(async () => {
+    public async groupReduction(): Promise<void> {
+        await this.withSudokuUpdate(async () => {
             await this.wasmSudokuProxy.groupReduction();
         });
     }

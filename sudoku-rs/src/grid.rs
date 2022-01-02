@@ -132,6 +132,12 @@ impl<Base: SudokuBase> Grid<Base> {
         }
     }
 
+    pub fn unfix_all_values(&mut self) {
+        for pos in self.all_value_positions() {
+            self.get_mut(pos).unfix();
+        }
+    }
+
     pub fn base() -> u8 {
         Base::to_u8()
     }
@@ -324,7 +330,7 @@ impl<Base: SudokuBase, CView: Into<CellView>> TryFrom<Vec<CView>> for Grid<Base>
     fn try_from(views: Vec<CView>) -> Result<Self> {
         let cells = views
             .into_iter()
-            .map(|view| view.into().try_into_cell())
+            .map(|view| view.into().try_into())
             .collect::<Result<_>>()?;
 
         Ok(Self::with_cells(cells))

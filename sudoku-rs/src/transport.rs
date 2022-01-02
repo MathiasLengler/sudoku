@@ -7,8 +7,6 @@ use crate::position::Position;
 use crate::sudoku::DynamicSudoku;
 use crate::sudoku::Sudoku;
 
-// TODO:
-//  conflicting cells (groups?)
 // TODO: can_undo
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -30,17 +28,17 @@ impl<Base: SudokuBase> From<&Sudoku<Base>> for TransportSudoku {
                 .map(|block| {
                     block
                         .map(|pos| {
-                            let cell_view = grid.get(pos).view();
-                            let incorrect_value = if cell_view.is_value() {
+                            let cell = grid.get(pos);
+                            let incorrect_value = if cell.has_value() {
                                 solved_grid
                                     .as_ref()
-                                    .map(|solved_grid| solved_grid.get(pos).view() != cell_view)
+                                    .map(|solved_grid| solved_grid.get(pos) != cell)
                                     .unwrap_or(false)
                             } else {
                                 false
                             };
                             TransportCell {
-                                cell_view,
+                                cell_view: cell.view(),
                                 position: pos,
                                 incorrect_value,
                             }
@@ -66,8 +64,6 @@ impl From<&DynamicSudoku> for TransportSudoku {
     }
 }
 
-// TODO:
-//  conflicts_with (via all_conflict_pairs)
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransportCell {

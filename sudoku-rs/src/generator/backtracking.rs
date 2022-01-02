@@ -46,14 +46,18 @@ impl Generator {
 
         let filled_sudoku = self.filled_grid();
 
-        match self.target {
+        let mut grid = match self.target {
             Filled => filled_sudoku,
             FromFilled {
                 distance: _distance,
             } => unimplemented!(),
             Minimal => Self::minimal(filled_sudoku, 0),
             FromMinimal { distance } => Self::minimal(filled_sudoku, distance),
-        }
+        };
+
+        grid.fix_all_values();
+
+        grid
     }
 
     fn filled_grid<Base: SudokuBase>(&self) -> Grid<Base> {
@@ -121,6 +125,8 @@ mod tests {
 
     fn is_minimal<Base: SudokuBase>(grid: &Grid<Base>) -> bool {
         let mut grid = grid.clone();
+
+        grid.unfix_all_values();
 
         backtracking::Solver::has_unique_solution(&grid)
             && grid.all_value_positions().into_iter().all(|pos| {

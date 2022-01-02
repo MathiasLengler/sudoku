@@ -77,7 +77,8 @@ export function makeKeyDownListener(
         const value = keyToValue(key);
         if (value !== undefined) {
             ev.preventDefault();
-            return sudokuController.handleValue(value);
+            sudokuController.handleValue(value);
+            return;
         }
 
         const { selectedPos } = inputState;
@@ -85,7 +86,8 @@ export function makeKeyDownListener(
         const newPos = keyToNewPos(key, selectedPos, sideLength);
         if (newPos !== undefined) {
             ev.preventDefault();
-            return sudokuController.handlePosition(newPos);
+            sudokuController.handlePosition(newPos);
+            return;
         }
 
         const toolbarAction = keyToToolbarAction(key);

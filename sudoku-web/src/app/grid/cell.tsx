@@ -102,7 +102,7 @@ const Cell: React.FunctionComponent<CellProps> = props => {
     const cellClassNames = classnames(
         "cell",
         cellBackgroundClass(isSelected, isGuide),
-        cellColorClass(cell.fixed, cell.incorrectValue)
+        cellColorClass(cell.kind === "value" && cell.fixed, cell.incorrectValue)
     );
 
     const onPointerMove: PointerEventHandler = e => {

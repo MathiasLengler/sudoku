@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Input, WasmSudokuController } from "./wasmSudokuController";
 import { blocksToCell } from "./utils";
 import { useClientHeight, useResponsiveGridSize } from "./useResponsiveGridSize";
@@ -7,7 +7,9 @@ import { makeKeyDownListener } from "./useKeyboardInput";
 import { Grid } from "./grid/grid";
 import { ControlPanel } from "./controlPanel/controlPanel";
 import * as Comlink from "comlink";
-import { TypedWasmSudoku } from "../typedWasmSudoku";
+import type { TypedWasmSudoku } from "../typedWasmSudoku";
+import { saveCells } from "./persistence";
+import debounce from "lodash/debounce";
 
 interface SudokuProps {
     sudoku: TransportSudoku;
@@ -17,6 +19,20 @@ interface SudokuProps {
 
 export const Sudoku: React.FunctionComponent<SudokuProps> = ({ sudoku, setSudoku, wasmSudokuProxy }) => {
     const { blocks, base, sideLength } = sudoku;
+
+    const debouncedSaveCells = useMemo(
+        () =>
+            debounce((blocks: TransportSudoku["blocks"]) => {
+                console.debug("Saving cells to localStorage");
+                const cells = blocks.flatMap(block => block.map(({ position, incorrectValue, ...cell }) => cell));
+                saveCells(cells);
+            }, 1000),
+        []
+    );
+
+    useEffect(() => {
+        debouncedSaveCells(blocks);
+    }, [debouncedSaveCells, blocks]);
 
     const [inputWithoutSelectedCell, setInput] = useState<Omit<Input, "selectedCell">>(() => {
         const selectedPos = { column: 0, row: 0 };

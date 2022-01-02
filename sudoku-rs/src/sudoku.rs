@@ -7,6 +7,7 @@ use crate::base::SudokuBase;
 use crate::cell::compact::value::Value;
 use crate::error::Result;
 use crate::generator::backtracking::{Generator, Target};
+use crate::grid::serialization::GridFormat;
 use crate::grid::Grid;
 use crate::history::History;
 use crate::position::Position;
@@ -17,7 +18,6 @@ use crate::solver::strategic::{
 };
 
 use self::settings::Settings;
-use crate::grid::serialization::GridFormat;
 
 mod dynamic;
 pub mod settings;
@@ -38,7 +38,6 @@ impl<Base: SudokuBase> Default for Sudoku<Base> {
 
 // TODO: provide redo API
 // TODO: return result in all asserts
-//  sudoku::Error as JSValue (JS Exception)?
 impl<Base: SudokuBase> Sudoku<Base> {
     pub fn new() -> Self {
         Default::default()
@@ -48,9 +47,7 @@ impl<Base: SudokuBase> Sudoku<Base> {
         Self::with_grid_and_settings(grid, Default::default())
     }
 
-    pub fn with_grid_and_settings(mut grid: Grid<Base>, settings: Settings) -> Self {
-        grid.fix_all_values();
-
+    pub fn with_grid_and_settings(grid: Grid<Base>, settings: Settings) -> Self {
         Sudoku {
             solved_grid: if settings.solve_grid {
                 BacktrackingSolver::unique_solution(&grid)
