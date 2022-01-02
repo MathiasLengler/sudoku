@@ -7,6 +7,8 @@ import { Sudoku } from "./sudoku";
 import { WorkerApi } from "../worker";
 import { MyTheme } from "./myTheme";
 import { Stack, Typography } from "@mui/material";
+import { WORKER_BOOT_UP_MESSAGE } from "../constants";
+import { loadCells } from "./persistence";
 
 export const App: React.FunctionComponent = () => {
     const [loadingStatus, setLoadingStatus] = useState<string>("Startup");
@@ -17,15 +19,47 @@ export const App: React.FunctionComponent = () => {
         async function loadSudoku() {
             setLoadingStatus("Creating worker");
             const worker = new Worker(new URL("../worker.tsx", import.meta.url));
+
             if (process.env.NODE_ENV !== "production") {
                 worker.addEventListener("message", ev => {
-                    console.debug("Worker TX", ev.data);
+                    console.debug("Worker message TX", ev.data);
+                });
+                worker.addEventListener("error", ev => {
+                    console.error("Worker error", ev);
+                });
+                worker.addEventListener("messageerror", ev => {
+                    console.error("Worker messageerror", ev);
                 });
             }
+
+            setLoadingStatus("Waiting for worker to load");
+            const bootUpMessage = await new Promise<string>((resolve, reject) => {
+                const controller = new AbortController();
+
+                worker.addEventListener(
+                    "message",
+                    (ev: MessageEvent) => {
+                        console.debug("workerBootUpListener", ev);
+
+                        // Only capture the first event/message.
+                        controller.abort();
+
+                        if (ev.data === WORKER_BOOT_UP_MESSAGE) {
+                            resolve(ev.data);
+                        } else {
+                            reject(new Error(`Unexpected message: ${ev.data}`));
+                        }
+                    },
+                    { signal: controller.signal }
+                );
+            });
+
+            setLoadingStatus(bootUpMessage);
+
             const workerApi = Comlink.wrap<WorkerApi>(worker);
 
             setLoadingStatus("Initializing worker");
-            await workerApi.init();
+            await workerApi.init(loadCells());
 
             setLoadingStatus("Connecting to worker");
             const wasmSudokuProxy = workerApi.typedWasmSudoku as unknown as Comlink.Remote<TypedWasmSudoku>;

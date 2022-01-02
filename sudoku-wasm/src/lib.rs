@@ -2,10 +2,11 @@
 
 use std::cell::RefCell;
 
-use log::trace;
+use log::{debug, trace};
 use wasm_bindgen::prelude::*;
 
 use sudoku::base::consts::*;
+use sudoku::cell::view::CellView;
 use sudoku::cell::Cell;
 use sudoku::error::Error as SudokuError;
 use sudoku::generator::backtracking::RuntimeSettings;
@@ -36,6 +37,14 @@ pub struct WasmSudoku {
     sudoku: RefCell<DynamicSudoku>,
 }
 
+impl From<DynamicSudoku> for WasmSudoku {
+    fn from(sudoku: DynamicSudoku) -> Self {
+        WasmSudoku {
+            sudoku: RefCell::new(sudoku),
+        }
+    }
+}
+
 #[wasm_bindgen]
 impl WasmSudoku {
     #[wasm_bindgen(constructor)]
@@ -48,9 +57,17 @@ impl WasmSudoku {
         #[cfg(not(debug_assertions))]
         let grid: Grid<U3> = sudoku::samples::minimal();
 
-        WasmSudoku {
-            sudoku: RefCell::new(DynamicSudoku::with_sudoku(Sudoku::with_grid(grid)).unwrap()),
-        }
+        DynamicSudoku::with_sudoku(Sudoku::with_grid(grid))
+            .unwrap()
+            .into()
+    }
+
+    pub fn restore(cells: JsValue) -> Result<WasmSudoku, JsValue> {
+        let cells = Self::import_cells(cells);
+
+        Ok(DynamicSudoku::try_from(cells)
+            .map_err(Self::export_error)?
+            .into())
     }
 
     pub fn get_sudoku(&self) -> JsValue {
@@ -155,6 +172,10 @@ impl WasmSudoku {
 
     fn export_error(error: SudokuError) -> js_sys::Error {
         js_sys::Error::new(&error.to_string())
+    }
+
+    fn import_cells(cells: JsValue) -> Vec<CellView> {
+        cells.into_serde().unwrap()
     }
 }
 
