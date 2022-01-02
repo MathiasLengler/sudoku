@@ -15,9 +15,21 @@ impl<Base: SudokuBase> Strategy<Base> for GroupReduction {
     fn execute(&self, grid: &mut Grid<Base>) -> Vec<Position> {
         let mut modified_positions = vec![];
 
-        Self::reduce_groups(grid.all_row_positions(), grid, &mut modified_positions);
-        Self::reduce_groups(grid.all_column_positions(), grid, &mut modified_positions);
-        Self::reduce_groups(grid.all_block_positions(), grid, &mut modified_positions);
+        Self::reduce_groups(
+            Grid::<Base>::all_row_positions(),
+            grid,
+            &mut modified_positions,
+        );
+        Self::reduce_groups(
+            Grid::<Base>::all_column_positions(),
+            grid,
+            &mut modified_positions,
+        );
+        Self::reduce_groups(
+            Grid::<Base>::all_block_positions(),
+            grid,
+            &mut modified_positions,
+        );
 
         modified_positions.sort();
         modified_positions.dedup();

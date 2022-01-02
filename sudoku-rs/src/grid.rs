@@ -33,13 +33,12 @@ impl<Base: SudokuBase> Grid<Base> {
         });
     }
     pub fn update_candidates(&mut self, pos: Position, value: Value<Base>) {
-        self.neighbor_positions_with_duplicates(pos)
-            .for_each(|pos| {
-                let cell = self.get_mut(pos);
-                if cell.has_candidates() {
-                    cell.delete_candidate(value);
-                }
-            });
+        Self::neighbor_positions_with_duplicates(pos).for_each(|pos| {
+            let cell = self.get_mut(pos);
+            if cell.has_candidates() {
+                cell.delete_candidate(value);
+            }
+        });
     }
 
     pub fn direct_candidates(&self, pos: Position) -> Candidates<Base> {
@@ -48,7 +47,7 @@ impl<Base: SudokuBase> Grid<Base> {
         {
             let mut candidates_mut = candidates.as_mut();
 
-            for pos in self.neighbor_positions_with_duplicates(pos) {
+            for pos in Self::neighbor_positions_with_duplicates(pos) {
                 if let Some(value) = self.get(pos).value() {
                     candidates_mut.delete(value);
                 }
@@ -76,7 +75,6 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 
     // TODO: bit_slice set optimization
-    // TODO: conflict location pairs
     pub fn has_duplicate<'a>(&'a self, cells: impl Iterator<Item = &'a Cell<Base>>) -> bool {
         let mut unique = HashSet::with_capacity(Self::side_length() as usize);
 
@@ -112,6 +110,28 @@ impl<Base: SudokuBase> Grid<Base> {
         Grid {
             cells: Array2::from_shape_vec((side_length, side_length), cells).unwrap(),
         }
+    }
+
+    pub fn try_from_blocks(blocks: Vec<Vec<CellView>>) -> Result<Self> {
+        assert_eq!(blocks.len(), Self::side_length() as usize);
+        assert!(blocks
+            .iter()
+            .all(|block| block.len() == Self::side_length() as usize));
+
+        let mut grid = Self::new();
+
+        Self::all_block_positions()
+            .zip(blocks)
+            .try_for_each(|(block_positions, block)| {
+                block_positions
+                    .zip(block)
+                    .try_for_each::<_, Result<()>>(|(pos, cell_view)| {
+                        *grid.get_mut(pos) = cell_view.try_into()?;
+                        Ok(())
+                    })
+            })?;
+
+        Ok(grid)
     }
 
     pub fn get(&self, pos: Position) -> &Cell<Base> {
@@ -182,64 +202,64 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 
     pub fn row_cells(&self, row: u8) -> impl Iterator<Item = &Cell<Base>> {
-        self.positions_to_cells(self.row_positions(row))
+        self.positions_to_cells(Self::row_positions(row))
     }
 
     pub fn all_row_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell<Base>>> {
-        self.nested_positions_to_nested_cells(self.all_row_positions())
+        self.nested_positions_to_nested_cells(Self::all_row_positions())
     }
 
     pub fn column_cells(&self, column: u8) -> impl Iterator<Item = &Cell<Base>> {
-        self.positions_to_cells(self.column_positions(column))
+        self.positions_to_cells(Self::column_positions(column))
     }
 
     pub fn all_column_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell<Base>>> {
-        self.nested_positions_to_nested_cells(self.all_column_positions())
+        self.nested_positions_to_nested_cells(Self::all_column_positions())
     }
 
     pub fn block_cells(&self, pos: Position) -> impl Iterator<Item = &Cell<Base>> {
-        self.positions_to_cells(self.block_positions(pos))
+        self.positions_to_cells(Self::block_positions(pos))
     }
 
     // TODO: exact chunks
     pub fn all_block_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell<Base>>> {
-        self.nested_positions_to_nested_cells(self.all_block_positions())
+        self.nested_positions_to_nested_cells(Self::all_block_positions())
     }
 }
 
 /// Position iterators
 impl<Base: SudokuBase> Grid<Base> {
-    pub fn all_positions(&self) -> impl Iterator<Item = Position> {
-        self.all_row_positions().flatten()
+    pub fn all_positions() -> impl Iterator<Item = Position> {
+        Self::all_row_positions().flatten()
     }
 
-    pub fn row_positions(&self, row: u8) -> impl Iterator<Item = Position> {
+    pub fn row_positions(row: u8) -> impl Iterator<Item = Position> {
         Self::assert_coordinate(row);
 
         (0..Self::side_length()).map(move |column| Position { column, row })
     }
 
-    pub fn all_row_positions(&self) -> impl Iterator<Item = impl Iterator<Item = Position>> {
+    pub fn all_row_positions() -> impl Iterator<Item = impl Iterator<Item = Position>> {
         (0..Self::side_length())
-            .map(move |row_index| self.row_positions(row_index))
+            .map(move |row_index| Self::row_positions(row_index))
             .collect::<Vec<_>>()
             .into_iter()
     }
 
-    pub fn column_positions(&self, column: u8) -> impl Iterator<Item = Position> {
+    pub fn column_positions(column: u8) -> impl Iterator<Item = Position> {
         Self::assert_coordinate(column);
 
         (0..Self::side_length()).map(move |row| Position { column, row })
     }
 
-    pub fn all_column_positions(&self) -> impl Iterator<Item = impl Iterator<Item = Position>> {
+    pub fn all_column_positions() -> impl Iterator<Item = impl Iterator<Item = Position>> {
         (0..Self::side_length())
-            .map(move |column| self.column_positions(column))
+            .map(move |column| Self::column_positions(column))
             .collect::<Vec<_>>()
             .into_iter()
     }
 
-    pub fn block_positions(&self, pos: Position) -> impl Iterator<Item = Position> {
+    pub fn block_positions(pos: Position) -> impl Iterator<Item = Position> {
         Self::assert_position(pos);
 
         let base = Self::base();
@@ -254,13 +274,13 @@ impl<Base: SudokuBase> Grid<Base> {
         })
     }
 
-    pub fn all_block_positions(&self) -> impl Iterator<Item = impl Iterator<Item = Position>> {
+    pub fn all_block_positions() -> impl Iterator<Item = impl Iterator<Item = Position>> {
         let all_block_base_pos = (0..Self::base())
             .flat_map(move |row| (0..Self::base()).map(move |column| Position { column, row }))
             .map(move |pos| pos * Self::base());
 
         all_block_base_pos
-            .map(|block_base_pos| self.block_positions(block_base_pos))
+            .map(|block_base_pos| Self::block_positions(block_base_pos))
             .collect::<Vec<_>>()
             .into_iter()
     }
@@ -269,13 +289,13 @@ impl<Base: SudokuBase> Grid<Base> {
 /// Filtered position vec
 impl<Base: SudokuBase> Grid<Base> {
     pub fn all_value_positions(&self) -> Vec<Position> {
-        self.all_positions()
+        Self::all_positions()
             .filter(|pos| self.get(*pos).has_value())
             .collect()
     }
 
     pub fn all_candidates_positions(&self) -> Vec<Position> {
-        self.all_positions()
+        Self::all_positions()
             .filter(|pos| self.get(*pos).has_candidates())
             .collect()
     }
@@ -283,20 +303,17 @@ impl<Base: SudokuBase> Grid<Base> {
 
 /// Neighbor iterators
 impl<Base: SudokuBase> Grid<Base> {
-    pub fn neighbor_positions_with_duplicates(
-        &self,
-        pos: Position,
-    ) -> impl Iterator<Item = Position> {
+    pub fn neighbor_positions_with_duplicates(pos: Position) -> impl Iterator<Item = Position> {
         // TODO: reimplement without chain (VTune: bad speculation + unique version)
-        self.row_positions(pos.row)
-            .chain(self.column_positions(pos.column))
-            .chain(self.block_positions(pos))
+        Self::row_positions(pos.row)
+            .chain(Self::column_positions(pos.column))
+            .chain(Self::block_positions(pos))
     }
 
-    pub fn neighbor_positions(&self, pos: Position) -> impl Iterator<Item = Position> {
+    pub fn neighbor_positions(pos: Position) -> impl Iterator<Item = Position> {
         use itertools::Itertools;
 
-        self.neighbor_positions_with_duplicates(pos).unique()
+        Self::neighbor_positions_with_duplicates(pos).unique()
     }
 }
 

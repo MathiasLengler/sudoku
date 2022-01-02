@@ -8,7 +8,7 @@ import { Grid } from "./grid/grid";
 import { ControlPanel } from "./controlPanel/controlPanel";
 import * as Comlink from "comlink";
 import type { TypedWasmSudoku } from "../typedWasmSudoku";
-import { saveCells } from "./persistence";
+import { saveCellBlocks } from "./persistence";
 import debounce from "lodash/debounce";
 
 interface SudokuProps {
@@ -23,10 +23,10 @@ export const Sudoku: React.FunctionComponent<SudokuProps> = ({ sudoku, setSudoku
     const debouncedSaveCells = useMemo(
         () =>
             debounce((blocks: TransportSudoku["blocks"]) => {
-                console.debug("Saving cells to localStorage");
-                const cells = blocks.flatMap(block => block.map(({ position, incorrectValue, ...cell }) => cell));
-                saveCells(cells);
-            }, 1000),
+                console.debug("Saving cell blocks to localStorage");
+                const cellBlocks = blocks.map(block => block.map(({ position, incorrectValue, ...cell }) => cell));
+                saveCellBlocks(cellBlocks);
+            }, 500),
         []
     );
 

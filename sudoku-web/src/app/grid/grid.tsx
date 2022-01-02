@@ -6,7 +6,7 @@ import { cellPositionToBlockPosition, indexToPosition } from "../utils";
 import { Input, WasmSudokuController } from "../wasmSudokuController";
 
 interface BlockProps {
-    block: Block;
+    block: TransportCellBlock;
     blockIndex: number;
     base: TransportSudoku["base"];
     input: Input;

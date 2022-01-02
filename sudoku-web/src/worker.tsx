@@ -29,15 +29,15 @@ postMessage(WORKER_BOOT_UP_MESSAGE);
 
 Comlink.expose(workerApi);
 
-async function init(cells?: Cell[]) {
+async function init(blocks?: Cell[][]) {
     console.debug("Worker init");
 
     console.debug("Initializing WASM module");
     wasmModule.run();
 
-    if (cells) {
+    if (blocks) {
         console.debug("Restoring sudoku from cells");
-        workerApi.typedWasmSudoku = TypedWasmSudoku.restore(cells);
+        workerApi.typedWasmSudoku = TypedWasmSudoku.restore(blocks);
     } else {
         console.debug("Generating initial sudoku");
         workerApi.typedWasmSudoku = new TypedWasmSudoku(new wasmModule.WasmSudoku());

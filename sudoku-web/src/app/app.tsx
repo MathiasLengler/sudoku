@@ -8,7 +8,7 @@ import { WorkerApi } from "../worker";
 import { MyTheme } from "./myTheme";
 import { Stack, Typography } from "@mui/material";
 import { WORKER_BOOT_UP_MESSAGE } from "../constants";
-import { loadCells } from "./persistence";
+import { loadCellBlocks } from "./persistence";
 
 export const App: React.FunctionComponent = () => {
     const [loadingStatus, setLoadingStatus] = useState<string>("Startup");
@@ -59,7 +59,7 @@ export const App: React.FunctionComponent = () => {
             const workerApi = Comlink.wrap<WorkerApi>(worker);
 
             setLoadingStatus("Initializing worker");
-            await workerApi.init(loadCells());
+            await workerApi.init(loadCellBlocks());
 
             setLoadingStatus("Connecting to worker");
             const wasmSudokuProxy = workerApi.typedWasmSudoku as unknown as Comlink.Remote<TypedWasmSudoku>;
