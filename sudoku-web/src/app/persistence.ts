@@ -1,10 +1,10 @@
 const KEY_CELLS = "cells_v1";
 
-export function saveCells(cells: Cell[]) {
-    localStorage.setItem(KEY_CELLS, JSON.stringify(cells));
+export function saveCellBlocks(blocks: Cell[][]) {
+    localStorage.setItem(KEY_CELLS, JSON.stringify(blocks));
 }
 
-export function loadCells(): Cell[] | undefined {
+export function loadCellBlocks(): Cell[][] | undefined {
     const cellsString = localStorage.getItem(KEY_CELLS);
 
     if (!cellsString) return undefined;

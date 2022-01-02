@@ -13,12 +13,12 @@ use crate::cell::view::parser::parse_cells;
 use crate::cell::view::CellView;
 use crate::error::{Error, Result};
 use crate::generator::backtracking::RuntimeSettings as GeneratorSettings;
+use crate::grid::Grid;
 use crate::sudoku::Sudoku;
 
 mod game {
-    use typenum::consts::*;
-
     use enum_dispatch::enum_dispatch;
+    use typenum::consts::*;
 
     use crate::error::Result;
     use crate::grid::serialization::GridFormat;
@@ -118,6 +118,22 @@ impl TryFrom<Vec<CellView>> for DynamicSudoku {
             5 => Base5(Sudoku::<U5>::with_grid(views.try_into()?)),
             unexpected_base => bail!(Self::unexpected_base_err(unexpected_base)),
         })
+    }
+}
+
+impl TryFrom<Vec<Vec<CellView>>> for DynamicSudoku {
+    type Error = Error;
+
+    fn try_from(blocks: Vec<Vec<CellView>>) -> Result<Self> {
+        let sudoku = match Self::cell_count_to_base(blocks.iter().map(|block| block.len()).sum())? {
+            2 => Base2(Sudoku::with_grid(Grid::<U2>::try_from_blocks(blocks)?)),
+            3 => Base3(Sudoku::with_grid(Grid::<U3>::try_from_blocks(blocks)?)),
+            4 => Base4(Sudoku::with_grid(Grid::<U4>::try_from_blocks(blocks)?)),
+            5 => Base5(Sudoku::with_grid(Grid::<U5>::try_from_blocks(blocks)?)),
+            unexpected_base => bail!(Self::unexpected_base_err(unexpected_base)),
+        };
+
+        Ok(sudoku)
     }
 }
 

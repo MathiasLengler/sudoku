@@ -23,8 +23,7 @@ impl<Base: SudokuBase> From<&Sudoku<Base>> for TransportSudoku {
         let solved_grid = sudoku.solved_grid();
 
         Self {
-            blocks: grid
-                .all_block_positions()
+            blocks: Grid::<Base>::all_block_positions()
                 .map(|block| {
                     block
                         .map(|pos| {

@@ -62,8 +62,8 @@ impl WasmSudoku {
             .into()
     }
 
-    pub fn restore(cells: JsValue) -> Result<WasmSudoku, JsValue> {
-        let cells = Self::import_cells(cells);
+    pub fn restore(blocks: JsValue) -> Result<WasmSudoku, JsValue> {
+        let cells = Self::import_blocks(blocks);
 
         Ok(DynamicSudoku::try_from(cells)
             .map_err(Self::export_error)?
@@ -174,7 +174,7 @@ impl WasmSudoku {
         js_sys::Error::new(&error.to_string())
     }
 
-    fn import_cells(cells: JsValue) -> Vec<CellView> {
+    fn import_blocks(cells: JsValue) -> Vec<Vec<CellView>> {
         cells.into_serde().unwrap()
     }
 }

@@ -3,7 +3,7 @@ import { WasmSudoku } from "../../sudoku-wasm/pkg";
 export class TypedWasmSudoku {
     public constructor(private wasmSudoku: WasmSudoku) {}
 
-    public static restore(cells: Cell[]): TypedWasmSudoku {
+    public static restore(cells: Cell[][]): TypedWasmSudoku {
         return new TypedWasmSudoku(WasmSudoku.restore(cells));
     }
 

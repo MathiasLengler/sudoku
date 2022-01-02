@@ -83,7 +83,7 @@ impl Generator {
 
         assert!(grid.all_candidates_positions().is_empty());
 
-        let mut all_positions: Vec<_> = grid.all_positions().collect();
+        let mut all_positions: Vec<_> = Grid::<Base>::all_positions().collect();
 
         all_positions.shuffle(&mut rand::thread_rng());
 
