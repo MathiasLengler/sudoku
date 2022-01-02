@@ -9,7 +9,7 @@ itertools = "0.10.3"
 rand = "0.8.4"
 getrandom = "0.2.3"
 anyhow = "1.0.52"
-serde = { version = "1.0.132", features = ["derive"] }
+serde = { version = "1.0.133", features = ["derive"] }
 bitvec = { version = "0.22.3", default-features = false, features = ["std"] }
 indexmap = "1.7.0"
 ndarray = "0.15.4"
