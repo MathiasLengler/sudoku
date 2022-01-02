@@ -9,7 +9,7 @@ import { ControlPanel } from "./controlPanel/controlPanel";
 import * as Comlink from "comlink";
 import type { TypedWasmSudoku } from "../typedWasmSudoku";
 import { saveCells } from "./persistence";
-import { debounce } from "lodash";
+import debounce from "lodash/debounce";
 
 interface SudokuProps {
     sudoku: TransportSudoku;
