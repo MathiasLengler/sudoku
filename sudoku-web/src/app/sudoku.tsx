@@ -7,7 +7,7 @@ import { makeKeyDownListener } from "./useKeyboardInput";
 import { Grid } from "./grid/grid";
 import { ControlPanel } from "./controlPanel/controlPanel";
 import * as Comlink from "comlink";
-import { TypedWasmSudoku } from "../typedWasmSudoku";
+import type { TypedWasmSudoku } from "../typedWasmSudoku";
 import { saveCells } from "./persistence";
 import { debounce } from "lodash";
 

@@ -1,4 +1,4 @@
-import { TypedWasmSudoku } from "../typedWasmSudoku";
+import type { TypedWasmSudoku } from "../typedWasmSudoku";
 import * as React from "react";
 import { blocksToCell } from "./utils";
 import isEqual from "lodash/isEqual";

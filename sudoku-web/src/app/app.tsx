@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useEffect, useState } from "react";
-import { TypedWasmSudoku } from "../typedWasmSudoku";
+import type { TypedWasmSudoku } from "../typedWasmSudoku";
 import CircularProgress from "@mui/material/CircularProgress";
 import * as Comlink from "comlink";
 import { Sudoku } from "./sudoku";
