@@ -132,6 +132,12 @@ impl<Base: SudokuBase> Grid<Base> {
         }
     }
 
+    pub fn unfix_all_values(&mut self) {
+        for pos in self.all_value_positions() {
+            self.get_mut(pos).unfix();
+        }
+    }
+
     pub fn base() -> u8 {
         Base::to_u8()
     }

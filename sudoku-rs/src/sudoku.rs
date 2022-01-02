@@ -47,9 +47,7 @@ impl<Base: SudokuBase> Sudoku<Base> {
         Self::with_grid_and_settings(grid, Default::default())
     }
 
-    pub fn with_grid_and_settings(mut grid: Grid<Base>, settings: Settings) -> Self {
-        grid.fix_all_values();
-
+    pub fn with_grid_and_settings(grid: Grid<Base>, settings: Settings) -> Self {
         Sudoku {
             solved_grid: if settings.solve_grid {
                 BacktrackingSolver::unique_solution(&grid)
