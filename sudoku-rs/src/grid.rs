@@ -76,7 +76,6 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 
     // TODO: bit_slice set optimization
-    // TODO: conflict location pairs
     pub fn has_duplicate<'a>(&'a self, cells: impl Iterator<Item = &'a Cell<Base>>) -> bool {
         let mut unique = HashSet::with_capacity(Self::side_length() as usize);
 
