@@ -39,8 +39,9 @@ export class WasmSudokuController {
     }
 
     private checkFixed(): boolean {
-        if (this.input.selectedCell.fixed) {
-            console.warn("WasmSudokuController", "cannot modify a fixed cell", this.input.selectedCell);
+        const selectedCell = this.input.selectedCell;
+        if (selectedCell.kind === "value" && selectedCell.fixed) {
+            console.warn("WasmSudokuController", "cannot modify a fixed cell", selectedCell);
 
             return true;
         } else {

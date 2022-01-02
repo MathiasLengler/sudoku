@@ -12,23 +12,25 @@ interface CellPosition {
     row: number;
 }
 
-interface BaseCell {
+interface TransportCellContext {
     position: CellPosition;
-    fixed: boolean;
     incorrectValue: boolean;
 }
 
-interface ValueCell extends BaseCell {
+interface ValueCell {
     kind: "value";
+    fixed: boolean;
     value: number;
 }
 
-interface CandidatesCell extends BaseCell {
+interface CandidatesCell {
     kind: "candidates";
     candidates: number[];
 }
 
-type TransportCell = ValueCell | CandidatesCell;
+type Cell = ValueCell | CandidatesCell;
+
+type TransportCell = TransportCellContext & Cell;
 
 interface GeneratorSettings {
     base: number;
