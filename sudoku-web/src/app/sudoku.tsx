@@ -7,14 +7,14 @@ import { makeKeyDownListener } from "./useKeyboardInput";
 import { Grid } from "./grid/grid";
 import { ControlPanel } from "./controlPanel/controlPanel";
 import * as Comlink from "comlink";
-import type { TypedWasmSudoku } from "../typedWasmSudoku";
+import { TransportSudoku, WasmSudoku } from "../types";
 import { saveCellBlocks } from "./persistence";
 import debounce from "lodash/debounce";
 
 interface SudokuProps {
     sudoku: TransportSudoku;
     setSudoku: React.Dispatch<TransportSudoku>;
-    wasmSudokuProxy: Comlink.Remote<TypedWasmSudoku>;
+    wasmSudokuProxy: Comlink.Remote<WasmSudoku>;
 }
 
 export const Sudoku: React.FunctionComponent<SudokuProps> = ({ sudoku, setSudoku, wasmSudokuProxy }) => {

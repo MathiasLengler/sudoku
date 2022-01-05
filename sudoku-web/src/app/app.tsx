@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useEffect, useState } from "react";
-import type { TypedWasmSudoku } from "../typedWasmSudoku";
+import { TransportSudoku, WasmSudoku } from "../types";
 import CircularProgress from "@mui/material/CircularProgress";
 import * as Comlink from "comlink";
 import { Sudoku } from "./sudoku";
@@ -13,7 +13,7 @@ import { loadCellBlocks } from "./persistence";
 export const App: React.FunctionComponent = () => {
     const [loadingStatus, setLoadingStatus] = useState<string>("Startup");
     const [sudoku, setSudoku] = useState<TransportSudoku | undefined>(undefined);
-    const [wasmSudokuProxy, setWasmSudokuProxy] = useState<Comlink.Remote<TypedWasmSudoku> | undefined>(undefined);
+    const [wasmSudokuProxy, setWasmSudokuProxy] = useState<Comlink.Remote<WasmSudoku> | undefined>(undefined);
 
     useEffect(() => {
         async function loadSudoku() {
@@ -62,7 +62,7 @@ export const App: React.FunctionComponent = () => {
             await workerApi.init(loadCellBlocks());
 
             setLoadingStatus("Connecting to worker");
-            const wasmSudokuProxy = workerApi.typedWasmSudoku as unknown as Comlink.Remote<TypedWasmSudoku>;
+            const wasmSudokuProxy = workerApi.typedWasmSudoku as unknown as Comlink.Remote<WasmSudoku>;
             // Important: setState using setter function.
             //  This ensures that React does not misinterpret the comlink proxy instance as a setter function itself.
             //  Otherwise, a rejected promise of an attempt to call the proxy as a function would get set as the state.

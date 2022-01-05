@@ -1,7 +1,7 @@
 import * as Comlink from "comlink";
-import { TypedWasmSudoku } from "./typedWasmSudoku";
-import * as wasmModule from "../../sudoku-wasm/pkg";
+import { init as wasmInit, WasmSudoku } from "./wasmSudoku";
 import { WORKER_BOOT_UP_MESSAGE } from "./constants";
+import { CellBlocks } from "./types";
 
 if (process.env.NODE_ENV !== "production") {
     self.addEventListener("message", ev => {
@@ -12,13 +12,13 @@ if (process.env.NODE_ENV !== "production") {
 export interface WorkerApi {
     init: typeof init;
     // We need to lie about the nullability of typedWasmSudoku
-    // or else Comlink.Remote<TypedWasmSudoku> doesn't narrow
-    typedWasmSudoku: TypedWasmSudoku;
+    // or else Comlink.Remote<WasmSudoku> doesn't narrow
+    typedWasmSudoku: WasmSudoku;
 }
 
 const workerApi: WorkerApi = {
     init,
-    typedWasmSudoku: undefined as unknown as TypedWasmSudoku,
+    typedWasmSudoku: undefined as unknown as WasmSudoku,
 };
 
 // Send boot up message
@@ -29,18 +29,18 @@ postMessage(WORKER_BOOT_UP_MESSAGE);
 
 Comlink.expose(workerApi);
 
-async function init(blocks?: Cell[][]) {
+async function init(blocks?: CellBlocks) {
     console.debug("Worker init");
 
     console.debug("Initializing WASM module");
-    wasmModule.run();
+    wasmInit();
 
     if (blocks) {
         console.debug("Restoring sudoku from cells");
-        workerApi.typedWasmSudoku = TypedWasmSudoku.restore(blocks);
+        workerApi.typedWasmSudoku = WasmSudoku.restore(blocks);
     } else {
         console.debug("Generating initial sudoku");
-        workerApi.typedWasmSudoku = new TypedWasmSudoku(new wasmModule.WasmSudoku());
+        workerApi.typedWasmSudoku = new WasmSudoku();
     }
 
     console.debug("Worker init done");

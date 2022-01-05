@@ -3,6 +3,7 @@ import { valuesFromSideLength, valueToString } from "../utils";
 import { Input, WasmSudokuController } from "../wasmSudokuController";
 import ButtonBase from "@mui/material/ButtonBase";
 import classnames from "classnames";
+import { TransportSudoku } from "../../types";
 
 interface ValueProps {
     sudokuController: WasmSudokuController;
