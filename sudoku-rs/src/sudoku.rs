@@ -50,6 +50,8 @@ impl<Base: SudokuBase> Sudoku<Base> {
     pub fn with_grid_and_settings(grid: Grid<Base>, settings: Settings) -> Self {
         Sudoku {
             solved_grid: if settings.solve_grid {
+                // TODO: only respect fixed cells for solution
+                //  this breaks restoring of persisted blocks, if an incorrect unfixed cell has been set.
                 BacktrackingSolver::unique_solution(&grid)
             } else {
                 None
