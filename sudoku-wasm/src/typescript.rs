@@ -59,7 +59,7 @@ export type GeneratorTarget =
           };
       };
 
-export type GridFormat = "givensLine" | "givensGrid" | "candidates";
+export type GridFormat = "givensLine" | "givensGrid" | "binaryCandidatesLine";
 "#;
 
 #[wasm_bindgen]
