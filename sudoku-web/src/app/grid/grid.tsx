@@ -4,6 +4,7 @@ import isEqual from "lodash/isEqual";
 import { MemoCell } from "./cell";
 import { cellPositionToBlockPosition, indexToPosition } from "../utils";
 import { Input, WasmSudokuController } from "../wasmSudokuController";
+import { TransportCellBlock, TransportSudoku } from "../../types";
 
 interface BlockProps {
     block: TransportCellBlock;

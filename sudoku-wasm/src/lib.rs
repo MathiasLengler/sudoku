@@ -1,13 +1,16 @@
-#![allow(unused_imports)]
+mod typescript;
+
+use typescript::{
+    ICandidates, ICellBlocks, ICellPosition, IGeneratorSettings, IGridFormat, ITransportSudoku,
+};
 
 use std::cell::RefCell;
 
-use log::{debug, trace};
+use log::trace;
 use wasm_bindgen::prelude::*;
 
 use sudoku::base::consts::*;
 use sudoku::cell::view::CellView;
-use sudoku::cell::Cell;
 use sudoku::error::Error as SudokuError;
 use sudoku::generator::backtracking::RuntimeSettings;
 use sudoku::grid::serialization::GridFormat;
@@ -24,12 +27,21 @@ use sudoku::{DynamicSudoku, Game, Sudoku};
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[wasm_bindgen]
-pub fn run() -> Result<(), JsValue> {
-    init();
+pub fn init() {
+    #[cfg(feature = "console")]
+    {
+        use log::Level;
+        use std::panic;
+        use std::sync::Once;
+
+        static SET_HOOK: Once = Once::new();
+        SET_HOOK.call_once(|| {
+            panic::set_hook(Box::new(console_error_panic_hook::hook));
+            console_log::init_with_level(Level::Trace).unwrap();
+        });
+    }
 
     trace!("WASM initialized");
-
-    Ok(())
 }
 
 #[wasm_bindgen]
@@ -62,7 +74,7 @@ impl WasmSudoku {
             .into()
     }
 
-    pub fn restore(blocks: JsValue) -> Result<WasmSudoku, JsValue> {
+    pub fn restore(blocks: ICellBlocks) -> Result<WasmSudoku, JsValue> {
         let cells = Self::import_blocks(blocks);
 
         Ok(DynamicSudoku::try_from(cells)
@@ -70,13 +82,15 @@ impl WasmSudoku {
             .into())
     }
 
-    pub fn get_sudoku(&self) -> JsValue {
+    #[wasm_bindgen(js_name = getSudoku)]
+    pub fn get_sudoku(&self) -> ITransportSudoku {
         let transport_sudoku = TransportSudoku::from(&*self.sudoku.borrow());
 
-        JsValue::from_serde(&transport_sudoku).unwrap()
+        JsValue::from_serde(&transport_sudoku).unwrap().into()
     }
 
-    pub fn set_value(&self, pos: JsValue, value: u8) -> Result<(), JsValue> {
+    #[wasm_bindgen(js_name = setValue)]
+    pub fn set_value(&self, pos: ICellPosition, value: u8) -> Result<(), JsValue> {
         Ok(self
             .sudoku
             .borrow_mut()
@@ -84,7 +98,8 @@ impl WasmSudoku {
             .map_err(Self::export_error)?)
     }
 
-    pub fn set_or_toggle_value(&self, pos: JsValue, value: u8) -> Result<(), JsValue> {
+    #[wasm_bindgen(js_name = setOrToggleValue)]
+    pub fn set_or_toggle_value(&self, pos: ICellPosition, value: u8) -> Result<(), JsValue> {
         Ok(self
             .sudoku
             .borrow_mut()
@@ -92,7 +107,12 @@ impl WasmSudoku {
             .map_err(Self::export_error)?)
     }
 
-    pub fn set_candidates(&mut self, pos: JsValue, candidates: JsValue) -> Result<(), JsValue> {
+    #[wasm_bindgen(js_name = setCandidates)]
+    pub fn set_candidates(
+        &mut self,
+        pos: ICellPosition,
+        candidates: ICandidates,
+    ) -> Result<(), JsValue> {
         Ok(self
             .sudoku
             .borrow_mut()
@@ -100,7 +120,8 @@ impl WasmSudoku {
             .map_err(Self::export_error)?)
     }
 
-    pub fn toggle_candidate(&mut self, pos: JsValue, candidate: u8) -> Result<(), JsValue> {
+    #[wasm_bindgen(js_name = toggleCandidate)]
+    pub fn toggle_candidate(&mut self, pos: ICellPosition, candidate: u8) -> Result<(), JsValue> {
         Ok(self
             .sudoku
             .borrow_mut()
@@ -108,10 +129,11 @@ impl WasmSudoku {
             .map_err(Self::export_error)?)
     }
 
-    pub fn delete(&mut self, pos: JsValue) {
+    pub fn delete(&mut self, pos: ICellPosition) {
         self.sudoku.borrow_mut().delete(Self::import_pos(pos));
     }
 
+    #[wasm_bindgen(js_name = setAllDirectCandidates)]
     pub fn set_all_direct_candidates(&mut self) {
         self.sudoku.borrow_mut().set_all_direct_candidates();
     }
@@ -120,7 +142,7 @@ impl WasmSudoku {
         self.sudoku.borrow_mut().undo();
     }
 
-    pub fn generate(&mut self, generator_settings: JsValue) -> Result<(), JsValue> {
+    pub fn generate(&mut self, generator_settings: IGeneratorSettings) -> Result<(), JsValue> {
         Ok(self
             .sudoku
             .borrow_mut()
@@ -136,16 +158,18 @@ impl WasmSudoku {
             .map_err(Self::export_error)?)
     }
 
-    pub fn export(&self, format: JsValue) -> String {
+    pub fn export(&self, format: IGridFormat) -> String {
         self.sudoku
             .borrow_mut()
             .export(&Self::import_grid_format(format))
     }
 
+    #[wasm_bindgen(js_name = solveSingleCandidates)]
     pub fn solve_single_candidates(&mut self) {
         self.sudoku.borrow_mut().solve_single_candidates();
     }
 
+    #[wasm_bindgen(js_name = groupReduction)]
     pub fn group_reduction(&mut self) {
         self.sudoku.borrow_mut().group_reduction();
     }
@@ -154,19 +178,19 @@ impl WasmSudoku {
 // TODO: remove unwraps
 /// Conversion Helpers
 impl WasmSudoku {
-    fn import_pos(pos: JsValue) -> Position {
+    fn import_pos(pos: ICellPosition) -> Position {
         pos.into_serde().unwrap()
     }
 
-    fn import_candidates(candidates: JsValue) -> Vec<u8> {
+    fn import_candidates(candidates: ICandidates) -> Vec<u8> {
         candidates.into_serde().unwrap()
     }
 
-    fn import_generator_settings(generator_settings: JsValue) -> RuntimeSettings {
+    fn import_generator_settings(generator_settings: IGeneratorSettings) -> RuntimeSettings {
         generator_settings.into_serde().unwrap()
     }
 
-    fn import_grid_format(format: JsValue) -> GridFormat {
+    fn import_grid_format(format: IGridFormat) -> GridFormat {
         format.into_serde().unwrap()
     }
 
@@ -174,20 +198,7 @@ impl WasmSudoku {
         js_sys::Error::new(&error.to_string())
     }
 
-    fn import_blocks(cells: JsValue) -> Vec<Vec<CellView>> {
+    fn import_blocks(cells: ICellBlocks) -> Vec<Vec<CellView>> {
         cells.into_serde().unwrap()
     }
-}
-
-fn init() {
-    use log::Level;
-    use std::panic;
-    use std::sync::Once;
-    static SET_HOOK: Once = Once::new();
-
-    #[cfg(feature = "console")]
-    SET_HOOK.call_once(|| {
-        panic::set_hook(Box::new(console_error_panic_hook::hook));
-        console_log::init_with_level(Level::Trace).unwrap();
-    });
 }

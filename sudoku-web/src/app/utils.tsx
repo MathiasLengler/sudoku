@@ -1,5 +1,7 @@
 // TODO: expose rust utility functions
 
+import { CellPosition, TransportCell, TransportSudoku, ValueCell } from "../types";
+
 export function valuesFromSideLength(sideLength: TransportSudoku["sideLength"]): number[] {
     return Array.from(Array(sideLength).keys()).map(value => value + 1);
 }

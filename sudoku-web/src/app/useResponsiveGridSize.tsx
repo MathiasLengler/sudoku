@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useCallback, useLayoutEffect, useMemo, useState } from "react";
+import { TransportSudoku } from "../types";
 
 function getSize() {
     return {

@@ -1,13 +1,45 @@
 use crate::base::SudokuBase;
+use crate::cell::view::CellView;
 use crate::grid::Grid;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum GridFormat {
+    /// # Example
+    /// `800000000003600000070090200050007000000045700000100030001000068008500010090000400`
     GivensLine,
+    /// # Example
+    /// ```text
+    ///   8  0  0|  0  0  0|  0  0  0
+    ///   0  0  3|  6  0  0|  0  0  0
+    ///   0  7  0|  0  9  0|  2  0  0
+    /// ------------------------------
+    ///   0  5  0|  0  0  7|  0  0  0
+    ///   0  0  0|  0  4  5|  7  0  0
+    ///   0  0  0|  1  0  0|  0  3  0
+    /// ------------------------------
+    ///   0  0  1|  0  0  0|  0  6  8
+    ///   0  0  8|  5  0  0|  0  1  0
+    ///   0  9  0|  0  0  0|  4  0  0
+    /// ```
     GivensGrid,
-    Candidates,
+    /// Compact candidates grid format used by [sudokuwiki.org](https://www.sudokuwiki.org/sudoku.htm)
+    /// for the search parameter "n".
+    ///
+    /// # Encoding
+    /// - Values are encoded as `2^value`.
+    /// - Candidates are encoded as a bitfield and serialized in base 10.
+    /// - Empty cells are `0`.
+    ///
+    /// Each number is separated by a ",".
+    ///
+    /// # Note
+    /// This format does not differentiate between single candidates and values.
+    ///
+    /// # Example
+    /// `1,2,4,8,16,32,64,128,256,3,5,9,17,33,65,129,257,511,3,7,15,31,63,127,255,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511`
+    BinaryCandidatesLine,
 }
 
 impl GridFormat {
@@ -15,12 +47,35 @@ impl GridFormat {
         match self {
             GridFormat::GivensLine => render_givens_line(grid),
             GridFormat::GivensGrid => render_givens_grid(grid),
-            // TODO: show candidates (compare with exchange formats)
-            GridFormat::Candidates => {
-                unimplemented!()
-            }
+            GridFormat::BinaryCandidatesLine => render_binary_candidates_line(grid),
         }
     }
+}
+
+fn render_binary_candidates_line<Base: SudokuBase>(grid: &Grid<Base>) -> String {
+    use bitvec::prelude::*;
+    use itertools::Itertools;
+
+    grid.cells
+        .iter()
+        .map(|cell| {
+            let cell_view = cell.view();
+
+            match cell_view {
+                CellView::Value { value, .. } => 2usize.pow(u32::from(value) - 1).to_string(),
+                CellView::Candidates { candidates } => {
+                    // TODO: reuse compact candidates implementation
+                    let data = [0usize; 1];
+                    let mut bits: BitArray<Lsb0, _> = BitArray::new(data);
+                    for candidate in candidates {
+                        bits.set(usize::from(candidate) - 1, true);
+                    }
+                    let [encoded_candidates] = bits.into_inner();
+                    encoded_candidates.to_string()
+                }
+            }
+        })
+        .join(",")
 }
 
 fn render_givens_line<Base: SudokuBase>(grid: &Grid<Base>) -> String {

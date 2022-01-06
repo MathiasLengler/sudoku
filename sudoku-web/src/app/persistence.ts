@@ -1,10 +1,12 @@
+import { CellBlocks } from "../types";
+
 const KEY_CELLS = "cells_v1";
 
-export function saveCellBlocks(blocks: Cell[][]) {
+export function saveCellBlocks(blocks: CellBlocks) {
     localStorage.setItem(KEY_CELLS, JSON.stringify(blocks));
 }
 
-export function loadCellBlocks(): Cell[][] | undefined {
+export function loadCellBlocks(): CellBlocks | undefined {
     const cellsString = localStorage.getItem(KEY_CELLS);
 
     if (!cellsString) return undefined;

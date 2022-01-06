@@ -3,6 +3,7 @@ import * as React from "react";
 import { KeyboardEvent } from "react";
 import clamp from "lodash/clamp";
 import { assertNever } from "assert-never";
+import { CellPosition, TransportSudoku } from "../types";
 
 function keyToValue(key: string): number | undefined {
     if (key.length === 1) {

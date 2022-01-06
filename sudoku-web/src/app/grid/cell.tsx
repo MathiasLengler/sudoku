@@ -5,6 +5,7 @@ import isEqual from "lodash/isEqual";
 import classnames from "classnames";
 import { indexToPosition, valueToString } from "../utils";
 import { Input, WasmSudokuController } from "../wasmSudokuController";
+import { CandidatesCell, TransportCell, TransportSudoku, ValueCell } from "../../types";
 
 function cellBackgroundClass(isSelected: boolean, isGuide: boolean) {
     if (isSelected) {

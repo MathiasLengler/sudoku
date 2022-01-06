@@ -1,4 +1,4 @@
-import type { TypedWasmSudoku } from "../typedWasmSudoku";
+import { CellPosition, GeneratorSettings, GridFormat, TransportCell, TransportSudoku, WasmSudoku } from "../types";
 import * as React from "react";
 import { blocksToCell } from "./utils";
 import isEqual from "lodash/isEqual";
@@ -17,7 +17,7 @@ export interface Input {
 
 export class WasmSudokuController {
     public constructor(
-        private readonly wasmSudokuProxy: Comlink.Remote<TypedWasmSudoku>,
+        private readonly wasmSudokuProxy: Comlink.Remote<WasmSudoku>,
         private readonly sudoku: TransportSudoku,
         private readonly onSudokuUpdate: onSudokuUpdate,
         private readonly input: Input,

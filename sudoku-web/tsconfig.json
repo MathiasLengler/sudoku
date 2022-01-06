@@ -10,7 +10,8 @@
         "sourceMap": true,
         "jsx": "react",
         "target": "es2017",
-        "noEmit": true
+        "noEmit": true,
+        "isolatedModules": true
     },
     "include": ["src/**/*"]
 }
