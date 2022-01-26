@@ -8,6 +8,7 @@
         "start": "webpack serve --mode development",
         "start:profiling": "webpack serve --mode production --env reactProfiling=true",
         "build": "webpack --mode production",
+        "build:analyze": "webpack --mode production --env bundleAnalyzer=true",
         "lint": "eslint src/**",
         "serve": "npx serve -l 8080 dist"
     },
