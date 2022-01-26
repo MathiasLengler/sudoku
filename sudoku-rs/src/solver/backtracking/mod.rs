@@ -66,13 +66,16 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
     }
 
     fn init(&mut self) {
-        if let Some(first_pos) = self.empty_positions.first() {
-            self.choices.push(Choice::new(
-                self.grid.direct_candidates(*first_pos).to_vec_value(),
-                *first_pos,
-                self.settings.shuffle_candidates,
-            ))
+        if let Some(first_pos) = self.empty_positions.first().cloned() {
+            self.push_choice(first_pos);
         };
+    }
+
+    fn push_choice(&mut self, pos: Position) {
+        self.choices.push(Choice::new(
+            self.grid.direct_candidates(pos).to_vec_value(),
+            self.settings.shuffle_candidates,
+        ))
     }
 
     fn try_solve(&mut self) -> Option<Grid<Base>> {
@@ -103,7 +106,7 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
 
         match self.choices.last_mut() {
             Some(choice) => {
-                let cell = self.grid.get_mut(choice.position());
+                let cell = self.grid.get_mut(self.empty_positions[choices_len - 1]);
 
                 if let Some(value) = choice.selection() {
                     cell.set_value(value);
@@ -121,13 +124,9 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
 
                     StepResult::Backtrack
                 } else {
-                    match self.empty_positions.get(choices_len) {
+                    match self.empty_positions.get(choices_len).cloned() {
                         Some(next_position) => {
-                            self.choices.push(Choice::new(
-                                self.grid.direct_candidates(*next_position).to_vec_value(),
-                                *next_position,
-                                self.settings.shuffle_candidates,
-                            ));
+                            self.push_choice(next_position);
 
                             StepResult::NextCell
                         }
