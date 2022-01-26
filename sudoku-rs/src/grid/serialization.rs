@@ -66,7 +66,7 @@ fn render_binary_candidates_line<Base: SudokuBase>(grid: &Grid<Base>) -> String 
                 CellView::Candidates { candidates } => {
                     // TODO: reuse compact candidates implementation
                     let data = [0usize; 1];
-                    let mut bits: BitArray<Lsb0, _> = BitArray::new(data);
+                    let mut bits: BitArray<_, Lsb0> = BitArray::new(data);
                     for candidate in candidates {
                         bits.set(usize::from(candidate) - 1, true);
                     }

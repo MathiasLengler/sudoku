@@ -26,7 +26,7 @@ impl<Base: SudokuBase> Candidates<Base> {
 
         let bits = this.as_mut_bits();
 
-        bits[0..Base::MaxValue::to_usize()].set_all(true);
+        bits[0..Base::MaxValue::to_usize()].fill(true);
 
         this.debug_assert();
 
@@ -87,11 +87,11 @@ impl<Base: SudokuBase> Candidates<Base> {
 }
 
 impl<Base: SudokuBase> Candidates<Base> {
-    fn as_bits(&self) -> &BitSlice<Lsb0, ArrayElement> {
+    fn as_bits(&self) -> &BitSlice<ArrayElement> {
         self.arr.view_bits()
     }
 
-    fn as_mut_bits(&mut self) -> &mut BitSlice<Lsb0, ArrayElement> {
+    fn as_mut_bits(&mut self) -> &mut BitSlice<ArrayElement> {
         self.arr.view_bits_mut()
     }
 
@@ -153,7 +153,7 @@ impl<Base: SudokuBase> Display for Candidates<Base> {
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
 pub struct CandidatesMut<'a, Base: SudokuBase> {
-    bits: &'a mut BitSlice<Lsb0, ArrayElement>,
+    bits: &'a mut BitSlice<ArrayElement>,
     base: PhantomData<Base>,
 }
 
