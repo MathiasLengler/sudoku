@@ -103,7 +103,7 @@ fn bench_grid_group<Base: SudokuBase + 'static>(grid_group: &mut BenchmarkGroup<
     grid_group.bench_with_input(
         BenchmarkId::new("all_positions", &parameter_string),
         &grid,
-        |b, grid| b.iter(|| grid.all_positions().for_each(drop)),
+        |b, _grid| b.iter(|| Grid::<Base>::all_positions().for_each(drop)),
     );
     grid_group.bench_with_input(
         BenchmarkId::new("direct_candidates", &parameter_string),
