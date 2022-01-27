@@ -12,11 +12,9 @@ pub mod consts {
 pub type ArrayElement = u8;
 type ArrayElementBitSize = U8;
 
-// TODO: compare with: fixed-bitset
+/// (A + B - 1) / B;
 type DivCeil<A, B> = Quot<Sub1<Sum<A, B>>, B>;
-// (A + B - 1) / B;
 type SideLength<Base> = Prod<Base, Base>;
-// TODO: as well as storage size (U8)
 type CandidatesCapacity<Base> = DivCeil<SideLength<Base>, ArrayElementBitSize>;
 type CellCount<Base> = Prod<SideLength<Base>, SideLength<Base>>;
 

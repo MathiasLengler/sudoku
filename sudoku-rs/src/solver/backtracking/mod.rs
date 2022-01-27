@@ -66,13 +66,16 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
     }
 
     fn init(&mut self) {
-        if let Some(first_pos) = self.empty_positions.first() {
-            self.choices.push(Choice::new(
-                self.grid.direct_candidates(*first_pos).to_vec_value(),
-                *first_pos,
-                self.settings.shuffle_candidates,
-            ))
+        if let Some(first_pos) = self.empty_positions.first().cloned() {
+            self.push_choice(first_pos);
         };
+    }
+
+    fn push_choice(&mut self, pos: Position) {
+        self.choices.push(Choice::new(
+            self.grid.direct_candidates(pos).to_vec_value(),
+            self.settings.shuffle_candidates,
+        ))
     }
 
     fn try_solve(&mut self) -> Option<Grid<Base>> {
@@ -103,7 +106,7 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
 
         match self.choices.last_mut() {
             Some(choice) => {
-                let cell = self.grid.get_mut(choice.position());
+                let cell = self.grid.get_mut(self.empty_positions[choices_len - 1]);
 
                 if let Some(value) = choice.selection() {
                     cell.set_value(value);
@@ -121,13 +124,9 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
 
                     StepResult::Backtrack
                 } else {
-                    match self.empty_positions.get(choices_len) {
+                    match self.empty_positions.get(choices_len).cloned() {
                         Some(next_position) => {
-                            self.choices.push(Choice::new(
-                                self.grid.direct_candidates(*next_position).to_vec_value(),
-                                *next_position,
-                                self.settings.shuffle_candidates,
-                            ));
+                            self.push_choice(next_position);
 
                             StepResult::NextCell
                         }
@@ -193,8 +192,9 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
     }
 
     /// Returns the solution to the grid only if it is the only possible solution
-    pub fn unique_solution(grid: &Grid<Base>) -> Option<Grid<Base>> {
+    pub fn unique_solution_for_fixed_values(grid: &Grid<Base>) -> Option<Grid<Base>> {
         let mut grid = grid.clone();
+        grid.delete_all_unfixed_values();
         let mut solver = Solver::new(&mut grid);
         let first_solution = solver.next();
         let second_solution = solver.next();
@@ -283,10 +283,10 @@ mod tests {
 
     #[test]
     fn test_base_2() {
-        let sudokus = crate::samples::base_2();
+        let grids = crate::samples::base_2();
 
-        for (_sudoku_index, mut sudoku) in sudokus.into_iter().enumerate() {
-            let mut solver = Solver::new(&mut sudoku);
+        for mut grid in grids.into_iter() {
+            let mut solver = Solver::new(&mut grid);
 
             let solve_result = solver.try_solve();
 
@@ -296,14 +296,32 @@ mod tests {
 
     #[test]
     fn test_base_3() {
-        let sudokus = crate::samples::base_3();
+        let grids = crate::samples::base_3();
 
-        for (_sudoku_index, mut sudoku) in sudokus.into_iter().enumerate() {
-            let mut solver = Solver::new(&mut sudoku);
+        for mut grid in grids.into_iter() {
+            let mut solver = Solver::new(&mut grid);
 
             let solve_result = solver.try_solve();
 
             assert_solve_result(solve_result);
         }
+    }
+
+    #[test]
+    fn test_unique_solution_for_fixed_values() {
+        let mut grid = crate::samples::base_2().drain(..).next().unwrap();
+
+        grid.fix_all_values();
+
+        assert!(Solver::unique_solution_for_fixed_values(&grid).is_some());
+
+        // Invalid unfixed value
+        grid.get_mut(Position { row: 0, column: 0 })
+            .set_value(1.try_into().unwrap());
+        assert!(Solver::unique_solution_for_fixed_values(&grid).is_some());
+
+        // Invalid fixed value
+        grid.get_mut(Position { row: 0, column: 0 }).fix();
+        assert!(Solver::unique_solution_for_fixed_values(&grid).is_none());
     }
 }

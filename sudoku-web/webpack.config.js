@@ -7,7 +7,6 @@ const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
 const FaviconsWebpackPlugin = require("favicons-webpack-plugin");
 
 const dist = path.resolve(__dirname, "dist");
-// const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
 module.exports = (env, argv) => {
     const { mode } = argv;
@@ -20,7 +19,7 @@ module.exports = (env, argv) => {
 
     const devtool = isProduction ? "source-map" : "eval-source-map";
 
-    const reactProfiling = !!(env && env.reactProfiling);
+    const reactProfiling = !!env.reactProfiling;
 
     const alias = reactProfiling
         ? {
@@ -115,7 +114,7 @@ module.exports = (env, argv) => {
                     },
                 },
             }),
-            // new BundleAnalyzerPlugin(),
+            ...(env.bundleAnalyzer ? [new (require("webpack-bundle-analyzer").BundleAnalyzerPlugin)()] : []),
         ],
         module: {
             rules: [

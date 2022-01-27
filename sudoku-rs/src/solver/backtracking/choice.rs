@@ -4,20 +4,14 @@ use rand::seq::SliceRandom;
 
 use crate::base::SudokuBase;
 use crate::cell::compact::value::Value;
-use crate::position::Position;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Choice<Base: SudokuBase> {
-    pos: Position,
     candidates: Vec<Value<Base>>,
 }
 
 impl<Base: SudokuBase> Choice<Base> {
-    pub fn new(
-        mut candidates: Vec<Value<Base>>,
-        pos: Position,
-        shuffle_candidates: bool,
-    ) -> Choice<Base> {
+    pub fn new(mut candidates: Vec<Value<Base>>, shuffle_candidates: bool) -> Choice<Base> {
         if shuffle_candidates {
             candidates.shuffle(&mut rand::thread_rng())
         } else {
@@ -25,7 +19,7 @@ impl<Base: SudokuBase> Choice<Base> {
             candidates.reverse();
         }
 
-        Self { pos, candidates }
+        Self { candidates }
     }
 
     pub fn set_next(&mut self) {
@@ -38,10 +32,6 @@ impl<Base: SudokuBase> Choice<Base> {
         self.candidates.is_empty()
     }
 
-    pub fn position(&self) -> Position {
-        self.pos
-    }
-
     pub fn selection(&self) -> Option<Value<Base>> {
         self.candidates.last().copied()
     }
@@ -49,7 +39,7 @@ impl<Base: SudokuBase> Choice<Base> {
 
 impl<Base: SudokuBase> Display for Choice<Base> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}=({:?})", self.pos, self.candidates)
+        write!(f, "({:?})", self.candidates)
     }
 }
 
@@ -68,7 +58,6 @@ mod tests {
                 .into_iter()
                 .map(|v| v.try_into().unwrap())
                 .collect(),
-            Position { row: 0, column: 0 },
             false,
         );
 

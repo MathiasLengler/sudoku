@@ -158,6 +158,12 @@ impl<Base: SudokuBase> Grid<Base> {
         }
     }
 
+    pub fn delete_all_unfixed_values(&mut self) {
+        for pos in self.all_unfixed_value_positions() {
+            self.get_mut(pos).delete();
+        }
+    }
+
     pub fn base() -> u8 {
         Base::to_u8()
     }
@@ -291,6 +297,12 @@ impl<Base: SudokuBase> Grid<Base> {
     pub fn all_value_positions(&self) -> Vec<Position> {
         Self::all_positions()
             .filter(|pos| self.get(*pos).has_value())
+            .collect()
+    }
+
+    pub fn all_unfixed_value_positions(&self) -> Vec<Position> {
+        Self::all_positions()
+            .filter(|pos| self.get(*pos).has_unfixed_value())
             .collect()
     }
 
