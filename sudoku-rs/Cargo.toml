@@ -15,7 +15,7 @@ indexmap = "1.8.0"
 ndarray = "0.15.4"
 generic-array = "0.14.5"
 typenum = "1.15.0"
-enum_dispatch = "0.3.7"
+enum_dispatch = "0.3.8"
 rayon = { version = "1.5.1", optional = true }
 indicatif = { version = "0.16.2", optional = true }
 crossterm = { version = "0.22.1", optional = true }
