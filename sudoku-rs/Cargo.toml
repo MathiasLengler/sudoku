@@ -8,7 +8,7 @@ edition = "2021"
 itertools = "0.10.3"
 rand = "0.8.4"
 getrandom = "0.2.4"
-anyhow = "1.0.53"
+anyhow = "1.0.56"
 serde = { version = "1.0.136", features = ["derive"] }
 bitvec = { version = "1.0.0", default-features = false, features = ["std"] }
 indexmap = "1.8.0"
