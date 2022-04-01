@@ -7,7 +7,7 @@ edition = "2021"
 [dependencies]
 itertools = "0.10.3"
 rand = "0.8.4"
-getrandom = "0.2.4"
+getrandom = "0.2.6"
 anyhow = "1.0.53"
 serde = { version = "1.0.136", features = ["derive"] }
 bitvec = { version = "1.0.0", default-features = false, features = ["std"] }
