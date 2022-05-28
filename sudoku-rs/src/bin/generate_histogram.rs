@@ -34,7 +34,7 @@ fn main() -> Result<()> {
     let num_values_to_grid = Mutex::new(IndexMap::new());
     let best_grid = Mutex::new(None);
 
-    const MAX: u64 = 10000;
+    const MAX: u64 = 100;
     let pb = ProgressBar::new(MAX).with_style(ProgressStyle::default_bar().template(
         "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] ({pos}/{len}, ETA {eta})",
     ));
