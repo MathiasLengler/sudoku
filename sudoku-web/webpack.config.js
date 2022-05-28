@@ -96,6 +96,12 @@ module.exports = (env, argv) => {
                         sizes: [96, 128, 192, 256, 384, 512],
                         destination: "assets",
                     },
+                    {
+                        src: path.resolve("res/img/maskable_icon.png"),
+                        sizes: [192, 512],
+                        purpose: "maskable",
+                        destination: "assets",
+                    },
                 ],
             }),
             new FaviconsWebpackPlugin({
