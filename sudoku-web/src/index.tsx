@@ -1,17 +1,15 @@
-import * as React from "react";
-import * as ReactDOM from "react-dom";
+import React from "react";
+import { createRoot } from "react-dom/client";
 import { App } from "./app/app";
 import "../res/styles.css";
 
-// Dokku deployment hacks
-import "../res/mime.types";
-import "../res/.static";
-
-ReactDOM.render(
+const container = document.getElementById("root");
+if (!container) throw new Error("React root container not found");
+const root = createRoot(container);
+root.render(
     <React.StrictMode>
         <App />
-    </React.StrictMode>,
-    document.getElementById("root")
+    </React.StrictMode>
 );
 
 if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {

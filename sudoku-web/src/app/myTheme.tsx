@@ -1,9 +1,13 @@
-import React from "react";
+import React, { ReactNode } from "react";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { createTheme, StyledEngineProvider, ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 
-export const MyTheme: React.FunctionComponent = ({ children }) => {
+interface MyThemeProps {
+    children: ReactNode;
+}
+
+export const MyTheme = ({ children }: MyThemeProps) => {
     const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
 
     const theme = React.useMemo(
