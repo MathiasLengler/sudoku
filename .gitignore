@@ -2,5 +2,4 @@
 **/*.rs.bk
 cargo-timing*.html
 
-sudoku-bubblewrap/*
-!sudoku-bubblewrap/assetlinks.json
+sudoku-bubblewrap/
