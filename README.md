@@ -1,6 +1,6 @@
-[<img src="sudoku-web/res/img/icon_dark.png" width="125" />](https://lengler.dev/sudoku/)
+[<img src="sudoku-web/res/img/icon_dark.png" width="125" />](https://sudoku.lengler.dev)
 
-# [Sudoku](https://lengler.dev/sudoku/)
+# [Sudoku](https://sudoku.lengler.dev)
 
 Touch optimized sudoku built with Rust/WASM/TypeScript/React.
 
