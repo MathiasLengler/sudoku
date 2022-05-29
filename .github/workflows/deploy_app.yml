@@ -50,16 +50,6 @@ jobs:
       - run: npm run lint
         working-directory: ./sudoku-web
 
-      # https://webpack.js.org/configuration/cache/#github-actions
-      - uses: actions/cache@v3
-        with:
-          # cache directory
-          path: sudoku-web/node_modules/.cache/webpack/
-          key: ${{ GITHUB_REF_NAME }}-webpack-build
-          # fallback to use "main" branch cache
-          restore-keys: |
-            main-webpack-build
-
       - run: npm run build
         working-directory: ./sudoku-web
 
