@@ -1,4 +1,4 @@
-[<img src="sudoku-web/res/img/sudoku_icon_full_size.png" width="125" />](https://lengler.dev/sudoku/)
+[<img src="sudoku-web/res/img/icon_dark.png" width="125" />](https://lengler.dev/sudoku/)
 
 # [Sudoku](https://lengler.dev/sudoku/)
 
