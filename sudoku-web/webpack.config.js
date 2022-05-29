@@ -5,6 +5,7 @@ const WebpackPwaManifest = require("webpack-pwa-manifest");
 const WorkboxPlugin = require("workbox-webpack-plugin");
 const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
 const FaviconsWebpackPlugin = require("favicons-webpack-plugin");
+const CopyPlugin = require("copy-webpack-plugin");
 
 const dist = path.resolve(__dirname, "dist");
 
@@ -123,6 +124,9 @@ module.exports = (env, argv) => {
                     },
                 },
             }),
+            new CopyPlugin({
+                patterns: ["res/public"],
+            }),
             ...(env.bundleAnalyzer ? [new (require("webpack-bundle-analyzer").BundleAnalyzerPlugin)()] : []),
         ],
         module: {
@@ -134,14 +138,6 @@ module.exports = (env, argv) => {
                 {
                     test: /\.css$/,
                     use: [{ loader: "style-loader" }, { loader: "css-loader" }],
-                },
-                {
-                    test: /(mime\.types|\.static)/,
-                    type: "asset/resource",
-                    generator: {
-                        // Reference: https://webpack.js.org/configuration/output/#template-strings
-                        filename: "[base]",
-                    },
                 },
             ],
         },
