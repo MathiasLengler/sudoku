@@ -68,27 +68,3 @@ jobs:
         env:
           webhook_url: ${{ secrets.CLOUDFLARE_WEBHOOK_URL }}
           webhook_secret: ${{ secrets.CLOUDFLARE_WEBHOOK_SECRET }}
-
-      - name: Install dokku SSH key
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ secrets.DOKKU_HETZNER_SSH_PRIVATE_KEY }}
-          name: id_rsa-dokku
-          known_hosts: ${{ secrets.DOKKU_HETZNER_SSH_HOST_KEY }}
-          config: |
-            Host dokku-hetzner
-              Hostname hetzner.lengler.dev
-              User dokku
-              IdentityFile ~/.ssh/id_rsa-dokku
-              IdentitiesOnly yes
-
-      - name: Deploy to dokku
-        working-directory: ./sudoku-web/dist
-        run: |
-          git init
-          git config --global user.email "github-ci@lengler.dev"
-          git config --global user.name "GitHub CI"
-          git add .
-          git commit -m "deploy: ${GITHUB_SHA}"
-          git remote add dokku ssh://dokku-hetzner/sudoku
-          git push --force dokku master
