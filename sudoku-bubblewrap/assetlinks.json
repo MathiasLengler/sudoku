@@ -1,0 +1,6 @@
+[{
+        "relation": ["delegate_permission/common.handle_all_urls"],
+        "target" : { "namespace": "android_app", "package_name": "dev.lengler.sudoku.twa",
+                     "sha256_cert_fingerprints": ["3B:E1:1F:30:31:DB:69:FA:9F:68:90:72:6D:6B:61:8C:19:01:A4:B4:76:3A:4A:64:03:6F:A5:67:B6:CD:63:1C"] }
+      }
+]
