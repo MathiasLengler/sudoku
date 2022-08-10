@@ -48,9 +48,7 @@ impl Generator {
 
         let mut grid = match self.target {
             Filled => filled_sudoku,
-            FromFilled {
-                distance: _distance,
-            } => unimplemented!(),
+            FromFilled { distance } => Self::filled(filled_sudoku, distance),
             Minimal => Self::minimal(filled_sudoku, 0),
             FromMinimal { distance } => Self::minimal(filled_sudoku, distance),
         };
@@ -74,6 +72,54 @@ impl Generator {
         solver.next().unwrap()
     }
 
+    fn try_delete_cell_at_pos<Base: SudokuBase>(
+        grid: &mut Grid<Base>,
+        pos: Position,
+    ) -> Option<(Position, Value<Base>)> {
+        let cell = grid.get(pos);
+
+        if let Some(value) = cell.value() {
+            grid.get_mut(pos).delete();
+
+            // TODO: use strategic solver
+            if backtracking::Solver::has_unique_solution(&grid) {
+                // current position can be removed without losing uniqueness of the grid solution.
+                Some((pos, value))
+            } else {
+                // current position is necessary for unique solution
+                grid.get_mut(pos).set_value(value);
+                None
+            }
+        } else {
+            panic!("Expected value at {} but got: {:?}", pos, cell)
+        }
+    }
+
+    fn filled<Base: SudokuBase>(mut grid: Grid<Base>, distance: usize) -> Grid<Base> {
+        if distance == 0 {
+            return grid;
+        }
+
+        assert!(grid.all_candidates_positions().is_empty());
+
+        let mut all_positions: Vec<_> = Grid::<Base>::all_positions().collect();
+        all_positions.shuffle(&mut rand::thread_rng());
+
+        let mut deleted: Vec<(Position, Value<Base>)> = vec![];
+
+        for pos in all_positions {
+            if deleted.len() >= distance {
+                break;
+            }
+
+            if let Some(delete) = Self::try_delete_cell_at_pos::<Base>(&mut grid, pos) {
+                deleted.push(delete)
+            }
+        }
+
+        grid
+    }
+
     // TODO: optimize performance for base >= 3
     fn minimal<Base: SudokuBase>(mut grid: Grid<Base>, distance: usize) -> Grid<Base> {
         // If the distance results in a filled sudoku, return it directly.
@@ -90,22 +136,8 @@ impl Generator {
         let mut deleted: Vec<(Position, Value<Base>)> = vec![];
 
         for pos in all_positions {
-            let cell = grid.get(pos);
-
-            if let Some(value) = cell.value() {
-                grid.get_mut(pos).delete();
-
-                deleted.push((pos, value));
-
-                // TODO: use strategic solver
-                if !backtracking::Solver::has_unique_solution(&grid) {
-                    // current position is necessary for unique solution
-                    grid.get_mut(pos).set_value(value);
-
-                    deleted.pop();
-                }
-            } else {
-                panic!("Expected value at {} but got: {:?}", pos, cell)
+            if let Some(delete) = Self::try_delete_cell_at_pos::<Base>(&mut grid, pos) {
+                deleted.push(delete)
             }
         }
 
@@ -144,5 +176,21 @@ mod tests {
         let grid = Generator::with_target(Target::Minimal).generate::<U2>();
 
         assert!(is_minimal(&grid));
+    }
+
+    #[test]
+    fn test_filled() {
+        let grid = Generator::with_target(Target::Filled).generate::<U2>();
+
+        assert!(grid.is_solved());
+    }
+
+    #[test]
+    fn test_from_filled() {
+        let grid = Generator::with_target(Target::FromFilled { distance: 2 }).generate::<U2>();
+
+        assert_eq!(grid.all_candidates_positions().len(), 2);
+
+        assert!(backtracking::Solver::has_unique_solution(&grid));
     }
 }
