@@ -11,6 +11,9 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
     steps:
       - uses: actions/checkout@v3
 
@@ -53,14 +56,11 @@ jobs:
       - run: npm run build
         working-directory: ./sudoku-web
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Publish to Cloudflare Pages
+        uses: cloudflare/pages-action@1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./sudoku-web/dist
-
-      - name: Deploy to Cloudflare Pages
-        uses: distributhor/workflow-webhook@v2
-        env:
-          webhook_url: ${{ secrets.CLOUDFLARE_WEBHOOK_URL }}
-          webhook_secret: ${{ secrets.CLOUDFLARE_WEBHOOK_SECRET }}
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: sudoku
+          directory: sudoku-web/dist
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
