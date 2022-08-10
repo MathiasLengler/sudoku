@@ -1750,6 +1750,7 @@ dependencies = [
  "indexmap",
  "indicatif",
  "itertools",
+ "log",
  "ndarray",
  "rand",
  "rayon",

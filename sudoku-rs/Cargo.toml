@@ -5,6 +5,7 @@ authors = ["Mathias Lengler <mathias@lengler.dev>"]
 edition = "2021"
 
 [dependencies]
+log = "0.4.17"
 itertools = "0.10.3"
 rand = "0.8.5"
 getrandom = "0.2.7"

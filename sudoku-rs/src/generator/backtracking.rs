@@ -1,3 +1,4 @@
+use log::debug;
 use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
 
@@ -7,7 +8,6 @@ use crate::grid::Grid;
 use crate::position::Position;
 use crate::solver::backtracking;
 
-// TODO: replace with separate generate methods (return type)
 #[derive(Debug, Serialize, Deserialize, Copy, Clone)]
 #[serde(rename_all = "camelCase")]
 pub enum Target {
@@ -35,12 +35,12 @@ pub struct Generator {
     target: Target,
 }
 
+// TODO: expose random seed for deterministic benchmarking
 impl Generator {
     pub fn with_target(target: Target) -> Self {
         Self { target }
     }
 
-    // TODO: also return solution for checking
     pub fn generate<Base: SudokuBase>(&self) -> Grid<Base> {
         use self::Target::*;
 
@@ -72,10 +72,13 @@ impl Generator {
         solver.next().unwrap()
     }
 
+    /// Try to delete a cell at specific position in a grid while preserving uniqueness of the grid solution.
+    ///
+    /// Returns the value of the deleted cell, if any.
     fn try_delete_cell_at_pos<Base: SudokuBase>(
         grid: &mut Grid<Base>,
         pos: Position,
-    ) -> Option<(Position, Value<Base>)> {
+    ) -> Option<Value<Base>> {
         let cell = grid.get(pos);
 
         if let Some(value) = cell.value() {
@@ -84,7 +87,7 @@ impl Generator {
             // TODO: use strategic solver
             if backtracking::Solver::has_unique_solution(&grid) {
                 // current position can be removed without losing uniqueness of the grid solution.
-                Some((pos, value))
+                Some(value)
             } else {
                 // current position is necessary for unique solution
                 grid.get_mut(pos).set_value(value);
@@ -100,20 +103,25 @@ impl Generator {
             return grid;
         }
 
-        assert!(grid.all_candidates_positions().is_empty());
+        assert!(grid.is_solved());
 
         let mut all_positions: Vec<_> = Grid::<Base>::all_positions().collect();
         all_positions.shuffle(&mut rand::thread_rng());
+        let all_positions_count = Grid::<Base>::cell_count();
 
-        let mut deleted: Vec<(Position, Value<Base>)> = vec![];
+        let mut deleted_count = 0;
+        for (i, pos) in all_positions.into_iter().enumerate() {
+            let i = i + 1;
 
-        for pos in all_positions {
-            if deleted.len() >= distance {
+            if deleted_count >= distance {
                 break;
             }
 
-            if let Some(delete) = Self::try_delete_cell_at_pos::<Base>(&mut grid, pos) {
-                deleted.push(delete)
+            if Self::try_delete_cell_at_pos::<Base>(&mut grid, pos).is_some() {
+                deleted_count += 1;
+                debug!("Position {i}/{all_positions_count} deleted, totaling {deleted_count}/{distance} deleted positions");
+            } else {
+                debug!("Position {i}/{all_positions_count} is required for unique solution");
             }
         }
 
@@ -127,20 +135,29 @@ impl Generator {
             return grid;
         }
 
-        assert!(grid.all_candidates_positions().is_empty());
+        assert!(grid.is_solved());
 
         let mut all_positions: Vec<_> = Grid::<Base>::all_positions().collect();
-
         all_positions.shuffle(&mut rand::thread_rng());
+        let all_positions_count = Grid::<Base>::cell_count();
 
         let mut deleted: Vec<(Position, Value<Base>)> = vec![];
 
-        for pos in all_positions {
-            if let Some(delete) = Self::try_delete_cell_at_pos::<Base>(&mut grid, pos) {
-                deleted.push(delete)
+        // Reduce grid to a minimal solution.
+        for (i, pos) in all_positions.into_iter().enumerate() {
+            let i = i + 1;
+
+            if let Some(deleted_value) = Self::try_delete_cell_at_pos::<Base>(&mut grid, pos) {
+                let deleted_count = deleted.len();
+                debug!("Position {i}/{all_positions_count} deleted, totaling {deleted_count}/{distance} deleted positions");
+
+                deleted.push((pos, deleted_value))
+            } else {
+                debug!("Position {i}/{all_positions_count} is required for unique solution");
             }
         }
 
+        // Restore the required amount of values, specified by distance.
         for (deleted_pos, deleted_value) in deleted.into_iter().take(distance) {
             grid.get_mut(deleted_pos).set_value(deleted_value);
         }
