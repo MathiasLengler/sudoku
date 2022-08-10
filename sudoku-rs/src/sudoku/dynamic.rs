@@ -141,7 +141,16 @@ impl TryFrom<&str> for DynamicSudoku {
     type Error = Error;
 
     fn try_from(input: &str) -> Result<Self> {
-        parse_cells(input)?.try_into()
+        let mut cells = parse_cells(input)?;
+        cells.iter_mut().for_each(|cell| match cell {
+            CellView::Value { fixed, value } => {
+                if *value != 0 {
+                    *fixed = true;
+                }
+            }
+            _ => {}
+        });
+        cells.try_into()
     }
 }
 
