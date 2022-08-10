@@ -8,9 +8,9 @@ import DialogActions from "@mui/material/DialogActions";
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 
-const baseMin = 2;
-const baseMax = 5;
-const baseMarks = range(baseMin, baseMax + 1).map(base => {
+const BASE_MIN = 2;
+const BASE_MAX = 5;
+const BASE_MARKS = range(BASE_MIN, BASE_MAX + 1).map(base => {
     const sideLength = Math.pow(base, 2);
     return {
         value: base,
@@ -28,38 +28,38 @@ export const GenerateForm: React.FunctionComponent<GenerateFormProps> = props =>
 
     const [loading, setLoading] = useState(false);
     const [base, setBase] = useState(3);
-    const [distance, setDistance] = useState(0);
-    const maxDistance = Math.pow(base, 4);
+    const [minGivens, setMinGivens] = useState(0);
+    const cellCount = Math.pow(base, 4);
 
-    if (maxDistance < distance) {
-        setDistance(maxDistance);
+    if (cellCount < minGivens) {
+        setMinGivens(cellCount);
     }
 
     return (
         <>
             <Box p={3}>
-                <Typography gutterBottom>Grid Size</Typography>
+                <Typography gutterBottom>Size</Typography>
                 <Slider
                     value={base}
                     onChange={(e, base) => setBase(base as number)}
                     valueLabelDisplay="auto"
                     step={null}
-                    min={baseMin}
-                    max={baseMax}
-                    marks={baseMarks}
+                    min={BASE_MIN}
+                    max={BASE_MAX}
+                    marks={BASE_MARKS}
                     disabled={loading}
                 />
-                <Typography gutterBottom>Additional clues (starting from minimal Sudoku)</Typography>
+                <Typography gutterBottom>Minimum number of givens</Typography>
                 <Slider
-                    value={distance}
-                    onChange={(e, distance) => setDistance(distance as number)}
+                    value={minGivens}
+                    onChange={(e, minGivens) => setMinGivens(minGivens as number)}
                     valueLabelDisplay="auto"
                     step={1}
                     min={0}
-                    max={maxDistance}
+                    max={cellCount}
                     marks={[
                         { value: 0, label: 0 },
-                        { value: maxDistance, label: maxDistance },
+                        { value: cellCount, label: cellCount },
                     ]}
                     disabled={loading}
                 />
@@ -79,8 +79,8 @@ export const GenerateForm: React.FunctionComponent<GenerateFormProps> = props =>
                             await sudokuController.generate({
                                 base,
                                 target: {
-                                    fromMinimal: {
-                                        distance,
+                                    fromFilled: {
+                                        distance: cellCount - minGivens,
                                     },
                                 },
                             });
