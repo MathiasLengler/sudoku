@@ -39,6 +39,10 @@ pub fn v(value: u8) -> CellView {
     CellView::value(value, false)
 }
 
+pub fn f(value: u8) -> CellView {
+    CellView::value(value, true)
+}
+
 pub fn c(candidates: Vec<u8>) -> CellView {
     CellView::candidates(candidates)
 }

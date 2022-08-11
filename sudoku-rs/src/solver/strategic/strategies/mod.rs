@@ -21,16 +21,27 @@ use std::fmt::Debug;
 
 pub use backtracking::Backtracking;
 pub use group_reduction::GroupReduction;
+pub use hidden_singles::HiddenSingles;
 pub use single_candidate::SingleCandidate;
 
 use crate::base::SudokuBase;
 use crate::grid::Grid;
 use crate::position::Position;
 
-// TODO: bench
 mod backtracking;
 pub mod group_reduction;
+mod hidden_singles;
 mod single_candidate;
+
+// TODO: split strategy result and grid mutation
+//  StrategyResult/Deduction
+//  - Value at position
+//  - Remove candidate at position
+//  - Retain set of candidates at position
+//  Pros:
+//  - Abstract mutation
+//  - Easier testing
+//  - Visualize hints in UI
 
 // TODO: use
 #[allow(dead_code)]
@@ -48,6 +59,7 @@ pub trait Strategy<Base: SudokuBase>: Debug {
 pub(super) fn all_strategies<Base: SudokuBase>() -> Vec<Box<dyn Strategy<Base>>> {
     vec![
         Box::new(SingleCandidate),
+        Box::new(HiddenSingles),
         Box::new(GroupReduction),
         Box::new(Backtracking),
     ]
