@@ -2,7 +2,6 @@ use crate::base::SudokuBase;
 use crate::cell::compact::value::Value;
 use crate::grid::Grid;
 use crate::position::Position;
-use generic_array::GenericArray;
 use std::collections::HashSet;
 
 use super::Strategy;
@@ -69,7 +68,7 @@ impl<Base: SudokuBase> Strategy<Base> for HiddenSingles {
 
 #[cfg(test)]
 mod tests {
-    use crate::cell::view::{c, f, v};
+    use crate::cell::view::{f, v};
     use crate::samples;
 
     use super::*;

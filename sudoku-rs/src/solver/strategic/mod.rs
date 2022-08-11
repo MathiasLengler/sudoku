@@ -73,7 +73,7 @@ mod tests {
 
     #[test]
     fn test_base_2() {
-        let mut grids = crate::samples::base_2();
+        let grids = crate::samples::base_2();
 
         for (grid_index, mut grid) in grids.into_iter().enumerate() {
             grid.set_all_direct_candidates();
