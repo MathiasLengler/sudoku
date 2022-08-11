@@ -309,7 +309,7 @@ mod tests {
 
     #[test]
     fn test_unique_solution_for_fixed_values() {
-        let mut grid = crate::samples::base_2().drain(..).next().unwrap();
+        let mut grid = crate::samples::base_2().into_iter().next().unwrap();
 
         grid.fix_all_values();
 
