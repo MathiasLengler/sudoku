@@ -284,6 +284,16 @@ impl<Base: SudokuBase> Grid<Base> {
 
         all_block_base_pos.map(|block_base_pos| Self::block_positions(block_base_pos))
     }
+
+    // TODO: optimize
+    pub fn all_group_positions() -> impl Iterator<Item = impl Iterator<Item = Position>> {
+        Self::all_row_positions()
+            .map(|rows| rows.collect::<Vec<_>>().into_iter())
+            .chain(
+                Self::all_column_positions().map(|columns| columns.collect::<Vec<_>>().into_iter()),
+            )
+            .chain(Self::all_block_positions().map(|blocks| blocks.collect::<Vec<_>>().into_iter()))
+    }
 }
 
 /// Filtered position vec
