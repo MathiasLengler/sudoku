@@ -246,10 +246,7 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 
     pub fn all_row_positions() -> impl Iterator<Item = impl Iterator<Item = Position>> {
-        (0..Self::side_length())
-            .map(move |row_index| Self::row_positions(row_index))
-            .collect::<Vec<_>>()
-            .into_iter()
+        (0..Self::side_length()).map(move |row_index| Self::row_positions(row_index))
     }
 
     pub fn column_positions(column: u8) -> impl Iterator<Item = Position> {
@@ -259,10 +256,7 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 
     pub fn all_column_positions() -> impl Iterator<Item = impl Iterator<Item = Position>> {
-        (0..Self::side_length())
-            .map(move |column| Self::column_positions(column))
-            .collect::<Vec<_>>()
-            .into_iter()
+        (0..Self::side_length()).map(move |column| Self::column_positions(column))
     }
 
     pub fn block_positions(pos: Position) -> impl Iterator<Item = Position> {
@@ -285,10 +279,7 @@ impl<Base: SudokuBase> Grid<Base> {
             .flat_map(move |row| (0..Self::base()).map(move |column| Position { column, row }))
             .map(move |pos| pos * Self::base());
 
-        all_block_base_pos
-            .map(|block_base_pos| Self::block_positions(block_base_pos))
-            .collect::<Vec<_>>()
-            .into_iter()
+        all_block_base_pos.map(|block_base_pos| Self::block_positions(block_base_pos))
     }
 }
 
