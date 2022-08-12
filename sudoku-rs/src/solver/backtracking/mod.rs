@@ -243,7 +243,7 @@ mod tests {
         assert!(sudoku.is_solved());
     }
 
-    fn assert_iter<Base: SudokuBase>(solver: Solver<'_, Base>) {
+    fn assert_solver_solutions_base_2<Base: SudokuBase>(solver: Solver<'_, Base>) {
         const NUMBER_OF_2X2_SOLUTIONS: usize = 288;
 
         let solutions = solver.collect::<Vec<_>>();
@@ -264,7 +264,7 @@ mod tests {
         let mut grid = Grid::<U2>::new();
         let solver = Solver::new(&mut grid);
 
-        assert_iter(solver);
+        assert_solver_solutions_base_2(solver);
     }
 
     #[test]
@@ -278,7 +278,7 @@ mod tests {
             },
         );
 
-        assert_iter(solver);
+        assert_solver_solutions_base_2(solver);
     }
 
     #[test]
