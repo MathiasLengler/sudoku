@@ -180,6 +180,12 @@ impl<'a, Base: SudokuBase> CandidatesMut<'a, Base> {
         self.bits.set(imported_candidate, false);
     }
 
+    pub fn set(&mut self, candidate: Value<Base>, value: bool) {
+        let imported_candidate = Candidates::<Base>::import(candidate);
+
+        self.bits.set(imported_candidate, value);
+    }
+
     fn debug_assert(&self) {
         debug_assert!(self.bits[Base::MAX_VALUE as usize..].not_any());
     }

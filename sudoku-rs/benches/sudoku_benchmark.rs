@@ -165,6 +165,49 @@ fn bench_strategy_group(strategy_group: &mut BenchmarkGroup<WallTime>) {
     );
 }
 
+fn bench_candidates_group(candidates_group: &mut BenchmarkGroup<WallTime>) {
+    candidates_group.bench_function("set", |b| {
+        b.iter_batched(
+            || {
+                (
+                    Candidates::<U3>::new(),
+                    vec![1, 2, 4, 5, 9]
+                        .into_iter()
+                        .map(|value| Value::try_from(value).unwrap())
+                        .collect::<Vec<_>>(),
+                )
+            },
+            |(mut candidates, candidates_to_set)| {
+                for candidate_to_set in candidates_to_set {
+                    candidates.set(candidate_to_set, true)
+                }
+            },
+            BatchSize::SmallInput,
+        );
+    });
+
+    candidates_group.bench_function("as_mut().set", |b| {
+        b.iter_batched(
+            || {
+                (
+                    Candidates::<U3>::new(),
+                    vec![1, 2, 4, 5, 9]
+                        .into_iter()
+                        .map(|value| Value::try_from(value).unwrap())
+                        .collect::<Vec<_>>(),
+                )
+            },
+            |(mut candidates, candidates_to_set)| {
+                let mut candidates_mut = candidates.as_mut();
+                for candidate_to_set in candidates_to_set {
+                    candidates_mut.set(candidate_to_set, true)
+                }
+            },
+            BatchSize::SmallInput,
+        );
+    });
+}
+
 fn criterion_benchmark(c: &mut Criterion) {
     let mut generator_group: BenchmarkGroup<WallTime> = c.benchmark_group("Generator");
     bench_generator_group::<U2>(&mut generator_group);
@@ -184,7 +227,11 @@ fn criterion_benchmark(c: &mut Criterion) {
 
     let mut strategy_group = c.benchmark_group("Strategies");
     bench_strategy_group(&mut strategy_group);
-    strategy_group.finish()
+    strategy_group.finish();
+
+    let mut candidates_group = c.benchmark_group("Candidates");
+    bench_candidates_group(&mut candidates_group);
+    candidates_group.finish();
 }
 
 criterion_group!(benches, criterion_benchmark);
