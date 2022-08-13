@@ -97,7 +97,7 @@ impl<Base: SudokuBase> Grid<Base> {
         Default::default()
     }
 
-    fn with_cells(cells: Vec<Cell<Base>>) -> Self {
+    pub fn with_cells(cells: Vec<Cell<Base>>) -> Self {
         assert_eq!(cells.len(), Self::cell_count());
 
         let side_length = Self::side_length() as usize;
