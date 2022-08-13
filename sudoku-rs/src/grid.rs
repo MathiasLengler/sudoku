@@ -211,6 +211,11 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 
     pub fn row_cells(&self, row: u8) -> impl Iterator<Item = &Cell<Base>> {
+        Self::assert_coordinate(row);
+
+        // TODO: after test replace with:
+        //  self.cells.row(usize::from(row))
+
         self.positions_to_cells(Self::row_positions(row))
     }
 
