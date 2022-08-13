@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 use std::hash::Hash;
+use std::mem::size_of;
 use std::ops::*;
 
 use generic_array::ArrayLength;
@@ -58,6 +59,28 @@ where
     type CellCount = CellCount<Base>;
 }
 
+// New const/macro based API and Candidates BitArray
+
+const fn base_to_side_length(base: usize) -> usize {
+    base.pow(2)
+}
+
+const fn base_to_max_value(base: usize) -> usize {
+    base_to_side_length(base)
+}
+
+const fn base_to_cell_count(base: usize) -> usize {
+    base.pow(4)
+}
+
+const fn base_to_candidates_capacity<T>(base: usize) -> usize {
+    let array_element_bit_size = size_of::<T>() * 8;
+    let side_length = base_to_side_length(base);
+
+    // div_ceil
+    (side_length + array_element_bit_size - 1) / array_element_bit_size
+}
+
 #[cfg(test)]
 mod tests {
     use typenum::Unsigned;
@@ -91,5 +114,35 @@ mod tests {
         assert_eq!(CandidatesCapacity::<U2>::to_u8(), 1);
         assert_eq!(CandidatesCapacity::<U3>::to_u8(), 2);
         assert_eq!(CandidatesCapacity::<U4>::to_u8(), 2);
+    }
+
+    #[test]
+    fn test_base_to_side_length() {
+        assert_eq!(base_to_side_length(0), 0);
+        assert_eq!(base_to_side_length(1), 1);
+        assert_eq!(base_to_side_length(2), 4);
+        assert_eq!(base_to_side_length(3), 9);
+        assert_eq!(base_to_side_length(4), 16);
+        assert_eq!(base_to_side_length(5), 25);
+    }
+    #[test]
+    fn test_base_to_cell_count() {
+        assert_eq!(base_to_cell_count(0), 0);
+        assert_eq!(base_to_cell_count(1), 1);
+        assert_eq!(base_to_cell_count(2), 16);
+        assert_eq!(base_to_cell_count(3), 81);
+        assert_eq!(base_to_cell_count(4), 256);
+        assert_eq!(base_to_cell_count(5), 625);
+
+        (0..=5).all(|base| base_to_side_length(base) == base_to_max_value(base));
+    }
+    #[test]
+    fn test_base_to_candidates_capacity() {
+        assert_eq!(base_to_candidates_capacity::<u8>(0), 0);
+        assert_eq!(base_to_candidates_capacity::<u8>(1), 1);
+        assert_eq!(base_to_candidates_capacity::<u8>(2), 1);
+        assert_eq!(base_to_candidates_capacity::<u8>(3), 2);
+        assert_eq!(base_to_candidates_capacity::<u8>(4), 2);
+        assert_eq!(base_to_candidates_capacity::<u8>(5), 4);
     }
 }
