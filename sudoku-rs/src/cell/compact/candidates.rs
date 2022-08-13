@@ -12,11 +12,6 @@ use crate::base::{ArrayElement, SudokuBase};
 use crate::cell::compact::value::Value;
 use crate::error::{Error, Result};
 
-// TODO: bench bitvec overhead
-//  - BitArray.as_bitslice
-//  - bits.set vs bit twiddling
-//  - Deref
-
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 pub struct Candidates<Base: SudokuBase> {
     arr: BitArray<Base::CandidatesArray>,
@@ -38,9 +33,7 @@ impl<Base: SudokuBase> Candidates<Base> {
     pub fn all() -> Self {
         let mut this = Self::default();
 
-        let bits = this.as_mut_bits();
-
-        bits[0..Base::MAX_VALUE as usize].fill(true);
+        this.arr[0..Base::MAX_VALUE as usize].fill(true);
 
         this.debug_assert();
 
@@ -50,9 +43,8 @@ impl<Base: SudokuBase> Candidates<Base> {
     pub fn toggle(&mut self, candidate: Value<Base>) {
         let imported_candidate = Self::import(candidate);
 
-        let bits = self.as_mut_bits();
-
-        bits.set(imported_candidate, !bits[imported_candidate]);
+        let toggled_bit = !self.arr[imported_candidate];
+        self.arr.set(imported_candidate, toggled_bit);
 
         self.debug_assert();
     }
@@ -60,9 +52,7 @@ impl<Base: SudokuBase> Candidates<Base> {
     pub fn set(&mut self, candidate: Value<Base>, value: bool) {
         let imported_candidate = Self::import(candidate);
 
-        let bits = self.as_mut_bits();
-
-        bits.set(imported_candidate, value);
+        self.arr.set(imported_candidate, value);
 
         self.debug_assert();
     }
@@ -70,17 +60,13 @@ impl<Base: SudokuBase> Candidates<Base> {
     pub fn delete(&mut self, candidate: Value<Base>) {
         let imported_candidate = Self::import(candidate);
 
-        let bits = self.as_mut_bits();
-
-        bits.set(imported_candidate, false);
+        self.arr.set(imported_candidate, false);
 
         self.debug_assert();
     }
 
     pub fn iter(&self) -> impl Iterator<Item = Value<Base>> + '_ {
-        let bits = self.as_bits();
-
-        bits.iter_ones().map(|i| Self::export(i))
+        self.arr.iter_ones().map(|i| Self::export(i))
     }
 
     pub fn to_vec_u8(&self) -> Vec<u8> {
@@ -90,25 +76,9 @@ impl<Base: SudokuBase> Candidates<Base> {
     pub fn to_vec_value(&self) -> Vec<Value<Base>> {
         self.iter().collect()
     }
-
-    /// Optimization to allow multiple modifications to candidates without recreating `BitSlice` wrapper.
-    pub fn as_mut(&mut self) -> CandidatesMut<'_, Base> {
-        CandidatesMut {
-            bits: self.as_mut_bits(),
-            base: PhantomData::default(),
-        }
-    }
 }
 
 impl<Base: SudokuBase> Candidates<Base> {
-    fn as_bits(&self) -> &BitSlice<<Base::CandidatesArray as BitView>::Store> {
-        self.arr.as_bitslice()
-    }
-
-    fn as_mut_bits(&mut self) -> &mut BitSlice<<Base::CandidatesArray as BitView>::Store> {
-        self.arr.as_mut_bitslice()
-    }
-
     fn import(candidate: Value<Base>) -> usize {
         (candidate.into_u8() - 1).into()
     }
@@ -118,10 +88,7 @@ impl<Base: SudokuBase> Candidates<Base> {
     }
 
     fn debug_assert(&self) {
-        debug_assert!({
-            let bits = self.as_bits();
-            bits[Base::MAX_VALUE as usize..].not_any()
-        });
+        debug_assert!(self.arr[Base::MAX_VALUE as usize..].not_any());
     }
 }
 
@@ -129,10 +96,8 @@ impl<Base: SudokuBase> From<Vec<Value<Base>>> for Candidates<Base> {
     fn from(candidates: Vec<Value<Base>>) -> Self {
         let mut this = Self::default();
 
-        let bits = this.as_mut_bits();
-
         for candidate in candidates {
-            bits.set(Self::import(candidate), true);
+            this.arr.set(Self::import(candidate), true);
         }
 
         this.debug_assert();
@@ -147,10 +112,8 @@ impl<Base: SudokuBase> TryFrom<Vec<u8>> for Candidates<Base> {
     fn try_from(candidates: Vec<u8>) -> Result<Self> {
         let mut this = Self::default();
 
-        let bits = this.as_mut_bits();
-
         for candidate in candidates {
-            bits.set(Self::import(candidate.try_into()?), true);
+            this.arr.set(Self::import(candidate.try_into()?), true);
         }
 
         this.debug_assert();
@@ -162,38 +125,6 @@ impl<Base: SudokuBase> TryFrom<Vec<u8>> for Candidates<Base> {
 impl<Base: SudokuBase> Display for Candidates<Base> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{:?}", self.to_vec_u8())
-    }
-}
-
-#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
-pub struct CandidatesMut<'a, Base: SudokuBase> {
-    bits: &'a mut BitSlice<<Base::CandidatesArray as BitView>::Store>,
-    base: PhantomData<Base>,
-}
-
-// TODO: move other methods / use internally?
-//  could require CandidatesRef for shared mutability methods
-impl<'a, Base: SudokuBase> CandidatesMut<'a, Base> {
-    pub fn delete(&mut self, candidate: Value<Base>) {
-        let imported_candidate = Candidates::<Base>::import(candidate);
-
-        self.bits.set(imported_candidate, false);
-    }
-
-    pub fn set(&mut self, candidate: Value<Base>, value: bool) {
-        let imported_candidate = Candidates::<Base>::import(candidate);
-
-        self.bits.set(imported_candidate, value);
-    }
-
-    fn debug_assert(&self) {
-        debug_assert!(self.bits[Base::MAX_VALUE as usize..].not_any());
-    }
-}
-
-impl<'a, Base: SudokuBase> Drop for CandidatesMut<'a, Base> {
-    fn drop(&mut self) {
-        self.debug_assert();
     }
 }
 

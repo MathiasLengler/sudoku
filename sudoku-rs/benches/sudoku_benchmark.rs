@@ -186,22 +186,20 @@ fn bench_candidates_group(candidates_group: &mut BenchmarkGroup<WallTime>) {
         );
     });
 
-    candidates_group.bench_function("as_mut().set", |b| {
+    candidates_group.bench_function("set bit twiddling", |b| {
         b.iter_batched(
             || {
-                (
-                    Candidates::<U3>::new(),
-                    vec![1, 2, 4, 5, 9]
-                        .into_iter()
-                        .map(|value| Value::try_from(value).unwrap())
-                        .collect::<Vec<_>>(),
-                )
+                vec![1, 2, 4, 5, 9]
+                    .into_iter()
+                    .map(|value| Value::<U3>::try_from(value).unwrap())
+                    .collect::<Vec<_>>()
             },
-            |(mut candidates, candidates_to_set)| {
-                let mut candidates_mut = candidates.as_mut();
+            |candidates_to_set| {
+                let mut candidates: u16 = 0;
                 for candidate_to_set in candidates_to_set {
-                    candidates_mut.set(candidate_to_set, true)
+                    candidates |= 1 << (candidate_to_set.into_u8() - 1)
                 }
+                candidates
             },
             BatchSize::SmallInput,
         );
