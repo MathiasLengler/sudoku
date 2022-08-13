@@ -72,7 +72,7 @@ impl DynamicSudoku {
             id if id == TypeId::of::<U3>() => Base3(*(any_sudoku.downcast().unwrap())),
             id if id == TypeId::of::<U4>() => Base4(*(any_sudoku.downcast().unwrap())),
             id if id == TypeId::of::<U5>() => Base5(*(any_sudoku.downcast().unwrap())),
-            _ => bail!(Self::unexpected_base_err(Base::to_u8())),
+            _ => bail!(Self::unexpected_base_err(Base::BASE)),
         })
     }
     pub fn generate(&mut self, generator_settings: GeneratorSettings) -> Result<()> {

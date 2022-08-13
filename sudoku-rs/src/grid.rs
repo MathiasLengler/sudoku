@@ -165,25 +165,25 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 
     pub fn base() -> u8 {
-        Base::to_u8()
+        Base::BASE
     }
     pub fn side_length() -> u8 {
-        Base::SideLength::to_u8()
+        Base::SIDE_LENGTH
     }
     pub fn max_value() -> u8 {
-        Base::MaxValue::to_u8()
+        Base::MAX_VALUE
     }
     pub fn cell_count() -> usize {
-        Base::CellCount::to_usize()
+        Base::CELL_COUNT.into()
     }
     pub fn base_usize() -> usize {
-        Base::to_usize()
+        Base::BASE.into()
     }
     pub fn side_length_usize() -> usize {
-        Base::SideLength::to_usize()
+        Base::SIDE_LENGTH.into()
     }
     pub fn max_value_usize() -> usize {
-        Base::MaxValue::to_usize()
+        Base::MAX_VALUE.into()
     }
 }
 

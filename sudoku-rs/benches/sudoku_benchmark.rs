@@ -23,7 +23,7 @@ fn cast_grid<Base: SudokuBase + 'static>(any_grid: Box<dyn Any>) -> Grid<Base> {
 }
 
 fn sample_grid<Base: SudokuBase + 'static>() -> Grid<Base> {
-    match Base::to_u8() {
+    match Base::BASE {
         2 => cast_grid(Box::new(base_2().into_iter().next().unwrap())),
         3 => cast_grid(Box::new(base_3().into_iter().next().unwrap())),
         _ => panic!("unexpected base"),
@@ -31,7 +31,7 @@ fn sample_grid<Base: SudokuBase + 'static>() -> Grid<Base> {
 }
 
 fn bench_generator_group<Base: SudokuBase>(generator_group: &mut BenchmarkGroup<WallTime>) {
-    let base = Base::to_u8();
+    let base = Base::BASE;
 
     for target in &[Target::Minimal, Target::Filled] {
         let parameter_string = format!("Base={} Target={:?}", base, target);
@@ -50,7 +50,7 @@ fn bench_generator_group<Base: SudokuBase>(generator_group: &mut BenchmarkGroup<
 }
 
 fn bench_solver_group<Base: SudokuBase + 'static>(solver_group: &mut BenchmarkGroup<WallTime>) {
-    let base = Base::to_u8();
+    let base = Base::BASE;
     let parameter_string = format!("Base={}", base);
     let grid = sample_grid::<Base>();
 
@@ -80,7 +80,7 @@ fn bench_solver_group<Base: SudokuBase + 'static>(solver_group: &mut BenchmarkGr
 }
 
 fn bench_grid_group<Base: SudokuBase + 'static>(grid_group: &mut BenchmarkGroup<WallTime>) {
-    let base = Base::to_u8();
+    let base = Base::BASE;
     let parameter_string = format!("Base={}", base);
     let grid = sample_grid::<Base>();
 

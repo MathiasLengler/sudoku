@@ -4,6 +4,7 @@ use std::fmt::{Display, Formatter};
 use std::marker::PhantomData;
 
 use bitvec::prelude::*;
+use bitvec::view::BitView;
 use generic_array::GenericArray;
 use typenum::Unsigned;
 
@@ -11,9 +12,22 @@ use crate::base::{ArrayElement, SudokuBase};
 use crate::cell::compact::value::Value;
 use crate::error::{Error, Result};
 
-#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug, Default)]
+// TODO: bench bitvec overhead
+//  - BitArray.as_bitslice
+//  - bits.set vs bit twiddling
+//  - Deref
+
+#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 pub struct Candidates<Base: SudokuBase> {
-    arr: GenericArray<ArrayElement, Base::CandidatesCapacity>,
+    arr: BitArray<Base::CandidatesArray>,
+}
+
+impl<Base: SudokuBase> Default for Candidates<Base> {
+    fn default() -> Self {
+        Self {
+            arr: BitArray::new(Base::CandidatesArray::ZERO),
+        }
+    }
 }
 
 impl<Base: SudokuBase> Candidates<Base> {
@@ -26,7 +40,7 @@ impl<Base: SudokuBase> Candidates<Base> {
 
         let bits = this.as_mut_bits();
 
-        bits[0..Base::MaxValue::to_usize()].fill(true);
+        bits[0..Base::MAX_VALUE as usize].fill(true);
 
         this.debug_assert();
 
@@ -87,12 +101,12 @@ impl<Base: SudokuBase> Candidates<Base> {
 }
 
 impl<Base: SudokuBase> Candidates<Base> {
-    fn as_bits(&self) -> &BitSlice<ArrayElement> {
-        self.arr.view_bits()
+    fn as_bits(&self) -> &BitSlice<<Base::CandidatesArray as BitView>::Store> {
+        self.arr.as_bitslice()
     }
 
-    fn as_mut_bits(&mut self) -> &mut BitSlice<ArrayElement> {
-        self.arr.view_bits_mut()
+    fn as_mut_bits(&mut self) -> &mut BitSlice<<Base::CandidatesArray as BitView>::Store> {
+        self.arr.as_mut_bitslice()
     }
 
     fn import(candidate: Value<Base>) -> usize {
@@ -106,7 +120,7 @@ impl<Base: SudokuBase> Candidates<Base> {
     fn debug_assert(&self) {
         debug_assert!({
             let bits = self.as_bits();
-            bits[Base::MaxValue::to_usize()..].not_any()
+            bits[Base::MAX_VALUE as usize..].not_any()
         });
     }
 }
@@ -153,7 +167,7 @@ impl<Base: SudokuBase> Display for Candidates<Base> {
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
 pub struct CandidatesMut<'a, Base: SudokuBase> {
-    bits: &'a mut BitSlice<ArrayElement>,
+    bits: &'a mut BitSlice<<Base::CandidatesArray as BitView>::Store>,
     base: PhantomData<Base>,
 }
 
@@ -167,7 +181,7 @@ impl<'a, Base: SudokuBase> CandidatesMut<'a, Base> {
     }
 
     fn debug_assert(&self) {
-        debug_assert!(self.bits[Base::MaxValue::to_usize()..].not_any());
+        debug_assert!(self.bits[Base::MAX_VALUE as usize..].not_any());
     }
 }
 

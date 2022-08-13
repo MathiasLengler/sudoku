@@ -24,7 +24,7 @@ impl<Base: SudokuBase> Value<Base> {
     /// Ok(None) => 0
     /// Err(err) => value too big
     pub fn new(value: u8) -> Result<Option<Self>> {
-        let limit = Base::MaxValue::to_u8();
+        let limit = Base::MAX_VALUE;
 
         ensure!(value <= limit, "Value can't be greater than {}", limit);
 
