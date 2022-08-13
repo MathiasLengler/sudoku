@@ -35,6 +35,13 @@ pub fn base_2() -> Vec<Grid<U2>> {
     .unwrap()
 }
 
+pub fn base_2_candidates_coordinates() -> Grid<U2> {
+    use crate::cell::view::{c, f, v};
+
+    todo!()
+    // Implement using u8 counter and new direct storage api of Candidates
+}
+
 pub fn base_3() -> Vec<Grid<U3>> {
     vec![
         // 11 Star difficulty
