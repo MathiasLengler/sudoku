@@ -75,10 +75,10 @@ const fn base_to_cell_count(base: usize) -> usize {
 
 const fn base_to_candidates_capacity<T>(base: usize) -> usize {
     let array_element_bit_size = size_of::<T>() * 8;
-    let side_length = base_to_side_length(base);
+    let max_value = base_to_max_value(base);
 
     // div_ceil
-    (side_length + array_element_bit_size - 1) / array_element_bit_size
+    (max_value + array_element_bit_size - 1) / array_element_bit_size
 }
 
 #[cfg(test)]
