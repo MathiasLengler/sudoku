@@ -26,12 +26,22 @@ impl<Base: SudokuBase> Candidates<Base> {
         Self::default()
     }
 
+    pub fn with_arr(arr: Base::CandidatesArray) -> Self {
+        let this = Self {
+            arr: BitArray::new(arr),
+        };
+
+        this.assert_is_valid();
+
+        this
+    }
+
     pub fn all() -> Self {
         let mut this = Self::default();
 
         this.arr[0..Base::MAX_VALUE as usize].fill(true);
 
-        this.debug_assert();
+        this.debug_assert_is_valid();
 
         this
     }
@@ -42,7 +52,7 @@ impl<Base: SudokuBase> Candidates<Base> {
         let toggled_bit = !self.arr[imported_candidate];
         self.arr.set(imported_candidate, toggled_bit);
 
-        self.debug_assert();
+        self.debug_assert_is_valid();
     }
 
     pub fn set(&mut self, candidate: Value<Base>, value: bool) {
@@ -50,7 +60,7 @@ impl<Base: SudokuBase> Candidates<Base> {
 
         self.arr.set(imported_candidate, value);
 
-        self.debug_assert();
+        self.debug_assert_is_valid();
     }
 
     pub fn delete(&mut self, candidate: Value<Base>) {
@@ -58,7 +68,7 @@ impl<Base: SudokuBase> Candidates<Base> {
 
         self.arr.set(imported_candidate, false);
 
-        self.debug_assert();
+        self.debug_assert_is_valid();
     }
 
     pub fn iter(&self) -> impl Iterator<Item = Value<Base>> + '_ {
@@ -83,8 +93,16 @@ impl<Base: SudokuBase> Candidates<Base> {
         u8::try_from(candidate + 1).unwrap().try_into().unwrap()
     }
 
-    fn debug_assert(&self) {
-        debug_assert!(self.arr[Base::MAX_VALUE as usize..].not_any());
+    fn debug_assert_is_valid(&self) {
+        debug_assert!(self.is_valid());
+    }
+
+    fn assert_is_valid(&self) {
+        assert!(self.is_valid());
+    }
+
+    fn is_valid(&self) -> bool {
+        self.arr[Base::MAX_VALUE as usize..].not_any()
     }
 }
 
@@ -96,7 +114,7 @@ impl<Base: SudokuBase> From<Vec<Value<Base>>> for Candidates<Base> {
             this.arr.set(Self::import(candidate), true);
         }
 
-        this.debug_assert();
+        this.debug_assert_is_valid();
 
         this
     }
@@ -112,7 +130,7 @@ impl<Base: SudokuBase> TryFrom<Vec<u8>> for Candidates<Base> {
             this.arr.set(Self::import(candidate.try_into()?), true);
         }
 
-        this.debug_assert();
+        this.debug_assert_is_valid();
 
         Ok(this)
     }
