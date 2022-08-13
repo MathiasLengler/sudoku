@@ -4,7 +4,6 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 
 use ndarray::Array2;
-use typenum::Unsigned;
 
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;

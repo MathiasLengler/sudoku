@@ -1,14 +1,10 @@
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::fmt::{Display, Formatter};
-use std::marker::PhantomData;
 
 use bitvec::prelude::*;
-use bitvec::view::BitView;
-use generic_array::GenericArray;
-use typenum::Unsigned;
 
-use crate::base::{ArrayElement, SudokuBase};
+use crate::base::SudokuBase;
 use crate::cell::compact::value::Value;
 use crate::error::{Error, Result};
 

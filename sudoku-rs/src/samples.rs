@@ -36,7 +36,7 @@ pub fn base_2() -> Vec<Grid<U2>> {
 }
 
 pub fn base_2_candidates_coordinates() -> Grid<U2> {
-    use crate::cell::view::{c, f, v};
+    // use crate::cell::view::{c, f, v};
 
     todo!()
     // Implement using u8 counter and new direct storage api of Candidates
