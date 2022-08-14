@@ -179,7 +179,6 @@ impl<Base: SudokuBase> CellState<Base> {
 impl<Base: SudokuBase> CellState<Base> {
     fn assert_unfixed(&self) {
         if let CellState::FixedValue(_) = self {
-            // TODO: bail instead of panic
             panic!("Fixed cell can't be modified: {}", self)
         }
     }
