@@ -1745,7 +1745,6 @@ dependencies = [
  "enum_dispatch",
  "flame",
  "flamer",
- "generic-array",
  "getrandom",
  "indexmap",
  "indicatif",
