@@ -122,7 +122,6 @@ impl<Base: SudokuBase> Cell<Base> {
         self.0.set_candidates(candidates)
     }
 
-    // TODO: replace candidate: u8 with candidate: Value<Base>
     /// Toggle the given candidate.
     /// Deletes value if present and sets the single candidate.
     ///
