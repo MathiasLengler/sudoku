@@ -12,13 +12,13 @@ use crate::error::{Error, Result};
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 pub struct Candidates<Base: SudokuBase> {
-    arr: BitArray<Base::CandidatesIntegral>,
+    arr: BitArray<Base::CandidatesArray>,
 }
 
 impl<Base: SudokuBase> Default for Candidates<Base> {
     fn default() -> Self {
         Self {
-            arr: BitArray::new(<Base::CandidatesIntegral as Integral>::ZERO),
+            arr: BitArray::new(Base::CandidatesArray::ZERO),
         }
     }
 }
@@ -29,12 +29,9 @@ impl<Base: SudokuBase> Candidates<Base> {
     }
 
     pub fn with_integral(int: Base::CandidatesIntegral) -> Self {
-        let this = Self {
-            arr: BitArray::new(int),
-        };
-
+        let mut this = Self::new();
+        this.arr.store_le(int);
         this.assert_is_valid();
-
         this
     }
 
@@ -158,6 +155,7 @@ impl<Base: SudokuBase> Display for Candidates<Base> {
 
 #[cfg(test)]
 mod tests {
+    use std::mem::size_of;
     use typenum::consts::*;
 
     use crate::error::Result;
@@ -189,5 +187,19 @@ mod tests {
         assert!(candidates.is_err());
 
         Ok(())
+    }
+
+    #[test]
+    fn test_size() {
+        assert_eq!(
+            vec![
+                size_of::<Candidates<U1>>(),
+                size_of::<Candidates<U2>>(),
+                size_of::<Candidates<U3>>(),
+                size_of::<Candidates<U4>>(),
+                size_of::<Candidates<U5>>()
+            ],
+            vec![1, 1, 2, 2, 4,]
+        )
     }
 }
