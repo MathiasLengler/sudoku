@@ -36,6 +36,12 @@ impl<Base: SudokuBase> Candidates<Base> {
         this
     }
 
+    pub fn single(candidate: Value<Base>) -> Self {
+        let mut this = Self::new();
+        this.set(candidate, true);
+        this
+    }
+
     pub fn all() -> Self {
         let mut this = Self::default();
 
@@ -155,6 +161,14 @@ mod tests {
     use crate::error::Result;
 
     use super::*;
+
+    #[test]
+    fn test_single() {
+        assert_eq!(
+            Candidates::<U2>::single(3.try_into().unwrap()).to_vec_u8(),
+            vec![3]
+        );
+    }
 
     #[test]
     fn test_try_from_vec_u8() -> Result<()> {
