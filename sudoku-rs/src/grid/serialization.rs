@@ -52,38 +52,12 @@ impl GridFormat {
     }
 }
 
-fn render_binary_candidates_line<Base: SudokuBase>(grid: &Grid<Base>) -> String {
-    use bitvec::prelude::*;
-    use itertools::Itertools;
-
-    grid.cells
-        .iter()
-        .map(|cell| {
-            let cell_view = cell.view();
-
-            match cell_view {
-                CellView::Value { value, .. } => 2usize.pow(u32::from(value) - 1).to_string(),
-                CellView::Candidates { candidates } => {
-                    // TODO: reuse compact candidates implementation
-                    let data = [0usize; 1];
-                    let mut bits: BitArray<_, Lsb0> = BitArray::new(data);
-                    for candidate in candidates {
-                        bits.set(usize::from(candidate) - 1, true);
-                    }
-                    let [encoded_candidates] = bits.into_inner();
-                    encoded_candidates.to_string()
-                }
-            }
-        })
-        .join(",")
-}
-
 fn render_givens_line<Base: SudokuBase>(grid: &Grid<Base>) -> String {
     grid.cells.iter().map(ToString::to_string).collect()
 }
 
 fn render_givens_grid<Base: SudokuBase>(grid: &Grid<Base>) -> String {
-    // TODO: implement using prettytable-rs
+    // TODO: implement using tabled
     use itertools::Itertools;
     use ndarray::Axis;
 
@@ -119,6 +93,32 @@ fn render_givens_grid<Base: SudokuBase>(grid: &Grid<Base>) -> String {
     .join("\n")
 }
 
+fn render_binary_candidates_line<Base: SudokuBase>(grid: &Grid<Base>) -> String {
+    use bitvec::prelude::*;
+    use itertools::Itertools;
+
+    grid.cells
+        .iter()
+        .map(|cell| {
+            let cell_view = cell.view();
+
+            match cell_view {
+                CellView::Value { value, .. } => 2usize.pow(u32::from(value) - 1).to_string(),
+                CellView::Candidates { candidates } => {
+                    // TODO: reuse compact candidates implementation
+                    let data = [0usize; 1];
+                    let mut bits: BitArray<_, Lsb0> = BitArray::new(data);
+                    for candidate in candidates {
+                        bits.set(usize::from(candidate) - 1, true);
+                    }
+                    let [encoded_candidates] = bits.into_inner();
+                    encoded_candidates.to_string()
+                }
+            }
+        })
+        .join(",")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -151,6 +151,17 @@ mod tests {
   0  0  8|  5  0  0|  0  1  0
   0  9  0|  0  0  0|  4  0  0",
             GridFormat::GivensGrid.render(&grid)
+        );
+    }
+    #[test]
+    fn test_render_binary_candidates_line() {
+        use crate::samples::base_3;
+        let mut grid = base_3().pop().unwrap();
+        grid.set_all_direct_candidates();
+
+        assert_eq!(
+            "128,43,314,78,87,15,309,344,381,283,11,4,32,211,139,401,472,345,57,64,56,140,256,141,2,152,61,303,16,298,390,166,64,417,394,299,295,167,290,390,8,16,64,386,291,362,170,362,1,162,418,432,4,314,94,14,1,334,70,270,276,32,128,110,46,128,16,102,302,260,1,326,118,256,114,198,231,167,8,82,86",
+            GridFormat::BinaryCandidatesLine.render(&grid)
         );
     }
 }
