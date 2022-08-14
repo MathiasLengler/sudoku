@@ -380,7 +380,7 @@ impl<Base: SudokuBase> TryFrom<&str> for Grid<Base> {
 
 impl<Base: SudokuBase> Display for Grid<Base> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.write_str(&GridFormat::GivensGrid.render(self))
+        f.write_str(&GridFormat::CandidatesGrid.render(self))
     }
 }
 
