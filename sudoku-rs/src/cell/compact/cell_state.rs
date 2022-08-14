@@ -158,8 +158,7 @@ impl<Base: SudokuBase> CellState<Base> {
                 candidates.toggle(candidate);
             }
             CellState::Value(_) => {
-                // TODO: optimize with Candidate::single
-                *self = Self::with_candidates(vec![candidate].into());
+                *self = Self::with_candidates(Candidates::single(candidate));
             }
             _ => unreachable!(),
         }
