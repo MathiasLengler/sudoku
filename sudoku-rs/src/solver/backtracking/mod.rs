@@ -248,7 +248,7 @@ mod tests {
 
         let solutions = solver.collect::<Vec<_>>();
 
-        assert_eq!(NUMBER_OF_2X2_SOLUTIONS, solutions.len());
+        assert_eq!(solutions.len(), NUMBER_OF_2X2_SOLUTIONS);
 
         solutions
             .iter()
@@ -256,7 +256,7 @@ mod tests {
 
         let unique_solutions = solutions.into_iter().collect::<HashSet<_>>();
 
-        assert_eq!(NUMBER_OF_2X2_SOLUTIONS, unique_solutions.len());
+        assert_eq!(unique_solutions.len(), NUMBER_OF_2X2_SOLUTIONS);
     }
 
     #[test]
