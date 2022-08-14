@@ -40,7 +40,7 @@ pub fn base_2() -> Vec<Grid<U2>> {
 pub fn base_2_candidates_coordinates() -> Grid<U2> {
     Grid::<U2>::with_cells(
         (0..u8::try_from(<U2 as SudokuBase>::CELL_COUNT).unwrap())
-            .map(|i| Cell::with_candidates(Candidates::with_arr([i])))
+            .map(|i| Cell::with_candidates(Candidates::with_integral(i)))
             .collect(),
     )
 }

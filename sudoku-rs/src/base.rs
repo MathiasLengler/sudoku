@@ -1,3 +1,5 @@
+use bitvec::store::BitStore;
+use bitvec::view::BitViewSized;
 use funty::Integral;
 use std::fmt::{Debug, Display};
 use std::hash::Hash;
@@ -45,9 +47,9 @@ where
     const CELL_COUNT: u16;
     const CANDIDATES_ARRAY_CAPACITY: usize;
 
-    type CandidatesArrayElement: bitvec::store::BitStore;
-    type CandidatesArray: bitvec::view::BitViewSized + Ord + Hash + Clone + Debug + Default;
-    type CandidatesIntegral: Integral + Clone + Debug + Default + Display;
+    type CandidatesArrayElement: BitStore;
+    type CandidatesArray: BitViewSized + Ord + Hash + Clone + Debug + Default;
+    type CandidatesIntegral: BitStore + Integral + Clone + Debug + Default + Display;
 }
 
 macro_rules! impl_sudoku_base {

@@ -3,6 +3,8 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 
 use bitvec::prelude::*;
+use bitvec::view::BitViewSized;
+use funty::Integral;
 
 use crate::base::SudokuBase;
 use crate::cell::compact::value::Value;
@@ -10,13 +12,13 @@ use crate::error::{Error, Result};
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 pub struct Candidates<Base: SudokuBase> {
-    arr: BitArray<Base::CandidatesArray>,
+    arr: BitArray<Base::CandidatesIntegral>,
 }
 
 impl<Base: SudokuBase> Default for Candidates<Base> {
     fn default() -> Self {
         Self {
-            arr: BitArray::new(Base::CandidatesArray::ZERO),
+            arr: BitArray::new(<Base::CandidatesIntegral as Integral>::ZERO),
         }
     }
 }
@@ -26,9 +28,9 @@ impl<Base: SudokuBase> Candidates<Base> {
         Self::default()
     }
 
-    pub fn with_arr(arr: Base::CandidatesArray) -> Self {
+    pub fn with_integral(int: Base::CandidatesIntegral) -> Self {
         let this = Self {
-            arr: BitArray::new(arr),
+            arr: BitArray::new(int),
         };
 
         this.assert_is_valid();
