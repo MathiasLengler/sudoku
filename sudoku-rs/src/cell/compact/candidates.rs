@@ -23,6 +23,7 @@ impl<Base: SudokuBase> Default for Candidates<Base> {
     }
 }
 
+/// Constructors
 impl<Base: SudokuBase> Candidates<Base> {
     pub fn new() -> Self {
         Self::default()
@@ -50,7 +51,10 @@ impl<Base: SudokuBase> Candidates<Base> {
 
         this
     }
+}
 
+/// Mutations
+impl<Base: SudokuBase> Candidates<Base> {
     pub fn toggle(&mut self, candidate: Value<Base>) {
         let imported_candidate = Self::import(candidate);
 
@@ -75,11 +79,18 @@ impl<Base: SudokuBase> Candidates<Base> {
 
         self.debug_assert_is_valid();
     }
+}
 
+/// Getters
+impl<Base: SudokuBase> Candidates<Base> {
     pub fn has(&self, candidate: Value<Base>) -> bool {
         let imported_candidate = Self::import(candidate);
 
         self.arr[imported_candidate]
+    }
+
+    pub fn integral(&self) -> Base::CandidatesIntegral {
+        self.arr.load_le()
     }
 
     pub fn iter(&self) -> impl Iterator<Item = Value<Base>> + '_ {
@@ -95,6 +106,7 @@ impl<Base: SudokuBase> Candidates<Base> {
     }
 }
 
+/// Internal helpers
 impl<Base: SudokuBase> Candidates<Base> {
     fn import(candidate: Value<Base>) -> usize {
         (candidate.into_u8() - 1).into()
@@ -201,5 +213,27 @@ mod tests {
             ],
             vec![1, 1, 2, 2, 4,]
         )
+    }
+
+    #[test]
+    fn test_integral() {
+        type Base = U5;
+
+        let mut candidates = Candidates::<Base>::new();
+        assert_eq!(candidates.integral(), 0);
+        assert_eq!(candidates.to_vec_u8(), vec![]);
+        candidates.set(1.try_into().unwrap(), true);
+        assert_eq!(candidates.integral(), 1);
+        assert_eq!(candidates.to_vec_u8(), vec![1]);
+        candidates.set(2.try_into().unwrap(), true);
+        assert_eq!(candidates.integral(), 3);
+        assert_eq!(candidates.to_vec_u8(), vec![1, 2]);
+        let mut candidates = Candidates::<Base>::new();
+        candidates.set(25.try_into().unwrap(), true);
+        assert_eq!(candidates.to_vec_u8(), vec![25]);
+        assert_eq!(candidates.integral(), 1 << 24);
+        candidates.set(10.try_into().unwrap(), true);
+        assert_eq!(candidates.to_vec_u8(), vec![10, 25]);
+        assert_eq!(candidates.integral(), 1 << 24 | 1 << 9);
     }
 }
