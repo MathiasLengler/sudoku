@@ -71,6 +71,12 @@ impl<Base: SudokuBase> Candidates<Base> {
         self.debug_assert_is_valid();
     }
 
+    pub fn has(&self, candidate: Value<Base>) -> bool {
+        let imported_candidate = Self::import(candidate);
+
+        self.arr[imported_candidate]
+    }
+
     pub fn iter(&self) -> impl Iterator<Item = Value<Base>> + '_ {
         self.arr.iter_ones().map(|i| Self::export(i))
     }
