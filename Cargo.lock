@@ -1849,6 +1849,7 @@ dependencies = [
  "enum_dispatch",
  "flame",
  "flamer",
+ "funty",
  "getrandom",
  "indexmap",
  "indicatif",

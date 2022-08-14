@@ -12,6 +12,7 @@ getrandom = "0.2.7"
 anyhow = "1.0.60"
 serde = { version = "1.0.143", features = ["derive"] }
 bitvec = { version = "1.0.1", default-features = false, features = ["std"] }
+funty = "2.0.0"
 indexmap = "1.9.1"
 ndarray = "0.15.6"
 typenum = "1.15.0"
