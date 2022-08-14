@@ -77,14 +77,10 @@ mod tests {
     fn test_hidden_singles() {
         let mut grid = samples::base_2().into_iter().nth(1).unwrap().clone();
 
-        println!("{grid}");
-
         grid.set_all_direct_candidates();
         grid.fix_all_values();
 
         let mut modified_positions = HiddenSingles.execute(&mut grid);
-
-        println!("{grid}");
 
         modified_positions.sort();
 
@@ -108,7 +104,6 @@ mod tests {
 
         expected_grid.set_all_direct_candidates();
 
-        println!("{expected_grid}");
         assert_eq!(grid, expected_grid);
     }
 }

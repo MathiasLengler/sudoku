@@ -71,21 +71,23 @@ mod tests {
 
     use super::*;
 
+    fn assert_solvable<Base: SudokuBase>(grid: &mut Grid<Base>) {
+        grid.set_all_direct_candidates();
+        grid.fix_all_values();
+
+        let mut solver = Solver::new(grid);
+
+        assert!(solver.try_solve());
+
+        assert!(grid.is_solved());
+    }
+
     #[test]
     fn test_base_2() {
         let grids = crate::samples::base_2();
 
-        for (grid_index, mut grid) in grids.into_iter().enumerate() {
-            grid.set_all_direct_candidates();
-            grid.fix_all_values();
-
-            println!("#{}:\n{}", grid_index, grid);
-
-            let mut solver = Solver::new(&mut grid);
-
-            assert!(solver.try_solve());
-
-            assert!(grid.is_solved());
+        for mut grid in grids.into_iter() {
+            assert_solvable(&mut grid);
         }
     }
 
@@ -93,17 +95,8 @@ mod tests {
     fn test_base_3() {
         let grids = crate::samples::base_3();
 
-        for (grid_index, mut grid) in grids.into_iter().enumerate() {
-            grid.set_all_direct_candidates();
-            grid.fix_all_values();
-
-            println!("#{}:\n{}", grid_index, grid);
-
-            let mut solver = Solver::new(&mut grid);
-
-            assert!(solver.try_solve());
-
-            assert!(grid.is_solved());
+        for mut grid in grids.into_iter() {
+            assert_solvable(&mut grid);
         }
     }
 
