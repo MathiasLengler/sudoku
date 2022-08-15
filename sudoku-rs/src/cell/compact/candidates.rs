@@ -11,23 +11,31 @@ use crate::error::{Error, Result};
 
 type CandidatesBitSlice<Base> = BitSlice<<<Base as SudokuBase>::CandidatesArray as BitView>::Store>;
 
-#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
+#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Copy, Clone, Debug)]
 pub struct Candidates<Base: SudokuBase> {
     arr: BitArray<Base::CandidatesArray>,
 }
 
 impl<Base: SudokuBase> Default for Candidates<Base> {
     fn default() -> Self {
-        Self {
-            arr: BitArray::new(Base::CandidatesArray::ZERO),
-        }
+        Self::new()
     }
 }
 
 /// Constructors
 impl<Base: SudokuBase> Candidates<Base> {
     pub fn new() -> Self {
-        Self::default()
+        Self::with_candidates_array(Base::CandidatesArray::ZERO)
+    }
+
+    fn with_candidates_array(arr: Base::CandidatesArray) -> Self {
+        Self::with_bit_array(BitArray::new(arr))
+    }
+
+    fn with_bit_array(arr: BitArray<Base::CandidatesArray>) -> Self {
+        let this = Self { arr };
+        this.debug_assert_is_valid();
+        this
     }
 
     pub fn with_integral(int: Base::CandidatesIntegral) -> Self {
@@ -51,6 +59,29 @@ impl<Base: SudokuBase> Candidates<Base> {
         this.debug_assert_is_valid();
 
         this
+    }
+}
+
+/// Set constructors
+impl<Base: SudokuBase> Candidates<Base> {
+    /// `self ∪ other`
+    /// https://en.wikipedia.org/wiki/Set_(mathematics)#Unions
+    pub fn union(&self, other: &Self) -> Self {
+        Self::with_bit_array(self.arr | other.arr)
+    }
+
+    /// `self ∩ other`
+    /// Reference:
+    /// https://en.wikipedia.org/wiki/Set_(mathematics)#Intersections
+    pub fn intersection(&self, other: &Self) -> Self {
+        Self::with_bit_array(self.arr & other.arr)
+    }
+
+    /// `self ∖ other`
+    /// Reference:
+    /// https://en.wikipedia.org/wiki/Set_(mathematics)#Unions:~:text=be%20%22subtracted%22.%20The-,relative%20complement,-of%20B%20in
+    pub fn without(&self, other: &Self) -> Self {
+        Self::with_bit_array(self.arr & !other.arr)
     }
 }
 
@@ -92,6 +123,14 @@ impl<Base: SudokuBase> Candidates<Base> {
 
     pub fn integral(&self) -> Base::CandidatesIntegral {
         self.arr.load_le()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.arr.not_any()
+    }
+
+    pub fn count(&self) -> u8 {
+        self.arr.count_ones().try_into().unwrap()
     }
 
     pub fn iter(&self) -> impl Iterator<Item = Value<Base>> + '_ {
@@ -139,6 +178,20 @@ impl<Base: SudokuBase> Candidates<Base> {
 
     fn unused_bits(&self) -> &CandidatesBitSlice<Base> {
         &self.arr[Base::MAX_VALUE as usize..]
+    }
+}
+
+impl<Base: SudokuBase> FromIterator<Value<Base>> for Candidates<Base> {
+    fn from_iter<T: IntoIterator<Item = Value<Base>>>(candidates: T) -> Self {
+        let mut this = Self::default();
+
+        for candidate in candidates {
+            this.arr.set(Self::import(candidate), true);
+        }
+
+        this.debug_assert_is_valid();
+
+        this
     }
 }
 
@@ -281,5 +334,42 @@ mod tests {
             Candidates::<Base>::with_integral(all).to_vec_u8(),
             (1..=25).collect::<Vec<_>>()
         );
+    }
+
+    #[test]
+    fn test_set_constructors() {
+        let a: Candidates<U2> = vec![1, 2].try_into().unwrap();
+        let b: Candidates<U2> = vec![2, 3].try_into().unwrap();
+
+        assert_eq!(a.union(&b).to_vec_u8(), vec![1, 2, 3]);
+        assert_eq!(b.union(&a).to_vec_u8(), vec![1, 2, 3]);
+
+        assert_eq!(a.intersection(&b).to_vec_u8(), vec![2]);
+        assert_eq!(b.intersection(&a).to_vec_u8(), vec![2]);
+
+        assert_eq!(a.without(&b).to_vec_u8(), vec![1]);
+        assert_eq!(b.without(&a).to_vec_u8(), vec![3]);
+    }
+
+    #[test]
+    fn test_is_empty() {
+        let empty: Candidates<U2> = Candidates::new();
+        let one: Candidates<U2> = vec![1].try_into().unwrap();
+        let all: Candidates<U2> = Candidates::<U2>::all();
+
+        assert!(empty.is_empty());
+        assert!(!one.is_empty());
+        assert!(!all.is_empty());
+    }
+
+    #[test]
+    fn test_count() {
+        let empty: Candidates<U2> = Candidates::new();
+        let one: Candidates<U2> = vec![1].try_into().unwrap();
+        let all: Candidates<U2> = Candidates::<U2>::all();
+
+        assert_eq!(empty.count(), 0);
+        assert_eq!(one.count(), 1);
+        assert_eq!(all.count(), 4);
     }
 }
