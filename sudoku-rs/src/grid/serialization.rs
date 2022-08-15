@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use tabled::{builder::Builder, object::Segment, Alignment, Modify, Style};
 
 use crate::base::SudokuBase;
+use crate::cell::compact::cell_state::CellState;
 use crate::cell::compact::value::Value;
 use crate::cell::view::CellView;
 use crate::grid::Grid;
@@ -101,22 +102,11 @@ fn render_binary_candidates_line<Base: SudokuBase>(grid: &Grid<Base>) -> String 
 
     grid.cells
         .iter()
-        .map(|cell| {
-            let cell_view = cell.view();
-
-            match cell_view {
-                CellView::Value { value, .. } => 2usize.pow(u32::from(value) - 1).to_string(),
-                CellView::Candidates { candidates } => {
-                    // TODO: reuse compact candidates implementation
-                    let data = [0usize; 1];
-                    let mut bits: BitArray<_, Lsb0> = BitArray::new(data);
-                    for candidate in candidates {
-                        bits.set(usize::from(candidate) - 1, true);
-                    }
-                    let [encoded_candidates] = bits.into_inner();
-                    encoded_candidates.to_string()
-                }
+        .map(|cell| match cell.state() {
+            CellState::Value(value) | CellState::FixedValue(value) => {
+                2usize.pow(u32::from(value.into_u8() - 1)).to_string()
             }
+            CellState::Candidates(candidates) => candidates.integral().to_string(),
         })
         .join(",")
 }

@@ -8,7 +8,7 @@ use crate::cell::compact::value::Value;
 use crate::cell::view::CellView;
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
-pub(super) enum CellState<Base: SudokuBase> {
+pub(crate) enum CellState<Base: SudokuBase> {
     Value(Value<Base>),
     FixedValue(Value<Base>),
     Candidates(Candidates<Base>),

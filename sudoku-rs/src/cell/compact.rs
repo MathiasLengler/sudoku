@@ -11,7 +11,7 @@ use crate::cell::view::CellView;
 use crate::error::Error;
 
 pub mod candidates;
-mod cell_state;
+pub(crate) mod cell_state;
 pub mod value;
 
 /// Memory efficient representation of a single Sudoku cell.
@@ -32,6 +32,11 @@ impl<Base: SudokuBase> Cell<Base> {
     /// Constructs a new cell with the provided candidates
     pub fn with_candidates(candidates: Candidates<Base>) -> Self {
         Self(CellState::with_candidates(candidates))
+    }
+
+    /// Expose internal `CellState`
+    pub(crate) fn state(&self) -> &CellState<Base> {
+        &self.0
     }
 
     /// Convenient view of the cell.
