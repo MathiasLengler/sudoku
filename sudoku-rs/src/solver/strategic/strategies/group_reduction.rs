@@ -1,10 +1,11 @@
-use itertools::izip;
+use itertools::{izip, Itertools};
 
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
 use crate::cell::compact::value::Value;
 use crate::grid::Grid;
 use crate::position::Position;
+use crate::solver::strategic::strategies::deduction::StrategyDeduction;
 
 use super::Strategy;
 
@@ -12,63 +13,51 @@ use super::Strategy;
 pub struct GroupReduction;
 
 impl<Base: SudokuBase> Strategy<Base> for GroupReduction {
-    fn execute(&self, grid: &mut Grid<Base>) -> Vec<Position> {
-        let mut modified_positions = vec![];
+    fn execute(&self, grid: &Grid<Base>) -> Vec<StrategyDeduction<Base>> {
+        let mut deductions = Self::reduce_groups(Grid::<Base>::all_group_positions(), grid);
 
-        Self::reduce_groups(
-            Grid::<Base>::all_row_positions(),
-            grid,
-            &mut modified_positions,
-        );
-        Self::reduce_groups(
-            Grid::<Base>::all_column_positions(),
-            grid,
-            &mut modified_positions,
-        );
-        Self::reduce_groups(
-            Grid::<Base>::all_block_positions(),
-            grid,
-            &mut modified_positions,
-        );
-
-        modified_positions.sort();
-        modified_positions.dedup();
-        modified_positions
+        // TODO: who is responsible for postprocessing deductions?
+        StrategyDeduction::postprocess(deductions)
     }
 }
 
 impl GroupReduction {
     fn reduce_groups<Base: SudokuBase>(
         groups: impl Iterator<Item = impl Iterator<Item = Position>>,
-        grid: &mut Grid<Base>,
-        modified_positions: &mut Vec<Position>,
-    ) {
-        for group in groups {
-            let (positions, candidates_group): (Vec<_>, Vec<_>) = group
-                .filter_map(|pos| {
-                    grid.get(pos)
-                        .candidates()
-                        .map(|candidates| (pos, candidates))
-                })
-                .unzip();
+        grid: &Grid<Base>,
+    ) -> Vec<StrategyDeduction<Base>> {
+        groups
+            .flat_map(|group| {
+                let (positions, candidates_group): (Vec<_>, Vec<_>) = group
+                    .filter_map(|pos| {
+                        grid.get(pos)
+                            .candidates()
+                            .map(|candidates| (pos, candidates))
+                    })
+                    .unzip();
 
-            let reduced_candidates_group = Self::reduce_candidates_group(&candidates_group);
+                let reduced_candidates_group = Self::reduce_candidates_group(&candidates_group);
 
-            for (position, candidates, reduced_candidates) in
-                izip!(positions, candidates_group, reduced_candidates_group)
-            {
-                if candidates != reduced_candidates {
-                    println!(
-                        "GroupReduction at {}: {} => {}",
-                        position, candidates, reduced_candidates
-                    );
+                izip!(positions, candidates_group, reduced_candidates_group).filter_map(
+                    |(position, candidates, reduced_candidates)| {
+                        if candidates != reduced_candidates {
+                            println!(
+                                "GroupReduction at {}: {} => {}",
+                                position, candidates, reduced_candidates
+                            );
 
-                    modified_positions.push(position);
-
-                    grid.get_mut(position).set_candidates(reduced_candidates);
-                }
-            }
-        }
+                            Some(StrategyDeduction::PruneCandidates {
+                                pos: position,
+                                previous_candidates: candidates,
+                                remaining_candidates: reduced_candidates,
+                            })
+                        } else {
+                            None
+                        }
+                    },
+                )
+            })
+            .collect()
     }
 
     pub fn reduce_candidates_group<Base: SudokuBase>(
@@ -118,7 +107,23 @@ mod tests {
 
     #[test]
     fn test_group_reduction() {
-        let test_cases = vec![
+        let test_cases: Vec<(Vec<Vec<u8>>, Vec<Vec<u8>>)> = vec![
+            (
+                vec![
+                    vec![1, 6],
+                    vec![1, 6],
+                    vec![1, 2, 5],
+                    vec![1, 2, 5, 6, 7],
+                    vec![2, 5, 6, 7],
+                ],
+                vec![
+                    vec![1, 6],
+                    vec![1, 6],
+                    vec![2, 5],
+                    vec![2, 5, 7],
+                    vec![2, 5, 7],
+                ],
+            ),
             (
                 vec![
                     vec![1, 2],
@@ -175,5 +180,32 @@ mod tests {
                 expected_reduced_candidate_group_data
             );
         }
+    }
+
+    /// Reference:
+    ///  https://www.sudokuwiki.org/Naked_Candidates
+    ///  "Naked Pairs examples : Load Example"
+    ///  https://www.sudokuwiki.org/sudoku.htm?bd=400000938032094100095300240370609004529001673604703090957008300003900400240030709
+    #[test]
+    fn test_naked_pairs() {
+        let mut grid: Grid<U3> =
+            "400000938032094100095300240370609004529001673604703090957008300003900400240030709"
+                .try_into()
+                .unwrap();
+
+        grid.fix_all_values();
+        grid.set_all_direct_candidates();
+
+        println!("{grid}");
+
+        let deductions = GroupReduction.execute(&grid);
+        // TODO: assert deductions
+        for deduction in &deductions {
+            println!("{deduction}");
+        }
+
+        grid.apply_deductions(&deductions);
+
+        println!("{grid}");
     }
 }

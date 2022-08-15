@@ -1,6 +1,7 @@
 use crate::base::SudokuBase;
 use crate::grid::Grid;
 use crate::position::Position;
+use crate::solver::strategic::strategies::deduction::StrategyDeduction;
 
 use super::Strategy;
 
@@ -8,25 +9,20 @@ use super::Strategy;
 pub struct SingleCandidate;
 
 impl<Base: SudokuBase> Strategy<Base> for SingleCandidate {
-    fn execute(&self, grid: &mut Grid<Base>) -> Vec<Position> {
+    fn execute(&self, grid: &Grid<Base>) -> Vec<StrategyDeduction<Base>> {
         grid.all_candidates_positions()
             .into_iter()
-            .filter(|candidate_pos| {
-                let candidates = grid
-                    .get(*candidate_pos)
-                    .candidates()
-                    .unwrap()
-                    .to_vec_value();
+            .filter_map(|candidate_pos| {
+                let candidates = grid.get(candidate_pos).candidates().unwrap().to_vec_value();
 
                 if candidates.len() == 1 {
                     let single_candidate = candidates[0];
-
-                    grid.get_mut(*candidate_pos).set_value(single_candidate);
-                    grid.update_candidates(*candidate_pos, single_candidate);
-
-                    true
+                    Some(StrategyDeduction::Value {
+                        pos: candidate_pos,
+                        value: single_candidate,
+                    })
                 } else {
-                    false
+                    None
                 }
             })
             .collect()
@@ -46,24 +42,50 @@ mod tests {
         grid.set_all_direct_candidates();
         grid.fix_all_values();
 
-        let mut modified_positions = SingleCandidate.execute(&mut grid);
+        println!("{grid}");
 
-        modified_positions.sort();
+        let mut deductions = SingleCandidate.execute(&mut grid);
+        deductions.sort();
 
         assert_eq!(
-            modified_positions,
+            deductions,
             vec![
-                Position { row: 0, column: 0 },
-                Position { row: 0, column: 3 },
-                Position { row: 1, column: 1 },
-                Position { row: 1, column: 2 },
-                Position { row: 2, column: 1 },
-                Position { row: 2, column: 2 },
-                Position { row: 3, column: 0 },
-                Position { row: 3, column: 3 },
+                StrategyDeduction::Value {
+                    pos: Position { row: 0, column: 0 },
+                    value: 2.try_into().unwrap()
+                },
+                StrategyDeduction::Value {
+                    pos: Position { row: 0, column: 3 },
+                    value: 1.try_into().unwrap()
+                },
+                StrategyDeduction::Value {
+                    pos: Position { row: 1, column: 1 },
+                    value: 1.try_into().unwrap()
+                },
+                StrategyDeduction::Value {
+                    pos: Position { row: 1, column: 2 },
+                    value: 3.try_into().unwrap()
+                },
+                StrategyDeduction::Value {
+                    pos: Position { row: 2, column: 1 },
+                    value: 4.try_into().unwrap()
+                },
+                StrategyDeduction::Value {
+                    pos: Position { row: 2, column: 2 },
+                    value: 2.try_into().unwrap()
+                },
+                StrategyDeduction::Value {
+                    pos: Position { row: 3, column: 0 },
+                    value: 3.try_into().unwrap()
+                },
+                StrategyDeduction::Value {
+                    pos: Position { row: 3, column: 3 },
+                    value: 4.try_into().unwrap()
+                },
             ]
         );
 
+        grid.apply_deductions(&deductions);
         assert!(grid.is_solved());
     }
 }

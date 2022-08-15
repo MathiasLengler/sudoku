@@ -2,6 +2,7 @@ use crate::base::SudokuBase;
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::solver::backtracking::Solver;
+use crate::solver::strategic::strategies::deduction::StrategyDeduction;
 
 use super::Strategy;
 
@@ -9,14 +10,16 @@ use super::Strategy;
 pub struct Backtracking;
 
 impl<Base: SudokuBase> Strategy<Base> for Backtracking {
-    fn execute(&self, grid: &mut Grid<Base>) -> Vec<Position> {
-        let mut solver = Solver::new(grid);
+    fn execute(&self, grid: &Grid<Base>) -> Vec<StrategyDeduction<Base>> {
+        todo!("port Backtracking Strategy to StrategyDeduction")
 
-        if solver.next().is_some() {
-            solver.into_empty_positions()
-        } else {
-            vec![]
-        }
+        // let mut solver = Solver::new(grid);
+        //
+        // if solver.next().is_some() {
+        //     solver.into_empty_positions()
+        // } else {
+        //     vec![]
+        // }
     }
 }
 

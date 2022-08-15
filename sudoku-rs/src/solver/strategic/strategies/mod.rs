@@ -25,9 +25,15 @@ pub use hidden_singles::HiddenSingles;
 pub use single_candidate::SingleCandidate;
 
 use crate::base::SudokuBase;
+use crate::cell::compact::candidates::Candidates;
+use crate::cell::compact::value::Value;
 use crate::grid::Grid;
 use crate::position::Position;
+use crate::solver::strategic::strategies::deduction::StrategyDeduction;
 
+// API
+pub mod deduction;
+// Strategies
 mod backtracking;
 pub mod group_reduction;
 mod hidden_singles;
@@ -43,17 +49,10 @@ mod single_candidate;
 //  - Easier testing
 //  - Visualize hints in UI
 
-// TODO: use
-#[allow(dead_code)]
-enum StrategyResult {
-    Modified { cell_positions: Vec<Position> },
-    Unsolvable,
-    MultipleSolutions,
-}
-
 pub trait Strategy<Base: SudokuBase>: Debug {
-    /// Execute this strategy on the given grid. Returns the list of modified positions.
-    fn execute(&self, grid: &mut Grid<Base>) -> Vec<Position>;
+    // TODO: evaluate different return type: Result<BTreeSet<StrategyDeduction<Base>>>
+    /// Execute this strategy on the given grid. Returns a list of deductions.
+    fn execute(&self, grid: &Grid<Base>) -> Vec<StrategyDeduction<Base>>;
 }
 
 pub(super) fn all_strategies<Base: SudokuBase>() -> Vec<Box<dyn Strategy<Base>>> {

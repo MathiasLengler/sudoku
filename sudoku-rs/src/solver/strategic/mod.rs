@@ -3,6 +3,7 @@ use strategies::Strategy;
 use crate::base::SudokuBase;
 use crate::grid::Grid;
 use crate::position::Position;
+use crate::solver::strategic::strategies::deduction::StrategyDeduction;
 
 pub mod strategies;
 
@@ -31,7 +32,9 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
                 return true;
             }
 
-            if let Some(_modified_positions) = self.try_strategies() {
+            if let Some((deductions)) = self.try_strategies() {
+                self.grid.apply_deductions(&deductions);
+
                 // Continue with strategy execution
             } else {
                 // All strategies have failed.
@@ -41,27 +44,27 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
     }
 
     /// Tries strategies until a strategy is able to modify the grid.
-    pub fn try_strategies(&mut self) -> Option<Vec<Position>> {
-        for strategy in self.strategies.iter() {
-            let modified_positions = strategy.execute(&mut self.grid);
+    pub fn try_strategies(&mut self) -> Option<Vec<StrategyDeduction<Base>>> {
+        self.strategies.iter().find_map(|strategy| {
+            let deductions = strategy.execute(&mut self.grid);
 
-            if !modified_positions.is_empty() {
+            if deductions.is_empty() {
+                None
+            } else {
                 #[cfg(feature = "debug_print")]
                 println!(
                     "{:?}: {:?}\n{}",
                     strategy,
-                    modified_positions
+                    deductions
                         .iter()
                         .map(|pos| pos.to_string())
                         .collect::<Vec<_>>(),
                     self.grid
                 );
 
-                return Some(modified_positions);
+                return Some(deductions);
             }
-        }
-
-        None
+        })
     }
 }
 
