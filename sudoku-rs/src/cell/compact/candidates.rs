@@ -3,12 +3,14 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 
 use bitvec::prelude::*;
-use bitvec::view::BitViewSized;
+use bitvec::view::{BitView, BitViewSized};
 use funty::Integral;
 
 use crate::base::SudokuBase;
 use crate::cell::compact::value::Value;
 use crate::error::{Error, Result};
+
+type CandidatesBitSlice<Base> = BitSlice<<<Base as SudokuBase>::CandidatesArray as BitView>::Store>;
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 pub struct Candidates<Base: SudokuBase> {
@@ -117,15 +119,27 @@ impl<Base: SudokuBase> Candidates<Base> {
     }
 
     fn debug_assert_is_valid(&self) {
-        debug_assert!(self.is_valid());
+        debug_assert!(
+            self.is_valid(),
+            "Unexpected bit set in {}",
+            self.unused_bits()
+        );
     }
 
     fn assert_is_valid(&self) {
-        assert!(self.is_valid());
+        assert!(
+            self.is_valid(),
+            "Unexpected bit set in {}",
+            self.unused_bits()
+        );
     }
 
     fn is_valid(&self) -> bool {
-        self.arr[Base::MAX_VALUE as usize..].not_any()
+        self.unused_bits().not_any()
+    }
+
+    fn unused_bits(&self) -> &CandidatesBitSlice<Base> {
+        &self.arr[Base::MAX_VALUE as usize..]
     }
 }
 
@@ -235,5 +249,38 @@ mod tests {
         candidates.set(10.try_into().unwrap(), true);
         assert_eq!(candidates.to_vec_u8(), vec![10, 25]);
         assert_eq!(candidates.integral(), 1 << 24 | 1 << 9);
+    }
+
+    #[test]
+    fn test_with_integral() {
+        type Base = U5;
+        fn assert_integral_identity(i: u32) {
+            assert_eq!(Candidates::<Base>::with_integral(i).integral(), i);
+        }
+
+        let powers_of_two = std::iter::successors(Some(1u32), |i| {
+            let next = i << 1;
+            if next >= 2.pow(Base::MAX_VALUE.into()) {
+                None
+            } else {
+                Some(next)
+            }
+        });
+
+        for i in powers_of_two {
+            assert_integral_identity(i);
+            assert_eq!(
+                Candidates::<Base>::with_integral(i).to_vec_u8(),
+                vec![(i.trailing_zeros() + 1).try_into().unwrap()]
+            );
+        }
+        assert_integral_identity(0);
+        assert_eq!(Candidates::<Base>::with_integral(0).to_vec_u8(), vec![]);
+        let all = 0b0000_0001_1111_1111_1111_1111_1111_1111;
+        assert_integral_identity(all);
+        assert_eq!(
+            Candidates::<Base>::with_integral(all).to_vec_u8(),
+            (1..=25).collect::<Vec<_>>()
+        );
     }
 }
