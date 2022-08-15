@@ -187,6 +187,8 @@ impl<Base: SudokuBase> Grid<Base> {
 //  0100 ...
 // TODO: rewrite with ndarray slice
 // TODO: zip position + cell
+//  indexed_iter
+//  https://docs.rs/ndarray/latest/ndarray/iter/struct.IndexedIter.html
 //  => impl Iterator<Item = &mut Cell>
 
 /// Cell iterators
