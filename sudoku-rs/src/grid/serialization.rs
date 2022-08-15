@@ -5,7 +5,6 @@ use tabled::{builder::Builder, object::Segment, Alignment, Modify, Style};
 use crate::base::SudokuBase;
 use crate::cell::compact::cell_state::CellState;
 use crate::cell::compact::value::Value;
-use crate::cell::view::CellView;
 use crate::grid::Grid;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -97,7 +96,6 @@ fn render_givens_grid<Base: SudokuBase>(grid: &Grid<Base>) -> String {
 }
 
 fn render_binary_candidates_line<Base: SudokuBase>(grid: &Grid<Base>) -> String {
-    use bitvec::prelude::*;
     use itertools::Itertools;
 
     grid.cells

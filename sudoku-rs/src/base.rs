@@ -77,7 +77,6 @@ impl_sudoku_base!(U1,u8; U2,u8; U3, u16; U4, u16; U5, u32);
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::any::{type_name, Any};
 
     #[test]
     fn test_base_to_side_length() {

@@ -4,7 +4,6 @@ use std::fmt::{Display, Formatter};
 
 use bitvec::prelude::*;
 use bitvec::view::{BitView, BitViewSized};
-use funty::Integral;
 
 use crate::base::SudokuBase;
 use crate::cell::compact::value::Value;
@@ -260,7 +259,7 @@ mod tests {
 
         let powers_of_two = std::iter::successors(Some(1u32), |i| {
             let next = i << 1;
-            if next >= 2.pow(Base::MAX_VALUE.into()) {
+            if next >= 2u32.pow(Base::MAX_VALUE.into()) {
                 None
             } else {
                 Some(next)
