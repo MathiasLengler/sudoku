@@ -11,7 +11,7 @@ use typenum::{
 };
 
 pub mod consts {
-    pub use typenum::consts::*;
+    pub use typenum::consts::{U1, U2, U3, U4, U5};
 }
 
 pub type ArrayElement = u8;
@@ -48,8 +48,8 @@ where
     const CANDIDATES_ARRAY_CAPACITY: usize;
 
     type CandidatesArrayElement: BitStore;
-    type CandidatesArray: BitViewSized + Ord + Hash + Clone + Debug + Default;
-    type CandidatesIntegral: BitStore + Integral + Clone + Debug + Default + Display;
+    type CandidatesArray: BitViewSized + Ord + Hash + Copy + Clone + Debug + Default;
+    type CandidatesIntegral: BitStore + Integral + Copy + Clone + Debug + Default + Display;
 }
 
 macro_rules! impl_sudoku_base {
