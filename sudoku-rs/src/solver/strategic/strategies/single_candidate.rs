@@ -1,7 +1,8 @@
 use crate::base::SudokuBase;
+use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
-use crate::solver::strategic::strategies::deduction::StrategyDeduction;
+use crate::solver::strategic::strategies::deduction::{Deduction, Deductions, TryIntoDeductions};
 
 use super::Strategy;
 
@@ -9,29 +10,33 @@ use super::Strategy;
 pub struct SingleCandidate;
 
 impl<Base: SudokuBase> Strategy<Base> for SingleCandidate {
-    fn execute(&self, grid: &Grid<Base>) -> Vec<StrategyDeduction<Base>> {
-        grid.all_candidates_positions()
-            .into_iter()
-            .filter_map(|candidate_pos| {
-                let candidates = grid.get(candidate_pos).candidates().unwrap().to_vec_value();
+    fn execute(&self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
+        TryIntoDeductions(
+            grid.all_candidates_positions()
+                .into_iter()
+                .filter_map(|candidate_pos| {
+                    let candidates = grid.get(candidate_pos).candidates().unwrap();
 
-                if candidates.len() == 1 {
-                    let single_candidate = candidates[0];
-                    Some(StrategyDeduction::Value {
-                        pos: candidate_pos,
-                        value: single_candidate,
-                    })
-                } else {
-                    None
-                }
-            })
-            .collect()
+                    if candidates.count() == 1 {
+                        let single_candidate = candidates.iter().next().unwrap();
+                        Some(Deduction::with_value(
+                            candidate_pos,
+                            candidates,
+                            single_candidate,
+                        ))
+                    } else {
+                        None
+                    }
+                }),
+        )
+        .try_into()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::samples;
+    use crate::solver::strategic::strategies::deduction::IntoDeductions;
 
     use super::*;
 
@@ -44,45 +49,79 @@ mod tests {
 
         println!("{grid}");
 
-        let mut deductions = SingleCandidate.execute(&mut grid);
-        deductions.sort();
+        let deductions = SingleCandidate.execute(&mut grid).unwrap();
 
+        // TODO: rewrite using grid.deduction_at
         assert_eq!(
             deductions,
-            vec![
-                StrategyDeduction::Value {
-                    pos: Position { row: 0, column: 0 },
-                    value: 2.try_into().unwrap()
-                },
-                StrategyDeduction::Value {
-                    pos: Position { row: 0, column: 3 },
-                    value: 1.try_into().unwrap()
-                },
-                StrategyDeduction::Value {
-                    pos: Position { row: 1, column: 1 },
-                    value: 1.try_into().unwrap()
-                },
-                StrategyDeduction::Value {
-                    pos: Position { row: 1, column: 2 },
-                    value: 3.try_into().unwrap()
-                },
-                StrategyDeduction::Value {
-                    pos: Position { row: 2, column: 1 },
-                    value: 4.try_into().unwrap()
-                },
-                StrategyDeduction::Value {
-                    pos: Position { row: 2, column: 2 },
-                    value: 2.try_into().unwrap()
-                },
-                StrategyDeduction::Value {
-                    pos: Position { row: 3, column: 0 },
-                    value: 3.try_into().unwrap()
-                },
-                StrategyDeduction::Value {
-                    pos: Position { row: 3, column: 3 },
-                    value: 4.try_into().unwrap()
-                },
-            ]
+            IntoDeductions(vec![
+                Deduction::with_value(
+                    Position { row: 0, column: 0 },
+                    grid.get(Position { row: 0, column: 0 })
+                        .candidates()
+                        .unwrap(),
+                    2.try_into().unwrap()
+                )
+                .unwrap(),
+                Deduction::with_value(
+                    Position { row: 0, column: 3 },
+                    grid.get(Position { row: 0, column: 3 })
+                        .candidates()
+                        .unwrap(),
+                    1.try_into().unwrap()
+                )
+                .unwrap(),
+                Deduction::with_value(
+                    Position { row: 1, column: 1 },
+                    grid.get(Position { row: 1, column: 1 })
+                        .candidates()
+                        .unwrap(),
+                    1.try_into().unwrap()
+                )
+                .unwrap(),
+                Deduction::with_value(
+                    Position { row: 1, column: 2 },
+                    grid.get(Position { row: 1, column: 2 })
+                        .candidates()
+                        .unwrap(),
+                    3.try_into().unwrap()
+                )
+                .unwrap(),
+                Deduction::with_value(
+                    Position { row: 2, column: 1 },
+                    grid.get(Position { row: 2, column: 1 })
+                        .candidates()
+                        .unwrap(),
+                    4.try_into().unwrap()
+                )
+                .unwrap(),
+                Deduction::with_value(
+                    Position { row: 2, column: 2 },
+                    grid.get(Position { row: 2, column: 2 })
+                        .candidates()
+                        .unwrap(),
+                    2.try_into().unwrap()
+                )
+                .unwrap(),
+                Deduction::with_value(
+                    Position { row: 3, column: 0 },
+                    grid.get(Position { row: 3, column: 0 })
+                        .candidates()
+                        .unwrap(),
+                    3.try_into().unwrap()
+                )
+                .unwrap(),
+                Deduction::with_value(
+                    Position { row: 3, column: 3 },
+                    grid.get(Position { row: 3, column: 3 })
+                        .candidates()
+                        .unwrap(),
+                    4.try_into().unwrap()
+                )
+                .unwrap(),
+            ])
+            .try_into()
+            .unwrap()
         );
 
         grid.apply_deductions(&deductions);

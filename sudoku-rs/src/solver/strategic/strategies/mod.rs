@@ -27,9 +27,10 @@ pub use single_candidate::SingleCandidate;
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
 use crate::cell::compact::value::Value;
+use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
-use crate::solver::strategic::strategies::deduction::StrategyDeduction;
+use crate::solver::strategic::strategies::deduction::Deductions;
 
 // API
 pub mod deduction;
@@ -39,20 +40,10 @@ pub mod group_reduction;
 mod hidden_singles;
 mod single_candidate;
 
-// TODO: split strategy result and grid mutation
-//  StrategyResult/Deduction
-//  - Value at position
-//  - Remove candidate at position
-//  - Retain set of candidates at position
-//  Pros:
-//  - Abstract mutation
-//  - Easier testing
-//  - Visualize hints in UI
-
 pub trait Strategy<Base: SudokuBase>: Debug {
     // TODO: evaluate different return type: Result<BTreeSet<StrategyDeduction<Base>>>
     /// Execute this strategy on the given grid. Returns a list of deductions.
-    fn execute(&self, grid: &Grid<Base>) -> Vec<StrategyDeduction<Base>>;
+    fn execute(&self, grid: &Grid<Base>) -> Result<Deductions<Base>>;
 }
 
 pub(super) fn all_strategies<Base: SudokuBase>() -> Vec<Box<dyn Strategy<Base>>> {

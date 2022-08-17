@@ -3,9 +3,12 @@ use itertools::{izip, Itertools};
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
 use crate::cell::compact::value::Value;
+use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
-use crate::solver::strategic::strategies::deduction::StrategyDeduction;
+use crate::solver::strategic::strategies::deduction::{
+    Deduction, Deductions, IntoDeductions, TryIntoDeductions,
+};
 
 use super::Strategy;
 
@@ -13,53 +16,42 @@ use super::Strategy;
 pub struct GroupReduction;
 
 impl<Base: SudokuBase> Strategy<Base> for GroupReduction {
-    fn execute(&self, grid: &Grid<Base>) -> Vec<StrategyDeduction<Base>> {
-        let mut deductions = Self::reduce_groups(Grid::<Base>::all_group_positions(), grid);
+    fn execute(&self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
+        TryIntoDeductions(Grid::<Base>::all_group_positions().flat_map(|group| {
+            let (positions, candidates_group): (Vec<_>, Vec<_>) = group
+                .filter_map(|pos| {
+                    grid.get(pos)
+                        .candidates()
+                        .map(|candidates| (pos, candidates))
+                })
+                .unzip();
 
-        // TODO: who is responsible for postprocessing deductions?
-        StrategyDeduction::postprocess(deductions)
+            let reduced_candidates_group = Self::reduce_candidates_group(&candidates_group);
+
+            izip!(positions, candidates_group, reduced_candidates_group).filter_map(
+                |(position, candidates, reduced_candidates)| {
+                    if candidates != reduced_candidates {
+                        println!(
+                            "GroupReduction at {}: {} => {}",
+                            position, candidates, reduced_candidates
+                        );
+
+                        Some(Deduction::with_remaining_candidates(
+                            position,
+                            candidates,
+                            reduced_candidates,
+                        ))
+                    } else {
+                        None
+                    }
+                },
+            )
+        }))
+        .try_into()
     }
 }
 
 impl GroupReduction {
-    fn reduce_groups<Base: SudokuBase>(
-        groups: impl Iterator<Item = impl Iterator<Item = Position>>,
-        grid: &Grid<Base>,
-    ) -> Vec<StrategyDeduction<Base>> {
-        groups
-            .flat_map(|group| {
-                let (positions, candidates_group): (Vec<_>, Vec<_>) = group
-                    .filter_map(|pos| {
-                        grid.get(pos)
-                            .candidates()
-                            .map(|candidates| (pos, candidates))
-                    })
-                    .unzip();
-
-                let reduced_candidates_group = Self::reduce_candidates_group(&candidates_group);
-
-                izip!(positions, candidates_group, reduced_candidates_group).filter_map(
-                    |(position, candidates, reduced_candidates)| {
-                        if candidates != reduced_candidates {
-                            println!(
-                                "GroupReduction at {}: {} => {}",
-                                position, candidates, reduced_candidates
-                            );
-
-                            Some(StrategyDeduction::PruneCandidates {
-                                pos: position,
-                                previous_candidates: candidates,
-                                remaining_candidates: reduced_candidates,
-                            })
-                        } else {
-                            None
-                        }
-                    },
-                )
-            })
-            .collect()
-    }
-
     pub fn reduce_candidates_group<Base: SudokuBase>(
         candidates_group: &[Candidates<Base>],
     ) -> Vec<Candidates<Base>> {
@@ -198,7 +190,7 @@ mod tests {
 
         println!("{grid}");
 
-        let deductions = GroupReduction.execute(&grid);
+        let deductions = GroupReduction.execute(&grid).unwrap();
         // TODO: assert deductions
         for deduction in &deductions {
             println!("{deduction}");

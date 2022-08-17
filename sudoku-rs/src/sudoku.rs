@@ -152,22 +152,26 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
         self.grid.set_all_direct_candidates();
     }
 
-    fn solve_single_candidates(&mut self) {
+    fn solve_single_candidates(&mut self) -> Result<()> {
         self.push_history();
 
         let mut solver =
             StrategicSolver::new_with_strategies(&mut self.grid, vec![Box::new(SingleCandidate)]);
 
-        solver.try_strategies();
+        solver.try_strategies()?;
+
+        Ok(())
     }
 
-    fn group_reduction(&mut self) {
+    fn group_reduction(&mut self) -> Result<()> {
         self.push_history();
 
         let mut solver =
             StrategicSolver::new_with_strategies(&mut self.grid, vec![Box::new(GroupReduction)]);
 
-        solver.try_strategies();
+        solver.try_strategies()?;
+
+        Ok(())
     }
 
     fn undo(&mut self) {

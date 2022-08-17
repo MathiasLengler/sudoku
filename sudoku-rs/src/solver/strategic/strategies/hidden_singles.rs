@@ -1,8 +1,9 @@
 use crate::base::SudokuBase;
 use crate::cell::compact::value::Value;
+use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
-use crate::solver::strategic::strategies::deduction::StrategyDeduction;
+use crate::solver::strategic::strategies::deduction::{Deduction, Deductions, TryIntoDeductions};
 use std::collections::HashSet;
 
 use super::Strategy;
@@ -11,53 +12,57 @@ use super::Strategy;
 pub struct HiddenSingles;
 
 impl<Base: SudokuBase> Strategy<Base> for HiddenSingles {
-    fn execute(&self, grid: &Grid<Base>) -> Vec<StrategyDeduction<Base>> {
-        let mut hidden_singles: HashSet<(Position, Value<Base>)> = HashSet::new();
+    fn execute(&self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
+        TryIntoDeductions(
+            Grid::<Base>::all_group_positions().flat_map(|group_positions| {
+                #[derive(Debug, Copy, Clone, Default)]
+                struct CandidateStats {
+                    count: u8,
+                    last_pos: Option<Position>,
+                }
 
-        Grid::<Base>::all_group_positions().for_each(|group_positions| {
-            #[derive(Debug, Copy, Clone, Default)]
-            struct CandidateStats {
-                count: u8,
-                last_pos: Option<Position>,
-            }
+                // TODO: evaluate better data structure
+                //  - stack allocated
+                //  - Value<Base> API, less conversions
+                let mut candidate_histogram =
+                    vec![CandidateStats::default(); Grid::<Base>::max_value_usize()];
 
-            // TODO: evaluate better data structure
-            //  - stack allocated
-            //  - Value<Base> API, less conversions
-            let mut candidate_histogram =
-                vec![CandidateStats::default(); Grid::<Base>::max_value_usize()];
+                for group_position in group_positions {
+                    if let Some(candidates) = grid.get(group_position).candidates() {
+                        for candidate in candidates.iter() {
+                            let candidate = candidate.into_u8() - 1;
 
-            for group_position in group_positions {
-                if let Some(candidates) = grid.get(group_position).candidates() {
-                    for candidate in candidates.iter() {
-                        let candidate = candidate.into_u8() - 1;
+                            let candidate_index = usize::from(candidate);
 
-                        let candidate_index = usize::from(candidate);
-
-                        candidate_histogram[candidate_index].count += 1;
-                        candidate_histogram[candidate_index].last_pos = Some(group_position);
+                            candidate_histogram[candidate_index].count += 1;
+                            candidate_histogram[candidate_index].last_pos = Some(group_position);
+                        }
                     }
                 }
-            }
 
-            for (candidate_value, stats) in candidate_histogram.into_iter().enumerate() {
-                if stats.count == 1 {
-                    // This candidate is unique in this group.
-                    let position = stats.last_pos.unwrap();
+                candidate_histogram.into_iter().enumerate().filter_map(
+                    |(candidate_value, stats)| {
+                        if stats.count == 1 {
+                            // This candidate is unique in this group.
+                            let pos = stats.last_pos.unwrap();
 
-                    let candidate_value =
-                        Value::<Base>::try_from(u8::try_from(candidate_value + 1).unwrap())
-                            .unwrap();
+                            let candidate_value =
+                                Value::<Base>::try_from(u8::try_from(candidate_value + 1).unwrap())
+                                    .unwrap();
 
-                    hidden_singles.insert((position, candidate_value));
-                }
-            }
-        });
-
-        hidden_singles
-            .into_iter()
-            .map(|(pos, value)| StrategyDeduction::Value { pos, value })
-            .collect::<Vec<_>>()
+                            Some(Deduction::with_value(
+                                pos,
+                                grid.get(pos).candidates().unwrap(),
+                                candidate_value,
+                            ))
+                        } else {
+                            None
+                        }
+                    },
+                )
+            }),
+        )
+        .try_into()
     }
 }
 

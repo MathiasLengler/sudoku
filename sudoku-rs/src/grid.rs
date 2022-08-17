@@ -14,7 +14,7 @@ use crate::cell::Cell;
 use crate::error::{Error, Result};
 use crate::grid::serialization::GridFormat;
 use crate::position::Position;
-use crate::solver::strategic::strategies::deduction::StrategyDeduction;
+use crate::solver::strategic::strategies::deduction::Deductions;
 
 pub mod serialization;
 
@@ -160,8 +160,8 @@ impl<Base: SudokuBase> Grid<Base> {
         }
     }
 
-    pub fn apply_deductions(&mut self, deductions: &[StrategyDeduction<Base>]) {
-        for deduction in deductions {
+    pub fn apply_deductions(&mut self, deductions: &Deductions<Base>) {
+        for deduction in deductions.iter() {
             deduction.apply(self);
         }
     }

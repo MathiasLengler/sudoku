@@ -1,11 +1,14 @@
 use strategies::Strategy;
 
 use crate::base::SudokuBase;
+use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
-use crate::solver::strategic::strategies::deduction::StrategyDeduction;
+use crate::solver::strategic::strategies::deduction::Deductions;
 
 pub mod strategies;
+
+// TODO: return/persist chain of deductions for complete solve
 
 #[derive(Debug)]
 pub struct Solver<'s, Base: SudokuBase> {
@@ -26,31 +29,29 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
     }
 
     // TODO: unique solution?
-    pub fn try_solve(&mut self) -> bool {
+    pub fn try_solve(&mut self) -> Result<bool> {
         loop {
             if self.grid.is_solved() {
-                return true;
+                return Ok(true);
             }
 
-            if let Some((deductions)) = self.try_strategies() {
+            if let Some((deductions)) = self.try_strategies()? {
                 self.grid.apply_deductions(&deductions);
 
                 // Continue with strategy execution
             } else {
                 // All strategies have failed.
-                return false;
+                return Ok(false);
             }
         }
     }
 
     /// Tries strategies until a strategy is able to modify the grid.
-    pub fn try_strategies(&mut self) -> Option<Vec<StrategyDeduction<Base>>> {
-        self.strategies.iter().find_map(|strategy| {
-            let deductions = strategy.execute(&mut self.grid);
+    pub fn try_strategies(&mut self) -> Result<Option<Deductions<Base>>> {
+        for strategy in &self.strategies {
+            let deductions = strategy.execute(&mut self.grid)?;
 
-            if deductions.is_empty() {
-                None
-            } else {
+            if !(deductions.is_empty()) {
                 #[cfg(feature = "debug_print")]
                 println!(
                     "{:?}: {:?}\n{}",
@@ -62,9 +63,11 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
                     self.grid
                 );
 
-                return Some(deductions);
+                return Ok(Some(deductions));
+            } else {
             }
-        })
+        }
+        Ok(None)
     }
 }
 
@@ -80,7 +83,7 @@ mod tests {
 
         let mut solver = Solver::new(grid);
 
-        assert!(solver.try_solve());
+        assert!(solver.try_solve().unwrap());
 
         assert!(grid.is_solved());
     }
@@ -112,7 +115,7 @@ mod tests {
 
         let mut solver = Solver::new(&mut grid);
 
-        assert!(solver.try_solve());
+        assert!(solver.try_solve().unwrap());
 
         assert!(grid.is_solved());
     }
