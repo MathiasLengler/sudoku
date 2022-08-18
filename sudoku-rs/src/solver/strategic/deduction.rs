@@ -340,17 +340,16 @@ mod tests {
 
         let pos = Position { row: 0, column: 1 };
         let value = 1.try_into().unwrap();
-        OldDeduction::Value { pos, value }.apply(&mut grid);
+        Deduction::with_value(pos, Candidates::single(1.try_into().unwrap()), value)
+            .unwrap()
+            .apply(&mut grid);
         assert_eq!(*grid.get(pos), Cell::with_value(value, false));
 
         let pos = Position { row: 3, column: 3 };
         let candidates = vec![2, 4].try_into().unwrap();
-        OldDeduction::PruneCandidates {
-            pos,
-            previous_candidates: Candidates::all(),
-            remaining_candidates: candidates,
-        }
-        .apply(&mut grid);
+        Deduction::with_remaining_candidates(pos, Candidates::all(), candidates)
+            .unwrap()
+            .apply(&mut grid);
         assert_eq!(
             *grid.get(pos),
             Cell::with_candidates(vec![2, 4].try_into().unwrap())
