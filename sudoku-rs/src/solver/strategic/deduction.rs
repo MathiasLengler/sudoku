@@ -332,8 +332,6 @@ mod tests {
     use crate::cell::Cell;
     use crate::samples;
 
-    // TODO: port tests from OldDeduction to Deduction
-
     #[test]
     fn test_deduction_apply() {
         let mut grid = samples::base_2_candidates_coordinates();
@@ -354,78 +352,61 @@ mod tests {
     }
 
     #[test]
-    fn test_postprocess() {
-        use OldDeduction::*;
-
+    fn test_deduction_merge() {
         let pos = Position { row: 1, column: 1 };
         let previous_candidates: Candidates<U2> = Candidates::all();
         let remaining_candidates: Candidates<U2> = Candidates::single(1.try_into().unwrap());
+        let value: Value<U2> = 1.try_into().unwrap();
 
-        let cases: Vec<(OldDeduction<U2>, OldDeduction<U2>, OldDeduction<U2>)> = vec![
+        let cases: Vec<(Deduction<U2>, Deduction<U2>, Deduction<U2>)> = vec![
             // Equal
             (
-                Value {
-                    pos,
-                    value: 1.try_into().unwrap(),
-                },
-                Value {
-                    pos,
-                    value: 1.try_into().unwrap(),
-                },
-                Value {
-                    pos,
-                    value: 1.try_into().unwrap(),
-                },
+                Deduction::with_value(pos, previous_candidates, value).unwrap(),
+                Deduction::with_value(pos, previous_candidates, value).unwrap(),
+                Deduction::with_value(pos, previous_candidates, value).unwrap(),
             ),
             // Left Value overwrites right PruneCandidates
             (
-                Value {
-                    pos,
-                    value: 1.try_into().unwrap(),
-                },
-                PruneCandidates {
+                Deduction::with_value(pos, previous_candidates, value).unwrap(),
+                Deduction::with_remaining_candidates(
                     pos,
                     previous_candidates,
                     remaining_candidates,
-                },
-                Value {
-                    pos,
-                    value: 1.try_into().unwrap(),
-                },
+                )
+                .unwrap(),
+                Deduction::with_value(pos, previous_candidates, value).unwrap(),
             ),
             // Right Value overwrites left PruneCandidates
             (
-                PruneCandidates {
+                Deduction::with_remaining_candidates(
                     pos,
                     previous_candidates,
                     remaining_candidates,
-                },
-                Value {
-                    pos,
-                    value: 1.try_into().unwrap(),
-                },
-                Value {
-                    pos,
-                    value: 1.try_into().unwrap(),
-                },
+                )
+                .unwrap(),
+                Deduction::with_value(pos, previous_candidates, value).unwrap(),
+                Deduction::with_value(pos, previous_candidates, value).unwrap(),
             ),
             // Intersect PruneCandidates
             (
-                PruneCandidates {
+                Deduction::with_remaining_candidates(
                     pos,
                     previous_candidates,
-                    remaining_candidates: vec![1, 2, 4].try_into().unwrap(),
-                },
-                PruneCandidates {
+                    vec![1, 2, 4].try_into().unwrap(),
+                )
+                .unwrap(),
+                Deduction::with_remaining_candidates(
                     pos,
                     previous_candidates,
-                    remaining_candidates: vec![1, 3, 4].try_into().unwrap(),
-                },
-                PruneCandidates {
+                    vec![1, 3, 4].try_into().unwrap(),
+                )
+                .unwrap(),
+                Deduction::with_remaining_candidates(
                     pos,
                     previous_candidates,
-                    remaining_candidates: vec![1, 4].try_into().unwrap(),
-                },
+                    vec![1, 4].try_into().unwrap(),
+                )
+                .unwrap(),
             ),
         ];
 
@@ -436,48 +417,76 @@ mod tests {
             );
         }
     }
-
     #[test]
-    fn test_postprocess_err() {
-        use OldDeduction::*;
-
+    fn test_deduction_merge_err() {
         let pos = Position { row: 1, column: 1 };
+        let different_pos = Position { row: 2, column: 2 };
+        let previous_candidates: Candidates<U2> = Candidates::all();
+        let different_previous_candidates: Candidates<U2> = vec![1, 2].try_into().unwrap();
+        let remaining_candidates: Candidates<U2> = Candidates::single(1.try_into().unwrap());
+        let different_remaining_candidates: Candidates<U2> =
+            Candidates::single(2.try_into().unwrap());
+        let value: Value<U2> = 1.try_into().unwrap();
+        let different_value: Value<U2> = 2.try_into().unwrap();
 
-        let err_cases: Vec<(OldDeduction<U2>, OldDeduction<U2>)> = vec![
+        let err_cases: Vec<(Deduction<U2>, Deduction<U2>)> = vec![
             // Different pos
             (
-                Value {
+                Deduction::with_value(pos, previous_candidates, value).unwrap(),
+                Deduction::with_value(different_pos, previous_candidates, value).unwrap(),
+            ),
+            (
+                Deduction::with_remaining_candidates(
                     pos,
-                    value: 1.try_into().unwrap(),
-                },
-                Value {
-                    pos: Position { row: 2, column: 2 },
-                    value: 1.try_into().unwrap(),
-                },
+                    previous_candidates,
+                    remaining_candidates,
+                )
+                .unwrap(),
+                Deduction::with_remaining_candidates(
+                    different_pos,
+                    previous_candidates,
+                    remaining_candidates,
+                )
+                .unwrap(),
+            ),
+            // Different previous_candidates
+            (
+                Deduction::with_value(pos, previous_candidates, value).unwrap(),
+                Deduction::with_value(pos, different_previous_candidates, value).unwrap(),
+            ),
+            (
+                Deduction::with_remaining_candidates(
+                    pos,
+                    previous_candidates,
+                    remaining_candidates,
+                )
+                .unwrap(),
+                Deduction::with_remaining_candidates(
+                    pos,
+                    different_previous_candidates,
+                    remaining_candidates,
+                )
+                .unwrap(),
             ),
             // Different value
             (
-                Value {
-                    pos,
-                    value: 1.try_into().unwrap(),
-                },
-                Value {
-                    pos,
-                    value: 2.try_into().unwrap(),
-                },
+                Deduction::with_value(pos, previous_candidates, value).unwrap(),
+                Deduction::with_value(pos, previous_candidates, different_value).unwrap(),
             ),
             // No intersection
             (
-                PruneCandidates {
+                Deduction::with_remaining_candidates(
                     pos,
-                    previous_candidates: Candidates::all(),
-                    remaining_candidates: Candidates::single(1.try_into().unwrap()),
-                },
-                PruneCandidates {
+                    previous_candidates,
+                    remaining_candidates,
+                )
+                .unwrap(),
+                Deduction::with_remaining_candidates(
                     pos,
-                    previous_candidates: Candidates::all(),
-                    remaining_candidates: Candidates::single(2.try_into().unwrap()),
-                },
+                    previous_candidates,
+                    different_remaining_candidates,
+                )
+                .unwrap(),
             ),
         ];
 
