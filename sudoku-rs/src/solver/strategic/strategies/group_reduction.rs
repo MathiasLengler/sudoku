@@ -196,7 +196,7 @@ mod tests {
             println!("{deduction}");
         }
 
-        grid.apply_deductions(&deductions);
+        deductions.apply(&mut grid);
 
         println!("{grid}");
     }

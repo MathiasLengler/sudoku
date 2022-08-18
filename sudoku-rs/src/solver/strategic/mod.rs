@@ -37,9 +37,8 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
                 return Ok(true);
             }
 
-            if let Some((deductions)) = self.try_strategies()? {
-                self.grid.apply_deductions(&deductions);
-
+            if let Some(deductions) = self.try_strategies()? {
+                deductions.apply(self.grid);
                 // Continue with strategy execution
             } else {
                 // All strategies have failed.

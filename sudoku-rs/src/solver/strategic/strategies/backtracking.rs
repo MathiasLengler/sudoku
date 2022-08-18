@@ -48,8 +48,7 @@ mod tests {
         // TODO: assert deductions
         let deductions = Backtracking.execute(&grid).unwrap();
 
-        // TODO: fix panic
-        grid.apply_deductions(&deductions);
+        deductions.apply(&mut grid);
 
         assert!(grid.is_solved());
     }

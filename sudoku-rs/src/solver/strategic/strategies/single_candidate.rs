@@ -124,7 +124,8 @@ mod tests {
             .unwrap()
         );
 
-        grid.apply_deductions(&deductions);
+        deductions.apply(&mut grid);
+
         assert!(grid.is_solved());
     }
 }

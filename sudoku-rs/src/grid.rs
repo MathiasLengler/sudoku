@@ -159,12 +159,6 @@ impl<Base: SudokuBase> Grid<Base> {
             self.get_mut(pos).delete();
         }
     }
-
-    pub fn apply_deductions(&mut self, deductions: &Deductions<Base>) {
-        for deduction in deductions.iter() {
-            deduction.apply(self);
-        }
-    }
 }
 
 /// Base constant accessors

@@ -101,6 +101,16 @@ impl<Base: SudokuBase> Deductions<Base> {
 
         Ok(())
     }
+
+    pub fn apply(&self, grid: &mut Grid<Base>) {
+        for deduction in self {
+            deduction.apply(grid);
+        }
+
+        for deduction in self {
+            grid.direct_candidates(deduction.pos);
+        }
+    }
 }
 
 // TODO: &grid.deduction_at
@@ -183,8 +193,6 @@ impl<Base: SudokuBase> Deduction<Base> {
         match kind {
             DeductionKind::Value { value } => {
                 cell.set_value(value);
-                // FIXME: this breaks the debug assert above (grid.apply_deductions)
-                grid.update_candidates(pos, value);
             }
             DeductionKind::PruneCandidates {
                 remaining_candidates,
