@@ -261,12 +261,7 @@ impl<Base: SudokuBase> Deduction<Base> {
                 "Conflicting previous_candidates: {self_previous_candidates} != {other_previous_candidates}"
             );
 
-            Ok(Self {
-                pos: *self_pos,
-                previous_candidates: *self_previous_candidates,
-                kind: self_kind.merge(&other_kind)?,
-            })
-
+            Self::new(*self_pos, *self_previous_candidates, self_kind.merge(&other_kind)?)
         })().with_context(|| format!("Incompatible merge of two deductions: {self}, {other}"))
     }
 }
