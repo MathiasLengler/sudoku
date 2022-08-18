@@ -12,6 +12,9 @@ pub struct HiddenSingles;
 
 impl<Base: SudokuBase> Strategy<Base> for HiddenSingles {
     fn execute(&self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
+        // TODO: debug assert: all values have been called with grid.update_candidates (grid.validate_all_direct_candidates?)
+        //  if not true, HiddenSingles produces conflicting deductions
+
         TryIntoDeductions(
             Grid::<Base>::all_group_positions().flat_map(|group_positions| {
                 #[derive(Debug, Copy, Clone, Default)]
@@ -79,7 +82,7 @@ mod tests {
         grid.set_all_direct_candidates();
         grid.fix_all_values();
 
-        let mut deductions = HiddenSingles.execute(&mut grid).unwrap();
+        let deductions = HiddenSingles.execute(&mut grid).unwrap();
 
         assert_eq!(
             deductions,

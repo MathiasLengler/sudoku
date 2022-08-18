@@ -104,8 +104,11 @@ impl<Base: SudokuBase> Deductions<Base> {
             deduction.apply(grid);
         }
 
+        // Update candidates for all value deductions.
         for deduction in self {
-            grid.direct_candidates(deduction.pos);
+            if let DeductionKind::Value { value } = deduction.kind {
+                grid.update_candidates(deduction.pos, value);
+            }
         }
     }
 }
@@ -193,6 +196,7 @@ impl<Base: SudokuBase> Deduction<Base> {
         match kind {
             DeductionKind::Value { value } => {
                 cell.set_value(value);
+                // Don't update candidates, which would fail the assert of previous_candidates for subsequent deductions.
             }
             DeductionKind::PruneCandidates {
                 remaining_candidates,
