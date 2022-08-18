@@ -335,7 +335,7 @@ mod tests {
     // TODO: port tests from OldDeduction to Deduction
 
     #[test]
-    fn test_apply() {
+    fn test_deduction_apply() {
         let mut grid = samples::base_2_candidates_coordinates();
 
         let pos = Position { row: 0, column: 1 };
@@ -350,10 +350,7 @@ mod tests {
         Deduction::with_remaining_candidates(pos, Candidates::all(), candidates)
             .unwrap()
             .apply(&mut grid);
-        assert_eq!(
-            *grid.get(pos),
-            Cell::with_candidates(vec![2, 4].try_into().unwrap())
-        );
+        assert_eq!(*grid.get(pos), Cell::with_candidates(candidates));
     }
 
     #[test]
