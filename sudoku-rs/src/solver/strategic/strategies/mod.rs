@@ -25,11 +25,8 @@ pub use hidden_singles::HiddenSingles;
 pub use single_candidate::SingleCandidate;
 
 use crate::base::SudokuBase;
-use crate::cell::compact::candidates::Candidates;
-use crate::cell::compact::value::Value;
 use crate::error::Result;
 use crate::grid::Grid;
-use crate::position::Position;
 use crate::solver::strategic::deduction::Deductions;
 
 // Strategies

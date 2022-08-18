@@ -4,12 +4,9 @@ use crate::cell::compact::value::Value;
 use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::position::Position;
-use crate::solver::strategic::strategies::*;
 use anyhow::{bail, ensure, Context};
-use itertools::Itertools;
-use std::cmp::Ordering;
 use std::collections::btree_map::Values;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use std::fmt::{Display, Formatter};
 
 #[derive(Debug, Clone, Eq, PartialEq, Default)]

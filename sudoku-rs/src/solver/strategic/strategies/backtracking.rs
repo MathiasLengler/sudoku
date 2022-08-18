@@ -1,7 +1,6 @@
 use crate::base::SudokuBase;
 use crate::error::Result;
 use crate::grid::Grid;
-use crate::position::Position;
 use crate::solver::backtracking::Solver;
 use crate::solver::strategic::deduction::{Deduction, Deductions, TryIntoDeductions};
 

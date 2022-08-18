@@ -1,14 +1,11 @@
-use itertools::{izip, Itertools};
+use itertools::izip;
 
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
 use crate::cell::compact::value::Value;
 use crate::error::Result;
 use crate::grid::Grid;
-use crate::position::Position;
-use crate::solver::strategic::deduction::{
-    Deduction, Deductions, IntoDeductions, TryIntoDeductions,
-};
+use crate::solver::strategic::deduction::{Deduction, Deductions, TryIntoDeductions};
 
 use super::Strategy;
 

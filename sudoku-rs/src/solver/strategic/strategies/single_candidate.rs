@@ -1,7 +1,6 @@
 use crate::base::SudokuBase;
 use crate::error::Result;
 use crate::grid::Grid;
-use crate::position::Position;
 use crate::solver::strategic::deduction::{Deduction, Deductions, TryIntoDeductions};
 
 use super::Strategy;
@@ -35,6 +34,7 @@ impl<Base: SudokuBase> Strategy<Base> for SingleCandidate {
 
 #[cfg(test)]
 mod tests {
+    use crate::position::Position;
     use crate::samples;
     use crate::solver::strategic::deduction::IntoDeductions;
 
