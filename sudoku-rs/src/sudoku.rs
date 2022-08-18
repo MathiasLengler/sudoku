@@ -152,12 +152,16 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
         self.grid.set_all_direct_candidates();
     }
 
+    // TODO: refactor Strategy API
+    //  return deductions for visualization
+    //  single method to try a specific strategy
     fn solve_single_candidates(&mut self) -> Result<()> {
         self.push_history();
 
         let mut solver =
             StrategicSolver::new_with_strategies(&mut self.grid, vec![Box::new(SingleCandidate)]);
 
+        // TODO: apply deductions
         solver.try_strategies()?;
 
         Ok(())
@@ -169,6 +173,7 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
         let mut solver =
             StrategicSolver::new_with_strategies(&mut self.grid, vec![Box::new(GroupReduction)]);
 
+        // TODO: apply deductions
         solver.try_strategies()?;
 
         Ok(())
