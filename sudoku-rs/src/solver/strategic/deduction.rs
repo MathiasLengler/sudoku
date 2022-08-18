@@ -132,12 +132,12 @@ impl<Base: SudokuBase> Display for Deduction<Base> {
 
         match kind {
             DeductionKind::Value { value } => {
-                write!(f, "At position {pos} previous candidates {previous_candidates} must be the value {value}")
+                write!(f, "{pos}: {previous_candidates} => {value}")
             }
             DeductionKind::PruneCandidates {
                 remaining_candidates,
             } => {
-                write!(f, "At position {pos} previous candidates {previous_candidates} must be {remaining_candidates}")
+                write!(f, "{pos}: {previous_candidates} => {remaining_candidates}")
             }
         }
     }
@@ -304,7 +304,7 @@ impl<Base: SudokuBase> DeductionKind<Base> {
         use DeductionKind::*;
         Ok(match (*self, *other) {
             (Value { value: self_value }, Value { value: other_value }) => {
-                bail!("Conflicting values: {self_value}, {other_value}")
+                bail!("Conflicting values: {self_value} != {other_value}")
             }
             // Merge PruneCandidates by intersecting their candidates.
             (
@@ -331,6 +331,40 @@ mod tests {
     use crate::base::consts::*;
     use crate::cell::Cell;
     use crate::samples;
+
+    #[test]
+    fn test_deductions_order_independence() {
+        use itertools::Itertools;
+
+        let pos = Position { row: 0, column: 0 };
+        let previous_candidates: Candidates<U2> = Candidates::all();
+        let remaining_candidates: Candidates<U2> = vec![1, 2].try_into().unwrap();
+
+        let value_deduction_1 =
+            Deduction::with_value(pos, previous_candidates, 1.try_into().unwrap()).unwrap();
+        let value_deduction_2 = Deduction::with_value(
+            Position { row: 1, column: 1 },
+            previous_candidates,
+            2.try_into().unwrap(),
+        )
+        .unwrap();
+        let remaining_candidates_deduction =
+            Deduction::with_remaining_candidates(pos, previous_candidates, remaining_candidates)
+                .unwrap();
+
+        let all_deductions: Vec<Deduction<U2>> = vec![
+            value_deduction_1,
+            value_deduction_2,
+            remaining_candidates_deduction,
+        ];
+        let deductions: Deductions<U2> = IntoDeductions(all_deductions.clone()).try_into().unwrap();
+        for deduction_permutation in all_deductions.into_iter().permutations(3) {
+            assert_eq!(
+                Deductions::<U2>::try_from(IntoDeductions(deduction_permutation)).unwrap(),
+                deductions
+            );
+        }
+    }
 
     #[test]
     fn test_deduction_apply() {
