@@ -4,9 +4,11 @@ use crate::base::SudokuBase;
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
-use crate::solver::strategic::strategies::deduction::Deductions;
+use deduction::Deductions;
 
 pub mod strategies;
+// API
+pub mod deduction;
 
 // TODO: return/persist chain of deductions for complete solve
 

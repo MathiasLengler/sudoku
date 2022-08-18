@@ -3,9 +3,7 @@ use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::solver::backtracking::Solver;
-use crate::solver::strategic::strategies::deduction::{
-    Deduction, Deductions, OldDeduction, TryIntoDeductions,
-};
+use crate::solver::strategic::deduction::{Deduction, Deductions, TryIntoDeductions};
 
 use super::Strategy;
 

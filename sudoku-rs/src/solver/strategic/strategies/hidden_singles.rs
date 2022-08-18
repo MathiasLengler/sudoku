@@ -3,7 +3,7 @@ use crate::cell::compact::value::Value;
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
-use crate::solver::strategic::strategies::deduction::{Deduction, Deductions, TryIntoDeductions};
+use crate::solver::strategic::deduction::{Deduction, Deductions, TryIntoDeductions};
 use std::collections::HashSet;
 
 use super::Strategy;

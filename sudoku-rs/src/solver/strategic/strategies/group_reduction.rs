@@ -6,7 +6,7 @@ use crate::cell::compact::value::Value;
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
-use crate::solver::strategic::strategies::deduction::{
+use crate::solver::strategic::deduction::{
     Deduction, Deductions, IntoDeductions, TryIntoDeductions,
 };
 

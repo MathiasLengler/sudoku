@@ -30,10 +30,8 @@ use crate::cell::compact::value::Value;
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
-use crate::solver::strategic::strategies::deduction::Deductions;
+use crate::solver::strategic::deduction::Deductions;
 
-// API
-pub mod deduction;
 // Strategies
 mod backtracking;
 pub mod group_reduction;

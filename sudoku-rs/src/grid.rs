@@ -14,7 +14,7 @@ use crate::cell::Cell;
 use crate::error::{Error, Result};
 use crate::grid::serialization::GridFormat;
 use crate::position::Position;
-use crate::solver::strategic::strategies::deduction::Deductions;
+use crate::solver::strategic::deduction::Deductions;
 
 pub mod serialization;
 
