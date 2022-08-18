@@ -67,44 +67,41 @@ impl<Base: SudokuBase> Strategy<Base> for HiddenSingles {
 
 #[cfg(test)]
 mod tests {
-    use crate::cell::view::{f, v};
     use crate::samples;
+    use crate::solver::strategic::deduction::IntoDeductions;
 
     use super::*;
 
     #[test]
     fn test_hidden_singles() {
-        // TODO: port test to deduction asserts
+        let mut grid = samples::base_2().into_iter().nth(1).unwrap().clone();
 
-        // let mut grid = samples::base_2().into_iter().nth(1).unwrap().clone();
-        //
-        // grid.set_all_direct_candidates();
-        // grid.fix_all_values();
-        //
-        // let mut modified_positions = HiddenSingles.execute(&mut grid);
-        //
-        // modified_positions.sort();
-        //
-        // assert_eq!(
-        //     modified_positions,
-        //     vec![
-        //         Position { row: 0, column: 1 },
-        //         Position { row: 1, column: 2 },
-        //         Position { row: 2, column: 3 },
-        //         Position { row: 3, column: 0 },
-        //     ]
-        // );
-        //
-        // let mut expected_grid = Grid::try_from(vec![
-        //     vec![f(1), v(2), f(4), v(0)],
-        //     vec![v(0), v(0), v(2), v(0)],
-        //     vec![v(0), v(0), v(0), v(4)],
-        //     vec![v(4), f(1), v(0), f(2)],
-        // ])
-        // .unwrap();
-        //
-        // expected_grid.set_all_direct_candidates();
-        //
-        // assert_eq!(grid, expected_grid);
+        grid.set_all_direct_candidates();
+        grid.fix_all_values();
+
+        let mut deductions = HiddenSingles.execute(&mut grid).unwrap();
+
+        assert_eq!(
+            deductions,
+            IntoDeductions(
+                vec![
+                    ((0, 1), vec![2, 3], 2),
+                    ((1, 2), vec![1, 2, 3], 2),
+                    ((2, 3), vec![1, 3, 4], 4),
+                    ((3, 0), vec![3, 4], 4),
+                ]
+                .into_iter()
+                .map(|((row, column), previous_candidates, value)| {
+                    Deduction::with_value(
+                        Position { row, column },
+                        previous_candidates.try_into().unwrap(),
+                        value.try_into().unwrap(),
+                    )
+                    .unwrap()
+                })
+            )
+            .try_into()
+            .unwrap()
+        );
     }
 }
