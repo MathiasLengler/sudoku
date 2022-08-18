@@ -18,7 +18,7 @@ pub struct Deductions<Base: SudokuBase> {
     deductions: BTreeMap<Position, Deduction<Base>>,
 }
 
-/// Specification workaround.
+/// Specialization workaround.
 ///
 /// Reference: https://github.com/rust-lang/rust/issues/50133#issuecomment-646908391
 #[derive(Debug)]
@@ -41,7 +41,7 @@ impl<Base: SudokuBase, I: IntoIterator<Item = Deduction<Base>>> TryFrom<IntoDedu
     }
 }
 
-/// Specification workaround.
+/// Specialization workaround.
 ///
 /// Reference: https://github.com/rust-lang/rust/issues/50133#issuecomment-646908391
 #[derive(Debug)]
