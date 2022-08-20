@@ -325,6 +325,8 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 
     pub fn column_cells(&self, column: u8) -> impl Iterator<Item = &Cell<Base>> {
+        Self::assert_coordinate(column);
+
         self.cells.column(usize::from(column)).into_iter()
     }
 
