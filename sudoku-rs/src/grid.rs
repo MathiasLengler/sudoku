@@ -500,7 +500,7 @@ impl<Base: SudokuBase> Display for Grid<Base> {
 
 #[cfg(test)]
 mod tests {
-    use itertools::assert_equal;
+    use itertools::{assert_equal, Itertools};
     use typenum::consts::*;
 
     use crate::samples;
@@ -641,6 +641,24 @@ mod tests {
         }
     }
     #[test]
+    fn test_all_row_cells() {
+        let grid = samples::base_2_candidates_coordinates();
+
+        grid.all_row_cells()
+            .zip_eq(vec![
+                vec![(0, 0), (0, 1), (0, 2), (0, 3)],
+                vec![(1, 0), (1, 1), (1, 2), (1, 3)],
+                vec![(2, 0), (2, 1), (2, 2), (2, 3)],
+                vec![(3, 0), (3, 1), (3, 2), (3, 3)],
+            ])
+            .for_each(|(actual_row, expected_row)| {
+                assert_equal(
+                    actual_row,
+                    expected_row.into_iter().map(|pos| grid.get(pos.into())),
+                )
+            });
+    }
+    #[test]
     fn test_column_cells() {
         let grid = samples::base_2_candidates_coordinates();
 
@@ -652,6 +670,24 @@ mod tests {
                     .map(|pos| grid.get(pos.into())),
             );
         }
+    }
+    #[test]
+    fn test_all_column_cells() {
+        let grid = samples::base_2_candidates_coordinates();
+
+        grid.all_column_cells()
+            .zip_eq(vec![
+                vec![(0, 0), (1, 0), (2, 0), (3, 0)],
+                vec![(0, 1), (1, 1), (2, 1), (3, 1)],
+                vec![(0, 2), (1, 2), (2, 2), (3, 2)],
+                vec![(0, 3), (1, 3), (2, 3), (3, 3)],
+            ])
+            .for_each(|(actual_row, expected_row)| {
+                assert_equal(
+                    actual_row,
+                    expected_row.into_iter().map(|pos| grid.get(pos.into())),
+                )
+            });
     }
     #[test]
     fn test_block_cells() {
@@ -682,5 +718,52 @@ mod tests {
                 .into_iter()
                 .map(|pos| grid.get(pos.into())),
         );
+    }
+    #[test]
+    fn test_all_block_cells() {
+        let grid = samples::base_2_candidates_coordinates();
+
+        grid.all_block_cells()
+            .zip_eq(vec![
+                vec![(0, 0), (0, 1), (1, 0), (1, 1)],
+                vec![(0, 2), (0, 3), (1, 2), (1, 3)],
+                vec![(2, 0), (2, 1), (3, 0), (3, 1)],
+                vec![(2, 2), (2, 3), (3, 2), (3, 3)],
+            ])
+            .for_each(|(actual_row, expected_row)| {
+                assert_equal(
+                    actual_row,
+                    expected_row.into_iter().map(|pos| grid.get(pos.into())),
+                )
+            });
+    }
+    #[test]
+    fn test_all_group_cells() {
+        let grid = samples::base_2_candidates_coordinates();
+
+        grid.all_group_cells()
+            .zip_eq(vec![
+                // all_rows
+                vec![(0, 0), (0, 1), (0, 2), (0, 3)],
+                vec![(1, 0), (1, 1), (1, 2), (1, 3)],
+                vec![(2, 0), (2, 1), (2, 2), (2, 3)],
+                vec![(3, 0), (3, 1), (3, 2), (3, 3)],
+                // all_columns
+                vec![(0, 0), (1, 0), (2, 0), (3, 0)],
+                vec![(0, 1), (1, 1), (2, 1), (3, 1)],
+                vec![(0, 2), (1, 2), (2, 2), (3, 2)],
+                vec![(0, 3), (1, 3), (2, 3), (3, 3)],
+                // all_blocks
+                vec![(0, 0), (0, 1), (1, 0), (1, 1)],
+                vec![(0, 2), (0, 3), (1, 2), (1, 3)],
+                vec![(2, 0), (2, 1), (3, 0), (3, 1)],
+                vec![(2, 2), (2, 3), (3, 2), (3, 3)],
+            ])
+            .for_each(|(actual_row, expected_row)| {
+                assert_equal(
+                    actual_row,
+                    expected_row.into_iter().map(|pos| grid.get(pos.into())),
+                )
+            });
     }
 }
