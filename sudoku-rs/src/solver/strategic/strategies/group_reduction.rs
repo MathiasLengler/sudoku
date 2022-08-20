@@ -28,11 +28,6 @@ impl<Base: SudokuBase> Strategy<Base> for GroupReduction {
             izip!(positions, candidates_group, reduced_candidates_group).filter_map(
                 |(position, candidates, reduced_candidates)| {
                     if candidates != reduced_candidates {
-                        println!(
-                            "GroupReduction at {}: {} => {}",
-                            position, candidates, reduced_candidates
-                        );
-
                         Some(Deduction::with_remaining_candidates(
                             position,
                             candidates,
@@ -91,6 +86,7 @@ mod tests {
     use std::convert::TryInto;
 
     use crate::base::consts::*;
+    use crate::solver::strategic::deduction::IntoDeductions;
 
     use super::*;
 
@@ -185,16 +181,32 @@ mod tests {
         grid.fix_all_values();
         grid.set_all_direct_candidates();
 
-        println!("{grid}");
-
         let deductions = GroupReduction.execute(&grid).unwrap();
-        // TODO: assert deductions
-        for deduction in &deductions {
-            println!("{deduction}");
-        }
 
-        deductions.apply(&mut grid);
-
-        println!("{grid}");
+        assert_eq!(
+            deductions,
+            IntoDeductions(vec![
+                grid.deduction_at((0, 3), Candidates::try_from(vec![2, 5]).unwrap())
+                    .unwrap(),
+                grid.deduction_at((0, 4), Candidates::try_from(vec![2, 5, 7]).unwrap())
+                    .unwrap(),
+                grid.deduction_at((0, 5), Candidates::try_from(vec![2, 5, 7]).unwrap())
+                    .unwrap(),
+                grid.deduction_at((2, 0), Candidates::try_from(vec![8]).unwrap())
+                    .unwrap(),
+                grid.deduction_at((2, 4), Candidates::try_from(vec![1, 8]).unwrap())
+                    .unwrap(),
+                grid.deduction_at((3, 4), Candidates::try_from(vec![2, 5]).unwrap())
+                    .unwrap(),
+                grid.deduction_at((3, 7), Candidates::try_from(vec![1, 2]).unwrap())
+                    .unwrap(),
+                grid.deduction_at((5, 4), Candidates::try_from(vec![2, 5]).unwrap())
+                    .unwrap(),
+                grid.deduction_at((5, 8), Candidates::try_from(vec![1, 2]).unwrap())
+                    .unwrap(),
+            ])
+            .try_into()
+            .unwrap()
+        );
     }
 }
