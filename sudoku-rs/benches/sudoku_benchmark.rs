@@ -108,6 +108,17 @@ fn bench_grid_group<Base: SudokuBase + 'static>(grid_group: &mut BenchmarkGroup<
         })
     });
     grid_group.bench_with_input(
+        BenchmarkId::new("row_cells", &parameter_string),
+        &grid,
+        |b, grid| {
+            b.iter(|| {
+                grid.row_cells(1).for_each(|cell| {
+                    criterion::black_box(cell);
+                })
+            })
+        },
+    );
+    grid_group.bench_with_input(
         BenchmarkId::new("direct_candidates", &parameter_string),
         &grid,
         |b, grid| b.iter(|| grid.direct_candidates(Position { column: 1, row: 1 })),
