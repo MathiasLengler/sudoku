@@ -11,8 +11,6 @@ pub struct Backtracking;
 
 impl<Base: SudokuBase> Strategy<Base> for Backtracking {
     fn execute(&self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
-        // todo!("port Backtracking Strategy to StrategyDeduction")
-
         let mut solver_grid = grid.clone();
 
         let mut solver = Solver::new(&mut solver_grid);
