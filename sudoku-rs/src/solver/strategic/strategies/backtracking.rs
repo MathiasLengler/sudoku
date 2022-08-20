@@ -32,21 +32,57 @@ impl<Base: SudokuBase> Strategy<Base> for Backtracking {
 
 #[cfg(test)]
 mod tests {
+    use crate::cell::compact::value::Value;
     use crate::samples;
+    use crate::solver::strategic::deduction::IntoDeductions;
 
     use super::*;
 
     #[test]
-    fn test_backtracking() {
+    fn test_backtracking_base_2() {
+        let mut grid = samples::base_2().first().unwrap().clone();
+        grid.fix_all_values();
+        grid.set_all_direct_candidates();
+
+        println!("{grid}");
+
+        let deductions = Backtracking.execute(&grid).unwrap();
+
+        assert_eq!(
+            deductions,
+            IntoDeductions(vec![
+                grid.deduction_at((0, 0), Value::try_from(2).unwrap())
+                    .unwrap(),
+                grid.deduction_at((0, 3), Value::try_from(1).unwrap())
+                    .unwrap(),
+                grid.deduction_at((1, 1), Value::try_from(1).unwrap())
+                    .unwrap(),
+                grid.deduction_at((1, 2), Value::try_from(3).unwrap())
+                    .unwrap(),
+                grid.deduction_at((2, 1), Value::try_from(4).unwrap())
+                    .unwrap(),
+                grid.deduction_at((2, 2), Value::try_from(2).unwrap())
+                    .unwrap(),
+                grid.deduction_at((3, 0), Value::try_from(3).unwrap())
+                    .unwrap(),
+                grid.deduction_at((3, 3), Value::try_from(4).unwrap())
+                    .unwrap(),
+            ])
+            .try_into()
+            .unwrap()
+        );
+
+        deductions.apply(&mut grid);
+        assert!(grid.is_solved());
+    }
+    #[test]
+    fn test_backtracking_base_3() {
         let mut grid = samples::base_3().first().unwrap().clone();
         grid.fix_all_values();
         grid.set_all_direct_candidates();
 
-        // TODO: assert deductions
         let deductions = Backtracking.execute(&grid).unwrap();
-
         deductions.apply(&mut grid);
-
         assert!(grid.is_solved());
     }
 }
