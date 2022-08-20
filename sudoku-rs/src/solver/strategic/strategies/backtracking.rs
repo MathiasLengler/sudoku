@@ -44,8 +44,6 @@ mod tests {
         grid.fix_all_values();
         grid.set_all_direct_candidates();
 
-        println!("{grid}");
-
         let deductions = Backtracking.execute(&grid).unwrap();
 
         assert_eq!(
