@@ -110,7 +110,7 @@ fn bench_grid_group<Base: SudokuBase + 'static>(grid_group: &mut BenchmarkGroup<
 
     // Cell iterators
     grid_group.bench_with_input(
-        BenchmarkId::new("row_cells", &parameter_string),
+        BenchmarkId::new("iter_cells/row_cells", &parameter_string),
         &grid,
         |b, grid| {
             b.iter(|| {
@@ -121,12 +121,36 @@ fn bench_grid_group<Base: SudokuBase + 'static>(grid_group: &mut BenchmarkGroup<
         },
     );
     grid_group.bench_with_input(
-        BenchmarkId::new("all_row_cells", &parameter_string),
+        BenchmarkId::new("iter_cells/all_row_cells", &parameter_string),
         &grid,
         |b, grid| {
             b.iter(|| {
                 grid.all_row_cells().for_each(|row| {
                     row.for_each(|cell| {
+                        criterion::black_box(cell);
+                    });
+                })
+            })
+        },
+    );
+    grid_group.bench_with_input(
+        BenchmarkId::new("iter_cells/column_cells", &parameter_string),
+        &grid,
+        |b, grid| {
+            b.iter(|| {
+                grid.column_cells(1).for_each(|cell| {
+                    criterion::black_box(cell);
+                })
+            })
+        },
+    );
+    grid_group.bench_with_input(
+        BenchmarkId::new("iter_cells/all_column_cells", &parameter_string),
+        &grid,
+        |b, grid| {
+            b.iter(|| {
+                grid.all_column_cells().for_each(|column| {
+                    column.for_each(|cell| {
                         criterion::black_box(cell);
                     });
                 })
