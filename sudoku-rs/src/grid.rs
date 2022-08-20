@@ -500,6 +500,7 @@ impl<Base: SudokuBase> Display for Grid<Base> {
 
 #[cfg(test)]
 mod tests {
+    use itertools::assert_equal;
     use typenum::consts::*;
 
     use crate::samples;
@@ -595,5 +596,91 @@ mod tests {
         );
 
         Ok(())
+    }
+
+    #[test]
+    fn test_all_cells() {
+        let grid = samples::base_2_candidates_coordinates();
+
+        assert_equal(
+            grid.all_cells(),
+            vec![
+                (0, 0),
+                (0, 1),
+                (0, 2),
+                (0, 3),
+                (1, 0),
+                (1, 1),
+                (1, 2),
+                (1, 3),
+                (2, 0),
+                (2, 1),
+                (2, 2),
+                (2, 3),
+                (3, 0),
+                (3, 1),
+                (3, 2),
+                (3, 3),
+            ]
+            .into_iter()
+            .map(|pos| grid.get(pos.into())),
+        );
+    }
+
+    #[test]
+    fn test_row_cells() {
+        let grid = samples::base_2_candidates_coordinates();
+
+        for row in 0..4 {
+            assert_equal(
+                grid.row_cells(row),
+                vec![(row, 0), (row, 1), (row, 2), (row, 3)]
+                    .into_iter()
+                    .map(|pos| grid.get(pos.into())),
+            );
+        }
+    }
+    #[test]
+    fn test_column_cells() {
+        let grid = samples::base_2_candidates_coordinates();
+
+        for column in 0..4 {
+            assert_equal(
+                grid.column_cells(column),
+                vec![(0, column), (1, column), (2, column), (3, column)]
+                    .into_iter()
+                    .map(|pos| grid.get(pos.into())),
+            );
+        }
+    }
+    #[test]
+    fn test_block_cells() {
+        let grid = samples::base_2_candidates_coordinates();
+
+        assert_equal(
+            grid.block_cells((0, 0).into()),
+            vec![(0, 0), (0, 1), (1, 0), (1, 1)]
+                .into_iter()
+                .map(|pos| grid.get(pos.into())),
+        );
+
+        assert_equal(
+            grid.block_cells((0, 2).into()),
+            vec![(0, 2), (0, 3), (1, 2), (1, 3)]
+                .into_iter()
+                .map(|pos| grid.get(pos.into())),
+        );
+        assert_equal(
+            grid.block_cells((2, 0).into()),
+            vec![(2, 0), (2, 1), (3, 0), (3, 1)]
+                .into_iter()
+                .map(|pos| grid.get(pos.into())),
+        );
+        assert_equal(
+            grid.block_cells((2, 2).into()),
+            vec![(2, 2), (2, 3), (3, 2), (3, 3)]
+                .into_iter()
+                .map(|pos| grid.get(pos.into())),
+        );
     }
 }
