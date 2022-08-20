@@ -85,17 +85,17 @@ fn bench_grid_group<Base: SudokuBase + 'static>(grid_group: &mut BenchmarkGroup<
     let grid = sample_grid::<Base>();
 
     grid_group.bench_with_input(
-        BenchmarkId::new("has_conflict_at", &parameter_string),
+        BenchmarkId::new("has_value_conflict_at", &parameter_string),
         &grid,
-        |b, grid| b.iter(|| grid.has_conflict_at(Position { column: 1, row: 1 })),
+        |b, grid| b.iter(|| grid.has_value_conflict_at(Position { column: 1, row: 1 })),
     );
     grid_group.bench_with_input(
-        BenchmarkId::new("has_duplicate", &parameter_string),
+        BenchmarkId::new("has_duplicate_value", &parameter_string),
         &grid,
         |b, grid| {
             b.iter_batched(
                 || (&grid, grid.row_cells(1)),
-                |(grid, row_cells)| grid.has_duplicate(row_cells),
+                |(grid, row_cells)| grid.has_duplicate_value(row_cells),
                 BatchSize::SmallInput,
             )
         },
@@ -113,7 +113,7 @@ fn bench_grid_group<Base: SudokuBase + 'static>(grid_group: &mut BenchmarkGroup<
         |b, grid| b.iter(|| grid.direct_candidates(Position { column: 1, row: 1 })),
     );
     grid_group.bench_with_input(
-        BenchmarkId::new("update_candidates", &parameter_string),
+        BenchmarkId::new("update_direct_candidates", &parameter_string),
         &grid,
         |b, grid| {
             let mut grid = grid.clone();
@@ -126,7 +126,7 @@ fn bench_grid_group<Base: SudokuBase + 'static>(grid_group: &mut BenchmarkGroup<
                     let pos = Position { column: 1, row: 1 };
                     let value = Value::new(2).unwrap().unwrap();
                     grid.get_mut(pos).set_or_toggle_value(value);
-                    grid.update_candidates(pos, value);
+                    grid.update_direct_candidates(pos, value);
                 },
                 BatchSize::SmallInput,
             )

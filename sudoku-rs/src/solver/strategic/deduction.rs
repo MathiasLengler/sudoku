@@ -107,7 +107,7 @@ impl<Base: SudokuBase> Deductions<Base> {
         // Update candidates for all value deductions.
         for deduction in self {
             if let DeductionKind::Value { value } = deduction.kind {
-                grid.update_candidates(deduction.pos, value);
+                grid.update_direct_candidates(deduction.pos, value);
             }
         }
     }

@@ -8,6 +8,7 @@ use ndarray::Array2;
 
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
+use crate::cell::compact::cell_state::CellState;
 use crate::cell::compact::value::Value;
 use crate::cell::view::parser::parse_cells;
 use crate::cell::view::CellView;
@@ -24,7 +25,7 @@ pub struct Grid<Base: SudokuBase> {
     cells: Array2<Cell<Base>>,
 }
 
-/// Public Sudoku API
+/// Direct Candidates
 impl<Base: SudokuBase> Grid<Base> {
     pub fn set_all_direct_candidates(&mut self) {
         self.all_candidates_positions().into_iter().for_each(|pos| {
@@ -33,7 +34,8 @@ impl<Base: SudokuBase> Grid<Base> {
             self.get_mut(pos).set_candidates(candidates);
         });
     }
-    pub fn update_candidates(&mut self, pos: Position, value: Value<Base>) {
+    pub fn update_direct_candidates(&mut self, pos: Position, value: Value<Base>) {
+        // TODO: assert params
         Self::neighbor_positions_with_duplicates(pos).for_each(|pos| {
             let cell = self.get_mut(pos);
             if cell.has_candidates() {
@@ -43,6 +45,8 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 
     pub fn direct_candidates(&self, pos: Position) -> Candidates<Base> {
+        assert!(self.get(pos).has_candidates());
+
         let mut candidates = Candidates::<Base>::all();
 
         for pos in Self::neighbor_positions_with_duplicates(pos) {
@@ -53,27 +57,99 @@ impl<Base: SudokuBase> Grid<Base> {
 
         candidates
     }
+}
 
-    pub fn has_conflict(&self) -> bool {
-        self.all_row_cells().any(|row| self.has_duplicate(row))
+// TODO: test
+/// Consistency testing
+impl<Base: SudokuBase> Grid<Base> {
+    /// A grid is directly consistent, if:
+    /// - No cell has empty candidates.
+    /// - No candidate is deletable based on a group-adjacent value.
+    /// - No group has duplicate values.
+    /// - No group has a missing candidate, e.g. every group contains every value as either a value or at least one candidate.
+    pub fn is_directly_consistent(&self) -> bool {
+        // Every candidate is directly consistent at its position
+        self.all_candidates_positions()
+            .into_iter()
+            .all(|pos| self.is_directly_consistent_at(pos))
+            &&
+            // Every group is directly consistent
+            self
+                .all_group_cells()
+                .all(|group| Self::is_group_directly_consistent(group))
+    }
+
+    /// A group is directly consistent, if it:
+    /// - has unique values.
+    /// - has no missing candidate.
+    fn is_group_directly_consistent<'a>(group_cells: impl Iterator<Item = &'a Cell<Base>>) -> bool
+    where
+        Base: 'a,
+    {
+        let mut seen_values = Candidates::new();
+        let mut seen_candidates_or_values = Candidates::new();
+
+        for cell in group_cells {
+            match *cell.state() {
+                CellState::Value(value) | CellState::FixedValue(value) => {
+                    if seen_values.has(value) {
+                        // Duplicate value in group.
+                        return false;
+                    }
+                    seen_values.set(value, true);
+                    seen_candidates_or_values.set(value, true)
+                }
+                CellState::Candidates(candidates) => {
+                    seen_candidates_or_values = seen_candidates_or_values.union(&candidates)
+                }
+            }
+        }
+
+        // Every candidate must be contained in group.
+        seen_candidates_or_values.is_full()
+    }
+
+    /// A cell with candidates is directly consistent, if its candidates:
+    /// - are non-empty.
+    /// - contain no candidate which is deletable based on a group-adjacent value.
+    fn is_directly_consistent_at(&self, pos: Position) -> bool {
+        let cell = self.get(pos);
+        assert!(cell.has_candidates());
+        let actual_candidates = cell.candidates().unwrap();
+        // At least one candidate is required for a consistent grid.
+        if actual_candidates.is_empty() {
+            return false;
+        }
+
+        let direct_candidates = self.direct_candidates(pos);
+        // No actual candidate is deletable via direct candidates.
+        actual_candidates.without(&direct_candidates).is_empty()
+    }
+}
+
+/// Public Sudoku API
+impl<Base: SudokuBase> Grid<Base> {
+    pub fn has_value_conflict(&self) -> bool {
+        self.all_row_cells()
+            .any(|row| self.has_duplicate_value(row))
             || self
                 .all_column_cells()
-                .any(|column| self.has_duplicate(column))
+                .any(|column| self.has_duplicate_value(column))
             || self
                 .all_block_cells()
-                .any(|block| self.has_duplicate(block))
+                .any(|block| self.has_duplicate_value(block))
     }
 
     // TODO: optimize: is value in group?
-    pub fn has_conflict_at(&self, pos: Position) -> bool {
-        self.has_duplicate(self.row_cells(pos.row))
-            || self.has_duplicate(self.column_cells(pos.column))
-            || self.has_duplicate(self.block_cells(pos))
+    pub fn has_value_conflict_at(&self, pos: Position) -> bool {
+        self.has_duplicate_value(self.row_cells(pos.row))
+            || self.has_duplicate_value(self.column_cells(pos.column))
+            || self.has_duplicate_value(self.block_cells(pos))
     }
 
     // TODO: bit_slice set optimization
-    pub fn has_duplicate<'a>(&'a self, cells: impl Iterator<Item = &'a Cell<Base>>) -> bool {
-        let mut unique = HashSet::with_capacity(Self::side_length() as usize);
+    pub fn has_duplicate_value<'a>(&'a self, cells: impl Iterator<Item = &'a Cell<Base>>) -> bool {
+        let mut unique = HashSet::with_capacity(Self::max_value() as usize);
 
         cells
             .filter_map(|cell| cell.value())
@@ -81,7 +157,7 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 
     pub fn is_solved(&self) -> bool {
-        self.all_candidates_positions().is_empty() && !self.has_conflict()
+        self.all_candidates_positions().is_empty() && !self.has_value_conflict()
     }
 }
 
@@ -236,6 +312,10 @@ impl<Base: SudokuBase> Grid<Base> {
         nested_positions.map(move |row_pos| row_pos.map(move |pos| self.get(pos)))
     }
 
+    pub fn all_cells(&self) -> impl Iterator<Item = &Cell<Base>> {
+        self.cells.iter()
+    }
+
     pub fn row_cells(&self, row: u8) -> impl Iterator<Item = &Cell<Base>> {
         Self::assert_coordinate(row);
 
@@ -264,6 +344,10 @@ impl<Base: SudokuBase> Grid<Base> {
     // TODO: exact chunks
     pub fn all_block_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell<Base>>> {
         self.nested_positions_to_nested_cells(Self::all_block_positions())
+    }
+
+    pub fn all_group_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell<Base>>> {
+        self.nested_positions_to_nested_cells(Self::all_group_positions())
     }
 }
 
@@ -427,32 +511,32 @@ mod tests {
     #[test]
     fn test_has_conflict() -> Result<()> {
         let mut grid = Grid::<U3>::new();
-        assert!(!grid.has_conflict());
+        assert!(!grid.has_value_conflict());
 
         grid.get_mut(Position { column: 0, row: 0 })
             .set_value(1.try_into()?);
-        assert!(!grid.has_conflict());
+        assert!(!grid.has_value_conflict());
 
         grid.get_mut(Position { column: 1, row: 0 })
             .set_value(1.try_into()?);
-        assert!(grid.has_conflict());
+        assert!(grid.has_value_conflict());
 
         grid.get_mut(Position { column: 1, row: 0 }).delete();
-        assert!(!grid.has_conflict());
+        assert!(!grid.has_value_conflict());
 
         grid.get_mut(Position { column: 0, row: 1 })
             .set_value(1.try_into()?);
-        assert!(grid.has_conflict());
+        assert!(grid.has_value_conflict());
 
         grid.get_mut(Position { column: 0, row: 1 }).delete();
-        assert!(!grid.has_conflict());
+        assert!(!grid.has_value_conflict());
 
         grid.get_mut(Position { column: 1, row: 1 })
             .set_value(1.try_into()?);
-        assert!(grid.has_conflict());
+        assert!(grid.has_value_conflict());
 
         grid.get_mut(Position { column: 1, row: 1 }).delete();
-        assert!(!grid.has_conflict());
+        assert!(!grid.has_value_conflict());
 
         Ok(())
     }
@@ -478,7 +562,7 @@ mod tests {
             {
                 let mut grid = grid.clone();
                 let pos = Position { column: 0, row: 3 };
-                grid.update_candidates(pos, 1.try_into()?);
+                grid.update_direct_candidates(pos, 1.try_into()?);
                 grid
             },
             { grid.clone() }
@@ -488,7 +572,7 @@ mod tests {
             {
                 let mut grid = grid.clone();
                 let pos = Position { column: 0, row: 3 };
-                grid.update_candidates(pos, 2.try_into()?);
+                grid.update_direct_candidates(pos, 2.try_into()?);
                 grid
             },
             {
@@ -501,7 +585,7 @@ mod tests {
             {
                 let mut grid = grid.clone();
                 let pos = Position { column: 0, row: 3 };
-                grid.update_candidates(pos, 4.try_into()?);
+                grid.update_direct_candidates(pos, 4.try_into()?);
                 grid
             },
             {

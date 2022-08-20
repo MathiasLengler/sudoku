@@ -129,6 +129,11 @@ impl<Base: SudokuBase> Candidates<Base> {
         self.arr.not_any()
     }
 
+    // TODO: test
+    pub fn is_full(&self) -> bool {
+        self.arr[0..Base::MAX_VALUE as usize].all()
+    }
+
     pub fn count(&self) -> u8 {
         self.arr.count_ones().try_into().unwrap()
     }
