@@ -54,7 +54,7 @@ impl<Base: SudokuBase> Grid<Base> {
         candidates
     }
 
-    pub(crate) fn has_conflict(&self) -> bool {
+    pub fn has_conflict(&self) -> bool {
         self.all_row_cells().any(|row| self.has_duplicate(row))
             || self
                 .all_column_cells()
@@ -94,7 +94,7 @@ impl<Base: SudokuBase> Default for Grid<Base> {
 // TODO: rethink indexing story (internal/cell position/block position)
 //  => use Index/IndexMut with custom index type:
 //     Cell, Row, Column, Block
-// Public Grid API
+/// Public Grid API
 impl<Base: SudokuBase> Grid<Base> {
     pub fn new() -> Self {
         Default::default()
@@ -350,14 +350,15 @@ impl<Base: SudokuBase> Grid<Base> {
 
 /// Neighbor iterators
 impl<Base: SudokuBase> Grid<Base> {
-    pub fn neighbor_positions_with_duplicates(pos: Position) -> impl Iterator<Item = Position> {
+    fn neighbor_positions_with_duplicates(pos: Position) -> impl Iterator<Item = Position> {
         // TODO: reimplement without chain (VTune: bad speculation + unique version)
         Self::row_positions(pos.row)
             .chain(Self::column_positions(pos.column))
             .chain(Self::block_positions(pos))
     }
 
-    pub fn neighbor_positions(pos: Position) -> impl Iterator<Item = Position> {
+    #[allow(dead_code)]
+    fn neighbor_positions(pos: Position) -> impl Iterator<Item = Position> {
         use itertools::Itertools;
 
         Self::neighbor_positions_with_duplicates(pos).unique()
