@@ -11,6 +11,12 @@ pub struct Position {
     pub column: u8,
 }
 
+impl From<(u8, u8)> for Position {
+    fn from((row, column): (u8, u8)) -> Self {
+        Self { row, column }
+    }
+}
+
 impl Position {
     pub fn index_tuple(&self) -> (usize, usize) {
         let &Position { row, column } = self;
