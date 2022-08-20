@@ -85,17 +85,12 @@ fn bench_grid_group<Base: SudokuBase + 'static>(grid_group: &mut BenchmarkGroup<
     let grid = sample_grid::<Base>();
 
     grid_group.bench_with_input(
-        BenchmarkId::new("has_value_conflict_at", &parameter_string),
-        &grid,
-        |b, grid| b.iter(|| grid.has_value_conflict_at(Position { column: 1, row: 1 })),
-    );
-    grid_group.bench_with_input(
         BenchmarkId::new("has_duplicate_value", &parameter_string),
         &grid,
         |b, grid| {
             b.iter_batched(
-                || (&grid, grid.row_cells(1)),
-                |(grid, row_cells)| grid.has_duplicate_value(row_cells),
+                || grid.row_cells(1),
+                |row_cells| Grid::<Base>::has_duplicate_value(row_cells),
                 BatchSize::SmallInput,
             )
         },

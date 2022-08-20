@@ -1,5 +1,4 @@
 use anyhow::anyhow;
-use std::collections::HashSet;
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::fmt::{Display, Formatter};
@@ -132,29 +131,29 @@ impl<Base: SudokuBase> Grid<Base> {
 impl<Base: SudokuBase> Grid<Base> {
     pub fn has_value_conflict(&self) -> bool {
         self.all_row_cells()
-            .any(|row| self.has_duplicate_value(row))
+            .any(|row| Self::has_duplicate_value(row))
             || self
                 .all_column_cells()
-                .any(|column| self.has_duplicate_value(column))
+                .any(|column| Self::has_duplicate_value(column))
             || self
                 .all_block_cells()
-                .any(|block| self.has_duplicate_value(block))
+                .any(|block| Self::has_duplicate_value(block))
     }
 
-    // TODO: optimize: is value in group?
-    pub fn has_value_conflict_at(&self, pos: Position) -> bool {
-        self.has_duplicate_value(self.row_cells(pos.row))
-            || self.has_duplicate_value(self.column_cells(pos.column))
-            || self.has_duplicate_value(self.block_cells(pos))
-    }
+    pub fn has_duplicate_value<'a>(cells: impl Iterator<Item = &'a Cell<Base>>) -> bool
+    where
+        Base: 'a,
+    {
+        let mut seen_values = Candidates::new();
 
-    // TODO: bit_slice set optimization
-    pub fn has_duplicate_value<'a>(&'a self, cells: impl Iterator<Item = &'a Cell<Base>>) -> bool {
-        let mut unique = HashSet::with_capacity(Self::max_value() as usize);
-
-        cells
-            .filter_map(|cell| cell.value())
-            .any(move |x| !unique.insert(x))
+        cells.filter_map(|cell| cell.value()).any(move |value| {
+            if seen_values.has(value) {
+                true
+            } else {
+                seen_values.set(value, true);
+                false
+            }
+        })
     }
 
     pub fn is_solved(&self) -> bool {
@@ -767,5 +766,65 @@ mod tests {
                     expected_row.into_iter().map(|pos| grid.get(pos.into())),
                 )
             });
+    }
+
+    #[test]
+    fn test_has_duplicate_value() {
+        let cells_with_no_duplicate_value = vec![
+            CellView::Value {
+                value: 1,
+                fixed: false,
+            }
+            .try_into()
+            .unwrap(),
+            CellView::Candidates {
+                candidates: vec![1, 2, 3],
+            }
+            .try_into()
+            .unwrap(),
+            CellView::Candidates {
+                candidates: vec![1, 2, 3],
+            }
+            .try_into()
+            .unwrap(),
+            CellView::Value {
+                value: 2,
+                fixed: false,
+            }
+            .try_into()
+            .unwrap(),
+        ];
+
+        assert!(!Grid::<U2>::has_duplicate_value(
+            cells_with_no_duplicate_value.iter()
+        ));
+        let cells_with_duplicate_value = vec![
+            CellView::Value {
+                value: 1,
+                fixed: false,
+            }
+            .try_into()
+            .unwrap(),
+            CellView::Candidates {
+                candidates: vec![1, 2, 3],
+            }
+            .try_into()
+            .unwrap(),
+            CellView::Candidates {
+                candidates: vec![1, 2, 3],
+            }
+            .try_into()
+            .unwrap(),
+            CellView::Value {
+                value: 1,
+                fixed: false,
+            }
+            .try_into()
+            .unwrap(),
+        ];
+
+        assert!(Grid::<U2>::has_duplicate_value(
+            cells_with_duplicate_value.iter()
+        ));
     }
 }
