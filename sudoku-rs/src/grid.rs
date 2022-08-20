@@ -325,11 +325,14 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 
     pub fn column_cells(&self, column: u8) -> impl Iterator<Item = &Cell<Base>> {
-        self.positions_to_cells(Self::column_positions(column))
+        self.cells.column(usize::from(column)).into_iter()
     }
 
     pub fn all_column_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell<Base>>> {
-        self.nested_positions_to_nested_cells(Self::all_column_positions())
+        self.cells
+            .columns()
+            .into_iter()
+            .map(|column| column.into_iter())
     }
 
     pub fn block_cells(&self, pos: Position) -> impl Iterator<Item = &Cell<Base>> {
