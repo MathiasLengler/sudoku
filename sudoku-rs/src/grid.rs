@@ -60,6 +60,7 @@ impl<Base: SudokuBase> Grid<Base> {
 }
 
 // TODO: test
+// TODO: bench
 /// Consistency testing
 impl<Base: SudokuBase> Grid<Base> {
     /// A grid is directly consistent, if:
