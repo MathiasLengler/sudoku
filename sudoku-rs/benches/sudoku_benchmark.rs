@@ -158,6 +158,31 @@ fn bench_grid_group<Base: SudokuBase + 'static>(grid_group: &mut BenchmarkGroup<
         },
     );
     grid_group.bench_with_input(
+        BenchmarkId::new("iter_cells/block_cells", &parameter_string),
+        &grid,
+        |b, grid| {
+            b.iter(|| {
+                grid.block_cells(Position { row: 3, column: 3 })
+                    .for_each(|cell| {
+                        criterion::black_box(cell);
+                    })
+            })
+        },
+    );
+    grid_group.bench_with_input(
+        BenchmarkId::new("iter_cells/all_block_cells", &parameter_string),
+        &grid,
+        |b, grid| {
+            b.iter(|| {
+                grid.all_block_cells().for_each(|block| {
+                    block.for_each(|cell| {
+                        criterion::black_box(cell);
+                    });
+                })
+            })
+        },
+    );
+    grid_group.bench_with_input(
         BenchmarkId::new("direct_candidates", &parameter_string),
         &grid,
         |b, grid| b.iter(|| grid.direct_candidates(Position { column: 1, row: 1 })),
