@@ -147,7 +147,7 @@ impl<Base: SudokuBase> Display for Deduction<Base> {
 }
 
 impl<Base: SudokuBase> Deduction<Base> {
-    fn new(
+    pub fn new(
         pos: Position,
         previous_candidates: Candidates<Base>,
         kind: DeductionKind<Base>,
@@ -279,7 +279,7 @@ impl<Base: SudokuBase> Deduction<Base> {
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
-enum DeductionKind<Base: SudokuBase> {
+pub enum DeductionKind<Base: SudokuBase> {
     Value {
         value: Value<Base>,
     },
@@ -326,6 +326,20 @@ impl<Base: SudokuBase> DeductionKind<Base> {
             // More specific Value overwrites PruneCandidates
             (Value { value }, _) | (_, Value { value }) => DeductionKind::with_value(value),
         })
+    }
+}
+
+impl<Base: SudokuBase> From<Value<Base>> for DeductionKind<Base> {
+    fn from(value: Value<Base>) -> Self {
+        Self::with_value(value)
+    }
+}
+
+impl<Base: SudokuBase> TryFrom<Candidates<Base>> for DeductionKind<Base> {
+    type Error = Error;
+
+    fn try_from(remaining_candidates: Candidates<Base>) -> Result<Self> {
+        Self::with_remaining_candidates(remaining_candidates)
     }
 }
 

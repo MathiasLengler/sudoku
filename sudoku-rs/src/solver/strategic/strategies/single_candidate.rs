@@ -34,7 +34,7 @@ impl<Base: SudokuBase> Strategy<Base> for SingleCandidate {
 
 #[cfg(test)]
 mod tests {
-    use crate::position::Position;
+    use crate::cell::compact::value::Value;
     use crate::samples;
     use crate::solver::strategic::deduction::IntoDeductions;
 
@@ -47,78 +47,27 @@ mod tests {
         grid.set_all_direct_candidates();
         grid.fix_all_values();
 
-        println!("{grid}");
-
         let deductions = SingleCandidate.execute(&mut grid).unwrap();
 
-        // TODO: rewrite using grid.deduction_at
         assert_eq!(
             deductions,
             IntoDeductions(vec![
-                Deduction::with_value(
-                    Position { row: 0, column: 0 },
-                    grid.get(Position { row: 0, column: 0 })
-                        .candidates()
-                        .unwrap(),
-                    2.try_into().unwrap()
-                )
-                .unwrap(),
-                Deduction::with_value(
-                    Position { row: 0, column: 3 },
-                    grid.get(Position { row: 0, column: 3 })
-                        .candidates()
-                        .unwrap(),
-                    1.try_into().unwrap()
-                )
-                .unwrap(),
-                Deduction::with_value(
-                    Position { row: 1, column: 1 },
-                    grid.get(Position { row: 1, column: 1 })
-                        .candidates()
-                        .unwrap(),
-                    1.try_into().unwrap()
-                )
-                .unwrap(),
-                Deduction::with_value(
-                    Position { row: 1, column: 2 },
-                    grid.get(Position { row: 1, column: 2 })
-                        .candidates()
-                        .unwrap(),
-                    3.try_into().unwrap()
-                )
-                .unwrap(),
-                Deduction::with_value(
-                    Position { row: 2, column: 1 },
-                    grid.get(Position { row: 2, column: 1 })
-                        .candidates()
-                        .unwrap(),
-                    4.try_into().unwrap()
-                )
-                .unwrap(),
-                Deduction::with_value(
-                    Position { row: 2, column: 2 },
-                    grid.get(Position { row: 2, column: 2 })
-                        .candidates()
-                        .unwrap(),
-                    2.try_into().unwrap()
-                )
-                .unwrap(),
-                Deduction::with_value(
-                    Position { row: 3, column: 0 },
-                    grid.get(Position { row: 3, column: 0 })
-                        .candidates()
-                        .unwrap(),
-                    3.try_into().unwrap()
-                )
-                .unwrap(),
-                Deduction::with_value(
-                    Position { row: 3, column: 3 },
-                    grid.get(Position { row: 3, column: 3 })
-                        .candidates()
-                        .unwrap(),
-                    4.try_into().unwrap()
-                )
-                .unwrap(),
+                grid.deduction_at((0, 0), Value::try_from(2).unwrap())
+                    .unwrap(),
+                grid.deduction_at((0, 3), Value::try_from(1).unwrap())
+                    .unwrap(),
+                grid.deduction_at((1, 1), Value::try_from(1).unwrap())
+                    .unwrap(),
+                grid.deduction_at((1, 2), Value::try_from(3).unwrap())
+                    .unwrap(),
+                grid.deduction_at((2, 1), Value::try_from(4).unwrap())
+                    .unwrap(),
+                grid.deduction_at((2, 2), Value::try_from(2).unwrap())
+                    .unwrap(),
+                grid.deduction_at((3, 0), Value::try_from(3).unwrap())
+                    .unwrap(),
+                grid.deduction_at((3, 3), Value::try_from(4).unwrap())
+                    .unwrap(),
             ])
             .try_into()
             .unwrap()

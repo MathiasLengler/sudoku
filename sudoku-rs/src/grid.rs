@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use std::collections::HashSet;
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
@@ -14,6 +15,7 @@ use crate::cell::Cell;
 use crate::error::{Error, Result};
 use crate::grid::serialization::GridFormat;
 use crate::position::Position;
+use crate::solver::strategic::deduction::{Deduction, DeductionKind};
 
 pub mod serialization;
 
@@ -22,7 +24,7 @@ pub struct Grid<Base: SudokuBase> {
     cells: Array2<Cell<Base>>,
 }
 
-/// Public API
+/// Public Sudoku API
 impl<Base: SudokuBase> Grid<Base> {
     pub fn set_all_direct_candidates(&mut self) {
         self.all_candidates_positions().into_iter().for_each(|pos| {
@@ -92,6 +94,7 @@ impl<Base: SudokuBase> Default for Grid<Base> {
 // TODO: rethink indexing story (internal/cell position/block position)
 //  => use Index/IndexMut with custom index type:
 //     Cell, Row, Column, Block
+// Public Grid API
 impl<Base: SudokuBase> Grid<Base> {
     pub fn new() -> Self {
         Default::default()
@@ -157,6 +160,26 @@ impl<Base: SudokuBase> Grid<Base> {
         for pos in self.all_unfixed_value_positions() {
             self.get_mut(pos).delete();
         }
+    }
+
+    pub fn deduction_at<TryIntoKind: TryInto<DeductionKind<Base>>>(
+        &self,
+        pos: impl Into<Position>,
+        kind: TryIntoKind,
+    ) -> Result<Deduction<Base>>
+    where
+        Error: From<TryIntoKind::Error>,
+    {
+        let pos = pos.into();
+        let kind = kind.try_into()?;
+
+        Deduction::new(
+            pos,
+            self.get(pos).candidates().ok_or_else(|| {
+                anyhow!("A deduction must be made for a position containing candidates")
+            })?,
+            kind,
+        )
     }
 }
 
