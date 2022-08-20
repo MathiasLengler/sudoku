@@ -107,7 +107,7 @@ impl Generator {
 
         let mut all_positions: Vec<_> = Grid::<Base>::all_positions().collect();
         all_positions.shuffle(&mut rand::thread_rng());
-        let all_positions_count = Grid::<Base>::cell_count();
+        let all_positions_count = Grid::<Base>::cell_count_usize();
 
         let mut deleted_count = 0;
         for (i, pos) in all_positions.into_iter().enumerate() {
@@ -131,7 +131,7 @@ impl Generator {
     // TODO: optimize performance for base >= 3
     fn minimal<Base: SudokuBase>(mut grid: Grid<Base>, distance: usize) -> Grid<Base> {
         // If the distance results in a filled sudoku, return it directly.
-        if Grid::<Base>::cell_count() <= distance {
+        if Grid::<Base>::cell_count_usize() <= distance {
             return grid;
         }
 
@@ -139,7 +139,7 @@ impl Generator {
 
         let mut all_positions: Vec<_> = Grid::<Base>::all_positions().collect();
         all_positions.shuffle(&mut rand::thread_rng());
-        let all_positions_count = Grid::<Base>::cell_count();
+        let all_positions_count = Grid::<Base>::cell_count_usize();
 
         let mut deleted: Vec<(Position, Value<Base>)> = vec![];
 

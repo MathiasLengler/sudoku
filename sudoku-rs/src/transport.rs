@@ -47,7 +47,7 @@ impl<Base: SudokuBase> From<&Sudoku<Base>> for TransportSudoku {
                 .collect(),
             base: Grid::<Base>::base(),
             side_length: Grid::<Base>::side_length(),
-            cell_count: Grid::<Base>::cell_count(),
+            cell_count: Grid::<Base>::cell_count_usize(),
         }
     }
 }

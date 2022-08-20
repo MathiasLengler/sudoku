@@ -85,7 +85,7 @@ impl<Base: SudokuBase> Grid<Base> {
 
 impl<Base: SudokuBase> Default for Grid<Base> {
     fn default() -> Self {
-        Self::with_cells(vec![Cell::new(); Self::cell_count()])
+        Self::with_cells(vec![Cell::new(); Self::cell_count_usize()])
     }
 }
 
@@ -98,7 +98,7 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 
     pub fn with_cells(cells: Vec<Cell<Base>>) -> Self {
-        assert_eq!(cells.len(), Self::cell_count());
+        assert_eq!(cells.len(), Self::cell_count_usize());
 
         let side_length = Self::side_length() as usize;
 
@@ -171,7 +171,10 @@ impl<Base: SudokuBase> Grid<Base> {
     pub fn max_value() -> u8 {
         Base::MAX_VALUE
     }
-    pub fn cell_count() -> usize {
+    pub fn cell_count() -> u16 {
+        Base::CELL_COUNT
+    }
+    pub fn cell_count_usize() -> usize {
         Base::CELL_COUNT.into()
     }
     pub fn base_usize() -> usize {
