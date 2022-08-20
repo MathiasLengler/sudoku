@@ -288,9 +288,6 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 }
 
-// TODO: test using "base 2 candidates" grid
-//  0000 0001 0010 0011
-//  0100 ...
 // TODO: rewrite with ndarray slice
 // TODO: zip position + cell
 //  indexed_iter
