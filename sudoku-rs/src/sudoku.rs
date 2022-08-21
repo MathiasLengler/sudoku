@@ -161,8 +161,9 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
         let mut solver =
             StrategicSolver::new_with_strategies(&mut self.grid, vec![Box::new(SingleCandidate)]);
 
-        // TODO: apply deductions
-        solver.try_strategies()?;
+        if let Some(deductions) = solver.try_strategies()? {
+            deductions.apply(&mut self.grid);
+        }
 
         Ok(())
     }
@@ -173,9 +174,9 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
         let mut solver =
             StrategicSolver::new_with_strategies(&mut self.grid, vec![Box::new(GroupReduction)]);
 
-        // TODO: apply deductions
-        solver.try_strategies()?;
-
+        if let Some(deductions) = solver.try_strategies()? {
+            deductions.apply(&mut self.grid);
+        }
         Ok(())
     }
 
