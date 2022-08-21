@@ -9,6 +9,10 @@ use crate::solver::strategic::deduction::{Deduction, Deductions, TryIntoDeductio
 
 use super::Strategy;
 
+// TODO: optimize
+//  - https://en.wikipedia.org/wiki/Strongly_connected_component
+//  - https://opensourc.es/blog/sudoku/
+
 #[derive(Debug)]
 pub struct GroupReduction;
 
