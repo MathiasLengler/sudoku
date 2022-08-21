@@ -11,5 +11,6 @@ default-members = [
     "sudoku-wasm"
 ]
 
-#[profile.release]
-#debug = true
+[profile.release-with-debug]
+inherits = "release"
+debug = true
