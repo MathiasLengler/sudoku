@@ -11,4 +11,4 @@ sudoku = { path = "../sudoku-rs" }
 arbitrary = "1.1.3"
 
 [target.'cfg(unix)'.dependencies]
-afl = "0.12.4"
+afl = "0.12.6"
