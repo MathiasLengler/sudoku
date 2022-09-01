@@ -9,7 +9,7 @@ log = "0.4.17"
 itertools = "0.10.3"
 rand = "0.8.5"
 getrandom = "0.2.7"
-anyhow = { version = "1.0.60", features = ["backtrace"] }
+anyhow = { version = "1.0.63", features = ["backtrace"] }
 serde = { version = "1.0.143", features = ["derive"] }
 bitvec = { version = "1.0.1", default-features = false, features = ["std"] }
 funty = "2.0.0"
