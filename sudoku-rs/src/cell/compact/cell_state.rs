@@ -5,7 +5,6 @@ use std::hash::Hash;
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
 use crate::cell::compact::value::Value;
-use crate::cell::view::CellView;
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 pub(crate) enum CellState<Base: SudokuBase> {
@@ -37,21 +36,6 @@ impl<Base: SudokuBase> CellState<Base> {
         CellState::Candidates(candidates)
     }
 
-    pub(super) fn view(&self) -> CellView {
-        match self {
-            CellState::Value(value) => CellView::Value {
-                value: value.into_u8(),
-                fixed: false,
-            },
-            CellState::FixedValue(value) => CellView::Value {
-                value: value.into_u8(),
-                fixed: true,
-            },
-            CellState::Candidates(candidates) => CellView::Candidates {
-                candidates: candidates.to_vec_u8(),
-            },
-        }
-    }
     pub(super) fn has_value(&self) -> bool {
         match self {
             CellState::Value(_) => true,

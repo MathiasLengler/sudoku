@@ -39,10 +39,6 @@ impl<Base: SudokuBase> Cell<Base> {
         &self.0
     }
 
-    /// Convenient view of the cell.
-    pub fn view(&self) -> CellView {
-        self.0.view()
-    }
     /// If the cell contains a fixed or unfixed value.
     pub fn has_value(&self) -> bool {
         self.0.has_value()

@@ -37,7 +37,7 @@ impl<Base: SudokuBase> From<&Sudoku<Base>> for TransportSudoku {
                                 false
                             };
                             TransportCell {
-                                cell_view: cell.view(),
+                                cell_view: cell.into(),
                                 position: pos,
                                 incorrect_value,
                             }

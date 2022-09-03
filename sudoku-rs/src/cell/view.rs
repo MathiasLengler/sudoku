@@ -5,6 +5,7 @@ use anyhow::bail;
 use serde::{Deserialize, Serialize};
 
 use crate::base::SudokuBase;
+use crate::cell::compact::cell_state::CellState;
 use crate::cell::Cell;
 use crate::error::{Error, Result};
 
@@ -25,13 +26,6 @@ impl CellView {
 
     pub fn candidates(candidates: Vec<u8>) -> Self {
         CellView::Candidates { candidates }
-    }
-
-    pub fn is_value(&self) -> bool {
-        match self {
-            CellView::Value { .. } => true,
-            CellView::Candidates { .. } => false,
-        }
     }
 }
 
@@ -95,8 +89,20 @@ impl From<u8> for CellView {
     }
 }
 
-impl<Base: SudokuBase> From<Cell<Base>> for CellView {
-    fn from(cell: Cell<Base>) -> Self {
-        cell.view()
+impl<Base: SudokuBase> From<&Cell<Base>> for CellView {
+    fn from(cell: &Cell<Base>) -> Self {
+        match cell.state() {
+            CellState::Value(value) => CellView::Value {
+                value: value.into_u8(),
+                fixed: false,
+            },
+            CellState::FixedValue(value) => CellView::Value {
+                value: value.into_u8(),
+                fixed: true,
+            },
+            CellState::Candidates(candidates) => CellView::Candidates {
+                candidates: candidates.to_vec_u8(),
+            },
+        }
     }
 }
