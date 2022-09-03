@@ -3,12 +3,13 @@ use std::io::{BufRead, BufReader};
 use sudoku::base::consts::U3;
 use sudoku::error::Result;
 use sudoku::grid::Grid;
+#[allow(unused)]
 use sudoku::solver::backtracking;
 use sudoku::solver::strategic;
 
 fn main() -> Result<()> {
     let file = File::open("./data/puzzles1_unbiased")?;
-    let mut reader = BufReader::new(file);
+    let reader = BufReader::new(file);
 
     for (i, line) in reader.lines().enumerate() {
         let line = line?;
