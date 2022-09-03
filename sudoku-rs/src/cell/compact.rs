@@ -112,10 +112,6 @@ impl<Base: SudokuBase> Cell<Base> {
     /// Set the cell to the given candidates.
     /// Deletes value if present.
     ///
-    /// Candidates can be anything convertible into the `Candidates` struct.
-    /// This is commonly a `Vec<u8>` via its implementation of `IntoIterator<Item = u8>`
-    /// or a `Candidates` struct directly.
-    ///
     /// # Panics
     ///
     /// Panics it the cell is fixed.
