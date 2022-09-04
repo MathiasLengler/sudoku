@@ -16,7 +16,7 @@ pub struct Solver<'a, Base: SudokuBase> {
     /// Cached remaining candidates for each group.
     group_availability: GroupAvailability<Base>,
     /// Stack of indices to non-value cells to be solved.
-    choice_indices: VecDeque<GroupAvailabilityIndex>,
+    choice_indices: Vec<GroupAvailabilityIndex>,
     /// Stack of the currently selected value for choice_indices.
     choices: Vec<Value<Base>>,
 }
@@ -49,67 +49,62 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
                         .mutate(index, |cell| cell.set_candidate(value, false))
                 } else {
                     // Non-value cell, add to choices
-                    self.choice_indices.push_back(index);
+                    self.choice_indices.push(index);
                 }
             }
         }
+    }
+
+    fn try_solve_index(&mut self, choice_indices_i: usize) -> Option<Grid<Base>> {
+        let choice_index = self.choice_indices[choice_indices_i];
+
+        let candidates = self.group_availability.intersection(choice_index);
+
+        for candidate in candidates.iter() {
+            // Clear candidate availability
+            self.group_availability.mutate(choice_index, |cell| {
+                cell.set_candidate(candidate, false);
+            });
+
+            self.choices.push(candidate);
+
+            if choice_indices_i == self.choice_indices.len() - 1 {
+                // Current choices are a solution
+                let mut solution_grid = self.grid.clone();
+
+                for (choice_pos, choice) in solution_grid
+                    .all_candidates_positions()
+                    .into_iter()
+                    .zip(self.choices.iter().copied())
+                {
+                    solution_grid.get_mut(choice_pos).set_value(choice)
+                }
+
+                return Some(solution_grid);
+            } else {
+                // Recursively solve remaining cells, returning the first solution, if any.
+                if let Some(solution) = self.try_solve_index(choice_indices_i + 1) {
+                    return Some(solution);
+                } else {
+                    // Backtrack
+                }
+            }
+
+            self.choices.pop();
+
+            // Restore candidate availability
+            self.group_availability.mutate(choice_index, |cell| {
+                cell.set_candidate(candidate, true);
+            });
+        }
+        None
     }
 
     // TODO: make resumable; seems to be a tradeoff between:
     //  - fast solution counting while return last solution, if any
     //  - more state tracking while returning every solution
     pub fn try_solve(&mut self) -> Option<Grid<Base>> {
-        // dbg!(&self.choice_indices);
-
-        if let Some(choice_index) = self.choice_indices.pop_front() {
-            let candidates = self.group_availability.intersection(choice_index);
-
-            // println!("{choice_index:?}: {candidates}");
-
-            for candidate in candidates.iter() {
-                // Clear candidate availability
-                self.group_availability.mutate(choice_index, |cell| {
-                    cell.set_candidate(candidate, false);
-                });
-
-                self.choices.push(candidate);
-
-                if self.choice_indices.is_empty() {
-                    // Current choices are a solution
-                    let mut solution_grid = self.grid.clone();
-
-                    for (choice_pos, choice) in solution_grid
-                        .all_candidates_positions()
-                        .into_iter()
-                        .zip(self.choices.iter().copied())
-                    {
-                        solution_grid.get_mut(choice_pos).set_value(choice)
-                    }
-
-                    return Some(solution_grid);
-                } else {
-                    // Recursively solve remaining cells, returning the first solution, if any.
-                    if let Some(solution) = self.try_solve() {
-                        return Some(solution);
-                    } else {
-                        // Backtrack
-                    }
-                }
-
-                self.choices.pop();
-
-                // Restore candidate availability
-                self.group_availability.mutate(choice_index, |cell| {
-                    cell.set_candidate(candidate, true);
-                });
-            }
-
-            self.choice_indices.push_front(choice_index);
-
-            None
-        } else {
-            todo!()
-        }
+        self.try_solve_index(0)
     }
 }
 
