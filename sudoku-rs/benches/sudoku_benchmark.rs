@@ -3,15 +3,18 @@ extern crate criterion;
 
 use std::any::Any;
 use std::convert::TryInto;
+use std::env::current_dir;
+use std::path::{Path, PathBuf};
 
 use criterion::measurement::WallTime;
-use criterion::{BatchSize, BenchmarkId};
+use criterion::{BatchSize, BenchmarkId, Throughput};
 use criterion::{BenchmarkGroup, Criterion};
 
 use sudoku::base::{consts::*, SudokuBase};
 use sudoku::cell::compact::candidates::Candidates;
 use sudoku::cell::compact::value::Value;
 use sudoku::generator::backtracking::{Generator, Target};
+use sudoku::grid::deserialization::read_grids_from_file;
 use sudoku::grid::Grid;
 use sudoku::position::Position;
 use sudoku::samples::{base_2, base_3};
@@ -89,6 +92,49 @@ fn bench_solver_group<Base: SudokuBase + 'static>(solver_group: &mut BenchmarkGr
             )
         },
     );
+}
+
+fn bench_solver_tdoku_group(solver_tdoku_group: &mut BenchmarkGroup<WallTime>) {
+    type Base = U3;
+
+    let tdoku_datasets_dir = Path::new("./tests/res/tdoku/");
+
+    let tdoku_datasets = vec![
+        "puzzles0_kaggle",
+        // "puzzles1_unbiased",
+        // "puzzles2_17_clue",
+        // "puzzles3_magictour_top1465",
+        // "puzzles4_forum_hardest_1905",
+        // "puzzles5_forum_hardest_1905_11+",
+        // "puzzles6_forum_hardest_1106",
+        // "puzzles7_serg_benchmark",
+        // "puzzles8_gen_puzzles",
+    ];
+
+    for tdoku_dataset in tdoku_datasets {
+        let path = tdoku_datasets_dir.join(tdoku_dataset);
+
+        let all_grids = read_grids_from_file::<Base>(path).unwrap();
+        let grids = &all_grids[..1000];
+
+        solver_tdoku_group.throughput(Throughput::Elements(grids.len() as u64));
+
+        // TODO: add backtracking and strategic
+
+        solver_tdoku_group.bench_with_input(
+            BenchmarkId::new("backtracking_bitset", tdoku_dataset),
+            grids,
+            |b, grids| {
+                b.iter(|| {
+                    for grid in grids {
+                        assert!(backtracking_bitset::Solver::new(&grid)
+                            .try_solve()
+                            .is_some())
+                    }
+                })
+            },
+        );
+    }
 }
 
 fn bench_grid_group<Base: SudokuBase + 'static>(grid_group: &mut BenchmarkGroup<WallTime>) {
@@ -294,11 +340,16 @@ fn criterion_benchmark(c: &mut Criterion) {
     bench_generator_group::<U3>(&mut generator_group);
     generator_group.finish();
 
-    let mut solver_group = c.benchmark_group("Solver");
+    let mut solver_group = c.benchmark_group("SolverSample");
     solver_group.sample_size(20);
     bench_solver_group::<U2>(&mut solver_group);
     bench_solver_group::<U3>(&mut solver_group);
     solver_group.finish();
+
+    let mut solver_tdoku_group = c.benchmark_group("SolverTdoku");
+    solver_tdoku_group.sample_size(10);
+    bench_solver_tdoku_group(&mut solver_tdoku_group);
+    solver_tdoku_group.finish();
 
     let mut grid_group = c.benchmark_group("Grid");
     bench_grid_group::<U2>(&mut grid_group);
