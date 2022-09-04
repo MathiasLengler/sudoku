@@ -212,11 +212,11 @@ mod tests {
         let inputs = [
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/tests/res/candidates.txt"
+                "/tests/res/parser/candidates.txt"
             )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/tests/res/givens_line.txt"
+                "/tests/res/parser/givens_line.txt"
             )),
         ];
 

@@ -50,7 +50,7 @@ mod tests {
     fn test_givens_line_base_3() -> Result<()> {
         let input = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/tests/res/givens_line.txt"
+            "/tests/res/parser/givens_line.txt"
         ));
 
         let cells = from_givens_line(input)?;
@@ -73,7 +73,7 @@ mod tests {
     fn test_givens_grid_base_3() -> Result<()> {
         let input = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/tests/res/givens_grid.txt"
+            "/tests/res/parser/givens_grid.txt"
         ));
 
         let cells = from_givens_grid(input);
@@ -98,7 +98,7 @@ mod tests {
 
         let input = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/tests/res/candidates.txt"
+            "/tests/res/parser/candidates.txt"
         ));
 
         let cells = from_candidates(input)?;
