@@ -17,6 +17,7 @@ use crate::grid::serialization::GridFormat;
 use crate::position::Position;
 use crate::solver::strategic::deduction::{Deduction, DeductionKind};
 
+pub mod deserialization;
 pub mod serialization;
 
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
