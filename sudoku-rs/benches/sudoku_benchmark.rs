@@ -115,7 +115,7 @@ fn bench_solver_tdoku_group(solver_tdoku_group: &mut BenchmarkGroup<WallTime>) {
         let path = tdoku_datasets_dir.join(tdoku_dataset);
 
         let all_grids = read_grids_from_file::<Base>(path).unwrap();
-        let grids = &all_grids[..1000];
+        let grids = &all_grids[..];
 
         solver_tdoku_group.throughput(Throughput::Elements(grids.len() as u64));
 
