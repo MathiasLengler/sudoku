@@ -96,10 +96,10 @@ impl<Base: SudokuBase> Candidates<Base> {
         self.debug_assert_is_valid();
     }
 
-    pub fn set(&mut self, candidate: Value<Base>, value: bool) {
+    pub fn set(&mut self, candidate: Value<Base>, enabled: bool) {
         let imported_candidate = Self::import(candidate);
 
-        self.arr.set(imported_candidate, value);
+        self.arr.set(imported_candidate, enabled);
 
         self.debug_assert_is_valid();
     }

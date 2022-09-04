@@ -1,14 +1,16 @@
-use bitvec::store::BitStore;
-use bitvec::view::BitViewSized;
-use funty::Integral;
 use std::fmt::{Debug, Display};
 use std::hash::Hash;
 use std::mem::size_of;
 
+use bitvec::store::BitStore;
+use bitvec::view::BitViewSized;
+use funty::Integral;
 use typenum::{
     consts::{U1, U2, U3, U4, U5},
     Unsigned,
 };
+
+use crate::cell::candidates_cell::CandidatesCell;
 
 pub mod consts {
     pub use typenum::consts::{U1, U2, U3, U4, U5};
@@ -36,6 +38,76 @@ const fn base_to_candidates_capacity<T>(base: u8) -> usize {
     (max_value + array_element_bit_size - 1) / array_element_bit_size
 }
 
+mod cell_index_to_block_index {
+    use super::*;
+
+    pub(super) static BASE_1: &[u8; base_to_cell_count(1) as usize] = &[0];
+    pub(super) static BASE_2: &[u8; base_to_cell_count(2) as usize] = &[
+        0, 0, 1, 1, //
+        0, 0, 1, 1, //
+        2, 2, 3, 3, //
+        2, 2, 3, 3, //
+    ];
+    pub(super) static BASE_3: &[u8; base_to_cell_count(3) as usize] = &[
+        0, 0, 0, 1, 1, 1, 2, 2, 2, //
+        0, 0, 0, 1, 1, 1, 2, 2, 2, //
+        0, 0, 0, 1, 1, 1, 2, 2, 2, //
+        3, 3, 3, 4, 4, 4, 5, 5, 5, //
+        3, 3, 3, 4, 4, 4, 5, 5, 5, //
+        3, 3, 3, 4, 4, 4, 5, 5, 5, //
+        6, 6, 6, 7, 7, 7, 8, 8, 8, //
+        6, 6, 6, 7, 7, 7, 8, 8, 8, //
+        6, 6, 6, 7, 7, 7, 8, 8, 8, //
+    ];
+    #[rustfmt::skip]
+    pub(super) static BASE_4: &[u8; base_to_cell_count(4) as usize] = &[
+        0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3,
+        0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3,
+        0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3,
+        0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 
+        4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7, 7,
+        4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7, 7,
+        4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7, 7,
+        4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7, 7, 
+        8, 8, 8, 8, 9, 9, 9, 9, 10, 10, 10, 10, 11, 11, 11, 11,
+        8, 8, 8, 8, 9, 9, 9, 9, 10, 10, 10, 10, 11, 11, 11, 11,
+        8, 8, 8, 8, 9, 9, 9, 9, 10, 10, 10, 10, 11, 11, 11, 11,
+        8, 8, 8, 8, 9, 9, 9, 9, 10, 10, 10, 10, 11, 11, 11, 11,
+        12, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 14, 15, 15, 15, 15,
+        12, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 14, 15, 15, 15, 15,
+        12, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 14, 15, 15, 15, 15,
+        12, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 14, 15, 15, 15, 15,
+    ];
+    #[rustfmt::skip]
+    pub(super) static BASE_5: &[u8; base_to_cell_count(5) as usize] = &[
+        0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
+        0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
+        0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
+        0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
+        0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
+        5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 9, 9, 9, 9, 9,
+        5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 9, 9, 9, 9, 9,
+        5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 9, 9, 9, 9, 9,
+        5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 9, 9, 9, 9, 9,
+        5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 9, 9, 9, 9, 9,
+        10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 13, 13, 13, 13, 13, 14, 14, 14, 14, 14,
+        10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 13, 13, 13, 13, 13, 14, 14, 14, 14, 14,
+        10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 13, 13, 13, 13, 13, 14, 14, 14, 14, 14,
+        10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 13, 13, 13, 13, 13, 14, 14, 14, 14, 14,
+        10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 13, 13, 13, 13, 13, 14, 14, 14, 14, 14,
+        15, 15, 15, 15, 15, 16, 16, 16, 16, 16, 17, 17, 17, 17, 17, 18, 18, 18, 18, 18, 19, 19, 19, 19, 19,
+        15, 15, 15, 15, 15, 16, 16, 16, 16, 16, 17, 17, 17, 17, 17, 18, 18, 18, 18, 18, 19, 19, 19, 19, 19,
+        15, 15, 15, 15, 15, 16, 16, 16, 16, 16, 17, 17, 17, 17, 17, 18, 18, 18, 18, 18, 19, 19, 19, 19, 19,
+        15, 15, 15, 15, 15, 16, 16, 16, 16, 16, 17, 17, 17, 17, 17, 18, 18, 18, 18, 18, 19, 19, 19, 19, 19,
+        15, 15, 15, 15, 15, 16, 16, 16, 16, 16, 17, 17, 17, 17, 17, 18, 18, 18, 18, 18, 19, 19, 19, 19, 19,
+        20, 20, 20, 20, 20, 21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 23, 23, 23, 23, 23, 24, 24, 24, 24, 24,
+        20, 20, 20, 20, 20, 21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 23, 23, 23, 23, 23, 24, 24, 24, 24, 24,
+        20, 20, 20, 20, 20, 21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 23, 23, 23, 23, 23, 24, 24, 24, 24, 24,
+        20, 20, 20, 20, 20, 21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 23, 23, 23, 23, 23, 24, 24, 24, 24, 24,
+        20, 20, 20, 20, 20, 21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 23, 23, 23, 23, 23, 24, 24, 24, 24, 24
+    ];
+}
+
 // TODO: evaluate `as` casting of constants
 pub trait SudokuBase
 where
@@ -47,13 +119,21 @@ where
     const CELL_COUNT: u16;
     const CANDIDATES_ARRAY_CAPACITY: usize;
 
+    fn cell_index_to_block_index(cell_index: u16) -> u8;
+
     type CandidatesArrayElement: BitStore;
     type CandidatesArray: BitViewSized + Ord + Hash + Copy + Clone + Debug + Default;
     type CandidatesIntegral: BitStore + Integral + Copy + Clone + Debug + Default + Display;
+
+    type CandidatesCells: AsRef<[CandidatesCell<Self>]>
+        + AsMut<[CandidatesCell<Self>]>
+        + Clone
+        + Debug
+        + Default;
 }
 
 macro_rules! impl_sudoku_base {
-    ($($type_num:ty,$type_integral:ty);+) => {
+    ($($type_num:ty,$type_integral:ty,$CELL_INDEX_TO_BLOCK_INDEX:expr;)+) => {
         $(
 impl SudokuBase for $type_num {
     const BASE: u8 = Self::U8;
@@ -63,20 +143,33 @@ impl SudokuBase for $type_num {
     const CANDIDATES_ARRAY_CAPACITY: usize =
         base_to_candidates_capacity::<Self::CandidatesArrayElement>(Self::BASE);
 
+    fn cell_index_to_block_index(cell_index: u16) -> u8 {
+        $CELL_INDEX_TO_BLOCK_INDEX[usize::from(cell_index)]
+    }
+
     type CandidatesArrayElement = u8;
     type CandidatesArray = [Self::CandidatesArrayElement; Self::CANDIDATES_ARRAY_CAPACITY];
     type CandidatesIntegral = $type_integral;
+
+    type CandidatesCells = [CandidatesCell<Self>; Self::MAX_VALUE as usize];
 }
         )+
     };
 }
 
 // All sudoku bases supported by DynamicSudoku, and U1 for testing.
-impl_sudoku_base!(U1,u8; U2,u8; U3, u16; U4, u16; U5, u32);
+impl_sudoku_base!(
+    U1, u8, cell_index_to_block_index::BASE_1;
+    U2, u8, cell_index_to_block_index::BASE_2;
+    U3, u16, cell_index_to_block_index::BASE_3;
+    U4, u16, cell_index_to_block_index::BASE_4;
+    U5, u32, cell_index_to_block_index::BASE_5;
+);
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::repeat;
 
     #[test]
     fn test_base_to_side_length() {
@@ -199,5 +292,44 @@ mod tests {
         assert_type_equals::<<Base as SudokuBase>::CandidatesIntegral, u32>();
 
         assert_base_invariants::<Base>();
+    }
+
+    #[test]
+    fn test_cell_index_to_block_index() {
+        fn generate_cell_index_to_block_index(base: u8) -> Vec<u8> {
+            use std::iter::repeat;
+            let base_usize = usize::from(base);
+            let block_row_cell_count = base_usize * base_usize * base_usize;
+            (0..base)
+                .flat_map(|row| {
+                    let starting_block_index = row * base;
+                    (starting_block_index..(starting_block_index + base))
+                        .flat_map(|i| repeat(i).take(base_usize))
+                        .cycle()
+                        .take(block_row_cell_count)
+                })
+                .collect::<Vec<_>>()
+        }
+
+        assert_eq!(
+            cell_index_to_block_index::BASE_1,
+            generate_cell_index_to_block_index(1).as_slice()
+        );
+        assert_eq!(
+            cell_index_to_block_index::BASE_2,
+            generate_cell_index_to_block_index(2).as_slice()
+        );
+        assert_eq!(
+            cell_index_to_block_index::BASE_3,
+            generate_cell_index_to_block_index(3).as_slice()
+        );
+        assert_eq!(
+            cell_index_to_block_index::BASE_4,
+            generate_cell_index_to_block_index(4).as_slice()
+        );
+        assert_eq!(
+            cell_index_to_block_index::BASE_5,
+            generate_cell_index_to_block_index(5).as_slice()
+        );
     }
 }

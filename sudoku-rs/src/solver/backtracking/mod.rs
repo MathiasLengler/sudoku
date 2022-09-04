@@ -218,6 +218,7 @@ impl<'s, Base: SudokuBase> Iterator for Solver<'s, Base> {
 mod tests {
     use std::collections::HashSet;
 
+    use crate::solver::test_util::assert_solve_result;
     use typenum::consts::*;
 
     use super::*;
@@ -234,14 +235,6 @@ mod tests {
     // TODO: test partial filled sudoku without conflict and one possible solution
     // TODO: test partial filled sudoku without conflict and multiple possible solutions
     // TODO: test partial filled sudoku with conflict (implies no solutions)
-
-    fn assert_solve_result<Base: SudokuBase>(solve_result: Option<Grid<Base>>) {
-        assert!(solve_result.is_some());
-
-        let sudoku = solve_result.unwrap();
-
-        assert!(sudoku.is_solved());
-    }
 
     fn assert_solver_solutions_base_2<Base: SudokuBase>(solver: Solver<'_, Base>) {
         const NUMBER_OF_2X2_SOLUTIONS: usize = 288;
