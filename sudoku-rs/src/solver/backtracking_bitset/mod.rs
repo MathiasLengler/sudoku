@@ -18,7 +18,7 @@ pub struct Solver<'a, Base: SudokuBase> {
     /// Stack of indices to non-value cells to be solved.
     choice_indices: Vec<GroupAvailabilityIndex>,
     /// Stack of the currently selected value for choice_indices.
-    choices: Vec<Value<Base>>,
+    choices: Vec<(Value<Base>, Position)>,
 }
 
 impl<'a, Base: SudokuBase> Solver<'a, Base> {
@@ -66,18 +66,20 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
                 cell.set_candidate(candidate, false);
             });
 
-            self.choices.push(candidate);
+            self.choices.push((
+                candidate,
+                Position {
+                    row: choice_index.row,
+                    column: choice_index.column,
+                },
+            ));
 
             if choice_indices_i == self.choice_indices.len() - 1 {
                 // Current choices are a solution
                 let mut solution_grid = self.grid.clone();
 
-                for (choice_pos, choice) in solution_grid
-                    .all_candidates_positions()
-                    .into_iter()
-                    .zip(self.choices.iter().copied())
-                {
-                    solution_grid.get_mut(choice_pos).set_value(choice)
+                for (value, position) in self.choices.iter() {
+                    solution_grid.get_mut(*position).set_value(*value)
                 }
 
                 return Some(solution_grid);
