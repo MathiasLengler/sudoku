@@ -1,0 +1,11 @@
+# Sourced from: https://github.com/t-dillon/tdoku/blob/master/data.zip
+!.gitignore
+puzzles0_kaggle
+puzzles1_unbiased
+puzzles2_17_clue
+puzzles3_magictour_top1465
+puzzles4_forum_hardest_1905
+puzzles5_forum_hardest_1905_11+
+puzzles6_forum_hardest_1106
+puzzles7_serg_benchmark
+puzzles8_gen_puzzles
