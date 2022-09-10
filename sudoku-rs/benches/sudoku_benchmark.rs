@@ -3,8 +3,7 @@ extern crate criterion;
 
 use std::any::Any;
 use std::convert::TryInto;
-use std::env::current_dir;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use criterion::measurement::WallTime;
 use criterion::{BatchSize, BenchmarkId, Throughput};
