@@ -13,7 +13,7 @@ pub fn read_grids_from_file<Base: SudokuBase>(path: impl AsRef<Path>) -> Result<
         .lines()
         .filter_map(|line| {
             let line = line.unwrap();
-            if line.starts_with('#') {
+            if line.is_empty() || line.starts_with('#') {
                 return None;
             }
             let mut grid: Grid<_> = line.as_str().try_into().unwrap();
