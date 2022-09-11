@@ -169,7 +169,6 @@ impl_sudoku_base!(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::repeat;
 
     #[test]
     fn test_base_to_side_length() {
