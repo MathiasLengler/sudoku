@@ -2,22 +2,16 @@ use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
-// TODO: replace `bitvec` with `num::PrimInt`
-//  Overhead of generic bitvec slicing prevents further optimization
-//  We don't ever need more than a u32 (Base5, [u8; 4]) as a bit field
-
-use bitvec::prelude::*;
-use bitvec::view::{BitView, BitViewSized};
+use num::traits::{CheckedShl, WrappingSub};
+use num::{One, PrimInt, Zero};
 
 use crate::base::SudokuBase;
 use crate::cell::compact::value::Value;
 use crate::error::{Error, Result};
 
-type CandidatesBitSlice<Base> = BitSlice<<<Base as SudokuBase>::CandidatesArray as BitView>::Store>;
-
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Copy, Clone, Debug)]
 pub struct Candidates<Base: SudokuBase> {
-    arr: BitArray<Base::CandidatesArray>,
+    bits: Base::CandidatesIntegral,
 }
 
 impl<Base: SudokuBase> Default for Candidates<Base> {
@@ -29,22 +23,18 @@ impl<Base: SudokuBase> Default for Candidates<Base> {
 /// Constructors
 impl<Base: SudokuBase> Candidates<Base> {
     pub fn new() -> Self {
-        Self::with_candidates_array(Base::CandidatesArray::ZERO)
+        Self::with_integral_unchecked(Base::CandidatesIntegral::default())
     }
 
-    fn with_candidates_array(arr: Base::CandidatesArray) -> Self {
-        Self::with_bit_array(BitArray::new(arr))
-    }
-
-    fn with_bit_array(arr: BitArray<Base::CandidatesArray>) -> Self {
-        let this = Self { arr };
+    fn with_integral_unchecked(bits: Base::CandidatesIntegral) -> Self {
+        let this = Self { bits };
         this.debug_assert_is_valid();
         this
     }
 
-    pub fn with_integral(int: Base::CandidatesIntegral) -> Self {
-        let mut this = Self::new();
-        this.arr.store_le(int);
+    // TODO: refactor into TryFrom implementation
+    pub fn with_integral(bits: Base::CandidatesIntegral) -> Self {
+        let this = Self { bits };
         this.assert_is_valid();
         this
     }
@@ -58,7 +48,7 @@ impl<Base: SudokuBase> Candidates<Base> {
     pub fn all() -> Self {
         let mut this = Self::default();
 
-        this.arr[0..Base::MAX_VALUE as usize].fill(true);
+        this.bits ^= Self::all_candidates_mask();
 
         this.debug_assert_is_valid();
 
@@ -71,21 +61,21 @@ impl<Base: SudokuBase> Candidates<Base> {
     /// `self ∪ other`
     /// https://en.wikipedia.org/wiki/Set_(mathematics)#Unions
     pub fn union(&self, other: &Self) -> Self {
-        Self::with_bit_array(self.arr | other.arr)
+        Self::with_integral_unchecked(self.bits | other.bits)
     }
 
     /// `self ∩ other`
     /// Reference:
     /// https://en.wikipedia.org/wiki/Set_(mathematics)#Intersections
     pub fn intersection(&self, other: &Self) -> Self {
-        Self::with_bit_array(self.arr & other.arr)
+        Self::with_integral_unchecked(self.bits & other.bits)
     }
 
     /// `self ∖ other`
     /// Reference:
     /// https://en.wikipedia.org/wiki/Set_(mathematics)#Unions:~:text=be%20%22subtracted%22.%20The-,relative%20complement,-of%20B%20in
     pub fn without(&self, other: &Self) -> Self {
-        Self::with_bit_array(self.arr & !other.arr)
+        Self::with_integral_unchecked(self.bits & !other.bits)
     }
 }
 
@@ -94,8 +84,7 @@ impl<Base: SudokuBase> Candidates<Base> {
     pub fn toggle(&mut self, candidate: Value<Base>) {
         let imported_candidate = Self::import(candidate);
 
-        let toggled_bit = !self.arr[imported_candidate];
-        self.arr.set(imported_candidate, toggled_bit);
+        self.bits ^= Base::CandidatesIntegral::one() << imported_candidate;
 
         self.debug_assert_is_valid();
     }
@@ -103,17 +92,17 @@ impl<Base: SudokuBase> Candidates<Base> {
     pub fn set(&mut self, candidate: Value<Base>, enabled: bool) {
         let imported_candidate = Self::import(candidate);
 
-        self.arr.set(imported_candidate, enabled);
+        if enabled {
+            self.bits |= Base::CandidatesIntegral::one() << imported_candidate;
+        } else {
+            self.bits &= !(Base::CandidatesIntegral::one() << imported_candidate);
+        }
 
         self.debug_assert_is_valid();
     }
 
     pub fn delete(&mut self, candidate: Value<Base>) {
-        let imported_candidate = Self::import(candidate);
-
-        self.arr.set(imported_candidate, false);
-
-        self.debug_assert_is_valid();
+        self.set(candidate, false);
     }
 }
 
@@ -122,27 +111,28 @@ impl<Base: SudokuBase> Candidates<Base> {
     pub fn has(&self, candidate: Value<Base>) -> bool {
         let imported_candidate = Self::import(candidate);
 
-        self.arr[imported_candidate]
+        (self.bits & Base::CandidatesIntegral::one() << imported_candidate)
+            != Base::CandidatesIntegral::zero()
     }
 
     pub fn integral(&self) -> Base::CandidatesIntegral {
-        self.arr.load_le()
+        self.bits
     }
 
     pub fn is_empty(&self) -> bool {
-        self.arr.not_any()
+        self.bits == Base::CandidatesIntegral::zero()
     }
 
     pub fn is_full(&self) -> bool {
-        self.arr[0..Base::MAX_VALUE as usize].all()
+        self.bits == Self::all_candidates_mask()
     }
 
     pub fn count(&self) -> u8 {
-        self.arr.count_ones().try_into().unwrap()
+        self.bits.count_ones().try_into().unwrap()
     }
 
     pub fn iter(&self) -> impl Iterator<Item = Value<Base>> + '_ {
-        self.arr.iter_ones().map(|i| Self::export(i))
+        IterOnes::from(self).map(|i| Self::export(i))
     }
 
     pub fn to_vec_u8(&self) -> Vec<u8> {
@@ -156,12 +146,20 @@ impl<Base: SudokuBase> Candidates<Base> {
 
 /// Internal helpers
 impl<Base: SudokuBase> Candidates<Base> {
-    fn import(candidate: Value<Base>) -> usize {
-        (candidate.into_u8() - 1).into()
+    fn all_candidates_mask() -> Base::CandidatesIntegral {
+        let zero = Base::CandidatesIntegral::zero();
+        let one = Base::CandidatesIntegral::one();
+        one.checked_shl(u32::from(Base::MAX_VALUE))
+            .unwrap_or(zero)
+            .wrapping_sub(&one)
     }
 
-    fn export(candidate: usize) -> Value<Base> {
-        u8::try_from(candidate + 1).unwrap().try_into().unwrap()
+    fn import(candidate: Value<Base>) -> u8 {
+        candidate.into_u8() - 1
+    }
+
+    fn export(candidate: u8) -> Value<Base> {
+        (candidate + 1).try_into().unwrap()
     }
 
     fn debug_assert_is_valid(&self) {
@@ -181,11 +179,11 @@ impl<Base: SudokuBase> Candidates<Base> {
     }
 
     fn is_valid(&self) -> bool {
-        self.unused_bits().not_any()
+        self.unused_bits() == Base::CandidatesIntegral::zero()
     }
 
-    fn unused_bits(&self) -> &CandidatesBitSlice<Base> {
-        &self.arr[Base::MAX_VALUE as usize..]
+    fn unused_bits(&self) -> Base::CandidatesIntegral {
+        self.bits & !Self::all_candidates_mask()
     }
 }
 
@@ -194,7 +192,7 @@ impl<Base: SudokuBase> FromIterator<Value<Base>> for Candidates<Base> {
         let mut this = Self::default();
 
         for candidate in candidates {
-            this.arr.set(Self::import(candidate), true);
+            this.set(candidate, true);
         }
 
         this.debug_assert_is_valid();
@@ -208,7 +206,7 @@ impl<Base: SudokuBase> From<Vec<Value<Base>>> for Candidates<Base> {
         let mut this = Self::default();
 
         for candidate in candidates {
-            this.arr.set(Self::import(candidate), true);
+            this.set(candidate, true);
         }
 
         this.debug_assert_is_valid();
@@ -224,7 +222,7 @@ impl<Base: SudokuBase> TryFrom<Vec<u8>> for Candidates<Base> {
         let mut this = Self::default();
 
         for candidate in candidates {
-            this.arr.set(Self::import(candidate.try_into()?), true);
+            this.set(candidate.try_into()?, true);
         }
 
         this.debug_assert_is_valid();
@@ -239,11 +237,39 @@ impl<Base: SudokuBase> Display for Candidates<Base> {
     }
 }
 
+#[derive(Debug)]
+struct IterOnes<Base: SudokuBase> {
+    bits: Base::CandidatesIntegral,
+}
+
+impl<Base: SudokuBase> From<&Candidates<Base>> for IterOnes<Base> {
+    fn from(candidates: &Candidates<Base>) -> Self {
+        Self {
+            bits: candidates.bits,
+        }
+    }
+}
+
+// TODO: test/benchmark
+impl<Base: SudokuBase> Iterator for IterOnes<Base> {
+    type Item = u8;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.bits.is_zero() {
+            None
+        } else {
+            let trailing_zeros = self.bits.trailing_zeros();
+            self.bits ^= Base::CandidatesIntegral::one() << trailing_zeros;
+            Some(u8::try_from(trailing_zeros).unwrap())
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::base::consts::*;
     use std::mem::size_of;
 
+    use crate::base::consts::*;
     use crate::error::Result;
 
     use super::*;
@@ -372,6 +398,7 @@ mod tests {
 
     mod mutations {
         use super::*;
+
         #[test]
         fn test_toggle() {
             let mut candidates = Candidates::<Base2>::new();
@@ -411,11 +438,11 @@ mod tests {
             let mut candidates = Candidates::<Base2>::all();
             let value1 = 1.try_into().unwrap();
             let value2 = 2.try_into().unwrap();
-            candidates.delete(value1);
-            assert_eq!(candidates.to_vec_u8(), vec![2, 3, 4]);
-            candidates.delete(value1);
-            assert_eq!(candidates.to_vec_u8(), vec![2, 3, 4]);
             candidates.delete(value2);
+            assert_eq!(candidates.to_vec_u8(), vec![1, 3, 4]);
+            candidates.delete(value1);
+            assert_eq!(candidates.to_vec_u8(), vec![3, 4]);
+            candidates.delete(value1);
             assert_eq!(candidates.to_vec_u8(), vec![3, 4]);
         }
     }
@@ -527,6 +554,26 @@ mod tests {
                     .map(|i| Value::<Base2>::try_from(i).unwrap())
                     .collect::<Vec<_>>()
             );
+        }
+    }
+
+    mod internal_helpers {
+        use super::*;
+
+        #[test]
+        fn test_all_candidates_mask() {
+            let all_candidates_mask = Candidates::<Base2>::all_candidates_mask();
+            assert_eq!(all_candidates_mask, 0b0000_1111);
+            let all_candidates_mask = Candidates::<Base3>::all_candidates_mask();
+            assert_eq!(all_candidates_mask, 0b0000_0001_1111_1111);
+            let all_candidates_mask = Candidates::<Base4>::all_candidates_mask();
+            assert_eq!(all_candidates_mask, 0b1111_1111_1111_1111);
+            let all_candidates_mask = Candidates::<Base5>::all_candidates_mask();
+            assert_eq!(
+                all_candidates_mask,
+                0b0000_0001_1111_1111_1111_1111_1111_1111
+            );
+            println!("{all_candidates_mask:032b}");
         }
     }
 }

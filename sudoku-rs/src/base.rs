@@ -1,13 +1,19 @@
-use std::fmt::{Debug, Display};
+use std::fmt::{Binary, Debug, Display};
 use std::hash::Hash;
 use std::mem::size_of;
+use std::ops::{BitAndAssign, BitOrAssign, BitXorAssign, Shl};
 
+// TODO: remove bitvec
 use bitvec::store::BitStore;
 use bitvec::view::BitViewSized;
-use funty::Integral;
+use num::traits::{
+    CheckedShl, CheckedShr, Unsigned, WrappingAdd, WrappingMul, WrappingShl, WrappingShr,
+    WrappingSub,
+};
+use num::PrimInt;
 use typenum::{
     consts::{U1, U2, U3, U4, U5},
-    Unsigned,
+    Unsigned as _,
 };
 
 use crate::cell::candidates_cell::CandidatesCell;
@@ -130,7 +136,27 @@ where
 
     type CandidatesArrayElement: BitStore;
     type CandidatesArray: BitViewSized + Ord + Hash + Copy + Clone + Debug + Default;
-    type CandidatesIntegral: BitStore + Integral + Copy + Clone + Debug + Default + Display;
+    type CandidatesIntegral: Copy
+        + Clone
+        + Debug
+        + Default
+        + Display
+        + Hash
+        // Generic bit twiddling
+        + PrimInt
+        + CheckedShl
+        + CheckedShr
+        + Unsigned
+        + WrappingAdd
+        + WrappingMul
+        + WrappingShl
+        + WrappingShr
+        + WrappingSub
+        + BitXorAssign
+        + BitOrAssign
+        + BitAndAssign
+        + Shl<u8, Output = Self::CandidatesIntegral>
+        + Binary;
 
     type CandidatesCells: AsRef<[CandidatesCell<Self>]>
         + AsMut<[CandidatesCell<Self>]>

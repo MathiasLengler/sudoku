@@ -193,6 +193,7 @@ mod tests {
 
     use super::*;
 
+    #[ignore]
     #[test]
     fn test_cell_state_size() {
         assert_eq!(
