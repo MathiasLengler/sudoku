@@ -1,10 +1,12 @@
-use crate::base::SudokuBase;
-use crate::cell::compact::candidates::Candidates;
-use crate::cell::compact::value::Value;
+#![allow(dead_code)]
 
 // TODO: refactor API, either:
 //  - merge additional functionality into Candidates
 //  - replicate all required functionality of Candidates on CandidatesCell
+
+use crate::base::SudokuBase;
+use crate::cell::compact::candidates::Candidates;
+use crate::cell::compact::value::Value;
 
 /// A sudoku cell represented as a candidates bitset.
 ///
