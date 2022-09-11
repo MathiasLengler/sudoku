@@ -131,8 +131,8 @@ impl<Base: SudokuBase> Candidates<Base> {
         self.bits.count_ones().try_into().unwrap()
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = Value<Base>> {
-        IterOnes::from(self).map(|i| Self::export(i))
+    pub fn iter(&self) -> CandidatesIter<Base> {
+        self.into()
     }
 
     pub fn to_vec_u8(&self) -> Vec<u8> {
@@ -250,10 +250,11 @@ impl<Base: SudokuBase> From<&Candidates<Base>> for IterOnes<Base> {
     }
 }
 
-// TODO: test/benchmark
+// TODO: benchmark
 impl<Base: SudokuBase> Iterator for IterOnes<Base> {
     type Item = u8;
 
+    #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         if self.bits.is_zero() {
             None
@@ -261,6 +262,53 @@ impl<Base: SudokuBase> Iterator for IterOnes<Base> {
             let trailing_zeros = self.bits.trailing_zeros();
             self.bits ^= Base::CandidatesIntegral::one() << trailing_zeros;
             Some(u8::try_from(trailing_zeros).unwrap())
+        }
+    }
+
+    #[inline(always)]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let len = self.len();
+        (len, Some(len))
+    }
+}
+
+impl<Base: SudokuBase> ExactSizeIterator for IterOnes<Base> {
+    #[inline(always)]
+    fn len(&self) -> usize {
+        usize::try_from(self.bits.count_ones()).unwrap()
+    }
+}
+
+#[derive(Debug)]
+pub struct CandidatesIter<Base: SudokuBase> {
+    iter: IterOnes<Base>,
+}
+
+impl<Base: SudokuBase> Iterator for CandidatesIter<Base> {
+    type Item = Value<Base>;
+
+    #[inline(always)]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next().map(|i| Candidates::export(i))
+    }
+
+    #[inline(always)]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
+}
+
+impl<Base: SudokuBase> ExactSizeIterator for CandidatesIter<Base> {
+    #[inline(always)]
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
+
+impl<Base: SudokuBase> From<&Candidates<Base>> for CandidatesIter<Base> {
+    fn from(candidates: &Candidates<Base>) -> Self {
+        Self {
+            iter: candidates.into(),
         }
     }
 }
