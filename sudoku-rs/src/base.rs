@@ -13,7 +13,14 @@ use typenum::{
 use crate::cell::candidates_cell::CandidatesCell;
 
 pub mod consts {
+    // TODO: remove
     pub use typenum::consts::{U1, U2, U3, U4, U5};
+
+    pub use U1 as Base1;
+    pub use U2 as Base2;
+    pub use U3 as Base3;
+    pub use U4 as Base4;
+    pub use U5 as Base5;
 }
 
 pub type ArrayElement = u8;
