@@ -136,6 +136,29 @@ fn bench_solver_tdoku_group(solver_tdoku_group: &mut BenchmarkGroup<WallTime>) {
     }
 }
 
+fn bench_solver_micro_group<Base: SudokuBase + 'static>(
+    solver_group: &mut BenchmarkGroup<WallTime>,
+) {
+    let base = Base::BASE;
+    let parameter_string = format!("Base={}", base);
+    let grid = sample_grid::<Base>();
+
+    solver_group.bench_with_input(
+        BenchmarkId::new(
+            "backtracking_bitset_move_best_choice_to_front",
+            &parameter_string,
+        ),
+        &grid,
+        |b, grid| {
+            b.iter_batched_ref(
+                || backtracking_bitset::Solver::new(&grid),
+                |solver| solver.move_best_choice_to_front(1),
+                BatchSize::SmallInput,
+            )
+        },
+    );
+}
+
 fn bench_grid_group<Base: SudokuBase + 'static>(grid_group: &mut BenchmarkGroup<WallTime>) {
     let base = Base::BASE;
     let parameter_string = format!("Base={}", base);
@@ -339,16 +362,22 @@ fn criterion_benchmark(c: &mut Criterion) {
     bench_generator_group::<U3>(&mut generator_group);
     generator_group.finish();
 
-    let mut solver_group = c.benchmark_group("SolverSample");
-    solver_group.sample_size(20);
-    bench_solver_group::<U2>(&mut solver_group);
-    bench_solver_group::<U3>(&mut solver_group);
-    solver_group.finish();
+    let mut solver_sample_group = c.benchmark_group("SolverSample");
+    solver_sample_group.sample_size(20);
+    bench_solver_group::<U2>(&mut solver_sample_group);
+    bench_solver_group::<U3>(&mut solver_sample_group);
+    solver_sample_group.finish();
 
     let mut solver_tdoku_group = c.benchmark_group("SolverTdoku");
     solver_tdoku_group.sample_size(10);
     bench_solver_tdoku_group(&mut solver_tdoku_group);
     solver_tdoku_group.finish();
+
+    let mut solver_micro_group = c.benchmark_group("SolverMicro");
+    solver_micro_group.sample_size(20);
+    bench_solver_micro_group::<U2>(&mut solver_micro_group);
+    bench_solver_micro_group::<U3>(&mut solver_micro_group);
+    solver_micro_group.finish();
 
     let mut grid_group = c.benchmark_group("Grid");
     bench_grid_group::<U2>(&mut grid_group);

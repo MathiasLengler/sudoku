@@ -16,37 +16,37 @@ use crate::cell::compact::value::Value;
 /// Use-case: more compact/efficient cell state for the backtracking solver.
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Copy, Clone, Debug, Default)]
 pub struct CandidatesCell<Base: SudokuBase> {
-    candidates: Candidates<Base>,
+    pub(crate) candidates: Candidates<Base>,
 }
 
 impl<Base: SudokuBase> CandidatesCell<Base> {
     /// Constructs new empty cell (empty candidates and no value)
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self::default()
     }
 
     /// Constructs a new cell with a value and if it should be fixed.
-    pub fn with_value(value: Value<Base>) -> Self {
+    pub(crate) fn with_value(value: Value<Base>) -> Self {
         Self {
             candidates: Candidates::single(value),
         }
     }
 
     /// Constructs a new cell with the provided candidates
-    pub fn with_candidates(candidates: Candidates<Base>) -> Self {
+    pub(crate) fn with_candidates(candidates: Candidates<Base>) -> Self {
         Self { candidates }
     }
 
     /// If the cell contains a fixed or unfixed value.
-    pub fn has_value(&self) -> bool {
+    pub(crate) fn has_value(&self) -> bool {
         self.candidates.count() == 1
     }
-    pub fn has_candidates(&self) -> bool {
+    pub(crate) fn has_candidates(&self) -> bool {
         !self.has_value()
     }
 
     /// Value if any
-    pub fn value(&self) -> Option<Value<Base>> {
+    pub(crate) fn value(&self) -> Option<Value<Base>> {
         let mut values = self.candidates.iter();
 
         if let Some(value) = values.next() {
@@ -57,18 +57,18 @@ impl<Base: SudokuBase> CandidatesCell<Base> {
         None
     }
 
-    pub fn candidates(&self) -> Candidates<Base> {
+    pub(crate) fn candidates(&self) -> Candidates<Base> {
         self.candidates
     }
 
     /// Delete contents of the cell
-    pub fn delete(&mut self) {
+    pub(crate) fn delete(&mut self) {
         *self = Self::new()
     }
 
     /// Set the cell to a unfixed value.
     /// Deletes candidates if present.
-    pub fn set_value(&mut self, value: Value<Base>) {
+    pub(crate) fn set_value(&mut self, value: Value<Base>) {
         *self = Self::with_value(value)
     }
 
@@ -77,7 +77,7 @@ impl<Base: SudokuBase> CandidatesCell<Base> {
     /// Deletes candidates if present.
     ///
     /// Returns true if a new value has been set.
-    pub fn set_or_toggle_value(&mut self, value: Value<Base>) -> bool {
+    pub(crate) fn set_or_toggle_value(&mut self, value: Value<Base>) -> bool {
         // Remove other candidates
         self.candidates = self.candidates.intersection(&Candidates::single(value));
 
@@ -89,22 +89,22 @@ impl<Base: SudokuBase> CandidatesCell<Base> {
 
     /// Set the cell to the given candidates.
     /// Deletes value if present.
-    pub fn set_candidates(&mut self, candidates: Candidates<Base>) {
+    pub(crate) fn set_candidates(&mut self, candidates: Candidates<Base>) {
         *self = Self::with_candidates(candidates)
     }
 
     /// Toggle the given candidate or last value.
-    pub fn toggle_candidate(&mut self, candidate: Value<Base>) {
+    pub(crate) fn toggle_candidate(&mut self, candidate: Value<Base>) {
         self.candidates.toggle(candidate)
     }
 
     /// Deletes the given candidate or last value.
-    pub fn delete_candidate(&mut self, candidate: Value<Base>) {
+    pub(crate) fn delete_candidate(&mut self, candidate: Value<Base>) {
         self.candidates.delete(candidate)
     }
 
     /// Set the given candidate to the given enabled state.
-    pub fn set_candidate(&mut self, candidate: Value<Base>, enabled: bool) {
+    pub(crate) fn set_candidate(&mut self, candidate: Value<Base>, enabled: bool) {
         self.candidates.set(candidate, enabled)
     }
 }
