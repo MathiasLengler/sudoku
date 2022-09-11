@@ -504,6 +504,16 @@ mod tests {
         }
 
         #[test]
+        fn test_to_vec_u8() {
+            let empty: Candidates<U2> = Candidates::new();
+            let one: Candidates<U2> = Candidates::single(1.try_into().unwrap());
+            let all: Candidates<U2> = Candidates::all();
+
+            assert_eq!(empty.to_vec_u8(), vec![]);
+            assert_eq!(one.to_vec_u8(), vec![1]);
+            assert_eq!(all.to_vec_u8(), vec![1, 2, 3, 4]);
+        }
+        #[test]
         fn test_to_vec_value() {
             let empty: Candidates<U2> = Candidates::new();
             let one: Candidates<U2> = Candidates::single(1.try_into().unwrap());
