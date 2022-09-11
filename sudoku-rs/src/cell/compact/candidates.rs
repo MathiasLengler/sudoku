@@ -242,8 +242,8 @@ impl<Base: SudokuBase> Display for Candidates<Base> {
 
 #[cfg(test)]
 mod tests {
+    use crate::base::consts::*;
     use std::mem::size_of;
-    use typenum::consts::*;
 
     use crate::error::Result;
 
@@ -254,6 +254,26 @@ mod tests {
         assert_eq!(
             Candidates::<U2>::single(3.try_into().unwrap()).to_vec_u8(),
             vec![3]
+        );
+    }
+
+    #[test]
+    fn test_all() {
+        assert_eq!(
+            Candidates::<Base2>::all().to_vec_u8(),
+            (1..=4).collect::<Vec<u8>>()
+        );
+        assert_eq!(
+            Candidates::<Base3>::all().to_vec_u8(),
+            (1..=9).collect::<Vec<u8>>()
+        );
+        assert_eq!(
+            Candidates::<Base4>::all().to_vec_u8(),
+            (1..=16).collect::<Vec<u8>>()
+        );
+        assert_eq!(
+            Candidates::<Base5>::all().to_vec_u8(),
+            (1..=25).collect::<Vec<u8>>()
         );
     }
 
