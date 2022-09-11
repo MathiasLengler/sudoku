@@ -321,6 +321,19 @@ mod tests {
     }
 
     #[test]
+    fn test_delete() {
+        let mut candidates = Candidates::<Base2>::all();
+        let value1 = 1.try_into().unwrap();
+        let value2 = 2.try_into().unwrap();
+        candidates.delete(value1);
+        assert_eq!(candidates.to_vec_u8(), vec![2, 3, 4]);
+        candidates.delete(value1);
+        assert_eq!(candidates.to_vec_u8(), vec![2, 3, 4]);
+        candidates.delete(value2);
+        assert_eq!(candidates.to_vec_u8(), vec![3, 4]);
+    }
+
+    #[test]
     fn test_try_from_vec_u8() -> Result<()> {
         let vec_candidates = vec![1, 2, 4, 8, 9];
 
