@@ -502,5 +502,21 @@ mod tests {
                     .collect::<Vec<_>>()
             );
         }
+
+        #[test]
+        fn test_to_vec_value() {
+            let empty: Candidates<U2> = Candidates::new();
+            let one: Candidates<U2> = Candidates::single(1.try_into().unwrap());
+            let all: Candidates<U2> = Candidates::all();
+
+            assert_eq!(empty.to_vec_value(), vec![]);
+            assert_eq!(one.to_vec_value(), vec![1.try_into().unwrap()]);
+            assert_eq!(
+                all.to_vec_value(),
+                (1..=4)
+                    .map(|i| Value::<Base2>::try_from(i).unwrap())
+                    .collect::<Vec<_>>()
+            );
+        }
     }
 }
