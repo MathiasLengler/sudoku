@@ -1,7 +1,7 @@
 /// Fork of: https://github.com/t-dillon/tdoku/blob/master/src/solver_basic.cc
 use crate::base::SudokuBase;
 use crate::cell::candidates_cell::CandidatesCell;
-use crate::cell::compact::candidates::Candidates;
+use crate::cell::compact::candidates::{Candidates, CandidatesIter};
 use crate::cell::compact::value::Value;
 use crate::grid::Grid;
 use crate::position::Position;
@@ -12,10 +12,13 @@ pub struct Solver<'a, Base: SudokuBase> {
     grid: &'a Grid<Base>,
     /// Cached remaining candidates for each group.
     group_availability: GroupAvailability<Base>,
+    // TODO: rename availability_indices
     /// Stack of indices to non-value cells to be solved.
     choice_indices: Vec<GroupAvailabilityIndex>,
     /// Stack of the currently selected value for choice_indices.
     choices: Vec<(Value<Base>, Position)>,
+
+    candidates_iters: Vec<CandidatesIter<Base>>,
 
     pub guess_count: u64,
 }
@@ -27,6 +30,7 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
             group_availability: GroupAvailability::all(),
             choice_indices: Default::default(),
             choices: Default::default(),
+            candidates_iters: vec![],
             guess_count: 0,
         };
 
@@ -45,14 +49,19 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
 
                 if let Some(value) = grid.get(Position { row, column }).value() {
                     // clue, clear group availability
-                    self.group_availability
-                        .mutate(index, |cell| cell.set_candidate(value, false))
+                    self.group_availability.reserve(index, value);
                 } else {
                     // Non-value cell, add to choices
                     self.choice_indices.push(index);
                 }
             }
         }
+
+        self.candidates_iters.push(
+            self.group_availability
+                .intersection(self.choice_indices[0])
+                .iter(),
+        );
     }
 
     pub fn move_best_choice_to_front(&mut self, choice_indices_i: usize) {
@@ -99,9 +108,7 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
             self.guess_count += 1;
 
             // Clear candidate availability
-            self.group_availability.mutate(choice_index, |cell| {
-                cell.set_candidate(candidate, false);
-            });
+            self.group_availability.reserve(choice_index, candidate);
 
             self.choices.push((
                 candidate,
@@ -132,18 +139,82 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
             self.choices.pop();
 
             // Restore candidate availability
-            self.group_availability.mutate(choice_index, |cell| {
-                cell.set_candidate(candidate, true);
-            });
+            self.group_availability.restore(choice_index, candidate);
         }
         None
+    }
+
+    fn next_solution(&mut self) -> Option<Grid<Base>> {
+        loop {
+            if let Some(candidates) = self.candidates_iters.last() {
+                if let Some(candidate) = candidates.peek() {
+                    let choice_index = self.choice_indices[self.candidates_iters.len() - 1];
+                    self.group_availability.reserve(choice_index, candidate);
+
+                    if self.candidates_iters.len() == self.choice_indices.len() {
+                        // Found solution
+                        let mut solution_grid = self.grid.clone();
+                        for (candidates_iter, choice_index) in
+                            self.candidates_iters.iter().zip(self.choice_indices.iter())
+                        {
+                            solution_grid
+                                .get_mut(choice_index.into())
+                                .set_value(candidates_iter.peek().unwrap())
+                        }
+
+                        // Continue at next candidate
+                        let last_candidates = self.candidates_iters.last_mut().unwrap();
+                        self.group_availability.restore(choice_index, candidate);
+                        last_candidates.next();
+
+                        return Some(solution_grid);
+                    } else {
+                        // Next cell
+                        let next_index = self.candidates_iters.len();
+                        self.move_best_choice_to_front(next_index);
+                        let next_choice_index = self.choice_indices[next_index];
+                        let next_candidates_iter = self
+                            .group_availability
+                            .intersection(next_choice_index)
+                            .iter();
+                        self.candidates_iters.push(next_candidates_iter);
+                    }
+                } else {
+                    // Backtrack
+                    self.candidates_iters.pop().unwrap();
+                    if self.candidates_iters.len() >= 1 {
+                        let choice_indices_i = self.candidates_iters.len() - 1;
+                        if let Some(prev_candidates) = self.candidates_iters.last_mut() {
+                            if let Some(prev_candidate) = prev_candidates.peek() {
+                                let prev_choice_index = self.choice_indices[choice_indices_i];
+                                self.group_availability
+                                    .restore(prev_choice_index, prev_candidate);
+                            }
+
+                            prev_candidates.next();
+                        }
+                    }
+                }
+            } else {
+                return None;
+            }
+        }
     }
 
     // TODO: make resumable; seems to be a tradeoff between:
     //  - fast solution counting while return last solution, if any
     //  - more state tracking while returning every solution
     pub fn try_solve(&mut self) -> Option<Grid<Base>> {
-        self.try_solve_index(0)
+        // self.try_solve_index(0)
+        self.next_solution()
+    }
+}
+
+impl<'s, Base: SudokuBase> Iterator for Solver<'s, Base> {
+    type Item = Grid<Base>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next_solution()
     }
 }
 
@@ -176,6 +247,19 @@ impl<Base: SudokuBase> GroupAvailability<Base> {
             .chain(self.blocks.as_mut().iter_mut())
     }
 
+    fn reserve(&mut self, index: GroupAvailabilityIndex, candidate: Value<Base>) {
+        // Clear candidate availability
+        self.mutate(index, |cell| {
+            cell.set_candidate(candidate, false);
+        });
+    }
+    fn restore(&mut self, index: GroupAvailabilityIndex, candidate: Value<Base>) {
+        // Restore candidate availability
+        self.mutate(index, |cell| {
+            cell.set_candidate(candidate, true);
+        });
+    }
+
     fn mutate(
         &mut self,
         index: GroupAvailabilityIndex,
@@ -203,14 +287,31 @@ struct GroupAvailabilityIndex {
     block: u8,
 }
 
+impl Into<Position> for &GroupAvailabilityIndex {
+    fn into(self) -> Position {
+        Position {
+            row: self.row,
+            column: self.column,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::mem::size_of;
 
     use crate::base::consts::*;
-    use crate::solver::test_util::assert_solve_result;
+    use crate::solver::test_util::{assert_solve_result, assert_solver_solutions_base_2};
 
     use super::*;
+
+    #[test]
+    fn test_iter_all_solutions() {
+        let mut grid = Grid::<U2>::new();
+        let solver = Solver::new(&grid);
+
+        assert_solver_solutions_base_2(solver);
+    }
 
     #[test]
     fn test_base_2() {

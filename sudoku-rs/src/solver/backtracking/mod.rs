@@ -216,10 +216,8 @@ impl<'s, Base: SudokuBase> Iterator for Solver<'s, Base> {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashSet;
-
     use crate::base::consts::*;
-    use crate::solver::test_util::assert_solve_result;
+    use crate::solver::test_util::{assert_solve_result, assert_solver_solutions_base_2};
 
     use super::*;
 
@@ -235,22 +233,6 @@ mod tests {
     // TODO: test partial filled sudoku without conflict and one possible solution
     // TODO: test partial filled sudoku without conflict and multiple possible solutions
     // TODO: test partial filled sudoku with conflict (implies no solutions)
-
-    fn assert_solver_solutions_base_2<Base: SudokuBase>(solver: Solver<'_, Base>) {
-        const NUMBER_OF_2X2_SOLUTIONS: usize = 288;
-
-        let solutions = solver.collect::<Vec<_>>();
-
-        assert_eq!(solutions.len(), NUMBER_OF_2X2_SOLUTIONS);
-
-        solutions
-            .iter()
-            .for_each(|solution| assert!(solution.is_solved()));
-
-        let unique_solutions = solutions.into_iter().collect::<HashSet<_>>();
-
-        assert_eq!(unique_solutions.len(), NUMBER_OF_2X2_SOLUTIONS);
-    }
 
     #[test]
     fn test_iter_all_solutions() {

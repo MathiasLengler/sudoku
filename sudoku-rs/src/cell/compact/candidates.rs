@@ -237,9 +237,21 @@ impl<Base: SudokuBase> Display for Candidates<Base> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct IterOnes<Base: SudokuBase> {
     bits: Base::CandidatesIntegral,
+}
+
+impl<Base: SudokuBase> IterOnes<Base> {
+    #[inline(always)]
+    pub fn peek(&self) -> Option<u8> {
+        if self.bits.is_zero() {
+            None
+        } else {
+            let trailing_zeros = self.bits.trailing_zeros();
+            Some(u8::try_from(trailing_zeros).unwrap())
+        }
+    }
 }
 
 impl<Base: SudokuBase> From<&Candidates<Base>> for IterOnes<Base> {
@@ -256,13 +268,11 @@ impl<Base: SudokuBase> Iterator for IterOnes<Base> {
 
     #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
-        if self.bits.is_zero() {
-            None
-        } else {
-            let trailing_zeros = self.bits.trailing_zeros();
+        let trailing_zeros = self.peek();
+        if let Some(trailing_zeros) = trailing_zeros {
             self.bits ^= Base::CandidatesIntegral::one() << trailing_zeros;
-            Some(u8::try_from(trailing_zeros).unwrap())
         }
+        trailing_zeros
     }
 
     #[inline(always)]
@@ -279,9 +289,16 @@ impl<Base: SudokuBase> ExactSizeIterator for IterOnes<Base> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CandidatesIter<Base: SudokuBase> {
     iter: IterOnes<Base>,
+}
+
+impl<Base: SudokuBase> CandidatesIter<Base> {
+    #[inline(always)]
+    pub fn peek(&self) -> Option<Value<Base>> {
+        self.iter.peek().map(|i| Candidates::export(i))
+    }
 }
 
 impl<Base: SudokuBase> Iterator for CandidatesIter<Base> {
