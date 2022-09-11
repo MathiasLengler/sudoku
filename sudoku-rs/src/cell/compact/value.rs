@@ -5,14 +5,13 @@ use std::marker::PhantomData;
 use std::num::NonZeroU8;
 
 use anyhow::{ensure, format_err};
-use typenum::Unsigned;
 
 use crate::base::SudokuBase;
 use crate::error::{Error, Result};
 
 /// A valid sudoku value for a given base.
 ///
-/// A `Value` always is in the range of `1..=(base^2)`
+/// A `Value` always is in the range of `1..=(SudokuBase^2)`
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Copy, Debug)]
 pub struct Value<Base: SudokuBase> {
     value: NonZeroU8,
@@ -24,7 +23,7 @@ impl<Base: SudokuBase> Value<Base> {
     /// Ok(None) => 0
     /// Err(err) => value too big
     pub fn new(value: u8) -> Result<Option<Self>> {
-        let limit = Base::MaxValue::to_u8();
+        let limit = Base::MAX_VALUE;
 
         ensure!(value <= limit, "Value can't be greater than {}", limit);
 
@@ -55,7 +54,7 @@ impl<Base: SudokuBase> Display for Value<Base> {
 
 #[cfg(test)]
 mod tests {
-    use typenum::consts::*;
+    use crate::base::consts::*;
 
     use super::*;
 

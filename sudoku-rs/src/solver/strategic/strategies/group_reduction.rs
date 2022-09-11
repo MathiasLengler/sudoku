@@ -3,47 +3,22 @@ use itertools::izip;
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
 use crate::cell::compact::value::Value;
+use crate::error::Result;
 use crate::grid::Grid;
-use crate::position::Position;
+use crate::solver::strategic::deduction::{Deduction, Deductions, TryIntoDeductions};
 
 use super::Strategy;
+
+// TODO: optimize
+//  - https://en.wikipedia.org/wiki/Strongly_connected_component
+//  - https://opensourc.es/blog/sudoku/
 
 #[derive(Debug)]
 pub struct GroupReduction;
 
 impl<Base: SudokuBase> Strategy<Base> for GroupReduction {
-    fn execute(&self, grid: &mut Grid<Base>) -> Vec<Position> {
-        let mut modified_positions = vec![];
-
-        Self::reduce_groups(
-            Grid::<Base>::all_row_positions(),
-            grid,
-            &mut modified_positions,
-        );
-        Self::reduce_groups(
-            Grid::<Base>::all_column_positions(),
-            grid,
-            &mut modified_positions,
-        );
-        Self::reduce_groups(
-            Grid::<Base>::all_block_positions(),
-            grid,
-            &mut modified_positions,
-        );
-
-        modified_positions.sort();
-        modified_positions.dedup();
-        modified_positions
-    }
-}
-
-impl GroupReduction {
-    fn reduce_groups<Base: SudokuBase>(
-        groups: impl Iterator<Item = impl Iterator<Item = Position>>,
-        grid: &mut Grid<Base>,
-        modified_positions: &mut Vec<Position>,
-    ) {
-        for group in groups {
+    fn execute(&self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
+        TryIntoDeductions(Grid::<Base>::all_group_positions().flat_map(|group| {
             let (positions, candidates_group): (Vec<_>, Vec<_>) = group
                 .filter_map(|pos| {
                     grid.get(pos)
@@ -54,23 +29,25 @@ impl GroupReduction {
 
             let reduced_candidates_group = Self::reduce_candidates_group(&candidates_group);
 
-            for (position, candidates, reduced_candidates) in
-                izip!(positions, candidates_group, reduced_candidates_group)
-            {
-                if candidates != reduced_candidates {
-                    println!(
-                        "GroupReduction at {}: {} => {}",
-                        position, candidates, reduced_candidates
-                    );
-
-                    modified_positions.push(position);
-
-                    grid.get_mut(position).set_candidates(reduced_candidates);
-                }
-            }
-        }
+            izip!(positions, candidates_group, reduced_candidates_group).filter_map(
+                |(position, candidates, reduced_candidates)| {
+                    if candidates != reduced_candidates {
+                        Some(Deduction::with_remaining_candidates(
+                            position,
+                            candidates,
+                            reduced_candidates,
+                        ))
+                    } else {
+                        None
+                    }
+                },
+            )
+        }))
+        .try_into()
     }
+}
 
+impl GroupReduction {
     pub fn reduce_candidates_group<Base: SudokuBase>(
         candidates_group: &[Candidates<Base>],
     ) -> Vec<Candidates<Base>> {
@@ -113,12 +90,29 @@ mod tests {
     use std::convert::TryInto;
 
     use crate::base::consts::*;
+    use crate::solver::strategic::deduction::IntoDeductions;
 
     use super::*;
 
     #[test]
     fn test_group_reduction() {
-        let test_cases = vec![
+        let test_cases: Vec<(Vec<Vec<u8>>, Vec<Vec<u8>>)> = vec![
+            (
+                vec![
+                    vec![1, 6],
+                    vec![1, 6],
+                    vec![1, 2, 5],
+                    vec![1, 2, 5, 6, 7],
+                    vec![2, 5, 6, 7],
+                ],
+                vec![
+                    vec![1, 6],
+                    vec![1, 6],
+                    vec![2, 5],
+                    vec![2, 5, 7],
+                    vec![2, 5, 7],
+                ],
+            ),
             (
                 vec![
                     vec![1, 2],
@@ -175,5 +169,48 @@ mod tests {
                 expected_reduced_candidate_group_data
             );
         }
+    }
+
+    /// Reference:
+    ///  https://www.sudokuwiki.org/Naked_Candidates
+    ///  "Naked Pairs examples : Load Example"
+    ///  https://www.sudokuwiki.org/sudoku.htm?bd=400000938032094100095300240370609004529001673604703090957008300003900400240030709
+    #[test]
+    fn test_naked_pairs() {
+        let mut grid: Grid<U3> =
+            "400000938032094100095300240370609004529001673604703090957008300003900400240030709"
+                .try_into()
+                .unwrap();
+
+        grid.fix_all_values();
+        grid.set_all_direct_candidates();
+
+        let deductions = GroupReduction.execute(&grid).unwrap();
+
+        assert_eq!(
+            deductions,
+            IntoDeductions(vec![
+                grid.deduction_at((0, 3), Candidates::try_from(vec![2, 5]).unwrap())
+                    .unwrap(),
+                grid.deduction_at((0, 4), Candidates::try_from(vec![2, 5, 7]).unwrap())
+                    .unwrap(),
+                grid.deduction_at((0, 5), Candidates::try_from(vec![2, 5, 7]).unwrap())
+                    .unwrap(),
+                grid.deduction_at((2, 0), Candidates::try_from(vec![8]).unwrap())
+                    .unwrap(),
+                grid.deduction_at((2, 4), Candidates::try_from(vec![1, 8]).unwrap())
+                    .unwrap(),
+                grid.deduction_at((3, 4), Candidates::try_from(vec![2, 5]).unwrap())
+                    .unwrap(),
+                grid.deduction_at((3, 7), Candidates::try_from(vec![1, 2]).unwrap())
+                    .unwrap(),
+                grid.deduction_at((5, 4), Candidates::try_from(vec![2, 5]).unwrap())
+                    .unwrap(),
+                grid.deduction_at((5, 8), Candidates::try_from(vec![1, 2]).unwrap())
+                    .unwrap(),
+            ])
+            .try_into()
+            .unwrap()
+        );
     }
 }

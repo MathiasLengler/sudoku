@@ -85,7 +85,7 @@ impl Generator {
             grid.get_mut(pos).delete();
 
             // TODO: use strategic solver
-            if backtracking::Solver::has_unique_solution(&grid) {
+            if grid.has_unique_solution() {
                 // current position can be removed without losing uniqueness of the grid solution.
                 Some(value)
             } else {
@@ -107,7 +107,7 @@ impl Generator {
 
         let mut all_positions: Vec<_> = Grid::<Base>::all_positions().collect();
         all_positions.shuffle(&mut rand::thread_rng());
-        let all_positions_count = Grid::<Base>::cell_count();
+        let all_positions_count = Grid::<Base>::cell_count_usize();
 
         let mut deleted_count = 0;
         for (i, pos) in all_positions.into_iter().enumerate() {
@@ -131,7 +131,7 @@ impl Generator {
     // TODO: optimize performance for base >= 3
     fn minimal<Base: SudokuBase>(mut grid: Grid<Base>, distance: usize) -> Grid<Base> {
         // If the distance results in a filled sudoku, return it directly.
-        if Grid::<Base>::cell_count() <= distance {
+        if Grid::<Base>::cell_count_usize() <= distance {
             return grid;
         }
 
@@ -139,7 +139,7 @@ impl Generator {
 
         let mut all_positions: Vec<_> = Grid::<Base>::all_positions().collect();
         all_positions.shuffle(&mut rand::thread_rng());
-        let all_positions_count = Grid::<Base>::cell_count();
+        let all_positions_count = Grid::<Base>::cell_count_usize();
 
         let mut deleted: Vec<(Position, Value<Base>)> = vec![];
 
@@ -168,7 +168,7 @@ impl Generator {
 
 #[cfg(test)]
 mod tests {
-    use typenum::consts::*;
+    use crate::base::consts::*;
 
     use super::*;
 
@@ -177,12 +177,12 @@ mod tests {
 
         grid.unfix_all_values();
 
-        backtracking::Solver::has_unique_solution(&grid)
+        grid.has_unique_solution()
             && grid.all_value_positions().into_iter().all(|pos| {
                 let cell = grid.get_mut(pos);
                 let prev_value = cell.value().unwrap();
                 cell.delete();
-                let has_multiple_solutions = !backtracking::Solver::has_unique_solution(&grid);
+                let has_multiple_solutions = !grid.has_unique_solution();
                 grid.get_mut(pos).set_value(prev_value);
                 has_multiple_solutions
             })
@@ -208,6 +208,6 @@ mod tests {
 
         assert_eq!(grid.all_candidates_positions().len(), 2);
 
-        assert!(backtracking::Solver::has_unique_solution(&grid));
+        assert!(grid.has_unique_solution());
     }
 }

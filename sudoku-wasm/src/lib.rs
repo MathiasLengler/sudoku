@@ -165,13 +165,21 @@ impl WasmSudoku {
     }
 
     #[wasm_bindgen(js_name = solveSingleCandidates)]
-    pub fn solve_single_candidates(&mut self) {
-        self.sudoku.borrow_mut().solve_single_candidates();
+    pub fn solve_single_candidates(&mut self) -> Result<(), JsValue> {
+        Ok(self
+            .sudoku
+            .borrow_mut()
+            .solve_single_candidates()
+            .map_err(Self::export_error)?)
     }
 
     #[wasm_bindgen(js_name = groupReduction)]
-    pub fn group_reduction(&mut self) {
-        self.sudoku.borrow_mut().group_reduction();
+    pub fn group_reduction(&mut self) -> Result<(), JsValue> {
+        Ok(self
+            .sudoku
+            .borrow_mut()
+            .group_reduction()
+            .map_err(Self::export_error)?)
     }
 }
 

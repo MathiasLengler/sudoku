@@ -1,8 +1,10 @@
 use std::convert::TryInto;
 
-use typenum::consts::*;
+use crate::base::consts::*;
 
 use crate::base::SudokuBase;
+use crate::cell::compact::candidates::Candidates;
+use crate::cell::Cell;
 use crate::error::Result;
 use crate::generator::backtracking::{Generator, Target};
 use crate::grid::Grid;
@@ -35,6 +37,14 @@ pub fn base_2() -> Vec<Grid<U2>> {
     .unwrap()
 }
 
+pub fn base_2_candidates_coordinates() -> Grid<U2> {
+    Grid::<U2>::with_cells(
+        (0..u8::try_from(<U2 as SudokuBase>::CELL_COUNT).unwrap())
+            .map(|i| Cell::with_candidates(Candidates::with_integral(i)))
+            .collect(),
+    )
+}
+
 pub fn base_3() -> Vec<Grid<U3>> {
     vec![
         // 11 Star difficulty
@@ -63,10 +73,21 @@ pub fn minimal<Base: SudokuBase>() -> Grid<Base> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::position::Position;
 
     #[test]
     fn test_base_2() {
         base_2();
+    }
+    #[test]
+    fn test_base_2_candidates_coordinates() {
+        let grid = base_2_candidates_coordinates();
+
+        let top_left_cell = grid.get(Position { row: 0, column: 0 });
+        assert_eq!(*top_left_cell, Cell::with_candidates(Candidates::new()));
+
+        let bottom_right = grid.get(Position { row: 3, column: 3 });
+        assert_eq!(*bottom_right, Cell::with_candidates(Candidates::all()));
     }
 
     #[test]

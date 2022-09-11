@@ -1,10 +1,15 @@
 use strategies::Strategy;
 
 use crate::base::SudokuBase;
+use crate::error::Result;
 use crate::grid::Grid;
-use crate::position::Position;
+use deduction::Deductions;
 
 pub mod strategies;
+// API
+pub mod deduction;
+
+// TODO: return/persist chain of deductions for complete solve
 
 #[derive(Debug)]
 pub struct Solver<'s, Base: SudokuBase> {
@@ -25,67 +30,70 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
     }
 
     // TODO: unique solution?
-    pub fn try_solve(&mut self) -> bool {
+    pub fn try_solve(&mut self) -> Result<bool> {
         loop {
             if self.grid.is_solved() {
-                return true;
+                return Ok(true);
             }
 
-            if let Some(_modified_positions) = self.try_strategies() {
+            if let Some(deductions) = self.try_strategies()? {
+                deductions.apply(self.grid);
                 // Continue with strategy execution
             } else {
                 // All strategies have failed.
-                return false;
+                return Ok(false);
             }
         }
     }
 
     /// Tries strategies until a strategy is able to modify the grid.
-    pub fn try_strategies(&mut self) -> Option<Vec<Position>> {
-        for strategy in self.strategies.iter() {
-            let modified_positions = strategy.execute(&mut self.grid);
+    pub fn try_strategies(&mut self) -> Result<Option<Deductions<Base>>> {
+        for strategy in &self.strategies {
+            let deductions = strategy.execute(&mut self.grid)?;
 
-            if !modified_positions.is_empty() {
+            if !(deductions.is_empty()) {
                 #[cfg(feature = "debug_print")]
                 println!(
                     "{:?}: {:?}\n{}",
                     strategy,
-                    modified_positions
+                    deductions
                         .iter()
                         .map(|pos| pos.to_string())
                         .collect::<Vec<_>>(),
                     self.grid
                 );
 
-                return Some(modified_positions);
+                return Ok(Some(deductions));
+            } else {
             }
         }
-
-        None
+        Ok(None)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use typenum::consts::*;
+    use crate::base::consts::*;
 
     use super::*;
 
+    fn assert_solvable<Base: SudokuBase>(grid: &mut Grid<Base>) {
+        grid.set_all_direct_candidates();
+        grid.fix_all_values();
+
+        let mut solver = Solver::new(grid);
+
+        assert!(solver.try_solve().unwrap());
+
+        assert!(grid.is_solved());
+    }
+
     #[test]
     fn test_base_2() {
-        let mut grids = crate::samples::base_2();
+        let grids = crate::samples::base_2();
 
-        for (grid_index, mut grid) in grids.drain(..).enumerate() {
-            grid.set_all_direct_candidates();
-            grid.fix_all_values();
-
-            println!("#{}:\n{}", grid_index, grid);
-
-            let mut solver = Solver::new(&mut grid);
-
-            assert!(solver.try_solve());
-
-            assert!(grid.is_solved());
+        for mut grid in grids.into_iter() {
+            assert_solvable(&mut grid);
         }
     }
 
@@ -93,17 +101,8 @@ mod tests {
     fn test_base_3() {
         let grids = crate::samples::base_3();
 
-        for (grid_index, mut grid) in grids.into_iter().enumerate() {
-            grid.set_all_direct_candidates();
-            grid.fix_all_values();
-
-            println!("#{}:\n{}", grid_index, grid);
-
-            let mut solver = Solver::new(&mut grid);
-
-            assert!(solver.try_solve());
-
-            assert!(grid.is_solved());
+        for mut grid in grids.into_iter() {
+            assert_solvable(&mut grid);
         }
     }
 
@@ -116,7 +115,7 @@ mod tests {
 
         let mut solver = Solver::new(&mut grid);
 
-        assert!(solver.try_solve());
+        assert!(solver.try_solve().unwrap());
 
         assert!(grid.is_solved());
     }

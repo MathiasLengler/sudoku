@@ -1,72 +1,142 @@
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::fmt::{Display, Formatter};
-use std::marker::PhantomData;
 
-use bitvec::prelude::*;
-use generic_array::GenericArray;
-use typenum::Unsigned;
+use num::traits::{CheckedShl, WrappingSub};
+use num::{One, PrimInt, Zero};
 
-use crate::base::{ArrayElement, SudokuBase};
+pub use iter::CandidatesIter;
+
+use crate::base::SudokuBase;
 use crate::cell::compact::value::Value;
 use crate::error::{Error, Result};
 
-#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug, Default)]
+mod iter;
+
+#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Copy, Clone, Debug)]
 pub struct Candidates<Base: SudokuBase> {
-    arr: GenericArray<ArrayElement, Base::CandidatesCapacity>,
+    bits: Base::CandidatesIntegral,
 }
 
+impl<Base: SudokuBase> Default for Candidates<Base> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Constructors
 impl<Base: SudokuBase> Candidates<Base> {
     pub fn new() -> Self {
-        Self::default()
+        Self::with_integral_unchecked(Base::CandidatesIntegral::default())
+    }
+
+    fn with_integral_unchecked(bits: Base::CandidatesIntegral) -> Self {
+        let this = Self { bits };
+        this.debug_assert_is_valid();
+        this
+    }
+
+    // TODO: refactor into TryFrom implementation
+    pub fn with_integral(bits: Base::CandidatesIntegral) -> Self {
+        let this = Self { bits };
+        this.assert_is_valid();
+        this
+    }
+
+    pub fn single(candidate: Value<Base>) -> Self {
+        let mut this = Self::new();
+        this.set(candidate, true);
+        this
     }
 
     pub fn all() -> Self {
         let mut this = Self::default();
 
-        let bits = this.as_mut_bits();
+        this.bits ^= Self::all_candidates_mask();
 
-        bits[0..Base::MaxValue::to_usize()].fill(true);
-
-        this.debug_assert();
+        this.debug_assert_is_valid();
 
         this
     }
+}
 
+/// Set constructors
+impl<Base: SudokuBase> Candidates<Base> {
+    /// `self ∪ other`
+    /// https://en.wikipedia.org/wiki/Set_(mathematics)#Unions
+    pub fn union(&self, other: &Self) -> Self {
+        Self::with_integral_unchecked(self.bits | other.bits)
+    }
+
+    /// `self ∩ other`
+    /// Reference:
+    /// https://en.wikipedia.org/wiki/Set_(mathematics)#Intersections
+    pub fn intersection(&self, other: &Self) -> Self {
+        Self::with_integral_unchecked(self.bits & other.bits)
+    }
+
+    /// `self ∖ other`
+    /// Reference:
+    /// https://en.wikipedia.org/wiki/Set_(mathematics)#Unions:~:text=be%20%22subtracted%22.%20The-,relative%20complement,-of%20B%20in
+    pub fn without(&self, other: &Self) -> Self {
+        Self::with_integral_unchecked(self.bits & !other.bits)
+    }
+}
+
+/// Mutations
+impl<Base: SudokuBase> Candidates<Base> {
     pub fn toggle(&mut self, candidate: Value<Base>) {
         let imported_candidate = Self::import(candidate);
 
-        let bits = self.as_mut_bits();
+        self.bits ^= Base::CandidatesIntegral::one() << imported_candidate;
 
-        bits.set(imported_candidate, !bits[imported_candidate]);
-
-        self.debug_assert();
+        self.debug_assert_is_valid();
     }
 
-    pub fn set(&mut self, candidate: Value<Base>, value: bool) {
+    pub fn set(&mut self, candidate: Value<Base>, enabled: bool) {
         let imported_candidate = Self::import(candidate);
 
-        let bits = self.as_mut_bits();
+        if enabled {
+            self.bits |= Base::CandidatesIntegral::one() << imported_candidate;
+        } else {
+            self.bits &= !(Base::CandidatesIntegral::one() << imported_candidate);
+        }
 
-        bits.set(imported_candidate, value);
-
-        self.debug_assert();
+        self.debug_assert_is_valid();
     }
 
     pub fn delete(&mut self, candidate: Value<Base>) {
+        self.set(candidate, false);
+    }
+}
+
+/// Getters
+impl<Base: SudokuBase> Candidates<Base> {
+    pub fn has(&self, candidate: Value<Base>) -> bool {
         let imported_candidate = Self::import(candidate);
 
-        let bits = self.as_mut_bits();
-
-        bits.set(imported_candidate, false);
-
-        self.debug_assert();
+        (self.bits & Base::CandidatesIntegral::one() << imported_candidate)
+            != Base::CandidatesIntegral::zero()
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = Value<Base>> + '_ {
-        let bits = self.as_bits();
+    pub fn integral(&self) -> Base::CandidatesIntegral {
+        self.bits
+    }
 
-        bits.iter_ones().map(|i| Self::export(i))
+    pub fn is_empty(&self) -> bool {
+        self.bits == Base::CandidatesIntegral::zero()
+    }
+
+    pub fn is_full(&self) -> bool {
+        self.bits == Self::all_candidates_mask()
+    }
+
+    pub fn count(&self) -> u8 {
+        self.bits.count_ones().try_into().unwrap()
+    }
+
+    pub fn iter(&self) -> CandidatesIter<Base> {
+        self.into()
     }
 
     pub fn to_vec_u8(&self) -> Vec<u8> {
@@ -76,38 +146,62 @@ impl<Base: SudokuBase> Candidates<Base> {
     pub fn to_vec_value(&self) -> Vec<Value<Base>> {
         self.iter().collect()
     }
+}
 
-    /// Optimization to allow multiple modifications to candidates without recreating `BitSlice` wrapper.
-    pub fn as_mut(&mut self) -> CandidatesMut<'_, Base> {
-        CandidatesMut {
-            bits: self.as_mut_bits(),
-            base: PhantomData::default(),
-        }
+/// Internal helpers
+impl<Base: SudokuBase> Candidates<Base> {
+    fn all_candidates_mask() -> Base::CandidatesIntegral {
+        let zero = Base::CandidatesIntegral::zero();
+        let one = Base::CandidatesIntegral::one();
+        one.checked_shl(u32::from(Base::MAX_VALUE))
+            .unwrap_or(zero)
+            .wrapping_sub(&one)
+    }
+
+    fn import(candidate: Value<Base>) -> u8 {
+        candidate.into_u8() - 1
+    }
+
+    fn export(candidate: u8) -> Value<Base> {
+        (candidate + 1).try_into().unwrap()
+    }
+
+    fn debug_assert_is_valid(&self) {
+        debug_assert!(
+            self.is_valid(),
+            "Unexpected bit set in {}",
+            self.unused_bits()
+        );
+    }
+
+    fn assert_is_valid(&self) {
+        assert!(
+            self.is_valid(),
+            "Unexpected bit set in {}",
+            self.unused_bits()
+        );
+    }
+
+    fn is_valid(&self) -> bool {
+        self.unused_bits() == Base::CandidatesIntegral::zero()
+    }
+
+    fn unused_bits(&self) -> Base::CandidatesIntegral {
+        self.bits & !Self::all_candidates_mask()
     }
 }
 
-impl<Base: SudokuBase> Candidates<Base> {
-    fn as_bits(&self) -> &BitSlice<ArrayElement> {
-        self.arr.view_bits()
-    }
+impl<Base: SudokuBase> FromIterator<Value<Base>> for Candidates<Base> {
+    fn from_iter<T: IntoIterator<Item = Value<Base>>>(candidates: T) -> Self {
+        let mut this = Self::default();
 
-    fn as_mut_bits(&mut self) -> &mut BitSlice<ArrayElement> {
-        self.arr.view_bits_mut()
-    }
+        for candidate in candidates {
+            this.set(candidate, true);
+        }
 
-    fn import(candidate: Value<Base>) -> usize {
-        (candidate.into_u8() - 1).into()
-    }
+        this.debug_assert_is_valid();
 
-    fn export(candidate: usize) -> Value<Base> {
-        u8::try_from(candidate + 1).unwrap().try_into().unwrap()
-    }
-
-    fn debug_assert(&self) {
-        debug_assert!({
-            let bits = self.as_bits();
-            bits[Base::MaxValue::to_usize()..].not_any()
-        });
+        this
     }
 }
 
@@ -115,13 +209,11 @@ impl<Base: SudokuBase> From<Vec<Value<Base>>> for Candidates<Base> {
     fn from(candidates: Vec<Value<Base>>) -> Self {
         let mut this = Self::default();
 
-        let bits = this.as_mut_bits();
-
         for candidate in candidates {
-            bits.set(Self::import(candidate), true);
+            this.set(candidate, true);
         }
 
-        this.debug_assert();
+        this.debug_assert_is_valid();
 
         this
     }
@@ -133,13 +225,11 @@ impl<Base: SudokuBase> TryFrom<Vec<u8>> for Candidates<Base> {
     fn try_from(candidates: Vec<u8>) -> Result<Self> {
         let mut this = Self::default();
 
-        let bits = this.as_mut_bits();
-
         for candidate in candidates {
-            bits.set(Self::import(candidate.try_into()?), true);
+            this.set(candidate.try_into()?, true);
         }
 
-        this.debug_assert();
+        this.debug_assert_is_valid();
 
         Ok(this)
     }
@@ -151,56 +241,315 @@ impl<Base: SudokuBase> Display for Candidates<Base> {
     }
 }
 
-#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
-pub struct CandidatesMut<'a, Base: SudokuBase> {
-    bits: &'a mut BitSlice<ArrayElement>,
-    base: PhantomData<Base>,
-}
-
-// TODO: move other methods / use internally?
-//  could require CandidatesRef for shared mutability methods
-impl<'a, Base: SudokuBase> CandidatesMut<'a, Base> {
-    pub fn delete(&mut self, candidate: Value<Base>) {
-        let imported_candidate = Candidates::<Base>::import(candidate);
-
-        self.bits.set(imported_candidate, false);
-    }
-
-    fn debug_assert(&self) {
-        debug_assert!(self.bits[Base::MaxValue::to_usize()..].not_any());
-    }
-}
-
-impl<'a, Base: SudokuBase> Drop for CandidatesMut<'a, Base> {
-    fn drop(&mut self) {
-        self.debug_assert();
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use typenum::consts::*;
+    use std::mem::size_of;
 
+    use crate::base::consts::*;
     use crate::error::Result;
 
     use super::*;
 
     #[test]
-    fn test_try_from_vec_u8() -> Result<()> {
-        let vec_candidates = vec![1, 2, 4, 8, 9];
+    fn test_size_of() {
+        assert_eq!(
+            vec![
+                size_of::<Candidates<U1>>(),
+                size_of::<Candidates<U2>>(),
+                size_of::<Candidates<U3>>(),
+                size_of::<Candidates<U4>>(),
+                size_of::<Candidates<U5>>()
+            ],
+            vec![1, 1, 2, 2, 4,]
+        )
+    }
 
-        let candidates = Candidates::<U3>::try_from(vec_candidates.clone())?;
-        assert_eq!(candidates.to_vec_u8(), vec_candidates);
+    mod constructors {
+        use super::*;
 
-        let candidates = Candidates::<U3>::try_from(Vec::<u8>::new())?;
-        assert_eq!(candidates.to_vec_u8(), Vec::<u8>::new());
+        #[test]
+        fn test_new() {
+            assert_eq!(Candidates::<Base1>::new().to_vec_u8(), vec![]);
+            assert_eq!(Candidates::<Base2>::new().to_vec_u8(), vec![]);
+            assert_eq!(Candidates::<Base3>::new().to_vec_u8(), vec![]);
+            assert_eq!(Candidates::<Base4>::new().to_vec_u8(), vec![]);
+            assert_eq!(Candidates::<Base5>::new().to_vec_u8(), vec![]);
+        }
 
-        let candidates = Candidates::<U3>::try_from(vec![0]);
-        assert!(candidates.is_err());
+        #[test]
+        fn test_single() {
+            assert_eq!(
+                Candidates::<U2>::single(3.try_into().unwrap()).to_vec_u8(),
+                vec![3]
+            );
+        }
 
-        let candidates = Candidates::<U3>::try_from(vec![10]);
-        assert!(candidates.is_err());
+        #[test]
+        fn test_all() {
+            assert_eq!(
+                Candidates::<Base2>::all().to_vec_u8(),
+                (1..=4).collect::<Vec<u8>>()
+            );
+            assert_eq!(
+                Candidates::<Base3>::all().to_vec_u8(),
+                (1..=9).collect::<Vec<u8>>()
+            );
+            assert_eq!(
+                Candidates::<Base4>::all().to_vec_u8(),
+                (1..=16).collect::<Vec<u8>>()
+            );
+            assert_eq!(
+                Candidates::<Base5>::all().to_vec_u8(),
+                (1..=25).collect::<Vec<u8>>()
+            );
+        }
 
-        Ok(())
+        #[test]
+        fn test_with_integral() {
+            type Base = U5;
+            fn assert_integral_identity(i: u32) {
+                assert_eq!(Candidates::<Base>::with_integral(i).integral(), i);
+            }
+
+            let powers_of_two = std::iter::successors(Some(1u32), |i| {
+                let next = i << 1;
+                if next >= 2u32.pow(Base::MAX_VALUE.into()) {
+                    None
+                } else {
+                    Some(next)
+                }
+            });
+
+            for i in powers_of_two {
+                assert_integral_identity(i);
+                assert_eq!(
+                    Candidates::<Base>::with_integral(i).to_vec_u8(),
+                    vec![(i.trailing_zeros() + 1).try_into().unwrap()]
+                );
+            }
+            assert_integral_identity(0);
+            assert_eq!(Candidates::<Base>::with_integral(0).to_vec_u8(), vec![]);
+            let all = 0b0000_0001_1111_1111_1111_1111_1111_1111;
+            assert_integral_identity(all);
+            assert_eq!(
+                Candidates::<Base>::with_integral(all).to_vec_u8(),
+                (1..=25).collect::<Vec<_>>()
+            );
+        }
+
+        #[test]
+        fn test_set_constructors() {
+            let a: Candidates<U2> = vec![1, 2].try_into().unwrap();
+            let b: Candidates<U2> = vec![2, 3].try_into().unwrap();
+
+            assert_eq!(a.union(&b).to_vec_u8(), vec![1, 2, 3]);
+            assert_eq!(b.union(&a).to_vec_u8(), vec![1, 2, 3]);
+
+            assert_eq!(a.intersection(&b).to_vec_u8(), vec![2]);
+            assert_eq!(b.intersection(&a).to_vec_u8(), vec![2]);
+
+            assert_eq!(a.without(&b).to_vec_u8(), vec![1]);
+            assert_eq!(b.without(&a).to_vec_u8(), vec![3]);
+        }
+
+        #[test]
+        fn test_try_from_vec_u8() -> Result<()> {
+            let vec_candidates = vec![1, 2, 4, 8, 9];
+
+            let candidates = Candidates::<U3>::try_from(vec_candidates.clone())?;
+            assert_eq!(candidates.to_vec_u8(), vec_candidates);
+
+            let candidates = Candidates::<U3>::try_from(Vec::<u8>::new())?;
+            assert_eq!(candidates.to_vec_u8(), Vec::<u8>::new());
+
+            let candidates = Candidates::<U3>::try_from(vec![0]);
+            assert!(candidates.is_err());
+
+            let candidates = Candidates::<U3>::try_from(vec![10]);
+            assert!(candidates.is_err());
+
+            Ok(())
+        }
+    }
+
+    mod mutations {
+        use super::*;
+
+        #[test]
+        fn test_toggle() {
+            let mut candidates = Candidates::<Base2>::new();
+            let value1 = 1.try_into().unwrap();
+            let value2 = 2.try_into().unwrap();
+            candidates.toggle(value1);
+            assert_eq!(candidates.to_vec_u8(), vec![1]);
+            candidates.toggle(value2);
+            assert_eq!(candidates.to_vec_u8(), vec![1, 2]);
+            candidates.toggle(value1);
+            assert_eq!(candidates.to_vec_u8(), vec![2]);
+            candidates.toggle(value2);
+            assert_eq!(candidates.to_vec_u8(), vec![]);
+        }
+
+        #[test]
+        fn test_set() {
+            let mut candidates = Candidates::<Base2>::new();
+            let value1 = 1.try_into().unwrap();
+            let value2 = 2.try_into().unwrap();
+            candidates.set(value1, false);
+            assert_eq!(candidates.to_vec_u8(), vec![]);
+            candidates.set(value1, true);
+            assert_eq!(candidates.to_vec_u8(), vec![1]);
+            candidates.set(value1, true);
+            assert_eq!(candidates.to_vec_u8(), vec![1]);
+            candidates.set(value2, true);
+            assert_eq!(candidates.to_vec_u8(), vec![1, 2]);
+            candidates.set(value1, false);
+            assert_eq!(candidates.to_vec_u8(), vec![2]);
+            candidates.set(value2, false);
+            assert_eq!(candidates.to_vec_u8(), vec![]);
+        }
+
+        #[test]
+        fn test_delete() {
+            let mut candidates = Candidates::<Base2>::all();
+            let value1 = 1.try_into().unwrap();
+            let value2 = 2.try_into().unwrap();
+            candidates.delete(value2);
+            assert_eq!(candidates.to_vec_u8(), vec![1, 3, 4]);
+            candidates.delete(value1);
+            assert_eq!(candidates.to_vec_u8(), vec![3, 4]);
+            candidates.delete(value1);
+            assert_eq!(candidates.to_vec_u8(), vec![3, 4]);
+        }
+    }
+
+    mod getters {
+        use super::*;
+
+        #[test]
+        fn test_has() {
+            let candidates: Candidates<Base2> = vec![1, 3].try_into().unwrap();
+            let value1 = 1.try_into().unwrap();
+            let value2 = 2.try_into().unwrap();
+            assert!(candidates.has(value1));
+            assert!(!candidates.has(value2));
+        }
+
+        #[test]
+        fn test_integral() {
+            type Base = U5;
+
+            let mut candidates = Candidates::<Base>::new();
+            assert_eq!(candidates.integral(), 0);
+            assert_eq!(candidates.to_vec_u8(), vec![]);
+            candidates.set(1.try_into().unwrap(), true);
+            assert_eq!(candidates.integral(), 1);
+            assert_eq!(candidates.to_vec_u8(), vec![1]);
+            candidates.set(2.try_into().unwrap(), true);
+            assert_eq!(candidates.integral(), 3);
+            assert_eq!(candidates.to_vec_u8(), vec![1, 2]);
+            let mut candidates = Candidates::<Base>::new();
+            candidates.set(25.try_into().unwrap(), true);
+            assert_eq!(candidates.to_vec_u8(), vec![25]);
+            assert_eq!(candidates.integral(), 1 << 24);
+            candidates.set(10.try_into().unwrap(), true);
+            assert_eq!(candidates.to_vec_u8(), vec![10, 25]);
+            assert_eq!(candidates.integral(), 1 << 24 | 1 << 9);
+        }
+
+        #[test]
+        fn test_is_empty() {
+            let empty: Candidates<U2> = Candidates::new();
+            let one: Candidates<U2> = Candidates::single(1.try_into().unwrap());
+            let all: Candidates<U2> = Candidates::all();
+
+            assert!(empty.is_empty());
+            assert!(!one.is_empty());
+            assert!(!all.is_empty());
+        }
+
+        #[test]
+        fn test_is_full() {
+            let empty: Candidates<U2> = Candidates::new();
+            let one: Candidates<U2> = Candidates::single(1.try_into().unwrap());
+            let all: Candidates<U2> = Candidates::all();
+
+            assert!(!empty.is_full());
+            assert!(!one.is_full());
+            assert!(all.is_full());
+        }
+
+        #[test]
+        fn test_count() {
+            let empty: Candidates<U2> = Candidates::new();
+            let one: Candidates<U2> = Candidates::single(1.try_into().unwrap());
+            let all: Candidates<U2> = Candidates::all();
+
+            assert_eq!(empty.count(), 0);
+            assert_eq!(one.count(), 1);
+            assert_eq!(all.count(), 4);
+        }
+
+        #[test]
+        fn test_iter() {
+            let empty: Candidates<U2> = Candidates::new();
+            let one: Candidates<U2> = Candidates::single(1.try_into().unwrap());
+            let all: Candidates<U2> = Candidates::all();
+
+            assert!(empty.iter().next().is_none());
+            assert_eq!(one.iter().collect::<Vec<_>>(), vec![1.try_into().unwrap()]);
+            assert_eq!(
+                all.iter().collect::<Vec<_>>(),
+                (1..=4)
+                    .map(|i| Value::<Base2>::try_from(i).unwrap())
+                    .collect::<Vec<_>>()
+            );
+        }
+
+        #[test]
+        fn test_to_vec_u8() {
+            let empty: Candidates<U2> = Candidates::new();
+            let one: Candidates<U2> = Candidates::single(1.try_into().unwrap());
+            let all: Candidates<U2> = Candidates::all();
+
+            assert_eq!(empty.to_vec_u8(), vec![]);
+            assert_eq!(one.to_vec_u8(), vec![1]);
+            assert_eq!(all.to_vec_u8(), vec![1, 2, 3, 4]);
+        }
+        #[test]
+        fn test_to_vec_value() {
+            let empty: Candidates<U2> = Candidates::new();
+            let one: Candidates<U2> = Candidates::single(1.try_into().unwrap());
+            let all: Candidates<U2> = Candidates::all();
+
+            assert_eq!(empty.to_vec_value(), vec![]);
+            assert_eq!(one.to_vec_value(), vec![1.try_into().unwrap()]);
+            assert_eq!(
+                all.to_vec_value(),
+                (1..=4)
+                    .map(|i| Value::<Base2>::try_from(i).unwrap())
+                    .collect::<Vec<_>>()
+            );
+        }
+    }
+
+    mod internal_helpers {
+        use super::*;
+
+        #[test]
+        fn test_all_candidates_mask() {
+            let all_candidates_mask = Candidates::<Base2>::all_candidates_mask();
+            assert_eq!(all_candidates_mask, 0b0000_1111);
+            let all_candidates_mask = Candidates::<Base3>::all_candidates_mask();
+            assert_eq!(all_candidates_mask, 0b0000_0001_1111_1111);
+            let all_candidates_mask = Candidates::<Base4>::all_candidates_mask();
+            assert_eq!(all_candidates_mask, 0b1111_1111_1111_1111);
+            let all_candidates_mask = Candidates::<Base5>::all_candidates_mask();
+            assert_eq!(
+                all_candidates_mask,
+                0b0000_0001_1111_1111_1111_1111_1111_1111
+            );
+            println!("{all_candidates_mask:032b}");
+        }
     }
 }

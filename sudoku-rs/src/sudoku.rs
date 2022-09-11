@@ -11,7 +11,6 @@ use crate::grid::serialization::GridFormat;
 use crate::grid::Grid;
 use crate::history::History;
 use crate::position::Position;
-use crate::solver::backtracking::Solver as BacktrackingSolver;
 use crate::solver::strategic::{
     strategies::{GroupReduction, SingleCandidate},
     Solver as StrategicSolver,
@@ -50,7 +49,7 @@ impl<Base: SudokuBase> Sudoku<Base> {
     pub fn with_grid_and_settings(grid: Grid<Base>, settings: Settings) -> Self {
         Sudoku {
             solved_grid: if settings.solve_grid {
-                BacktrackingSolver::unique_solution_for_fixed_values(&grid)
+                grid.unique_solution_for_fixed_values()
             } else {
                 None
             },
@@ -93,7 +92,7 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
             cell.set_value(value);
 
             if self.settings.update_candidates {
-                self.grid.update_candidates(pos, value);
+                self.grid.update_direct_candidates(pos, value);
             }
         } else {
             cell.delete();
@@ -111,7 +110,7 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
             let set_value = cell.set_or_toggle_value(value);
 
             if self.settings.update_candidates && set_value {
-                self.grid.update_candidates(pos, value);
+                self.grid.update_direct_candidates(pos, value);
             }
         } else {
             cell.delete();
@@ -152,22 +151,32 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
         self.grid.set_all_direct_candidates();
     }
 
-    fn solve_single_candidates(&mut self) {
+    // TODO: refactor Strategy API
+    //  return deductions for visualization
+    //  single method to try a specific strategy
+    fn solve_single_candidates(&mut self) -> Result<()> {
         self.push_history();
 
         let mut solver =
             StrategicSolver::new_with_strategies(&mut self.grid, vec![Box::new(SingleCandidate)]);
 
-        solver.try_strategies();
+        if let Some(deductions) = solver.try_strategies()? {
+            deductions.apply(&mut self.grid);
+        }
+
+        Ok(())
     }
 
-    fn group_reduction(&mut self) {
+    fn group_reduction(&mut self) -> Result<()> {
         self.push_history();
 
         let mut solver =
             StrategicSolver::new_with_strategies(&mut self.grid, vec![Box::new(GroupReduction)]);
 
-        solver.try_strategies();
+        if let Some(deductions) = solver.try_strategies()? {
+            deductions.apply(&mut self.grid);
+        }
+        Ok(())
     }
 
     fn undo(&mut self) {

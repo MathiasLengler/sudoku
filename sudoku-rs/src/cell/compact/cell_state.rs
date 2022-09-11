@@ -5,10 +5,9 @@ use std::hash::Hash;
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
 use crate::cell::compact::value::Value;
-use crate::cell::view::CellView;
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
-pub(super) enum CellState<Base: SudokuBase> {
+pub(crate) enum CellState<Base: SudokuBase> {
     Value(Value<Base>),
     FixedValue(Value<Base>),
     Candidates(Candidates<Base>),
@@ -37,21 +36,6 @@ impl<Base: SudokuBase> CellState<Base> {
         CellState::Candidates(candidates)
     }
 
-    pub(super) fn view(&self) -> CellView {
-        match self {
-            CellState::Value(value) => CellView::Value {
-                value: value.into_u8(),
-                fixed: false,
-            },
-            CellState::FixedValue(value) => CellView::Value {
-                value: value.into_u8(),
-                fixed: true,
-            },
-            CellState::Candidates(candidates) => CellView::Candidates {
-                candidates: candidates.to_vec_u8(),
-            },
-        }
-    }
     pub(super) fn has_value(&self) -> bool {
         match self {
             CellState::Value(_) => true,
@@ -158,8 +142,7 @@ impl<Base: SudokuBase> CellState<Base> {
                 candidates.toggle(candidate);
             }
             CellState::Value(_) => {
-                // TODO: optimize with Candidate::single
-                *self = Self::with_candidates(vec![candidate].into());
+                *self = Self::with_candidates(Candidates::single(candidate));
             }
             _ => unreachable!(),
         }
@@ -180,7 +163,6 @@ impl<Base: SudokuBase> CellState<Base> {
 impl<Base: SudokuBase> CellState<Base> {
     fn assert_unfixed(&self) {
         if let CellState::FixedValue(_) = self {
-            // TODO: bail instead of panic
             panic!("Fixed cell can't be modified: {}", self)
         }
     }
@@ -207,16 +189,22 @@ where
 mod tests {
     use std::mem::size_of;
 
-    use typenum::consts::*;
+    use crate::base::consts::*;
 
     use super::*;
 
+    #[ignore]
     #[test]
     fn test_cell_state_size() {
-        assert_eq!(size_of::<CellState<U1>>(), 2);
-        assert_eq!(size_of::<CellState<U2>>(), 2);
-        assert_eq!(size_of::<CellState<U3>>(), 3);
-        assert_eq!(size_of::<CellState<U4>>(), 3);
-        assert_eq!(size_of::<CellState<U5>>(), 5);
+        assert_eq!(
+            vec![
+                size_of::<CellState<U1>>(),
+                size_of::<CellState<U2>>(),
+                size_of::<CellState<U3>>(),
+                size_of::<CellState<U4>>(),
+                size_of::<CellState<U5>>()
+            ],
+            vec![2, 2, 3, 3, 5,]
+        )
     }
 }

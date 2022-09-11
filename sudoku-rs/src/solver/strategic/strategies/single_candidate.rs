@@ -1,6 +1,7 @@
 use crate::base::SudokuBase;
+use crate::error::Result;
 use crate::grid::Grid;
-use crate::position::Position;
+use crate::solver::strategic::deduction::{Deduction, Deductions, TryIntoDeductions};
 
 use super::Strategy;
 
@@ -8,34 +9,34 @@ use super::Strategy;
 pub struct SingleCandidate;
 
 impl<Base: SudokuBase> Strategy<Base> for SingleCandidate {
-    fn execute(&self, grid: &mut Grid<Base>) -> Vec<Position> {
-        grid.all_candidates_positions()
-            .into_iter()
-            .filter(|candidate_pos| {
-                let candidates = grid
-                    .get(*candidate_pos)
-                    .candidates()
-                    .unwrap()
-                    .to_vec_value();
+    fn execute(&self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
+        TryIntoDeductions(
+            grid.all_candidates_positions()
+                .into_iter()
+                .filter_map(|candidate_pos| {
+                    let candidates = grid.get(candidate_pos).candidates().unwrap();
 
-                if candidates.len() == 1 {
-                    let single_candidate = candidates[0];
-
-                    grid.get_mut(*candidate_pos).set_value(single_candidate);
-                    grid.update_candidates(*candidate_pos, single_candidate);
-
-                    true
-                } else {
-                    false
-                }
-            })
-            .collect()
+                    if candidates.count() == 1 {
+                        let single_candidate = candidates.iter().next().unwrap();
+                        Some(Deduction::with_value(
+                            candidate_pos,
+                            candidates,
+                            single_candidate,
+                        ))
+                    } else {
+                        None
+                    }
+                }),
+        )
+        .try_into()
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::cell::compact::value::Value;
     use crate::samples;
+    use crate::solver::strategic::deduction::IntoDeductions;
 
     use super::*;
 
@@ -46,23 +47,33 @@ mod tests {
         grid.set_all_direct_candidates();
         grid.fix_all_values();
 
-        let mut modified_positions = SingleCandidate.execute(&mut grid);
-
-        modified_positions.sort();
+        let deductions = SingleCandidate.execute(&mut grid).unwrap();
 
         assert_eq!(
-            modified_positions,
-            vec![
-                Position { row: 0, column: 0 },
-                Position { row: 0, column: 3 },
-                Position { row: 1, column: 1 },
-                Position { row: 1, column: 2 },
-                Position { row: 2, column: 1 },
-                Position { row: 2, column: 2 },
-                Position { row: 3, column: 0 },
-                Position { row: 3, column: 3 },
-            ]
+            deductions,
+            IntoDeductions(vec![
+                grid.deduction_at((0, 0), Value::try_from(2).unwrap())
+                    .unwrap(),
+                grid.deduction_at((0, 3), Value::try_from(1).unwrap())
+                    .unwrap(),
+                grid.deduction_at((1, 1), Value::try_from(1).unwrap())
+                    .unwrap(),
+                grid.deduction_at((1, 2), Value::try_from(3).unwrap())
+                    .unwrap(),
+                grid.deduction_at((2, 1), Value::try_from(4).unwrap())
+                    .unwrap(),
+                grid.deduction_at((2, 2), Value::try_from(2).unwrap())
+                    .unwrap(),
+                grid.deduction_at((3, 0), Value::try_from(3).unwrap())
+                    .unwrap(),
+                grid.deduction_at((3, 3), Value::try_from(4).unwrap())
+                    .unwrap(),
+            ])
+            .try_into()
+            .unwrap()
         );
+
+        deductions.apply(&mut grid);
 
         assert!(grid.is_solved());
     }

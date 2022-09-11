@@ -11,7 +11,7 @@ use crate::cell::view::CellView;
 use crate::error::Error;
 
 pub mod candidates;
-mod cell_state;
+pub(crate) mod cell_state;
 pub mod value;
 
 /// Memory efficient representation of a single Sudoku cell.
@@ -34,10 +34,11 @@ impl<Base: SudokuBase> Cell<Base> {
         Self(CellState::with_candidates(candidates))
     }
 
-    /// Convenient view of the cell.
-    pub fn view(&self) -> CellView {
-        self.0.view()
+    /// Expose internal `CellState`
+    pub(crate) fn state(&self) -> &CellState<Base> {
+        &self.0
     }
+
     /// If the cell contains a fixed or unfixed value.
     pub fn has_value(&self) -> bool {
         self.0.has_value()
@@ -111,10 +112,6 @@ impl<Base: SudokuBase> Cell<Base> {
     /// Set the cell to the given candidates.
     /// Deletes value if present.
     ///
-    /// Candidates can be anything convertible into the `Candidates` struct.
-    /// This is commonly a `Vec<u8>` via its implementation of `IntoIterator<Item = u8>`
-    /// or a `Candidates` struct directly.
-    ///
     /// # Panics
     ///
     /// Panics it the cell is fixed.
@@ -122,7 +119,6 @@ impl<Base: SudokuBase> Cell<Base> {
         self.0.set_candidates(candidates)
     }
 
-    // TODO: replace candidate: u8 with candidate: Value<Base>
     /// Toggle the given candidate.
     /// Deletes value if present and sets the single candidate.
     ///

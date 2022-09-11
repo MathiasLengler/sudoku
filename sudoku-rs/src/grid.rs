@@ -1,13 +1,13 @@
-use std::collections::HashSet;
+use anyhow::anyhow;
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
 use ndarray::Array2;
-use typenum::Unsigned;
 
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
+use crate::cell::compact::cell_state::CellState;
 use crate::cell::compact::value::Value;
 use crate::cell::view::parser::parse_cells;
 use crate::cell::view::CellView;
@@ -15,7 +15,10 @@ use crate::cell::Cell;
 use crate::error::{Error, Result};
 use crate::grid::serialization::GridFormat;
 use crate::position::Position;
+use crate::solver::backtracking_bitset;
+use crate::solver::strategic::deduction::{Deduction, DeductionKind};
 
+pub mod deserialization;
 pub mod serialization;
 
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
@@ -23,7 +26,7 @@ pub struct Grid<Base: SudokuBase> {
     cells: Array2<Cell<Base>>,
 }
 
-/// Public API
+/// Direct Candidates
 impl<Base: SudokuBase> Grid<Base> {
     pub fn set_all_direct_candidates(&mut self) {
         self.all_candidates_positions().into_iter().for_each(|pos| {
@@ -32,7 +35,8 @@ impl<Base: SudokuBase> Grid<Base> {
             self.get_mut(pos).set_candidates(candidates);
         });
     }
-    pub fn update_candidates(&mut self, pos: Position, value: Value<Base>) {
+    pub fn update_direct_candidates(&mut self, pos: Position, value: Value<Base>) {
+        // TODO: assert params
         Self::neighbor_positions_with_duplicates(pos).for_each(|pos| {
             let cell = self.get_mut(pos);
             if cell.has_candidates() {
@@ -42,68 +46,160 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 
     pub fn direct_candidates(&self, pos: Position) -> Candidates<Base> {
+        assert!(self.get(pos).has_candidates());
+
         let mut candidates = Candidates::<Base>::all();
 
-        {
-            let mut candidates_mut = candidates.as_mut();
-
-            for pos in Self::neighbor_positions_with_duplicates(pos) {
-                if let Some(value) = self.get(pos).value() {
-                    candidates_mut.delete(value);
-                }
+        for pos in Self::neighbor_positions_with_duplicates(pos) {
+            if let Some(value) = self.get(pos).value() {
+                candidates.delete(value);
             }
         }
 
         candidates
     }
+}
 
-    pub(crate) fn has_conflict(&self) -> bool {
-        self.all_row_cells().any(|row| self.has_duplicate(row))
+// TODO: test
+// TODO: bench
+/// Consistency testing
+impl<Base: SudokuBase> Grid<Base> {
+    /// A grid is directly consistent, if:
+    /// - No cell has empty candidates.
+    /// - No candidate is deletable based on a group-adjacent value.
+    /// - No group has duplicate values.
+    /// - No group has a missing candidate, e.g. every group contains every value as either a value or at least one candidate.
+    pub fn is_directly_consistent(&self) -> bool {
+        // Every candidate is directly consistent at its position
+        self.all_candidates_positions()
+            .into_iter()
+            .all(|pos| self.is_directly_consistent_at(pos))
+            &&
+            // Every group is directly consistent
+            self
+                .all_group_cells()
+                .all(|group| Self::is_group_directly_consistent(group))
+    }
+
+    /// A group is directly consistent, if it:
+    /// - has unique values.
+    /// - has no missing candidate.
+    fn is_group_directly_consistent<'a>(group_cells: impl Iterator<Item = &'a Cell<Base>>) -> bool
+    where
+        Base: 'a,
+    {
+        let mut seen_values = Candidates::new();
+        let mut seen_candidates_or_values = Candidates::new();
+
+        for cell in group_cells {
+            match *cell.state() {
+                CellState::Value(value) | CellState::FixedValue(value) => {
+                    if seen_values.has(value) {
+                        // Duplicate value in group.
+                        return false;
+                    }
+                    seen_values.set(value, true);
+                    seen_candidates_or_values.set(value, true)
+                }
+                CellState::Candidates(candidates) => {
+                    seen_candidates_or_values = seen_candidates_or_values.union(&candidates)
+                }
+            }
+        }
+
+        // Every candidate must be contained in group.
+        seen_candidates_or_values.is_full()
+    }
+
+    /// A cell with candidates is directly consistent, if its candidates:
+    /// - are non-empty.
+    /// - contain no candidate which is deletable based on a group-adjacent value.
+    fn is_directly_consistent_at(&self, pos: Position) -> bool {
+        let cell = self.get(pos);
+        assert!(cell.has_candidates());
+        let actual_candidates = cell.candidates().unwrap();
+        // At least one candidate is required for a consistent grid.
+        if actual_candidates.is_empty() {
+            return false;
+        }
+
+        let direct_candidates = self.direct_candidates(pos);
+        // No actual candidate is deletable via direct candidates.
+        actual_candidates.without(&direct_candidates).is_empty()
+    }
+}
+
+/// Public Sudoku API
+impl<Base: SudokuBase> Grid<Base> {
+    pub fn has_value_conflict(&self) -> bool {
+        self.all_row_cells()
+            .any(|row| Self::has_duplicate_value(row))
             || self
                 .all_column_cells()
-                .any(|column| self.has_duplicate(column))
+                .any(|column| Self::has_duplicate_value(column))
             || self
                 .all_block_cells()
-                .any(|block| self.has_duplicate(block))
+                .any(|block| Self::has_duplicate_value(block))
     }
 
-    // TODO: optimize: is value in group?
-    pub fn has_conflict_at(&self, pos: Position) -> bool {
-        self.has_duplicate(self.row_cells(pos.row))
-            || self.has_duplicate(self.column_cells(pos.column))
-            || self.has_duplicate(self.block_cells(pos))
-    }
+    pub fn has_duplicate_value<'a>(cells: impl Iterator<Item = &'a Cell<Base>>) -> bool
+    where
+        Base: 'a,
+    {
+        let mut seen_values = Candidates::new();
 
-    // TODO: bit_slice set optimization
-    pub fn has_duplicate<'a>(&'a self, cells: impl Iterator<Item = &'a Cell<Base>>) -> bool {
-        let mut unique = HashSet::with_capacity(Self::side_length() as usize);
-
-        cells
-            .filter_map(|cell| cell.value())
-            .any(move |x| !unique.insert(x))
+        cells.filter_map(|cell| cell.value()).any(move |value| {
+            if seen_values.has(value) {
+                true
+            } else {
+                seen_values.set(value, true);
+                false
+            }
+        })
     }
 
     pub fn is_solved(&self) -> bool {
-        self.all_candidates_positions().is_empty() && !self.has_conflict()
+        self.all_candidates_positions().is_empty() && !self.has_value_conflict()
+    }
+
+    pub fn has_unique_solution(&self) -> bool {
+        self.unique_solution().is_some()
+    }
+
+    pub fn unique_solution(&self) -> Option<Self> {
+        let mut solver = backtracking_bitset::Solver::new(self);
+
+        match (solver.next(), solver.next()) {
+            (Some(unique_solution), None) => Some(unique_solution),
+            _ => None,
+        }
+    }
+
+    pub fn unique_solution_for_fixed_values(&self) -> Option<Self> {
+        let mut cloned_grid = self.clone();
+        cloned_grid.delete_all_unfixed_values();
+
+        cloned_grid.unique_solution()
     }
 }
 
 impl<Base: SudokuBase> Default for Grid<Base> {
     fn default() -> Self {
-        Self::with_cells(vec![Cell::new(); Self::cell_count()])
+        Self::with_cells(vec![Cell::new(); Self::cell_count_usize()])
     }
 }
 
 // TODO: rethink indexing story (internal/cell position/block position)
 //  => use Index/IndexMut with custom index type:
 //     Cell, Row, Column, Block
+/// Public Grid API
 impl<Base: SudokuBase> Grid<Base> {
     pub fn new() -> Self {
         Default::default()
     }
 
-    fn with_cells(cells: Vec<Cell<Base>>) -> Self {
-        assert_eq!(cells.len(), Self::cell_count());
+    pub fn with_cells(cells: Vec<Cell<Base>>) -> Self {
+        assert_eq!(cells.len(), Self::cell_count_usize());
 
         let side_length = Self::side_length() as usize;
 
@@ -164,31 +260,59 @@ impl<Base: SudokuBase> Grid<Base> {
         }
     }
 
+    pub fn deduction_at<TryIntoKind: TryInto<DeductionKind<Base>>>(
+        &self,
+        pos: impl Into<Position>,
+        kind: TryIntoKind,
+    ) -> Result<Deduction<Base>>
+    where
+        Error: From<TryIntoKind::Error>,
+    {
+        let pos = pos.into();
+        let kind = kind.try_into()?;
+
+        Deduction::new(
+            pos,
+            self.get(pos).candidates().ok_or_else(|| {
+                anyhow!("A deduction must be made for a position containing candidates")
+            })?,
+            kind,
+        )
+    }
+}
+
+/// Base constant accessors
+impl<Base: SudokuBase> Grid<Base> {
     pub fn base() -> u8 {
-        Base::to_u8()
+        Base::BASE
     }
     pub fn side_length() -> u8 {
-        Base::SideLength::to_u8()
+        Base::SIDE_LENGTH
     }
     pub fn max_value() -> u8 {
-        Base::MaxValue::to_u8()
+        Base::MAX_VALUE
     }
-    pub fn cell_count() -> usize {
-        Base::CellCount::to_usize()
+    pub fn cell_count() -> u16 {
+        Base::CELL_COUNT
+    }
+    pub fn cell_count_usize() -> usize {
+        Base::CELL_COUNT.into()
     }
     pub fn base_usize() -> usize {
-        Base::to_usize()
+        Base::BASE.into()
     }
     pub fn side_length_usize() -> usize {
-        Base::SideLength::to_usize()
+        Base::SIDE_LENGTH.into()
     }
     pub fn max_value_usize() -> usize {
-        Base::MaxValue::to_usize()
+        Base::MAX_VALUE.into()
     }
 }
 
 // TODO: rewrite with ndarray slice
 // TODO: zip position + cell
+//  indexed_iter
+//  https://docs.rs/ndarray/latest/ndarray/iter/struct.IndexedIter.html
 //  => impl Iterator<Item = &mut Cell>
 
 /// Cell iterators
@@ -207,20 +331,31 @@ impl<Base: SudokuBase> Grid<Base> {
         nested_positions.map(move |row_pos| row_pos.map(move |pos| self.get(pos)))
     }
 
+    pub fn all_cells(&self) -> impl Iterator<Item = &Cell<Base>> {
+        self.cells.iter()
+    }
+
     pub fn row_cells(&self, row: u8) -> impl Iterator<Item = &Cell<Base>> {
-        self.positions_to_cells(Self::row_positions(row))
+        Self::assert_coordinate(row);
+
+        self.cells.row(usize::from(row)).into_iter()
     }
 
     pub fn all_row_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell<Base>>> {
-        self.nested_positions_to_nested_cells(Self::all_row_positions())
+        self.cells.rows().into_iter().map(|row| row.into_iter())
     }
 
     pub fn column_cells(&self, column: u8) -> impl Iterator<Item = &Cell<Base>> {
-        self.positions_to_cells(Self::column_positions(column))
+        Self::assert_coordinate(column);
+
+        self.cells.column(usize::from(column)).into_iter()
     }
 
     pub fn all_column_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell<Base>>> {
-        self.nested_positions_to_nested_cells(Self::all_column_positions())
+        self.cells
+            .columns()
+            .into_iter()
+            .map(|column| column.into_iter())
     }
 
     pub fn block_cells(&self, pos: Position) -> impl Iterator<Item = &Cell<Base>> {
@@ -230,6 +365,10 @@ impl<Base: SudokuBase> Grid<Base> {
     // TODO: exact chunks
     pub fn all_block_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell<Base>>> {
         self.nested_positions_to_nested_cells(Self::all_block_positions())
+    }
+
+    pub fn all_group_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell<Base>>> {
+        self.nested_positions_to_nested_cells(Self::all_group_positions())
     }
 }
 
@@ -246,10 +385,7 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 
     pub fn all_row_positions() -> impl Iterator<Item = impl Iterator<Item = Position>> {
-        (0..Self::side_length())
-            .map(move |row_index| Self::row_positions(row_index))
-            .collect::<Vec<_>>()
-            .into_iter()
+        (0..Self::side_length()).map(move |row_index| Self::row_positions(row_index))
     }
 
     pub fn column_positions(column: u8) -> impl Iterator<Item = Position> {
@@ -259,10 +395,7 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 
     pub fn all_column_positions() -> impl Iterator<Item = impl Iterator<Item = Position>> {
-        (0..Self::side_length())
-            .map(move |column| Self::column_positions(column))
-            .collect::<Vec<_>>()
-            .into_iter()
+        (0..Self::side_length()).map(move |column| Self::column_positions(column))
     }
 
     pub fn block_positions(pos: Position) -> impl Iterator<Item = Position> {
@@ -285,10 +418,17 @@ impl<Base: SudokuBase> Grid<Base> {
             .flat_map(move |row| (0..Self::base()).map(move |column| Position { column, row }))
             .map(move |pos| pos * Self::base());
 
-        all_block_base_pos
-            .map(|block_base_pos| Self::block_positions(block_base_pos))
-            .collect::<Vec<_>>()
-            .into_iter()
+        all_block_base_pos.map(|block_base_pos| Self::block_positions(block_base_pos))
+    }
+
+    // TODO: optimize
+    pub fn all_group_positions() -> impl Iterator<Item = impl Iterator<Item = Position>> {
+        Self::all_row_positions()
+            .map(|rows| rows.collect::<Vec<_>>().into_iter())
+            .chain(
+                Self::all_column_positions().map(|columns| columns.collect::<Vec<_>>().into_iter()),
+            )
+            .chain(Self::all_block_positions().map(|blocks| blocks.collect::<Vec<_>>().into_iter()))
     }
 }
 
@@ -315,14 +455,15 @@ impl<Base: SudokuBase> Grid<Base> {
 
 /// Neighbor iterators
 impl<Base: SudokuBase> Grid<Base> {
-    pub fn neighbor_positions_with_duplicates(pos: Position) -> impl Iterator<Item = Position> {
+    fn neighbor_positions_with_duplicates(pos: Position) -> impl Iterator<Item = Position> {
         // TODO: reimplement without chain (VTune: bad speculation + unique version)
         Self::row_positions(pos.row)
             .chain(Self::column_positions(pos.column))
             .chain(Self::block_positions(pos))
     }
 
-    pub fn neighbor_positions(pos: Position) -> impl Iterator<Item = Position> {
+    #[allow(dead_code)]
+    fn neighbor_positions(pos: Position) -> impl Iterator<Item = Position> {
         use itertools::Itertools;
 
         Self::neighbor_positions_with_duplicates(pos).unique()
@@ -376,13 +517,14 @@ impl<Base: SudokuBase> TryFrom<&str> for Grid<Base> {
 
 impl<Base: SudokuBase> Display for Grid<Base> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.write_str(&GridFormat::GivensGrid.render(self))
+        f.write_str(&GridFormat::CandidatesGrid.render(self))
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use typenum::consts::*;
+    use crate::base::consts::*;
+    use itertools::{assert_equal, Itertools};
 
     use crate::samples;
 
@@ -391,32 +533,32 @@ mod tests {
     #[test]
     fn test_has_conflict() -> Result<()> {
         let mut grid = Grid::<U3>::new();
-        assert!(!grid.has_conflict());
+        assert!(!grid.has_value_conflict());
 
         grid.get_mut(Position { column: 0, row: 0 })
             .set_value(1.try_into()?);
-        assert!(!grid.has_conflict());
+        assert!(!grid.has_value_conflict());
 
         grid.get_mut(Position { column: 1, row: 0 })
             .set_value(1.try_into()?);
-        assert!(grid.has_conflict());
+        assert!(grid.has_value_conflict());
 
         grid.get_mut(Position { column: 1, row: 0 }).delete();
-        assert!(!grid.has_conflict());
+        assert!(!grid.has_value_conflict());
 
         grid.get_mut(Position { column: 0, row: 1 })
             .set_value(1.try_into()?);
-        assert!(grid.has_conflict());
+        assert!(grid.has_value_conflict());
 
         grid.get_mut(Position { column: 0, row: 1 }).delete();
-        assert!(!grid.has_conflict());
+        assert!(!grid.has_value_conflict());
 
         grid.get_mut(Position { column: 1, row: 1 })
             .set_value(1.try_into()?);
-        assert!(grid.has_conflict());
+        assert!(grid.has_value_conflict());
 
         grid.get_mut(Position { column: 1, row: 1 }).delete();
-        assert!(!grid.has_conflict());
+        assert!(!grid.has_value_conflict());
 
         Ok(())
     }
@@ -442,7 +584,7 @@ mod tests {
             {
                 let mut grid = grid.clone();
                 let pos = Position { column: 0, row: 3 };
-                grid.update_candidates(pos, 1.try_into()?);
+                grid.update_direct_candidates(pos, 1.try_into()?);
                 grid
             },
             { grid.clone() }
@@ -452,7 +594,7 @@ mod tests {
             {
                 let mut grid = grid.clone();
                 let pos = Position { column: 0, row: 3 };
-                grid.update_candidates(pos, 2.try_into()?);
+                grid.update_direct_candidates(pos, 2.try_into()?);
                 grid
             },
             {
@@ -465,7 +607,7 @@ mod tests {
             {
                 let mut grid = grid.clone();
                 let pos = Position { column: 0, row: 3 };
-                grid.update_candidates(pos, 4.try_into()?);
+                grid.update_direct_candidates(pos, 4.try_into()?);
                 grid
             },
             {
@@ -477,5 +619,252 @@ mod tests {
         );
 
         Ok(())
+    }
+
+    #[test]
+    fn test_all_cells() {
+        let grid = samples::base_2_candidates_coordinates();
+
+        assert_equal(
+            grid.all_cells(),
+            vec![
+                (0, 0),
+                (0, 1),
+                (0, 2),
+                (0, 3),
+                (1, 0),
+                (1, 1),
+                (1, 2),
+                (1, 3),
+                (2, 0),
+                (2, 1),
+                (2, 2),
+                (2, 3),
+                (3, 0),
+                (3, 1),
+                (3, 2),
+                (3, 3),
+            ]
+            .into_iter()
+            .map(|pos| grid.get(pos.into())),
+        );
+    }
+
+    #[test]
+    fn test_row_cells() {
+        let grid = samples::base_2_candidates_coordinates();
+
+        for row in 0..4 {
+            assert_equal(
+                grid.row_cells(row),
+                vec![(row, 0), (row, 1), (row, 2), (row, 3)]
+                    .into_iter()
+                    .map(|pos| grid.get(pos.into())),
+            );
+        }
+    }
+    #[test]
+    fn test_all_row_cells() {
+        let grid = samples::base_2_candidates_coordinates();
+
+        grid.all_row_cells()
+            .zip_eq(vec![
+                vec![(0, 0), (0, 1), (0, 2), (0, 3)],
+                vec![(1, 0), (1, 1), (1, 2), (1, 3)],
+                vec![(2, 0), (2, 1), (2, 2), (2, 3)],
+                vec![(3, 0), (3, 1), (3, 2), (3, 3)],
+            ])
+            .for_each(|(actual_row, expected_row)| {
+                assert_equal(
+                    actual_row,
+                    expected_row.into_iter().map(|pos| grid.get(pos.into())),
+                )
+            });
+    }
+    #[test]
+    fn test_column_cells() {
+        let grid = samples::base_2_candidates_coordinates();
+
+        for column in 0..4 {
+            assert_equal(
+                grid.column_cells(column),
+                vec![(0, column), (1, column), (2, column), (3, column)]
+                    .into_iter()
+                    .map(|pos| grid.get(pos.into())),
+            );
+        }
+    }
+    #[test]
+    fn test_all_column_cells() {
+        let grid = samples::base_2_candidates_coordinates();
+
+        grid.all_column_cells()
+            .zip_eq(vec![
+                vec![(0, 0), (1, 0), (2, 0), (3, 0)],
+                vec![(0, 1), (1, 1), (2, 1), (3, 1)],
+                vec![(0, 2), (1, 2), (2, 2), (3, 2)],
+                vec![(0, 3), (1, 3), (2, 3), (3, 3)],
+            ])
+            .for_each(|(actual_row, expected_row)| {
+                assert_equal(
+                    actual_row,
+                    expected_row.into_iter().map(|pos| grid.get(pos.into())),
+                )
+            });
+    }
+    #[test]
+    fn test_block_cells() {
+        let grid = samples::base_2_candidates_coordinates();
+
+        assert_equal(
+            grid.block_cells((0, 0).into()),
+            vec![(0, 0), (0, 1), (1, 0), (1, 1)]
+                .into_iter()
+                .map(|pos| grid.get(pos.into())),
+        );
+
+        assert_equal(
+            grid.block_cells((0, 2).into()),
+            vec![(0, 2), (0, 3), (1, 2), (1, 3)]
+                .into_iter()
+                .map(|pos| grid.get(pos.into())),
+        );
+        assert_equal(
+            grid.block_cells((2, 0).into()),
+            vec![(2, 0), (2, 1), (3, 0), (3, 1)]
+                .into_iter()
+                .map(|pos| grid.get(pos.into())),
+        );
+        assert_equal(
+            grid.block_cells((2, 2).into()),
+            vec![(2, 2), (2, 3), (3, 2), (3, 3)]
+                .into_iter()
+                .map(|pos| grid.get(pos.into())),
+        );
+    }
+    #[test]
+    fn test_all_block_cells() {
+        let grid = samples::base_2_candidates_coordinates();
+
+        grid.all_block_cells()
+            .zip_eq(vec![
+                vec![(0, 0), (0, 1), (1, 0), (1, 1)],
+                vec![(0, 2), (0, 3), (1, 2), (1, 3)],
+                vec![(2, 0), (2, 1), (3, 0), (3, 1)],
+                vec![(2, 2), (2, 3), (3, 2), (3, 3)],
+            ])
+            .for_each(|(actual_row, expected_row)| {
+                assert_equal(
+                    actual_row,
+                    expected_row.into_iter().map(|pos| grid.get(pos.into())),
+                )
+            });
+    }
+    #[test]
+    fn test_all_group_cells() {
+        let grid = samples::base_2_candidates_coordinates();
+
+        grid.all_group_cells()
+            .zip_eq(vec![
+                // all_rows
+                vec![(0, 0), (0, 1), (0, 2), (0, 3)],
+                vec![(1, 0), (1, 1), (1, 2), (1, 3)],
+                vec![(2, 0), (2, 1), (2, 2), (2, 3)],
+                vec![(3, 0), (3, 1), (3, 2), (3, 3)],
+                // all_columns
+                vec![(0, 0), (1, 0), (2, 0), (3, 0)],
+                vec![(0, 1), (1, 1), (2, 1), (3, 1)],
+                vec![(0, 2), (1, 2), (2, 2), (3, 2)],
+                vec![(0, 3), (1, 3), (2, 3), (3, 3)],
+                // all_blocks
+                vec![(0, 0), (0, 1), (1, 0), (1, 1)],
+                vec![(0, 2), (0, 3), (1, 2), (1, 3)],
+                vec![(2, 0), (2, 1), (3, 0), (3, 1)],
+                vec![(2, 2), (2, 3), (3, 2), (3, 3)],
+            ])
+            .for_each(|(actual_row, expected_row)| {
+                assert_equal(
+                    actual_row,
+                    expected_row.into_iter().map(|pos| grid.get(pos.into())),
+                )
+            });
+    }
+
+    #[test]
+    fn test_has_duplicate_value() {
+        let cells_with_no_duplicate_value = vec![
+            CellView::Value {
+                value: 1,
+                fixed: false,
+            }
+            .try_into()
+            .unwrap(),
+            CellView::Candidates {
+                candidates: vec![1, 2, 3],
+            }
+            .try_into()
+            .unwrap(),
+            CellView::Candidates {
+                candidates: vec![1, 2, 3],
+            }
+            .try_into()
+            .unwrap(),
+            CellView::Value {
+                value: 2,
+                fixed: false,
+            }
+            .try_into()
+            .unwrap(),
+        ];
+
+        assert!(!Grid::<U2>::has_duplicate_value(
+            cells_with_no_duplicate_value.iter()
+        ));
+        let cells_with_duplicate_value = vec![
+            CellView::Value {
+                value: 1,
+                fixed: false,
+            }
+            .try_into()
+            .unwrap(),
+            CellView::Candidates {
+                candidates: vec![1, 2, 3],
+            }
+            .try_into()
+            .unwrap(),
+            CellView::Candidates {
+                candidates: vec![1, 2, 3],
+            }
+            .try_into()
+            .unwrap(),
+            CellView::Value {
+                value: 1,
+                fixed: false,
+            }
+            .try_into()
+            .unwrap(),
+        ];
+
+        assert!(Grid::<U2>::has_duplicate_value(
+            cells_with_duplicate_value.iter()
+        ));
+    }
+
+    #[test]
+    fn test_unique_solution_for_fixed_values() {
+        let mut grid = samples::base_2().into_iter().next().unwrap();
+
+        grid.fix_all_values();
+
+        assert!(grid.unique_solution_for_fixed_values().is_some());
+
+        // Invalid unfixed value
+        grid.get_mut(Position { row: 0, column: 0 })
+            .set_value(1.try_into().unwrap());
+        assert!(grid.unique_solution_for_fixed_values().is_some());
+
+        // Invalid fixed value
+        grid.get_mut(Position { row: 0, column: 0 }).fix();
+        assert!(grid.unique_solution_for_fixed_values().is_none());
     }
 }
