@@ -11,12 +11,9 @@ pub struct Solver<'a, Base: SudokuBase> {
     /// Grid to be solved
     grid: &'a Grid<Base>,
     /// Cached remaining candidates for each group.
-    group_availability: GroupAvailability<Base>,
-    // TODO: rename availability_indices
+    availability: GroupAvailability<Base>,
     /// Stack of indices to non-value cells to be solved.
-    choice_indices: Vec<GroupAvailabilityIndex>,
-    /// Stack of the currently selected value for choice_indices.
-    choices: Vec<(Value<Base>, Position)>,
+    availability_indices: Vec<GroupAvailabilityIndex>,
 
     candidates_iters: Vec<CandidatesIter<Base>>,
 
@@ -27,9 +24,8 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
     pub fn new(grid: &'a Grid<Base>) -> Self {
         let mut this = Self {
             grid,
-            group_availability: GroupAvailability::all(),
-            choice_indices: Default::default(),
-            choices: Default::default(),
+            availability: GroupAvailability::all(),
+            availability_indices: Default::default(),
             candidates_iters: vec![],
             guess_count: 0,
         };
@@ -49,17 +45,18 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
 
                 if let Some(value) = grid.get(Position { row, column }).value() {
                     // clue, clear group availability
-                    self.group_availability.reserve(index, value);
+                    self.availability.reserve(index, value);
                 } else {
                     // Non-value cell, add to choices
-                    self.choice_indices.push(index);
+                    self.availability_indices.push(index);
                 }
             }
         }
 
+        self.move_best_choice_to_front(0);
         self.candidates_iters.push(
-            self.group_availability
-                .intersection(self.choice_indices[0])
+            self.availability
+                .intersection(self.availability_indices[0])
                 .iter(),
         );
     }
@@ -67,9 +64,12 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
     pub fn move_best_choice_to_front(&mut self, choice_indices_i: usize) {
         use std::mem::swap;
 
-        if let Some((first_index, rest)) = self.choice_indices[choice_indices_i..].split_first_mut()
+        debug_assert!(self.candidates_iters.get(choice_indices_i).is_none());
+
+        if let Some((first_index, rest)) =
+            self.availability_indices[choice_indices_i..].split_first_mut()
         {
-            let first_count = self.group_availability.intersection(*first_index).count();
+            let first_count = self.availability.intersection(*first_index).count();
             if first_count <= 1 {
                 return;
             }
@@ -81,7 +81,7 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
                 if better_count <= 1 {
                     break;
                 }
-                let next_count = self.group_availability.intersection(*next_index).count();
+                let next_count = self.availability.intersection(*next_index).count();
                 if next_count < better_count {
                     better_count = next_count;
                     better_index = Some(next_index);
@@ -89,116 +89,71 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
             }
 
             if let Some(better_index) = better_index {
-                // println!(
-                //     "swapping {first_count} @ {first_index:?} with {better_count} @ {better_index:?}"
-                // );
+                #[cfg(feature = "debug_print")]
+                println!(
+                    "swapping {first_count} @ {first_index:?} with {better_count} @ {better_index:?}"
+                );
                 swap(first_index, better_index);
             }
         }
     }
 
-    fn try_solve_index(&mut self, choice_indices_i: usize) -> Option<Grid<Base>> {
-        self.move_best_choice_to_front(choice_indices_i);
-
-        let choice_index = self.choice_indices[choice_indices_i];
-
-        let candidates = self.group_availability.intersection(choice_index);
-
-        for candidate in candidates.iter() {
-            self.guess_count += 1;
-
-            // Clear candidate availability
-            self.group_availability.reserve(choice_index, candidate);
-
-            self.choices.push((
-                candidate,
-                Position {
-                    row: choice_index.row,
-                    column: choice_index.column,
-                },
-            ));
-
-            if choice_indices_i == self.choice_indices.len() - 1 {
-                // Current choices are a solution
-                let mut solution_grid = self.grid.clone();
-
-                for (value, position) in self.choices.iter() {
-                    solution_grid.get_mut(*position).set_value(*value)
-                }
-
-                return Some(solution_grid);
-            } else {
-                // Recursively solve remaining cells, returning the first solution, if any.
-                if let Some(solution) = self.try_solve_index(choice_indices_i + 1) {
-                    return Some(solution);
-                } else {
-                    // Backtrack
-                }
-            }
-
-            self.choices.pop();
-
-            // Restore candidate availability
-            self.group_availability.restore(choice_index, candidate);
+    fn build_solution_grid(&self) -> Grid<Base> {
+        let mut solution_grid = self.grid.clone();
+        for (candidates_iter, choice_index) in self
+            .candidates_iters
+            .iter()
+            .zip(self.availability_indices.iter())
+        {
+            solution_grid
+                .get_mut(choice_index.into())
+                .set_value(candidates_iter.peek().unwrap())
         }
-        None
+        solution_grid
     }
 
     fn next_solution(&mut self) -> Option<Grid<Base>> {
-        loop {
-            if let Some(candidates) = self.candidates_iters.last() {
-                if let Some(candidate) = candidates.peek() {
-                    let choice_index = self.choice_indices[self.candidates_iters.len() - 1];
-                    self.group_availability.reserve(choice_index, candidate);
+        while let Some(candidates) = self.candidates_iters.last() {
+            if let Some(candidate) = candidates.peek() {
+                let choice_index = self.availability_indices[self.candidates_iters.len() - 1];
+                self.availability.reserve(choice_index, candidate);
 
-                    if self.candidates_iters.len() == self.choice_indices.len() {
-                        // Found solution
-                        let mut solution_grid = self.grid.clone();
-                        for (candidates_iter, choice_index) in
-                            self.candidates_iters.iter().zip(self.choice_indices.iter())
-                        {
-                            solution_grid
-                                .get_mut(choice_index.into())
-                                .set_value(candidates_iter.peek().unwrap())
-                        }
+                if self.candidates_iters.len() == self.availability_indices.len() {
+                    // Found solution
+                    let solution_grid = self.build_solution_grid();
 
-                        // Continue at next candidate
-                        let last_candidates = self.candidates_iters.last_mut().unwrap();
-                        self.group_availability.restore(choice_index, candidate);
-                        last_candidates.next();
+                    // Continue at next candidate
+                    let last_candidates = self.candidates_iters.last_mut().unwrap();
+                    self.availability.restore(choice_index, candidate);
+                    last_candidates.next();
 
-                        return Some(solution_grid);
-                    } else {
-                        // Next cell
-                        let next_index = self.candidates_iters.len();
-                        self.move_best_choice_to_front(next_index);
-                        let next_choice_index = self.choice_indices[next_index];
-                        let next_candidates_iter = self
-                            .group_availability
-                            .intersection(next_choice_index)
-                            .iter();
-                        self.candidates_iters.push(next_candidates_iter);
-                    }
+                    return Some(solution_grid);
                 } else {
-                    // Backtrack
-                    self.candidates_iters.pop().unwrap();
-                    if self.candidates_iters.len() >= 1 {
-                        let choice_indices_i = self.candidates_iters.len() - 1;
-                        if let Some(prev_candidates) = self.candidates_iters.last_mut() {
-                            if let Some(prev_candidate) = prev_candidates.peek() {
-                                let prev_choice_index = self.choice_indices[choice_indices_i];
-                                self.group_availability
-                                    .restore(prev_choice_index, prev_candidate);
-                            }
-
-                            prev_candidates.next();
-                        }
-                    }
+                    // Next cell
+                    let next_index = self.candidates_iters.len();
+                    self.move_best_choice_to_front(next_index);
+                    let next_choice_index = self.availability_indices[next_index];
+                    let next_candidates_iter =
+                        self.availability.intersection(next_choice_index).iter();
+                    self.candidates_iters.push(next_candidates_iter);
                 }
             } else {
-                return None;
+                // Backtrack
+                self.candidates_iters.pop().unwrap();
+                if self.candidates_iters.len() >= 1 {
+                    let choice_indices_i = self.candidates_iters.len() - 1;
+                    if let Some(prev_candidates) = self.candidates_iters.last_mut() {
+                        if let Some(prev_candidate) = prev_candidates.peek() {
+                            let prev_choice_index = self.availability_indices[choice_indices_i];
+                            self.availability.restore(prev_choice_index, prev_candidate);
+                        }
+
+                        prev_candidates.next();
+                    }
+                }
             }
         }
+        None
     }
 
     // TODO: make resumable; seems to be a tradeoff between:
@@ -307,7 +262,7 @@ mod tests {
 
     #[test]
     fn test_iter_all_solutions() {
-        let mut grid = Grid::<U2>::new();
+        let grid = Grid::<U2>::new();
         let solver = Solver::new(&grid);
 
         assert_solver_solutions_base_2(solver);
@@ -352,13 +307,13 @@ mod tests {
         let mut expected_choice_indices = vec![
             GroupAvailabilityIndex {
                 row: 0,
-                column: 1,
-                block: 0,
+                column: 3,
+                block: 1,
             },
             GroupAvailabilityIndex {
                 row: 0,
-                column: 3,
-                block: 1,
+                column: 1,
+                block: 0,
             },
             GroupAvailabilityIndex {
                 row: 1,
@@ -411,15 +366,11 @@ mod tests {
                 block: 3,
             },
         ];
-        assert_eq!(solver.choice_indices, expected_choice_indices);
-
-        solver.move_best_choice_to_front(0);
-        expected_choice_indices.swap(0, 1);
-        assert_eq!(solver.choice_indices, expected_choice_indices);
+        assert_eq!(solver.availability_indices, expected_choice_indices);
 
         solver.move_best_choice_to_front(4);
         expected_choice_indices.swap(4, 11);
-        assert_eq!(solver.choice_indices, expected_choice_indices);
+        assert_eq!(solver.availability_indices, expected_choice_indices);
     }
 
     #[ignore]
