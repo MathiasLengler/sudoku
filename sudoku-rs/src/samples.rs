@@ -1,6 +1,6 @@
 use std::convert::TryInto;
 
-use typenum::consts::*;
+use crate::base::consts::*;
 
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;

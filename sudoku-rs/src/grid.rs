@@ -502,8 +502,8 @@ impl<Base: SudokuBase> Display for Grid<Base> {
 
 #[cfg(test)]
 mod tests {
+    use crate::base::consts::*;
     use itertools::{assert_equal, Itertools};
-    use typenum::consts::*;
 
     use crate::samples;
 

@@ -168,7 +168,7 @@ impl Generator {
 
 #[cfg(test)]
 mod tests {
-    use typenum::consts::*;
+    use crate::base::consts::*;
 
     use super::*;
 

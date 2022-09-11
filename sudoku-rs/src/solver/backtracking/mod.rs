@@ -218,8 +218,8 @@ impl<'s, Base: SudokuBase> Iterator for Solver<'s, Base> {
 mod tests {
     use std::collections::HashSet;
 
+    use crate::base::consts::*;
     use crate::solver::test_util::assert_solve_result;
-    use typenum::consts::*;
 
     use super::*;
 

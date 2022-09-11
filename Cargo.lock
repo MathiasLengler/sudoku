@@ -1910,7 +1910,6 @@ dependencies = [
  "rayon",
  "serde",
  "tabled",
- "typenum",
 ]
 
 [[package]]

@@ -8,23 +8,26 @@ use num::traits::{
 };
 use num::PrimInt;
 
-// TODO: replace with own empty structs Base*
-use typenum::{
-    consts::{U1, U2, U3, U4, U5},
-    Unsigned as _,
-};
-
 use crate::cell::candidates_cell::CandidatesCell;
+use consts::*;
 
 pub mod consts {
-    // TODO: remove
-    pub use typenum::consts::{U1, U2, U3, U4, U5};
+    #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+    pub struct Base1;
+    #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+    pub struct Base2;
+    #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+    pub struct Base3;
+    #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+    pub struct Base4;
+    #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+    pub struct Base5;
 
-    pub use U1 as Base1;
-    pub use U2 as Base2;
-    pub use U3 as Base3;
-    pub use U4 as Base4;
-    pub use U5 as Base5;
+    pub use Base1 as U1;
+    pub use Base2 as U2;
+    pub use Base3 as U3;
+    pub use Base4 as U4;
+    pub use Base5 as U5;
 }
 
 pub type ArrayElement = u8;
@@ -153,10 +156,10 @@ where
 }
 
 macro_rules! impl_sudoku_base {
-    ($($type_num:ty,$type_integral:ty,$CELL_INDEX_TO_BLOCK_INDEX:expr;)+) => {
+    ($($type_num:ty,$base_u8:expr,$type_integral:ty,$CELL_INDEX_TO_BLOCK_INDEX:expr;)+) => {
         $(
 impl SudokuBase for $type_num {
-    const BASE: u8 = Self::U8;
+    const BASE: u8 = $base_u8;
     const SIDE_LENGTH: u8 = base_to_side_length(Self::BASE);
     const MAX_VALUE: u8 = base_to_max_value(Self::BASE);
     const CELL_COUNT: u16 = base_to_cell_count(Self::BASE);
@@ -175,11 +178,11 @@ impl SudokuBase for $type_num {
 
 // All sudoku bases supported by DynamicSudoku, and U1 for testing.
 impl_sudoku_base!(
-    U1, u8, cell_index_to_block_index::BASE_1;
-    U2, u8, cell_index_to_block_index::BASE_2;
-    U3, u16, cell_index_to_block_index::BASE_3;
-    U4, u16, cell_index_to_block_index::BASE_4;
-    U5, u32, cell_index_to_block_index::BASE_5;
+    Base1, 1, u8, cell_index_to_block_index::BASE_1;
+    Base2, 2, u8, cell_index_to_block_index::BASE_2;
+    Base3, 3, u16, cell_index_to_block_index::BASE_3;
+    Base4, 4, u16, cell_index_to_block_index::BASE_4;
+    Base5, 5, u32, cell_index_to_block_index::BASE_5;
 );
 
 #[cfg(test)]

@@ -73,7 +73,7 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
 
 #[cfg(test)]
 mod tests {
-    use typenum::consts::*;
+    use crate::base::consts::*;
 
     use super::*;
 

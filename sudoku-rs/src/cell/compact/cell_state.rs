@@ -189,7 +189,7 @@ where
 mod tests {
     use std::mem::size_of;
 
-    use typenum::consts::*;
+    use crate::base::consts::*;
 
     use super::*;
 

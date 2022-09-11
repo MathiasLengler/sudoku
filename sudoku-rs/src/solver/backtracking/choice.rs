@@ -47,7 +47,7 @@ impl<Base: SudokuBase> Display for Choice<Base> {
 mod tests {
     use std::convert::TryInto;
 
-    use typenum::consts::*;
+    use crate::base::consts::*;
 
     use super::*;
 

@@ -13,7 +13,6 @@ anyhow = { version = "1.0.60", features = ["backtrace"] }
 serde = { version = "1.0.143", features = ["derive"] }
 indexmap = "1.9.1"
 ndarray = "0.15.6"
-typenum = "1.15.0"
 enum_dispatch = "0.3.8"
 num = "0.4.0"
 tabled = { version = "0.8.0", features = ["color"] }

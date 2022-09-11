@@ -54,7 +54,7 @@ impl<Base: SudokuBase> Display for Value<Base> {
 
 #[cfg(test)]
 mod tests {
-    use typenum::consts::*;
+    use crate::base::consts::*;
 
     use super::*;
 
