@@ -250,6 +250,15 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_new() {
+        assert_eq!(Candidates::<Base1>::new().to_vec_u8(), vec![]);
+        assert_eq!(Candidates::<Base2>::new().to_vec_u8(), vec![]);
+        assert_eq!(Candidates::<Base3>::new().to_vec_u8(), vec![]);
+        assert_eq!(Candidates::<Base4>::new().to_vec_u8(), vec![]);
+        assert_eq!(Candidates::<Base5>::new().to_vec_u8(), vec![]);
+    }
+
+    #[test]
     fn test_single() {
         assert_eq!(
             Candidates::<U2>::single(3.try_into().unwrap()).to_vec_u8(),
