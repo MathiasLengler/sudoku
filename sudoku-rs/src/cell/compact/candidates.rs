@@ -288,7 +288,7 @@ mod tests {
 
     #[test]
     fn test_toggle() {
-        let mut candidates = Candidates::<Base3>::new();
+        let mut candidates = Candidates::<Base2>::new();
         let value1 = 1.try_into().unwrap();
         let value2 = 2.try_into().unwrap();
         candidates.toggle(value1);
@@ -298,6 +298,25 @@ mod tests {
         candidates.toggle(value1);
         assert_eq!(candidates.to_vec_u8(), vec![2]);
         candidates.toggle(value2);
+        assert_eq!(candidates.to_vec_u8(), vec![]);
+    }
+
+    #[test]
+    fn test_set() {
+        let mut candidates = Candidates::<Base2>::new();
+        let value1 = 1.try_into().unwrap();
+        let value2 = 2.try_into().unwrap();
+        candidates.set(value1, false);
+        assert_eq!(candidates.to_vec_u8(), vec![]);
+        candidates.set(value1, true);
+        assert_eq!(candidates.to_vec_u8(), vec![1]);
+        candidates.set(value1, true);
+        assert_eq!(candidates.to_vec_u8(), vec![1]);
+        candidates.set(value2, true);
+        assert_eq!(candidates.to_vec_u8(), vec![1, 2]);
+        candidates.set(value1, false);
+        assert_eq!(candidates.to_vec_u8(), vec![2]);
+        candidates.set(value2, false);
         assert_eq!(candidates.to_vec_u8(), vec![]);
     }
 
