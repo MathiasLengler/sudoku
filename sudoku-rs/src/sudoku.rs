@@ -11,7 +11,6 @@ use crate::grid::serialization::GridFormat;
 use crate::grid::Grid;
 use crate::history::History;
 use crate::position::Position;
-use crate::solver::backtracking::Solver as BacktrackingSolver;
 use crate::solver::strategic::{
     strategies::{GroupReduction, SingleCandidate},
     Solver as StrategicSolver,
@@ -50,7 +49,7 @@ impl<Base: SudokuBase> Sudoku<Base> {
     pub fn with_grid_and_settings(grid: Grid<Base>, settings: Settings) -> Self {
         Sudoku {
             solved_grid: if settings.solve_grid {
-                BacktrackingSolver::unique_solution_for_fixed_values(&grid)
+                grid.unique_solution_for_fixed_values()
             } else {
                 None
             },

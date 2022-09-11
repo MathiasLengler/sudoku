@@ -15,6 +15,7 @@ use crate::cell::Cell;
 use crate::error::{Error, Result};
 use crate::grid::serialization::GridFormat;
 use crate::position::Position;
+use crate::solver::backtracking_bitset;
 use crate::solver::strategic::deduction::{Deduction, DeductionKind};
 
 pub mod deserialization;
@@ -159,6 +160,26 @@ impl<Base: SudokuBase> Grid<Base> {
 
     pub fn is_solved(&self) -> bool {
         self.all_candidates_positions().is_empty() && !self.has_value_conflict()
+    }
+
+    pub fn has_unique_solution(&self) -> bool {
+        self.unique_solution().is_some()
+    }
+
+    pub fn unique_solution(&self) -> Option<Self> {
+        let mut solver = backtracking_bitset::Solver::new(self);
+
+        match (solver.next(), solver.next()) {
+            (Some(unique_solution), None) => Some(unique_solution),
+            _ => None,
+        }
+    }
+
+    pub fn unique_solution_for_fixed_values(&self) -> Option<Self> {
+        let mut cloned_grid = self.clone();
+        cloned_grid.delete_all_unfixed_values();
+
+        cloned_grid.unique_solution()
     }
 }
 
@@ -827,5 +848,23 @@ mod tests {
         assert!(Grid::<U2>::has_duplicate_value(
             cells_with_duplicate_value.iter()
         ));
+    }
+
+    #[test]
+    fn test_unique_solution_for_fixed_values() {
+        let mut grid = samples::base_2().into_iter().next().unwrap();
+
+        grid.fix_all_values();
+
+        assert!(grid.unique_solution_for_fixed_values().is_some());
+
+        // Invalid unfixed value
+        grid.get_mut(Position { row: 0, column: 0 })
+            .set_value(1.try_into().unwrap());
+        assert!(grid.unique_solution_for_fixed_values().is_some());
+
+        // Invalid fixed value
+        grid.get_mut(Position { row: 0, column: 0 }).fix();
+        assert!(grid.unique_solution_for_fixed_values().is_none());
     }
 }

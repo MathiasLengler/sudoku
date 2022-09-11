@@ -85,7 +85,7 @@ impl Generator {
             grid.get_mut(pos).delete();
 
             // TODO: use strategic solver
-            if backtracking::Solver::has_unique_solution(&grid) {
+            if grid.has_unique_solution() {
                 // current position can be removed without losing uniqueness of the grid solution.
                 Some(value)
             } else {
@@ -177,12 +177,12 @@ mod tests {
 
         grid.unfix_all_values();
 
-        backtracking::Solver::has_unique_solution(&grid)
+        grid.has_unique_solution()
             && grid.all_value_positions().into_iter().all(|pos| {
                 let cell = grid.get_mut(pos);
                 let prev_value = cell.value().unwrap();
                 cell.delete();
-                let has_multiple_solutions = !backtracking::Solver::has_unique_solution(&grid);
+                let has_multiple_solutions = !grid.has_unique_solution();
                 grid.get_mut(pos).set_value(prev_value);
                 has_multiple_solutions
             })
@@ -208,6 +208,6 @@ mod tests {
 
         assert_eq!(grid.all_candidates_positions().len(), 2);
 
-        assert!(backtracking::Solver::has_unique_solution(&grid));
+        assert!(grid.has_unique_solution());
     }
 }

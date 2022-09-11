@@ -180,32 +180,6 @@ Current Choice: {:?}",
     }
 }
 
-impl<'s, Base: SudokuBase> Solver<'s, Base> {
-    /// Panics if the grid has no solution
-    pub fn has_unique_solution(grid: &Grid<Base>) -> bool {
-        let mut grid = grid.clone();
-        let mut solver = Solver::new(&mut grid);
-
-        assert!(solver.next().is_some());
-
-        solver.next().is_none()
-    }
-
-    /// Returns the solution to the grid only if it is the only possible solution
-    pub fn unique_solution_for_fixed_values(grid: &Grid<Base>) -> Option<Grid<Base>> {
-        let mut grid = grid.clone();
-        grid.delete_all_unfixed_values();
-        let mut solver = Solver::new(&mut grid);
-        let first_solution = solver.next();
-        let second_solution = solver.next();
-
-        match (first_solution, second_solution) {
-            (Some(solution), None) => Some(solution),
-            _ => None,
-        }
-    }
-}
-
 impl<'s, Base: SudokuBase> Iterator for Solver<'s, Base> {
     type Item = Grid<Base>;
 
@@ -280,23 +254,5 @@ mod tests {
 
             assert_solve_result(solve_result);
         }
-    }
-
-    #[test]
-    fn test_unique_solution_for_fixed_values() {
-        let mut grid = crate::samples::base_2().into_iter().next().unwrap();
-
-        grid.fix_all_values();
-
-        assert!(Solver::unique_solution_for_fixed_values(&grid).is_some());
-
-        // Invalid unfixed value
-        grid.get_mut(Position { row: 0, column: 0 })
-            .set_value(1.try_into().unwrap());
-        assert!(Solver::unique_solution_for_fixed_values(&grid).is_some());
-
-        // Invalid fixed value
-        grid.get_mut(Position { row: 0, column: 0 }).fix();
-        assert!(Solver::unique_solution_for_fixed_values(&grid).is_none());
     }
 }
