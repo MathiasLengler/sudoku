@@ -133,7 +133,6 @@ impl<Base: SudokuBase> Candidates<Base> {
         self.arr.not_any()
     }
 
-    // TODO: test
     pub fn is_full(&self) -> bool {
         self.arr[0..Base::MAX_VALUE as usize].all()
     }
@@ -464,6 +463,17 @@ mod tests {
             assert!(empty.is_empty());
             assert!(!one.is_empty());
             assert!(!all.is_empty());
+        }
+
+        #[test]
+        fn test_is_full() {
+            let empty: Candidates<U2> = Candidates::new();
+            let one: Candidates<U2> = Candidates::single(1.try_into().unwrap());
+            let all: Candidates<U2> = Candidates::all();
+
+            assert!(!empty.is_full());
+            assert!(!one.is_full());
+            assert!(all.is_full());
         }
 
         #[test]
