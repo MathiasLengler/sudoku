@@ -6,6 +6,8 @@ use crate::cell::compact::value::Value;
 use crate::grid::Grid;
 use crate::position::Position;
 
+// TODO: implement shuffle_candidates
+
 #[derive(Debug, Clone)]
 pub struct Solver<'a, Base: SudokuBase> {
     /// Grid to be solved
@@ -114,6 +116,9 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
     pub fn try_solve(&mut self) -> Option<Grid<Base>> {
         while let Some(candidates) = self.candidates_iters.last() {
             if let Some(candidate) = candidates.peek() {
+                // TODO: only update if there are multiple candidates
+                self.guess_count += 1;
+
                 let choice_index = self.availability_indices[self.candidates_iters.len() - 1];
                 self.availability.reserve(choice_index, candidate);
 
