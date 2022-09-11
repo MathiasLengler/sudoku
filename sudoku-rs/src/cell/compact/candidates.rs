@@ -486,5 +486,21 @@ mod tests {
             assert_eq!(one.count(), 1);
             assert_eq!(all.count(), 4);
         }
+
+        #[test]
+        fn test_iter() {
+            let empty: Candidates<U2> = Candidates::new();
+            let one: Candidates<U2> = Candidates::single(1.try_into().unwrap());
+            let all: Candidates<U2> = Candidates::all();
+
+            assert!(empty.iter().next().is_none());
+            assert_eq!(one.iter().collect::<Vec<_>>(), vec![1.try_into().unwrap()]);
+            assert_eq!(
+                all.iter().collect::<Vec<_>>(),
+                (1..=4)
+                    .map(|i| Value::<Base2>::try_from(i).unwrap())
+                    .collect::<Vec<_>>()
+            );
+        }
     }
 }
