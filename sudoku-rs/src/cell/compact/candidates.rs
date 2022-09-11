@@ -479,8 +479,8 @@ mod tests {
         #[test]
         fn test_count() {
             let empty: Candidates<U2> = Candidates::new();
-            let one: Candidates<U2> = vec![1].try_into().unwrap();
-            let all: Candidates<U2> = Candidates::<U2>::all();
+            let one: Candidates<U2> = Candidates::single(1.try_into().unwrap());
+            let all: Candidates<U2> = Candidates::all();
 
             assert_eq!(empty.count(), 0);
             assert_eq!(one.count(), 1);
