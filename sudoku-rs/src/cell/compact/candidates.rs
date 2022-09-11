@@ -2,6 +2,10 @@ use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
+// TODO: replace `bitvec` with `num::PrimInt`
+//  Overhead of generic bitvec slicing prevents further optimization
+//  We don't ever need more than a u32 (Base5, [u8; 4]) as a bit field
+
 use bitvec::prelude::*;
 use bitvec::view::{BitView, BitViewSized};
 
