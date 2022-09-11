@@ -131,7 +131,7 @@ impl<Base: SudokuBase> Candidates<Base> {
         self.bits.count_ones().try_into().unwrap()
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = Value<Base>> + '_ {
+    pub fn iter(&self) -> impl Iterator<Item = Value<Base>> {
         IterOnes::from(self).map(|i| Self::export(i))
     }
 
