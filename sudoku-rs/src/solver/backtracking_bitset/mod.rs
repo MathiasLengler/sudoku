@@ -1,5 +1,5 @@
 /// Fork of: https://github.com/t-dillon/tdoku/blob/master/src/solver_basic.cc
-use crate::base::{consts::Base3, SudokuBase};
+use crate::base::SudokuBase;
 use crate::cell::candidates_cell::CandidatesCell;
 use crate::cell::compact::candidates::Candidates;
 use crate::cell::compact::value::Value;
@@ -18,23 +18,6 @@ pub struct Solver<'a, Base: SudokuBase> {
     choices: Vec<(Value<Base>, Position)>,
 
     pub guess_count: u64,
-}
-
-// TODO: remove asm debug wrappers
-pub fn test_asm_move_best_choice_to_front(solver: &mut Solver<'_, Base3>, choice_indices_i: usize) {
-    solver.move_best_choice_to_front(choice_indices_i);
-}
-
-pub fn test_asm_raw_intersection(a: u16, b: u16, c: u16) -> u16 {
-    a & b & c
-}
-
-pub fn test_asm_candidates_intersection(
-    a: Candidates<Base3>,
-    b: Candidates<Base3>,
-    c: Candidates<Base3>,
-) -> Candidates<Base3> {
-    a.intersection(&b).intersection(&c)
 }
 
 impl<'a, Base: SudokuBase> Solver<'a, Base> {
