@@ -5,9 +5,13 @@ use std::fmt::{Display, Formatter};
 use num::traits::{CheckedShl, WrappingSub};
 use num::{One, PrimInt, Zero};
 
+pub use iter::CandidatesIter;
+
 use crate::base::SudokuBase;
 use crate::cell::compact::value::Value;
 use crate::error::{Error, Result};
+
+mod iter;
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Copy, Clone, Debug)]
 pub struct Candidates<Base: SudokuBase> {
@@ -234,99 +238,6 @@ impl<Base: SudokuBase> TryFrom<Vec<u8>> for Candidates<Base> {
 impl<Base: SudokuBase> Display for Candidates<Base> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{:?}", self.to_vec_u8())
-    }
-}
-
-#[derive(Debug, Clone)]
-struct IterOnes<Base: SudokuBase> {
-    bits: Base::CandidatesIntegral,
-}
-
-impl<Base: SudokuBase> IterOnes<Base> {
-    #[inline(always)]
-    pub fn peek(&self) -> Option<u8> {
-        if self.bits.is_zero() {
-            None
-        } else {
-            let trailing_zeros = self.bits.trailing_zeros();
-            Some(u8::try_from(trailing_zeros).unwrap())
-        }
-    }
-}
-
-impl<Base: SudokuBase> From<&Candidates<Base>> for IterOnes<Base> {
-    fn from(candidates: &Candidates<Base>) -> Self {
-        Self {
-            bits: candidates.bits,
-        }
-    }
-}
-
-// TODO: benchmark
-impl<Base: SudokuBase> Iterator for IterOnes<Base> {
-    type Item = u8;
-
-    #[inline(always)]
-    fn next(&mut self) -> Option<Self::Item> {
-        let trailing_zeros = self.peek();
-        if let Some(trailing_zeros) = trailing_zeros {
-            self.bits ^= Base::CandidatesIntegral::one() << trailing_zeros;
-        }
-        trailing_zeros
-    }
-
-    #[inline(always)]
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        let len = self.len();
-        (len, Some(len))
-    }
-}
-
-impl<Base: SudokuBase> ExactSizeIterator for IterOnes<Base> {
-    #[inline(always)]
-    fn len(&self) -> usize {
-        usize::try_from(self.bits.count_ones()).unwrap()
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct CandidatesIter<Base: SudokuBase> {
-    iter: IterOnes<Base>,
-}
-
-impl<Base: SudokuBase> CandidatesIter<Base> {
-    #[inline(always)]
-    pub fn peek(&self) -> Option<Value<Base>> {
-        self.iter.peek().map(|i| Candidates::export(i))
-    }
-}
-
-impl<Base: SudokuBase> Iterator for CandidatesIter<Base> {
-    type Item = Value<Base>;
-
-    #[inline(always)]
-    fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next().map(|i| Candidates::export(i))
-    }
-
-    #[inline(always)]
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iter.size_hint()
-    }
-}
-
-impl<Base: SudokuBase> ExactSizeIterator for CandidatesIter<Base> {
-    #[inline(always)]
-    fn len(&self) -> usize {
-        self.iter.len()
-    }
-}
-
-impl<Base: SudokuBase> From<&Candidates<Base>> for CandidatesIter<Base> {
-    fn from(candidates: &Candidates<Base>) -> Self {
-        Self {
-            iter: candidates.into(),
-        }
     }
 }
 
