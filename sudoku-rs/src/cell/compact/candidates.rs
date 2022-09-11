@@ -287,6 +287,21 @@ mod tests {
     }
 
     #[test]
+    fn test_toggle() {
+        let mut candidates = Candidates::<Base3>::new();
+        let value1 = 1.try_into().unwrap();
+        let value2 = 2.try_into().unwrap();
+        candidates.toggle(value1);
+        assert_eq!(candidates.to_vec_u8(), vec![1]);
+        candidates.toggle(value2);
+        assert_eq!(candidates.to_vec_u8(), vec![1, 2]);
+        candidates.toggle(value1);
+        assert_eq!(candidates.to_vec_u8(), vec![2]);
+        candidates.toggle(value2);
+        assert_eq!(candidates.to_vec_u8(), vec![]);
+    }
+
+    #[test]
     fn test_try_from_vec_u8() -> Result<()> {
         let vec_candidates = vec![1, 2, 4, 8, 9];
 
