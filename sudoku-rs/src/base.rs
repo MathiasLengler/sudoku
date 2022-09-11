@@ -1,6 +1,5 @@
 use std::fmt::{Binary, Debug, Display};
 use std::hash::Hash;
-use std::mem::size_of;
 use std::ops::{BitAndAssign, BitOrAssign, BitXorAssign, Shl};
 
 use num::traits::{
@@ -224,6 +223,8 @@ mod tests {
     }
 
     fn assert_base_invariants<Base: SudokuBase>() {
+        use std::mem::size_of;
+
         // MAX_VALUE must be representable at the highest bit position.
         assert!(size_of::<Base::CandidatesIntegral>() * 8 >= usize::from(Base::MAX_VALUE))
     }
