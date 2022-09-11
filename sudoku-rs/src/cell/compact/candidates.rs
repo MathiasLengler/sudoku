@@ -332,6 +332,14 @@ mod tests {
         candidates.delete(value2);
         assert_eq!(candidates.to_vec_u8(), vec![3, 4]);
     }
+    #[test]
+    fn test_has() {
+        let mut candidates: Candidates<Base2> = vec![1, 3].try_into().unwrap();
+        let value1 = 1.try_into().unwrap();
+        let value2 = 2.try_into().unwrap();
+        assert!(candidates.has(value1));
+        assert!(!candidates.has(value2));
+    }
 
     #[test]
     fn test_try_from_vec_u8() -> Result<()> {
