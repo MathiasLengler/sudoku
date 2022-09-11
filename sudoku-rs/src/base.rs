@@ -3,14 +3,13 @@ use std::hash::Hash;
 use std::mem::size_of;
 use std::ops::{BitAndAssign, BitOrAssign, BitXorAssign, Shl};
 
-// TODO: remove bitvec
-use bitvec::store::BitStore;
-use bitvec::view::BitViewSized;
 use num::traits::{
     CheckedShl, CheckedShr, Unsigned, WrappingAdd, WrappingMul, WrappingShl, WrappingShr,
     WrappingSub,
 };
 use num::PrimInt;
+
+// TODO: replace with own empty structs Base*
 use typenum::{
     consts::{U1, U2, U3, U4, U5},
     Unsigned as _,
@@ -41,14 +40,6 @@ const fn base_to_max_value(base: u8) -> u8 {
 
 const fn base_to_cell_count(base: u8) -> u16 {
     (base as u16).pow(4)
-}
-
-const fn base_to_candidates_capacity<T>(base: u8) -> usize {
-    let array_element_bit_size = size_of::<T>() * 8;
-    let max_value = base_to_max_value(base) as usize;
-
-    // div_ceil
-    (max_value + array_element_bit_size - 1) / array_element_bit_size
 }
 
 mod cell_index_to_block_index {
@@ -130,17 +121,15 @@ where
     const SIDE_LENGTH: u8;
     const MAX_VALUE: u8;
     const CELL_COUNT: u16;
-    const CANDIDATES_ARRAY_CAPACITY: usize;
 
     fn cell_index_to_block_index(cell_index: u16) -> u8;
 
-    type CandidatesArrayElement: BitStore;
-    type CandidatesArray: BitViewSized + Ord + Hash + Copy + Clone + Debug + Default;
     type CandidatesIntegral: Copy
         + Clone
         + Debug
         + Default
         + Display
+        + Binary
         + Hash
         // Generic bit twiddling
         + PrimInt
@@ -155,8 +144,7 @@ where
         + BitXorAssign
         + BitOrAssign
         + BitAndAssign
-        + Shl<u8, Output = Self::CandidatesIntegral>
-        + Binary;
+        + Shl<u8, Output = Self::CandidatesIntegral>;
 
     type CandidatesCells: AsRef<[CandidatesCell<Self>]>
         + AsMut<[CandidatesCell<Self>]>
@@ -173,18 +161,14 @@ impl SudokuBase for $type_num {
     const SIDE_LENGTH: u8 = base_to_side_length(Self::BASE);
     const MAX_VALUE: u8 = base_to_max_value(Self::BASE);
     const CELL_COUNT: u16 = base_to_cell_count(Self::BASE);
-    const CANDIDATES_ARRAY_CAPACITY: usize =
-        base_to_candidates_capacity::<Self::CandidatesArrayElement>(Self::BASE);
 
     fn cell_index_to_block_index(cell_index: u16) -> u8 {
         $CELL_INDEX_TO_BLOCK_INDEX[usize::from(cell_index)]
     }
 
-    type CandidatesArrayElement = u8;
-    type CandidatesArray = [Self::CandidatesArrayElement; Self::CANDIDATES_ARRAY_CAPACITY];
     type CandidatesIntegral = $type_integral;
 
-    type CandidatesCells = [CandidatesCell<Self>; Self::MAX_VALUE as usize];
+    type CandidatesCells = [CandidatesCell<Self>; Self::SIDE_LENGTH as usize];
 }
         )+
     };
@@ -223,15 +207,6 @@ mod tests {
         assert_eq!(base_to_cell_count(4), 256);
         assert_eq!(base_to_cell_count(5), 625);
     }
-    #[test]
-    fn test_base_to_candidates_capacity() {
-        assert_eq!(base_to_candidates_capacity::<u8>(0), 0);
-        assert_eq!(base_to_candidates_capacity::<u8>(1), 1);
-        assert_eq!(base_to_candidates_capacity::<u8>(2), 1);
-        assert_eq!(base_to_candidates_capacity::<u8>(3), 2);
-        assert_eq!(base_to_candidates_capacity::<u8>(4), 2);
-        assert_eq!(base_to_candidates_capacity::<u8>(5), 4);
-    }
 
     // Fork of https://docs.rs/type-equals/0.1.0/type_equals/
     trait TypeEquals {
@@ -249,13 +224,8 @@ mod tests {
     }
 
     fn assert_base_invariants<Base: SudokuBase>() {
-        assert_eq!(
-            size_of::<Base::CandidatesArray>(),
-            size_of::<Base::CandidatesIntegral>()
-        );
-
         // MAX_VALUE must be representable at the highest bit position.
-        assert!(size_of::<Base::CandidatesArray>() * 8 >= usize::from(Base::MAX_VALUE))
+        assert!(size_of::<Base::CandidatesIntegral>() * 8 >= usize::from(Base::MAX_VALUE))
     }
 
     #[test]
@@ -266,10 +236,7 @@ mod tests {
         assert_eq!(Base::SIDE_LENGTH, 4);
         assert_eq!(Base::MAX_VALUE, 4);
         assert_eq!(Base::CELL_COUNT, 16);
-        assert_eq!(Base::CANDIDATES_ARRAY_CAPACITY, 1);
 
-        assert_type_equals::<<Base as SudokuBase>::CandidatesArrayElement, u8>();
-        assert_type_equals::<<Base as SudokuBase>::CandidatesArray, [u8; 1]>();
         assert_type_equals::<<Base as SudokuBase>::CandidatesIntegral, u8>();
 
         assert_base_invariants::<Base>();
@@ -283,10 +250,7 @@ mod tests {
         assert_eq!(Base::SIDE_LENGTH, 9);
         assert_eq!(Base::MAX_VALUE, 9);
         assert_eq!(Base::CELL_COUNT, 81);
-        assert_eq!(Base::CANDIDATES_ARRAY_CAPACITY, 2);
 
-        assert_type_equals::<<Base as SudokuBase>::CandidatesArrayElement, u8>();
-        assert_type_equals::<<Base as SudokuBase>::CandidatesArray, [u8; 2]>();
         assert_type_equals::<<Base as SudokuBase>::CandidatesIntegral, u16>();
 
         assert_base_invariants::<Base>();
@@ -300,10 +264,7 @@ mod tests {
         assert_eq!(Base::SIDE_LENGTH, 16);
         assert_eq!(Base::MAX_VALUE, 16);
         assert_eq!(Base::CELL_COUNT, 256);
-        assert_eq!(Base::CANDIDATES_ARRAY_CAPACITY, 2);
 
-        assert_type_equals::<<Base as SudokuBase>::CandidatesArrayElement, u8>();
-        assert_type_equals::<<Base as SudokuBase>::CandidatesArray, [u8; 2]>();
         assert_type_equals::<<Base as SudokuBase>::CandidatesIntegral, u16>();
 
         assert_base_invariants::<Base>();
@@ -317,10 +278,7 @@ mod tests {
         assert_eq!(Base::SIDE_LENGTH, 25);
         assert_eq!(Base::MAX_VALUE, 25);
         assert_eq!(Base::CELL_COUNT, 625);
-        assert_eq!(Base::CANDIDATES_ARRAY_CAPACITY, 4);
 
-        assert_type_equals::<<Base as SudokuBase>::CandidatesArrayElement, u8>();
-        assert_type_equals::<<Base as SudokuBase>::CandidatesArray, [u8; 4]>();
         assert_type_equals::<<Base as SudokuBase>::CandidatesIntegral, u32>();
 
         assert_base_invariants::<Base>();
