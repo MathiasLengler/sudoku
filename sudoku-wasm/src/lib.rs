@@ -20,9 +20,6 @@ use sudoku::position::Position;
 use sudoku::transport::TransportSudoku;
 use sudoku::{DynamicSudoku, Game, Sudoku};
 
-// TODO: use wasm-bindgen "typescript_type" and replace typedWasmSudoku.tsx
-//  https://rustwasm.github.io/wasm-bindgen/reference/attributes/on-rust-exports/typescript_type.html
-
 #[wasm_bindgen]
 pub fn init() {
     #[cfg(feature = "console")]
