@@ -16,7 +16,6 @@ use crate::error::{Error, Result};
 use crate::grid::serialization::GridFormat;
 use crate::position::Position;
 use crate::solver::strategic::deduction::{Deduction, DeductionKind};
-use crate::solver::strategic::strategies;
 use crate::solver::strategic::strategies::Strategy;
 use crate::solver::{backtracking_bitset, strategic};
 
