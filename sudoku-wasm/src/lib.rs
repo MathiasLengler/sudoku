@@ -190,29 +190,32 @@ impl WasmSudoku {
 }
 
 // TODO: remove unwraps
-/// Conversion Helpers
+/// Import helpers
 impl WasmSudoku {
     fn import_pos(pos: ICellPosition) -> Position {
-        pos.into_serde().unwrap()
+        serde_wasm_bindgen::from_value(pos.into()).unwrap()
     }
 
     fn import_candidates(candidates: ICandidates) -> Vec<u8> {
-        candidates.into_serde().unwrap()
+        serde_wasm_bindgen::from_value(candidates.into()).unwrap()
     }
 
     fn import_generator_settings(generator_settings: IGeneratorSettings) -> RuntimeSettings {
-        generator_settings.into_serde().unwrap()
+        serde_wasm_bindgen::from_value(generator_settings.into()).unwrap()
     }
 
     fn import_grid_format(format: IGridFormat) -> GridFormat {
-        format.into_serde().unwrap()
-    }
-
-    fn export_error(error: SudokuError) -> js_sys::Error {
-        js_sys::Error::new(&error.to_string())
+        serde_wasm_bindgen::from_value(format.into()).unwrap()
     }
 
     fn import_blocks(cells: ICellBlocks) -> Vec<Vec<CellView>> {
-        cells.into_serde().unwrap()
+        serde_wasm_bindgen::from_value(cells.into()).unwrap()
+    }
+}
+
+/// Export helpers
+impl WasmSudoku {
+    fn export_error(error: SudokuError) -> js_sys::Error {
+        js_sys::Error::new(&error.to_string())
     }
 }
