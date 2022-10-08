@@ -7,6 +7,7 @@ use crate::cell::compact::value::Value;
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::solver::backtracking;
+use crate::solver::strategic::strategies;
 
 #[derive(Debug, Serialize, Deserialize, Copy, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -84,14 +85,21 @@ impl Generator {
         if let Some(value) = cell.value() {
             grid.get_mut(pos).delete();
 
-            // TODO: use strategic solver
-            if grid.has_unique_solution() {
-                // current position can be removed without losing uniqueness of the grid solution.
-                Some(value)
-            } else {
-                // current position is necessary for unique solution
-                grid.get_mut(pos).set_value(value);
-                None
+            match grid.is_solvable_with_strategies(vec![
+                Box::new(strategies::SingleCandidate),
+                Box::new(strategies::HiddenSingles),
+                // Box::new(strategies::GroupReduction),
+                // Box::new(strategies::Backtracking),
+            ]) {
+                Some(Ok(_)) if grid.has_unique_solution() => {
+                    // current position can be removed without losing uniqueness of the grid solution.
+                    Some(value)
+                }
+                _ => {
+                    // current position is necessary for unique solution
+                    grid.get_mut(pos).set_value(value);
+                    None
+                }
             }
         } else {
             panic!("Expected value at {} but got: {:?}", pos, cell)

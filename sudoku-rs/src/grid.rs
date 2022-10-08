@@ -15,8 +15,10 @@ use crate::cell::Cell;
 use crate::error::{Error, Result};
 use crate::grid::serialization::GridFormat;
 use crate::position::Position;
-use crate::solver::backtracking_bitset;
 use crate::solver::strategic::deduction::{Deduction, DeductionKind};
+use crate::solver::strategic::strategies;
+use crate::solver::strategic::strategies::Strategy;
+use crate::solver::{backtracking_bitset, strategic};
 
 pub mod deserialization;
 pub mod serialization;
@@ -64,6 +66,9 @@ impl<Base: SudokuBase> Grid<Base> {
 // TODO: bench
 /// Consistency testing
 impl<Base: SudokuBase> Grid<Base> {
+    // Alternative: compare with solved grid
+    //  are
+
     /// A grid is directly consistent, if:
     /// - No cell has empty candidates.
     /// - No candidate is deletable based on a group-adjacent value.
@@ -180,6 +185,18 @@ impl<Base: SudokuBase> Grid<Base> {
         cloned_grid.delete_all_unfixed_values();
 
         cloned_grid.unique_solution()
+    }
+
+    pub fn is_solvable_with_strategies(
+        &self,
+        strategies: Vec<Box<dyn Strategy<Base>>>,
+    ) -> Option<Result<Self>> {
+        let mut clone = self.clone();
+        clone.fix_all_values();
+        clone.set_all_direct_candidates();
+        let mut solver = strategic::Solver::new_with_strategies(&mut clone, strategies);
+
+        solver.try_solve()
     }
 }
 

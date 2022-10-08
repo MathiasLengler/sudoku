@@ -9,6 +9,7 @@ use std::cell::RefCell;
 use log::trace;
 use wasm_bindgen::prelude::*;
 
+use crate::typescript::IStrategyName;
 use sudoku::base::consts::*;
 use sudoku::cell::view::CellView;
 use sudoku::error::Error as SudokuError;
@@ -164,8 +165,17 @@ impl WasmSudoku {
             .export(&Self::import_grid_format(format))
     }
 
+    #[wasm_bindgen(js_name = tryStrategy)]
+    pub fn try_strategy(&mut self, strategy_name: IStrategyName) -> Result<bool, JsValue> {
+        Ok(self
+            .sudoku
+            .borrow_mut()
+            .try_strategy(&strategy_name.as_string().unwrap())
+            .map_err(Self::export_error)?)
+    }
+
     #[wasm_bindgen(js_name = solveSingleCandidates)]
-    pub fn solve_single_candidates(&mut self) -> Result<(), JsValue> {
+    pub fn solve_single_candidates(&mut self) -> Result<bool, JsValue> {
         Ok(self
             .sudoku
             .borrow_mut()

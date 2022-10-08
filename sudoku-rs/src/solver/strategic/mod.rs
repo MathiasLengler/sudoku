@@ -29,19 +29,24 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
         Self { grid, strategies }
     }
 
-    // TODO: unique solution?
-    pub fn try_solve(&mut self) -> Result<bool> {
+    pub fn try_solve(&mut self) -> Option<Result<Grid<Base>>> {
         loop {
             if self.grid.is_solved() {
-                return Ok(true);
+                return Some(Ok(self.grid.clone()));
             }
 
-            if let Some(deductions) = self.try_strategies()? {
-                deductions.apply(self.grid);
-                // Continue with strategy execution
-            } else {
-                // All strategies have failed.
-                return Ok(false);
+            match self.try_strategies() {
+                Ok(Some(deductions)) => {
+                    deductions.apply(self.grid);
+                    // Continue with strategy execution
+                }
+                Ok(None) => {
+                    // All strategies have failed.
+                    return None;
+                }
+                Err(err) => {
+                    return Some(Err(err));
+                }
             }
         }
     }
@@ -64,7 +69,6 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
                 );
 
                 return Ok(Some(deductions));
-            } else {
             }
         }
         Ok(None)
@@ -83,7 +87,7 @@ mod tests {
 
         let mut solver = Solver::new(grid);
 
-        assert!(solver.try_solve().unwrap());
+        assert!(solver.try_solve().unwrap().is_ok());
 
         assert!(grid.is_solved());
     }
@@ -115,7 +119,7 @@ mod tests {
 
         let mut solver = Solver::new(&mut grid);
 
-        assert!(solver.try_solve().unwrap());
+        assert!(solver.try_solve().unwrap().is_ok());
 
         assert!(grid.is_solved());
     }

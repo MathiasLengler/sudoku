@@ -7,6 +7,7 @@ use crate::grid::Grid;
 use crate::position::Position;
 
 // TODO: implement shuffle_candidates
+// TODO: fix crash on solved sudoku
 
 #[derive(Debug, Clone)]
 pub struct Solver<'a, Base: SudokuBase> {

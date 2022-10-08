@@ -61,10 +61,6 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
         solver
     }
 
-    pub fn into_empty_positions(self) -> Vec<Position> {
-        self.empty_positions
-    }
-
     fn init(&mut self) {
         if let Some(first_pos) = self.empty_positions.first().cloned() {
             self.push_choice(first_pos);

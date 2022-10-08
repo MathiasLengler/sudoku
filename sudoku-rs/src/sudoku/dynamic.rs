@@ -33,7 +33,8 @@ mod game {
         fn toggle_candidate(&mut self, pos: Position, candidate: u8) -> Result<()>;
         fn delete(&mut self, pos: Position);
         fn set_all_direct_candidates(&mut self);
-        fn solve_single_candidates(&mut self) -> Result<()>;
+        fn try_strategy(&mut self, strategy_name: &str) -> Result<bool>;
+        fn solve_single_candidates(&mut self) -> Result<bool>;
         fn group_reduction(&mut self) -> Result<()>;
         fn undo(&mut self);
         fn settings(&self) -> SudokuSettings;

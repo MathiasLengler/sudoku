@@ -6,6 +6,7 @@ import IconButton from "@mui/material/IconButton";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import Tooltip from "@mui/material/Tooltip";
 import { WasmSudokuController } from "../wasmSudokuController";
+import type { StrategyName } from "../../../../sudoku-wasm/pkg";
 
 interface ToolbarMenuProps {
     enterDelay: number;
@@ -20,9 +21,15 @@ export const ToolbarMenu: React.FunctionComponent<ToolbarMenuProps> = props => {
 
     const [newGameOpen, setNewGameOpen] = React.useState(false);
 
-    const makeHandleMenuClose = (action?: () => void) => () => {
+    const makeHandleMenuClose = (action?: () => Promise<void>) => async () => {
         setMenuAnchorEl(null);
-        action?.();
+        if (action) {
+            try {
+                await action();
+            } catch (err) {
+                console.error("Error while executing menu action:", err);
+            }
+        }
     };
 
     // TODO: refactor menu into AppBar
@@ -34,12 +41,57 @@ export const ToolbarMenu: React.FunctionComponent<ToolbarMenuProps> = props => {
                 </IconButton>
             </Tooltip>
             <Menu open={!!menuAnchorEl} anchorEl={menuAnchorEl} keepMounted onClose={makeHandleMenuClose()}>
-                <MenuItem onClick={makeHandleMenuClose(() => setNewGameOpen(true))}>New Game</MenuItem>
-                <MenuItem onClick={makeHandleMenuClose(() => sudokuController.solveSingleCandidates())}>
-                    Solver: single candidates
+                <MenuItem onClick={makeHandleMenuClose(async () => setNewGameOpen(true))}>New Game</MenuItem>
+                <MenuItem
+                    onClick={makeHandleMenuClose(async () => {
+                        await sudokuController.tryStrategy("SingleCandidate");
+                    })}
+                >
+                    Solver: SingleCandidate
                 </MenuItem>
-                <MenuItem onClick={makeHandleMenuClose(() => sudokuController.groupReduction())}>
-                    Solver: group reduction
+                <MenuItem
+                    onClick={makeHandleMenuClose(async () => {
+                        await sudokuController.tryStrategy("HiddenSingles");
+                    })}
+                >
+                    Solver: HiddenSingles
+                </MenuItem>
+                <MenuItem
+                    onClick={makeHandleMenuClose(async () => {
+                        await sudokuController.tryStrategy("GroupReduction");
+                    })}
+                >
+                    Solver: GroupReduction
+                </MenuItem>
+                <MenuItem
+                    onClick={makeHandleMenuClose(async () => {
+                        await sudokuController.tryStrategy("Backtracking");
+                    })}
+                >
+                    Solver: Backtracking
+                </MenuItem>
+                <MenuItem
+                    onClick={makeHandleMenuClose(async () => {
+                        const strategies: StrategyName[] = [
+                            "SingleCandidate",
+                            "HiddenSingles",
+                            // "GroupReduction",
+                            // "Backtracking",
+                        ];
+                        outer: while (true) {
+                            for (const strategy of strategies) {
+                                console.info("Trying strategy:", strategy);
+                                if (await sudokuController.tryStrategy(strategy)) {
+                                    console.info("Made progress with:", strategy);
+                                    continue outer;
+                                }
+                            }
+                            break;
+                        }
+                        console.info("All strategies failed to make progress");
+                    })}
+                >
+                    Solver: debug
                 </MenuItem>
                 <MenuItem
                     onClick={makeHandleMenuClose(async () => {

@@ -1,8 +1,7 @@
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(typescript_custom_section)]
-const TRANSPORT_TYPESCRIPT: &'static str = r#"
-export type CellBlocks = Cell[][];
+const TRANSPORT_TYPESCRIPT: &'static str = r#"export type CellBlocks = Cell[][];
 
 export type TransportCellBlock = TransportCell[];
 
@@ -13,6 +12,7 @@ export interface TransportSudoku {
     base: number;
     sideLength: number;
     cellCount: number;
+    isSolved: boolean;
 }
 
 export interface CellPosition {
@@ -49,17 +49,21 @@ export type GeneratorTarget =
     | "minimal"
     | "filled"
     | {
-          fromMinimal: {
-              distance: number;
-          };
-      }
+    fromMinimal: {
+        distance: number;
+    };
+}
     | {
-          fromFilled: {
-              distance: number;
-          };
-      };
+    fromFilled: {
+        distance: number;
+    };
+};
 
 export type GridFormat = "givensLine" | "givensGrid" | "binaryCandidatesLine";
+export type StrategyName = "SingleCandidate" |
+    "HiddenSingles" |
+    "GroupReduction" |
+    "Backtracking"
 "#;
 
 #[wasm_bindgen]
@@ -90,4 +94,6 @@ extern "C" {
     pub type IGeneratorTarget;
     #[wasm_bindgen(typescript_type = "GridFormat")]
     pub type IGridFormat;
+    #[wasm_bindgen(typescript_type = "StrategyName")]
+    pub type IStrategyName;
 }

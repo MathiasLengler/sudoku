@@ -3,6 +3,7 @@ import * as React from "react";
 import { blocksToCell } from "./utils";
 import isEqual from "lodash/isEqual";
 import * as Comlink from "comlink";
+import type { StrategyName } from "../../../sudoku-wasm/pkg";
 
 export type onSudokuUpdate = (this: void, sudoku: TransportSudoku) => void;
 
@@ -148,9 +149,15 @@ export class WasmSudokuController {
         return await this.wasmSudokuProxy.export(format);
     }
 
-    public async solveSingleCandidates(): Promise<void> {
-        await this.withSudokuUpdate(async () => {
-            await this.wasmSudokuProxy.solveSingleCandidates();
+    public async tryStrategy(strategyName: StrategyName): Promise<boolean> {
+        return await this.withSudokuUpdate(async () => {
+            return await this.wasmSudokuProxy.tryStrategy(strategyName);
+        });
+    }
+
+    public async solveSingleCandidates(): Promise<boolean> {
+        return await this.withSudokuUpdate(async () => {
+            return await this.wasmSudokuProxy.solveSingleCandidates();
         });
     }
 

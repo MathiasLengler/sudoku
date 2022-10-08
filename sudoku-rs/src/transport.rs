@@ -15,6 +15,7 @@ pub struct TransportSudoku {
     base: u8,
     side_length: u8,
     cell_count: usize,
+    is_solved: bool,
 }
 
 impl<Base: SudokuBase> From<&Sudoku<Base>> for TransportSudoku {
@@ -48,6 +49,7 @@ impl<Base: SudokuBase> From<&Sudoku<Base>> for TransportSudoku {
             base: Grid::<Base>::base(),
             side_length: Grid::<Base>::side_length(),
             cell_count: Grid::<Base>::cell_count_usize(),
+            is_solved: grid.is_solved(),
         }
     }
 }

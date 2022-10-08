@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use std::convert::{TryFrom, TryInto};
 use std::fmt::{self, Display, Formatter};
 
@@ -12,6 +13,7 @@ use crate::grid::Grid;
 use crate::history::History;
 use crate::position::Position;
 use crate::solver::strategic::{
+    strategies,
     strategies::{GroupReduction, SingleCandidate},
     Solver as StrategicSolver,
 };
@@ -151,20 +153,41 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
         self.grid.set_all_direct_candidates();
     }
 
+    fn try_strategy(&mut self, strategy_name: &str) -> Result<bool> {
+        self.push_history();
+
+        let strategy = strategies::all_strategies()
+            .into_iter()
+            .find(|strategy| format!("{strategy:#?}") == strategy_name)
+            .ok_or_else(|| anyhow!("Unexpected strategy name: {strategy_name}"))?;
+
+        let mut solver = StrategicSolver::new_with_strategies(&mut self.grid, vec![strategy]);
+
+        Ok(if let Some(deductions) = solver.try_strategies()? {
+            deductions.apply(&mut self.grid);
+
+            true
+        } else {
+            false
+        })
+    }
+
     // TODO: refactor Strategy API
     //  return deductions for visualization
     //  single method to try a specific strategy
-    fn solve_single_candidates(&mut self) -> Result<()> {
+    fn solve_single_candidates(&mut self) -> Result<bool> {
         self.push_history();
 
         let mut solver =
             StrategicSolver::new_with_strategies(&mut self.grid, vec![Box::new(SingleCandidate)]);
 
-        if let Some(deductions) = solver.try_strategies()? {
+        Ok(if let Some(deductions) = solver.try_strategies()? {
             deductions.apply(&mut self.grid);
-        }
 
-        Ok(())
+            true
+        } else {
+            false
+        })
     }
 
     fn group_reduction(&mut self) -> Result<()> {

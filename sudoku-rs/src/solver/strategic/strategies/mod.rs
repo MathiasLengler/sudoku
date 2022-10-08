@@ -41,7 +41,7 @@ pub trait Strategy<Base: SudokuBase>: Debug {
     fn execute(&self, grid: &Grid<Base>) -> Result<Deductions<Base>>;
 }
 
-pub(super) fn all_strategies<Base: SudokuBase>() -> Vec<Box<dyn Strategy<Base>>> {
+pub(crate) fn all_strategies<Base: SudokuBase>() -> Vec<Box<dyn Strategy<Base>>> {
     vec![
         Box::new(SingleCandidate),
         Box::new(HiddenSingles),
