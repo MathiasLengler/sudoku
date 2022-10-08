@@ -1,6 +1,8 @@
 use std::cell::RefCell;
 
 use log::trace;
+use serde::Serialize;
+use serde_wasm_bindgen::Serializer;
 use wasm_bindgen::prelude::*;
 
 use sudoku::base::consts::*;
@@ -219,7 +221,11 @@ impl WasmSudoku {
         JsError::new(&message)
     }
 
+    pub fn export_value<T: serde::ser::Serialize + ?Sized>(value: &T) -> Result<JsValue> {
+        Ok(value.serialize(&Serializer::new().serialize_maps_as_objects(true))?)
+    }
+
     fn export_sudoku(transport_sudoku: TransportSudoku) -> Result<ITransportSudoku> {
-        Ok(serde_wasm_bindgen::to_value(&transport_sudoku)?.into())
+        Ok(Self::export_value(&transport_sudoku)?.into())
     }
 }
