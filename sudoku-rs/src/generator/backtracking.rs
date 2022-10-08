@@ -86,8 +86,9 @@ impl Generator {
             grid.get_mut(pos).delete();
 
             match grid.is_solvable_with_strategies(vec![
+                // TODO: introduce parameter
                 Box::new(strategies::SingleCandidate),
-                Box::new(strategies::HiddenSingles),
+                // Box::new(strategies::HiddenSingles),
                 // Box::new(strategies::GroupReduction),
                 // Box::new(strategies::Backtracking),
             ]) {
