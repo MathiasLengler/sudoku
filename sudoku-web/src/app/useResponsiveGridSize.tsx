@@ -1,6 +1,8 @@
 import * as React from "react";
 import { useCallback, useLayoutEffect, useMemo, useState } from "react";
 import { TransportSudoku } from "../types";
+import useResizeObserver from "@react-hook/resize-observer";
+import { DOMRectReadOnly } from "@juggle/resize-observer/lib/DOMRectReadOnly";
 
 function getSize() {
     return {
@@ -50,4 +52,20 @@ export function useClientHeight(): [number, ElementRef] {
     }, []);
 
     return [height, ref];
+}
+
+export function useSize<T extends HTMLElement>(elementRef: React.RefObject<T>): DOMRectReadOnly | undefined {
+    const [size, setSize] = React.useState<DOMRectReadOnly>();
+
+    React.useLayoutEffect(() => {
+        const element = elementRef.current;
+        if (element) {
+            setSize(element.getBoundingClientRect());
+        } else {
+            console.warn("useSize could not initialize size");
+        }
+    }, [elementRef]);
+
+    useResizeObserver(elementRef, entry => setSize(entry.contentRect));
+    return size;
 }

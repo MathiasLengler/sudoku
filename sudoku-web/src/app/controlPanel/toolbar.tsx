@@ -7,27 +7,24 @@ import GestureIcon from "@mui/icons-material/Gesture";
 import UndoIcon from "@mui/icons-material/Undo";
 import { Input, WasmSudokuController } from "../wasmSudokuController";
 import Tooltip from "@mui/material/Tooltip";
-import { ElementRef } from "../useResponsiveGridSize";
 import { ToolbarMenu } from "./toolbarMenu";
 
 interface ToolbarProps {
     sudokuController: WasmSudokuController;
     input: Input;
-    toolbarRef: ElementRef;
 }
 
 export const Toolbar: React.FunctionComponent<ToolbarProps> = props => {
     const {
         sudokuController,
         input: { candidateMode, stickyMode },
-        toolbarRef,
     } = props;
 
     const enterDelay = 500;
     const leaveDelay = 200;
 
     return (
-        <div className="toolbar" ref={toolbarRef}>
+        <div className="toolbar">
             <Tooltip title="Toggle candidate mode [space bar]" enterDelay={enterDelay} leaveDelay={leaveDelay}>
                 <IconButton
                     color={candidateMode ? "primary" : "default"}

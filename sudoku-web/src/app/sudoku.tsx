@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Input, WasmSudokuController } from "./wasmSudokuController";
 import { blocksToCell } from "./utils";
-import { useClientHeight, useResponsiveGridSize } from "./useResponsiveGridSize";
 import * as CSS from "csstype";
 import { makeKeyDownListener } from "./useKeyboardInput";
 import { Grid } from "./grid/grid";
@@ -10,6 +9,8 @@ import * as Comlink from "comlink";
 import { TransportSudoku, WasmSudoku } from "../types";
 import { saveCellBlocks } from "./persistence";
 import debounce from "lodash/debounce";
+import { useResizeDetector } from "react-resize-detector";
+import SudokuAppBar from "./menu/sudokuAppBar";
 
 interface SudokuProps {
     sudoku: TransportSudoku;
@@ -59,29 +60,28 @@ export const Sudoku: React.FunctionComponent<SudokuProps> = ({ sudoku, setSudoku
     );
 
     // Responsive Grid
-    const [toolbarHeight, toolbarRef] = useClientHeight();
-    const gridSize = useResponsiveGridSize(toolbarHeight, sideLength);
+    // const [gridHeight, gridRef] = useClientHeight();
 
-    const style: CSS.Properties = {
-        "--sideLength": sideLength,
+    const { width: gridWidth, height: gridHeight, ref: gridRef } = useResizeDetector({});
+
+    console.log({ gridWidth, gridHeight });
+
+    const cssVariables: CSS.Properties = {
+        "--side-length": sideLength,
         "--base": base,
-        "--outer-grid-size": `${gridSize}px`,
+        "--grid-size": `${gridHeight}px`,
     };
 
     return (
         <div
             className="sudoku"
-            style={style}
+            style={cssVariables}
             onKeyDown={makeKeyDownListener(sudokuController, input, sideLength)}
             tabIndex={0}
         >
-            <Grid sudokuController={sudokuController} input={input} sudoku={sudoku} />
-            <ControlPanel
-                sudokuController={sudokuController}
-                input={input}
-                sideLength={sideLength}
-                toolbarRef={toolbarRef}
-            />
+            <SudokuAppBar />
+            <Grid sudokuController={sudokuController} input={input} sudoku={sudoku} gridRef={gridRef} />
+            <ControlPanel sudokuController={sudokuController} input={input} sideLength={sideLength} />
         </div>
     );
 };
