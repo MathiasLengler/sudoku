@@ -5,8 +5,6 @@ import { MemoCell } from "./cell";
 import { cellPositionToBlockPosition, indexToPosition } from "../utils";
 import { Input, WasmSudokuController } from "../wasmSudokuController";
 import { TransportCellBlock, TransportSudoku } from "../../types";
-import { ElementRef } from "../useResponsiveGridSize";
-import { Ref } from "react";
 
 interface BlockProps {
     block: TransportCellBlock;
@@ -87,17 +85,19 @@ export const Grid: React.FunctionComponent<GridProps> = props => {
     } = props;
 
     return (
-        <div className="grid" ref={gridRef}>
-            {blocks.map((block, blockIndex) => (
-                <Block
-                    key={blockIndex}
-                    block={block}
-                    blockIndex={blockIndex}
-                    base={base}
-                    input={input}
-                    sudokuController={sudokuController}
-                />
-            ))}
+        <div className="grid-wrapper">
+            <div className="grid" ref={gridRef}>
+                {blocks.map((block, blockIndex) => (
+                    <Block
+                        key={blockIndex}
+                        block={block}
+                        blockIndex={blockIndex}
+                        base={base}
+                        input={input}
+                        sudokuController={sudokuController}
+                    />
+                ))}
+            </div>
         </div>
     );
 };

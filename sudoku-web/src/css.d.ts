@@ -6,6 +6,7 @@ import * as CSS from "csstype";
 declare module "csstype" {
     interface Properties {
         "--base"?: number;
+        "--side-length-fr"?: string;
         "--side-length"?: number;
         "--candidate-column"?: number;
         "--candidate-row"?: number;
