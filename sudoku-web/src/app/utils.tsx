@@ -41,5 +41,8 @@ export function blocksToCell(
         row: pos.row - blockPosition.row * base,
     };
     const cellIndexInBlock = positionToIndex(cellPositionInBlock, base);
+
+    // FIXME: crash: Cannot read properties of undefined (reading '0')
+    //  Reproduction: load smaller base sudoku after interacting with larger base sudoku.
     return block[cellIndexInBlock];
 }
