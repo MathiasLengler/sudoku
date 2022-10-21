@@ -6,11 +6,23 @@ use crate::error::Result;
 pub(crate) fn parse_cells(input: &str) -> Result<Vec<CellView>> {
     let input = input.trim();
 
-    Ok(if input.contains('\n') {
+    let mut cell_views = if input.contains('\n') {
         from_candidates(input).unwrap_or_else(|_| from_givens_grid(input))
     } else {
         from_givens_line(input)?
-    })
+    };
+
+    // Fix all values
+    cell_views.iter_mut().for_each(|cell_view| match cell_view {
+        CellView::Value { fixed, value } => {
+            if *value != 0 {
+                *fixed = true;
+            }
+        }
+        _ => {}
+    });
+
+    Ok(cell_views)
 }
 
 fn from_givens_line(input: &str) -> Result<Vec<CellView>> {
@@ -45,6 +57,10 @@ fn from_candidates(input: &str) -> Result<Vec<CellView>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::base::SudokuBase;
+    use crate::grid::serialization::GridFormat;
+    use crate::grid::Grid;
+    use crate::samples;
 
     #[test]
     fn test_givens_line_base_3() -> Result<()> {
@@ -201,5 +217,61 @@ mod tests {
         assert_eq!(cells, expected_cells);
 
         Ok(())
+    }
+
+    #[test]
+    fn test_parse_cells_roundtrip() {
+        let grid_formats = vec![
+            GridFormat::GivensLine,
+            GridFormat::GivensGrid,
+            // FIXME: handle formats in parse_cells
+            // GridFormat::BinaryCandidatesLine,
+            // GridFormat::CandidatesGrid,
+        ];
+
+        fn assert_grid_roundtrip<Base: SudokuBase>(
+            grid_format: GridFormat,
+            grid_string: &str,
+            grid: Grid<Base>,
+        ) {
+            let parsed_grid = parse_cells(&grid_string)
+                .expect(&format!(
+                    "parse_cells to parse:\n\
+                        {grid_string}"
+                ))
+                .try_into()
+                .expect(&format!(
+                    "cell_views to be convertable to a grid:\n\
+                        {grid_string}"
+                ));
+
+            assert_eq!(
+                grid, parsed_grid,
+                "Failed to roundtrip format {grid_format:?}:\n\
+                    Original:\n\
+                    {grid}\n\
+                    \n\
+                    Serialized:\n\
+                    {grid_string}\n\
+                    Parsed:\n\
+                    {parsed_grid}"
+            );
+        }
+
+        for grid_format in grid_formats {
+            for (grid_string, grid) in samples::base_2()
+                .into_iter()
+                .map(|grid| (grid_format.render(&grid), grid))
+            {
+                assert_grid_roundtrip(grid_format, &grid_string, grid);
+            }
+
+            for (grid_string, grid) in samples::base_3()
+                .into_iter()
+                .map(|grid| (grid_format.render(&grid), grid))
+            {
+                assert_grid_roundtrip(grid_format, &grid_string, grid);
+            }
+        }
     }
 }

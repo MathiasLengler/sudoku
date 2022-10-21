@@ -1,6 +1,7 @@
-use anyhow::anyhow;
-use std::convert::{TryFrom, TryInto};
+use std::convert::TryInto;
 use std::fmt::{self, Display, Formatter};
+
+use anyhow::anyhow;
 
 pub use dynamic::{DynamicSudoku, Game};
 
@@ -73,14 +74,6 @@ impl<Base: SudokuBase> Sudoku<Base> {
 
     pub fn solved_grid(&self) -> &Option<Grid<Base>> {
         &self.solved_grid
-    }
-
-    pub fn import(&mut self, input: &str) -> Result<()> {
-        let grid = Grid::try_from(input)?;
-
-        self.replace_grid(grid);
-
-        Ok(())
     }
 }
 
@@ -226,10 +219,6 @@ impl<Base: SudokuBase> Sudoku<Base> {
     fn push_history(&mut self) {
         self.history
             .push(self.grid.clone(), self.settings.history_limit)
-    }
-
-    fn replace_grid(&mut self, new_grid: Grid<Base>) {
-        *self = Self::with_grid_and_settings(new_grid, self.settings);
     }
 }
 

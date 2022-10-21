@@ -182,7 +182,6 @@ mod tests {
                 .try_into()
                 .unwrap();
 
-        grid.fix_all_values();
         grid.set_all_direct_candidates();
 
         let deductions = GroupReduction.execute(&grid).unwrap();
