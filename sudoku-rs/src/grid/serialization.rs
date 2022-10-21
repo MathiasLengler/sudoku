@@ -7,7 +7,7 @@ use crate::cell::compact::cell_state::CellState;
 use crate::cell::compact::value::Value;
 use crate::grid::Grid;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum GridFormat {
     /// # Example
