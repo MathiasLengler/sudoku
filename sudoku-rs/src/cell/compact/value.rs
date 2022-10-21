@@ -25,7 +25,10 @@ impl<Base: SudokuBase> Value<Base> {
     pub fn new(value: u8) -> Result<Option<Self>> {
         let limit = Base::MAX_VALUE;
 
-        ensure!(value <= limit, "Value can't be greater than {}", limit);
+        ensure!(
+            value <= limit,
+            "Value can't be greater than {limit}, instead got: {value}"
+        );
 
         Ok(NonZeroU8::new(value).map(|value| Self {
             value,
