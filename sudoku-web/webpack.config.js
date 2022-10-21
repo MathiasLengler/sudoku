@@ -77,7 +77,7 @@ module.exports = (env, argv) => {
                 outDir: path.resolve(__dirname, "../sudoku-wasm/pkg"),
             }),
             // PWA
-            ...(isProduction
+            ...(isProduction && !reactProfiling
                 ? [
                       new WorkboxPlugin.GenerateSW({
                           clientsClaim: true,
