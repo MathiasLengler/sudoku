@@ -75,7 +75,7 @@ const Candidates: React.FunctionComponent<CandidatesProps> = ({ base, candidates
     );
 };
 
-export const MemoCandidates = React.memo(Candidates, isEqual);
+export const MemoCandidates = Candidates;
 
 interface CellProps {
     blockCellIndex: number;
@@ -149,4 +149,4 @@ const Cell: React.FunctionComponent<CellProps> = props => {
         </div>
     );
 };
-export const MemoCell = React.memo(Cell, isEqual);
+export const MemoCell = Cell;
