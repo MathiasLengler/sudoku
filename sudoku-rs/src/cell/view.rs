@@ -11,6 +11,11 @@ use crate::error::{Error, Result};
 
 pub(crate) mod parser;
 
+// TODO: unify representation for empty cell
+//  Cell: Empty Candidates
+//  CellView: Unfixed value
+//  => Constructor now validates this, but Deserialize can break this contract
+
 #[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "kind")]
@@ -21,7 +26,15 @@ pub enum CellView {
 
 impl CellView {
     pub fn value(value: u8, fixed: bool) -> Self {
-        CellView::Value { value, fixed }
+        if value == 0 {
+            if fixed {
+                panic!("An empty cell can't be fixed")
+            } else {
+                Self::candidates(vec![])
+            }
+        } else {
+            CellView::Value { value, fixed }
+        }
     }
 
     pub fn candidates(candidates: Vec<u8>) -> Self {
