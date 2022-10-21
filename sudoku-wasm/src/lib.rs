@@ -1,7 +1,6 @@
 use std::cell::RefCell;
 
 use log::trace;
-use serde::Serialize;
 use serde_wasm_bindgen::Serializer;
 use wasm_bindgen::prelude::*;
 
