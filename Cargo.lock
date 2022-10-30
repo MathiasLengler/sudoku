@@ -1934,6 +1934,7 @@ dependencies = [
  "rand",
  "rayon",
  "serde",
+ "strip-ansi-escapes",
  "tabled",
 ]
 

@@ -76,6 +76,20 @@ fn from_ascii_candidates_grid(input: &str) -> Result<Vec<CellView>> {
         .collect::<Result<Vec<_>>>()
 }
 
+fn from_terminal_candidates_grid(input: &str) -> Result<Vec<CellView>> {
+    let stripped_input_bytes = strip_ansi_escapes::strip(input.as_bytes())?;
+    let stripped_input = String::from_utf8(stripped_input_bytes)?;
+
+    dbg!(&stripped_input);
+
+    // TODO: implement
+    //  split into multi-line rows
+    //  split rows into multi-line cells
+    //  extract numbers from cells
+
+    todo!()
+}
+
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;
