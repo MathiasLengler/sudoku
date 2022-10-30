@@ -7,7 +7,7 @@ pub(crate) fn parse_cells(input: &str) -> Result<Vec<CellView>> {
     let input = input.trim();
 
     let mut cell_views = if input.contains('\n') {
-        from_candidates(input).unwrap_or_else(|_| from_givens_grid(input))
+        from_ascii_candidates_grid(input).unwrap_or_else(|_| from_givens_grid(input))
     } else {
         from_givens_line(input).or_else(|_| from_binary_candidates_line(input))?
     };
@@ -53,13 +53,15 @@ fn from_binary_candidates_line(input: &str) -> Result<Vec<CellView>> {
     Ok(cell_views)
 }
 
-fn from_candidates(input: &str) -> Result<Vec<CellView>> {
+fn from_ascii_candidates_grid(input: &str) -> Result<Vec<CellView>> {
+    static SEPARATORS: &[char] = &['-', '|', ':', '+', '\'', '\n', '*'];
+
     input
         .lines()
         // Filter horizontal separator lines
         .filter(|line| line.contains(|c: char| c.is_digit(36)))
         // Filter vertical separators
-        .flat_map(|line| line.split(['-', '|', ':', '+', '\'', '\n', '*'].as_ref()))
+        .flat_map(|line| line.split(SEPARATORS))
         .filter(|s| !s.is_empty())
         // Split and trim groups of numbers
         .flat_map(|s| s.split_whitespace())
@@ -74,9 +76,10 @@ mod tests {
     use crate::grid::serialization::GridFormat;
     use crate::grid::Grid;
     use crate::samples;
+    use anyhow::Context;
 
     #[test]
-    fn test_givens_line_base_3() -> Result<()> {
+    fn test_from_givens_line() -> Result<()> {
         let input = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/tests/res/parser/givens_line.txt"
@@ -99,7 +102,7 @@ mod tests {
     }
 
     #[test]
-    fn test_givens_grid_base_3() -> Result<()> {
+    fn test_from_givens_grid() -> Result<()> {
         let input = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/tests/res/parser/givens_grid.txt"
@@ -122,7 +125,7 @@ mod tests {
     }
 
     #[test]
-    fn test_candidates() -> Result<()> {
+    fn test_from_candidates_grid() -> Result<()> {
         use crate::cell::view::{c, v};
 
         let input = include_str!(concat!(
@@ -130,7 +133,7 @@ mod tests {
             "/tests/res/parser/candidates.txt"
         ));
 
-        let cells = from_candidates(input)?;
+        let cells = from_ascii_candidates_grid(input)?;
 
         let expected_cells = vec![
             vec![
@@ -247,16 +250,25 @@ mod tests {
             grid_string: &str,
             grid: Grid<Base>,
         ) {
-            let parsed_grid = parse_cells(&grid_string)
-                .expect(&format!(
-                    "parse_cells to parse:\n\
+            let cell_views = parse_cells(&grid_string)
+                .with_context(|| {
+                    format!(
+                        "parse_cells to parse:\n\
                         {grid_string}"
-                ))
+                    )
+                })
+                .unwrap();
+
+            let parsed_grid = cell_views
                 .try_into()
-                .expect(&format!(
-                    "cell_views to be convertable to a grid:\n\
-                        {grid_string}"
-                ));
+                .with_context(|| {
+                    format!(
+                        "Failed to convert cell_views to grid:\n\
+                        {grid_string}\n\
+                        {grid_string:?}"
+                    )
+                })
+                .unwrap();
 
             assert_eq!(
                 grid, parsed_grid,
