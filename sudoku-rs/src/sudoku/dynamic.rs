@@ -170,6 +170,9 @@ impl DynamicSudoku {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::cell::view::parser::tests::{
+        INPUT_CANDIDATES, INPUT_GIVENS_GRID, INPUT_GIVENS_LINE,
+    };
 
     #[test]
     fn test_cell_count_to_base() -> Result<()> {
@@ -199,23 +202,11 @@ mod tests {
     }
 
     #[test]
-    fn test_try_from_str() -> Result<()> {
-        let inputs = [
-            include_str!(concat!(
-                env!("CARGO_MANIFEST_DIR"),
-                "/tests/res/parser/candidates.txt"
-            )),
-            include_str!(concat!(
-                env!("CARGO_MANIFEST_DIR"),
-                "/tests/res/parser/givens_line.txt"
-            )),
-        ];
+    fn test_try_from_str() {
+        let inputs = [INPUT_CANDIDATES, INPUT_GIVENS_LINE, INPUT_GIVENS_GRID];
 
-        inputs
-            .iter()
-            .map(|input| DynamicSudoku::try_from(*input))
-            .collect::<Result<Vec<_>>>()?;
-
-        Ok(())
+        for input in inputs {
+            DynamicSudoku::try_from(input).unwrap();
+        }
     }
 }

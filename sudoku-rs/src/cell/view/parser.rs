@@ -1,3 +1,5 @@
+use crate::base::consts::ALL_CELL_COUNTS;
+use anyhow::ensure;
 use std::convert::TryInto;
 
 use crate::cell::view::CellView;
@@ -12,7 +14,12 @@ pub(crate) fn parse_cells(input: &str) -> Result<Vec<CellView>> {
         from_givens_line(input).or_else(|_| from_binary_candidates_line(input))?
     };
 
-    // TODO: validate cell_views.count()
+    let actual_cell_count = cell_views.len().try_into()?;
+
+    ensure!(
+        ALL_CELL_COUNTS.contains(&actual_cell_count),
+        "Unexpected cell count {actual_cell_count}, expected one of: {ALL_CELL_COUNTS:?}"
+    );
 
     // Fix all values
     cell_views.iter_mut().for_each(|cell_view| match cell_view {
@@ -70,7 +77,7 @@ fn from_ascii_candidates_grid(input: &str) -> Result<Vec<CellView>> {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use crate::base::SudokuBase;
     use crate::grid::serialization::GridFormat;
@@ -78,14 +85,24 @@ mod tests {
     use crate::samples;
     use anyhow::Context;
 
+    pub(crate) static INPUT_GIVENS_LINE: &'static str = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/res/parser/givens_line.txt"
+    ));
+
+    pub(crate) static INPUT_GIVENS_GRID: &'static str = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/res/parser/givens_grid.txt"
+    ));
+
+    pub(crate) static INPUT_CANDIDATES: &'static str = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/res/parser/candidates.txt"
+    ));
+
     #[test]
     fn test_from_givens_line() -> Result<()> {
-        let input = include_str!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/tests/res/parser/givens_line.txt"
-        ));
-
-        let cells = from_givens_line(input)?;
+        let cells = from_givens_line(INPUT_GIVENS_LINE)?;
 
         let expected_cells = vec![
             6, 0, 0, 0, 0, 2, 3, 0, 0, 1, 2, 5, 6, 0, 0, 0, 0, 0, 0, 0, 4, 7, 0, 0, 0, 2, 0, 7, 3,
@@ -103,12 +120,7 @@ mod tests {
 
     #[test]
     fn test_from_givens_grid() -> Result<()> {
-        let input = include_str!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/tests/res/parser/givens_grid.txt"
-        ));
-
-        let cells = from_givens_grid(input);
+        let cells = from_givens_grid(INPUT_GIVENS_GRID);
 
         let expected_cells = vec![
             0, 8, 0, 5, 0, 3, 0, 7, 0, 0, 2, 7, 0, 0, 0, 3, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -128,12 +140,7 @@ mod tests {
     fn test_from_candidates_grid() -> Result<()> {
         use crate::cell::view::{c, v};
 
-        let input = include_str!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/tests/res/parser/candidates.txt"
-        ));
-
-        let cells = from_ascii_candidates_grid(input)?;
+        let cells = from_ascii_candidates_grid(INPUT_CANDIDATES)?;
 
         let expected_cells = vec![
             vec![
