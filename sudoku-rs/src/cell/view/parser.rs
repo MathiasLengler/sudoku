@@ -9,8 +9,10 @@ pub(crate) fn parse_cells(input: &str) -> Result<Vec<CellView>> {
     let mut cell_views = if input.contains('\n') {
         from_candidates(input).unwrap_or_else(|_| from_givens_grid(input))
     } else {
-        from_givens_line(input)?
+        from_givens_line(input).or_else(|_| from_binary_candidates_line(input))?
     };
+
+    // TODO: validate cell_views.count()
 
     // Fix all values
     cell_views.iter_mut().for_each(|cell_view| match cell_view {
@@ -38,6 +40,17 @@ fn from_givens_grid(input: &str) -> Vec<CellView> {
         .map(TryInto::<CellView>::try_into)
         .filter_map(Result::ok)
         .collect::<Vec<_>>()
+}
+
+fn from_binary_candidates_line(input: &str) -> Result<Vec<CellView>> {
+    let mut cell_views = vec![];
+
+    for cell_str in input.split(",") {
+        let bits = cell_str.parse::<u32>()?;
+        cell_views.push(bits.try_into()?)
+    }
+
+    Ok(cell_views)
 }
 
 fn from_candidates(input: &str) -> Result<Vec<CellView>> {
@@ -224,8 +237,8 @@ mod tests {
         let grid_formats = vec![
             GridFormat::GivensLine,
             GridFormat::GivensGrid,
+            GridFormat::BinaryCandidatesLine,
             // FIXME: handle formats in parse_cells
-            // GridFormat::BinaryCandidatesLine,
             // GridFormat::CandidatesGrid,
         ];
 

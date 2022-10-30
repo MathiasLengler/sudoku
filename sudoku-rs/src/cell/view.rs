@@ -1,10 +1,12 @@
 use std::convert::TryFrom;
 use std::convert::TryInto;
 
+use crate::base::consts::BaseMax;
 use anyhow::bail;
 use serde::{Deserialize, Serialize};
 
 use crate::base::SudokuBase;
+use crate::cell::compact::candidates::Candidates;
 use crate::cell::compact::cell_state::CellState;
 use crate::cell::Cell;
 use crate::error::{Error, Result};
@@ -93,6 +95,21 @@ impl TryFrom<char> for CellView {
 
     fn try_from(c: char) -> Result<Self> {
         Ok(char_value_to_u8(c)?.into())
+    }
+}
+
+impl TryFrom<u32> for CellView {
+    type Error = Error;
+
+    fn try_from(bits: u32) -> Result<Self> {
+        let candidates = Candidates::<BaseMax>::with_integral(bits);
+        let candidates_vec = candidates.to_vec_u8();
+
+        Ok(if let &[value] = candidates_vec.as_slice() {
+            Self::value(value, false)
+        } else {
+            Self::candidates(candidates_vec)
+        })
     }
 }
 
