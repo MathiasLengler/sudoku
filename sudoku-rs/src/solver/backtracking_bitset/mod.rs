@@ -367,12 +367,16 @@ mod tests {
         assert_eq!(solver.availability_indices, expected_choice_indices);
     }
 
-    #[ignore]
     #[test]
-    fn test_size() {
-        dbg!(size_of::<Solver::<'_, U2>>());
-        dbg!(size_of::<Solver::<'_, U3>>());
-        dbg!(size_of::<Solver::<'_, U4>>());
-        dbg!(size_of::<Solver::<'_, U5>>());
+    fn test_size_of() {
+        assert_eq!(
+            vec![
+                size_of::<Solver::<'_, U2>>(),
+                size_of::<Solver::<'_, U3>>(),
+                size_of::<Solver::<'_, U4>>(),
+                size_of::<Solver::<'_, U5>>(),
+            ],
+            vec![80, 120, 160, 368]
+        )
     }
 }
