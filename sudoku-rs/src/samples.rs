@@ -49,6 +49,7 @@ pub fn base_2_candidates_coordinates() -> Grid<U2> {
             .map(|i| Cell::with_candidates(Candidates::with_integral(i)))
             .collect(),
     )
+    .unwrap()
 }
 
 pub fn base_3() -> Vec<Grid<U3>> {

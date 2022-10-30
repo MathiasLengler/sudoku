@@ -1,4 +1,4 @@
-use anyhow::anyhow;
+use anyhow::{anyhow, ensure};
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::fmt::{Display, Formatter};
@@ -201,7 +201,7 @@ impl<Base: SudokuBase> Grid<Base> {
 
 impl<Base: SudokuBase> Default for Grid<Base> {
     fn default() -> Self {
-        Self::with_cells(vec![Cell::new(); Self::cell_count_usize()])
+        Self::with_cells(vec![Cell::new(); Self::cell_count_usize()]).unwrap()
     }
 }
 
@@ -214,21 +214,38 @@ impl<Base: SudokuBase> Grid<Base> {
         Default::default()
     }
 
-    pub fn with_cells(cells: Vec<Cell<Base>>) -> Self {
-        assert_eq!(cells.len(), Self::cell_count_usize());
+    pub fn with_cells(cells: Vec<Cell<Base>>) -> Result<Self> {
+        let cell_count = Self::cell_count_usize();
 
-        let side_length = Self::side_length() as usize;
+        ensure!(
+            cells.len() == cell_count,
+            "Invalid number of cells, expected {cell_count}, instead got: {}",
+            cells.len()
+        );
 
-        Grid {
-            cells: Array2::from_shape_vec((side_length, side_length), cells).unwrap(),
-        }
+        let side_length = Self::side_length_usize();
+
+        Ok(Grid {
+            cells: Array2::from_shape_vec((side_length, side_length), cells)?,
+        })
     }
 
     pub fn try_from_blocks(blocks: Vec<Vec<CellView>>) -> Result<Self> {
-        assert_eq!(blocks.len(), Self::side_length() as usize);
-        assert!(blocks
-            .iter()
-            .all(|block| block.len() == Self::side_length() as usize));
+        let side_length = Self::side_length_usize();
+
+        ensure!(
+            blocks.len() == side_length,
+            "Invalid number of blocks, expected {side_length}, instead got: {}",
+            blocks.len()
+        );
+
+        for (i, block) in blocks.iter().enumerate() {
+            ensure!(
+                block.len() == side_length,
+                "Invalid block size for block {i}, expected {side_length}, instead got: {}",
+                block.len()
+            )
+        }
 
         let mut grid = Self::new();
 
@@ -519,7 +536,7 @@ impl<Base: SudokuBase, CView: Into<CellView>> TryFrom<Vec<CView>> for Grid<Base>
             .map(|view| view.into().try_into())
             .collect::<Result<_>>()?;
 
-        Ok(Self::with_cells(cells))
+        Self::with_cells(cells)
     }
 }
 
