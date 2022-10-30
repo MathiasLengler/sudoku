@@ -431,8 +431,12 @@ mod tests {
             let candidates: Candidates<Base2> = vec![1, 3].try_into().unwrap();
             let value1 = 1.try_into().unwrap();
             let value2 = 2.try_into().unwrap();
+            let value3 = 3.try_into().unwrap();
+            let value4 = 4.try_into().unwrap();
             assert!(candidates.has(value1));
             assert!(!candidates.has(value2));
+            assert!(candidates.has(value3));
+            assert!(!candidates.has(value4));
         }
 
         #[test]
