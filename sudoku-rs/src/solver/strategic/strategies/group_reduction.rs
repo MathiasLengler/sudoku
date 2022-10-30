@@ -51,7 +51,7 @@ impl GroupReduction {
     pub fn reduce_candidates_group<Base: SudokuBase>(
         candidates_group: &[Candidates<Base>],
     ) -> Vec<Candidates<Base>> {
-        let mut values = vec![];
+        let mut values = Vec::with_capacity(candidates_group.len());
         let mut reduced_candidates_group = vec![Candidates::new(); candidates_group.len()];
 
         Self::walk_value_assignments(
