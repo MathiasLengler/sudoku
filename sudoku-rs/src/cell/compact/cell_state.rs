@@ -193,18 +193,17 @@ mod tests {
 
     use super::*;
 
-    #[ignore]
     #[test]
     fn test_cell_state_size() {
         assert_eq!(
             vec![
-                size_of::<CellState<U1>>(),
-                size_of::<CellState<U2>>(),
-                size_of::<CellState<U3>>(),
-                size_of::<CellState<U4>>(),
-                size_of::<CellState<U5>>()
+                size_of::<CellState<Base1>>(),
+                size_of::<CellState<Base2>>(),
+                size_of::<CellState<Base3>>(),
+                size_of::<CellState<Base4>>(),
+                size_of::<CellState<Base5>>()
             ],
-            vec![2, 2, 3, 3, 5,]
+            vec![2, 2, 4, 4, 8]
         )
     }
 }
