@@ -11,7 +11,7 @@ use crate::error::{Error, Result};
 
 /// A valid sudoku value for a given base.
 ///
-/// A `Value` always is in the range of `1..=(SudokuBase^2)`
+/// A `Value` always is in the range of `1..=(Base::MAX_VALUE)`
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Copy, Debug)]
 pub struct Value<Base: SudokuBase> {
     value: NonZeroU8,
