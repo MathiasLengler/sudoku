@@ -148,6 +148,170 @@ mod tests {
                 vec![vec![2, 3, 4], vec![2, 3, 4], vec![1, 3], vec![1, 3, 4]],
                 vec![vec![2, 3, 4], vec![2, 3, 4], vec![1, 3], vec![1, 3, 4]],
             ),
+            // Naked single
+            (
+                vec![
+                    vec![2], //
+                    vec![1, 2, 3],
+                    vec![1, 2, 3],
+                ],
+                vec![
+                    vec![2], //
+                    vec![1, 3],
+                    vec![1, 3],
+                ],
+            ),
+            // Naked pair
+            (
+                vec![
+                    vec![1, 3],
+                    vec![1, 3],
+                    vec![1, 2, 3, 4, 5],
+                    vec![1, 2, 3, 4, 5],
+                    vec![1, 2, 3, 4, 5],
+                ],
+                vec![
+                    vec![1, 3],
+                    vec![1, 3],
+                    vec![2, 4, 5],
+                    vec![2, 4, 5],
+                    vec![2, 4, 5],
+                ],
+            ),
+            // Naked tripple {3,3,3}
+            (
+                vec![
+                    vec![1, 2, 3], //
+                    vec![1, 2, 3],
+                    vec![1, 2, 3],
+                    vec![1, 2, 3, 4, 5, 6, 7],
+                    vec![1, 2, 3, 4, 5, 6, 7],
+                    vec![1, 2, 3, 4, 5, 6, 7],
+                    vec![1, 2, 3, 4, 5, 6, 7],
+                ],
+                vec![
+                    vec![1, 2, 3], //
+                    vec![1, 2, 3],
+                    vec![1, 2, 3],
+                    vec![4, 5, 6, 7],
+                    vec![4, 5, 6, 7],
+                    vec![4, 5, 6, 7],
+                    vec![4, 5, 6, 7],
+                ],
+            ),
+            // Naked tripple {3,3,2}
+            (
+                vec![
+                    vec![1, 2, 3], //
+                    vec![1, 2, 3],
+                    vec![1, 2],
+                    vec![1, 2, 3, 4, 5, 6, 7],
+                    vec![1, 2, 3, 4, 5, 6, 7],
+                    vec![1, 2, 3, 4, 5, 6, 7],
+                    vec![1, 2, 3, 4, 5, 6, 7],
+                ],
+                vec![
+                    vec![1, 2, 3], //
+                    vec![1, 2, 3],
+                    vec![1, 2],
+                    vec![4, 5, 6, 7],
+                    vec![4, 5, 6, 7],
+                    vec![4, 5, 6, 7],
+                    vec![4, 5, 6, 7],
+                ],
+            ),
+            // Naked tripple {3,2,2}
+            (
+                vec![
+                    vec![1, 2, 3], //
+                    vec![1, 2],
+                    vec![2, 3],
+                    vec![1, 2, 3, 4, 5, 6, 7],
+                    vec![1, 2, 3, 4, 5, 6, 7],
+                    vec![1, 2, 3, 4, 5, 6, 7],
+                    vec![1, 2, 3, 4, 5, 6, 7],
+                ],
+                vec![
+                    vec![1, 2, 3], //
+                    vec![1, 2],
+                    vec![2, 3],
+                    vec![4, 5, 6, 7],
+                    vec![4, 5, 6, 7],
+                    vec![4, 5, 6, 7],
+                    vec![4, 5, 6, 7],
+                ],
+            ),
+            // Naked tripple {2,2,2}
+            (
+                vec![
+                    vec![1, 2], //
+                    vec![2, 3],
+                    vec![1, 3],
+                    vec![1, 2, 3, 4, 5, 6, 7],
+                    vec![1, 2, 3, 4, 5, 6, 7],
+                    vec![1, 2, 3, 4, 5, 6, 7],
+                    vec![1, 2, 3, 4, 5, 6, 7],
+                ],
+                vec![
+                    vec![1, 2], //
+                    vec![2, 3],
+                    vec![1, 3],
+                    vec![4, 5, 6, 7],
+                    vec![4, 5, 6, 7],
+                    vec![4, 5, 6, 7],
+                    vec![4, 5, 6, 7],
+                ],
+            ),
+            // Naked quad
+            // Reference: https://www.sudokuwiki.org/sudoku.htm?bd=000030086000020040090078520371856294900142375400397618200703859039205467700904132
+            (
+                vec![
+                    vec![1, 5], //
+                    vec![1, 5, 6, 8],
+                    vec![1, 5, 6, 8],
+                    vec![1, 6],
+                    vec![1, 2, 4, 5],
+                    vec![2, 4, 5, 7],
+                    vec![3, 5, 6, 7, 8],
+                    vec![3, 4, 6],
+                ],
+                vec![
+                    vec![1, 5], //
+                    vec![1, 5, 6, 8],
+                    vec![1, 5, 6, 8],
+                    vec![1, 6],
+                    vec![2, 4],
+                    vec![2, 4, 7],
+                    vec![3, 7],
+                    vec![3, 4],
+                ],
+            ),
+            // Hidden pair
+            // Reference (with a 4 in the first cell): https://www.sudokuwiki.org/sudoku.htm?bd=000000000904607000076804100309701080008000300050308702007502610000403208000000000
+            (
+                vec![
+                    vec![1, 2, 4, 5, 8], //
+                    vec![1, 2, 3, 8],
+                    vec![2, 3],
+                    vec![1, 2, 9],
+                    vec![1, 2, 3, 5, 9],
+                    vec![5, 9],
+                    vec![4, 5, 8, 9],
+                    vec![2, 3, 4, 5, 6, 7, 9],
+                    vec![3, 4, 5, 6, 7, 9],
+                ],
+                vec![
+                    vec![1, 2, 4, 5, 8], //
+                    vec![1, 2, 3, 8],
+                    vec![2, 3],
+                    vec![1, 2, 9],
+                    vec![1, 2, 3, 5, 9],
+                    vec![5, 9],
+                    vec![4, 5, 8, 9],
+                    vec![6, 7],
+                    vec![6, 7],
+                ],
+            ),
         ];
 
         for (candidates_group_data, expected_reduced_candidate_group_data) in test_cases {
@@ -206,6 +370,42 @@ mod tests {
                 grid.deduction_at((5, 4), Candidates::try_from(vec![2, 5]).unwrap())
                     .unwrap(),
                 grid.deduction_at((5, 8), Candidates::try_from(vec![1, 2]).unwrap())
+                    .unwrap(),
+            ])
+            .try_into()
+            .unwrap()
+        );
+    }
+
+    /// Reference:
+    ///  https://www.sudokuwiki.org/Hidden_Candidates
+    ///  "Three Hidden Pairs : Load Example"
+    ///  https://www.sudokuwiki.org/sudoku.htm?bd=720408030080000047401076802810739000000851000000264080209680413340000008168943275
+    #[test]
+    fn test_hidden_pairs() {
+        let mut grid: Grid<U3> =
+            "720408030080000047401076802810739000000851000000264080209680413340000008168943275"
+                .try_into()
+                .unwrap();
+
+        grid.set_all_direct_candidates();
+
+        let deductions = GroupReduction.execute(&grid).unwrap();
+
+        assert_eq!(
+            deductions,
+            IntoDeductions(vec![
+                grid.deduction_at((3, 2), Candidates::try_from(vec![2, 4]).unwrap())
+                    .unwrap(),
+                grid.deduction_at((4, 2), Candidates::try_from(vec![2, 4]).unwrap())
+                    .unwrap(),
+                grid.deduction_at((4, 6), Candidates::try_from(vec![3, 7]).unwrap())
+                    .unwrap(),
+                grid.deduction_at((5, 6), Candidates::try_from(vec![3, 7]).unwrap())
+                    .unwrap(),
+                grid.deduction_at((4, 0), Candidates::try_from(vec![6]).unwrap())
+                    .unwrap(),
+                grid.deduction_at((5, 8), Candidates::try_from(vec![1]).unwrap())
                     .unwrap(),
             ])
             .try_into()
