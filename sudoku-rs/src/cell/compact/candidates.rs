@@ -1,6 +1,6 @@
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
-use std::fmt::{Display, Formatter};
+use std::fmt::{Binary, Display, Formatter};
 
 use num::traits::{CheckedShl, WrappingSub};
 use num::{One, PrimInt, Zero};
@@ -238,6 +238,12 @@ impl<Base: SudokuBase> TryFrom<Vec<u8>> for Candidates<Base> {
 impl<Base: SudokuBase> Display for Candidates<Base> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{:?}", self.to_vec_u8())
+    }
+}
+
+impl<Base: SudokuBase> Binary for Candidates<Base> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        Binary::fmt(&self.bits, f)
     }
 }
 
