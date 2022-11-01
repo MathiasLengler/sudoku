@@ -8,7 +8,7 @@ edition = "2021"
 
 [dependencies]
 sudoku = { path = "../sudoku-rs" }
-arbitrary = "1.1.6"
+arbitrary = "1.2.0"
 
 [target.'cfg(unix)'.dependencies]
 afl = "0.12.8"
