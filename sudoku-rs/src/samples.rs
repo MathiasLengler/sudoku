@@ -43,6 +43,16 @@ pub fn base_2() -> Vec<Grid<U2>> {
     grids
 }
 
+pub fn base_2_solved() -> Grid<U2> {
+    Grid::<Base2>::try_from(vec![
+        vec![2, 3, 4, 1],
+        vec![4, 1, 3, 2],
+        vec![1, 4, 2, 3],
+        vec![3, 2, 1, 4],
+    ])
+    .unwrap()
+}
+
 pub fn base_2_candidates_coordinates() -> Grid<U2> {
     Grid::<U2>::with_cells(
         (0..u8::try_from(<U2 as SudokuBase>::CELL_COUNT).unwrap())
@@ -92,6 +102,12 @@ mod tests {
     fn test_base_2() {
         base_2();
     }
+
+    #[test]
+    fn test_base_2_solved() {
+        assert!(base_2_solved().is_solved());
+    }
+
     #[test]
     fn test_base_2_candidates_coordinates() {
         let grid = base_2_candidates_coordinates();

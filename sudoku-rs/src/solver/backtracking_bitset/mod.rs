@@ -7,7 +7,6 @@ use crate::grid::Grid;
 use crate::position::Position;
 
 // TODO: implement shuffle_candidates
-// TODO: fix crash on solved sudoku
 
 #[derive(Debug, Clone)]
 pub struct Solver<'a, Base: SudokuBase> {
@@ -22,6 +21,8 @@ pub struct Solver<'a, Base: SudokuBase> {
     candidates_iters: Vec<CandidatesIter<Base>>,
 
     pub guess_count: u64,
+
+    has_returned_pre_filled_grid_solution: bool,
 }
 
 impl<'a, Base: SudokuBase> Solver<'a, Base> {
@@ -32,6 +33,7 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
             availability_indices: Default::default(),
             candidates_iters: vec![],
             guess_count: 0,
+            has_returned_pre_filled_grid_solution: false,
         };
 
         this.initialize(grid);
@@ -58,11 +60,10 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
         }
 
         self.move_best_choice_to_front(0);
-        self.candidates_iters.push(
-            self.availability
-                .intersection(self.availability_indices[0])
-                .iter(),
-        );
+        if let Some(availability_index) = self.availability_indices.first() {
+            self.candidates_iters
+                .push(self.availability.intersection(*availability_index).iter());
+        }
     }
 
     pub fn move_best_choice_to_front(&mut self, front_i: usize) {
@@ -155,7 +156,18 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
                 }
             }
         }
-        None
+
+        if self.availability_indices.is_empty() && !self.has_returned_pre_filled_grid_solution {
+            self.has_returned_pre_filled_grid_solution = true;
+
+            if self.grid.is_solved() {
+                Some(self.grid.clone())
+            } else {
+                None
+            }
+        } else {
+            None
+        }
     }
 }
 
@@ -363,15 +375,13 @@ mod tests {
     }
 
     #[test]
-    fn test_size_of() {
-        assert_eq!(
-            vec![
-                size_of::<Solver::<'_, U2>>(),
-                size_of::<Solver::<'_, U3>>(),
-                size_of::<Solver::<'_, U4>>(),
-                size_of::<Solver::<'_, U5>>(),
-            ],
-            vec![80, 120, 160, 368]
-        )
+    fn test_solved() {
+        let grid = crate::samples::base_2_solved();
+
+        let mut solver = Solver::new(&grid);
+        let solve_result = solver.try_solve();
+        assert_solve_result(solve_result);
+
+        assert!(solver.try_solve().is_none());
     }
 }
