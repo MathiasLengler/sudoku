@@ -559,7 +559,6 @@ mod tests {
                 all_candidates_mask,
                 0b0000_0001_1111_1111_1111_1111_1111_1111
             );
-            println!("{all_candidates_mask:032b}");
         }
     }
 }

@@ -271,8 +271,6 @@ mod tests {
 
             let solve_result = solver.try_solve();
 
-            dbg!(solver.guess_count);
-
             assert_solve_result(solve_result);
         }
     }
@@ -286,8 +284,6 @@ mod tests {
 
             let solve_result = solver.try_solve();
 
-            dbg!(solver.guess_count);
-
             assert_solve_result(solve_result);
         }
     }
@@ -296,7 +292,6 @@ mod tests {
     fn test_move_best_choice_to_front() {
         let mut grid = crate::samples::base_2()[1].clone();
         grid.set_all_direct_candidates();
-        println!("{grid}");
         let mut solver = Solver::new(&grid);
         let mut expected_choice_indices = vec![
             GroupAvailabilityIndex {
