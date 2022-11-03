@@ -1,12 +1,11 @@
 use sudoku::base::consts::*;
 use sudoku::error::Result;
-use sudoku::generator::backtracking::{Generator, Target};
+use sudoku::generator::{Generator, Target};
 
 fn main() -> Result<()> {
-    for i in 0..20 {
-        dbg!(i);
-        Generator::with_target(Target::Minimal).generate::<Base3>();
-    }
+    let grid = Generator::with_target(Target::Minimal).generate::<Base3>();
+
+    println!("{grid}");
 
     Ok(())
 }

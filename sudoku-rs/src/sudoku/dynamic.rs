@@ -11,7 +11,7 @@ use crate::base::SudokuBase;
 use crate::cell::view::parser::parse_cells;
 use crate::cell::view::CellView;
 use crate::error::{Error, Result};
-use crate::generator::backtracking::RuntimeSettings as GeneratorSettings;
+use crate::generator::RuntimeSettings as GeneratorSettings;
 use crate::grid::Grid;
 use crate::sudoku::Sudoku;
 

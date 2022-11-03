@@ -7,7 +7,7 @@ use wasm_bindgen::prelude::*;
 use sudoku::base::consts::*;
 use sudoku::cell::view::CellView;
 use sudoku::error::Error as SudokuError;
-use sudoku::generator::backtracking::RuntimeSettings;
+use sudoku::generator::RuntimeSettings;
 use sudoku::grid::serialization::GridFormat;
 use sudoku::grid::Grid;
 use sudoku::position::Position;

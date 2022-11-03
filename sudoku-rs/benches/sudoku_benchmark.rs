@@ -12,7 +12,7 @@ use criterion::{BenchmarkGroup, Criterion};
 use sudoku::base::{consts::*, SudokuBase};
 use sudoku::cell::compact::candidates::Candidates;
 use sudoku::cell::compact::value::Value;
-use sudoku::generator::backtracking::{Generator, Target};
+use sudoku::generator::{Generator, Target};
 use sudoku::grid::deserialization::read_grids_from_file;
 use sudoku::grid::Grid;
 use sudoku::position::Position;

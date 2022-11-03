@@ -26,7 +26,7 @@ use rayon::prelude::*;
 use std::sync::Mutex;
 use sudoku::base::consts::U3;
 use sudoku::error::Result;
-use sudoku::generator::backtracking::{Generator, Target};
+use sudoku::generator::{Generator, Target};
 
 type Base = U3;
 

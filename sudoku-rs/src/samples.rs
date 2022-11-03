@@ -6,7 +6,7 @@ use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
 use crate::cell::Cell;
 use crate::error::Result;
-use crate::generator::backtracking::{Generator, Target};
+use crate::generator::{Generator, Target};
 use crate::grid::Grid;
 
 // TODO: rethink API (unwrap, clone for consumer of specific sudoku)

@@ -8,7 +8,7 @@ pub use dynamic::{DynamicSudoku, Game};
 use crate::base::SudokuBase;
 use crate::cell::compact::value::Value;
 use crate::error::Result;
-use crate::generator::backtracking::{Generator, Target};
+use crate::generator::{Generator, Target};
 use crate::grid::serialization::GridFormat;
 use crate::grid::Grid;
 use crate::history::History;
