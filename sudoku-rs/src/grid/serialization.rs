@@ -130,15 +130,10 @@ fn render_candidates_grid<Base: SudokuBase>(grid: &Grid<Base>) -> String {
                 let mut block_builder: Builder = block
                     .chunks(usize::from(Base::BASE))
                     .map(|block_row| {
-                        block_row.iter().map(|cell| {
-                            if let Some(value) = cell.value() {
-                                let value_string = value.to_string();
-                                if cell.has_fixed_value() {
-                                    bold.style(value_string)
-                                } else {
-                                    bold_blue.style(value_string)
-                                }
-                            } else if let Some(candidates) = cell.candidates() {
+                        block_row.iter().map(|cell| match cell.state() {
+                            CellState::Value(value) => bold_blue.style(value.to_string()),
+                            CellState::FixedValue(value) => bold.style(value.to_string()),
+                            CellState::Candidates(candidates) => {
                                 let mut candidates_builder = Builder::new();
 
                                 all_values.chunks(usize::from(Base::BASE)).for_each(
@@ -161,8 +156,6 @@ fn render_candidates_grid<Base: SudokuBase>(grid: &Grid<Base>) -> String {
                                         .with(Style::empty().horizontal(' '))
                                         .to_string(),
                                 )
-                            } else {
-                                unreachable!()
                             }
                         })
                     })
