@@ -2,12 +2,6 @@
 #![warn(missing_debug_implementations)]
 #![deny(unsafe_code)]
 
-#[cfg(feature = "flame_it")]
-extern crate flame;
-#[cfg(feature = "flame_it")]
-#[macro_use]
-extern crate flamer;
-
 pub use crate::sudoku::*;
 
 pub mod base;
