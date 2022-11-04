@@ -6,7 +6,7 @@ use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
 use crate::cell::Cell;
 use crate::error::Result;
-use crate::generator::{Generator, Target};
+use crate::generator::{Generator, GeneratorTarget};
 use crate::grid::Grid;
 
 // TODO: rethink API (unwrap, clone for consumer of specific sudoku)
@@ -90,7 +90,10 @@ pub fn base_3() -> Vec<Grid<U3>> {
 }
 
 pub fn minimal<Base: SudokuBase>() -> Grid<Base> {
-    Generator::with_target(Target::Minimal).generate()
+    Generator::with_target(GeneratorTarget::Minimal {
+        set_all_direct_candidates: true,
+    })
+    .generate()
 }
 
 #[cfg(test)]

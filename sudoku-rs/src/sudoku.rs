@@ -8,7 +8,7 @@ pub use dynamic::{DynamicSudoku, Game};
 use crate::base::SudokuBase;
 use crate::cell::compact::value::Value;
 use crate::error::Result;
-use crate::generator::{Generator, Target};
+use crate::generator::{Generator, GeneratorTarget};
 use crate::grid::serialization::GridFormat;
 use crate::grid::Grid;
 use crate::history::History;
@@ -62,7 +62,7 @@ impl<Base: SudokuBase> Sudoku<Base> {
         }
     }
 
-    pub fn with_target_and_settings(target: Target, settings: Settings) -> Result<Self> {
+    pub fn with_target_and_settings(target: GeneratorTarget, settings: Settings) -> Result<Self> {
         let grid = Generator::with_target(target).generate();
 
         Ok(Self::with_grid_and_settings(grid, settings))

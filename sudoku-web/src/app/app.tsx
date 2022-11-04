@@ -1,10 +1,10 @@
 import * as React from "react";
 import { useEffect, useState } from "react";
-import { TransportSudoku, WasmSudoku } from "../types";
+import type { TransportSudoku, WasmSudoku } from "../types";
 import CircularProgress from "@mui/material/CircularProgress";
 import * as Comlink from "comlink";
 import { Sudoku } from "./sudoku";
-import { WorkerApi } from "../worker";
+import type { WorkerApi } from "../worker";
 import { MyTheme } from "./myTheme";
 import { Stack, Typography } from "@mui/material";
 import { WORKER_BOOT_UP_MESSAGE } from "../constants";

@@ -1,6 +1,8 @@
 use log::debug;
 use rand::prelude::SliceRandom;
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "wasm")]
+use ts_rs::TS;
 
 use crate::base::SudokuBase;
 use crate::cell::compact::value::Value;
@@ -13,50 +15,80 @@ use crate::solver::strategic::strategies;
 //  needed strategies to solve
 //  target difficultly: sum of weighted strategy applications
 
+#[cfg_attr(feature = "wasm", derive(TS))]
+#[cfg_attr(feature = "wasm", ts(export))]
 #[derive(Debug, Serialize, Deserialize, Copy, Clone)]
 #[serde(rename_all = "camelCase")]
-pub enum Target {
+pub enum GeneratorTarget {
     Filled,
-    FromFilled { distance: usize },
-    Minimal,
-    FromMinimal { distance: usize },
+    FromFilled {
+        distance: usize,
+        set_all_direct_candidates: bool,
+    },
+    Minimal {
+        set_all_direct_candidates: bool,
+    },
+    FromMinimal {
+        distance: usize,
+        set_all_direct_candidates: bool,
+    },
 }
 
-impl Default for Target {
+impl Default for GeneratorTarget {
     fn default() -> Self {
-        Target::Filled
+        GeneratorTarget::Filled
     }
 }
 
+#[cfg_attr(feature = "wasm", derive(TS))]
+#[cfg_attr(feature = "wasm", ts(export))]
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct RuntimeSettings {
+pub struct GeneratorSettings {
     pub base: u8,
-    pub target: Target,
+    pub target: GeneratorTarget,
 }
 
 #[derive(Debug)]
 pub struct Generator {
-    target: Target,
+    target: GeneratorTarget,
 }
 
 // TODO: expose random seed for deterministic benchmarking
 impl Generator {
-    pub fn with_target(target: Target) -> Self {
+    pub fn with_target(target: GeneratorTarget) -> Self {
         Self { target }
     }
 
     pub fn generate<Base: SudokuBase>(&self) -> Grid<Base> {
         let filled_sudoku = self.filled_grid();
 
-        let mut grid = match self.target {
-            Target::Filled => filled_sudoku,
-            Target::FromFilled { distance } => Self::filled(filled_sudoku, distance),
-            Target::Minimal => Self::minimal(filled_sudoku, 0),
-            Target::FromMinimal { distance } => Self::minimal(filled_sudoku, distance),
+        let (mut grid, set_all_direct_candidates) = match self.target {
+            GeneratorTarget::Filled => (filled_sudoku, false),
+            GeneratorTarget::FromFilled {
+                distance,
+                set_all_direct_candidates,
+            } => (
+                Self::filled(filled_sudoku, distance),
+                set_all_direct_candidates,
+            ),
+            GeneratorTarget::Minimal {
+                set_all_direct_candidates,
+            } => (Self::minimal(filled_sudoku, 0), set_all_direct_candidates),
+            GeneratorTarget::FromMinimal {
+                distance,
+                set_all_direct_candidates,
+            } => (
+                Self::minimal(filled_sudoku, distance),
+                set_all_direct_candidates,
+            ),
         };
 
         grid.fix_all_values();
+
+        if set_all_direct_candidates {
+            grid.set_all_direct_candidates();
+        }
 
         grid
     }
@@ -201,21 +233,28 @@ mod tests {
 
     #[test]
     fn test_minimal() {
-        let grid = Generator::with_target(Target::Minimal).generate::<U2>();
+        let grid = Generator::with_target(GeneratorTarget::Minimal {
+            set_all_direct_candidates: false,
+        })
+        .generate::<U2>();
 
         assert!(is_minimal(&grid));
     }
 
     #[test]
     fn test_filled() {
-        let grid = Generator::with_target(Target::Filled).generate::<U2>();
+        let grid = Generator::with_target(GeneratorTarget::Filled).generate::<U2>();
 
         assert!(grid.is_solved());
     }
 
     #[test]
     fn test_from_filled() {
-        let grid = Generator::with_target(Target::FromFilled { distance: 2 }).generate::<U2>();
+        let grid = Generator::with_target(GeneratorTarget::FromFilled {
+            distance: 2,
+            set_all_direct_candidates: false,
+        })
+        .generate::<U2>();
 
         assert_eq!(grid.all_candidates_positions().len(), 2);
 

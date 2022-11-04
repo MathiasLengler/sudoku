@@ -3,7 +3,7 @@ import AppBar from "@mui/material/AppBar";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import { GenerateForm } from "./generateForm";
-import { WasmSudokuController } from "../../wasmSudokuController";
+import type { WasmSudokuController } from "../../wasmSudokuController";
 import { ImportForm } from "./importForm";
 
 interface TabPanelProps {

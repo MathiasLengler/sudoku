@@ -5,7 +5,7 @@ import { NewGameDialog } from "./newGame/newGameDialog";
 import IconButton from "@mui/material/IconButton";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import Tooltip from "@mui/material/Tooltip";
-import { WasmSudokuController } from "../wasmSudokuController";
+import type { WasmSudokuController } from "../wasmSudokuController";
 import type { StrategyName } from "../../../../sudoku-wasm/pkg";
 
 interface ToolbarMenuProps {

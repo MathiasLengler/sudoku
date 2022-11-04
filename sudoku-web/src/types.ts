@@ -10,8 +10,6 @@ export type {
     CandidatesCell,
     Cell,
     TransportCell,
-    GeneratorSettings,
-    GeneratorTarget,
     GridFormat,
     WasmSudoku,
 } from "../../sudoku-wasm/pkg";

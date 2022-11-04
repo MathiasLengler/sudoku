@@ -259,8 +259,6 @@ impl Into<Position> for &GroupAvailabilityIndex {
 
 #[cfg(test)]
 mod tests {
-    use std::mem::size_of;
-
     use crate::base::consts::*;
     use crate::solver::test_util::{assert_solve_result, assert_solver_solutions_base_2};
 

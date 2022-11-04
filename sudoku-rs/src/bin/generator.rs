@@ -1,9 +1,13 @@
 use sudoku::base::consts::*;
 use sudoku::error::Result;
-use sudoku::generator::{Generator, Target};
+use sudoku::generator::{Generator, GeneratorTarget};
 
 fn main() -> Result<()> {
-    let grid = Generator::with_target(Target::Minimal).generate::<Base3>();
+    let grid = Generator::with_target(GeneratorTarget::FromFilled {
+        distance: 85,
+        set_all_direct_candidates: true,
+    })
+    .generate::<Base3>();
 
     println!("{grid}");
 

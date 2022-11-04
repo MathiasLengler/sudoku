@@ -26,7 +26,7 @@ use rayon::prelude::*;
 use std::sync::Mutex;
 use sudoku::base::consts::U3;
 use sudoku::error::Result;
-use sudoku::generator::{Generator, Target};
+use sudoku::generator::{Generator, GeneratorTarget};
 
 type Base = U3;
 
@@ -39,7 +39,7 @@ fn main() -> Result<()> {
         "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] ({pos}/{len}, ETA {eta})",
     ));
     (0..MAX).into_par_iter().progress_with(pb).for_each(|_i| {
-        let grid = Generator::with_target(Target::Minimal).generate::<Base>();
+        let grid = Generator::with_target(GeneratorTarget::Minimal).generate::<Base>();
 
         let num_values = grid.all_value_positions().len();
 

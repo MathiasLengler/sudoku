@@ -1,24 +1,24 @@
 use std::any::{Any, TypeId};
 use std::convert::{TryFrom, TryInto};
 
-use crate::base::consts::*;
 use anyhow::{bail, ensure, format_err};
 
 pub use game::DynamicSudoku;
 pub use game::Game;
 
+use crate::base::consts::*;
 use crate::base::SudokuBase;
 use crate::cell::view::parser::parse_cells;
 use crate::cell::view::CellView;
 use crate::error::{Error, Result};
-use crate::generator::RuntimeSettings as GeneratorSettings;
+use crate::generator::GeneratorSettings;
 use crate::grid::Grid;
 use crate::sudoku::Sudoku;
 
 mod game {
-    use crate::base::consts::*;
     use enum_dispatch::enum_dispatch;
 
+    use crate::base::consts::*;
     use crate::error::Result;
     use crate::grid::serialization::GridFormat;
     use crate::position::Position;
@@ -169,10 +169,11 @@ impl DynamicSudoku {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::cell::view::parser::tests::{
         INPUT_CANDIDATES, INPUT_GIVENS_GRID, INPUT_GIVENS_LINE,
     };
+
+    use super::*;
 
     #[test]
     fn test_cell_count_to_base() -> Result<()> {

@@ -7,7 +7,7 @@ use wasm_bindgen::prelude::*;
 use sudoku::base::consts::*;
 use sudoku::cell::view::CellView;
 use sudoku::error::Error as SudokuError;
-use sudoku::generator::RuntimeSettings;
+use sudoku::generator::GeneratorSettings;
 use sudoku::grid::serialization::GridFormat;
 use sudoku::grid::Grid;
 use sudoku::position::Position;
@@ -200,7 +200,7 @@ impl WasmSudoku {
 
     fn import_generator_settings(
         generator_settings: IGeneratorSettings,
-    ) -> Result<RuntimeSettings> {
+    ) -> Result<GeneratorSettings> {
         Ok(serde_wasm_bindgen::from_value(generator_settings.into())?)
     }
 

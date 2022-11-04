@@ -1,11 +1,10 @@
 import * as React from "react";
-import { PointerEventHandler } from "react";
-import * as CSS from "csstype";
-import isEqual from "lodash/isEqual";
+import type { PointerEventHandler } from "react";
+import type * as CSS from "csstype";
 import classnames from "classnames";
 import { indexToPosition, valueToString } from "../utils";
-import { Input, WasmSudokuController } from "../wasmSudokuController";
-import { CandidatesCell, TransportCell, TransportSudoku, ValueCell } from "../../types";
+import type { Input, WasmSudokuController } from "../wasmSudokuController";
+import type { CandidatesCell, TransportCell, TransportSudoku, ValueCell } from "../../types";
 
 function cellBackgroundClass(isSelected: boolean, isGuide: boolean) {
     if (isSelected) {

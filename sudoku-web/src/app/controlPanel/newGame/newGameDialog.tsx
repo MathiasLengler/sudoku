@@ -3,7 +3,7 @@ import Dialog from "@mui/material/Dialog";
 import { NewGameTabs } from "./tabs";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
-import { WasmSudokuController } from "../../wasmSudokuController";
+import type { WasmSudokuController } from "../../wasmSudokuController";
 
 interface NewGameDialogProps {
     open: boolean;

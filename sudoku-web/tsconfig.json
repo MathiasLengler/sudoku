@@ -11,7 +11,8 @@
         "jsx": "react",
         "target": "es2017",
         "noEmit": true,
-        "isolatedModules": true
+        "isolatedModules": true,
+        "importsNotUsedAsValues": "error"
     },
     "include": ["src/**/*"]
 }

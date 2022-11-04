@@ -1,9 +1,10 @@
-import { CellPosition, GeneratorSettings, GridFormat, TransportCell, TransportSudoku, WasmSudoku } from "../types";
-import * as React from "react";
+import type { CellPosition, GridFormat, TransportCell, TransportSudoku, WasmSudoku } from "../types";
+import type * as React from "react";
 import { blocksToCell } from "./utils";
 import isEqual from "lodash/isEqual";
-import * as Comlink from "comlink";
+import type * as Comlink from "comlink";
 import type { StrategyName } from "../../../sudoku-wasm/pkg";
+import type { GeneratorSettings } from "../../../sudoku-rs/bindings";
 
 export type onSudokuUpdate = (this: void, sudoku: TransportSudoku) => void;
 

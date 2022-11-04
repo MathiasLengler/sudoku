@@ -9,7 +9,9 @@
         "start:profiling": "webpack serve --mode production --env reactProfiling=true",
         "build": "webpack --mode production",
         "build:analyze": "webpack --mode production --env bundleAnalyzer=true",
-        "lint": "eslint src/**",
+        "lint": "npm run lint:tsc && npm run lint:eslint",
+        "lint:tsc": "tsc",
+        "lint:eslint": "eslint src/**",
         "serve": "npx serve -l 8080 dist"
     },
     "engines": {

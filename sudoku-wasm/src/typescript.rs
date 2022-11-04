@@ -1,7 +1,10 @@
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(typescript_custom_section)]
-const TRANSPORT_TYPESCRIPT: &'static str = r#"export type CellBlocks = Cell[][];
+const TRANSPORT_TYPESCRIPT: &'static str = r#"
+import type * as bindings from "../../sudoku-rs/bindings";
+
+export type CellBlocks = Cell[][];
 
 export type TransportCellBlock = TransportCell[];
 
@@ -40,25 +43,6 @@ export type Cell = ValueCell | CandidatesCell;
 
 export type TransportCell = TransportCellContext & Cell;
 
-export interface GeneratorSettings {
-    base: number;
-    target: GeneratorTarget;
-}
-
-export type GeneratorTarget =
-    | "minimal"
-    | "filled"
-    | {
-    fromMinimal: {
-        distance: number;
-    };
-}
-    | {
-    fromFilled: {
-        distance: number;
-    };
-};
-
 export type GridFormat = "givensLine" | "givensGrid" | "binaryCandidatesLine";
 export type StrategyName = "SingleCandidate" |
     "HiddenSingles" |
@@ -88,9 +72,9 @@ extern "C" {
     pub type ICell;
     #[wasm_bindgen(typescript_type = "TransportCell")]
     pub type ITransportCell;
-    #[wasm_bindgen(typescript_type = "GeneratorSettings")]
+    #[wasm_bindgen(typescript_type = "bindings.GeneratorSettings")]
     pub type IGeneratorSettings;
-    #[wasm_bindgen(typescript_type = "GeneratorTarget")]
+    #[wasm_bindgen(typescript_type = "bindings.GeneratorTarget")]
     pub type IGeneratorTarget;
     #[wasm_bindgen(typescript_type = "GridFormat")]
     pub type IGridFormat;

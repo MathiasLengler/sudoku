@@ -1,4 +1,4 @@
-import { WasmSudokuController } from "../../wasmSudokuController";
+import type { WasmSudokuController } from "../../wasmSudokuController";
 import React, { useState } from "react";
 import Box from "@mui/material/Box";
 import DialogActions from "@mui/material/DialogActions";

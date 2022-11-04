@@ -5,7 +5,7 @@ import InfoIcon from "@mui/icons-material/Info";
 import CreateIcon from "@mui/icons-material/Create";
 import GestureIcon from "@mui/icons-material/Gesture";
 import UndoIcon from "@mui/icons-material/Undo";
-import { Input, WasmSudokuController } from "../wasmSudokuController";
+import type { Input, WasmSudokuController } from "../wasmSudokuController";
 import Tooltip from "@mui/material/Tooltip";
 import { ToolbarMenu } from "./toolbarMenu";
 

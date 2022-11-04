@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Typography from "@mui/material/Typography";
 import Slider from "@mui/material/Slider";
 import range from "lodash/range";
-import { WasmSudokuController } from "../../wasmSudokuController";
+import type { WasmSudokuController } from "../../wasmSudokuController";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import Box from "@mui/material/Box";
@@ -81,6 +81,8 @@ export const GenerateForm: React.FunctionComponent<GenerateFormProps> = props =>
                                 target: {
                                     fromFilled: {
                                         distance: cellCount - minGivens,
+                                        // TODO: add checkbox, default true
+                                        set_all_direct_candidates: true,
                                     },
                                 },
                             });

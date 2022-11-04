@@ -1,7 +1,7 @@
 import * as Comlink from "comlink";
 import { init as wasmInit, WasmSudoku } from "./wasmSudoku";
 import { WORKER_BOOT_UP_MESSAGE } from "./constants";
-import { CellBlocks } from "./types";
+import type { CellBlocks } from "./types";
 
 if (process.env.NODE_ENV !== "production") {
     self.addEventListener("message", ev => {

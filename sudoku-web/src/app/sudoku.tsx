@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Input, WasmSudokuController } from "./wasmSudokuController";
 import { blocksToCell } from "./utils";
-import * as CSS from "csstype";
+import type * as CSS from "csstype";
 import { makeKeyDownListener } from "./useKeyboardInput";
 import { Grid } from "./grid/grid";
 import { ControlPanel } from "./controlPanel/controlPanel";
-import * as Comlink from "comlink";
-import { TransportSudoku, WasmSudoku } from "../types";
+import type * as Comlink from "comlink";
+import type { TransportSudoku, WasmSudoku } from "../types";
 import { saveCellBlocks } from "./persistence";
 import debounce from "lodash/debounce";
 import { useResizeDetector } from "react-resize-detector";

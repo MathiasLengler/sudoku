@@ -1,8 +1,8 @@
 import * as React from "react";
 import { Selector } from "./selector";
 import { Toolbar } from "./toolbar";
-import { Input, WasmSudokuController } from "../wasmSudokuController";
-import { TransportSudoku } from "../../types";
+import type { Input, WasmSudokuController } from "../wasmSudokuController";
+import type { TransportSudoku } from "../../types";
 
 interface ControlPanelProps {
     sudokuController: WasmSudokuController;

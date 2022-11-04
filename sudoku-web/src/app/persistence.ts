@@ -1,4 +1,4 @@
-import { CellBlocks } from "../types";
+import type { CellBlocks } from "../types";
 
 const KEY_CELLS = "cells_v1";
 
