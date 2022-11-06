@@ -3,7 +3,7 @@ import type * as React from "react";
 import type { KeyboardEvent } from "react";
 import clamp from "lodash/clamp";
 import { assertNever } from "assert-never";
-import type { CellPosition, TransportSudoku } from "../types";
+import type { Position, TransportSudoku } from "../types";
 
 function keyToValue(key: string): number | undefined {
     if (key.length === 1) {
@@ -17,9 +17,9 @@ function keyToValue(key: string): number | undefined {
 
 function keyToNewPos(
     key: string,
-    selectedPos: CellPosition,
+    selectedPos: Position,
     sideLength: TransportSudoku["sideLength"]
-): CellPosition | undefined {
+): Position | undefined {
     let { column, row } = selectedPos;
     switch (key) {
         case "ArrowUp":

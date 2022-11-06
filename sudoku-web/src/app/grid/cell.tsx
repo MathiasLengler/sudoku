@@ -4,7 +4,7 @@ import type * as CSS from "csstype";
 import classnames from "classnames";
 import { indexToPosition, valueToString } from "../utils";
 import type { Input, WasmSudokuController } from "../wasmSudokuController";
-import type { CandidatesCell, TransportCell, TransportSudoku, ValueCell } from "../../types";
+import type { CellViewCandidates, TransportCell, TransportSudoku, CellViewValue } from "../../types";
 
 function cellBackgroundClass(isSelected: boolean, isGuide: boolean) {
     if (isSelected) {
@@ -27,7 +27,7 @@ function cellColorClass(fixed: boolean, incorrectValue: boolean) {
 }
 
 interface CellValueProps {
-    value: ValueCell["value"];
+    value: CellViewValue["value"];
 }
 
 const CellValue: React.FunctionComponent<CellValueProps> = props => {
@@ -40,7 +40,7 @@ const CellValue: React.FunctionComponent<CellValueProps> = props => {
 };
 
 interface CandidatesProps {
-    candidates: CandidatesCell["candidates"];
+    candidates: CellViewCandidates["candidates"];
     base: TransportSudoku["base"];
     selectedValue: Input["selectedValue"];
     stickyMode: Input["stickyMode"];
@@ -92,11 +92,11 @@ const Cell: React.FunctionComponent<CellProps> = props => {
 
     const { position: gridPosition } = cell;
 
-    const blockCellPosition = indexToPosition(blockCellIndex, base);
+    const blockPosition = indexToPosition(blockCellIndex, base);
 
     const style: CSS.Properties = {
-        "--cell-column": blockCellPosition.column,
-        "--cell-row": blockCellPosition.row,
+        "--cell-column": blockPosition.column,
+        "--cell-row": blockPosition.row,
     };
 
     const cellClassNames = classnames(

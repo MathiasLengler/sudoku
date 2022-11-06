@@ -15,10 +15,10 @@ use sudoku::transport::TransportSudoku;
 use sudoku::{DynamicSudoku, Game, Sudoku};
 
 use typescript::{
-    ICandidates, ICellBlocks, ICellPosition, IGeneratorSettings, IGridFormat, IStrategyName,
-    ITransportSudoku,
+    ICandidates, ICellBlocks, IGeneratorSettings, IGridFormat, IStrategyName, ITransportSudoku,
 };
 
+use crate::typescript::IPosition;
 use error::Result;
 
 mod typescript;
@@ -89,7 +89,7 @@ impl WasmSudoku {
     }
 
     #[wasm_bindgen(js_name = setValue)]
-    pub fn set_value(&self, pos: ICellPosition, value: u8) -> Result<()> {
+    pub fn set_value(&self, pos: IPosition, value: u8) -> Result<()> {
         Ok(self
             .sudoku
             .borrow_mut()
@@ -98,7 +98,7 @@ impl WasmSudoku {
     }
 
     #[wasm_bindgen(js_name = setOrToggleValue)]
-    pub fn set_or_toggle_value(&self, pos: ICellPosition, value: u8) -> Result<()> {
+    pub fn set_or_toggle_value(&self, pos: IPosition, value: u8) -> Result<()> {
         Ok(self
             .sudoku
             .borrow_mut()
@@ -107,7 +107,7 @@ impl WasmSudoku {
     }
 
     #[wasm_bindgen(js_name = setCandidates)]
-    pub fn set_candidates(&mut self, pos: ICellPosition, candidates: ICandidates) -> Result<()> {
+    pub fn set_candidates(&mut self, pos: IPosition, candidates: ICandidates) -> Result<()> {
         Ok(self
             .sudoku
             .borrow_mut()
@@ -116,7 +116,7 @@ impl WasmSudoku {
     }
 
     #[wasm_bindgen(js_name = toggleCandidate)]
-    pub fn toggle_candidate(&mut self, pos: ICellPosition, candidate: u8) -> Result<()> {
+    pub fn toggle_candidate(&mut self, pos: IPosition, candidate: u8) -> Result<()> {
         Ok(self
             .sudoku
             .borrow_mut()
@@ -124,7 +124,7 @@ impl WasmSudoku {
             .map_err(Self::export_error)?)
     }
 
-    pub fn delete(&mut self, pos: ICellPosition) -> Result<()> {
+    pub fn delete(&mut self, pos: IPosition) -> Result<()> {
         Ok(self.sudoku.borrow_mut().delete(Self::import_pos(pos)?))
     }
 
@@ -190,7 +190,7 @@ impl WasmSudoku {
 
 /// Import helpers
 impl WasmSudoku {
-    fn import_pos(pos: ICellPosition) -> Result<Position> {
+    fn import_pos(pos: IPosition) -> Result<Position> {
         Ok(serde_wasm_bindgen::from_value(pos.into())?)
     }
 

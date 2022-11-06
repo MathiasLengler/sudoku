@@ -4,6 +4,8 @@ use std::convert::TryInto;
 use crate::base::consts::BaseMax;
 use anyhow::bail;
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "wasm")]
+use ts_rs::TS;
 
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
@@ -18,9 +20,10 @@ pub(crate) mod parser;
 //  CellView: Unfixed value
 //  => Constructor now validates this, but Deserialize can break this contract
 
+#[cfg_attr(feature = "wasm", derive(TS))]
+#[cfg_attr(feature = "wasm", ts(export))]
 #[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
-#[serde(tag = "kind")]
+#[serde(rename_all = "camelCase", tag = "kind")]
 pub enum CellView {
     Value { value: u8, fixed: bool },
     Candidates { candidates: Vec<u8> },

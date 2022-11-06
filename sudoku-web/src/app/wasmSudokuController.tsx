@@ -1,4 +1,4 @@
-import type { CellPosition, GridFormat, TransportCell, TransportSudoku, WasmSudoku } from "../types";
+import type { Position, GridFormat, TransportCell, TransportSudoku, WasmSudoku } from "../types";
 import type * as React from "react";
 import { blocksToCell } from "./utils";
 import isEqual from "lodash/isEqual";
@@ -11,7 +11,7 @@ export type onSudokuUpdate = (this: void, sudoku: TransportSudoku) => void;
 export interface Input {
     stickyMode: boolean;
     candidateMode: boolean;
-    selectedPos: CellPosition;
+    selectedPos: Position;
     selectedCell: TransportCell;
     // FIXME: only useful if stickyMode is true
     selectedValue: number;
@@ -51,7 +51,7 @@ export class WasmSudokuController {
         }
     }
 
-    public async handlePosition(newSelectedPosition: CellPosition, move = false): Promise<void> {
+    public async handlePosition(newSelectedPosition: Position, move = false): Promise<void> {
         const { stickyMode, selectedPos, selectedValue } = this.input;
 
         if (move && isEqual(selectedPos, newSelectedPosition)) {
@@ -65,7 +65,7 @@ export class WasmSudokuController {
         }
     }
 
-    private setSelectedPosition(selectedPos: CellPosition) {
+    private setSelectedPosition(selectedPos: Position) {
         const {
             sudoku: { base, blocks },
         } = this;

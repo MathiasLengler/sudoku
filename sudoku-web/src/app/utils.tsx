@@ -1,36 +1,36 @@
 // TODO: expose rust utility functions
 
-import type { CellPosition, TransportCell, TransportSudoku, ValueCell } from "../types";
+import type { Position, TransportCell, TransportSudoku, CellViewValue } from "../types";
 
 export function valuesFromSideLength(sideLength: TransportSudoku["sideLength"]): number[] {
     return Array.from(Array(sideLength).keys()).map(value => value + 1);
 }
 
-export function indexToPosition(index: number, base: TransportSudoku["base"]): CellPosition {
+export function indexToPosition(index: number, base: TransportSudoku["base"]): Position {
     return {
         column: index % base,
         row: Math.floor(index / base),
     };
 }
 
-export function positionToIndex(pos: CellPosition, base: TransportSudoku["base"]): number {
+export function positionToIndex(pos: Position, base: TransportSudoku["base"]): number {
     return pos.column + pos.row * base;
 }
 
-export function cellPositionToBlockPosition(cellPosition: CellPosition, base: TransportSudoku["base"]): CellPosition {
+export function cellPositionToBlockPosition(cellPosition: Position, base: TransportSudoku["base"]): Position {
     return {
         column: Math.floor(cellPosition.column / base),
         row: Math.floor(cellPosition.row / base),
     };
 }
 
-export function valueToString(value: ValueCell["value"]): string {
+export function valueToString(value: CellViewValue["value"]): string {
     return value.toString(36);
 }
 
 export function blocksToCell(
     blocks: TransportSudoku["blocks"],
-    pos: CellPosition,
+    pos: Position,
     base: TransportSudoku["base"]
 ): TransportCell {
     const blockPosition = cellPositionToBlockPosition(pos, base);

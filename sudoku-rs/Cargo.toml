@@ -22,7 +22,7 @@ rayon = { version = "1.5.3", optional = true }
 indicatif = { version = "0.17.0", optional = true }
 crossterm = { version = "0.25.0", optional = true }
 arbitrary = { version = "1.1.6", features = ["derive"], optional = true }
-ts-rs = { version = "6.2.0", optional = true }
+ts-rs = { version = "6.2.0", optional = true, path = "../../ts-rs/ts-rs" }
 
 [dev-dependencies]
 criterion = { version = "0.4.0", features = ["html_reports"] }
