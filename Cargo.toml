@@ -3,8 +3,7 @@
 members = [
     "sudoku-rs",
     "sudoku-wasm",
-    "sudoku-api",
-    "sudoku-afl"
+    "sudoku-api"
 ]
 default-members = [
     "sudoku-rs",
