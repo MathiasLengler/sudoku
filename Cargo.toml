@@ -13,3 +13,6 @@ default-members = [
 [profile.release-with-debug]
 inherits = "release"
 debug = true
+
+[patch.crates-io]
+ts-rs = { git = "https://github.com/MathiasLengler/ts-rs" }

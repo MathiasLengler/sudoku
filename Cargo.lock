@@ -2126,6 +2126,7 @@ checksum = "59547bce71d9c38b83d9c0e92b6066c4253371f15005def0c30d9657f50c7642"
 [[package]]
 name = "ts-rs"
 version = "6.2.0"
+source = "git+https://github.com/MathiasLengler/ts-rs#2ac35c3764a6bb06aad448ff0be4c38b6ab90083"
 dependencies = [
  "thiserror",
  "ts-rs-macros",
@@ -2134,6 +2135,7 @@ dependencies = [
 [[package]]
 name = "ts-rs-macros"
 version = "6.2.0"
+source = "git+https://github.com/MathiasLengler/ts-rs#2ac35c3764a6bb06aad448ff0be4c38b6ab90083"
 dependencies = [
  "Inflector",
  "proc-macro2",
