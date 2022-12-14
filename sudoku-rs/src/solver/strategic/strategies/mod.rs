@@ -36,7 +36,6 @@ mod hidden_singles;
 mod single_candidate;
 
 pub trait Strategy<Base: SudokuBase>: Debug {
-    // TODO: evaluate different return type: Result<BTreeSet<StrategyDeduction<Base>>>
     /// Execute this strategy on the given grid. Returns a list of deductions.
     fn execute(&self, grid: &Grid<Base>) -> Result<Deductions<Base>>;
 }
