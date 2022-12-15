@@ -13,7 +13,7 @@ use crate::solver::strategic::strategies;
 
 // TODO: strategic
 //  needed strategies to solve
-//  target difficultly: sum of weighted strategy applications
+//  target difficulty: sum of weighted strategy applications
 
 #[cfg_attr(feature = "wasm", derive(TS))]
 #[cfg_attr(feature = "wasm", ts(export))]
