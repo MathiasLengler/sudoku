@@ -85,6 +85,8 @@ export const GenerateForm: React.FunctionComponent<GenerateFormProps> = props =>
                                         set_all_direct_candidates: true,
                                     },
                                 },
+                                // TODO: add form control
+                                strategies: ["SingleCandidate"],
                             });
                             onClose();
                         } finally {

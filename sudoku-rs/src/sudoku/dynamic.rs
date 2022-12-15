@@ -11,7 +11,7 @@ use crate::base::SudokuBase;
 use crate::cell::view::parser::parse_cells;
 use crate::cell::view::CellView;
 use crate::error::{Error, Result};
-use crate::generator::GeneratorSettings;
+use crate::generator::DynamicGeneratorSettings;
 use crate::grid::Grid;
 use crate::sudoku::Sudoku;
 
@@ -75,26 +75,14 @@ impl DynamicSudoku {
             _ => bail!(Self::unexpected_base_err(Base::BASE)),
         })
     }
-    pub fn generate(&mut self, generator_settings: GeneratorSettings) -> Result<()> {
-        let GeneratorSettings { base, target } = generator_settings;
+    pub fn generate(&mut self, dynamic_generator_settings: DynamicGeneratorSettings) -> Result<()> {
+        let DynamicGeneratorSettings { base, settings } = dynamic_generator_settings;
 
         *self = match base {
-            2 => Self::Base2(Sudoku::<U2>::with_target_and_settings(
-                target,
-                self.settings(),
-            )?),
-            3 => Self::Base3(Sudoku::<U3>::with_target_and_settings(
-                target,
-                self.settings(),
-            )?),
-            4 => Self::Base4(Sudoku::<U4>::with_target_and_settings(
-                target,
-                self.settings(),
-            )?),
-            5 => Self::Base5(Sudoku::<U5>::with_target_and_settings(
-                target,
-                self.settings(),
-            )?),
+            2 => Self::Base2(Sudoku::<U2>::generate(settings, self.settings())?),
+            3 => Self::Base3(Sudoku::<U3>::generate(settings, self.settings())?),
+            4 => Self::Base4(Sudoku::<U4>::generate(settings, self.settings())?),
+            5 => Self::Base5(Sudoku::<U5>::generate(settings, self.settings())?),
             unexpected_base => bail!(Self::unexpected_base_err(unexpected_base)),
         };
 

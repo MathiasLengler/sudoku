@@ -1,5 +1,7 @@
 use wasm_bindgen::prelude::*;
 
+// TODO: replace StrategyName with DynamicStrategy
+
 #[wasm_bindgen(typescript_custom_section)]
 const TRANSPORT_TYPESCRIPT: &'static str = r#"
 import type * as bindings from "../../sudoku-rs/bindings";
@@ -37,5 +39,8 @@ extern "C" {
     pub type IPosition;
     #[wasm_bindgen(typescript_type = "bindings.GeneratorSettings")]
     pub type IGeneratorSettings;
-
+    #[wasm_bindgen(typescript_type = "bindings.DynamicStrategy")]
+    pub type IDynamicStrategy;
+    #[wasm_bindgen(typescript_type = "bindings.DynamicGeneratorSettings")]
+    pub type IDynamicGeneratorSettings;
 }

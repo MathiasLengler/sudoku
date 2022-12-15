@@ -17,11 +17,17 @@
 //! Hidden Quad | us4 | 7000 | 5000
 //! Swordfish | sf4 | 8000 | 6000
 
+use std::fmt;
 use std::fmt::Debug;
 use std::str::FromStr;
 
 use anyhow::anyhow;
 use enum_dispatch::enum_dispatch;
+use serde::de::{EnumAccess, Visitor};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use ts_rs::Dependency;
+#[cfg(feature = "wasm")]
+use ts_rs::TS;
 
 pub use backtracking::Backtracking;
 pub use group_reduction::GroupReduction;
@@ -48,7 +54,8 @@ pub trait Strategy: Debug {
         format!("{:?}", self)
     }
 }
-
+#[cfg_attr(feature = "wasm", derive(TS))]
+#[cfg_attr(feature = "wasm", ts(export))]
 #[enum_dispatch]
 #[derive(Debug)]
 pub enum DynamicStrategy {
@@ -57,6 +64,54 @@ pub enum DynamicStrategy {
     GroupReduction,
     Backtracking,
 }
+
+impl Serialize for DynamicStrategy {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match *self {
+            Self::SingleCandidate(_) => {
+                serializer.serialize_unit_variant("Strategy", 0, "SingleCandidate")
+            }
+            Self::HiddenSingles(_) => {
+                serializer.serialize_unit_variant("Strategy", 1, "HiddenSingles")
+            }
+            Self::GroupReduction(_) => {
+                serializer.serialize_unit_variant("Strategy", 2, "GroupReduction")
+            }
+            Self::Backtracking(_) => {
+                serializer.serialize_unit_variant("Strategy", 3, "Backtracking")
+            }
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for DynamicStrategy {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct StrategyVisitor;
+
+        impl<'de> Visitor<'de> for StrategyVisitor {
+            type Value = DynamicStrategy;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("a valid strategy name")
+            }
+
+            fn visit_str<E>(self, strategy_name: &str) -> std::result::Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                strategy_name.parse().map_err(serde::de::Error::custom)
+            }
+        }
+        deserializer.deserialize_str(StrategyVisitor)
+    }
+}
+
 impl DynamicStrategy {
     pub fn all() -> Vec<Self> {
         vec![
@@ -78,3 +133,18 @@ impl FromStr for DynamicStrategy {
             .ok_or_else(|| anyhow!("Unexpected strategy name: {strategy_name}"))
     }
 }
+
+// #[cfg(feature = "wasm")]
+// impl TS for DynamicStrategy {
+//     fn name() -> String {
+//         "DynamicStrategy".to_owned()
+//     }
+//
+//     fn dependencies() -> Vec<Dependency> {
+//         vec![]
+//     }
+//
+//     fn transparent() -> bool {
+//         true
+//     }
+// }

@@ -1,10 +1,16 @@
-import type { Position, GridFormat, TransportCell, TransportSudoku, WasmSudoku } from "../types";
+import type {
+    DynamicGeneratorSettings,
+    GridFormat,
+    Position,
+    TransportCell,
+    TransportSudoku,
+    WasmSudoku,
+} from "../types";
 import type * as React from "react";
 import { blocksToCell } from "./utils";
 import isEqual from "lodash/isEqual";
 import type * as Comlink from "comlink";
 import type { StrategyName } from "../../../sudoku-wasm/pkg";
-import type { GeneratorSettings } from "../../../sudoku-rs/bindings";
 
 export type onSudokuUpdate = (this: void, sudoku: TransportSudoku) => void;
 
@@ -134,7 +140,7 @@ export class WasmSudokuController {
         });
     }
 
-    public async generate(settings: GeneratorSettings): Promise<void> {
+    public async generate(settings: DynamicGeneratorSettings): Promise<void> {
         await this.withSudokuUpdate(async () => {
             await this.wasmSudokuProxy.generate(settings);
         });

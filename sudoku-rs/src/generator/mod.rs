@@ -1,4 +1,4 @@
-use log::debug;
+use log::{debug, log};
 use rand::prelude::SliceRandom;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "wasm")]
@@ -10,9 +10,9 @@ use crate::grid::Grid;
 use crate::position::Position;
 use crate::solver::backtracking;
 use crate::solver::strategic::strategies;
+use crate::solver::strategic::strategies::DynamicStrategy;
 
 // TODO: strategic
-//  needed strategies to solve
 //  target difficulty: sum of weighted strategy applications
 
 #[cfg_attr(feature = "wasm", derive(TS))]
@@ -45,25 +45,44 @@ impl Default for GeneratorTarget {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GeneratorSettings {
-    pub base: u8,
     pub target: GeneratorTarget,
+    pub strategies: Vec<DynamicStrategy>,
+}
+
+#[cfg_attr(feature = "wasm", derive(TS))]
+#[cfg_attr(feature = "wasm", ts(export))]
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DynamicGeneratorSettings {
+    pub base: u8,
+    #[serde(flatten)]
+    pub settings: GeneratorSettings,
 }
 
 #[derive(Debug)]
 pub struct Generator {
-    target: GeneratorTarget,
+    settings: GeneratorSettings,
 }
 
 // TODO: expose random seed for deterministic benchmarking
 impl Generator {
     pub fn with_target(target: GeneratorTarget) -> Self {
-        Self { target }
+        Self::with_settings(GeneratorSettings {
+            target,
+            strategies: DynamicStrategy::all(),
+        })
+    }
+
+    pub fn with_settings(settings: GeneratorSettings) -> Self {
+        Self { settings }
     }
 
     pub fn generate<Base: SudokuBase>(&self) -> Grid<Base> {
+        debug!("{self:?}");
+
         let filled_sudoku = self.filled_grid();
 
-        let (mut grid, set_all_direct_candidates) = match self.target {
+        let (mut grid, set_all_direct_candidates) = match self.settings.target {
             GeneratorTarget::Filled => (filled_sudoku, false),
             GeneratorTarget::FromFilled {
                 distance,

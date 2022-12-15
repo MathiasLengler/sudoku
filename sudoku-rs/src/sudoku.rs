@@ -6,7 +6,7 @@ pub use dynamic::{DynamicSudoku, Game};
 use crate::base::SudokuBase;
 use crate::cell::compact::value::Value;
 use crate::error::Result;
-use crate::generator::{Generator, GeneratorTarget};
+use crate::generator::{Generator, GeneratorSettings, GeneratorTarget};
 use crate::grid::serialization::GridFormat;
 use crate::grid::Grid;
 use crate::history::History;
@@ -60,12 +60,14 @@ impl<Base: SudokuBase> Sudoku<Base> {
         }
     }
 
-    pub fn with_target_and_settings(target: GeneratorTarget, settings: Settings) -> Result<Self> {
-        let grid = Generator::with_target(target).generate();
+    pub fn generate(generator_settings: GeneratorSettings, settings: Settings) -> Result<Self> {
+        let grid = Generator::with_settings(generator_settings).generate();
 
         Ok(Self::with_grid_and_settings(grid, settings))
     }
+}
 
+impl<Base: SudokuBase> Sudoku<Base> {
     pub fn grid(&self) -> &Grid<Base> {
         &self.grid
     }

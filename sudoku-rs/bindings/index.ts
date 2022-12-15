@@ -2,6 +2,8 @@
 // This file manually re-exports all bindings.
 
 export * from "./CellView";
+export * from "./DynamicGeneratorSettings";
+export * from "./DynamicStrategy";
 export * from "./GeneratorSettings";
 export * from "./GeneratorTarget";
 export * from "./GridFormat";

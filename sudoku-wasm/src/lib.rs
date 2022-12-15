@@ -7,7 +7,7 @@ use wasm_bindgen::prelude::*;
 use sudoku::base::consts::*;
 use sudoku::cell::view::CellView;
 use sudoku::error::Error as SudokuError;
-use sudoku::generator::GeneratorSettings;
+use sudoku::generator::DynamicGeneratorSettings;
 use sudoku::grid::serialization::GridFormat;
 use sudoku::grid::Grid;
 use sudoku::position::Position;
@@ -18,7 +18,7 @@ use typescript::{
     ICandidates, ICellBlocks, IGeneratorSettings, IGridFormat, IStrategyName, ITransportSudoku,
 };
 
-use crate::typescript::IPosition;
+use crate::typescript::{IDynamicGeneratorSettings, IPosition};
 use error::Result;
 
 mod typescript;
@@ -137,11 +137,11 @@ impl WasmSudoku {
         self.sudoku.borrow_mut().undo();
     }
 
-    pub fn generate(&mut self, generator_settings: IGeneratorSettings) -> Result<()> {
+    pub fn generate(&mut self, generator_settings: IDynamicGeneratorSettings) -> Result<()> {
         Ok(self
             .sudoku
             .borrow_mut()
-            .generate(Self::import_generator_settings(generator_settings)?)
+            .generate(Self::import_dynamic_generator_settings(generator_settings)?)
             .map_err(Self::export_error)?)
     }
 
@@ -198,10 +198,12 @@ impl WasmSudoku {
         Ok(serde_wasm_bindgen::from_value(candidates.into())?)
     }
 
-    fn import_generator_settings(
-        generator_settings: IGeneratorSettings,
-    ) -> Result<GeneratorSettings> {
-        Ok(serde_wasm_bindgen::from_value(generator_settings.into())?)
+    fn import_dynamic_generator_settings(
+        dynamic_generator_settings: IDynamicGeneratorSettings,
+    ) -> Result<DynamicGeneratorSettings> {
+        Ok(serde_wasm_bindgen::from_value(
+            dynamic_generator_settings.into(),
+        )?)
     }
 
     fn import_grid_format(format: IGridFormat) -> Result<GridFormat> {

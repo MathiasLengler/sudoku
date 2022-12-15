@@ -39,7 +39,7 @@ fn main() -> Result<()> {
         "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] ({pos}/{len}, ETA {eta})",
     ));
     (0..MAX).into_par_iter().progress_with(pb).for_each(|_i| {
-        let grid = Generator::with_target(GeneratorTarget::Minimal).generate::<Base>();
+        let grid = Generator::with_settings(GeneratorTarget::Minimal).generate::<Base>();
 
         let num_values = grid.all_value_positions().len();
 
