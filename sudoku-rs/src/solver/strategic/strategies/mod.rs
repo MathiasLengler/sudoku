@@ -18,6 +18,10 @@
 //! Swordfish | sf4 | 8000 | 6000
 
 use std::fmt::Debug;
+use std::str::FromStr;
+
+use anyhow::anyhow;
+use enum_dispatch::enum_dispatch;
 
 pub use backtracking::Backtracking;
 pub use group_reduction::GroupReduction;
@@ -25,7 +29,7 @@ pub use hidden_singles::HiddenSingles;
 pub use single_candidate::SingleCandidate;
 
 use crate::base::SudokuBase;
-use crate::error::Result;
+use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::solver::strategic::deduction::Deductions;
 
@@ -35,16 +39,42 @@ pub mod group_reduction;
 mod hidden_singles;
 mod single_candidate;
 
-pub trait Strategy<Base: SudokuBase>: Debug {
+#[enum_dispatch(DynamicStrategy)]
+pub trait Strategy: Debug {
     /// Execute this strategy on the given grid. Returns a list of deductions.
-    fn execute(&self, grid: &Grid<Base>) -> Result<Deductions<Base>>;
+    fn execute<Base: SudokuBase>(&self, grid: &Grid<Base>) -> Result<Deductions<Base>>;
+
+    fn strategy_name(&self) -> String {
+        format!("{:?}", self)
+    }
 }
 
-pub(crate) fn all_strategies<Base: SudokuBase>() -> Vec<Box<dyn Strategy<Base>>> {
-    vec![
-        Box::new(SingleCandidate),
-        Box::new(HiddenSingles),
-        Box::new(GroupReduction),
-        Box::new(Backtracking),
-    ]
+#[enum_dispatch]
+#[derive(Debug)]
+pub enum DynamicStrategy {
+    SingleCandidate,
+    HiddenSingles,
+    GroupReduction,
+    Backtracking,
+}
+impl DynamicStrategy {
+    pub fn all() -> Vec<Self> {
+        vec![
+            SingleCandidate.into(),
+            HiddenSingles.into(),
+            GroupReduction.into(),
+            Backtracking.into(),
+        ]
+    }
+}
+
+impl FromStr for DynamicStrategy {
+    type Err = Error;
+
+    fn from_str(strategy_name: &str) -> Result<Self> {
+        DynamicStrategy::all()
+            .into_iter()
+            .find(|strategy| strategy.strategy_name() == strategy_name)
+            .ok_or_else(|| anyhow!("Unexpected strategy name: {strategy_name}"))
+    }
 }

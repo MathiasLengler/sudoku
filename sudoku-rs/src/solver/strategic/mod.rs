@@ -3,6 +3,7 @@ use strategies::Strategy;
 use crate::base::SudokuBase;
 use crate::error::Result;
 use crate::grid::Grid;
+use crate::solver::strategic::strategies::DynamicStrategy;
 use deduction::Deductions;
 
 pub mod strategies;
@@ -14,17 +15,17 @@ pub mod deduction;
 #[derive(Debug)]
 pub struct Solver<'s, Base: SudokuBase> {
     grid: &'s mut Grid<Base>,
-    strategies: Vec<Box<dyn Strategy<Base>>>,
+    strategies: Vec<DynamicStrategy>,
 }
 
 impl<'s, Base: SudokuBase> Solver<'s, Base> {
     pub fn new(grid: &'s mut Grid<Base>) -> Solver<'s, Base> {
-        Self::new_with_strategies(grid, strategies::all_strategies())
+        Self::new_with_strategies(grid, strategies::DynamicStrategy::all())
     }
 
     pub fn new_with_strategies(
         grid: &'s mut Grid<Base>,
-        strategies: Vec<Box<dyn Strategy<Base>>>,
+        strategies: Vec<DynamicStrategy>,
     ) -> Solver<'s, Base> {
         Self { grid, strategies }
     }

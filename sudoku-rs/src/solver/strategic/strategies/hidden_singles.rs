@@ -10,8 +10,8 @@ use super::Strategy;
 #[derive(Debug)]
 pub struct HiddenSingles;
 
-impl<Base: SudokuBase> Strategy<Base> for HiddenSingles {
-    fn execute(&self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
+impl Strategy for HiddenSingles {
+    fn execute<Base: SudokuBase>(&self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
         debug_assert!(grid.is_directly_consistent());
 
         TryIntoDeductions(

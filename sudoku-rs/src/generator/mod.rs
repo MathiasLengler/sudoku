@@ -121,7 +121,7 @@ impl Generator {
 
             match grid.is_solvable_with_strategies(vec![
                 // TODO: introduce parameter
-                Box::new(strategies::SingleCandidate),
+                strategies::SingleCandidate.into(),
                 // Box::new(strategies::HiddenSingles),
                 // Box::new(strategies::GroupReduction),
                 // Box::new(strategies::Backtracking),

@@ -8,8 +8,8 @@ use super::Strategy;
 #[derive(Debug)]
 pub struct SingleCandidate;
 
-impl<Base: SudokuBase> Strategy<Base> for SingleCandidate {
-    fn execute(&self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
+impl Strategy for SingleCandidate {
+    fn execute<Base: SudokuBase>(&self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
         TryIntoDeductions(
             grid.all_candidates_positions()
                 .into_iter()

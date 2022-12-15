@@ -76,6 +76,7 @@ fn from_ascii_candidates_grid(input: &str) -> Result<Vec<CellView>> {
         .collect::<Result<Vec<_>>>()
 }
 
+#[allow(dead_code)]
 fn from_terminal_candidates_grid(input: &str) -> Result<Vec<CellView>> {
     let stripped_input_bytes = strip_ansi_escapes::strip(input.as_bytes())?;
     let stripped_input = String::from_utf8(stripped_input_bytes)?;

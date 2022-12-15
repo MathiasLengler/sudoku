@@ -9,8 +9,8 @@ use super::Strategy;
 #[derive(Debug)]
 pub struct Backtracking;
 
-impl<Base: SudokuBase> Strategy<Base> for Backtracking {
-    fn execute(&self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
+impl Strategy for Backtracking {
+    fn execute<Base: SudokuBase>(&self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
         let mut solver = Solver::new(&grid);
 
         if let Some(solved_grid) = solver.next() {

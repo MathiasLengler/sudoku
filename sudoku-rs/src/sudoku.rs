@@ -1,8 +1,6 @@
 use std::convert::TryInto;
 use std::fmt::{self, Display, Formatter};
 
-use anyhow::anyhow;
-
 pub use dynamic::{DynamicSudoku, Game};
 
 use crate::base::SudokuBase;
@@ -13,8 +11,8 @@ use crate::grid::serialization::GridFormat;
 use crate::grid::Grid;
 use crate::history::History;
 use crate::position::Position;
+use crate::solver::strategic::strategies::DynamicStrategy;
 use crate::solver::strategic::{
-    strategies,
     strategies::{GroupReduction, SingleCandidate},
     Solver as StrategicSolver,
 };
@@ -149,10 +147,7 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
     fn try_strategy(&mut self, strategy_name: &str) -> Result<bool> {
         self.push_history();
 
-        let strategy = strategies::all_strategies()
-            .into_iter()
-            .find(|strategy| format!("{strategy:#?}") == strategy_name)
-            .ok_or_else(|| anyhow!("Unexpected strategy name: {strategy_name}"))?;
+        let strategy: DynamicStrategy = strategy_name.parse()?;
 
         let mut solver = StrategicSolver::new_with_strategies(&mut self.grid, vec![strategy]);
 
@@ -172,7 +167,7 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
         self.push_history();
 
         let mut solver =
-            StrategicSolver::new_with_strategies(&mut self.grid, vec![Box::new(SingleCandidate)]);
+            StrategicSolver::new_with_strategies(&mut self.grid, vec![SingleCandidate.into()]);
 
         Ok(if let Some(deductions) = solver.try_strategies()? {
             deductions.apply(&mut self.grid);
@@ -187,7 +182,7 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
         self.push_history();
 
         let mut solver =
-            StrategicSolver::new_with_strategies(&mut self.grid, vec![Box::new(GroupReduction)]);
+            StrategicSolver::new_with_strategies(&mut self.grid, vec![GroupReduction.into()]);
 
         if let Some(deductions) = solver.try_strategies()? {
             deductions.apply(&mut self.grid);

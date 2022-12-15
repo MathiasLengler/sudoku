@@ -16,7 +16,7 @@ use crate::error::{Error, Result};
 use crate::grid::serialization::GridFormat;
 use crate::position::Position;
 use crate::solver::strategic::deduction::{Deduction, DeductionKind};
-use crate::solver::strategic::strategies::Strategy;
+use crate::solver::strategic::strategies::DynamicStrategy;
 use crate::solver::{backtracking_bitset, strategic};
 
 pub mod deserialization;
@@ -188,7 +188,7 @@ impl<Base: SudokuBase> Grid<Base> {
 
     pub fn is_solvable_with_strategies(
         &self,
-        strategies: Vec<Box<dyn Strategy<Base>>>,
+        strategies: Vec<DynamicStrategy>,
     ) -> Option<Result<Self>> {
         let mut clone = self.clone();
         clone.fix_all_values();
