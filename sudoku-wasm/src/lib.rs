@@ -4,6 +4,7 @@ use log::trace;
 use serde_wasm_bindgen::Serializer;
 use wasm_bindgen::prelude::*;
 
+use error::Result;
 use sudoku::base::consts::*;
 use sudoku::cell::view::CellView;
 use sudoku::error::Error as SudokuError;
@@ -11,15 +12,12 @@ use sudoku::generator::DynamicGeneratorSettings;
 use sudoku::grid::serialization::GridFormat;
 use sudoku::grid::Grid;
 use sudoku::position::Position;
+use sudoku::solver::strategic::strategies::DynamicStrategy;
 use sudoku::transport::TransportSudoku;
 use sudoku::{DynamicSudoku, Game, Sudoku};
+use typescript::{ICandidates, ICellBlocks, IGridFormat, ITransportSudoku};
 
-use typescript::{
-    ICandidates, ICellBlocks, IGeneratorSettings, IGridFormat, IStrategyName, ITransportSudoku,
-};
-
-use crate::typescript::{IDynamicGeneratorSettings, IPosition};
-use error::Result;
+use crate::typescript::{IDynamicGeneratorSettings, IDynamicStrategy, IPosition};
 
 mod typescript;
 
@@ -161,29 +159,11 @@ impl WasmSudoku {
     }
 
     #[wasm_bindgen(js_name = tryStrategy)]
-    pub fn try_strategy(&mut self, strategy_name: IStrategyName) -> Result<bool> {
+    pub fn try_strategy(&mut self, strategy: IDynamicStrategy) -> Result<bool> {
         Ok(self
             .sudoku
             .borrow_mut()
-            .try_strategy(&strategy_name.as_string().unwrap())
-            .map_err(Self::export_error)?)
-    }
-
-    #[wasm_bindgen(js_name = solveSingleCandidates)]
-    pub fn solve_single_candidates(&mut self) -> Result<bool> {
-        Ok(self
-            .sudoku
-            .borrow_mut()
-            .solve_single_candidates()
-            .map_err(Self::export_error)?)
-    }
-
-    #[wasm_bindgen(js_name = groupReduction)]
-    pub fn group_reduction(&mut self) -> Result<()> {
-        Ok(self
-            .sudoku
-            .borrow_mut()
-            .group_reduction()
+            .try_strategy(Self::import_strategy(strategy)?)
             .map_err(Self::export_error)?)
     }
 }
@@ -212,6 +192,9 @@ impl WasmSudoku {
 
     fn import_blocks(cells: ICellBlocks) -> Result<Vec<Vec<CellView>>> {
         Ok(serde_wasm_bindgen::from_value(cells.into())?)
+    }
+    fn import_strategy(strategy: IDynamicStrategy) -> Result<DynamicStrategy> {
+        Ok(serde_wasm_bindgen::from_value(strategy.into())?)
     }
 }
 

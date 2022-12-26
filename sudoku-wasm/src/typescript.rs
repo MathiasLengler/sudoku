@@ -1,7 +1,5 @@
 use wasm_bindgen::prelude::*;
 
-// TODO: replace StrategyName with DynamicStrategy
-
 #[wasm_bindgen(typescript_custom_section)]
 const TRANSPORT_TYPESCRIPT: &'static str = r#"
 import type * as bindings from "../../sudoku-rs/bindings";
@@ -11,10 +9,6 @@ export type Candidates = number[];
 export type CellBlocks = bindings.CellView[][];
 
 export type GridFormat = "givensLine" | "givensGrid" | "binaryCandidatesLine";
-export type StrategyName = "SingleCandidate" |
-    "HiddenSingles" |
-    "GroupReduction" |
-    "Backtracking"
 "#;
 
 // Source: wasm_bindgen typescript_custom_section
@@ -26,8 +20,6 @@ extern "C" {
     pub type ICellBlocks;
     #[wasm_bindgen(typescript_type = "GridFormat")]
     pub type IGridFormat;
-    #[wasm_bindgen(typescript_type = "StrategyName")]
-    pub type IStrategyName;
 }
 
 // Source: ts_rs

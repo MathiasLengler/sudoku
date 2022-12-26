@@ -1,5 +1,6 @@
 import type {
     DynamicGeneratorSettings,
+    DynamicStrategy,
     GridFormat,
     Position,
     TransportCell,
@@ -10,7 +11,6 @@ import type * as React from "react";
 import { blocksToCell } from "./utils";
 import isEqual from "lodash/isEqual";
 import type * as Comlink from "comlink";
-import type { StrategyName } from "../../../sudoku-wasm/pkg";
 
 export type onSudokuUpdate = (this: void, sudoku: TransportSudoku) => void;
 
@@ -156,21 +156,9 @@ export class WasmSudokuController {
         return await this.wasmSudokuProxy.export(format);
     }
 
-    public async tryStrategy(strategyName: StrategyName): Promise<boolean> {
+    public async tryStrategy(strategyName: DynamicStrategy): Promise<boolean> {
         return await this.withSudokuUpdate(async () => {
             return await this.wasmSudokuProxy.tryStrategy(strategyName);
-        });
-    }
-
-    public async solveSingleCandidates(): Promise<boolean> {
-        return await this.withSudokuUpdate(async () => {
-            return await this.wasmSudokuProxy.solveSingleCandidates();
-        });
-    }
-
-    public async groupReduction(): Promise<void> {
-        await this.withSudokuUpdate(async () => {
-            await this.wasmSudokuProxy.groupReduction();
         });
     }
 

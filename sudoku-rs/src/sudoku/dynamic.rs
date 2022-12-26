@@ -22,6 +22,7 @@ mod game {
     use crate::error::Result;
     use crate::grid::serialization::GridFormat;
     use crate::position::Position;
+    use crate::solver::strategic::strategies::DynamicStrategy;
     use crate::sudoku::settings::Settings as SudokuSettings;
     use crate::Sudoku;
 
@@ -33,9 +34,7 @@ mod game {
         fn toggle_candidate(&mut self, pos: Position, candidate: u8) -> Result<()>;
         fn delete(&mut self, pos: Position);
         fn set_all_direct_candidates(&mut self);
-        fn try_strategy(&mut self, strategy_name: &str) -> Result<bool>;
-        fn solve_single_candidates(&mut self) -> Result<bool>;
-        fn group_reduction(&mut self) -> Result<()>;
+        fn try_strategy(&mut self, strategy: DynamicStrategy) -> Result<bool>;
         fn undo(&mut self);
         fn settings(&self) -> SudokuSettings;
         fn update_settings(&mut self, settings: SudokuSettings);

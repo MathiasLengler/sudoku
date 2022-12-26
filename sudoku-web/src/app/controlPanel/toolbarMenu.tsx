@@ -6,7 +6,7 @@ import IconButton from "@mui/material/IconButton";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import Tooltip from "@mui/material/Tooltip";
 import type { WasmSudokuController } from "../wasmSudokuController";
-import type { StrategyName } from "../../../../sudoku-wasm/pkg";
+import type { DynamicStrategy } from "../../types";
 
 interface ToolbarMenuProps {
     enterDelay: number;
@@ -72,7 +72,7 @@ export const ToolbarMenu: React.FunctionComponent<ToolbarMenuProps> = props => {
                 </MenuItem>
                 <MenuItem
                     onClick={makeHandleMenuClose(async () => {
-                        const strategies: StrategyName[] = [
+                        const strategies: DynamicStrategy[] = [
                             "SingleCandidate",
                             "HiddenSingles",
                             // "GroupReduction",

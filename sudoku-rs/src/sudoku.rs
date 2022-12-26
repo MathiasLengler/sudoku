@@ -146,10 +146,8 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
         self.grid.set_all_direct_candidates();
     }
 
-    fn try_strategy(&mut self, strategy_name: &str) -> Result<bool> {
+    fn try_strategy(&mut self, strategy: DynamicStrategy) -> Result<bool> {
         self.push_history();
-
-        let strategy: DynamicStrategy = strategy_name.parse()?;
 
         let mut solver = StrategicSolver::new_with_strategies(&mut self.grid, vec![strategy]);
 
@@ -160,36 +158,6 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
         } else {
             false
         })
-    }
-
-    // TODO: refactor Strategy API
-    //  return deductions for visualization
-    //  single method to try a specific strategy
-    fn solve_single_candidates(&mut self) -> Result<bool> {
-        self.push_history();
-
-        let mut solver =
-            StrategicSolver::new_with_strategies(&mut self.grid, vec![SingleCandidate.into()]);
-
-        Ok(if let Some(deductions) = solver.try_strategies()? {
-            deductions.apply(&mut self.grid);
-
-            true
-        } else {
-            false
-        })
-    }
-
-    fn group_reduction(&mut self) -> Result<()> {
-        self.push_history();
-
-        let mut solver =
-            StrategicSolver::new_with_strategies(&mut self.grid, vec![GroupReduction.into()]);
-
-        if let Some(deductions) = solver.try_strategies()? {
-            deductions.apply(&mut self.grid);
-        }
-        Ok(())
     }
 
     fn undo(&mut self) {
