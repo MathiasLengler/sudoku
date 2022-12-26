@@ -1,4 +1,4 @@
-use log::{debug, log};
+use log::debug;
 use rand::prelude::SliceRandom;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "wasm")]

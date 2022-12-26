@@ -23,9 +23,8 @@ use std::str::FromStr;
 
 use anyhow::anyhow;
 use enum_dispatch::enum_dispatch;
-use serde::de::{EnumAccess, Visitor};
+use serde::de::Visitor;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use ts_rs::Dependency;
 #[cfg(feature = "wasm")]
 use ts_rs::TS;
 
@@ -133,18 +132,3 @@ impl FromStr for DynamicStrategy {
             .ok_or_else(|| anyhow!("Unexpected strategy name: {strategy_name}"))
     }
 }
-
-// #[cfg(feature = "wasm")]
-// impl TS for DynamicStrategy {
-//     fn name() -> String {
-//         "DynamicStrategy".to_owned()
-//     }
-//
-//     fn dependencies() -> Vec<Dependency> {
-//         vec![]
-//     }
-//
-//     fn transparent() -> bool {
-//         true
-//     }
-// }

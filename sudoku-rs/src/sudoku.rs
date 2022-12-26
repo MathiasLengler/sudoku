@@ -6,16 +6,13 @@ pub use dynamic::{DynamicSudoku, Game};
 use crate::base::SudokuBase;
 use crate::cell::compact::value::Value;
 use crate::error::Result;
-use crate::generator::{Generator, GeneratorSettings, GeneratorTarget};
+use crate::generator::{Generator, GeneratorSettings};
 use crate::grid::serialization::GridFormat;
 use crate::grid::Grid;
 use crate::history::History;
 use crate::position::Position;
 use crate::solver::strategic::strategies::DynamicStrategy;
-use crate::solver::strategic::{
-    strategies::{GroupReduction, SingleCandidate},
-    Solver as StrategicSolver,
-};
+use crate::solver::strategic::Solver as StrategicSolver;
 
 use self::settings::Settings;
 
