@@ -58,8 +58,6 @@ impl From<DynamicSudoku> for WasmSudoku {
 impl WasmSudoku {
     #[wasm_bindgen(constructor)]
     pub fn new() -> Self {
-        // Intellij-rust false positive
-        #[allow(unused_variables)]
         #[cfg(debug_assertions)]
         let grid: Grid<U2> = sudoku::samples::minimal();
 
