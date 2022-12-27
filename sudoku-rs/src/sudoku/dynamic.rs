@@ -34,6 +34,7 @@ mod game {
         fn toggle_candidate(&mut self, pos: Position, candidate: u8) -> Result<()>;
         fn delete(&mut self, pos: Position);
         fn set_all_direct_candidates(&mut self);
+        fn all_strategies(&self) -> Vec<DynamicStrategy>;
         fn try_strategy(&mut self, strategy: DynamicStrategy) -> Result<bool>;
         fn undo(&mut self);
         fn settings(&self) -> SudokuSettings;

@@ -156,6 +156,17 @@ impl WasmSudoku {
             .export(&Self::import_grid_format(format)?))
     }
 
+    #[wasm_bindgen(js_name = allStrategies)]
+    pub fn all_strategies(&self) -> Result<Vec<IDynamicStrategy>> {
+        Ok(self
+            .sudoku
+            .borrow_mut()
+            .all_strategies()
+            .into_iter()
+            .map(Self::export_strategy)
+            .collect::<Result<Vec<_>>>()?)
+    }
+
     #[wasm_bindgen(js_name = tryStrategy)]
     pub fn try_strategy(&mut self, strategy: IDynamicStrategy) -> Result<bool> {
         Ok(self
@@ -209,5 +220,9 @@ impl WasmSudoku {
 
     fn export_sudoku(transport_sudoku: TransportSudoku) -> Result<ITransportSudoku> {
         Ok(Self::export_value(&transport_sudoku)?.into())
+    }
+
+    fn export_strategy(strategy: DynamicStrategy) -> Result<IDynamicStrategy> {
+        Ok(Self::export_value(&strategy)?.into())
     }
 }

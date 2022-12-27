@@ -143,6 +143,10 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
         self.grid.set_all_direct_candidates();
     }
 
+    fn all_strategies(&self) -> Vec<DynamicStrategy> {
+        DynamicStrategy::all()
+    }
+
     fn try_strategy(&mut self, strategy: DynamicStrategy) -> Result<bool> {
         self.push_history();
 

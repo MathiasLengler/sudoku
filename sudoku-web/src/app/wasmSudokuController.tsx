@@ -156,6 +156,10 @@ export class WasmSudokuController {
         return await this.wasmSudokuProxy.export(format);
     }
 
+    public async allStrategies(): Promise<DynamicStrategy[]> {
+        return await this.wasmSudokuProxy.allStrategies();
+    }
+
     public async tryStrategy(strategyName: DynamicStrategy): Promise<boolean> {
         return await this.withSudokuUpdate(async () => {
             return await this.wasmSudokuProxy.tryStrategy(strategyName);

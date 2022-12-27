@@ -1,5 +1,3 @@
-// TODO: expose rust utility functions
-
 import type { Position, TransportCell, TransportSudoku, CellViewValue } from "../types";
 
 export function valuesFromSideLength(sideLength: TransportSudoku["sideLength"]): number[] {
@@ -26,6 +24,13 @@ export function cellPositionToBlockPosition(cellPosition: Position, base: Transp
 
 export function valueToString(value: CellViewValue["value"]): string {
     return value.toString(36);
+}
+
+export function baseToSideLength(base: number): number {
+    return base ** 2;
+}
+export function baseToCellCount(base: number): number {
+    return base ** 4;
 }
 
 export function blocksToCell(
