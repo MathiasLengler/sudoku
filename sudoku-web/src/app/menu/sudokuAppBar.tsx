@@ -24,7 +24,12 @@ function NewGameButton({ sudokuController }: NewGameButtonProps) {
 
     return (
         <>
-            <IconButton size="large" aria-label="Create new game" onClick={() => setIsNewGameDialogOpen(true)}>
+            <IconButton
+                color="inherit"
+                size="large"
+                aria-label="Create new game"
+                onClick={() => setIsNewGameDialogOpen(true)}
+            >
                 <AddCircleIcon fontSize="large" />
             </IconButton>
             <NewGameDialog
@@ -74,7 +79,7 @@ function SolverMenu({ sudokuController }: SolverMenuProps) {
             ]}
         >
             {({ onMenuOpen }) => (
-                <IconButton size="large" aria-label="Solver" onClick={onMenuOpen}>
+                <IconButton color="inherit" size="large" aria-label="Solver" onClick={onMenuOpen}>
                     <LightbulbIcon fontSize="large" />
                 </IconButton>
             )}
@@ -114,7 +119,7 @@ function ShareMenu({ sudokuController }: ShareMenuProps) {
             ]}
         >
             {({ onMenuOpen }) => (
-                <IconButton size="large" aria-label="Share" onClick={onMenuOpen}>
+                <IconButton color="inherit" size="large" aria-label="Share" onClick={onMenuOpen}>
                     <ShareIcon fontSize="large" />
                 </IconButton>
             )}
