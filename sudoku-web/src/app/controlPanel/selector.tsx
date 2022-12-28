@@ -1,4 +1,4 @@
-import * as React from "react";
+import type * as React from "react";
 import { valuesFromSideLength, valueToString } from "../utils";
 import type { Input, WasmSudokuController } from "../wasmSudokuController";
 import ButtonBase from "@mui/material/ButtonBase";

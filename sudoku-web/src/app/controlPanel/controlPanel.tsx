@@ -1,4 +1,4 @@
-import * as React from "react";
+import type * as React from "react";
 import { Selector } from "./selector";
 import { Toolbar } from "./toolbar";
 import type { Input, WasmSudokuController } from "../wasmSudokuController";

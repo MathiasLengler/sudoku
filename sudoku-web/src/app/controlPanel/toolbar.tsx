@@ -1,4 +1,4 @@
-import * as React from "react";
+import type * as React from "react";
 import IconButton from "@mui/material/IconButton";
 import DeleteIcon from "@mui/icons-material/Delete";
 import InfoIcon from "@mui/icons-material/Info";

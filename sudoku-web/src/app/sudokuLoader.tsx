@@ -1,4 +1,4 @@
-import * as React from "react";
+import type * as React from "react";
 import { useEffect, useState } from "react";
 import type { TransportSudoku } from "../../../sudoku-rs/bindings";
 import * as Comlink from "comlink";

@@ -2,17 +2,17 @@
     "compilerOptions": {
         "strict": true,
         "noFallthroughCasesInSwitch": true,
-        // needed to have dynamic imports
         "module": "esnext",
         "lib": ["dom", "esnext"],
         "moduleResolution": "node",
         "esModuleInterop": true,
         "sourceMap": true,
-        "jsx": "react",
-        "target": "es2017",
+        "jsx": "react-jsx",
+        "target": "ESNext",
         "noEmit": true,
         "isolatedModules": true,
-        "importsNotUsedAsValues": "error"
+        "importsNotUsedAsValues": "error",
+        "incremental": true,
     },
     "include": ["src/**/*"]
 }

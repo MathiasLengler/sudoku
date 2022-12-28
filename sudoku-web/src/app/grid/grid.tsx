@@ -1,4 +1,4 @@
-import * as React from "react";
+import type * as React from "react";
 import type * as CSS from "csstype";
 import isEqual from "lodash/isEqual";
 import { MemoCell } from "./cell";
