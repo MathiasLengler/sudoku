@@ -6,7 +6,7 @@ import type { WasmSudoku } from "../types";
 import { WORKER_BOOT_UP_MESSAGE } from "../constants";
 import type { WorkerApi } from "../worker";
 import { loadCellBlocks } from "./persistence";
-import { Stack, Typography } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
 import CircularProgress from "@mui/material/CircularProgress";
 import { Sudoku } from "./sudoku";
 
@@ -87,12 +87,12 @@ export const SudokuLoader: React.FunctionComponent = () => {
 
     if (!sudoku || !wasmSudokuProxy) {
         return (
-            <div className="sudoku">
-                <Stack direction="column" justifyContent="center" alignItems="center" spacing={2}>
+            <Box className="app-spinner" sx={{ height: 1 }}>
+                <Stack direction="column" justifyContent="center" alignItems="center" spacing={2} sx={{ height: 1 }}>
                     <CircularProgress />
                     <Typography>{loadingStatus}</Typography>
                 </Stack>
-            </div>
+            </Box>
         );
     } else {
         return <Sudoku sudoku={sudoku} setSudoku={setSudoku} wasmSudokuProxy={wasmSudokuProxy} />;
