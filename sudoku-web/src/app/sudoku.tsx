@@ -62,8 +62,6 @@ export const Sudoku: React.FunctionComponent<SudokuProps> = ({ sudoku, setSudoku
     // Responsive Grid
     const { width: gridWidth, height: gridHeight, ref: gridRef } = useResizeDetector({});
 
-    console.log({ gridWidth, gridHeight });
-
     const cssVariables: CSS.Properties = {
         "--side-length": sideLength,
         "--side-length-fr": `${sideLength}fr`,

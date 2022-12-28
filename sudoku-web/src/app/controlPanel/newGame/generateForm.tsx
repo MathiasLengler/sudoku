@@ -75,8 +75,6 @@ export const GenerateForm: React.FunctionComponent<GenerateFormProps> = props =>
         <form
             noValidate
             onSubmit={handleSubmit(async formData => {
-                console.log({ formData });
-
                 const { base, minGivens, setAllDirectCandidates, strategies } = formData;
 
                 const cellCount = baseToCellCount(base);
