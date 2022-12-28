@@ -80,7 +80,7 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
 
             self.step_count += 1;
 
-            #[cfg(feature = "debug_print")]
+            #[cfg(feature = "solver_debug_print")]
             self.debug_print(&step_result);
 
             match step_result {
@@ -144,7 +144,7 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
         }
     }
 
-    #[cfg(feature = "debug_print")]
+    #[cfg(feature = "solver_debug_print")]
     fn debug_print(&self, step_result: &StepResult) {
         use crossterm::{cursor, style::Print, terminal, QueueableCommand};
         use std::io::{prelude::*, stdout};

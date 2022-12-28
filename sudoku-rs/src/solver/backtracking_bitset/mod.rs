@@ -1,3 +1,5 @@
+use log::trace;
+
 /// Fork of: https://github.com/t-dillon/tdoku/blob/master/src/solver_basic.cc
 use crate::base::SudokuBase;
 use crate::cell::candidates_cell::CandidatesCell;
@@ -92,8 +94,7 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
             }
 
             if let Some(better_index) = better_index {
-                #[cfg(feature = "debug_print")]
-                println!(
+                trace!(
                     "swapping {first_count} @ {first_index:?} with {better_count} @ {better_index:?}"
                 );
                 swap(first_index, better_index);

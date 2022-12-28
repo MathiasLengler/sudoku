@@ -1,10 +1,12 @@
+use log::trace;
+
+use deduction::Deductions;
 use strategies::Strategy;
 
 use crate::base::SudokuBase;
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::solver::strategic::strategies::DynamicStrategy;
-use deduction::Deductions;
 
 pub mod strategies;
 // API
@@ -58,8 +60,7 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
             let deductions = strategy.execute(&mut self.grid)?;
 
             if !(deductions.is_empty()) {
-                #[cfg(feature = "debug_print")]
-                println!(
+                trace!(
                     "{:?}: {:?}\n{}",
                     strategy,
                     deductions

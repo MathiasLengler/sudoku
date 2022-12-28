@@ -33,15 +33,16 @@ harness = false
 
 [features]
 default = []
-debug_print = ["crossterm"]
+terminal = ["crossterm"]
 parallel = ["rayon", "indicatif", "indicatif/rayon"]
 wasm = ["getrandom/js", "ts-rs"]
 fuzz = ["arbitrary"]
+solver_debug_print = ["terminal"]
 
 [[bin]]
 name = "generate_histogram"
-required-features = ["parallel"]
+required-features = ["parallel", "terminal"]
 
 [[bin]]
 name = "solver_animation"
-required-features = ["debug_print"]
+required-features = ["solver_debug_print"]
