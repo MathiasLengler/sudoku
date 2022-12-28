@@ -18,6 +18,23 @@ interface SudokuProps {
     wasmSudokuProxy: Comlink.Remote<WasmSudoku>;
 }
 
+interface SudokuContentProps {
+    sudokuController: WasmSudokuController;
+    input: Input;
+    sudoku: TransportSudoku;
+    gridRef: React.MutableRefObject<HTMLDivElement>;
+    sideLength: TransportSudoku["sideLength"];
+}
+
+const SudokuContent = ({ gridRef, input, sideLength, sudoku, sudokuController }: SudokuContentProps) => (
+    <div className="app-content">
+        <div className="sudoku">
+            <Grid sudokuController={sudokuController} input={input} sudoku={sudoku} gridRef={gridRef} />
+            <ControlPanel sudokuController={sudokuController} input={input} sideLength={sideLength} />
+        </div>
+    </div>
+);
+
 export const Sudoku: React.FunctionComponent<SudokuProps> = ({ sudoku, setSudoku, wasmSudokuProxy }) => {
     const { blocks, base, sideLength } = sudoku;
 
@@ -71,14 +88,19 @@ export const Sudoku: React.FunctionComponent<SudokuProps> = ({ sudoku, setSudoku
 
     return (
         <div
-            className="sudoku"
+            className="app"
             style={cssVariables}
             onKeyDown={makeKeyDownListener(sudokuController, input, sideLength)}
             tabIndex={0}
         >
-            <SudokuAppBar />
-            <Grid sudokuController={sudokuController} input={input} sudoku={sudoku} gridRef={gridRef} />
-            <ControlPanel sudokuController={sudokuController} input={input} sideLength={sideLength} />
+            <SudokuAppBar sudokuController={sudokuController} />
+            <SudokuContent
+                sudokuController={sudokuController}
+                input={input}
+                sudoku={sudoku}
+                gridRef={gridRef}
+                sideLength={sideLength}
+            />
         </div>
     );
 };

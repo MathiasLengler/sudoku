@@ -43,15 +43,17 @@ export const Selector: React.FunctionComponent<SelectorProps> = props => {
     } = props;
 
     return (
-        <div className="selector">
-            {valuesFromSideLength(sideLength).map(value => (
-                <SelectorValue
-                    key={value}
-                    value={value}
-                    sudokuController={sudokuController}
-                    selected={stickyMode && selectedValue === value}
-                />
-            ))}
+        <div className="selector-container">
+            <div className="selector">
+                {valuesFromSideLength(sideLength).map(value => (
+                    <SelectorValue
+                        key={value}
+                        value={value}
+                        sudokuController={sudokuController}
+                        selected={stickyMode && selectedValue === value}
+                    />
+                ))}
+            </div>
         </div>
     );
 };

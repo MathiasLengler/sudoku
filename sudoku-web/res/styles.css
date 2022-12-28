@@ -21,6 +21,9 @@
     --candiate-color: hsl(var(--hue), 3%, 39%);
     --candiate-color-guide: hsl(var(--hue), 25%, 83%);
     --bg-color: hsl(0, 0%, 100%);
+
+    --sudoku-content-direction: column;
+    --sudoku-toolbar-direction: row;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -41,6 +44,13 @@
     }
 }
 
+@media (min-aspect-ratio: 91/100) {
+    :root {
+        --sudoku-content-direction: row;
+        --sudoku-toolbar-direction: column;
+    }
+}
+
 html {
     max-height: 100vh;
     overflow-x: hidden;
@@ -56,15 +66,27 @@ button {
     font-family: "Roboto", "Helvetica", "Arial", sans-serif;
 }
 
+.app {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.app-bar {
+    flex: 0;
+}
+
+.app-content {
+    flex: 1;
+    overflow: clip;
+}
+
 .sudoku {
     height: 100%;
-    display: grid;
-    place-items: center;
-    /*justify-content: stretch;*/
-    /*align-content: center;*/
+    display: flex;
+    flex-direction: var(--sudoku-content-direction);
 
-    grid-template-rows: min-content minmax(0, var(--side-length-fr)) min-content minmax(0, 1fr);
-    grid-template-columns: minmax(0, 1fr);
+    place-items: center;
 
     /*No Select*/
     user-select: none; /* supported by Chrome and Opera */
@@ -79,11 +101,13 @@ button {
     justify-self: stretch;
 }
 
-.grid-wrapper {
+.grid-container {
     align-self: stretch;
     justify-self: stretch;
     min-height: 0;
     min-width: 0;
+
+    flex: 4;
 }
 
 .grid {
@@ -230,6 +254,18 @@ button {
     color: var(--cell-value-color-user);
 }
 
+.toolbar {
+    display: flex;
+    flex-direction: var(--sudoku-toolbar-direction);
+}
+
+.selector-container {
+    flex: 1;
+    display: flex;
+    flex-direction: var(--sudoku-content-direction);
+    justify-content: center;
+}
+
 .selector {
     --selector-width: calc(var(--grid-size) + (2 * var(--block-border-size)));
     --selector-gutter: var(--cell-border-size);
@@ -237,18 +273,30 @@ button {
     --selector-row-height: calc(
         (var(--selector-width) - (var(--selector-no-of-gutters) * var(--selector-gutter))) / var(--side-length)
     );
+    --selector-grid-template-columns: repeat(var(--side-length), 1fr);
+    --selector-grid-template-rows: 1fr;
 
     width: var(--selector-width);
     height: var(--selector-row-height);
     display: grid;
     place-items: stretch;
-    grid-template-columns: repeat(var(--side-length), 1fr);
-    grid-template-rows: 1fr;
+    grid-template-columns: var(--selector-grid-template-columns);
+    grid-template-rows: var(--selector-grid-template-rows);
     grid-gap: var(--selector-gutter);
 
     border: var(--block-border-size) solid var(--block-border-color);
 
     background-color: var(--cell-border-color);
+}
+
+@media (min-aspect-ratio: 91/100) {
+    .selector {
+        /* "rotate" selector grid */
+        height: var(--selector-width);
+        width: var(--selector-row-height);
+        grid-template-columns: var(--selector-grid-template-rows);
+        grid-template-rows: var(--selector-grid-template-columns);
+    }
 }
 
 .selectorValue {

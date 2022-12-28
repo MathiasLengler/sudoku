@@ -1,6 +1,6 @@
 import type * as React from "react";
 import Dialog from "@mui/material/Dialog";
-import { NewGameTabs } from "./tabs";
+import { NewGameTabs } from "./newGameTabs";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
 import type { WasmSudokuController } from "../../wasmSudokuController";
@@ -18,8 +18,15 @@ export const NewGameDialog: React.FunctionComponent<NewGameDialogProps> = props 
     const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth fullScreen={fullScreen}>
-            <NewGameTabs sudokuController={sudokuController} onClose={onClose} />
-        </Dialog>
+        <div
+            onKeyDown={e => {
+                // Disable global game shortcuts in dialog boxes.
+                e.stopPropagation();
+            }}
+        >
+            <Dialog open={open} onClose={onClose} fullWidth fullScreen={fullScreen}>
+                <NewGameTabs sudokuController={sudokuController} onClose={onClose} />
+            </Dialog>
+        </div>
     );
 };

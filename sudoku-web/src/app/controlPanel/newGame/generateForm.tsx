@@ -8,6 +8,7 @@ import { CheckboxButtonGroup, SliderElement, SwitchElement, useForm } from "reac
 import type { DynamicStrategy } from "../../../types";
 import { Box, DialogContent, FormLabel } from "@mui/material";
 import { baseToCellCount, baseToSideLength } from "../../utils";
+import { ALL_STRATEGIES } from "../../../constants";
 
 const BASE_MIN = 2;
 const BASE_MAX = 5;
@@ -30,19 +31,7 @@ interface FormData {
     setAllDirectCandidates: boolean;
 }
 
-const arrayOfAll =
-    <T,>() =>
-    <U extends T[]>(array: U & ([T] extends [U[number]] ? unknown : "Invalid")) =>
-        array;
-
-// Copy of sudokuController.allStrategies
-const ALL_STRATEGIES = arrayOfAll<DynamicStrategy>()([
-    "SingleCandidate",
-    "HiddenSingles",
-    "GroupReduction",
-    "Backtracking",
-]);
-
+// FIXME: don't reset form
 export const GenerateForm: React.FunctionComponent<GenerateFormProps> = props => {
     const { sudokuController, onClose } = props;
 
@@ -125,7 +114,7 @@ export const GenerateForm: React.FunctionComponent<GenerateFormProps> = props =>
                     row
                 />
                 <FormLabel component="legend">Post generation</FormLabel>
-                <SwitchElement control={control} name="setAllDirectCandidates" label="Set all direct candidates" />
+                <SwitchElement control={control} name="setAllDirectCandidates" label="Fill candidates" />
             </DialogContent>
             <DialogActions>
                 {isSubmitting && (
@@ -136,7 +125,7 @@ export const GenerateForm: React.FunctionComponent<GenerateFormProps> = props =>
                 <Button onClick={onClose} disabled={isSubmitting}>
                     Cancel
                 </Button>
-                <Button type="submit" color="primary" disabled={isSubmitting}>
+                <Button type="submit" color="primary" variant="contained" disabled={isSubmitting}>
                     Generate
                 </Button>
             </DialogActions>

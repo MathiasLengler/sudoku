@@ -85,7 +85,7 @@ export const Grid: React.FunctionComponent<GridProps> = props => {
     } = props;
 
     return (
-        <div className="grid-wrapper">
+        <div className="grid-container">
             <div className="grid" ref={gridRef}>
                 {blocks.map((block, blockIndex) => (
                     <Block
