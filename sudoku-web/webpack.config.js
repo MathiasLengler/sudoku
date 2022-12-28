@@ -24,6 +24,7 @@ module.exports = (env, argv) => {
 
     const reactProfiling = !!env.reactProfiling;
     const bundleAnalyzer = !!env.bundleAnalyzer;
+    const hostAny = !!env.hostAny;
 
     const alias = reactProfiling
         ? {
@@ -57,7 +58,7 @@ module.exports = (env, argv) => {
                     warnings: false,
                 },
             },
-            host: "127.0.0.1",
+            host: hostAny ? "0.0.0.0" : "127.0.0.1",
             hot: true,
         },
         devtool,
