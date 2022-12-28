@@ -98,7 +98,7 @@ export const ToolbarMenu: React.FunctionComponent<ToolbarMenuProps> = props => {
                         const binaryCandidatesLine = await sudokuController.export("binaryCandidatesLine");
                         window.open(
                             // Template string, since URLSearchParams encodes the reserved character ",".
-                            // sudokuwiki.org expects these characters *not* to be encoded.
+                            // sudokuwiki.org expects these characters to be unencoded.
                             `https://www.sudokuwiki.org/sudoku.htm?n=${binaryCandidatesLine}`,
                             "_blank",
                             "noopener"
