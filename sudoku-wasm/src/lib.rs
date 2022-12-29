@@ -108,6 +108,22 @@ impl WasmSudoku {
             .map_err(Self::export_error)?)
     }
 
+    #[wasm_bindgen(js_name = setCandidate)]
+    pub fn set_candidate(&mut self, pos: IPosition, candidate: u8) -> Result<()> {
+        Ok(self
+            .sudoku
+            .set_candidate(Self::import_pos(pos)?, candidate)
+            .map_err(Self::export_error)?)
+    }
+
+    #[wasm_bindgen(js_name = deleteCandidate)]
+    pub fn delete_candidate(&mut self, pos: IPosition, candidate: u8) -> Result<()> {
+        Ok(self
+            .sudoku
+            .delete_candidate(Self::import_pos(pos)?, candidate)
+            .map_err(Self::export_error)?)
+    }
+
     pub fn delete(&mut self, pos: IPosition) -> Result<()> {
         Ok(self.sudoku.delete(Self::import_pos(pos)?))
     }

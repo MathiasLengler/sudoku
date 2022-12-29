@@ -132,6 +132,22 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
 
         Ok(())
     }
+    fn set_candidate(&mut self, pos: Position, candidate: u8) -> Result<()> {
+        self.push_history();
+
+        self.grid.get_mut(pos).set_candidate(candidate.try_into()?);
+
+        Ok(())
+    }
+    fn delete_candidate(&mut self, pos: Position, candidate: u8) -> Result<()> {
+        self.push_history();
+
+        self.grid
+            .get_mut(pos)
+            .delete_candidate(candidate.try_into()?);
+
+        Ok(())
+    }
 
     fn delete(&mut self, pos: Position) {
         self.push_history();
