@@ -9,7 +9,6 @@ use crate::position::Position;
 use crate::sudoku::DynamicSudoku;
 use crate::sudoku::Sudoku;
 
-// TODO: can_undo
 #[cfg_attr(feature = "wasm", derive(TS))]
 #[cfg_attr(feature = "wasm", ts(export))]
 #[derive(Debug, Serialize, Deserialize)]
@@ -20,6 +19,8 @@ pub struct TransportSudoku {
     side_length: u8,
     cell_count: usize,
     is_solved: bool,
+    can_undo: bool,
+    can_redo: bool,
 }
 
 impl<Base: SudokuBase> From<&Sudoku<Base>> for TransportSudoku {
@@ -54,6 +55,8 @@ impl<Base: SudokuBase> From<&Sudoku<Base>> for TransportSudoku {
             side_length: Grid::<Base>::side_length(),
             cell_count: Grid::<Base>::cell_count_usize(),
             is_solved: grid.is_solved(),
+            can_undo: sudoku.history.can_go_back(),
+            can_redo: sudoku.history.can_go_forward(),
         }
     }
 }

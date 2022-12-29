@@ -8,8 +8,8 @@ pub use game::Game;
 
 use crate::base::consts::*;
 use crate::base::SudokuBase;
-use crate::cell::view::parser::parse_cells;
 use crate::cell::view::CellView;
+use crate::cell::view::parser::parse_cells;
 use crate::error::{Error, Result};
 use crate::generator::DynamicGeneratorSettings;
 use crate::grid::Grid;
@@ -23,20 +23,22 @@ mod game {
     use crate::grid::serialization::GridFormat;
     use crate::position::Position;
     use crate::solver::strategic::strategies::DynamicStrategy;
-    use crate::sudoku::settings::Settings as SudokuSettings;
     use crate::Sudoku;
+    use crate::sudoku::settings::Settings as SudokuSettings;
 
     #[enum_dispatch]
     pub trait Game {
         fn set_value(&mut self, pos: Position, value: u8) -> Result<()>;
         fn set_or_toggle_value(&mut self, pos: Position, value: u8) -> Result<()>;
         fn set_candidates(&mut self, pos: Position, candidates: Vec<u8>) -> Result<()>;
+        // TODO: add {set|delete}_candidate for sticky mode
         fn toggle_candidate(&mut self, pos: Position, candidate: u8) -> Result<()>;
         fn delete(&mut self, pos: Position);
         fn set_all_direct_candidates(&mut self);
         fn all_strategies(&self) -> Vec<DynamicStrategy>;
         fn try_strategy(&mut self, strategy: DynamicStrategy) -> Result<bool>;
         fn undo(&mut self);
+        fn redo(&mut self);
         fn settings(&self) -> SudokuSettings;
         fn update_settings(&mut self, settings: SudokuSettings);
         fn export(&self, format: &GridFormat) -> String;

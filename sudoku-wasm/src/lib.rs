@@ -1,5 +1,3 @@
-use std::cell::RefCell;
-
 use log::trace;
 use serde_wasm_bindgen::Serializer;
 use wasm_bindgen::prelude::*;
@@ -43,14 +41,12 @@ pub fn init() {
 
 #[wasm_bindgen]
 pub struct WasmSudoku {
-    sudoku: RefCell<DynamicSudoku>,
+    sudoku: DynamicSudoku,
 }
 
 impl From<DynamicSudoku> for WasmSudoku {
     fn from(sudoku: DynamicSudoku) -> Self {
-        WasmSudoku {
-            sudoku: RefCell::new(sudoku),
-        }
+        WasmSudoku { sudoku }
     }
 }
 
@@ -58,10 +54,6 @@ impl From<DynamicSudoku> for WasmSudoku {
 impl WasmSudoku {
     #[wasm_bindgen(constructor)]
     pub fn new() -> Self {
-        #[cfg(debug_assertions)]
-        let grid: Grid<U2> = sudoku::samples::minimal();
-
-        #[cfg(not(debug_assertions))]
         let grid: Grid<U3> = sudoku::samples::minimal();
 
         DynamicSudoku::with_sudoku(Sudoku::with_grid(grid))
@@ -79,25 +71,23 @@ impl WasmSudoku {
 
     #[wasm_bindgen(js_name = getSudoku)]
     pub fn get_sudoku(&self) -> Result<ITransportSudoku> {
-        let transport_sudoku = TransportSudoku::from(&*self.sudoku.borrow());
+        let transport_sudoku = TransportSudoku::from(&self.sudoku);
 
         Self::export_sudoku(transport_sudoku)
     }
 
     #[wasm_bindgen(js_name = setValue)]
-    pub fn set_value(&self, pos: IPosition, value: u8) -> Result<()> {
+    pub fn set_value(&mut self, pos: IPosition, value: u8) -> Result<()> {
         Ok(self
             .sudoku
-            .borrow_mut()
             .set_value(Self::import_pos(pos)?, value)
             .map_err(Self::export_error)?)
     }
 
     #[wasm_bindgen(js_name = setOrToggleValue)]
-    pub fn set_or_toggle_value(&self, pos: IPosition, value: u8) -> Result<()> {
+    pub fn set_or_toggle_value(&mut self, pos: IPosition, value: u8) -> Result<()> {
         Ok(self
             .sudoku
-            .borrow_mut()
             .set_or_toggle_value(Self::import_pos(pos)?, value)
             .map_err(Self::export_error)?)
     }
@@ -106,7 +96,6 @@ impl WasmSudoku {
     pub fn set_candidates(&mut self, pos: IPosition, candidates: ICandidates) -> Result<()> {
         Ok(self
             .sudoku
-            .borrow_mut()
             .set_candidates(Self::import_pos(pos)?, Self::import_candidates(candidates)?)
             .map_err(Self::export_error)?)
     }
@@ -115,52 +104,46 @@ impl WasmSudoku {
     pub fn toggle_candidate(&mut self, pos: IPosition, candidate: u8) -> Result<()> {
         Ok(self
             .sudoku
-            .borrow_mut()
             .toggle_candidate(Self::import_pos(pos)?, candidate)
             .map_err(Self::export_error)?)
     }
 
     pub fn delete(&mut self, pos: IPosition) -> Result<()> {
-        Ok(self.sudoku.borrow_mut().delete(Self::import_pos(pos)?))
+        Ok(self.sudoku.delete(Self::import_pos(pos)?))
     }
 
     #[wasm_bindgen(js_name = setAllDirectCandidates)]
     pub fn set_all_direct_candidates(&mut self) {
-        self.sudoku.borrow_mut().set_all_direct_candidates();
+        self.sudoku.set_all_direct_candidates();
     }
 
     pub fn undo(&mut self) {
-        self.sudoku.borrow_mut().undo();
+        self.sudoku.undo();
+    }
+
+    pub fn redo(&mut self) {
+        self.sudoku.redo();
     }
 
     pub fn generate(&mut self, generator_settings: IDynamicGeneratorSettings) -> Result<()> {
         Ok(self
             .sudoku
-            .borrow_mut()
             .generate(Self::import_dynamic_generator_settings(generator_settings)?)
             .map_err(Self::export_error)?)
     }
 
     pub fn import(&mut self, input: &str) -> Result<()> {
-        Ok(self
-            .sudoku
-            .borrow_mut()
-            .import(input)
-            .map_err(Self::export_error)?)
+        Ok(self.sudoku.import(input).map_err(Self::export_error)?)
     }
 
     pub fn export(&self, format: IGridFormat) -> Result<String> {
-        Ok(self
-            .sudoku
-            .borrow_mut()
-            .export(&Self::import_grid_format(format)?))
+        Ok(self.sudoku.export(&Self::import_grid_format(format)?))
     }
 
     #[wasm_bindgen(js_name = allStrategies)]
     pub fn all_strategies(&self) -> Result<Vec<IDynamicStrategy>> {
         Ok(self
             .sudoku
-            .borrow_mut()
             .all_strategies()
             .into_iter()
             .map(Self::export_strategy)
@@ -171,7 +154,6 @@ impl WasmSudoku {
     pub fn try_strategy(&mut self, strategy: IDynamicStrategy) -> Result<bool> {
         Ok(self
             .sudoku
-            .borrow_mut()
             .try_strategy(Self::import_strategy(strategy)?)
             .map_err(Self::export_error)?)
     }

@@ -8,13 +8,14 @@ interface ControlPanelProps {
     sudokuController: WasmSudokuController;
     input: Input;
     sideLength: TransportSudoku["sideLength"];
+    canUndo: boolean;
+    canRedo: boolean;
 }
 
-export const ControlPanel: React.FunctionComponent<ControlPanelProps> = props => {
-    const { sudokuController, sideLength, input } = props;
+export const ControlPanel = ({ input, sideLength, sudokuController, canUndo, canRedo }: ControlPanelProps) => {
     return (
         <>
-            <Toolbar sudokuController={sudokuController} input={input} />
+            <Toolbar sudokuController={sudokuController} input={input} canUndo={canUndo} canRedo={canRedo} />
             <Selector sudokuController={sudokuController} input={input} sideLength={sideLength} />
         </>
     );

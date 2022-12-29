@@ -26,14 +26,23 @@ interface SudokuContentProps {
     sideLength: TransportSudoku["sideLength"];
 }
 
-const SudokuContent = ({ gridRef, input, sideLength, sudoku, sudokuController }: SudokuContentProps) => (
-    <div className="app-content">
-        <div className="sudoku">
-            <Grid sudokuController={sudokuController} input={input} sudoku={sudoku} gridRef={gridRef} />
-            <ControlPanel sudokuController={sudokuController} input={input} sideLength={sideLength} />
+const SudokuContent = ({ gridRef, input, sideLength, sudoku, sudokuController }: SudokuContentProps) => {
+    const { canUndo, canRedo } = sudoku;
+    return (
+        <div className="app-content">
+            <div className="sudoku">
+                <Grid sudokuController={sudokuController} input={input} sudoku={sudoku} gridRef={gridRef} />
+                <ControlPanel
+                    sudokuController={sudokuController}
+                    input={input}
+                    sideLength={sideLength}
+                    canUndo={canUndo}
+                    canRedo={canRedo}
+                />
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 export const Sudoku: React.FunctionComponent<SudokuProps> = ({ sudoku, setSudoku, wasmSudokuProxy }) => {
     const { blocks, base, sideLength } = sudoku;

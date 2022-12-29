@@ -1,4 +1,4 @@
-use std::usize;
+use crate::sudoku::history::DEFAULT_LIMIT;
 
 // TODO: add public settings API
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug, Copy)]
@@ -12,7 +12,7 @@ impl Default for Settings {
     fn default() -> Self {
         Settings {
             update_candidates: true,
-            history_limit: 256,
+            history_limit: DEFAULT_LIMIT,
             solve_grid: true,
         }
     }

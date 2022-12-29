@@ -2,6 +2,7 @@ use std::convert::TryInto;
 use std::fmt::{self, Display, Formatter};
 
 pub use dynamic::{DynamicSudoku, Game};
+use history::History;
 
 use crate::base::SudokuBase;
 use crate::cell::compact::value::Value;
@@ -9,7 +10,6 @@ use crate::error::Result;
 use crate::generator::{Generator, GeneratorSettings};
 use crate::grid::serialization::GridFormat;
 use crate::grid::Grid;
-use crate::history::History;
 use crate::position::Position;
 use crate::solver::strategic::strategies::DynamicStrategy;
 use crate::solver::strategic::Solver as StrategicSolver;
@@ -17,7 +17,9 @@ use crate::solver::strategic::Solver as StrategicSolver;
 use self::settings::Settings;
 
 mod dynamic;
+mod history;
 pub mod settings;
+pub mod transport;
 
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub struct Sudoku<Base: SudokuBase> {
@@ -53,7 +55,7 @@ impl<Base: SudokuBase> Sudoku<Base> {
             },
             grid,
             settings,
-            history: Default::default(),
+            history: History::with_limit(settings.history_limit),
         }
     }
 
@@ -162,7 +164,13 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
     }
 
     fn undo(&mut self) {
-        if let Some(grid) = self.history.pop() {
+        if let Some(grid) = self.history.go_back(&self.grid) {
+            self.grid = grid;
+        }
+    }
+
+    fn redo(&mut self) {
+        if let Some(grid) = self.history.go_forward(&self.grid) {
             self.grid = grid;
         }
     }
@@ -174,6 +182,7 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
     // TODO: wasm integration
     fn update_settings(&mut self, settings: Settings) {
         self.settings = settings;
+        self.history.set_limit(self.settings.history_limit);
     }
 
     fn export(&self, format: &GridFormat) -> String {
@@ -183,8 +192,7 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
 
 impl<Base: SudokuBase> Sudoku<Base> {
     fn push_history(&mut self) {
-        self.history
-            .push(self.grid.clone(), self.settings.history_limit)
+        self.history.push(self.grid.clone())
     }
 }
 

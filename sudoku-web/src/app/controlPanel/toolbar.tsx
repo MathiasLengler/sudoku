@@ -12,14 +12,11 @@ import { ToggleButton } from "@mui/material";
 interface ToolbarProps {
     sudokuController: WasmSudokuController;
     input: Input;
+    canUndo: boolean;
+    canRedo: boolean;
 }
 
-export const Toolbar: React.FunctionComponent<ToolbarProps> = props => {
-    const {
-        sudokuController,
-        input: { candidateMode, stickyMode },
-    } = props;
-
+export const Toolbar = ({ input: { candidateMode, stickyMode }, sudokuController, canUndo, canRedo }: ToolbarProps) => {
     const enterDelay = 500;
     const leaveDelay = 200;
 
@@ -48,14 +45,24 @@ export const Toolbar: React.FunctionComponent<ToolbarProps> = props => {
                 </ToggleButton>
             </Tooltip>
             <Tooltip title="Undo [backspace]" enterDelay={enterDelay} leaveDelay={leaveDelay}>
-                {/* TODO: disable if can't undo */}
-                <IconButton onClick={() => sudokuController.undo()} size="large">
+                <IconButton
+                    onClick={() => {
+                        sudokuController.undo();
+                    }}
+                    size="large"
+                    disabled={!canUndo}
+                >
                     <UndoIcon fontSize="large" />
                 </IconButton>
             </Tooltip>
             <Tooltip title="Redo [shift+backspace]" enterDelay={enterDelay} leaveDelay={leaveDelay}>
-                {/* TODO: disable if can't redo */}
-                <IconButton onClick={() => console.warn("TODO: expose redo")} size="large">
+                <IconButton
+                    onClick={() => {
+                        sudokuController.redo();
+                    }}
+                    disabled={!canRedo}
+                    size="large"
+                >
                     <RedoIcon fontSize="large" />
                 </IconButton>
             </Tooltip>

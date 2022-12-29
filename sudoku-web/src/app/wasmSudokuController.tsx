@@ -139,6 +139,11 @@ export class WasmSudokuController {
             await this.wasmSudokuProxy.undo();
         });
     }
+    public async redo(): Promise<void> {
+        await this.withSudokuUpdate(async () => {
+            await this.wasmSudokuProxy.redo();
+        });
+    }
 
     public async generate(settings: DynamicGeneratorSettings): Promise<void> {
         await this.withSudokuUpdate(async () => {
