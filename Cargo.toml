@@ -3,11 +3,6 @@
 members = [
     "sudoku-rs",
     "sudoku-wasm",
-    "sudoku-api"
-]
-default-members = [
-    "sudoku-rs",
-    "sudoku-wasm"
 ]
 
 [profile.release-with-debug]

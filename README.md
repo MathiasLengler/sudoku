@@ -21,6 +21,3 @@ The PWA integration enables offline usage.
 
 ### [sudoku-rs/fuzz](sudoku-rs/fuzz)
 [cargo fuzz](https://github.com/rust-fuzz/cargo-fuzz) harness for grid parsers.
-
-### [sudoku-api](sudoku-api)
-WIP [Rocket](https://rocket.rs/) API server to support `sudoku-web`.
