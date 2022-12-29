@@ -129,6 +129,15 @@ impl<Base: SudokuBase> Cell<Base> {
         self.0.toggle_candidate(candidate)
     }
 
+    /// Set the given candidate if the cell contains candidates.
+    ///
+    /// # Panics
+    ///
+    /// Panics it the cell is fixed.
+    pub fn set_candidate(&mut self, candidate: Value<Base>) {
+        self.0.set_candidate(candidate)
+    }
+
     /// Deletes the given candidate if the cell contains candidates.
     ///
     /// # Panics
