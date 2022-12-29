@@ -37,8 +37,13 @@ async function init(blocks?: CellBlocks) {
 
     if (blocks) {
         console.debug("Restoring sudoku from cells");
-        workerApi.typedWasmSudoku = WasmSudoku.restore(blocks);
-    } else {
+        try {
+            workerApi.typedWasmSudoku = WasmSudoku.restore(blocks);
+        } catch (err) {
+            console.error("Failed to restore persisted grid:", err);
+        }
+    }
+    if (!workerApi.typedWasmSudoku) {
         console.debug("Generating initial sudoku");
         workerApi.typedWasmSudoku = new WasmSudoku();
     }
