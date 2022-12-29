@@ -27,7 +27,7 @@ impl<Base: SudokuBase> Default for Candidates<Base> {
 /// Constructors
 impl<Base: SudokuBase> Candidates<Base> {
     pub fn new() -> Self {
-        Self::with_integral_unchecked(Base::CandidatesIntegral::default())
+        Self::with_integral_unchecked(Base::CandidatesIntegral::zero())
     }
 
     fn with_integral_unchecked(bits: Base::CandidatesIntegral) -> Self {
