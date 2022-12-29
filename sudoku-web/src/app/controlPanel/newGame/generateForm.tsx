@@ -31,7 +31,8 @@ interface FormData {
     setAllDirectCandidates: boolean;
 }
 
-// FIXME: don't reset form
+let previousFormData: FormData | undefined;
+
 export const GenerateForm: React.FunctionComponent<GenerateFormProps> = props => {
     const { sudokuController, onClose } = props;
 
@@ -42,7 +43,7 @@ export const GenerateForm: React.FunctionComponent<GenerateFormProps> = props =>
         formState: { isSubmitting },
         setValue,
     } = useForm<FormData>({
-        defaultValues: {
+        defaultValues: previousFormData ?? {
             base: 3,
             minGivens: 0,
             strategies: ALL_STRATEGIES,
@@ -78,6 +79,9 @@ export const GenerateForm: React.FunctionComponent<GenerateFormProps> = props =>
                     },
                     strategies,
                 });
+
+                previousFormData = formData;
+
                 onClose();
             })}
         >
