@@ -5,7 +5,7 @@ import type { CellBlocks } from "./types";
 
 if (process.env.NODE_ENV !== "production") {
     self.addEventListener("message", ev => {
-        console.debug("Worker RX", ev.data);
+        console.debug("Worker message RX:", ev.data);
     });
 }
 

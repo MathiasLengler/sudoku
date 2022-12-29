@@ -22,13 +22,13 @@ export const SudokuLoader: React.FunctionComponent = () => {
 
             if (process.env.NODE_ENV !== "production") {
                 worker.addEventListener("message", ev => {
-                    console.debug("Worker message TX", ev.data);
+                    console.debug("Worker message TX:", ev.data);
                 });
                 worker.addEventListener("error", ev => {
-                    console.error("Worker error", ev);
+                    console.error("Worker error:", ev);
                 });
                 worker.addEventListener("messageerror", ev => {
-                    console.error("Worker messageerror", ev);
+                    console.error("Worker messageerror:", ev);
                 });
             }
 
