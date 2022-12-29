@@ -77,7 +77,7 @@ impl<Base: SudokuBase> CellState<Base> {
         *self = match self {
             CellState::Value(value) => CellState::Value(*value),
             CellState::FixedValue(value) => CellState::Value(*value),
-            CellState::Candidates(ref candidates) => CellState::Candidates(candidates.clone()),
+            CellState::Candidates(candidates) => CellState::Candidates(*candidates),
         };
     }
 
