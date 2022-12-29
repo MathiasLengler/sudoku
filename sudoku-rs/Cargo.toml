@@ -1,6 +1,7 @@
 [package]
 name = "sudoku"
 version = "0.1.0"
+# TODO: move to workspace
 authors = ["Mathias Lengler <mathias@lengler.dev>"]
 edition = "2021"
 
