@@ -80,3 +80,55 @@ impl<T: Clone + Debug> Default for History<T> {
         Self::with_limit(DEFAULT_LIMIT)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_history() {
+        let mut history = History::<i32>::with_limit(3);
+        assert!(!history.can_go_back());
+        assert!(!history.can_go_forward());
+        assert!(history.go_back(&-1).is_none());
+        assert!(!history.can_go_back());
+        assert!(!history.can_go_forward());
+        assert!(history.go_forward(&-1).is_none());
+        assert!(!history.can_go_back());
+        assert!(!history.can_go_forward());
+
+        history.push(0);
+
+        assert!(history.can_go_back());
+        assert!(!history.can_go_forward());
+
+        history.push(1);
+
+        assert!(history.can_go_back());
+        assert!(!history.can_go_forward());
+
+        assert_eq!(history.go_back(&2), Some(1));
+
+        assert!(history.can_go_back());
+        assert!(history.can_go_forward());
+
+        assert_eq!(history.go_back(&1), Some(0));
+
+        assert!(!history.can_go_back());
+        assert!(history.can_go_forward());
+
+        assert_eq!(history.go_forward(&0), Some(1));
+
+        assert!(history.can_go_back());
+        assert!(history.can_go_forward());
+
+        history.push(3);
+
+        assert!(history.can_go_back());
+        assert!(!history.can_go_forward());
+
+        assert_eq!(history.go_back(&4), Some(3));
+        assert_eq!(history.go_back(&3), Some(0));
+        assert_eq!(history.go_back(&0), None);
+    }
+}
