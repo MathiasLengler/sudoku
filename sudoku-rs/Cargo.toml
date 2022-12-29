@@ -1,9 +1,17 @@
 [package]
 name = "sudoku"
-version = "0.1.0"
-# TODO: move to workspace
-authors = ["Mathias Lengler <mathias@lengler.dev>"]
-edition = "2021"
+
+authors.workspace = true
+categories.workspace = true
+description.workspace = true
+edition.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
 
 [dependencies]
 log = "0.4.17"

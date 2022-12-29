@@ -1,9 +1,18 @@
 [package]
-authors = ["Mathias Lengler <mathias@lengler.dev>"]
 name = "sudoku-wasm"
-readme = "./README.md"
-version = "0.1.0"
-edition = "2021"
+
+# Wait for issure to be resolved: https://github.com/rustwasm/wasm-pack/issues/1180
+authors.workspace = true
+categories.workspace = true
+description = "Touch optimized sudoku built with Rust/WASM/TypeScript/React."
+edition.workspace = true
+homepage = "https://sudoku.lengler.dev"
+keywords.workspace = true
+license = "MIT"
+publish.workspace = true
+repository = "https://github.com/MathiasLengler/sudoku"
+rust-version.workspace = true
+version.workspace = true
 
 [lib]
 crate-type = ["cdylib"]
