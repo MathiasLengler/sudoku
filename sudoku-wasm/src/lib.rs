@@ -13,9 +13,9 @@ use sudoku::position::Position;
 use sudoku::solver::strategic::strategies::DynamicStrategy;
 use sudoku::transport::TransportSudoku;
 use sudoku::{DynamicSudoku, Game, Sudoku};
-use typescript::{ICandidates, ICellBlocks, IGridFormat, ITransportSudoku};
+use typescript::{ICandidates, IGridFormat, ITransportSudoku};
 
-use crate::typescript::{IDynamicGeneratorSettings, IDynamicStrategy, IPosition};
+use crate::typescript::{ICellView, IDynamicGeneratorSettings, IDynamicStrategy, IPosition};
 
 mod typescript;
 
@@ -61,8 +61,8 @@ impl WasmSudoku {
             .into()
     }
 
-    pub fn restore(blocks: ICellBlocks) -> Result<WasmSudoku> {
-        let cells = Self::import_blocks(blocks)?;
+    pub fn restore(cells: Vec<ICellView>) -> Result<WasmSudoku> {
+        let cells = Self::import_cells(cells)?;
 
         Ok(DynamicSudoku::try_from(cells)
             .map_err(Self::export_error)?
@@ -197,8 +197,11 @@ impl WasmSudoku {
         Ok(serde_wasm_bindgen::from_value(format.into())?)
     }
 
-    fn import_blocks(cells: ICellBlocks) -> Result<Vec<Vec<CellView>>> {
-        Ok(serde_wasm_bindgen::from_value(cells.into())?)
+    fn import_cells(cells: Vec<ICellView>) -> Result<Vec<CellView>> {
+        Ok(cells
+            .into_iter()
+            .map(|cell| serde_wasm_bindgen::from_value(cell.into()).map_err(Into::into))
+            .collect::<Result<Vec<_>>>()?)
     }
     fn import_strategy(strategy: IDynamicStrategy) -> Result<DynamicStrategy> {
         Ok(serde_wasm_bindgen::from_value(strategy.into())?)

@@ -14,7 +14,8 @@ use crate::sudoku::Sudoku;
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransportSudoku {
-    blocks: Vec<Vec<TransportCell>>,
+    cells: Vec<TransportCell>,
+    blocks_indices: Vec<Vec<u16>>,
     base: u8,
     side_length: u8,
     cell_count: usize,
@@ -29,27 +30,26 @@ impl<Base: SudokuBase> From<&Sudoku<Base>> for TransportSudoku {
         let solved_grid = sudoku.solved_grid();
 
         Self {
-            blocks: Grid::<Base>::all_block_positions()
-                .map(|block| {
-                    block
-                        .map(|pos| {
-                            let cell = grid.get(pos);
-                            let incorrect_value = if cell.has_value() {
-                                solved_grid
-                                    .as_ref()
-                                    .map(|solved_grid| solved_grid.get(pos) != cell)
-                                    .unwrap_or(false)
-                            } else {
-                                false
-                            };
-                            TransportCell {
-                                cell_view: cell.into(),
-                                position: pos,
-                                incorrect_value,
-                            }
-                        })
-                        .collect()
+            cells: Grid::<Base>::all_positions()
+                .map(|pos| {
+                    let cell = grid.get(pos);
+                    let incorrect_value = if cell.has_value() {
+                        solved_grid
+                            .as_ref()
+                            .map(|solved_grid| solved_grid.get(pos) != cell)
+                            .unwrap_or(false)
+                    } else {
+                        false
+                    };
+                    TransportCell {
+                        cell_view: cell.into(),
+                        position: pos,
+                        incorrect_value,
+                    }
                 })
+                .collect(),
+            blocks_indices: Grid::<Base>::all_block_positions()
+                .map(|block| block.map(|pos| pos.cell_index::<Base>()).collect())
                 .collect(),
             base: Grid::<Base>::base(),
             side_length: Grid::<Base>::side_length(),

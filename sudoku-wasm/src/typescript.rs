@@ -6,8 +6,6 @@ import type * as bindings from "../../sudoku-rs/bindings";
 
 export type Candidates = number[];
 
-export type CellBlocks = bindings.CellView[][];
-
 export type GridFormat = "givensLine" | "givensGrid" | "binaryCandidatesLine";
 "#;
 
@@ -16,8 +14,6 @@ export type GridFormat = "givensLine" | "givensGrid" | "binaryCandidatesLine";
 extern "C" {
     #[wasm_bindgen(typescript_type = "Candidates")]
     pub type ICandidates;
-    #[wasm_bindgen(typescript_type = "CellBlocks")]
-    pub type ICellBlocks;
     #[wasm_bindgen(typescript_type = "GridFormat")]
     pub type IGridFormat;
 }
@@ -35,4 +31,6 @@ extern "C" {
     pub type IDynamicStrategy;
     #[wasm_bindgen(typescript_type = "bindings.DynamicGeneratorSettings")]
     pub type IDynamicGeneratorSettings;
+    #[wasm_bindgen(typescript_type = "bindings.CellView")]
+    pub type ICellView;
 }

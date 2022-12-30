@@ -5,6 +5,8 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "wasm")]
 use ts_rs::TS;
 
+use crate::base::SudokuBase;
+
 #[cfg_attr(feature = "wasm", derive(TS))]
 #[cfg_attr(feature = "wasm", ts(export))]
 #[derive(
@@ -25,6 +27,10 @@ impl Position {
     pub fn index_tuple(&self) -> (usize, usize) {
         let &Position { row, column } = self;
         (row.into(), column.into())
+    }
+
+    pub fn cell_index<Base: SudokuBase>(&self) -> u16 {
+        u16::from(self.row) + u16::from(self.column) * u16::from(Base::SIDE_LENGTH)
     }
 }
 
