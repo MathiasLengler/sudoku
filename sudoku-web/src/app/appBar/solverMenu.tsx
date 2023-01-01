@@ -7,10 +7,31 @@ import type { DynamicStrategy } from "../../../../sudoku-rs/bindings";
 import { IconButton } from "@mui/material";
 import LightbulbIcon from "@mui/icons-material/Lightbulb";
 import React from "react";
+import _ from "lodash";
+
+const STRATEGIES_PYRAMID = _.initial(ALL_STRATEGIES).map((strategy, i) => ({
+    untilStrategy: strategy,
+    strategies: _.take(ALL_STRATEGIES, i + 1),
+}));
 
 export function SolverMenu() {
     const tryStrategy = useTryStrategy();
     const isSolved = useRecoilValue(sudokuIsSolvedState);
+
+    const tryStrategiesInLoop = async (strategies: DynamicStrategy[]) => {
+        outer: while (true) {
+            for (const strategy of strategies) {
+                console.info("Trying strategy:", strategy);
+                if (await tryStrategy(strategy)) {
+                    console.info("Made progress with:", strategy);
+                    continue outer;
+                }
+            }
+            break;
+        }
+        // TODO: show in Snackbar
+        console.info("All strategies failed to make progress");
+    };
 
     return (
         <CustomMenu
@@ -21,29 +42,12 @@ export function SolverMenu() {
                         await tryStrategy(strategy);
                     },
                 })),
-                {
-                    label: "Debug Iterative",
+                ...STRATEGIES_PYRAMID.map(({ untilStrategy, strategies }) => ({
+                    label: `Loop: ${untilStrategy}`,
                     onClick: async () => {
-                        const strategies: DynamicStrategy[] = [
-                            "SingleCandidate",
-                            // "HiddenSingles",
-                            // "GroupReduction",
-                            // "Backtracking",
-                        ];
-                        outer: while (true) {
-                            for (const strategy of strategies) {
-                                console.info("Trying strategy:", strategy);
-                                if (await tryStrategy(strategy)) {
-                                    console.info("Made progress with:", strategy);
-                                    continue outer;
-                                }
-                            }
-                            break;
-                        }
-                        // TODO: show in Snackbar
-                        console.info("All strategies failed to make progress");
+                        await tryStrategiesInLoop(strategies);
                     },
-                },
+                })),
             ]}
         >
             {({ onMenuOpen }) => (
