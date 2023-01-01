@@ -1,6 +1,5 @@
 import React, { useEffect } from "react";
 import range from "lodash/range";
-import type { WasmSudokuController } from "../../wasmSudokuController";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -9,6 +8,7 @@ import type { DynamicStrategy } from "../../../types";
 import { Box, DialogContent, FormLabel } from "@mui/material";
 import { baseToCellCount, baseToSideLength } from "../../utils";
 import { ALL_STRATEGIES } from "../../../constants";
+import { useGenerate } from "../../sudokuActions";
 
 const BASE_MIN = 2;
 const BASE_MAX = 5;
@@ -21,7 +21,6 @@ const BASE_MARKS = range(BASE_MIN, BASE_MAX + 1).map(base => {
 });
 
 interface GenerateFormProps {
-    sudokuController: WasmSudokuController;
     onClose: () => void;
 }
 interface FormData {
@@ -33,9 +32,7 @@ interface FormData {
 
 let previousFormData: FormData | undefined;
 
-export const GenerateForm: React.FunctionComponent<GenerateFormProps> = props => {
-    const { sudokuController, onClose } = props;
-
+export const GenerateForm = ({ onClose }: GenerateFormProps) => {
     const {
         control,
         handleSubmit,
@@ -61,6 +58,8 @@ export const GenerateForm: React.FunctionComponent<GenerateFormProps> = props =>
         }
     }, [cellCount, minGivens, setValue]);
 
+    const generate = useGenerate();
+
     return (
         <form
             noValidate
@@ -69,7 +68,7 @@ export const GenerateForm: React.FunctionComponent<GenerateFormProps> = props =>
 
                 const cellCount = baseToCellCount(base);
 
-                await sudokuController.generate({
+                await generate({
                     base,
                     target: {
                         fromFilled: {

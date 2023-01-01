@@ -1,4 +1,3 @@
-import type { WasmSudokuController } from "../../wasmSudokuController";
 import React, { useState } from "react";
 import Box from "@mui/material/Box";
 import DialogActions from "@mui/material/DialogActions";
@@ -10,6 +9,7 @@ import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import CircularProgress from "@mui/material/CircularProgress";
+import { useImportSudokuString } from "../../sudokuActions";
 
 interface CodeProps {
     text: string;
@@ -29,13 +29,10 @@ const Code: React.FunctionComponent<CodeProps> = ({ text }) => {
 };
 
 interface ImportFormProps {
-    sudokuController: WasmSudokuController;
     onClose: () => void;
 }
 
-export const ImportForm: React.FunctionComponent<ImportFormProps> = props => {
-    const { sudokuController, onClose } = props;
-
+export const ImportForm = ({ onClose }: ImportFormProps) => {
     const [loading, setLoading] = useState(false);
     const [input, setInput] = useState("");
     const [inputError, setInputError] = useState(false);
@@ -89,6 +86,7 @@ export const ImportForm: React.FunctionComponent<ImportFormProps> = props => {
             </AccordionDetails>
         </Accordion>
     );
+    const importSudokuString = useImportSudokuString();
 
     return (
         <>
@@ -118,7 +116,7 @@ export const ImportForm: React.FunctionComponent<ImportFormProps> = props => {
                         setLoading(true);
 
                         try {
-                            await sudokuController.import(input);
+                            await importSudokuString(input);
                             onClose();
                         } catch (e) {
                             console.error("Unable to parse input sudoku string:", input, e);

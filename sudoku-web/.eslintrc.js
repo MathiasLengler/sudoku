@@ -20,7 +20,12 @@ module.exports = {
         "@typescript-eslint/no-unused-vars": "off",
         "@typescript-eslint/no-use-before-define": ["error", { functions: false }],
         "react-hooks/rules-of-hooks": "error",
-        "react-hooks/exhaustive-deps": "warn",
+        "react-hooks/exhaustive-deps": [
+            "warn",
+            {
+                additionalHooks: "(useRecoilCallback|useRecoilTransaction_UNSTABLE)",
+            },
+        ],
         "react/prop-types": "off",
     },
     settings: {

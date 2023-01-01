@@ -30,7 +30,7 @@ impl Position {
     }
 
     pub fn cell_index<Base: SudokuBase>(&self) -> u16 {
-        u16::from(self.row) + u16::from(self.column) * u16::from(Base::SIDE_LENGTH)
+        u16::from(self.row) * u16::from(Base::SIDE_LENGTH) + u16::from(self.column)
     }
 }
 

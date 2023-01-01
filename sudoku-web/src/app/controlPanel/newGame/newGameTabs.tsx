@@ -3,7 +3,6 @@ import AppBar from "@mui/material/AppBar";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import { GenerateForm } from "./generateForm";
-import type { WasmSudokuController } from "../../wasmSudokuController";
 import { ImportForm } from "./importForm";
 
 interface TabPanelProps {
@@ -23,13 +22,10 @@ function TabPanel(props: TabPanelProps) {
 }
 
 interface NewGameTabsProps {
-    sudokuController: WasmSudokuController;
     onClose: () => void;
 }
 
-export const NewGameTabs: React.FunctionComponent<NewGameTabsProps> = props => {
-    const { sudokuController, onClose } = props;
-
+export const NewGameTabs = ({ onClose }: NewGameTabsProps) => {
     const [tabIndex, setTabIndex] = React.useState(0);
 
     const handleChange = (event: React.ChangeEvent<unknown>, newValue: number) => {
@@ -52,10 +48,10 @@ export const NewGameTabs: React.FunctionComponent<NewGameTabsProps> = props => {
                 </Tabs>
             </AppBar>
             <TabPanel index={0} tabIndex={tabIndex}>
-                <GenerateForm onClose={onClose} sudokuController={sudokuController} />
+                <GenerateForm onClose={onClose} />
             </TabPanel>
             <TabPanel index={1} tabIndex={tabIndex}>
-                <ImportForm onClose={onClose} sudokuController={sudokuController} />
+                <ImportForm onClose={onClose} />
             </TabPanel>
         </div>
     );

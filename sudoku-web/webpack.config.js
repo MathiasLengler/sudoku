@@ -139,7 +139,13 @@ module.exports = (env, argv) => {
                         loader: "babel-loader",
                         options: {
                             presets: [
-                                "@babel/preset-env",
+                                [
+                                    "@babel/preset-env",
+                                    {
+                                        targets:
+                                            "> .5% and last 2 versions and supports es6-module and supports wasm and supports async-functions",
+                                    },
+                                ],
                                 "@babel/preset-typescript",
                                 // Enable development transform of React with new automatic runtime
                                 ["@babel/preset-react", { development: !isProduction, runtime: "automatic" }],

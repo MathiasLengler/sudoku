@@ -25,6 +25,14 @@ export const MyTheme = ({ children }: MyThemeProps) => {
                           }
                         : {},
                 },
+                components: {
+                    MuiTooltip: {
+                        defaultProps: {
+                            enterDelay: 500,
+                            leaveDelay: 200,
+                        },
+                    },
+                },
             }),
         [prefersDarkMode]
     );

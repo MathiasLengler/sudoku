@@ -2,9 +2,12 @@ import type * as React from "react";
 import type { PointerEventHandler } from "react";
 import type * as CSS from "csstype";
 import classnames from "classnames";
-import { indexToPosition, valueToString } from "../utils";
-import type { Input, WasmSudokuController } from "../wasmSudokuController";
-import type { CellViewCandidates, TransportCell, TransportSudoku, CellViewValue } from "../../types";
+import { indexToPosition, positionToIndex, valueToString } from "../utils";
+import type { CellViewCandidates, CellViewValue, TransportCell } from "../../types";
+import { inputState } from "../state/input";
+import { sudokuBaseState } from "../state/sudoku";
+import { useRecoilValue } from "recoil";
+import { useHandlePosition } from "../sudokuActions";
 
 function cellBackgroundClass(isSelected: boolean, isGuide: boolean) {
     if (isSelected) {
@@ -41,17 +44,17 @@ const CellValue: React.FunctionComponent<CellValueProps> = props => {
 
 interface CandidatesProps {
     candidates: CellViewCandidates["candidates"];
-    base: TransportSudoku["base"];
-    selectedValue: Input["selectedValue"];
-    stickyMode: Input["stickyMode"];
 }
 
-const Candidates: React.FunctionComponent<CandidatesProps> = ({ base, candidates, selectedValue, stickyMode }) => {
+const Candidates = ({ candidates }: CandidatesProps) => {
+    const base = useRecoilValue(sudokuBaseState);
+    const input = useRecoilValue(inputState);
+
     return (
         <div className="candidates">
             {candidates.map(candidate => {
                 // Candidates are 1 based, grid calculations are 0 based.
-                const { column, row } = indexToPosition(candidate - 1, base);
+                const { column, row } = indexToPosition({ blockIndex: candidate - 1, base });
 
                 const style: CSS.Properties = {
                     "--candidate-column": column,
@@ -62,7 +65,7 @@ const Candidates: React.FunctionComponent<CandidatesProps> = ({ base, candidates
                     <span
                         key={candidate}
                         className={classnames("candidate", {
-                            "candidate--guide": stickyMode && selectedValue === candidate,
+                            "candidate--guide": input.stickyMode && input.selectedValue === candidate,
                         })}
                         style={style}
                     >
@@ -74,29 +77,26 @@ const Candidates: React.FunctionComponent<CandidatesProps> = ({ base, candidates
     );
 };
 
-export const MemoCandidates = Candidates;
-
 interface CellProps {
     blockCellIndex: number;
     cell: TransportCell;
-    base: TransportSudoku["base"];
     isSelected: boolean;
     isGuide: boolean;
-    sudokuController: WasmSudokuController;
-    selectedValue: Input["selectedValue"];
-    stickyMode: Input["stickyMode"];
 }
 
-const Cell: React.FunctionComponent<CellProps> = props => {
-    const { blockCellIndex, cell, base, isSelected, isGuide, sudokuController, selectedValue, stickyMode } = props;
+export const Cell = (props: CellProps) => {
+    const { blockCellIndex, cell, isSelected, isGuide } = props;
 
     const { position: gridPosition } = cell;
 
-    const blockPosition = indexToPosition(blockCellIndex, base);
+    const base = useRecoilValue(sudokuBaseState);
+
+    const gridIndex = positionToIndex({ gridPosition, base });
+    const cellPositionInBlock = indexToPosition({ blockIndex: blockCellIndex, base: base });
 
     const style: CSS.Properties = {
-        "--cell-column": blockPosition.column,
-        "--cell-row": blockPosition.row,
+        "--cell-column": cellPositionInBlock.column,
+        "--cell-row": cellPositionInBlock.row,
     };
 
     const cellClassNames = classnames(
@@ -105,13 +105,16 @@ const Cell: React.FunctionComponent<CellProps> = props => {
         cellColorClass(cell.kind === "value" && cell.fixed, cell.incorrectValue)
     );
 
+    const handlePosition = useHandlePosition();
+
+    // TODO: replace with onPointerEnter
     const onPointerMove: PointerEventHandler = e => {
         // Left Mouse, Touch Contact, Pen contact
         if (e.buttons !== 1) {
             return;
         }
 
-        sudokuController.handlePosition(gridPosition, true);
+        handlePosition(gridPosition).catch(console.error);
 
         // Workaround for touch drag cell selection
         if (e.pointerType !== "mouse") {
@@ -132,20 +135,16 @@ const Cell: React.FunctionComponent<CellProps> = props => {
         <div
             className={cellClassNames}
             style={style}
-            onPointerDown={() => sudokuController.handlePosition(gridPosition)}
+            onPointerDown={() => {
+                console.log("onPointerDown");
+                handlePosition(gridPosition).catch(console.error);
+            }}
+            onPointerEnter={e => {
+                console.log("onPointerEnter", gridPosition, gridIndex);
+            }}
             onPointerMove={onPointerMove}
         >
-            {cell.kind === "value" ? (
-                <CellValue value={cell.value} />
-            ) : (
-                <MemoCandidates
-                    candidates={cell.candidates}
-                    base={base}
-                    selectedValue={selectedValue}
-                    stickyMode={stickyMode}
-                />
-            )}
+            {cell.kind === "value" ? <CellValue value={cell.value} /> : <Candidates candidates={cell.candidates} />}
         </div>
     );
 };
-export const MemoCell = Cell;

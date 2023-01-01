@@ -3,7 +3,6 @@ import React from "react";
 import AppBar from "@mui/material/AppBar";
 import Typography from "@mui/material/Typography";
 import Toolbar from "@mui/material/Toolbar";
-import type { WasmSudokuController } from "../wasmSudokuController";
 import { ALL_STRATEGIES } from "../../constants";
 import { CustomMenu } from "./customMenu";
 import { NewGameDialog } from "../controlPanel/newGame/newGameDialog";
@@ -14,12 +13,9 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import { IconButton } from "@mui/material";
 import LightbulbIcon from "@mui/icons-material/Lightbulb";
 import ShareIcon from "@mui/icons-material/Share";
+import { useExportSudokuString, useTryStrategy } from "../sudokuActions";
 
-interface NewGameButtonProps {
-    sudokuController: WasmSudokuController;
-}
-
-function NewGameButton({ sudokuController }: NewGameButtonProps) {
+function NewGameButton() {
     const [isNewGameDialogOpen, setIsNewGameDialogOpen] = React.useState(false);
 
     return (
@@ -32,26 +28,21 @@ function NewGameButton({ sudokuController }: NewGameButtonProps) {
             >
                 <AddCircleIcon fontSize="large" />
             </IconButton>
-            <NewGameDialog
-                open={isNewGameDialogOpen}
-                onClose={() => setIsNewGameDialogOpen(false)}
-                sudokuController={sudokuController}
-            />
+            <NewGameDialog open={isNewGameDialogOpen} onClose={() => setIsNewGameDialogOpen(false)} />
         </>
     );
 }
-interface SolverMenuProps {
-    sudokuController: WasmSudokuController;
-}
 
-function SolverMenu({ sudokuController }: SolverMenuProps) {
+function SolverMenu() {
+    const tryStrategy = useTryStrategy();
+
     return (
         <CustomMenu
             menuItems={[
                 ...ALL_STRATEGIES.map(strategy => ({
                     label: strategy as string,
                     onClick: async () => {
-                        await sudokuController.tryStrategy(strategy);
+                        await tryStrategy(strategy);
                     },
                 })),
                 {
@@ -66,7 +57,7 @@ function SolverMenu({ sudokuController }: SolverMenuProps) {
                         outer: while (true) {
                             for (const strategy of strategies) {
                                 console.info("Trying strategy:", strategy);
-                                if (await sudokuController.tryStrategy(strategy)) {
+                                if (await tryStrategy(strategy)) {
                                     console.info("Made progress with:", strategy);
                                     continue outer;
                                 }
@@ -86,11 +77,10 @@ function SolverMenu({ sudokuController }: SolverMenuProps) {
         </CustomMenu>
     );
 }
-interface ShareMenuProps {
-    sudokuController: WasmSudokuController;
-}
 
-function ShareMenu({ sudokuController }: ShareMenuProps) {
+function ShareMenu() {
+    const exportSudokuString = useExportSudokuString();
+
     return (
         <CustomMenu
             menuItems={[
@@ -98,7 +88,7 @@ function ShareMenu({ sudokuController }: ShareMenuProps) {
                     label: "SudokuWiki",
                     icon: <OpenInNewIcon />,
                     onClick: async () => {
-                        const binaryCandidatesLine = await sudokuController.export("binaryCandidatesLine");
+                        const binaryCandidatesLine = await exportSudokuString("binaryCandidatesLine");
                         window.open(
                             // Template string, since URLSearchParams encodes the reserved character ",".
                             // sudokuwiki.org expects these characters to be unencoded.
@@ -112,7 +102,7 @@ function ShareMenu({ sudokuController }: ShareMenuProps) {
                     label: "Clipboard",
                     icon: <ContentCopyIcon />,
                     onClick: async () => {
-                        const givensGrid = await sudokuController.export("givensGrid");
+                        const givensGrid = await exportSudokuString("givensGrid");
                         await window.navigator.clipboard.writeText(givensGrid);
                     },
                 },
@@ -127,11 +117,7 @@ function ShareMenu({ sudokuController }: ShareMenuProps) {
     );
 }
 
-interface SudokuAppBarProps {
-    sudokuController: WasmSudokuController;
-}
-
-export default function SudokuAppBar({ sudokuController }: SudokuAppBarProps) {
+export default function SudokuAppBar() {
     return (
         <Box sx={{ flexGrow: 1 }} className="app-bar">
             <AppBar position="static">
@@ -140,9 +126,9 @@ export default function SudokuAppBar({ sudokuController }: SudokuAppBarProps) {
                         Sudoku
                     </Typography>
 
-                    <ShareMenu sudokuController={sudokuController} />
-                    <SolverMenu sudokuController={sudokuController} />
-                    <NewGameButton sudokuController={sudokuController} />
+                    <ShareMenu />
+                    <SolverMenu />
+                    <NewGameButton />
                 </Toolbar>
             </AppBar>
         </Box>

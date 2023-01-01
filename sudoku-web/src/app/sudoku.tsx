@@ -1,89 +1,53 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Input, WasmSudokuController } from "./wasmSudokuController";
-import { blocksToCell } from "./utils";
+import React, { useEffect, useMemo } from "react";
 import type * as CSS from "csstype";
-import { makeKeyDownListener } from "./useKeyboardInput";
+import { useKeyboardInput } from "./useKeyboardInput";
 import { Grid } from "./grid/grid";
 import { ControlPanel } from "./controlPanel/controlPanel";
-import type * as Comlink from "comlink";
-import type { TransportSudoku, WasmSudoku } from "../types";
-import { saveCellBlocks } from "./persistence";
+import type { CellViews, TransportSudoku } from "../types";
+import { saveCellViews } from "./persistence";
 import debounce from "lodash/debounce";
 import { useResizeDetector } from "react-resize-detector";
 import SudokuAppBar from "./menu/sudokuAppBar";
-
-interface SudokuProps {
-    sudoku: TransportSudoku;
-    setSudoku: React.Dispatch<TransportSudoku>;
-    wasmSudokuProxy: Comlink.Remote<WasmSudoku>;
-}
+import { useRecoilValue } from "recoil";
+import { sudokuState } from "./state/sudoku";
 
 interface SudokuContentProps {
-    sudokuController: WasmSudokuController;
-    input: Input;
-    sudoku: TransportSudoku;
     gridRef: React.MutableRefObject<HTMLDivElement>;
-    sideLength: TransportSudoku["sideLength"];
 }
 
-const SudokuContent = ({ gridRef, input, sideLength, sudoku, sudokuController }: SudokuContentProps) => {
-    const { canUndo, canRedo } = sudoku;
+const SudokuContent = ({ gridRef }: SudokuContentProps) => {
     return (
         <div className="app-content">
             <div className="sudoku">
-                <Grid sudokuController={sudokuController} input={input} sudoku={sudoku} gridRef={gridRef} />
-                <ControlPanel
-                    sudokuController={sudokuController}
-                    input={input}
-                    sideLength={sideLength}
-                    canUndo={canUndo}
-                    canRedo={canRedo}
-                />
+                <Grid gridRef={gridRef} />
+                <ControlPanel />
             </div>
         </div>
     );
 };
 
-export const Sudoku: React.FunctionComponent<SudokuProps> = ({ sudoku, setSudoku, wasmSudokuProxy }) => {
-    const { blocks, base, sideLength } = sudoku;
+export const Sudoku = () => {
+    const sudoku = useRecoilValue(sudokuState);
 
+    const { cells, base, sideLength, blocksIndices, isSolved } = sudoku;
+
+    // TODO: refactor using recoil
+    //  use Recoil Sync?
+    //  replace with atom effect?
+    //  move inside side effect component?
     const debouncedSaveCells = useMemo(
         () =>
-            debounce((blocks: TransportSudoku["blocks"]) => {
-                console.debug("Saving cell blocks to localStorage");
-                const cellBlocks = blocks.map(block => block.map(({ position, incorrectValue, ...cell }) => cell));
-                saveCellBlocks(cellBlocks);
+            debounce((cells: TransportSudoku["cells"]) => {
+                console.debug("Saving sudoku cells to localStorage");
+                const cellViews: CellViews = cells.map(({ position, incorrectValue, ...cell }) => cell);
+                saveCellViews(cellViews);
             }, 500),
         []
     );
 
     useEffect(() => {
-        debouncedSaveCells(blocks);
-    }, [debouncedSaveCells, blocks]);
-
-    const [inputWithoutSelectedCell, setInput] = useState<Omit<Input, "selectedCell">>(() => {
-        const selectedPos = { column: 0, row: 0 };
-
-        return {
-            selectedPos,
-            selectedValue: 1,
-            stickyMode: false,
-            candidateMode: false,
-        };
-    });
-
-    const selectedCell = blocksToCell(blocks, inputWithoutSelectedCell.selectedPos, base);
-
-    const input = { ...inputWithoutSelectedCell, selectedCell };
-
-    const sudokuController = new WasmSudokuController(
-        wasmSudokuProxy,
-        sudoku,
-        sudoku => setSudoku(sudoku),
-        input,
-        setInput,
-        sideLength
-    );
+        debouncedSaveCells(cells);
+    }, [debouncedSaveCells, cells]);
 
     // Responsive Grid
     const { width: gridWidth, height: gridHeight, ref: gridRef } = useResizeDetector({});
@@ -92,24 +56,21 @@ export const Sudoku: React.FunctionComponent<SudokuProps> = ({ sudoku, setSudoku
         "--side-length": sideLength,
         "--side-length-fr": `${sideLength}fr`,
         "--base": base,
-        "--grid-size": `${gridHeight}px`,
+        "--grid-size": gridWidth && gridHeight ? `${Math.min(gridWidth, gridHeight)}px` : "0",
     };
+
+    const { onKeyDown } = useKeyboardInput();
 
     return (
         <div
             className="app"
             style={cssVariables}
-            onKeyDown={makeKeyDownListener(sudokuController, input, sideLength)}
+            onKeyDown={onKeyDown}
+            // Enable keyboard events
             tabIndex={0}
         >
-            <SudokuAppBar sudokuController={sudokuController} />
-            <SudokuContent
-                sudokuController={sudokuController}
-                input={input}
-                sudoku={sudoku}
-                gridRef={gridRef}
-                sideLength={sideLength}
-            />
+            <SudokuAppBar />
+            <SudokuContent gridRef={gridRef} />
         </div>
     );
 };

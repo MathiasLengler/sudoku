@@ -1,50 +1,58 @@
 import type * as React from "react";
 import type * as CSS from "csstype";
 import isEqual from "lodash/isEqual";
-import { MemoCell } from "./cell";
-import { cellPositionToBlockPosition, indexToPosition } from "../utils";
-import type { Input, WasmSudokuController } from "../wasmSudokuController";
-import type { TransportCell, TransportSudoku } from "../../types";
+import { Cell } from "./cell";
+import { indexToPosition } from "../utils";
+import type { Position, TransportCell } from "../../types";
+import { inputState } from "../state/input";
+import { selectedBlockPositionState } from "../state/cellIndexing";
+import { selectorFamily, useRecoilValue } from "recoil";
+import { sudokuBaseState, sudokuBlocksIndicesState, sudokuCellsState } from "../state/sudoku";
+import type { CreateSerializableParam } from "../../typeUtils";
 
 interface BlockProps {
-    block: TransportCell[];
+    cells: TransportCell[];
     blockIndex: number;
-    base: TransportSudoku["base"];
-    input: Input;
-    sudokuController: WasmSudokuController;
 }
 
-const Block: React.FunctionComponent<BlockProps> = props => {
-    const {
-        block,
-        blockIndex,
-        base,
-        input: { selectedPos, selectedValue, stickyMode },
-        sudokuController,
-    } = props;
+const containsSelectedPosState = selectorFamily<boolean | undefined, CreateSerializableParam<Position>>({
+    key: "Block.containsSelectedPos",
+    get:
+        blockPosition =>
+        ({ get }) => {
+            const selectedBlockPosition = get(selectedBlockPositionState);
+            if (selectedBlockPosition) {
+                return isEqual(blockPosition, selectedBlockPosition);
+            }
+        },
+});
 
-    const blockPosition = indexToPosition(blockIndex, base);
+const Block = ({ blockIndex, cells }: BlockProps) => {
+    const base = useRecoilValue(sudokuBaseState);
+    const input = useRecoilValue(inputState);
+
+    const blockPosition = indexToPosition({ blockIndex, base });
+
+    const containsSelectedPos = useRecoilValue(containsSelectedPosState(blockPosition));
 
     const style: CSS.Properties = {
         "--block-column": blockPosition.column,
         "--block-row": blockPosition.row,
     };
 
-    const selectedBlockPosition = cellPositionToBlockPosition(selectedPos, base);
-
-    const containsSelectedPos = isEqual(blockPosition, selectedBlockPosition);
-
     return (
-        <div className={"block"} style={style}>
-            {block.map((cell, blockCellIndex) => {
+        <div className="block" style={style}>
+            {cells.map((cell, blockCellIndex) => {
                 let isSelected: boolean;
                 let isGuide: boolean;
 
-                if (stickyMode) {
+                if (input.stickyMode) {
+                    const { selectedValue } = input;
                     isSelected = cell.kind === "value" && cell.value === selectedValue;
                     isGuide = !(cell.kind === "candidates" && cell.candidates.includes(selectedValue));
                 } else {
-                    isSelected = containsSelectedPos && isEqual(selectedPos, cell.position);
+                    const { selectedPos } = input;
+                    isSelected = !!containsSelectedPos && isEqual(selectedPos, cell.position);
                     isGuide =
                         containsSelectedPos ||
                         selectedPos.column == cell.position.column ||
@@ -52,16 +60,12 @@ const Block: React.FunctionComponent<BlockProps> = props => {
                 }
 
                 return (
-                    <MemoCell
+                    <Cell
                         key={blockCellIndex}
                         blockCellIndex={blockCellIndex}
                         cell={cell}
-                        base={base}
-                        sudokuController={sudokuController}
                         isSelected={isSelected}
                         isGuide={isGuide}
-                        selectedValue={selectedValue}
-                        stickyMode={stickyMode}
                     />
                 );
             })}
@@ -70,31 +74,21 @@ const Block: React.FunctionComponent<BlockProps> = props => {
 };
 
 interface GridProps {
-    sudokuController: WasmSudokuController;
-    sudoku: TransportSudoku;
-    input: Input;
     gridRef: React.MutableRefObject<HTMLDivElement>;
 }
 
-export const Grid: React.FunctionComponent<GridProps> = props => {
-    const {
-        sudokuController,
-        sudoku: { base, blocks },
-        input,
-        gridRef,
-    } = props;
+export const Grid = ({ gridRef }: GridProps) => {
+    const blocksIndices = useRecoilValue(sudokuBlocksIndicesState);
+    const cells = useRecoilValue(sudokuCellsState);
 
     return (
         <div className="grid-container">
             <div className="grid" ref={gridRef}>
-                {blocks.map((block, blockIndex) => (
+                {blocksIndices.map((cellIndices, blockIndex) => (
                     <Block
                         key={blockIndex}
-                        block={block}
+                        cells={cellIndices.map(cellIndex => cells[cellIndex])}
                         blockIndex={blockIndex}
-                        base={base}
-                        input={input}
-                        sudokuController={sudokuController}
                     />
                 ))}
             </div>

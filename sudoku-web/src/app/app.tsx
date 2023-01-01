@@ -1,15 +1,27 @@
 import type * as React from "react";
+import { Suspense } from "react";
 import { MyTheme } from "./myTheme";
+import { RecoilRoot } from "recoil";
 import { SudokuLoader } from "./sudokuLoader";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { RecoilDebug } from "./RecoilDebug";
+import { NoDefaultSandbox } from "./noDefaultSandbox";
 
-const queryClient = new QueryClient();
-export const App: React.FunctionComponent = () => {
+export const App = () => {
+    const noDefaultSandbox = false;
     return (
-        <QueryClientProvider client={queryClient}>
+        <RecoilRoot>
+            <RecoilDebug />
             <MyTheme>
-                <SudokuLoader />
+                {noDefaultSandbox ? (
+                    <Suspense fallback={"NoDefaultSandbox fallback"}>
+                        <NoDefaultSandbox />
+                    </Suspense>
+                ) : (
+                    <Suspense fallback={"App fallback"}>
+                        <SudokuLoader />
+                    </Suspense>
+                )}
             </MyTheme>
-        </QueryClientProvider>
+        </RecoilRoot>
     );
 };

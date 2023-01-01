@@ -1,22 +1,12 @@
 import type * as React from "react";
-import { Selector } from "./selector";
+import { ValueSelector } from "./valueSelector";
 import { Toolbar } from "./toolbar";
-import type { Input, WasmSudokuController } from "../wasmSudokuController";
-import type { TransportSudoku } from "../../types";
 
-interface ControlPanelProps {
-    sudokuController: WasmSudokuController;
-    input: Input;
-    sideLength: TransportSudoku["sideLength"];
-    canUndo: boolean;
-    canRedo: boolean;
-}
-
-export const ControlPanel = ({ input, sideLength, sudokuController, canUndo, canRedo }: ControlPanelProps) => {
+export const ControlPanel = () => {
     return (
         <>
-            <Toolbar sudokuController={sudokuController} input={input} canUndo={canUndo} canRedo={canRedo} />
-            <Selector sudokuController={sudokuController} input={input} sideLength={sideLength} />
+            <Toolbar />
+            <ValueSelector />
         </>
     );
 };

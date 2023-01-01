@@ -3,17 +3,13 @@ import Dialog from "@mui/material/Dialog";
 import { NewGameTabs } from "./newGameTabs";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
-import type { WasmSudokuController } from "../../wasmSudokuController";
 
 interface NewGameDialogProps {
     open: boolean;
-    sudokuController: WasmSudokuController;
     onClose: () => void;
 }
 
-export const NewGameDialog: React.FunctionComponent<NewGameDialogProps> = props => {
-    const { open, onClose, sudokuController } = props;
-
+export const NewGameDialog = ({ onClose, open }: NewGameDialogProps) => {
     const theme = useTheme();
     const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
 
@@ -25,7 +21,7 @@ export const NewGameDialog: React.FunctionComponent<NewGameDialogProps> = props 
             }}
         >
             <Dialog open={open} onClose={onClose} fullWidth fullScreen={fullScreen}>
-                <NewGameTabs sudokuController={sudokuController} onClose={onClose} />
+                <NewGameTabs onClose={onClose} />
             </Dialog>
         </div>
     );
