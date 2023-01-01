@@ -12,7 +12,7 @@ import { sudokuBaseState, sudokuBlocksIndicesState, sudokuCellsState } from "../
 import type { CreateSerializableParam } from "../../typeUtils";
 import { useEndStickyChain } from "../sudokuActions";
 
-const OnPointerUpHandler = () => {
+const PointerUpHandler = () => {
     const endStickyChain = useEndStickyChain();
 
     const onPointerUp = useCallback(
@@ -124,7 +124,7 @@ export const Grid = ({ gridRef }: GridProps) => {
                     ))}
                 </div>
             </div>
-            <OnPointerUpHandler />
+            <PointerUpHandler />
         </>
     );
 };
