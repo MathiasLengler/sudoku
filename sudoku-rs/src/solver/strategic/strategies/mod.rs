@@ -69,20 +69,14 @@ impl Serialize for DynamicStrategy {
     where
         S: Serializer,
     {
-        match *self {
-            Self::SingleCandidate(_) => {
-                serializer.serialize_unit_variant("Strategy", 0, "SingleCandidate")
-            }
-            Self::HiddenSingles(_) => {
-                serializer.serialize_unit_variant("Strategy", 1, "HiddenSingles")
-            }
-            Self::GroupReduction(_) => {
-                serializer.serialize_unit_variant("Strategy", 2, "GroupReduction")
-            }
-            Self::Backtracking(_) => {
-                serializer.serialize_unit_variant("Strategy", 3, "Backtracking")
-            }
-        }
+        let (variant_index, variant) = match *self {
+            Self::SingleCandidate(_) => (0, "SingleCandidate"),
+            Self::HiddenSingles(_) => (1, "HiddenSingles"),
+            Self::GroupReduction(_) => (2, "GroupReduction"),
+            Self::Backtracking(_) => (3, "Backtracking"),
+        };
+
+        serializer.serialize_unit_variant("Strategy", variant_index, variant)
     }
 }
 
