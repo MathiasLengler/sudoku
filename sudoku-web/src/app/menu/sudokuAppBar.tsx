@@ -125,7 +125,7 @@ export default function SudokuAppBar() {
                     <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
                         Sudoku
                     </Typography>
-
+                    {/*TODO: Sudoku.isSolved feedback*/}
                     <ShareMenu />
                     <SolverMenu />
                     <NewGameButton />

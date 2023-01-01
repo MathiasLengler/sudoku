@@ -1,4 +1,5 @@
 import type * as React from "react";
+import { useCallback, useEffect } from "react";
 import type * as CSS from "csstype";
 import isEqual from "lodash/isEqual";
 import { Cell } from "./cell";
@@ -9,6 +10,35 @@ import { selectedBlockPositionState } from "../state/cellIndexing";
 import { selectorFamily, useRecoilValue } from "recoil";
 import { sudokuBaseState, sudokuBlocksIndicesState, sudokuCellsState } from "../state/sudoku";
 import type { CreateSerializableParam } from "../../typeUtils";
+import { useEndStickyChain } from "../sudokuActions";
+
+const OnPointerUpHandler = () => {
+    const endStickyChain = useEndStickyChain();
+
+    const onPointerUp = useCallback(
+        ({ isPrimary, buttons, pointerId }: PointerEvent): void => {
+            if (!isPrimary) {
+                return;
+            }
+            console.debug("window.onPointerUp", { isPrimary, buttons, pointerId });
+
+            endStickyChain().catch(console.error);
+        },
+        [endStickyChain]
+    );
+
+    useEffect(() => {
+        const controller = new AbortController();
+        // Listen on window to catch primary pointer transition to inactive outside the cell/grid/window.
+        window.addEventListener("pointerup", onPointerUp, { signal: controller.signal });
+
+        return () => {
+            controller.abort();
+        };
+    }, [onPointerUp]);
+
+    return null;
+};
 
 interface BlockProps {
     cells: TransportCell[];
@@ -82,16 +112,19 @@ export const Grid = ({ gridRef }: GridProps) => {
     const cells = useRecoilValue(sudokuCellsState);
 
     return (
-        <div className="grid-container">
-            <div className="grid" ref={gridRef}>
-                {blocksIndices.map((cellIndices, blockIndex) => (
-                    <Block
-                        key={blockIndex}
-                        cells={cellIndices.map(cellIndex => cells[cellIndex])}
-                        blockIndex={blockIndex}
-                    />
-                ))}
+        <>
+            <div className="grid-container">
+                <div className="grid" ref={gridRef}>
+                    {blocksIndices.map((cellIndices, blockIndex) => (
+                        <Block
+                            key={blockIndex}
+                            cells={cellIndices.map(cellIndex => cells[cellIndex])}
+                            blockIndex={blockIndex}
+                        />
+                    ))}
+                </div>
             </div>
-        </div>
+            <OnPointerUpHandler />
+        </>
     );
 };

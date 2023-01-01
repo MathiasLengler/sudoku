@@ -1,22 +1,33 @@
 import type { Position } from "../../types";
 import { atom, selector } from "recoil";
 
-interface BaseInput {
+export interface BaseInput {
     stickyMode: boolean;
     candidateMode: boolean;
 }
 
-interface NormalModeInput extends BaseInput {
+export interface NormalModeInput extends BaseInput {
     stickyMode: false;
     selectedPos: Position;
     // Used for restoring state on sticky mode toggle
-    inactiveSelectedValue: number;
+    previouslySelectedValue: number;
 }
-interface StickyModeInput extends BaseInput {
+
+export type CellAction = "set" | "delete";
+
+export interface StickyChain {
+    cellAction: CellAction;
+    handledGridPositions: Position[];
+}
+
+export interface StickyModeInput extends BaseInput {
     stickyMode: true;
     selectedValue: number;
+    // Is defined if the primary pointer is in the active buttons state and has interacted with at least one cell.
+    // The first actively interacted cell defines the action type for all subsequent cells.
+    stickyChain: StickyChain | undefined;
     // Used for restoring state on sticky mode toggle
-    inactiveSelectedPos: Position;
+    previouslySelectedPos: Position;
 }
 
 export type Input = NormalModeInput | StickyModeInput;
@@ -27,7 +38,7 @@ export const inputState = atom<Input>({
         stickyMode: false,
         selectedPos: { column: 0, row: 0 },
         candidateMode: false,
-        inactiveSelectedValue: 1,
+        previouslySelectedValue: 1,
     },
 });
 

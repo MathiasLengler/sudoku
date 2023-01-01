@@ -161,6 +161,9 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
         self.grid.set_all_direct_candidates();
     }
 
+    // TODO: replace_with_direct_candidates(pos: Position)
+    //  For which UI interactions could this operation make sense?
+
     fn try_strategy(&mut self, strategy: DynamicStrategy) -> Result<bool> {
         self.push_history();
 

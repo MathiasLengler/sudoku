@@ -1,5 +1,4 @@
 import type * as React from "react";
-import type { PointerEventHandler } from "react";
 import type * as CSS from "csstype";
 import classnames from "classnames";
 import { indexToPosition, positionToIndex, valueToString } from "../utils";
@@ -107,42 +106,32 @@ export const Cell = (props: CellProps) => {
 
     const handlePosition = useHandlePosition();
 
-    // TODO: replace with onPointerEnter
-    const onPointerMove: PointerEventHandler = e => {
-        // Left Mouse, Touch Contact, Pen contact
-        if (e.buttons !== 1) {
-            return;
-        }
-
-        handlePosition(gridPosition).catch(console.error);
-
-        // Workaround for touch drag cell selection
-        if (e.pointerType !== "mouse") {
-            let el = document.elementFromPoint(e.clientX, e.clientY);
-            if (el) {
-                while (el.parentElement !== null) {
-                    if (el.classList.contains("cell")) {
-                        el.setPointerCapture(e.pointerId);
-                        break;
-                    }
-                    el = el.parentElement;
-                }
-            }
-        }
-    };
-
     return (
         <div
             className={cellClassNames}
             style={style}
-            onPointerDown={() => {
-                console.log("onPointerDown");
+            onPointerDown={({ isPrimary, buttons, pointerId }) => {
+                if (
+                    // Left Mouse, Touch Contact, Pen contact
+                    buttons !== 1 ||
+                    !isPrimary
+                ) {
+                    return;
+                }
+                console.debug("onPointerDown", { isPrimary, buttons, pointerId });
                 handlePosition(gridPosition).catch(console.error);
             }}
-            onPointerEnter={e => {
-                console.log("onPointerEnter", gridPosition, gridIndex);
+            onPointerEnter={({ isPrimary, buttons, pointerId }) => {
+                if (
+                    // Left Mouse, Touch Contact, Pen contact
+                    buttons !== 1 ||
+                    !isPrimary
+                ) {
+                    return;
+                }
+                console.debug("onPointerEnter", { isPrimary, buttons, pointerId });
+                handlePosition(gridPosition).catch(console.error);
             }}
-            onPointerMove={onPointerMove}
         >
             {cell.kind === "value" ? <CellValue value={cell.value} /> : <Candidates candidates={cell.candidates} />}
         </div>

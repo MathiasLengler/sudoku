@@ -1,16 +1,16 @@
 import { SelectorCallbackInterface, useRecoilCallback } from "recoil";
 import { sudokuSideLengthState, sudokuState, wasmSudokuProxyContainerState } from "./state/sudoku";
 import type { DynamicGeneratorSettings, DynamicStrategy, Position } from "../../../sudoku-rs/bindings";
-import { Input, inputState } from "./state/input";
+import { CellAction, Input, inputState } from "./state/input";
 import { cellAtGridPositionState } from "./state/cellIndexing";
 import _ from "lodash";
 import type { GridFormat } from "../types";
 import type { WasmSudokuProxy } from "../spawnWorker";
+import assertNever from "assert-never/index";
 
 // Snapshot accessors
 async function getWasmSudokuProxy({ snapshot }: Pick<SelectorCallbackInterface, "snapshot">): Promise<WasmSudokuProxy> {
     const { wasmSudokuProxy } = await snapshot.getPromise(wasmSudokuProxyContainerState);
-    console.log({ wasmSudokuProxy });
     return wasmSudokuProxy;
 }
 
@@ -26,7 +26,7 @@ async function isFixedValueCell({
     const cell = await snapshot.getPromise(cellAtGridPositionState(gridPosition));
 
     if (cell.kind === "value" && cell.fixed) {
-        console.warn("Can't modify fixed cell", cell);
+        console.info("Can't modify fixed cell", cell);
 
         return true;
     } else {
@@ -84,19 +84,136 @@ async function applyValueAtGridPosition({
     if (await isFixedValueCell({ snapshot, gridPosition })) {
         return;
     }
+    const wasmSudokuProxy = await getWasmSudokuProxy({ snapshot });
     const input = await getInput({ snapshot });
 
-    const wasmSudokuProxy = await getWasmSudokuProxy({ snapshot });
+    if (input.stickyMode) {
+        // Behaviour of stickyMode ("value first, cell second"):
+        //  in candidateMode:
+        //   only modifies existing candidates (could be configurable?)
+        //   first candidate cell interaction determines if the candidate is set/deleted
+        //  in valueMode:
+        //   first cell interaction:
+        //    candidates => set value
+        //    matching value => delete value
+        //    different value => set value
+        //   chained cell interaction based on first action:
+        //    set value => set value
+        //    delete value => delete value if matching
+        let cellAction: CellAction;
+        if (!input.stickyChain) {
+            const cell = await snapshot.getPromise(cellAtGridPositionState(gridPosition));
+            if (input.candidateMode) {
+                if (cell.kind === "value") {
+                    return; // Wait for first candidates cell interaction.
+                } else {
+                    if (cell.candidates.includes(value)) {
+                        cellAction = "delete";
+                    } else {
+                        cellAction = "set";
+                    }
+                }
+            } else {
+                if (cell.kind === "value") {
+                    if (cell.value === value) {
+                        cellAction = "delete";
+                    } else {
+                        cellAction = "set";
+                    }
+                } else {
+                    cellAction = "set";
+                }
+            }
 
-    if (value === 0) {
-        await wasmSudokuProxy.delete(gridPosition);
-    } else {
-        if (input.candidateMode) {
-            await wasmSudokuProxy.toggleCandidate(gridPosition, value);
+            // Initialize stickyChain
+            set(inputState, input => {
+                if (!input.stickyMode) {
+                    console.warn("Expected stickyMode to be active");
+                    return input;
+                }
+                return {
+                    ...input,
+                    stickyChain: {
+                        cellAction,
+                        handledGridPositions: [],
+                    },
+                };
+            });
         } else {
-            await wasmSudokuProxy.setOrToggleValue(gridPosition, value);
+            // Active sticky "chain"
+            ({ cellAction } = input.stickyChain);
+        }
+
+        if (_.find(input.stickyChain?.handledGridPositions, gridPosition)) {
+            console.info(
+                `Skip handling of grid position ${JSON.stringify(
+                    gridPosition
+                )}, since it was already processed in the active sticky chain.`
+            );
+            return;
+        }
+
+        if (input.candidateMode) {
+            if (cellAction === "set") {
+                await wasmSudokuProxy.setCandidate(gridPosition, value);
+            } else if (cellAction === "delete") {
+                await wasmSudokuProxy.deleteCandidate(gridPosition, value);
+            } else {
+                assertNever(cellAction);
+            }
+        } else {
+            if (cellAction === "set") {
+                await wasmSudokuProxy.setValue(gridPosition, value);
+            } else if (cellAction === "delete") {
+                const cell = await snapshot.getPromise(cellAtGridPositionState(gridPosition));
+                // Only delete cell value if it matches the handled value
+                if (cell.kind === "value" && cell.value === value) {
+                    await wasmSudokuProxy.delete(gridPosition);
+                }
+            } else {
+                assertNever(cellAction);
+            }
+        }
+
+        // Add gridPosition to handledGridPositions
+        set(inputState, input => {
+            if (!input.stickyMode) {
+                console.warn("Expected stickyMode to be active");
+                return input;
+            }
+            if (!input.stickyChain) {
+                console.warn("Expected stickyChain to be defined");
+                return input;
+            }
+            if (_.find(input.stickyChain.handledGridPositions, gridPosition)) {
+                console.warn(
+                    "Expected handledGridPositions to not contain gridPosition",
+                    gridPosition,
+                    ":",
+                    input.stickyChain.handledGridPositions
+                );
+                return input;
+            }
+            return {
+                ...input,
+                stickyChain: {
+                    ...input.stickyChain,
+                    handledGridPositions: [...input.stickyChain.handledGridPositions, gridPosition],
+                },
+            };
+        });
+    } else {
+        if (value === 0) {
+            await wasmSudokuProxy.delete(gridPosition);
+        } else {
+            if (input.candidateMode) {
+                await wasmSudokuProxy.toggleCandidate(gridPosition, value);
+            } else {
+                await wasmSudokuProxy.setOrToggleValue(gridPosition, value);
+            }
         }
     }
+
     await updateSudoku({ set, wasmSudokuProxy });
 }
 
@@ -113,6 +230,19 @@ export function useHandlePosition() {
                     await applyValueAtGridPosition({ set, snapshot, gridPosition, value: input.selectedValue });
                 } else {
                     set(inputState, input => ({ ...input, selectedPos: gridPosition }));
+                }
+            },
+        []
+    );
+}
+
+export function useEndStickyChain() {
+    return useRecoilCallback(
+        ({ snapshot, set }) =>
+            async () => {
+                const input = await getInput({ snapshot });
+                if (input.stickyMode && input.stickyChain) {
+                    set(inputState, { ...input, stickyChain: undefined });
                 }
             },
         []
@@ -254,15 +384,16 @@ export function useToggleStickyMode() {
                         return {
                             stickyMode: false,
                             candidateMode: input.candidateMode,
-                            selectedPos: input.inactiveSelectedPos,
-                            inactiveSelectedValue: input.selectedValue,
+                            selectedPos: input.previouslySelectedPos,
+                            previouslySelectedValue: input.selectedValue,
                         };
                     } else {
                         return {
                             stickyMode: true,
                             candidateMode: input.candidateMode,
-                            selectedValue: input.inactiveSelectedValue,
-                            inactiveSelectedPos: input.selectedPos,
+                            selectedValue: input.previouslySelectedValue,
+                            previouslySelectedPos: input.selectedPos,
+                            stickyChain: undefined,
                         };
                     }
                 });
