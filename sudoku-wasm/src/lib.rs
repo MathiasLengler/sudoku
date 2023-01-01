@@ -212,8 +212,4 @@ impl WasmSudoku {
     fn export_sudoku(transport_sudoku: TransportSudoku) -> Result<ITransportSudoku> {
         Ok(Self::export_value(&transport_sudoku)?.into())
     }
-
-    fn export_strategy(strategy: DynamicStrategy) -> Result<IDynamicStrategy> {
-        Ok(Self::export_value(&strategy)?.into())
-    }
 }
