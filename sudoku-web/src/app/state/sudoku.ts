@@ -41,3 +41,7 @@ export const sudokuCanRedoState = selector<TransportSudoku["canRedo"]>({
     key: "Sudoku.canRedo",
     get: ({ get }) => get(sudokuState).canRedo,
 });
+export const sudokuIsSolvedState = selector<TransportSudoku["isSolved"]>({
+    key: "Sudoku.isSolved",
+    get: ({ get }) => get(sudokuState).isSolved,
+});

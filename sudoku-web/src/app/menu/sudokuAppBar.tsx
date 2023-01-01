@@ -14,6 +14,8 @@ import { IconButton } from "@mui/material";
 import LightbulbIcon from "@mui/icons-material/Lightbulb";
 import ShareIcon from "@mui/icons-material/Share";
 import { useExportSudokuString, useTryStrategy } from "../sudokuActions";
+import { useRecoilValue } from "recoil";
+import { sudokuIsSolvedState } from "../state/sudoku";
 
 function NewGameButton() {
     const [isNewGameDialogOpen, setIsNewGameDialogOpen] = React.useState(false);
@@ -35,6 +37,7 @@ function NewGameButton() {
 
 function SolverMenu() {
     const tryStrategy = useTryStrategy();
+    const isSolved = useRecoilValue(sudokuIsSolvedState);
 
     return (
         <CustomMenu
@@ -70,7 +73,12 @@ function SolverMenu() {
             ]}
         >
             {({ onMenuOpen }) => (
-                <IconButton color="inherit" size="large" aria-label="Solver" onClick={onMenuOpen}>
+                <IconButton
+                    color={isSolved ? "success" : "inherit"}
+                    size="large"
+                    aria-label="Solver"
+                    onClick={onMenuOpen}
+                >
                     <LightbulbIcon fontSize="large" />
                 </IconButton>
             )}
@@ -125,7 +133,6 @@ export default function SudokuAppBar() {
                     <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
                         Sudoku
                     </Typography>
-                    {/*TODO: Sudoku.isSolved feedback*/}
                     <ShareMenu />
                     <SolverMenu />
                     <NewGameButton />
