@@ -1,5 +1,4 @@
 import type * as React from "react";
-import { useCallback, useEffect } from "react";
 import type * as CSS from "csstype";
 import isEqual from "lodash/isEqual";
 import { Cell } from "./cell";
@@ -10,35 +9,6 @@ import { selectedBlockPositionState } from "../state/cellIndexing";
 import { selectorFamily, useRecoilValue } from "recoil";
 import { sudokuBaseState, sudokuBlocksIndicesState, sudokuCellsState } from "../state/sudoku";
 import type { CreateSerializableParam } from "../../typeUtils";
-import { useEndStickyChain } from "../sudokuActions";
-
-const PointerUpHandler = () => {
-    const endStickyChain = useEndStickyChain();
-
-    const onPointerUp = useCallback(
-        ({ isPrimary, buttons, pointerId }: PointerEvent): void => {
-            if (!isPrimary) {
-                return;
-            }
-            console.debug("window.onPointerUp", { isPrimary, buttons, pointerId });
-
-            endStickyChain().catch(console.error);
-        },
-        [endStickyChain]
-    );
-
-    useEffect(() => {
-        const controller = new AbortController();
-        // Listen on window to catch primary pointer transition to inactive outside the cell/grid/window.
-        window.addEventListener("pointerup", onPointerUp, { signal: controller.signal });
-
-        return () => {
-            controller.abort();
-        };
-    }, [onPointerUp]);
-
-    return null;
-};
 
 interface BlockProps {
     cells: TransportCell[];
@@ -124,7 +94,6 @@ export const Grid = ({ gridRef }: GridProps) => {
                     ))}
                 </div>
             </div>
-            <PointerUpHandler />
         </>
     );
 };

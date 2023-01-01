@@ -1,15 +1,13 @@
-import React, { useEffect, useMemo } from "react";
+import type React from "react";
 import type * as CSS from "csstype";
 import { useKeyboardInput } from "./useKeyboardInput";
 import { Grid } from "./grid/grid";
 import { ControlPanel } from "./controlPanel/controlPanel";
-import type { CellViews, TransportSudoku } from "../types";
-import { saveCellViews } from "./persistence";
-import debounce from "lodash/debounce";
 import { useResizeDetector } from "react-resize-detector";
 import SudokuAppBar from "./menu/sudokuAppBar";
 import { useRecoilValue } from "recoil";
-import { sudokuState } from "./state/sudoku";
+import { sudokuBaseState, sudokuSideLengthState } from "./state/sudoku";
+import { SudokuEffects } from "./sudokuEffects";
 
 interface SudokuContentProps {
     gridRef: React.MutableRefObject<HTMLDivElement>;
@@ -27,27 +25,8 @@ const SudokuContent = ({ gridRef }: SudokuContentProps) => {
 };
 
 export const Sudoku = () => {
-    const sudoku = useRecoilValue(sudokuState);
-
-    const { cells, base, sideLength, blocksIndices, isSolved } = sudoku;
-
-    // TODO: refactor using recoil
-    //  use Recoil Sync?
-    //  replace with atom effect?
-    //  move inside side effect component?
-    const debouncedSaveCells = useMemo(
-        () =>
-            debounce((cells: TransportSudoku["cells"]) => {
-                console.debug("Saving sudoku cells to localStorage");
-                const cellViews: CellViews = cells.map(({ position, incorrectValue, ...cell }) => cell);
-                saveCellViews(cellViews);
-            }, 500),
-        []
-    );
-
-    useEffect(() => {
-        debouncedSaveCells(cells);
-    }, [debouncedSaveCells, cells]);
+    const base = useRecoilValue(sudokuBaseState);
+    const sideLength = useRecoilValue(sudokuSideLengthState);
 
     // Responsive Grid
     const { width: gridWidth, height: gridHeight, ref: gridRef } = useResizeDetector({});
@@ -71,6 +50,7 @@ export const Sudoku = () => {
         >
             <SudokuAppBar />
             <SudokuContent gridRef={gridRef} />
+            <SudokuEffects />
         </div>
     );
 };
