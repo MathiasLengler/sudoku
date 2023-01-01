@@ -8,6 +8,7 @@ interface CustomMenuProps {
         onClick: () => Promise<void> | void;
         label: string;
         icon?: React.ReactNode;
+        disabled?: boolean;
     }[];
 }
 
@@ -32,7 +33,7 @@ export function CustomMenu({ children, menuItems }: CustomMenuProps) {
             {children({ onMenuOpen })}
             <Menu keepMounted open={!!menuAnchorEl} anchorEl={menuAnchorEl} onClose={makeHandleMenuClose()}>
                 {menuItems.map((menuItem, i) => (
-                    <MenuItem key={i} onClick={makeHandleMenuClose(menuItem.onClick)}>
+                    <MenuItem key={i} onClick={makeHandleMenuClose(menuItem.onClick)} disabled={menuItem.disabled}>
                         {menuItem.icon && <ListItemIcon>{menuItem.icon}</ListItemIcon>}
                         <ListItemText>{menuItem.label}</ListItemText>
                     </MenuItem>

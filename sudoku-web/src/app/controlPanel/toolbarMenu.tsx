@@ -6,19 +6,22 @@ import { CustomMenu } from "../menu/customMenu";
 import InfoIcon from "@mui/icons-material/Info";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useDeleteSelectedCell, useSetAllDirectCandidates } from "../sudokuActions";
+import { inputState } from "../state/input";
+import { useRecoilValue } from "recoil";
 
 export const ToolbarMenu = () => {
     const deleteSelectedCell = useDeleteSelectedCell();
     const setAllDirectCandidates = useSetAllDirectCandidates();
+    const input = useRecoilValue(inputState);
 
     return (
         <CustomMenu
             menuItems={[
                 {
                     // TODO: show KB shortcut [Delete]
-                    // TODO: disable in sticky mode
                     label: "Delete selected cell",
                     icon: <DeleteIcon />,
+                    disabled: input.stickyMode,
                     onClick: async () => {
                         await deleteSelectedCell();
                     },
