@@ -7,6 +7,7 @@ interface MyThemeProps {
     children: ReactNode;
 }
 
+// TODO: switch to: https://mui.com/material-ui/experimental-api/css-theme-variables/overview/
 export const MyTheme = ({ children }: MyThemeProps) => {
     const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
 
