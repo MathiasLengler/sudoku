@@ -242,7 +242,7 @@ impl<Base: SudokuBase> GroupAvailability<Base> {
     }
 }
 
-#[derive(Debug, Clone, Copy, Default, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Default, Eq, PartialEq)]
 struct GroupAvailabilityIndex {
     row: u8,
     column: u8,
