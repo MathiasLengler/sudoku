@@ -4,7 +4,7 @@ import { useKeyboardInput } from "./useKeyboardInput";
 import { Grid } from "./grid/grid";
 import { ControlPanel } from "./controlPanel/controlPanel";
 import { useResizeDetector } from "react-resize-detector";
-import SudokuAppBar from "./menu/sudokuAppBar";
+import SudokuAppBar from "./appBar/sudokuAppBar";
 import { useRecoilValue } from "recoil";
 import { sudokuBaseState, sudokuSideLengthState } from "./state/sudoku";
 import { SudokuEffects } from "./sudokuEffects";
