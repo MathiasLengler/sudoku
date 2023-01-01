@@ -22,7 +22,7 @@ pub struct Solver<'s, Base: SudokuBase> {
 
 impl<'s, Base: SudokuBase> Solver<'s, Base> {
     pub fn new(grid: &'s mut Grid<Base>) -> Solver<'s, Base> {
-        Self::new_with_strategies(grid, strategies::DynamicStrategy::all())
+        Self::new_with_strategies(grid, DynamicStrategy::all())
     }
 
     pub fn new_with_strategies(
