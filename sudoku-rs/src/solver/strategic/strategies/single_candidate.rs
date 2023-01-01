@@ -5,7 +5,7 @@ use crate::solver::strategic::deduction::{Deduction, Deductions, TryIntoDeductio
 
 use super::Strategy;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct SingleCandidate;
 
 impl Strategy for SingleCandidate {

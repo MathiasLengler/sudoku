@@ -9,7 +9,6 @@ use crate::cell::compact::value::Value;
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::solver::backtracking;
-use crate::solver::strategic::strategies;
 use crate::solver::strategic::strategies::DynamicStrategy;
 
 // TODO: strategic
@@ -77,28 +76,30 @@ impl Generator {
         Self { settings }
     }
 
-    pub fn generate<Base: SudokuBase>(&self) -> Grid<Base> {
-        debug!("{self:?}");
+    // TODO: fn rng() -> impl Rng
 
-        let filled_sudoku = self.filled_grid();
+    pub fn generate<Base: SudokuBase>(&self) -> Grid<Base> {
+        debug!("generate: {self:?}");
+
+        let filled_grid = self.filled_grid();
 
         let (mut grid, set_all_direct_candidates) = match self.settings.target {
-            GeneratorTarget::Filled => (filled_sudoku, false),
+            GeneratorTarget::Filled => (filled_grid, false),
             GeneratorTarget::FromFilled {
                 distance,
                 set_all_direct_candidates,
             } => (
-                Self::filled(filled_sudoku, distance),
+                self.filled(filled_grid, distance),
                 set_all_direct_candidates,
             ),
             GeneratorTarget::Minimal {
                 set_all_direct_candidates,
-            } => (Self::minimal(filled_sudoku, 0), set_all_direct_candidates),
+            } => (self.minimal(filled_grid, 0), set_all_direct_candidates),
             GeneratorTarget::FromMinimal {
                 distance,
                 set_all_direct_candidates,
             } => (
-                Self::minimal(filled_sudoku, distance),
+                self.minimal(filled_grid, distance),
                 set_all_direct_candidates,
             ),
         };
@@ -130,6 +131,7 @@ impl Generator {
     ///
     /// Returns the value of the deleted cell, if any.
     fn try_delete_cell_at_pos<Base: SudokuBase>(
+        &self,
         grid: &mut Grid<Base>,
         pos: Position,
     ) -> Option<Value<Base>> {
@@ -138,13 +140,7 @@ impl Generator {
         if let Some(value) = cell.value() {
             grid.get_mut(pos).delete();
 
-            match grid.is_solvable_with_strategies(vec![
-                // TODO: introduce parameter
-                strategies::SingleCandidate.into(),
-                // Box::new(strategies::HiddenSingles),
-                // Box::new(strategies::GroupReduction),
-                // Box::new(strategies::Backtracking),
-            ]) {
+            match grid.is_solvable_with_strategies(self.settings.strategies.clone()) {
                 Some(Ok(_)) if grid.has_unique_solution() => {
                     // current position can be removed without losing uniqueness of the grid solution.
                     Some(value)
@@ -160,7 +156,7 @@ impl Generator {
         }
     }
 
-    fn filled<Base: SudokuBase>(mut grid: Grid<Base>, distance: usize) -> Grid<Base> {
+    fn filled<Base: SudokuBase>(&self, mut grid: Grid<Base>, distance: usize) -> Grid<Base> {
         if distance == 0 {
             return grid;
         }
@@ -179,7 +175,7 @@ impl Generator {
                 break;
             }
 
-            if Self::try_delete_cell_at_pos::<Base>(&mut grid, pos).is_some() {
+            if self.try_delete_cell_at_pos(&mut grid, pos).is_some() {
                 deleted_count += 1;
                 debug!("Position {i}/{all_positions_count} deleted, totaling {deleted_count}/{distance} deleted positions");
             } else {
@@ -190,10 +186,9 @@ impl Generator {
         grid
     }
 
-    // TODO: optimize performance for base >= 3
-    fn minimal<Base: SudokuBase>(mut grid: Grid<Base>, distance: usize) -> Grid<Base> {
+    fn minimal<Base: SudokuBase>(&self, mut grid: Grid<Base>, distance: usize) -> Grid<Base> {
         // If the distance results in a filled sudoku, return it directly.
-        if Grid::<Base>::cell_count_usize() <= distance {
+        if distance >= Grid::<Base>::cell_count_usize() {
             return grid;
         }
 
@@ -209,7 +204,7 @@ impl Generator {
         for (i, pos) in all_positions.into_iter().enumerate() {
             let i = i + 1;
 
-            if let Some(deleted_value) = Self::try_delete_cell_at_pos::<Base>(&mut grid, pos) {
+            if let Some(deleted_value) = self.try_delete_cell_at_pos(&mut grid, pos) {
                 let deleted_count = deleted.len();
                 debug!("Position {i}/{all_positions_count} deleted, totaling {deleted_count}/{distance} deleted positions");
 

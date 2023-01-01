@@ -13,7 +13,7 @@ use super::Strategy;
 //  - https://en.wikipedia.org/wiki/Strongly_connected_component
 //  - https://opensourc.es/blog/sudoku/
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct GroupReduction;
 
 impl Strategy for GroupReduction {

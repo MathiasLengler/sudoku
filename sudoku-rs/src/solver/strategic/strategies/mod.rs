@@ -45,7 +45,7 @@ mod hidden_singles;
 mod single_candidate;
 
 #[enum_dispatch(DynamicStrategy)]
-pub trait Strategy: Debug {
+pub trait Strategy: Debug + Copy + Clone {
     /// Execute this strategy on the given grid. Returns a list of deductions.
     fn execute<Base: SudokuBase>(&self, grid: &Grid<Base>) -> Result<Deductions<Base>>;
 
@@ -56,7 +56,7 @@ pub trait Strategy: Debug {
 #[cfg_attr(feature = "wasm", derive(TS))]
 #[cfg_attr(feature = "wasm", ts(export))]
 #[enum_dispatch]
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum DynamicStrategy {
     SingleCandidate,
     HiddenSingles,

@@ -7,7 +7,7 @@ use crate::solver::strategic::deduction::{Deduction, Deductions, TryIntoDeductio
 
 use super::Strategy;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct HiddenSingles;
 
 impl Strategy for HiddenSingles {

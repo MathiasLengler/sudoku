@@ -6,7 +6,7 @@ use crate::solver::strategic::deduction::{Deduction, Deductions, TryIntoDeductio
 
 use super::Strategy;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct Backtracking;
 
 impl Strategy for Backtracking {
