@@ -15,20 +15,20 @@ pub mod deduction;
 // TODO: return/persist chain of deductions for complete solve
 
 #[derive(Debug)]
-pub struct Solver<'s, Base: SudokuBase> {
-    grid: &'s mut Grid<Base>,
+pub struct Solver<'g, Base: SudokuBase> {
+    grid: &'g mut Grid<Base>,
     strategies: Vec<DynamicStrategy>,
 }
 
-impl<'s, Base: SudokuBase> Solver<'s, Base> {
-    pub fn new(grid: &'s mut Grid<Base>) -> Solver<'s, Base> {
+impl<'g, Base: SudokuBase> Solver<'g, Base> {
+    pub fn new(grid: &'g mut Grid<Base>) -> Solver<'g, Base> {
         Self::new_with_strategies(grid, DynamicStrategy::all())
     }
 
     pub fn new_with_strategies(
-        grid: &'s mut Grid<Base>,
+        grid: &'g mut Grid<Base>,
         strategies: Vec<DynamicStrategy>,
-    ) -> Solver<'s, Base> {
+    ) -> Solver<'g, Base> {
         Self { grid, strategies }
     }
 
@@ -61,8 +61,7 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
 
             if !(deductions.is_empty()) {
                 trace!(
-                    "{:?}: {:?}\n{}",
-                    strategy,
+                    "{strategy:?}: {:?}\n{}",
                     deductions
                         .iter()
                         .map(|pos| pos.to_string())
