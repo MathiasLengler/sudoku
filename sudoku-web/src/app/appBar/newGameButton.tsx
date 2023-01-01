@@ -1,7 +1,7 @@
 import React from "react";
 import { IconButton } from "@mui/material";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
-import { NewGameDialog } from "../controlPanel/newGame/newGameDialog";
+import { NewGameDialog } from "./newGame/newGameDialog";
 
 export function NewGameButton() {
     const [isNewGameDialogOpen, setIsNewGameDialogOpen] = React.useState(false);
