@@ -29,7 +29,7 @@ export const MyTheme = ({ children }: MyThemeProps) => {
                 components: {
                     MuiTooltip: {
                         defaultProps: {
-                            enterDelay: 500,
+                            enterDelay: 700,
                             leaveDelay: 200,
                         },
                     },
