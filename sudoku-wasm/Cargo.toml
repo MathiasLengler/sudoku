@@ -26,6 +26,9 @@ log = { version = "0.4.17", features = ["max_level_debug"] }
 sudoku = { path = "../sudoku-rs", features = ["wasm"] }
 serde = "1.0.144"
 
+[dev-dependencies]
+wasm-bindgen-test = "0.3.33"
+
 [dependencies.web-sys]
 version = "0.3.59"
 features = [
