@@ -76,6 +76,8 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                             set_all_direct_candidates: setAllDirectCandidates,
                         },
                     },
+                    // TODO: expose in form
+                    seed: 42n,
                     strategies,
                 });
 

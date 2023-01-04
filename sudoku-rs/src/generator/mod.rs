@@ -49,6 +49,7 @@ impl Default for GeneratorTarget {
 pub struct GeneratorSettings {
     pub target: GeneratorTarget,
     pub strategies: Vec<DynamicStrategy>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub seed: Option<u64>,
 }
 
