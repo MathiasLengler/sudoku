@@ -1,5 +1,7 @@
 use log::debug;
 use rand::prelude::SliceRandom;
+use rand::{thread_rng, Rng, SeedableRng};
+use rand_xoshiro::Xoshiro256StarStar;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "wasm")]
 use ts_rs::TS;
@@ -9,7 +11,8 @@ use crate::cell::compact::value::Value;
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::solver::backtracking;
-use crate::solver::strategic::strategies::DynamicStrategy;
+use crate::solver::backtracking::CandidatesVisitOrder;
+use crate::solver::strategic::strategies::{Backtracking, DynamicStrategy};
 
 // TODO: strategic
 //  target difficulty: sum of weighted strategy applications
@@ -46,6 +49,7 @@ impl Default for GeneratorTarget {
 pub struct GeneratorSettings {
     pub target: GeneratorTarget,
     pub strategies: Vec<DynamicStrategy>,
+    pub seed: Option<u64>,
 }
 
 #[cfg_attr(feature = "wasm", derive(TS))]
@@ -68,7 +72,8 @@ impl Generator {
     pub fn with_target(target: GeneratorTarget) -> Self {
         Self::with_settings(GeneratorSettings {
             target,
-            strategies: DynamicStrategy::all(),
+            strategies: vec![Backtracking.into()],
+            seed: None,
         })
     }
 
@@ -76,7 +81,13 @@ impl Generator {
         Self { settings }
     }
 
-    // TODO: fn rng() -> impl Rng
+    fn rng(&self) -> impl Rng {
+        if let Some(seed) = self.settings.seed {
+            Xoshiro256StarStar::seed_from_u64(seed)
+        } else {
+            Xoshiro256StarStar::from_rng(thread_rng()).unwrap()
+        }
+    }
 
     pub fn generate<Base: SudokuBase>(&self) -> Grid<Base> {
         debug!("generate: {self:?}");
@@ -119,7 +130,11 @@ impl Generator {
         let mut solver = backtracking::Solver::new_with_settings(
             &mut grid,
             backtracking::Settings {
-                shuffle_candidates: true,
+                candidates_visit_order: if let Some(seed) = self.settings.seed {
+                    CandidatesVisitOrder::RandomSeed(seed)
+                } else {
+                    CandidatesVisitOrder::Random
+                },
                 ..Default::default()
             },
         );
@@ -164,7 +179,7 @@ impl Generator {
         assert!(grid.is_solved());
 
         let mut all_positions: Vec<_> = Grid::<Base>::all_positions().collect();
-        all_positions.shuffle(&mut rand::thread_rng());
+        all_positions.shuffle(&mut self.rng());
         let all_positions_count = Grid::<Base>::cell_count_usize();
 
         let mut deleted_count = 0;
@@ -195,7 +210,7 @@ impl Generator {
         assert!(grid.is_solved());
 
         let mut all_positions: Vec<_> = Grid::<Base>::all_positions().collect();
-        all_positions.shuffle(&mut rand::thread_rng());
+        all_positions.shuffle(&mut self.rng());
         let all_positions_count = Grid::<Base>::cell_count_usize();
 
         let mut deleted: Vec<(Position, Value<Base>)> = vec![];
@@ -273,5 +288,32 @@ mod tests {
         assert_eq!(grid.all_candidates_positions().len(), 2);
 
         assert!(grid.has_unique_solution());
+    }
+
+    #[test]
+    fn test_seed() {
+        let strategies = vec![Backtracking.into()];
+        let generator_1 = Generator::with_settings(GeneratorSettings {
+            seed: Some(1),
+            target: GeneratorTarget::Filled,
+            strategies: strategies.clone(),
+        });
+        assert_eq!(
+            generator_1.generate::<Base3>(),
+            generator_1.generate::<Base3>()
+        );
+        let generator_2 = Generator::with_settings(GeneratorSettings {
+            seed: Some(2),
+            target: GeneratorTarget::Filled,
+            strategies,
+        });
+        assert_eq!(
+            generator_2.generate::<Base3>(),
+            generator_2.generate::<Base3>()
+        );
+        assert_ne!(
+            generator_1.generate::<Base3>(),
+            generator_2.generate::<Base3>()
+        );
     }
 }

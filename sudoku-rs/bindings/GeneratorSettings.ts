@@ -2,4 +2,4 @@
 import type { DynamicStrategy } from "./DynamicStrategy";
 import type { GeneratorTarget } from "./GeneratorTarget";
 
-export interface GeneratorSettings { target: GeneratorTarget, strategies: Array<DynamicStrategy>, }
+export interface GeneratorSettings { target: GeneratorTarget, strategies: Array<DynamicStrategy>, seed: bigint | null, }

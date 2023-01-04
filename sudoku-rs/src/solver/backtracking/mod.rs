@@ -3,12 +3,26 @@ use std::num::NonZeroUsize;
 use crate::base::SudokuBase;
 use crate::grid::Grid;
 use crate::position::Position;
-use crate::solver::backtracking::choice::Choice;
+use crate::solver::backtracking::choice::{CandidatesProcessor, Choice};
 
 mod choice;
 
 // TODO: how to externally drive and visualize solver (steps)
 //  make step into an iterator over step results
+
+#[derive(Debug, Copy, Clone)]
+pub enum CandidatesVisitOrder {
+    Asc,
+    Desc,
+    Random,
+    RandomSeed(u64),
+}
+
+impl Default for CandidatesVisitOrder {
+    fn default() -> Self {
+        CandidatesVisitOrder::Asc
+    }
+}
 
 #[derive(Debug)]
 pub struct Solver<'s, Base: SudokuBase> {
@@ -21,12 +35,14 @@ pub struct Solver<'s, Base: SudokuBase> {
     step_count: usize,
     /// Settings
     settings: Settings,
+    /// Initialized by `settings.candidates_visit_order`
+    candidates_processor: CandidatesProcessor,
 }
 
 #[derive(Debug, Default)]
 pub struct Settings {
     pub step_limit: Option<NonZeroUsize>,
-    pub shuffle_candidates: bool,
+    pub candidates_visit_order: CandidatesVisitOrder,
 }
 
 #[derive(Debug)]
@@ -53,6 +69,7 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
             choices: Vec::with_capacity(empty_positions.len()),
             empty_positions,
             step_count: 0,
+            candidates_processor: settings.candidates_visit_order.into(),
             settings,
         };
 
@@ -70,7 +87,7 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
     fn push_choice(&mut self, pos: Position) {
         self.choices.push(Choice::new(
             self.grid.direct_candidates(pos).to_vec_value(),
-            self.settings.shuffle_candidates,
+            &mut self.candidates_processor,
         ))
     }
 
@@ -218,7 +235,7 @@ mod tests {
         let solver = Solver::new_with_settings(
             &mut grid,
             Settings {
-                shuffle_candidates: true,
+                candidates_visit_order: CandidatesVisitOrder::Random,
                 step_limit: Default::default(),
             },
         );
