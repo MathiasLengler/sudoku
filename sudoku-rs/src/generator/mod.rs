@@ -167,7 +167,7 @@ impl Generator {
                 }
             }
         } else {
-            panic!("Expected value at {} but got: {:?}", pos, cell)
+            panic!("Expected value at {}, instead got: {:?}", pos, cell)
         }
     }
 
