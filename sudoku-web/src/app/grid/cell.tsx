@@ -109,7 +109,7 @@ export const Cell = (props: CellProps) => {
         <div
             className={cellClassNames}
             style={style}
-            onPointerDown={({ isPrimary, buttons, pointerId }) => {
+            onPointerDown={({ buttons, isPrimary, pointerId, pointerType, target }) => {
                 if (
                     // Left Mouse, Touch Contact, Pen contact
                     buttons !== 1 ||
@@ -117,8 +117,16 @@ export const Cell = (props: CellProps) => {
                 ) {
                     return;
                 }
-                console.debug("onPointerDown", { isPrimary, buttons, pointerId });
-                handlePosition(gridPosition).catch(console.error);
+                console.debug("onPointerDown", { isPrimary, buttons, pointerId, pointerType, target });
+
+                // Disable implicit pointer capture, e.g. handle touch events with mouse event semantics
+                if ((target as Element).hasPointerCapture(pointerId)) {
+                    (target as Element).releasePointerCapture(pointerId);
+                }
+
+                if (pointerType !== "touch") {
+                    handlePosition(gridPosition).catch(console.error);
+                }
             }}
             onPointerEnter={({ isPrimary, buttons, pointerId }) => {
                 if (
