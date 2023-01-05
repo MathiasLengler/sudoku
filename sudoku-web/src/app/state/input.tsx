@@ -53,17 +53,6 @@ export const selectedPosState = selector<Position | undefined>({
     },
 });
 
-// Defined in sticky mode
-const selectedValueState = selector<number | undefined>({
-    key: "Input.selectedValue",
-    get: ({ get }) => {
-        const input = get(inputState);
-        if (input.stickyMode) {
-            return input.selectedValue;
-        }
-    },
-});
-
 export const inputCandidateModeState = selector<Input["candidateMode"]>({
     key: "Input.candidateMode",
     get: ({ get }) => get(inputState).candidateMode,

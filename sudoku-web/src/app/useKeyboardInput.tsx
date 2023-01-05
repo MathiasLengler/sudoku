@@ -54,8 +54,6 @@ function keyToNewPos(
     return { row: row, column: column };
 }
 
-type ToolbarAction = "toggleCandidateMode" | "toggleStickyMode" | "delete" | "setAllDirectCandidates" | "undo";
-
 export function useKeyboardInput() {
     const handlePosition = useHandlePosition();
     const handleValue = useHandleValue();

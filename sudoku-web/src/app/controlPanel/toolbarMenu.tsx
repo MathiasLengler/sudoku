@@ -6,7 +6,7 @@ import { CustomMenu } from "../appBar/customMenu";
 import InfoIcon from "@mui/icons-material/Info";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useDeleteSelectedCell, useSetAllDirectCandidates } from "../sudokuActions";
-import { inputState, inputStickyModeState } from "../state/input";
+import { inputStickyModeState } from "../state/input";
 import { useRecoilValue } from "recoil";
 
 export const ToolbarMenu = () => {

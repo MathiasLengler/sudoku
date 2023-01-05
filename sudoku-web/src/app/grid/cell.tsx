@@ -1,7 +1,7 @@
 import type * as React from "react";
 import type * as CSS from "csstype";
 import classnames from "classnames";
-import { indexToPosition, positionToIndex, valueToString } from "../utils";
+import { indexToPosition, valueToString } from "../utils";
 import type { CellViewCandidates, CellViewValue, TransportCell } from "../../types";
 import { inputState } from "../state/input";
 import { sudokuBaseState } from "../state/sudoku";
@@ -90,7 +90,6 @@ export const Cell = (props: CellProps) => {
 
     const base = useRecoilValue(sudokuBaseState);
 
-    const gridIndex = positionToIndex({ gridPosition, base });
     const cellPositionInBlock = indexToPosition({ blockIndex: blockCellIndex, base: base });
 
     const style: CSS.Properties = {
