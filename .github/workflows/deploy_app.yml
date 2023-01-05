@@ -40,6 +40,12 @@ jobs:
         with:
           command: test
 
+      - name: Install wasm-pack
+        uses: jetli/wasm-pack-action@v0.4.0
+
+      - run: wasm-pack build --out-name index
+        working-directory: ./sudoku-wasm
+
       # Node
       - uses: actions/setup-node@v3
         with:
