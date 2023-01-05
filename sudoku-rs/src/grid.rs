@@ -66,7 +66,6 @@ impl<Base: SudokuBase> Grid<Base> {
 /// Consistency testing
 impl<Base: SudokuBase> Grid<Base> {
     // Alternative: compare with solved grid
-    //  are
 
     /// A grid is directly consistent, if:
     /// - No cell has empty candidates.
