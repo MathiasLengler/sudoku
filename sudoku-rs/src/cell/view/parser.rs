@@ -1,3 +1,5 @@
+use crate::base::consts::ALL_CELL_COUNTS;
+use anyhow::ensure;
 use std::convert::TryInto;
 
 use crate::cell::view::CellView;
@@ -6,11 +8,30 @@ use crate::error::Result;
 pub(crate) fn parse_cells(input: &str) -> Result<Vec<CellView>> {
     let input = input.trim();
 
-    Ok(if input.contains('\n') {
-        from_candidates(input).unwrap_or_else(|_| from_givens_grid(input))
+    let mut cell_views = if input.contains('\n') {
+        from_ascii_candidates_grid(input).unwrap_or_else(|_| from_givens_grid(input))
     } else {
-        from_givens_line(input)?
-    })
+        from_givens_line(input).or_else(|_| from_binary_candidates_line(input))?
+    };
+
+    let actual_cell_count = cell_views.len().try_into()?;
+
+    ensure!(
+        ALL_CELL_COUNTS.contains(&actual_cell_count),
+        "Unexpected cell count {actual_cell_count}, expected one of: {ALL_CELL_COUNTS:?}"
+    );
+
+    // Fix all values
+    cell_views.iter_mut().for_each(|cell_view| match cell_view {
+        CellView::Value { fixed, value } => {
+            if *value != 0 {
+                *fixed = true;
+            }
+        }
+        _ => {}
+    });
+
+    Ok(cell_views)
 }
 
 fn from_givens_line(input: &str) -> Result<Vec<CellView>> {
@@ -28,13 +49,26 @@ fn from_givens_grid(input: &str) -> Vec<CellView> {
         .collect::<Vec<_>>()
 }
 
-fn from_candidates(input: &str) -> Result<Vec<CellView>> {
+fn from_binary_candidates_line(input: &str) -> Result<Vec<CellView>> {
+    let mut cell_views = vec![];
+
+    for cell_str in input.split(",") {
+        let bits = cell_str.parse::<u32>()?;
+        cell_views.push(bits.try_into()?)
+    }
+
+    Ok(cell_views)
+}
+
+fn from_ascii_candidates_grid(input: &str) -> Result<Vec<CellView>> {
+    static SEPARATORS: &[char] = &['-', '|', ':', '+', '\'', '\n', '*'];
+
     input
         .lines()
         // Filter horizontal separator lines
         .filter(|line| line.contains(|c: char| c.is_digit(36)))
         // Filter vertical separators
-        .flat_map(|line| line.split(['-', '|', ':', '+', '\'', '\n', '*'].as_ref()))
+        .flat_map(|line| line.split(SEPARATORS))
         .filter(|s| !s.is_empty())
         // Split and trim groups of numbers
         .flat_map(|s| s.split_whitespace())
@@ -42,18 +76,48 @@ fn from_candidates(input: &str) -> Result<Vec<CellView>> {
         .collect::<Result<Vec<_>>>()
 }
 
+#[allow(dead_code)]
+fn from_terminal_candidates_grid(input: &str) -> Result<Vec<CellView>> {
+    let stripped_input_bytes = strip_ansi_escapes::strip(input.as_bytes())?;
+    let stripped_input = String::from_utf8(stripped_input_bytes)?;
+
+    dbg!(&stripped_input);
+
+    // TODO: implement
+    //  split into multi-line rows
+    //  split rows into multi-line cells
+    //  extract numbers from cells
+
+    todo!()
+}
+
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
+    use crate::base::SudokuBase;
+    use crate::grid::serialization::GridFormat;
+    use crate::grid::Grid;
+    use crate::samples;
+    use anyhow::Context;
+
+    pub(crate) static INPUT_GIVENS_LINE: &'static str = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/res/parser/givens_line.txt"
+    ));
+
+    pub(crate) static INPUT_GIVENS_GRID: &'static str = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/res/parser/givens_grid.txt"
+    ));
+
+    pub(crate) static INPUT_CANDIDATES: &'static str = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/res/parser/candidates.txt"
+    ));
 
     #[test]
-    fn test_givens_line_base_3() -> Result<()> {
-        let input = include_str!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/tests/res/parser/givens_line.txt"
-        ));
-
-        let cells = from_givens_line(input)?;
+    fn test_from_givens_line() -> Result<()> {
+        let cells = from_givens_line(INPUT_GIVENS_LINE)?;
 
         let expected_cells = vec![
             6, 0, 0, 0, 0, 2, 3, 0, 0, 1, 2, 5, 6, 0, 0, 0, 0, 0, 0, 0, 4, 7, 0, 0, 0, 2, 0, 7, 3,
@@ -70,13 +134,8 @@ mod tests {
     }
 
     #[test]
-    fn test_givens_grid_base_3() -> Result<()> {
-        let input = include_str!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/tests/res/parser/givens_grid.txt"
-        ));
-
-        let cells = from_givens_grid(input);
+    fn test_from_givens_grid() -> Result<()> {
+        let cells = from_givens_grid(INPUT_GIVENS_GRID);
 
         let expected_cells = vec![
             0, 8, 0, 5, 0, 3, 0, 7, 0, 0, 2, 7, 0, 0, 0, 3, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -93,15 +152,10 @@ mod tests {
     }
 
     #[test]
-    fn test_candidates() -> Result<()> {
+    fn test_from_candidates_grid() -> Result<()> {
         use crate::cell::view::{c, v};
 
-        let input = include_str!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/tests/res/parser/candidates.txt"
-        ));
-
-        let cells = from_candidates(input)?;
+        let cells = from_ascii_candidates_grid(INPUT_CANDIDATES)?;
 
         let expected_cells = vec![
             vec![
@@ -201,5 +255,70 @@ mod tests {
         assert_eq!(cells, expected_cells);
 
         Ok(())
+    }
+
+    #[test]
+    fn test_parse_cells_roundtrip() {
+        let grid_formats = vec![
+            GridFormat::GivensLine,
+            GridFormat::GivensGrid,
+            GridFormat::BinaryCandidatesLine,
+            // FIXME: handle formats in parse_cells
+            // GridFormat::CandidatesGrid,
+        ];
+
+        fn assert_grid_roundtrip<Base: SudokuBase>(
+            grid_format: GridFormat,
+            grid_string: &str,
+            grid: Grid<Base>,
+        ) {
+            let cell_views = parse_cells(&grid_string)
+                .with_context(|| {
+                    format!(
+                        "parse_cells to parse:\n\
+                        {grid_string}"
+                    )
+                })
+                .unwrap();
+
+            let parsed_grid = cell_views
+                .try_into()
+                .with_context(|| {
+                    format!(
+                        "Failed to convert cell_views to grid:\n\
+                        {grid_string}\n\
+                        {grid_string:?}"
+                    )
+                })
+                .unwrap();
+
+            assert_eq!(
+                grid, parsed_grid,
+                "Failed to roundtrip format {grid_format:?}:\n\
+                    Original:\n\
+                    {grid}\n\
+                    \n\
+                    Serialized:\n\
+                    {grid_string}\n\
+                    Parsed:\n\
+                    {parsed_grid}"
+            );
+        }
+
+        for grid_format in grid_formats {
+            for (grid_string, grid) in samples::base_2()
+                .into_iter()
+                .map(|grid| (grid_format.render(&grid), grid))
+            {
+                assert_grid_roundtrip(grid_format, &grid_string, grid);
+            }
+
+            for (grid_string, grid) in samples::base_3()
+                .into_iter()
+                .map(|grid| (grid_format.render(&grid), grid))
+            {
+                assert_grid_roundtrip(grid_format, &grid_string, grid);
+            }
+        }
     }
 }

@@ -38,7 +38,10 @@ fn main() -> Result<()> {
             SolverSelection::Strategic => {
                 grid.set_all_direct_candidates();
 
-                assert!(strategic::Solver::new(&mut grid).try_solve()?);
+                assert!(strategic::Solver::new(&mut grid)
+                    .try_solve()
+                    .unwrap()
+                    .is_ok());
             }
             SolverSelection::BacktrackingBitset => {
                 let mut solver = backtracking_bitset::Solver::new(&grid);

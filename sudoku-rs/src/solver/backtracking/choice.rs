@@ -1,9 +1,45 @@
+use rand::{thread_rng, SeedableRng};
 use std::fmt::{self, Display};
 
 use rand::seq::SliceRandom;
+use rand_xoshiro::Xoshiro256StarStar;
 
 use crate::base::SudokuBase;
 use crate::cell::compact::value::Value;
+use crate::solver::backtracking::CandidatesVisitOrder;
+
+#[derive(Debug)]
+pub enum CandidatesProcessor {
+    Asc,
+    Desc,
+    Random(Xoshiro256StarStar),
+}
+
+impl From<CandidatesVisitOrder> for CandidatesProcessor {
+    fn from(candidates_visit_order: CandidatesVisitOrder) -> Self {
+        match candidates_visit_order {
+            CandidatesVisitOrder::Asc => CandidatesProcessor::Asc,
+            CandidatesVisitOrder::Desc => CandidatesProcessor::Desc,
+            CandidatesVisitOrder::Random => {
+                CandidatesProcessor::Random(Xoshiro256StarStar::from_rng(thread_rng()).unwrap())
+            }
+            CandidatesVisitOrder::RandomSeed(seed) => {
+                CandidatesProcessor::Random(Xoshiro256StarStar::seed_from_u64(seed))
+            }
+        }
+    }
+}
+
+impl CandidatesProcessor {
+    fn process<Base: SudokuBase>(&mut self, candidates: &mut [Value<Base>]) {
+        match self {
+            // Values are popped from the end of the candidates vec
+            CandidatesProcessor::Asc => candidates.reverse(),
+            CandidatesProcessor::Desc => {}
+            CandidatesProcessor::Random(rng) => candidates.shuffle(rng),
+        }
+    }
+}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Choice<Base: SudokuBase> {
@@ -11,14 +47,11 @@ pub struct Choice<Base: SudokuBase> {
 }
 
 impl<Base: SudokuBase> Choice<Base> {
-    pub fn new(mut candidates: Vec<Value<Base>>, shuffle_candidates: bool) -> Choice<Base> {
-        if shuffle_candidates {
-            candidates.shuffle(&mut rand::thread_rng())
-        } else {
-            // Ascending value selection order when selecting values from the end of the vec
-            candidates.reverse();
-        }
-
+    pub fn new(
+        mut candidates: Vec<Value<Base>>,
+        candidates_processor: &mut CandidatesProcessor,
+    ) -> Choice<Base> {
+        candidates_processor.process(&mut candidates);
         Self { candidates }
     }
 
@@ -58,7 +91,7 @@ mod tests {
                 .into_iter()
                 .map(|v| v.try_into().unwrap())
                 .collect(),
-            false,
+            &mut CandidatesProcessor::Asc,
         );
 
         assert_eq!(choice.selection(), Some(1.try_into().unwrap()));

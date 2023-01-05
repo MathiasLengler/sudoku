@@ -77,7 +77,7 @@ impl<Base: SudokuBase> CellState<Base> {
         *self = match self {
             CellState::Value(value) => CellState::Value(*value),
             CellState::FixedValue(value) => CellState::Value(*value),
-            CellState::Candidates(ref candidates) => CellState::Candidates(candidates.clone()),
+            CellState::Candidates(candidates) => CellState::Candidates(*candidates),
         };
     }
 
@@ -148,6 +148,15 @@ impl<Base: SudokuBase> CellState<Base> {
         }
     }
 
+    pub(super) fn set_candidate(&mut self, candidate: Value<Base>) {
+        self.assert_unfixed();
+
+        match self {
+            CellState::Candidates(candidates) => candidates.set(candidate, true),
+            CellState::Value(_) => {}
+            _ => unreachable!(),
+        };
+    }
     pub(super) fn delete_candidate(&mut self, candidate: Value<Base>) {
         self.assert_unfixed();
 
@@ -193,18 +202,343 @@ mod tests {
 
     use super::*;
 
-    #[ignore]
+    struct Setup {
+        value: Value<Base2>,
+        candidates: Candidates<Base2>,
+        candidates_2: Candidates<Base2>,
+        cell_state_unfixed_value: CellState<Base2>,
+        cell_state_unfixed_value_2: CellState<Base2>,
+        cell_state_fixed_value: CellState<Base2>,
+        cell_state_candidates: CellState<Base2>,
+        cell_state_candidates_2: CellState<Base2>,
+        cell_state_empty_candidates: CellState<Base2>,
+    }
+
+    fn setup() -> Setup {
+        let value = Value::try_from(1).unwrap();
+        let different_value = Value::try_from(2).unwrap();
+        let candidates = Candidates::single(value);
+        let candidates_2 = Candidates::single(different_value);
+        let cell_state_unfixed_value = CellState::<Base2>::with_value(value, false);
+        let cell_state_unfixed_value_2 = CellState::<Base2>::with_value(different_value, false);
+        let cell_state_fixed_value = CellState::<Base2>::with_value(value, true);
+        let cell_state_candidates = CellState::<Base2>::with_candidates(candidates);
+        let cell_state_candidates_2 = CellState::<Base2>::with_candidates(candidates_2);
+        let cell_state_empty_candidates = CellState::<Base2>::new();
+
+        Setup {
+            value,
+            candidates,
+            candidates_2,
+            cell_state_unfixed_value,
+            cell_state_fixed_value,
+            cell_state_candidates,
+            cell_state_candidates_2,
+            cell_state_empty_candidates,
+            cell_state_unfixed_value_2,
+        }
+    }
+
     #[test]
     fn test_cell_state_size() {
         assert_eq!(
             vec![
-                size_of::<CellState<U1>>(),
-                size_of::<CellState<U2>>(),
-                size_of::<CellState<U3>>(),
-                size_of::<CellState<U4>>(),
-                size_of::<CellState<U5>>()
+                size_of::<CellState<Base1>>(),
+                size_of::<CellState<Base2>>(),
+                size_of::<CellState<Base3>>(),
+                size_of::<CellState<Base4>>(),
+                size_of::<CellState<Base5>>()
             ],
-            vec![2, 2, 3, 3, 5,]
+            vec![2, 2, 4, 4, 8]
         )
+    }
+
+    #[test]
+    fn test_new() {
+        assert_eq!(
+            CellState::<Base2>::new(),
+            CellState::with_candidates(Candidates::new())
+        );
+    }
+
+    #[test]
+    fn test_with_value() {
+        let Setup {
+            value,
+            cell_state_fixed_value,
+            cell_state_unfixed_value,
+            ..
+        } = setup();
+        assert_eq!(cell_state_fixed_value.value(), Some(value));
+        assert_eq!(cell_state_unfixed_value.value(), Some(value));
+    }
+
+    #[test]
+    fn test_with_candidates() {
+        let Setup {
+            candidates,
+            cell_state_candidates,
+            ..
+        } = setup();
+        assert_eq!(cell_state_candidates.candidates(), Some(candidates));
+    }
+
+    #[test]
+    fn test_has() {
+        let Setup {
+            cell_state_unfixed_value,
+            cell_state_fixed_value,
+            cell_state_candidates,
+            ..
+        } = setup();
+
+        assert!(cell_state_unfixed_value.has_value());
+        assert!(cell_state_unfixed_value.has_unfixed_value());
+        assert!(!cell_state_unfixed_value.has_fixed_value());
+        assert!(!cell_state_unfixed_value.has_candidates());
+
+        assert!(cell_state_fixed_value.has_value());
+        assert!(!cell_state_fixed_value.has_unfixed_value());
+        assert!(cell_state_fixed_value.has_fixed_value());
+        assert!(!cell_state_fixed_value.has_candidates());
+
+        assert!(!cell_state_candidates.has_value());
+        assert!(!cell_state_candidates.has_unfixed_value());
+        assert!(!cell_state_candidates.has_fixed_value());
+        assert!(cell_state_candidates.has_candidates());
+    }
+
+    #[test]
+    fn test_fixing() {
+        let Setup {
+            cell_state_unfixed_value: mut cell_state,
+            ..
+        } = setup();
+
+        assert!(cell_state.has_unfixed_value());
+        cell_state.unfix();
+        assert!(cell_state.has_unfixed_value());
+        cell_state.fix();
+        assert!(cell_state.has_fixed_value());
+        cell_state.fix();
+        assert!(cell_state.has_fixed_value());
+        cell_state.unfix();
+        assert!(cell_state.has_unfixed_value());
+    }
+
+    #[test]
+    #[should_panic(expected = "Candidates can't be fixed")]
+    fn test_fix_panic() {
+        setup().cell_state_empty_candidates.fix();
+    }
+
+    #[test]
+    fn test_delete() {
+        let Setup {
+            mut cell_state_unfixed_value,
+            mut cell_state_candidates,
+            cell_state_empty_candidates,
+            ..
+        } = setup();
+
+        cell_state_unfixed_value.delete();
+        cell_state_candidates.delete();
+
+        assert_eq!(cell_state_unfixed_value, cell_state_empty_candidates);
+        assert_eq!(cell_state_candidates, cell_state_empty_candidates);
+    }
+
+    #[test]
+    #[should_panic(expected = "Fixed cell can't be modified")]
+    fn test_delete_panic() {
+        setup().cell_state_fixed_value.delete()
+    }
+
+    #[test]
+    fn test_set_value() {
+        let Setup {
+            value,
+            mut cell_state_unfixed_value,
+            mut cell_state_candidates,
+            ..
+        } = setup();
+
+        cell_state_unfixed_value.set_value(value);
+        cell_state_candidates.set_value(value);
+
+        assert_eq!(cell_state_unfixed_value.value(), Some(value));
+        assert_eq!(cell_state_candidates.value(), Some(value));
+    }
+
+    #[test]
+    #[should_panic(expected = "Fixed cell can't be modified")]
+    fn test_set_value_panic() {
+        let Setup {
+            mut cell_state_fixed_value,
+            value,
+            ..
+        } = setup();
+        cell_state_fixed_value.set_value(value);
+    }
+
+    #[test]
+    fn test_set_or_toggle_value() {
+        let Setup {
+            value,
+            mut cell_state_unfixed_value,
+            mut cell_state_unfixed_value_2,
+            mut cell_state_candidates,
+            cell_state_empty_candidates,
+            ..
+        } = setup();
+
+        cell_state_unfixed_value.set_or_toggle_value(value);
+        cell_state_unfixed_value_2.set_or_toggle_value(value);
+        cell_state_candidates.set_or_toggle_value(value);
+
+        assert_eq!(cell_state_unfixed_value, cell_state_empty_candidates);
+        assert_eq!(cell_state_unfixed_value_2.value(), Some(value));
+        assert_eq!(cell_state_candidates.value(), Some(value));
+    }
+
+    #[test]
+    #[should_panic(expected = "Fixed cell can't be modified")]
+    fn test_set_or_toggle_value_panic() {
+        let Setup {
+            mut cell_state_fixed_value,
+            value,
+            ..
+        } = setup();
+        cell_state_fixed_value.set_or_toggle_value(value);
+    }
+
+    #[test]
+    fn test_set_candidates() {
+        let Setup {
+            candidates,
+            mut cell_state_unfixed_value,
+            mut cell_state_candidates,
+            ..
+        } = setup();
+
+        cell_state_unfixed_value.set_candidates(candidates);
+        cell_state_candidates.set_candidates(candidates);
+
+        assert_eq!(cell_state_unfixed_value.candidates(), Some(candidates));
+        assert_eq!(cell_state_candidates.candidates(), Some(candidates));
+    }
+
+    #[test]
+    #[should_panic(expected = "Fixed cell can't be modified")]
+    fn test_set_candidates_panic() {
+        let Setup {
+            mut cell_state_fixed_value,
+            candidates,
+            ..
+        } = setup();
+        cell_state_fixed_value.set_candidates(candidates);
+    }
+
+    #[test]
+    fn test_toggle_candidate() {
+        let Setup {
+            value,
+            candidates,
+            candidates_2,
+            cell_state_empty_candidates,
+            mut cell_state_unfixed_value,
+            mut cell_state_candidates,
+            mut cell_state_candidates_2,
+            ..
+        } = setup();
+
+        cell_state_unfixed_value.toggle_candidate(value);
+        cell_state_candidates.toggle_candidate(value);
+        cell_state_candidates_2.toggle_candidate(value);
+
+        assert_eq!(cell_state_unfixed_value.candidates(), Some(candidates));
+        assert_eq!(cell_state_candidates, cell_state_empty_candidates);
+        assert_eq!(
+            cell_state_candidates_2.candidates(),
+            Some(candidates.union(&candidates_2))
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "Fixed cell can't be modified")]
+    fn test_toggle_candidate_panic() {
+        let Setup {
+            mut cell_state_fixed_value,
+            value,
+            ..
+        } = setup();
+        cell_state_fixed_value.toggle_candidate(value);
+    }
+
+    #[test]
+    fn test_set_candidate() {
+        let Setup {
+            value,
+            candidates,
+            candidates_2,
+            mut cell_state_unfixed_value,
+            mut cell_state_candidates,
+            mut cell_state_candidates_2,
+            ..
+        } = setup();
+
+        cell_state_unfixed_value.set_candidate(value);
+        cell_state_candidates.set_candidate(value);
+        cell_state_candidates_2.set_candidate(value);
+
+        assert_eq!(cell_state_unfixed_value.value(), Some(value));
+        assert_eq!(cell_state_candidates.candidates(), Some(candidates));
+        assert_eq!(
+            cell_state_candidates_2.candidates(),
+            Some(candidates.union(&candidates_2))
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "Fixed cell can't be modified")]
+    fn test_set_candidate_panic() {
+        let Setup {
+            mut cell_state_fixed_value,
+            value,
+            ..
+        } = setup();
+        cell_state_fixed_value.set_candidate(value);
+    }
+
+    #[test]
+    fn test_delete_candidate() {
+        let Setup {
+            value,
+            candidates_2,
+            cell_state_empty_candidates,
+            mut cell_state_unfixed_value,
+            mut cell_state_candidates,
+            mut cell_state_candidates_2,
+            ..
+        } = setup();
+
+        cell_state_unfixed_value.delete_candidate(value);
+        cell_state_candidates.delete_candidate(value);
+        cell_state_candidates_2.delete_candidate(value);
+
+        assert_eq!(cell_state_unfixed_value.value(), Some(value));
+        assert_eq!(cell_state_candidates, cell_state_empty_candidates);
+        assert_eq!(cell_state_candidates_2.candidates(), Some(candidates_2));
+    }
+
+    #[test]
+    #[should_panic(expected = "Fixed cell can't be modified")]
+    fn test_delete_candidate_panic() {
+        let Setup {
+            mut cell_state_fixed_value,
+            value,
+            ..
+        } = setup();
+        cell_state_fixed_value.delete_candidate(value);
     }
 }

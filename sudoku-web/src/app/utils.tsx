@@ -1,45 +1,57 @@
-// TODO: expose rust utility functions
+import type { CellViewValue, Position, TransportSudoku } from "../types";
 
-import { CellPosition, TransportCell, TransportSudoku, ValueCell } from "../types";
-
-export function valuesFromSideLength(sideLength: TransportSudoku["sideLength"]): number[] {
-    return Array.from(Array(sideLength).keys()).map(value => value + 1);
-}
-
-export function indexToPosition(index: number, base: TransportSudoku["base"]): CellPosition {
+export function indexToPosition({ blockIndex, base }: { blockIndex: number; base: TransportSudoku["base"] }): Position {
     return {
-        column: index % base,
-        row: Math.floor(index / base),
+        row: Math.floor(blockIndex / base),
+        column: blockIndex % base,
     };
 }
 
-export function positionToIndex(pos: CellPosition, base: TransportSudoku["base"]): number {
-    return pos.column + pos.row * base;
+type PositionToIndexParam =
+    | {
+          gridPosition: Position;
+          sideLength: TransportSudoku["sideLength"];
+      }
+    | {
+          gridPosition: Position;
+          base: TransportSudoku["sideLength"];
+      }
+    | {
+          blockPosition: Position;
+          base: TransportSudoku["sideLength"];
+      };
+
+export function positionToIndex(params: PositionToIndexParam): number {
+    if ("gridPosition" in params) {
+        // Full cell grid (4x4, 9x9, 16x16, ...)
+        let sideLength;
+        if ("sideLength" in params) {
+            sideLength = params.sideLength;
+        } else {
+            sideLength = baseToSideLength(params.base);
+        }
+
+        return params.gridPosition.row * sideLength + params.gridPosition.column;
+    } else {
+        // Block/candidates grid (2x2, 3x3, 4x4)
+        return params.blockPosition.row * params.base + params.blockPosition.column;
+    }
 }
 
-export function cellPositionToBlockPosition(cellPosition: CellPosition, base: TransportSudoku["base"]): CellPosition {
+export function cellPositionToBlockPosition(cellPosition: Position, base: TransportSudoku["base"]): Position {
     return {
-        column: Math.floor(cellPosition.column / base),
         row: Math.floor(cellPosition.row / base),
+        column: Math.floor(cellPosition.column / base),
     };
 }
 
-export function valueToString(value: ValueCell["value"]): string {
+export function valueToString(value: CellViewValue["value"]): string {
     return value.toString(36);
 }
 
-export function blocksToCell(
-    blocks: TransportSudoku["blocks"],
-    pos: CellPosition,
-    base: TransportSudoku["base"]
-): TransportCell {
-    const blockPosition = cellPositionToBlockPosition(pos, base);
-    const blockIndex = positionToIndex(blockPosition, base);
-    const block = blocks[blockIndex];
-    const cellPositionInBlock = {
-        column: pos.column - blockPosition.column * base,
-        row: pos.row - blockPosition.row * base,
-    };
-    const cellIndexInBlock = positionToIndex(cellPositionInBlock, base);
-    return block[cellIndexInBlock];
+export function baseToSideLength(base: number): number {
+    return base ** 2;
+}
+export function baseToCellCount(base: number): number {
+    return base ** 4;
 }

@@ -1,29 +1,28 @@
 use std::any::{Any, TypeId};
 use std::convert::{TryFrom, TryInto};
 
-use crate::base::consts::*;
 use anyhow::{bail, ensure, format_err};
 
 pub use game::DynamicSudoku;
 pub use game::Game;
 
+use crate::base::consts::*;
 use crate::base::SudokuBase;
 use crate::cell::view::parser::parse_cells;
 use crate::cell::view::CellView;
 use crate::error::{Error, Result};
-use crate::generator::backtracking::RuntimeSettings as GeneratorSettings;
+use crate::generator::DynamicGeneratorSettings;
+use crate::grid::serialization::GridFormat;
 use crate::grid::Grid;
+use crate::position::Position;
+use crate::solver::strategic::strategies::DynamicStrategy;
+use crate::sudoku::settings::Settings as SudokuSettings;
 use crate::sudoku::Sudoku;
 
 mod game {
-    use crate::base::consts::*;
     use enum_dispatch::enum_dispatch;
 
-    use crate::error::Result;
-    use crate::grid::serialization::GridFormat;
-    use crate::position::Position;
-    use crate::sudoku::settings::Settings as SudokuSettings;
-    use crate::Sudoku;
+    use super::*;
 
     #[enum_dispatch]
     pub trait Game {
@@ -31,11 +30,13 @@ mod game {
         fn set_or_toggle_value(&mut self, pos: Position, value: u8) -> Result<()>;
         fn set_candidates(&mut self, pos: Position, candidates: Vec<u8>) -> Result<()>;
         fn toggle_candidate(&mut self, pos: Position, candidate: u8) -> Result<()>;
+        fn set_candidate(&mut self, pos: Position, candidate: u8) -> Result<()>;
+        fn delete_candidate(&mut self, pos: Position, candidate: u8) -> Result<()>;
         fn delete(&mut self, pos: Position);
         fn set_all_direct_candidates(&mut self);
-        fn solve_single_candidates(&mut self) -> Result<()>;
-        fn group_reduction(&mut self) -> Result<()>;
+        fn try_strategy(&mut self, strategy: DynamicStrategy) -> Result<bool>;
         fn undo(&mut self);
+        fn redo(&mut self);
         fn settings(&self) -> SudokuSettings;
         fn update_settings(&mut self, settings: SudokuSettings);
         fn export(&self, format: &GridFormat) -> String;
@@ -74,26 +75,14 @@ impl DynamicSudoku {
             _ => bail!(Self::unexpected_base_err(Base::BASE)),
         })
     }
-    pub fn generate(&mut self, generator_settings: GeneratorSettings) -> Result<()> {
-        let GeneratorSettings { base, target } = generator_settings;
+    pub fn generate(&mut self, dynamic_generator_settings: DynamicGeneratorSettings) -> Result<()> {
+        let DynamicGeneratorSettings { base, settings } = dynamic_generator_settings;
 
         *self = match base {
-            2 => Self::Base2(Sudoku::<U2>::with_target_and_settings(
-                target,
-                self.settings(),
-            )?),
-            3 => Self::Base3(Sudoku::<U3>::with_target_and_settings(
-                target,
-                self.settings(),
-            )?),
-            4 => Self::Base4(Sudoku::<U4>::with_target_and_settings(
-                target,
-                self.settings(),
-            )?),
-            5 => Self::Base5(Sudoku::<U5>::with_target_and_settings(
-                target,
-                self.settings(),
-            )?),
+            2 => Self::Base2(Sudoku::<U2>::generate(settings, self.settings())?),
+            3 => Self::Base3(Sudoku::<U3>::generate(settings, self.settings())?),
+            4 => Self::Base4(Sudoku::<U4>::generate(settings, self.settings())?),
+            5 => Self::Base5(Sudoku::<U5>::generate(settings, self.settings())?),
             unexpected_base => bail!(Self::unexpected_base_err(unexpected_base)),
         };
 
@@ -140,16 +129,7 @@ impl TryFrom<&str> for DynamicSudoku {
     type Error = Error;
 
     fn try_from(input: &str) -> Result<Self> {
-        let mut cells = parse_cells(input)?;
-        cells.iter_mut().for_each(|cell| match cell {
-            CellView::Value { fixed, value } => {
-                if *value != 0 {
-                    *fixed = true;
-                }
-            }
-            _ => {}
-        });
-        cells.try_into()
+        parse_cells(input)?.try_into()
     }
 }
 
@@ -177,6 +157,10 @@ impl DynamicSudoku {
 
 #[cfg(test)]
 mod tests {
+    use crate::cell::view::parser::tests::{
+        INPUT_CANDIDATES, INPUT_GIVENS_GRID, INPUT_GIVENS_LINE,
+    };
+
     use super::*;
 
     #[test]
@@ -207,23 +191,11 @@ mod tests {
     }
 
     #[test]
-    fn test_try_from_str() -> Result<()> {
-        let inputs = [
-            include_str!(concat!(
-                env!("CARGO_MANIFEST_DIR"),
-                "/tests/res/parser/candidates.txt"
-            )),
-            include_str!(concat!(
-                env!("CARGO_MANIFEST_DIR"),
-                "/tests/res/parser/givens_line.txt"
-            )),
-        ];
+    fn test_try_from_str() {
+        let inputs = [INPUT_CANDIDATES, INPUT_GIVENS_LINE, INPUT_GIVENS_GRID];
 
-        inputs
-            .iter()
-            .map(|input| DynamicSudoku::try_from(*input))
-            .collect::<Result<Vec<_>>>()?;
-
-        Ok(())
+        for input in inputs {
+            DynamicSudoku::try_from(input).unwrap();
+        }
     }
 }

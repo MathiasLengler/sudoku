@@ -1,25 +1,25 @@
-use std::convert::{TryFrom, TryInto};
+use std::convert::TryInto;
 use std::fmt::{self, Display, Formatter};
 
 pub use dynamic::{DynamicSudoku, Game};
+use history::History;
 
 use crate::base::SudokuBase;
 use crate::cell::compact::value::Value;
 use crate::error::Result;
-use crate::generator::backtracking::{Generator, Target};
+use crate::generator::{Generator, GeneratorSettings};
 use crate::grid::serialization::GridFormat;
 use crate::grid::Grid;
-use crate::history::History;
 use crate::position::Position;
-use crate::solver::strategic::{
-    strategies::{GroupReduction, SingleCandidate},
-    Solver as StrategicSolver,
-};
+use crate::solver::strategic::strategies::DynamicStrategy;
+use crate::solver::strategic::Solver as StrategicSolver;
 
 use self::settings::Settings;
 
 mod dynamic;
+mod history;
 pub mod settings;
+pub mod transport;
 
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub struct Sudoku<Base: SudokuBase> {
@@ -55,30 +55,24 @@ impl<Base: SudokuBase> Sudoku<Base> {
             },
             grid,
             settings,
-            history: Default::default(),
+            history: History::with_limit(settings.history_limit),
         }
     }
 
-    pub fn with_target_and_settings(target: Target, settings: Settings) -> Result<Self> {
-        let grid = Generator::with_target(target).generate();
+    pub fn generate(generator_settings: GeneratorSettings, settings: Settings) -> Result<Self> {
+        let grid = Generator::with_settings(generator_settings).generate();
 
         Ok(Self::with_grid_and_settings(grid, settings))
     }
+}
 
+impl<Base: SudokuBase> Sudoku<Base> {
     pub fn grid(&self) -> &Grid<Base> {
         &self.grid
     }
 
     pub fn solved_grid(&self) -> &Option<Grid<Base>> {
         &self.solved_grid
-    }
-
-    pub fn import(&mut self, input: &str) -> Result<()> {
-        let grid = Grid::try_from(input)?;
-
-        self.replace_grid(grid);
-
-        Ok(())
     }
 }
 
@@ -138,6 +132,22 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
 
         Ok(())
     }
+    fn set_candidate(&mut self, pos: Position, candidate: u8) -> Result<()> {
+        self.push_history();
+
+        self.grid.get_mut(pos).set_candidate(candidate.try_into()?);
+
+        Ok(())
+    }
+    fn delete_candidate(&mut self, pos: Position, candidate: u8) -> Result<()> {
+        self.push_history();
+
+        self.grid
+            .get_mut(pos)
+            .delete_candidate(candidate.try_into()?);
+
+        Ok(())
+    }
 
     fn delete(&mut self, pos: Position) {
         self.push_history();
@@ -151,36 +161,31 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
         self.grid.set_all_direct_candidates();
     }
 
-    // TODO: refactor Strategy API
-    //  return deductions for visualization
-    //  single method to try a specific strategy
-    fn solve_single_candidates(&mut self) -> Result<()> {
+    // TODO: replace_with_direct_candidates(pos: Position)
+    //  For which UI interactions could this operation make sense?
+
+    fn try_strategy(&mut self, strategy: DynamicStrategy) -> Result<bool> {
         self.push_history();
 
-        let mut solver =
-            StrategicSolver::new_with_strategies(&mut self.grid, vec![Box::new(SingleCandidate)]);
+        let mut solver = StrategicSolver::new_with_strategies(&mut self.grid, vec![strategy]);
 
-        if let Some(deductions) = solver.try_strategies()? {
+        Ok(if let Some(deductions) = solver.try_strategies()? {
             deductions.apply(&mut self.grid);
-        }
 
-        Ok(())
-    }
-
-    fn group_reduction(&mut self) -> Result<()> {
-        self.push_history();
-
-        let mut solver =
-            StrategicSolver::new_with_strategies(&mut self.grid, vec![Box::new(GroupReduction)]);
-
-        if let Some(deductions) = solver.try_strategies()? {
-            deductions.apply(&mut self.grid);
-        }
-        Ok(())
+            true
+        } else {
+            false
+        })
     }
 
     fn undo(&mut self) {
-        if let Some(grid) = self.history.pop() {
+        if let Some(grid) = self.history.go_back(&self.grid) {
+            self.grid = grid;
+        }
+    }
+
+    fn redo(&mut self) {
+        if let Some(grid) = self.history.go_forward(&self.grid) {
             self.grid = grid;
         }
     }
@@ -192,6 +197,7 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
     // TODO: wasm integration
     fn update_settings(&mut self, settings: Settings) {
         self.settings = settings;
+        self.history.set_limit(self.settings.history_limit);
     }
 
     fn export(&self, format: &GridFormat) -> String {
@@ -201,12 +207,7 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
 
 impl<Base: SudokuBase> Sudoku<Base> {
     fn push_history(&mut self) {
-        self.history
-            .push(self.grid.clone(), self.settings.history_limit)
-    }
-
-    fn replace_grid(&mut self, new_grid: Grid<Base>) {
-        *self = Self::with_grid_and_settings(new_grid, self.settings);
+        self.history.push(self.grid.clone())
     }
 }
 

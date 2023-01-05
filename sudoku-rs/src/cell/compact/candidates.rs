@@ -1,6 +1,6 @@
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
-use std::fmt::{Display, Formatter};
+use std::fmt::{Binary, Display, Formatter};
 
 use num::traits::{CheckedShl, WrappingSub};
 use num::{One, PrimInt, Zero};
@@ -27,7 +27,7 @@ impl<Base: SudokuBase> Default for Candidates<Base> {
 /// Constructors
 impl<Base: SudokuBase> Candidates<Base> {
     pub fn new() -> Self {
-        Self::with_integral_unchecked(Base::CandidatesIntegral::default())
+        Self::with_integral_unchecked(Base::CandidatesIntegral::zero())
     }
 
     fn with_integral_unchecked(bits: Base::CandidatesIntegral) -> Self {
@@ -241,6 +241,12 @@ impl<Base: SudokuBase> Display for Candidates<Base> {
     }
 }
 
+impl<Base: SudokuBase> Binary for Candidates<Base> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        Binary::fmt(&self.bits, f)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::mem::size_of;
@@ -431,8 +437,12 @@ mod tests {
             let candidates: Candidates<Base2> = vec![1, 3].try_into().unwrap();
             let value1 = 1.try_into().unwrap();
             let value2 = 2.try_into().unwrap();
+            let value3 = 3.try_into().unwrap();
+            let value4 = 4.try_into().unwrap();
             assert!(candidates.has(value1));
             assert!(!candidates.has(value2));
+            assert!(candidates.has(value3));
+            assert!(!candidates.has(value4));
         }
 
         #[test]
@@ -549,7 +559,6 @@ mod tests {
                 all_candidates_mask,
                 0b0000_0001_1111_1111_1111_1111_1111_1111
             );
-            println!("{all_candidates_mask:032b}");
         }
     }
 }

@@ -1,16 +1,25 @@
 [workspace]
-
 members = [
     "sudoku-rs",
     "sudoku-wasm",
-    "sudoku-api",
-    "sudoku-afl"
 ]
-default-members = [
-    "sudoku-rs",
-    "sudoku-wasm"
-]
+
+[workspace.package]
+authors = ["Mathias Lengler <mathias@lengler.dev>"]
+categories = ["games", "wasm", "algorithms"]
+description = "Touch optimized sudoku built with Rust/WASM/TypeScript/React."
+edition = "2021"
+homepage = "https://sudoku.lengler.dev"
+keywords = ["sudoku"]
+license = "MIT"
+publish = false
+repository = "https://github.com/MathiasLengler/sudoku"
+rust-version = "1.66"
+version = "0.2.0"
 
 [profile.release-with-debug]
 inherits = "release"
 debug = true
+
+[patch.crates-io]
+ts-rs = { git = "https://github.com/MathiasLengler/ts-rs" }

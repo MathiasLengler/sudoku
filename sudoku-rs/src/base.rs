@@ -28,6 +28,18 @@ pub mod consts {
     pub use Base3 as U3;
     pub use Base4 as U4;
     pub use Base5 as U5;
+
+    pub use Base5 as BaseMax;
+
+    use crate::base::SudokuBase;
+
+    pub const ALL_CELL_COUNTS: [u16; 5] = [
+        Base1::CELL_COUNT,
+        Base2::CELL_COUNT,
+        Base3::CELL_COUNT,
+        Base4::CELL_COUNT,
+        Base5::CELL_COUNT,
+    ];
 }
 
 pub type ArrayElement = u8;

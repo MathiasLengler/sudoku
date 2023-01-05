@@ -1,13 +1,23 @@
 [package]
 name = "sudoku"
-version = "0.1.0"
-authors = ["Mathias Lengler <mathias@lengler.dev>"]
-edition = "2021"
+
+authors.workspace = true
+categories.workspace = true
+description.workspace = true
+edition.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
 
 [dependencies]
 log = "0.4.17"
 itertools = "0.10.3"
 rand = "0.8.5"
+rand_xoshiro = "0.6.0"
 getrandom = "0.2.7"
 anyhow = { version = "1.0.64", features = ["backtrace"] }
 serde = { version = "1.0.144", features = ["derive"] }
@@ -17,14 +27,14 @@ enum_dispatch = "0.3.8"
 num = "0.4.0"
 tabled = { version = "0.8.0", features = ["color"] }
 owo-colors = "3.5.0"
+strip-ansi-escapes = "0.1.1"
 rayon = { version = "1.5.3", optional = true }
 indicatif = { version = "0.17.0", optional = true }
 crossterm = { version = "0.25.0", optional = true }
-flame = { version = "0.2.2", optional = true }
-flamer = { version = "0.4.0", optional = true }
 arbitrary = { version = "1.1.6", features = ["derive"], optional = true }
+ts-rs = { version = "6.2.0", optional = true }
 
-[dev-dependencies]
+[target.'cfg(not(target_family="wasm"))'.dev-dependencies]
 criterion = { version = "0.4.0", features = ["html_reports"] }
 
 [[bench]]
@@ -33,16 +43,16 @@ harness = false
 
 [features]
 default = []
-debug_print = ["crossterm"]
+terminal = ["crossterm"]
 parallel = ["rayon", "indicatif", "indicatif/rayon"]
-wasm-bindgen = ["getrandom/js"]
-flame_it = ["flame", "flamer"]
+wasm = ["getrandom/js", "ts-rs"]
 fuzz = ["arbitrary"]
+solver_debug_print = ["terminal"]
 
 [[bin]]
 name = "generate_histogram"
-required-features = ["parallel"]
+required-features = ["parallel", "terminal"]
 
 [[bin]]
 name = "solver_animation"
-required-features = ["debug_print"]
+required-features = ["solver_debug_print"]

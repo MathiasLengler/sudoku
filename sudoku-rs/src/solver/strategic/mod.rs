@@ -1,9 +1,12 @@
+use log::trace;
+
+use deduction::Deductions;
 use strategies::Strategy;
 
 use crate::base::SudokuBase;
 use crate::error::Result;
 use crate::grid::Grid;
-use deduction::Deductions;
+use crate::solver::strategic::strategies::DynamicStrategy;
 
 pub mod strategies;
 // API
@@ -12,36 +15,41 @@ pub mod deduction;
 // TODO: return/persist chain of deductions for complete solve
 
 #[derive(Debug)]
-pub struct Solver<'s, Base: SudokuBase> {
-    grid: &'s mut Grid<Base>,
-    strategies: Vec<Box<dyn Strategy<Base>>>,
+pub struct Solver<'g, Base: SudokuBase> {
+    grid: &'g mut Grid<Base>,
+    strategies: Vec<DynamicStrategy>,
 }
 
-impl<'s, Base: SudokuBase> Solver<'s, Base> {
-    pub fn new(grid: &'s mut Grid<Base>) -> Solver<'s, Base> {
-        Self::new_with_strategies(grid, strategies::all_strategies())
+impl<'g, Base: SudokuBase> Solver<'g, Base> {
+    pub fn new(grid: &'g mut Grid<Base>) -> Solver<'g, Base> {
+        Self::new_with_strategies(grid, DynamicStrategy::all())
     }
 
     pub fn new_with_strategies(
-        grid: &'s mut Grid<Base>,
-        strategies: Vec<Box<dyn Strategy<Base>>>,
-    ) -> Solver<'s, Base> {
+        grid: &'g mut Grid<Base>,
+        strategies: Vec<DynamicStrategy>,
+    ) -> Solver<'g, Base> {
         Self { grid, strategies }
     }
 
-    // TODO: unique solution?
-    pub fn try_solve(&mut self) -> Result<bool> {
+    pub fn try_solve(&mut self) -> Option<Result<Grid<Base>>> {
         loop {
             if self.grid.is_solved() {
-                return Ok(true);
+                return Some(Ok(self.grid.clone()));
             }
 
-            if let Some(deductions) = self.try_strategies()? {
-                deductions.apply(self.grid);
-                // Continue with strategy execution
-            } else {
-                // All strategies have failed.
-                return Ok(false);
+            match self.try_strategies() {
+                Ok(Some(deductions)) => {
+                    deductions.apply(self.grid);
+                    // Continue with strategy execution
+                }
+                Ok(None) => {
+                    // All strategies have failed.
+                    return None;
+                }
+                Err(err) => {
+                    return Some(Err(err));
+                }
             }
         }
     }
@@ -52,10 +60,8 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
             let deductions = strategy.execute(&mut self.grid)?;
 
             if !(deductions.is_empty()) {
-                #[cfg(feature = "debug_print")]
-                println!(
-                    "{:?}: {:?}\n{}",
-                    strategy,
+                trace!(
+                    "{strategy:?}: {:?}\n{}",
                     deductions
                         .iter()
                         .map(|pos| pos.to_string())
@@ -64,7 +70,6 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
                 );
 
                 return Ok(Some(deductions));
-            } else {
             }
         }
         Ok(None)
@@ -83,7 +88,7 @@ mod tests {
 
         let mut solver = Solver::new(grid);
 
-        assert!(solver.try_solve().unwrap());
+        assert!(solver.try_solve().unwrap().is_ok());
 
         assert!(grid.is_solved());
     }
@@ -115,7 +120,7 @@ mod tests {
 
         let mut solver = Solver::new(&mut grid);
 
-        assert!(solver.try_solve().unwrap());
+        assert!(solver.try_solve().unwrap().is_ok());
 
         assert!(grid.is_solved());
     }

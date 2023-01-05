@@ -1,19 +1,29 @@
 use std::convert::TryFrom;
 use std::convert::TryInto;
 
+use crate::base::consts::BaseMax;
 use anyhow::bail;
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "wasm")]
+use ts_rs::TS;
 
 use crate::base::SudokuBase;
+use crate::cell::compact::candidates::Candidates;
 use crate::cell::compact::cell_state::CellState;
 use crate::cell::Cell;
 use crate::error::{Error, Result};
 
 pub(crate) mod parser;
 
+// TODO: unify representation for empty cell
+//  Cell: Empty Candidates
+//  CellView: Unfixed value
+//  => Constructor now validates this, but Deserialize can break this contract
+
+#[cfg_attr(feature = "wasm", derive(TS))]
+#[cfg_attr(feature = "wasm", ts(export))]
 #[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
-#[serde(tag = "kind")]
+#[serde(rename_all = "camelCase", tag = "kind")]
 pub enum CellView {
     Value { value: u8, fixed: bool },
     Candidates { candidates: Vec<u8> },
@@ -21,7 +31,15 @@ pub enum CellView {
 
 impl CellView {
     pub fn value(value: u8, fixed: bool) -> Self {
-        CellView::Value { value, fixed }
+        if value == 0 {
+            if fixed {
+                panic!("An empty cell can't be fixed")
+            } else {
+                Self::candidates(vec![])
+            }
+        } else {
+            CellView::Value { value, fixed }
+        }
     }
 
     pub fn candidates(candidates: Vec<u8>) -> Self {
@@ -80,6 +98,21 @@ impl TryFrom<char> for CellView {
 
     fn try_from(c: char) -> Result<Self> {
         Ok(char_value_to_u8(c)?.into())
+    }
+}
+
+impl TryFrom<u32> for CellView {
+    type Error = Error;
+
+    fn try_from(bits: u32) -> Result<Self> {
+        let candidates = Candidates::<BaseMax>::with_integral(bits);
+        let candidates_vec = candidates.to_vec_u8();
+
+        Ok(if let &[value] = candidates_vec.as_slice() {
+            Self::value(value, false)
+        } else {
+            Self::candidates(candidates_vec)
+        })
     }
 }
 

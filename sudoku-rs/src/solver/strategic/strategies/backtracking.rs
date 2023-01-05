@@ -1,26 +1,24 @@
 use crate::base::SudokuBase;
 use crate::error::Result;
 use crate::grid::Grid;
-use crate::solver::backtracking::Solver;
+use crate::solver::backtracking_bitset::Solver;
 use crate::solver::strategic::deduction::{Deduction, Deductions, TryIntoDeductions};
 
 use super::Strategy;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct Backtracking;
 
-impl<Base: SudokuBase> Strategy<Base> for Backtracking {
-    fn execute(&self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
-        let mut solver_grid = grid.clone();
+impl Strategy for Backtracking {
+    fn execute<Base: SudokuBase>(&self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
+        let mut solver = Solver::new(&grid);
 
-        let mut solver = Solver::new(&mut solver_grid);
-
-        if solver.next().is_some() {
-            TryIntoDeductions(solver.into_empty_positions().into_iter().map(|pos| {
+        if let Some(solved_grid) = solver.next() {
+            TryIntoDeductions(grid.all_candidates_positions().into_iter().map(|pos| {
                 Deduction::with_value(
                     pos,
                     grid.get(pos).candidates().unwrap(),
-                    solver_grid.get(pos).value().unwrap(),
+                    solved_grid.get(pos).value().unwrap(),
                 )
             }))
             .try_into()

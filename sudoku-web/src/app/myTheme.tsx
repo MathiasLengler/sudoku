@@ -7,6 +7,7 @@ interface MyThemeProps {
     children: ReactNode;
 }
 
+// TODO: switch to: https://mui.com/material-ui/experimental-api/css-theme-variables/overview/
 export const MyTheme = ({ children }: MyThemeProps) => {
     const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
 
@@ -24,6 +25,14 @@ export const MyTheme = ({ children }: MyThemeProps) => {
                               paper: "#2C2C2C",
                           }
                         : {},
+                },
+                components: {
+                    MuiTooltip: {
+                        defaultProps: {
+                            enterDelay: 700,
+                            leaveDelay: 200,
+                        },
+                    },
                 },
             }),
         [prefersDarkMode]
