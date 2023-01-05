@@ -8,7 +8,7 @@ import { RecoilDebug } from "./RecoilDebug";
 export const App = () => {
     return (
         <RecoilRoot>
-            <RecoilDebug />
+            {process.env.NODE_ENV !== "production" && <RecoilDebug />}
             <MyTheme>
                 <Suspense fallback={"App fallback"}>
                     <SudokuLoader />
