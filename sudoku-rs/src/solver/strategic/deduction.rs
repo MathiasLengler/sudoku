@@ -113,11 +113,6 @@ impl<Base: SudokuBase> Deductions<Base> {
     }
 }
 
-// TODO: &grid.deduction_at
-// TODO: test sort order
-// TODO: impl TryFrom for testing
-//  ((0, 1), vec![2, 3], 2) => with_value
-//  ((0, 1), vec![1,2,3], vec![1,2]) => with_remaining_candidates
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Deduction<Base: SudokuBase> {
     pos: Position,

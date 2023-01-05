@@ -1,87 +1,56 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Input, WasmSudokuController } from "./wasmSudokuController";
-import { blocksToCell } from "./utils";
-import { useClientHeight, useResponsiveGridSize } from "./useResponsiveGridSize";
-import * as CSS from "csstype";
-import { makeKeyDownListener } from "./useKeyboardInput";
+import type React from "react";
+import type * as CSS from "csstype";
+import { useKeyboardInput } from "./useKeyboardInput";
 import { Grid } from "./grid/grid";
 import { ControlPanel } from "./controlPanel/controlPanel";
-import * as Comlink from "comlink";
-import { TransportSudoku, WasmSudoku } from "../types";
-import { saveCellBlocks } from "./persistence";
-import debounce from "lodash/debounce";
+import { useResizeDetector } from "react-resize-detector";
+import SudokuAppBar from "./appBar/sudokuAppBar";
+import { useRecoilValue } from "recoil";
+import { sudokuBaseState, sudokuSideLengthState } from "./state/sudoku";
+import { SudokuEffects } from "./sudokuEffects";
 
-interface SudokuProps {
-    sudoku: TransportSudoku;
-    setSudoku: React.Dispatch<TransportSudoku>;
-    wasmSudokuProxy: Comlink.Remote<WasmSudoku>;
+interface SudokuContentProps {
+    gridRef: React.MutableRefObject<HTMLDivElement>;
 }
 
-export const Sudoku: React.FunctionComponent<SudokuProps> = ({ sudoku, setSudoku, wasmSudokuProxy }) => {
-    const { blocks, base, sideLength } = sudoku;
-
-    const debouncedSaveCells = useMemo(
-        () =>
-            debounce((blocks: TransportSudoku["blocks"]) => {
-                console.debug("Saving cell blocks to localStorage");
-                const cellBlocks = blocks.map(block => block.map(({ position, incorrectValue, ...cell }) => cell));
-                saveCellBlocks(cellBlocks);
-            }, 500),
-        []
+const SudokuContent = ({ gridRef }: SudokuContentProps) => {
+    return (
+        <div className="app-content">
+            <div className="sudoku">
+                <Grid gridRef={gridRef} />
+                <ControlPanel />
+            </div>
+        </div>
     );
+};
 
-    useEffect(() => {
-        debouncedSaveCells(blocks);
-    }, [debouncedSaveCells, blocks]);
-
-    const [inputWithoutSelectedCell, setInput] = useState<Omit<Input, "selectedCell">>(() => {
-        const selectedPos = { column: 0, row: 0 };
-
-        return {
-            selectedPos,
-            selectedValue: 1,
-            stickyMode: false,
-            candidateMode: false,
-        };
-    });
-
-    const selectedCell = blocksToCell(blocks, inputWithoutSelectedCell.selectedPos, base);
-
-    const input = { ...inputWithoutSelectedCell, selectedCell };
-
-    const sudokuController = new WasmSudokuController(
-        wasmSudokuProxy,
-        sudoku,
-        sudoku => setSudoku(sudoku),
-        input,
-        setInput,
-        sideLength
-    );
+export const Sudoku = () => {
+    const base = useRecoilValue(sudokuBaseState);
+    const sideLength = useRecoilValue(sudokuSideLengthState);
 
     // Responsive Grid
-    const [toolbarHeight, toolbarRef] = useClientHeight();
-    const gridSize = useResponsiveGridSize(toolbarHeight, sideLength);
+    const { width: gridWidth, height: gridHeight, ref: gridRef } = useResizeDetector({});
 
-    const style: CSS.Properties = {
-        "--sideLength": sideLength,
+    const cssVariables: CSS.Properties = {
+        "--side-length": sideLength,
+        "--side-length-fr": `${sideLength}fr`,
         "--base": base,
-        "--outer-grid-size": `${gridSize}px`,
+        "--grid-size": gridWidth && gridHeight ? `${Math.min(gridWidth, gridHeight)}px` : "0",
     };
+
+    const { onKeyDown } = useKeyboardInput();
 
     return (
         <div
-            className="sudoku"
-            style={style}
-            onKeyDown={makeKeyDownListener(sudokuController, input, sideLength)}
+            className="app"
+            style={cssVariables}
+            onKeyDown={onKeyDown}
+            // Enable keyboard events
             tabIndex={0}
         >
-            <Grid sudokuController={sudokuController} input={input} sudoku={sudoku} />
-            <ControlPanel
-                sudokuController={sudokuController}
-                input={input}
-                sideLength={sideLength}
-                toolbarRef={toolbarRef}
-            />
+            <SudokuAppBar />
+            <SudokuContent gridRef={gridRef} />
+            <SudokuEffects />
         </div>
     );
 };

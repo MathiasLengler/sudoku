@@ -4,15 +4,19 @@ use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::solver::strategic::deduction::{Deduction, Deductions, TryIntoDeductions};
+use anyhow::ensure;
 
 use super::Strategy;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct HiddenSingles;
 
-impl<Base: SudokuBase> Strategy<Base> for HiddenSingles {
-    fn execute(&self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
-        debug_assert!(grid.is_directly_consistent());
+impl Strategy for HiddenSingles {
+    fn execute<Base: SudokuBase>(&self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
+        ensure!(
+            grid.is_directly_consistent(),
+            "HiddenSingles requires a directly consistent grid"
+        );
 
         TryIntoDeductions(
             Grid::<Base>::all_group_positions().flat_map(|group_positions| {

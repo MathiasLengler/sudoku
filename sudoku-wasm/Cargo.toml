@@ -1,26 +1,34 @@
 [package]
-authors = ["Mathias Lengler <mathias@lengler.dev>"]
 name = "sudoku-wasm"
-readme = "./README.md"
-version = "0.1.0"
-edition = "2021"
+
+# Wait for issure to be resolved: https://github.com/rustwasm/wasm-pack/issues/1180
+authors.workspace = true
+categories.workspace = true
+description = "Touch optimized sudoku built with Rust/WASM/TypeScript/React."
+edition.workspace = true
+homepage = "https://sudoku.lengler.dev"
+keywords.workspace = true
+license = "MIT"
+publish.workspace = true
+repository = "https://github.com/MathiasLengler/sudoku"
+rust-version.workspace = true
+version.workspace = true
 
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
-# wasm
 console_error_panic_hook = { version = "0.1.7", optional = true }
-wee_alloc = { version = "0.4.5", optional = true }
 console_log = { version = "0.2.0", optional = true }
 js-sys = "0.3.59"
-
-# own
-log = "0.4.17"
-sudoku = { path = "../sudoku-rs", features = ["wasm-bindgen"] }
+serde-wasm-bindgen = "0.4.5"
+log = { version = "0.4.17", features = ["max_level_debug"] }
+sudoku = { path = "../sudoku-rs", features = ["wasm"] }
 serde = "1.0.144"
 
-# wasm
+[dev-dependencies]
+wasm-bindgen-test = "0.3.33"
+
 [dependencies.web-sys]
 version = "0.3.59"
 features = [

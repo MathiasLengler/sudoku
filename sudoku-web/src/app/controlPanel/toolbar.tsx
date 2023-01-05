@@ -1,67 +1,80 @@
-import * as React from "react";
+import type * as React from "react";
 import IconButton from "@mui/material/IconButton";
-import DeleteIcon from "@mui/icons-material/Delete";
-import InfoIcon from "@mui/icons-material/Info";
 import CreateIcon from "@mui/icons-material/Create";
 import GestureIcon from "@mui/icons-material/Gesture";
 import UndoIcon from "@mui/icons-material/Undo";
-import { Input, WasmSudokuController } from "../wasmSudokuController";
 import Tooltip from "@mui/material/Tooltip";
-import { ElementRef } from "../useResponsiveGridSize";
 import { ToolbarMenu } from "./toolbarMenu";
+import RedoIcon from "@mui/icons-material/Redo";
+import { ToggleButton } from "@mui/material";
+import { inputCandidateModeState, inputStickyModeState } from "../state/input";
+import { useRecoilValue } from "recoil";
+import { useRedo, useToggleCandidateMode, useToggleStickyMode, useUndo } from "../sudokuActions";
+import { sudokuCanRedoState, sudokuCanUndoState } from "../state/sudoku";
 
-interface ToolbarProps {
-    sudokuController: WasmSudokuController;
-    input: Input;
-    toolbarRef: ElementRef;
-}
+export const Toolbar = () => {
+    const inputCandidateMode = useRecoilValue(inputCandidateModeState);
+    const inputStickyMode = useRecoilValue(inputStickyModeState);
+    const canUndo = useRecoilValue(sudokuCanUndoState);
+    const canRedo = useRecoilValue(sudokuCanRedoState);
 
-export const Toolbar: React.FunctionComponent<ToolbarProps> = props => {
-    const {
-        sudokuController,
-        input: { candidateMode, stickyMode },
-        toolbarRef,
-    } = props;
+    const toggleCandidateMode = useToggleCandidateMode();
+    const toggleStickyMode = useToggleStickyMode();
 
-    const enterDelay = 500;
-    const leaveDelay = 200;
+    const undo = useUndo();
+    const redo = useRedo();
 
     return (
-        <div className="toolbar" ref={toolbarRef}>
-            <Tooltip title="Toggle candidate mode [space bar]" enterDelay={enterDelay} leaveDelay={leaveDelay}>
-                <IconButton
-                    color={candidateMode ? "primary" : "default"}
-                    onClick={() => sudokuController.toggleCandidateMode()}
+        <div className="toolbar">
+            <Tooltip title="Toggle candidate mode [space bar]">
+                <ToggleButton
+                    value="candidateMode"
+                    selected={inputCandidateMode}
+                    onChange={() => toggleCandidateMode()}
+                    color="primary"
                     size="large"
                 >
                     <CreateIcon fontSize="large" />
-                </IconButton>
+                </ToggleButton>
             </Tooltip>
-            <Tooltip title="Toggle sticky mode [+]" enterDelay={enterDelay} leaveDelay={leaveDelay}>
-                <IconButton
-                    color={stickyMode ? "primary" : "default"}
-                    onClick={() => sudokuController.toggleStickyMode()}
+            <Tooltip title="Toggle sticky mode [+]">
+                <ToggleButton
+                    value="stickyMode"
+                    selected={inputStickyMode}
+                    onChange={() => toggleStickyMode()}
+                    color="primary"
                     size="large"
                 >
                     <GestureIcon fontSize="large" />
-                </IconButton>
+                </ToggleButton>
             </Tooltip>
-            <Tooltip title="Delete selected cell [delete]" enterDelay={enterDelay} leaveDelay={leaveDelay}>
-                <IconButton onClick={() => sudokuController.delete()} size="large">
-                    <DeleteIcon fontSize="large" />
-                </IconButton>
+            <Tooltip title="Undo [backspace]">
+                <span>
+                    <IconButton
+                        onClick={async () => {
+                            await undo();
+                        }}
+                        size="large"
+                        disabled={!canUndo}
+                    >
+                        <UndoIcon fontSize="large" />
+                    </IconButton>
+                </span>
             </Tooltip>
-            <Tooltip title="Set all direct candidates [insert]" enterDelay={enterDelay} leaveDelay={leaveDelay}>
-                <IconButton onClick={() => sudokuController.setAllDirectCandidates()} size="large">
-                    <InfoIcon fontSize="large" />
-                </IconButton>
+            <Tooltip title="Redo [shift+backspace]">
+                <span>
+                    <IconButton
+                        onClick={async () => {
+                            await redo();
+                        }}
+                        disabled={!canRedo}
+                        size="large"
+                    >
+                        <RedoIcon fontSize="large" />
+                    </IconButton>
+                </span>
             </Tooltip>
-            <Tooltip title="Undo [backspace]" enterDelay={enterDelay} leaveDelay={leaveDelay}>
-                <IconButton onClick={() => sudokuController.undo()} size="large">
-                    <UndoIcon fontSize="large" />
-                </IconButton>
-            </Tooltip>
-            <ToolbarMenu enterDelay={enterDelay} leaveDelay={leaveDelay} sudokuController={sudokuController} />
+            <ToolbarMenu />
         </div>
     );
 };

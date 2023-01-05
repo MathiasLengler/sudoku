@@ -1,17 +1,9 @@
 // Re-exports only the types of the wasm module.
 // This ensures only the worker loads the WASM module at runtime.
-export type {
-    CellBlocks,
-    TransportCellBlock,
-    TransportSudoku,
-    CellPosition,
-    TransportCellContext,
-    ValueCell,
-    CandidatesCell,
-    Cell,
-    TransportCell,
-    GeneratorSettings,
-    GeneratorTarget,
-    GridFormat,
-    WasmSudoku,
-} from "../../sudoku-wasm/pkg";
+import type { CellView } from "../../sudoku-rs/bindings";
+
+export type { GridFormat, WasmSudoku } from "../../sudoku-wasm/pkg";
+
+export * from "../../sudoku-rs/bindings";
+
+export type CellViews = CellView[];

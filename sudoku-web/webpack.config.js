@@ -1,4 +1,3 @@
-/* eslint-disable */
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const WebpackPwaManifest = require("webpack-pwa-manifest");
@@ -6,6 +5,8 @@ const WorkboxPlugin = require("workbox-webpack-plugin");
 const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
 const FaviconsWebpackPlugin = require("favicons-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
+const ReactRefreshPlugin = require("@pmmmwh/react-refresh-webpack-plugin");
+const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
 
 const dist = path.resolve(__dirname, "dist");
 
@@ -13,14 +14,17 @@ module.exports = (env, argv) => {
     const { mode } = argv;
 
     const isDevelopment = mode === "development";
-    const isProduction = mode === "production";
+    let isProduction = mode === "production";
     if (!isDevelopment && !isProduction) {
-        throw new Error(`Unexpected mode: ${mode}`);
+        console.warn(`Unexpected mode: ${mode}`);
+        isProduction = true;
     }
 
     const devtool = isProduction ? "source-map" : "eval-source-map";
 
     const reactProfiling = !!env.reactProfiling;
+    const bundleAnalyzer = !!env.bundleAnalyzer;
+    const hostAny = !!env.hostAny;
 
     const alias = reactProfiling
         ? {
@@ -54,7 +58,7 @@ module.exports = (env, argv) => {
                     warnings: false,
                 },
             },
-            host: "127.0.0.1",
+            host: hostAny ? "0.0.0.0" : "127.0.0.1",
             hot: true,
         },
         devtool,
@@ -67,6 +71,8 @@ module.exports = (env, argv) => {
             topLevelAwait: true,
         },
         plugins: [
+            isDevelopment && new ReactRefreshPlugin(),
+            new ForkTsCheckerWebpackPlugin(),
             new HtmlWebpackPlugin({
                 template: path.resolve(__dirname, "res", "index.html"),
                 favicon: "",
@@ -77,15 +83,13 @@ module.exports = (env, argv) => {
                 outDir: path.resolve(__dirname, "../sudoku-wasm/pkg"),
             }),
             // PWA
-            ...(isProduction
-                ? [
-                      new WorkboxPlugin.GenerateSW({
-                          clientsClaim: true,
-                          skipWaiting: true,
-                          maximumFileSizeToCacheInBytes: Math.pow(10, 8),
-                      }),
-                  ]
-                : []),
+            isProduction &&
+                !reactProfiling &&
+                new WorkboxPlugin.GenerateSW({
+                    clientsClaim: true,
+                    skipWaiting: true,
+                    maximumFileSizeToCacheInBytes: Math.pow(10, 8),
+                }),
             new WebpackPwaManifest({
                 name: "Sudoku",
                 short_name: "Sudoku",
@@ -124,16 +128,32 @@ module.exports = (env, argv) => {
                     },
                 },
             }),
-            new CopyPlugin({
-                patterns: ["res/public"],
-            }),
-            ...(env.bundleAnalyzer ? [new (require("webpack-bundle-analyzer").BundleAnalyzerPlugin)()] : []),
-        ],
+            new CopyPlugin({ patterns: ["res/public"] }),
+            bundleAnalyzer && new (require("webpack-bundle-analyzer").BundleAnalyzerPlugin)(),
+        ].filter(Boolean),
         module: {
             rules: [
                 {
                     test: /\.tsx?$/,
-                    use: [{ loader: "ts-loader", options: { compilerOptions: { noEmit: false } } }],
+                    use: {
+                        loader: "babel-loader",
+                        options: {
+                            presets: [
+                                [
+                                    "@babel/preset-env",
+                                    {
+                                        targets:
+                                            "> .5% and last 2 versions and supports es6-module and supports wasm and supports async-functions",
+                                    },
+                                ],
+                                "@babel/preset-typescript",
+                                // Enable development transform of React with new automatic runtime
+                                ["@babel/preset-react", { development: !isProduction, runtime: "automatic" }],
+                            ],
+                            // Applies the react-refresh Babel plugin on non-production modes only
+                            ...(!isProduction && { plugins: ["react-refresh/babel"] }),
+                        },
+                    },
                 },
                 {
                     test: /\.css$/,

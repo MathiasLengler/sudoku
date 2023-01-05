@@ -1,11 +1,11 @@
 import * as Comlink from "comlink";
 import { init as wasmInit, WasmSudoku } from "./wasmSudoku";
 import { WORKER_BOOT_UP_MESSAGE } from "./constants";
-import { CellBlocks } from "./types";
+import type { CellViews } from "./types";
 
 if (process.env.NODE_ENV !== "production") {
     self.addEventListener("message", ev => {
-        console.debug("Worker RX", ev.data);
+        console.debug("Worker message RX:", ev.data);
     });
 }
 
@@ -29,16 +29,21 @@ postMessage(WORKER_BOOT_UP_MESSAGE);
 
 Comlink.expose(workerApi);
 
-async function init(blocks?: CellBlocks) {
+async function init(cellViews?: CellViews) {
     console.debug("Worker init");
 
     console.debug("Initializing WASM module");
     wasmInit();
 
-    if (blocks) {
+    if (cellViews) {
         console.debug("Restoring sudoku from cells");
-        workerApi.typedWasmSudoku = WasmSudoku.restore(blocks);
-    } else {
+        try {
+            workerApi.typedWasmSudoku = WasmSudoku.restore(cellViews);
+        } catch (err) {
+            console.error("Failed to restore persisted grid:", err);
+        }
+    }
+    if (!workerApi.typedWasmSudoku) {
         console.debug("Generating initial sudoku");
         workerApi.typedWasmSudoku = new WasmSudoku();
     }

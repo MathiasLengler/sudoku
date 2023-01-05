@@ -11,8 +11,8 @@ use crate::error::{Error, Result};
 
 /// A valid sudoku value for a given base.
 ///
-/// A `Value` always is in the range of `1..=(SudokuBase^2)`
-#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Copy, Debug)]
+/// A `Value` always is in the range of `1..=(Base::MAX_VALUE)`
+#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Copy, Clone, Debug)]
 pub struct Value<Base: SudokuBase> {
     value: NonZeroU8,
     base: PhantomData<Base>,
@@ -25,7 +25,10 @@ impl<Base: SudokuBase> Value<Base> {
     pub fn new(value: u8) -> Result<Option<Self>> {
         let limit = Base::MAX_VALUE;
 
-        ensure!(value <= limit, "Value can't be greater than {}", limit);
+        ensure!(
+            value <= limit,
+            "Value can't be greater than {limit}, instead got: {value}"
+        );
 
         Ok(NonZeroU8::new(value).map(|value| Self {
             value,

@@ -1,0 +1,84 @@
+use serde::{Deserialize, Serialize};
+#[cfg(feature = "wasm")]
+use ts_rs::TS;
+
+use crate::base::SudokuBase;
+use crate::cell::view::CellView;
+use crate::grid::Grid;
+use crate::position::Position;
+use crate::sudoku::DynamicSudoku;
+use crate::sudoku::Sudoku;
+
+#[cfg_attr(feature = "wasm", derive(TS))]
+#[cfg_attr(feature = "wasm", ts(export))]
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TransportSudoku {
+    cells: Vec<TransportCell>,
+    blocks_indices: Vec<Vec<u16>>,
+    base: u8,
+    side_length: u8,
+    cell_count: usize,
+    is_solved: bool,
+    can_undo: bool,
+    can_redo: bool,
+}
+
+impl<Base: SudokuBase> From<&Sudoku<Base>> for TransportSudoku {
+    fn from(sudoku: &Sudoku<Base>) -> Self {
+        let grid = sudoku.grid();
+        let solved_grid = sudoku.solved_grid();
+
+        Self {
+            cells: Grid::<Base>::all_positions()
+                .map(|pos| {
+                    let cell = grid.get(pos);
+                    let incorrect_value = if cell.has_value() {
+                        solved_grid
+                            .as_ref()
+                            .map(|solved_grid| solved_grid.get(pos) != cell)
+                            .unwrap_or(false)
+                    } else {
+                        false
+                    };
+                    TransportCell {
+                        cell_view: cell.into(),
+                        position: pos,
+                        incorrect_value,
+                    }
+                })
+                .collect(),
+            blocks_indices: Grid::<Base>::all_block_positions()
+                .map(|block| block.map(|pos| pos.cell_index::<Base>()).collect())
+                .collect(),
+            base: Grid::<Base>::base(),
+            side_length: Grid::<Base>::side_length(),
+            cell_count: Grid::<Base>::cell_count_usize(),
+            is_solved: grid.is_solved(),
+            can_undo: sudoku.history.can_go_back(),
+            can_redo: sudoku.history.can_go_forward(),
+        }
+    }
+}
+
+impl From<&DynamicSudoku> for TransportSudoku {
+    fn from(dynamic_sudoku: &DynamicSudoku) -> Self {
+        match dynamic_sudoku {
+            DynamicSudoku::Base2(sudoku) => Self::from(sudoku),
+            DynamicSudoku::Base3(sudoku) => Self::from(sudoku),
+            DynamicSudoku::Base4(sudoku) => Self::from(sudoku),
+            DynamicSudoku::Base5(sudoku) => Self::from(sudoku),
+        }
+    }
+}
+
+#[cfg_attr(feature = "wasm", derive(TS))]
+#[cfg_attr(feature = "wasm", ts(export))]
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TransportCell {
+    #[serde(flatten)]
+    cell_view: CellView,
+    position: Position,
+    incorrect_value: bool,
+}

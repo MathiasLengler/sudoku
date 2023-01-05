@@ -1,3 +1,5 @@
+use log::trace;
+
 /// Fork of: https://github.com/t-dillon/tdoku/blob/master/src/solver_basic.cc
 use crate::base::SudokuBase;
 use crate::cell::candidates_cell::CandidatesCell;
@@ -21,6 +23,8 @@ pub struct Solver<'a, Base: SudokuBase> {
     candidates_iters: Vec<CandidatesIter<Base>>,
 
     pub guess_count: u64,
+
+    has_returned_pre_filled_grid_solution: bool,
 }
 
 impl<'a, Base: SudokuBase> Solver<'a, Base> {
@@ -31,6 +35,7 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
             availability_indices: Default::default(),
             candidates_iters: vec![],
             guess_count: 0,
+            has_returned_pre_filled_grid_solution: false,
         };
 
         this.initialize(grid);
@@ -57,11 +62,10 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
         }
 
         self.move_best_choice_to_front(0);
-        self.candidates_iters.push(
-            self.availability
-                .intersection(self.availability_indices[0])
-                .iter(),
-        );
+        if let Some(availability_index) = self.availability_indices.first() {
+            self.candidates_iters
+                .push(self.availability.intersection(*availability_index).iter());
+        }
     }
 
     pub fn move_best_choice_to_front(&mut self, front_i: usize) {
@@ -90,8 +94,7 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
             }
 
             if let Some(better_index) = better_index {
-                #[cfg(feature = "debug_print")]
-                println!(
+                trace!(
                     "swapping {first_count} @ {first_index:?} with {better_count} @ {better_index:?}"
                 );
                 swap(first_index, better_index);
@@ -154,7 +157,18 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
                 }
             }
         }
-        None
+
+        if self.availability_indices.is_empty() && !self.has_returned_pre_filled_grid_solution {
+            self.has_returned_pre_filled_grid_solution = true;
+
+            if self.grid.is_solved() {
+                Some(self.grid.clone())
+            } else {
+                None
+            }
+        } else {
+            None
+        }
     }
 }
 
@@ -228,7 +242,7 @@ impl<Base: SudokuBase> GroupAvailability<Base> {
     }
 }
 
-#[derive(Debug, Clone, Copy, Default, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Default, Eq, PartialEq)]
 struct GroupAvailabilityIndex {
     row: u8,
     column: u8,
@@ -246,8 +260,6 @@ impl Into<Position> for &GroupAvailabilityIndex {
 
 #[cfg(test)]
 mod tests {
-    use std::mem::size_of;
-
     use crate::base::consts::*;
     use crate::solver::test_util::{assert_solve_result, assert_solver_solutions_base_2};
 
@@ -270,8 +282,6 @@ mod tests {
 
             let solve_result = solver.try_solve();
 
-            dbg!(solver.guess_count);
-
             assert_solve_result(solve_result);
         }
     }
@@ -285,8 +295,6 @@ mod tests {
 
             let solve_result = solver.try_solve();
 
-            dbg!(solver.guess_count);
-
             assert_solve_result(solve_result);
         }
     }
@@ -295,7 +303,6 @@ mod tests {
     fn test_move_best_choice_to_front() {
         let mut grid = crate::samples::base_2()[1].clone();
         grid.set_all_direct_candidates();
-        println!("{grid}");
         let mut solver = Solver::new(&grid);
         let mut expected_choice_indices = vec![
             GroupAvailabilityIndex {
@@ -366,12 +373,14 @@ mod tests {
         assert_eq!(solver.availability_indices, expected_choice_indices);
     }
 
-    #[ignore]
     #[test]
-    fn test_size() {
-        dbg!(size_of::<Solver::<'_, U2>>());
-        dbg!(size_of::<Solver::<'_, U3>>());
-        dbg!(size_of::<Solver::<'_, U4>>());
-        dbg!(size_of::<Solver::<'_, U5>>());
+    fn test_solved() {
+        let grid = crate::samples::base_2_solved();
+
+        let mut solver = Solver::new(&grid);
+        let solve_result = solver.try_solve();
+        assert_solve_result(solve_result);
+
+        assert!(solver.try_solve().is_none());
     }
 }

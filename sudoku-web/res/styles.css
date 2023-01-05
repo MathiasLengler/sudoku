@@ -1,8 +1,9 @@
 :root {
     /*React Variables*/
-    --sideLength: 0;
+    --side-length: 0;
+    --side-length-fr: 0fr;
     --base: 0;
-    --outer-grid-size: 100vmin;
+    --grid-size: 70vmin;
 
     /*Style Variables*/
     --hue: 213;
@@ -20,6 +21,9 @@
     --candiate-color: hsl(var(--hue), 3%, 39%);
     --candiate-color-guide: hsl(var(--hue), 25%, 83%);
     --bg-color: hsl(0, 0%, 100%);
+
+    --sudoku-content-direction: column;
+    --sudoku-toolbar-direction: row;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -40,23 +44,49 @@
     }
 }
 
-body {
-    overflow: hidden;
+@media (min-aspect-ratio: 91/100) {
+    :root {
+        --sudoku-content-direction: row;
+        --sudoku-toolbar-direction: column;
+    }
+}
+
+html {
+    max-height: 100vh;
+    overflow-x: hidden;
+}
+
+html,
+body,
+#root {
+    height: 100%;
 }
 
 button {
     font-family: "Roboto", "Helvetica", "Arial", sans-serif;
 }
 
-.sudoku {
-    width: 100vw;
-    height: 100vh;
-    display: grid;
-    place-items: center;
-    justify-content: center;
-    align-content: center;
+.app {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
 
-    grid-template-rows: min-content min-content min-content;
+.app-bar {
+    flex: 0;
+}
+
+.app-content {
+    flex: 1;
+    overflow: clip;
+}
+
+.sudoku {
+    height: 100%;
+    display: flex;
+    flex-direction: var(--sudoku-content-direction);
+
+    place-items: center;
 
     /*No Select*/
     user-select: none; /* supported by Chrome and Opera */
@@ -67,14 +97,34 @@ button {
     -webkit-tap-highlight-color: transparent;
 }
 
+.sudoku-app-bar {
+    justify-self: stretch;
+}
+
+.grid-container {
+    align-self: stretch;
+    justify-self: stretch;
+    min-height: 0;
+    min-width: 0;
+
+    flex: 4;
+}
+
 .grid {
     /*Grid Variables*/
-    --grid-size: calc(var(--outer-grid-size) - (2 * var(--block-border-size)));
     --grid-gutter: var(--block-border-size);
     --grid-no-of-gutters: calc(var(--base) - 1);
     --grid-row-height: calc((var(--grid-size) - (var(--grid-no-of-gutters) * var(--grid-gutter))) / var(--base));
 
     /*Styling*/
+
+    position: relative;
+    max-width: 100%;
+    max-height: 100%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+
     display: grid;
     grid-template-columns: repeat(var(--base), 1fr);
     grid-template-rows: repeat(var(--base), 1fr);
@@ -83,9 +133,13 @@ button {
     background-color: var(--block-border-color);
 
     /*Square blocks*/
-    width: var(--outer-grid-size);
-    height: var(--outer-grid-size);
-    grid-auto-rows: var(--grid-row-height);
+    aspect-ratio: 1;
+    /*justify-self: stretch;*/
+    /*align-self: stretch;*/
+
+    /*width: var(--outer-grid-size);*/
+    /*height: 100%;*/
+    /*grid-auto-rows: var(--grid-row-height);*/
     grid-gap: var(--grid-gutter);
 
     touch-action: none;
@@ -112,15 +166,17 @@ button {
     background-color: var(--cell-border-color);
 
     /*Square cells*/
-    width: var(--block-size);
-    height: var(--block-size);
-    grid-auto-rows: var(--block-row-height);
+    /*width: var(--block-size);*/
+    /*height: var(--block-size);*/
+    /*grid-auto-rows: var(--block-row-height);*/
     grid-gap: var(--block-gutter);
 }
 
 .cell {
     --cell-column: 0;
     --cell-row: 0;
+
+    aspect-ratio: 1;
 
     --cell-size: calc(var(--block-row-height) - var(--cell-padding));
 
@@ -138,6 +194,8 @@ button {
     place-items: stretch;
 
     cursor: pointer;
+
+    overflow: hidden;
 }
 
 .cell--selected {
@@ -196,25 +254,49 @@ button {
     color: var(--cell-value-color-user);
 }
 
-.selector {
-    --selector-size: var(--outer-grid-size);
-    --selector-gutter: var(--cell-border-size);
-    --selector-no-of-gutters: calc(var(--sideLength) - 1);
-    --selector-row-height: calc(
-        (var(--selector-size) - (var(--selector-no-of-gutters) * var(--selector-gutter))) / var(--sideLength)
-    );
+.toolbar {
+    display: flex;
+    flex-direction: var(--sudoku-toolbar-direction);
+}
 
-    width: var(--selector-size);
+.selector-container {
+    flex: 1;
+    display: flex;
+    flex-direction: var(--sudoku-content-direction);
+    justify-content: center;
+}
+
+.selector {
+    --selector-width: calc(var(--grid-size) + (2 * var(--block-border-size)));
+    --selector-gutter: var(--cell-border-size);
+    --selector-no-of-gutters: calc(var(--side-length) - 1);
+    --selector-row-height: calc(
+        (var(--selector-width) - (var(--selector-no-of-gutters) * var(--selector-gutter))) / var(--side-length)
+    );
+    --selector-grid-template-columns: repeat(var(--side-length), 1fr);
+    --selector-grid-template-rows: 1fr;
+
+    width: var(--selector-width);
     height: var(--selector-row-height);
     display: grid;
     place-items: stretch;
-    grid-template-columns: repeat(var(--sideLength), 1fr);
-    grid-template-rows: 1fr;
+    grid-template-columns: var(--selector-grid-template-columns);
+    grid-template-rows: var(--selector-grid-template-rows);
     grid-gap: var(--selector-gutter);
 
     border: var(--block-border-size) solid var(--block-border-color);
 
     background-color: var(--cell-border-color);
+}
+
+@media (min-aspect-ratio: 91/100) {
+    .selector {
+        /* "rotate" selector grid */
+        height: var(--selector-width);
+        width: var(--selector-row-height);
+        grid-template-columns: var(--selector-grid-template-rows);
+        grid-template-rows: var(--selector-grid-template-columns);
+    }
 }
 
 .selectorValue {
