@@ -3,13 +3,13 @@ import range from "lodash/range";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import CircularProgress from "@mui/material/CircularProgress";
-import { CheckboxButtonGroup, SliderElement, SwitchElement, useForm } from "react-hook-form-mui";
+import { CheckboxButtonGroup, SliderElement, SwitchElement, TextFieldElement, useForm } from "react-hook-form-mui";
 import type { DynamicStrategy } from "../../../types";
-import { Box, DialogContent, FormLabel } from "@mui/material";
+import { Box, DialogContent, FormGroup, FormLabel, IconButton } from "@mui/material";
 import { baseToCellCount, baseToSideLength } from "../../utils";
 import { ALL_STRATEGIES } from "../../../constants";
 import { useGenerate } from "../../sudokuActions";
-
+import CasinoIcon from "@mui/icons-material/Casino";
 const BASE_MIN = 2;
 const BASE_MAX = 5;
 const BASE_MARKS = range(BASE_MIN, BASE_MAX + 1).map(base => {
@@ -19,17 +19,19 @@ const BASE_MARKS = range(BASE_MIN, BASE_MAX + 1).map(base => {
         label: `${sideLength}x${sideLength}`,
     };
 });
+const SEED_MAX = Number.MAX_SAFE_INTEGER;
 
 interface GenerateFormProps {
     onClose: () => void;
 }
-interface FormData {
+type FormData = {
     base: number;
     minGivens: number;
     strategies: DynamicStrategy[];
     setAllDirectCandidates: boolean;
-    seed?: bigint;
-}
+    useSeed: false;
+    seed: string;
+};
 
 let previousFormData: FormData | undefined;
 
@@ -46,10 +48,14 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
             minGivens: 0,
             strategies: ["Backtracking"],
             setAllDirectCandidates: true,
+            useSeed: false,
+            seed: "0",
         },
     });
 
-    const { base, minGivens } = watch();
+    const { base, minGivens, useSeed, seed } = watch();
+
+    console.log({ seed });
 
     const cellCount = baseToCellCount(base);
 
@@ -65,7 +71,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
         <form
             noValidate
             onSubmit={handleSubmit(async formData => {
-                const { base, minGivens, setAllDirectCandidates, strategies } = formData;
+                const { base, minGivens, setAllDirectCandidates, strategies, seed, useSeed } = formData;
 
                 const cellCount = baseToCellCount(base);
 
@@ -77,8 +83,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                             set_all_direct_candidates: setAllDirectCandidates,
                         },
                     },
-                    // TODO: expose in form
-                    seed: 42n,
+                    seed: useSeed ? BigInt(seed) : undefined,
                     strategies,
                 });
 
@@ -120,8 +125,38 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                     row
                     required
                 />
+
                 <FormLabel component="legend">Post generation</FormLabel>
                 <SwitchElement control={control} name="setAllDirectCandidates" label="Fill candidates" />
+
+                <FormLabel component="legend">Random seed</FormLabel>
+                <FormGroup row>
+                    <SwitchElement control={control} name="useSeed" label="Use seed" />
+                    <TextFieldElement
+                        sx={{ flex: 1 }}
+                        control={control}
+                        name="seed"
+                        label="Seed"
+                        disabled={!useSeed}
+                        validation={{
+                            min: { value: 0, message: "Seed must not be negative" },
+                            max: { value: SEED_MAX, message: "Seed too big" },
+                        }}
+                        InputProps={{
+                            startAdornment: (
+                                <IconButton
+                                    onClick={() => {
+                                        setValue("seed", Math.trunc(Math.random() * SEED_MAX).toFixed(0));
+                                    }}
+                                    disabled={!useSeed}
+                                >
+                                    <CasinoIcon />
+                                </IconButton>
+                            ),
+                        }}
+                        type="number"
+                    />
+                </FormGroup>
             </DialogContent>
             <DialogActions>
                 {isSubmitting && (
