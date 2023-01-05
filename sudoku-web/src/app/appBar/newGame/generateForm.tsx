@@ -28,6 +28,7 @@ interface FormData {
     minGivens: number;
     strategies: DynamicStrategy[];
     setAllDirectCandidates: boolean;
+    seed?: bigint;
 }
 
 let previousFormData: FormData | undefined;
@@ -43,7 +44,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
         defaultValues: previousFormData ?? {
             base: 3,
             minGivens: 0,
-            strategies: ALL_STRATEGIES,
+            strategies: ["Backtracking"],
             setAllDirectCandidates: true,
         },
     });
@@ -117,6 +118,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                     label="Strategies"
                     options={ALL_STRATEGIES.map(strategy => ({ id: strategy, label: strategy }))}
                     row
+                    required
                 />
                 <FormLabel component="legend">Post generation</FormLabel>
                 <SwitchElement control={control} name="setAllDirectCandidates" label="Fill candidates" />
