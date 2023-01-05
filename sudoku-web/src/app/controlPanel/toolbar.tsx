@@ -7,13 +7,14 @@ import Tooltip from "@mui/material/Tooltip";
 import { ToolbarMenu } from "./toolbarMenu";
 import RedoIcon from "@mui/icons-material/Redo";
 import { ToggleButton } from "@mui/material";
-import { inputState } from "../state/input";
+import { inputCandidateModeState, inputStickyModeState } from "../state/input";
 import { useRecoilValue } from "recoil";
 import { useRedo, useToggleCandidateMode, useToggleStickyMode, useUndo } from "../sudokuActions";
 import { sudokuCanRedoState, sudokuCanUndoState } from "../state/sudoku";
 
 export const Toolbar = () => {
-    const input = useRecoilValue(inputState);
+    const inputCandidateMode = useRecoilValue(inputCandidateModeState);
+    const inputStickyMode = useRecoilValue(inputStickyModeState);
     const canUndo = useRecoilValue(sudokuCanUndoState);
     const canRedo = useRecoilValue(sudokuCanRedoState);
 
@@ -28,7 +29,7 @@ export const Toolbar = () => {
             <Tooltip title="Toggle candidate mode [space bar]">
                 <ToggleButton
                     value="candidateMode"
-                    selected={input.candidateMode}
+                    selected={inputCandidateMode}
                     onChange={() => toggleCandidateMode()}
                     color="primary"
                     size="large"
@@ -39,7 +40,7 @@ export const Toolbar = () => {
             <Tooltip title="Toggle sticky mode [+]">
                 <ToggleButton
                     value="stickyMode"
-                    selected={input.stickyMode}
+                    selected={inputStickyMode}
                     onChange={() => toggleStickyMode()}
                     color="primary"
                     size="large"

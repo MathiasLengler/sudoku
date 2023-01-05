@@ -63,3 +63,13 @@ const selectedValueState = selector<number | undefined>({
         }
     },
 });
+
+export const inputCandidateModeState = selector<Input["candidateMode"]>({
+    key: "Input.candidateMode",
+    get: ({ get }) => get(inputState).candidateMode,
+});
+
+export const inputStickyModeState = selector<Input["stickyMode"]>({
+    key: "Input.stickyMode",
+    get: ({ get }) => get(inputState).stickyMode,
+});
