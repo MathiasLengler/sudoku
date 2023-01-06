@@ -39,7 +39,7 @@ fn main() -> Result<()> {
     let num_values_histogram = Mutex::new(IndexMap::new());
     let best_grid = Mutex::new(None);
 
-    const MAX: u64 = 10000;
+    const MAX: u64 = 100000;
     let pb = ProgressBar::new(MAX).with_style(ProgressStyle::default_bar().template(
         "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] ({pos}/{len}, ETA {eta})",
     )?);
@@ -49,6 +49,7 @@ fn main() -> Result<()> {
                 set_all_direct_candidates: true,
             },
             strategies: vec![SingleCandidate.into()],
+            seed: None,
         })
         .generate::<Base>();
 
