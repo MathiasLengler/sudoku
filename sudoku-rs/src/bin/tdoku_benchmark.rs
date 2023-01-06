@@ -23,8 +23,7 @@ enum SolverSelection {
 fn main() -> Result<()> {
     let solver_selection = SolverSelection::BacktrackingBitset;
 
-    let grids =
-        read_grids_from_file::<U3>("./sudoku-rs/tests/res/tdoku/puzzles3_magictour_top1465")?;
+    let grids = read_grids_from_file::<U3>("./sudoku-rs/tests/res/tdoku/puzzles1_unbiased")?;
 
     let before = Instant::now();
 
@@ -50,9 +49,9 @@ fn main() -> Result<()> {
             }
         }
 
-        // if i % 1000 == 0 {
-        println!("{i}");
-        // }
+        if i % 10000 == 0 {
+            println!("{i}");
+        }
     }
 
     let after = Instant::now();
