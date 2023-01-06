@@ -35,9 +35,14 @@ fn sample_grid<Base: SudokuBase + 'static>() -> Grid<Base> {
 fn bench_generator_group<Base: SudokuBase>(generator_group: &mut BenchmarkGroup<WallTime>) {
     let base = Base::BASE;
 
-    for target in &[GeneratorTarget::Minimal, GeneratorTarget::Filled] {
+    for target in &[
+        GeneratorTarget::Minimal {
+            set_all_direct_candidates: false,
+        },
+        GeneratorTarget::Filled,
+    ] {
         let parameter_string = format!("Base={} Target={:?}", base, target);
-        let generator = Generator::with_settings(*target);
+        let generator = Generator::with_target(*target);
 
         generator_group.bench_with_input(
             BenchmarkId::new("generate", parameter_string),
