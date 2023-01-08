@@ -11,6 +11,12 @@ use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::position::Position;
 
+// TODO: evaluate Deductions Builder
+//  enable grouping of Deductions
+//   multiple independent Group Reduction inferences are currently merged together
+//  add Reason(s) for group of Deductions
+//   denormalized data if saved with each deduction
+
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct Deductions<Base: SudokuBase> {
     // Invariant: K == V.pos
@@ -336,6 +342,14 @@ impl<Base: SudokuBase> TryFrom<Candidates<Base>> for DeductionKind<Base> {
     fn try_from(remaining_candidates: Candidates<Base>) -> Result<Self> {
         Self::with_remaining_candidates(remaining_candidates)
     }
+}
+
+/// On what basis a deduction was made.
+/// Used to highlight/explain a deduction in the UI.
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
+pub struct Reason<Base: SudokuBase> {
+    pos: Position,
+    candidates: Candidates<Base>,
 }
 
 #[cfg(test)]
