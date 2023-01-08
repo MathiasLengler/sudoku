@@ -1,13 +1,15 @@
+use std::collections::btree_map::Values;
+use std::collections::BTreeMap;
+use std::fmt::{Display, Formatter};
+
+use anyhow::{bail, ensure, Context};
+
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
 use crate::cell::compact::value::Value;
 use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::position::Position;
-use anyhow::{bail, ensure, Context};
-use std::collections::btree_map::Values;
-use std::collections::BTreeMap;
-use std::fmt::{Display, Formatter};
 
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct Deductions<Base: SudokuBase> {
@@ -309,11 +311,9 @@ impl<Base: SudokuBase> DeductionKind<Base> {
             (
                 PruneCandidates {
                     remaining_candidates: self_remaining_candidates,
-                    ..
                 },
                 PruneCandidates {
                     remaining_candidates: other_remaining_candidates,
-                    ..
                 },
             ) => DeductionKind::with_remaining_candidates(
                 self_remaining_candidates.intersection(&other_remaining_candidates),
@@ -340,10 +340,11 @@ impl<Base: SudokuBase> TryFrom<Candidates<Base>> for DeductionKind<Base> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::base::consts::*;
     use crate::cell::Cell;
     use crate::samples;
+
+    use super::*;
 
     #[test]
     fn test_deductions_order_independence() {
