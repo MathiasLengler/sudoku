@@ -17,6 +17,10 @@ repository = "https://github.com/MathiasLengler/sudoku"
 rust-version = "1.66"
 version = "0.2.0"
 
+[workspace.dependencies]
+log = { version = "0.4.17", features = ["max_level_debug"] }
+serde = { version = "1.0.144" }
+
 [profile.release-with-debug]
 inherits = "release"
 debug = true

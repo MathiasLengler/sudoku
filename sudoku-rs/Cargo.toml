@@ -14,13 +14,13 @@ rust-version.workspace = true
 version.workspace = true
 
 [dependencies]
-log = "0.4.17"
+log = { workspace = true }
 itertools = "0.10.3"
 rand = "0.8.5"
 rand_xoshiro = "0.6.0"
 getrandom = "0.2.7"
 anyhow = { version = "1.0.64", features = ["backtrace"] }
-serde = { version = "1.0.144", features = ["derive"] }
+serde = { workspace = true, features = ["derive"] }
 indexmap = "1.9.1"
 ndarray = "0.15.6"
 enum_dispatch = "0.3.8"
