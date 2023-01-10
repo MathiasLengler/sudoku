@@ -10,6 +10,7 @@ export const App = () => {
         <RecoilRoot>
             {process.env.NODE_ENV !== "production" && <RecoilDebug />}
             <MyTheme>
+                <h1>Edit 3</h1>
                 <Suspense fallback={"App fallback"}>
                     <SudokuLoader />
                 </Suspense>

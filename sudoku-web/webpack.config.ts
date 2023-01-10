@@ -1,17 +1,26 @@
-const path = require("path");
-const HtmlWebpackPlugin = require("html-webpack-plugin");
-const WebpackPwaManifest = require("webpack-pwa-manifest");
-const WorkboxPlugin = require("workbox-webpack-plugin");
-const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
-const FaviconsWebpackPlugin = require("favicons-webpack-plugin");
-const CopyPlugin = require("copy-webpack-plugin");
-const ReactRefreshPlugin = require("@pmmmwh/react-refresh-webpack-plugin");
-const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
+import path from "path";
+import HtmlWebpackPlugin from "html-webpack-plugin";
+import WebpackPwaManifest from "webpack-pwa-manifest";
+import WorkboxPlugin from "workbox-webpack-plugin";
+import WasmPackPlugin from "@wasm-tool/wasm-pack-plugin";
+import FaviconsWebpackPlugin from "favicons-webpack-plugin";
+import CopyPlugin from "copy-webpack-plugin";
+import ReactRefreshPlugin from "@pmmmwh/react-refresh-webpack-plugin";
+import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin";
+import webpack, { WebpackPluginInstance } from "webpack";
+import "webpack-dev-server";
+
+import _ from "lodash";
 
 const dist = path.resolve(__dirname, "dist");
-
-module.exports = (env, argv) => {
-    const { mode } = argv;
+export default async (
+    env: Record<string, string | undefined>,
+    { mode }: { mode: webpack.Configuration["mode"] }
+): Promise<webpack.Configuration> => {
+    const reactProfiling = !!env.reactProfiling;
+    const bundleAnalyzer = !!env.bundleAnalyzer;
+    const hostAny = !!env.hostAny;
+    const debugSW = !!env.debugSW;
 
     const isDevelopment = mode === "development";
     let isProduction = mode === "production";
@@ -22,16 +31,15 @@ module.exports = (env, argv) => {
 
     const devtool = isProduction ? "source-map" : "eval-source-map";
 
-    const reactProfiling = !!env.reactProfiling;
-    const bundleAnalyzer = !!env.bundleAnalyzer;
-    const hostAny = !!env.hostAny;
-
-    const alias = reactProfiling
-        ? {
-              "react-dom$": "react-dom/profiling",
-              "scheduler/tracing": "scheduler/tracing-profiling",
-          }
-        : {};
+    const alias = {
+        ...(reactProfiling
+            ? {
+                  "react-dom$": "react-dom/profiling",
+                  "scheduler/tracing": "scheduler/tracing-profiling",
+              }
+            : undefined),
+        "workbox-window": "workbox-window/Workbox.mjs",
+    };
 
     const optimization = reactProfiling
         ? {
@@ -70,7 +78,7 @@ module.exports = (env, argv) => {
             asyncWebAssembly: true,
             topLevelAwait: true,
         },
-        plugins: [
+        plugins: _.compact([
             isDevelopment && new ReactRefreshPlugin(),
             new ForkTsCheckerWebpackPlugin(),
             new HtmlWebpackPlugin({
@@ -83,12 +91,25 @@ module.exports = (env, argv) => {
                 outDir: path.resolve(__dirname, "../sudoku-wasm/pkg"),
             }),
             // PWA
-            isProduction &&
-                !reactProfiling &&
+            ((isProduction && !reactProfiling) || debugSW) &&
                 new WorkboxPlugin.GenerateSW({
-                    clientsClaim: true,
-                    skipWaiting: true,
+                    // clientsClaim: true,
+                    // skipWaiting: true,
                     maximumFileSizeToCacheInBytes: Math.pow(10, 8),
+                    // runtimeCaching: [
+                    //     {
+                    //         handler: "StaleWhileRevalidate",
+                    //         urlPattern: options => {
+                    //             console.log("StaleWhileRevalidate URL options", options);
+                    //             return true;
+                    //         },
+                    //         options: {},
+                    //     },
+                    // ],
+                }),
+            debugSW &&
+                new webpack.DefinePlugin({
+                    "process.env.DEBUG_SW": "true",
                 }),
             new WebpackPwaManifest({
                 name: "Sudoku",
@@ -111,7 +132,7 @@ module.exports = (env, argv) => {
                         destination: "assets",
                     },
                 ],
-            }),
+            }) as WebpackPluginInstance,
             new FaviconsWebpackPlugin({
                 logo: "./res/img/icon_light.png",
                 cache: true,
@@ -120,17 +141,15 @@ module.exports = (env, argv) => {
                         android: false,
                         appleIcon: ["apple-touch-icon-180x180.png"],
                         appleStartup: false,
-                        coast: false,
                         favicons: true,
-                        firefox: false,
                         windows: false,
                         yandex: false,
                     },
                 },
             }),
             new CopyPlugin({ patterns: ["res/public"] }),
-            bundleAnalyzer && new (require("webpack-bundle-analyzer").BundleAnalyzerPlugin)(),
-        ].filter(Boolean),
+            bundleAnalyzer && new (await import("webpack-bundle-analyzer")).BundleAnalyzerPlugin(),
+        ]),
         module: {
             rules: [
                 {
