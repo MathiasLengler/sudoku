@@ -2,14 +2,17 @@ use std::collections::btree_map::Values;
 use std::collections::BTreeMap;
 use std::fmt::{Display, Formatter};
 
-use anyhow::{bail, ensure, Context};
-
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
 use crate::cell::compact::value::Value;
 use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::position::Position;
+use anyhow::{bail, ensure, Context};
+use serde::Serialize;
+
+#[cfg(feature = "wasm")]
+use ts_rs::TS;
 
 // TODO: evaluate Deductions Builder
 //  enable grouping of Deductions
@@ -20,7 +23,7 @@ use crate::position::Position;
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct Deductions<Base: SudokuBase> {
     // Invariant: K == V.pos
-    deductions: BTreeMap<Position, Deduction<Base>>,
+    deductions: BTreeMap<Position, OldDeduction<Base>>,
 }
 
 /// Specialization workaround.
@@ -29,7 +32,7 @@ pub struct Deductions<Base: SudokuBase> {
 #[derive(Debug)]
 pub struct IntoDeductions<I>(pub I);
 
-impl<Base: SudokuBase, I: IntoIterator<Item = Deduction<Base>>> TryFrom<IntoDeductions<I>>
+impl<Base: SudokuBase, I: IntoIterator<Item = OldDeduction<Base>>> TryFrom<IntoDeductions<I>>
     for Deductions<Base>
 {
     type Error = Error;
@@ -52,7 +55,7 @@ impl<Base: SudokuBase, I: IntoIterator<Item = Deduction<Base>>> TryFrom<IntoDedu
 #[derive(Debug)]
 pub struct TryIntoDeductions<I>(pub I);
 
-impl<Base: SudokuBase, I: IntoIterator<Item = Result<Deduction<Base>>>>
+impl<Base: SudokuBase, I: IntoIterator<Item = Result<OldDeduction<Base>>>>
     TryFrom<TryIntoDeductions<I>> for Deductions<Base>
 {
     type Error = Error;
@@ -70,8 +73,8 @@ impl<Base: SudokuBase, I: IntoIterator<Item = Result<Deduction<Base>>>>
 }
 
 impl<Base: SudokuBase> IntoIterator for Deductions<Base> {
-    type Item = Deduction<Base>;
-    type IntoIter = std::collections::btree_map::IntoValues<Position, Deduction<Base>>;
+    type Item = OldDeduction<Base>;
+    type IntoIter = std::collections::btree_map::IntoValues<Position, OldDeduction<Base>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.deductions.into_values()
@@ -79,8 +82,8 @@ impl<Base: SudokuBase> IntoIterator for Deductions<Base> {
 }
 
 impl<'a, Base: SudokuBase> IntoIterator for &'a Deductions<Base> {
-    type Item = &'a Deduction<Base>;
-    type IntoIter = Values<'a, Position, Deduction<Base>>;
+    type Item = &'a OldDeduction<Base>;
+    type IntoIter = Values<'a, Position, OldDeduction<Base>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
@@ -88,7 +91,7 @@ impl<'a, Base: SudokuBase> IntoIterator for &'a Deductions<Base> {
 }
 
 impl<Base: SudokuBase> Deductions<Base> {
-    pub fn iter(&self) -> Values<'_, Position, Deduction<Base>> {
+    pub fn iter(&self) -> Values<'_, Position, OldDeduction<Base>> {
         self.deductions.values()
     }
 
@@ -96,7 +99,7 @@ impl<Base: SudokuBase> Deductions<Base> {
         self.deductions.is_empty()
     }
 
-    fn try_append(&mut self, deduction: Deduction<Base>) -> Result<()> {
+    fn try_append(&mut self, deduction: OldDeduction<Base>) -> Result<()> {
         if let Some(existing_deduction) = self.deductions.get(&deduction.pos) {
             self.deductions
                 .insert(deduction.pos, existing_deduction.merge(&deduction)?);
@@ -122,15 +125,15 @@ impl<Base: SudokuBase> Deductions<Base> {
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
-pub struct Deduction<Base: SudokuBase> {
+pub struct OldDeduction<Base: SudokuBase> {
     pos: Position,
     kind: DeductionKind<Base>,
     previous_candidates: Candidates<Base>,
 }
 
-impl<Base: SudokuBase> Display for Deduction<Base> {
+impl<Base: SudokuBase> Display for OldDeduction<Base> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let Deduction {
+        let OldDeduction {
             pos,
             previous_candidates,
             kind,
@@ -149,7 +152,7 @@ impl<Base: SudokuBase> Display for Deduction<Base> {
     }
 }
 
-impl<Base: SudokuBase> Deduction<Base> {
+impl<Base: SudokuBase> OldDeduction<Base> {
     pub fn new(
         pos: Position,
         previous_candidates: Candidates<Base>,
@@ -188,7 +191,7 @@ impl<Base: SudokuBase> Deduction<Base> {
     }
 
     pub fn apply(&self, grid: &mut Grid<Base>) {
-        let Deduction {
+        let OldDeduction {
             pos,
             previous_candidates,
             kind,
@@ -210,7 +213,7 @@ impl<Base: SudokuBase> Deduction<Base> {
     }
 
     fn validate(&self) -> Result<()> {
-        let Deduction {
+        let OldDeduction {
             previous_candidates,
             kind,
             ..
@@ -252,13 +255,13 @@ impl<Base: SudokuBase> Deduction<Base> {
             return Ok(*self);
         }
 
-        let Deduction {
+        let OldDeduction {
             pos: self_pos,
             previous_candidates: self_previous_candidates,
             kind: self_kind,
         } = self;
 
-        let Deduction {
+        let OldDeduction {
             pos: other_pos,
             previous_candidates: other_previous_candidates,
             kind: other_kind,
@@ -344,12 +347,77 @@ impl<Base: SudokuBase> TryFrom<Candidates<Base>> for DeductionKind<Base> {
     }
 }
 
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+pub struct Deduction<Base: SudokuBase> {
+    reasons: BTreeMap<Position, Reason<Base>>,
+    actions: BTreeMap<Position, Action<Base>>,
+}
+
 /// On what basis a deduction was made.
 /// Used to highlight/explain a deduction in the UI.
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
-pub struct Reason<Base: SudokuBase> {
-    pos: Position,
-    candidates: Candidates<Base>,
+#[cfg_attr(
+    feature = "wasm",
+    derive(TS),
+    ts(export, export_generic_params = "crate::base::consts::Base3")
+)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize)]
+#[serde(bound = "", rename_all = "camelCase")]
+pub enum Reason<Base: SudokuBase> {
+    Candidate(Value<Base>),
+    Candidates(Candidates<Base>),
+}
+
+#[cfg_attr(
+    feature = "wasm",
+    derive(TS),
+    ts(export, export_generic_params = "crate::base::consts::Base3")
+)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize)]
+#[serde(bound = "", rename_all = "camelCase")]
+pub enum Action<Base: SudokuBase> {
+    SetValue(Value<Base>),
+    DeleteCandidate(Value<Base>),
+    DeleteCandidates(Candidates<Base>),
+}
+
+mod transport {
+    use super::*;
+
+    #[cfg_attr(
+        feature = "wasm",
+        derive(TS),
+        ts(export, export_generic_params = "crate::base::consts::Base3")
+    )]
+    #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize)]
+    #[serde(bound = "", rename_all = "camelCase")]
+    pub struct TransportDeduction<Base: SudokuBase> {
+        pub reasons: Vec<TransportReason<Base>>,
+        pub actions: Vec<TransportAction<Base>>,
+    }
+    #[cfg_attr(
+        feature = "wasm",
+        derive(TS),
+        ts(export, export_generic_params = "crate::base::consts::Base3")
+    )]
+    #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize)]
+    #[serde(bound = "", rename_all = "camelCase")]
+    pub struct TransportReason<Base: SudokuBase> {
+        pub position: Position,
+        #[serde(flatten)]
+        pub reason: Reason<Base>,
+    }
+    #[cfg_attr(
+        feature = "wasm",
+        derive(TS),
+        ts(export, export_generic_params = "crate::base::consts::Base3")
+    )]
+    #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize)]
+    #[serde(bound = "", rename_all = "camelCase")]
+    pub struct TransportAction<Base: SudokuBase> {
+        pub position: Position,
+        #[serde(flatten)]
+        pub action: Action<Base>,
+    }
 }
 
 #[cfg(test)]
@@ -357,8 +425,44 @@ mod tests {
     use crate::base::consts::*;
     use crate::cell::Cell;
     use crate::samples;
+    use crate::solver::strategic::deduction::transport::{TransportAction, TransportReason};
 
     use super::*;
+
+    #[test]
+    fn test_new_deduction() {
+        use crate::solver::strategic::deduction::transport::TransportDeduction;
+        use serde_json;
+
+        let deduction = TransportDeduction::<Base3> {
+            reasons: vec![
+                TransportReason {
+                    position: Position { row: 1, column: 1 },
+                    reason: Reason::Candidates(Candidates::all()),
+                },
+                TransportReason {
+                    position: Position { row: 1, column: 1 },
+                    reason: Reason::Candidate(Value::try_from(1).unwrap()),
+                },
+            ],
+            actions: vec![
+                TransportAction {
+                    position: Position { row: 1, column: 1 },
+                    action: Action::SetValue(Value::try_from(1).unwrap()),
+                },
+                TransportAction {
+                    position: Position { row: 1, column: 1 },
+                    action: Action::DeleteCandidate(Value::try_from(2).unwrap()),
+                },
+                TransportAction {
+                    position: Position { row: 1, column: 1 },
+                    action: Action::DeleteCandidates(Candidates::all()),
+                },
+            ],
+        };
+
+        println!("{}", serde_json::to_string_pretty(&deduction).unwrap());
+    }
 
     #[test]
     fn test_deductions_order_independence() {
@@ -369,18 +473,18 @@ mod tests {
         let remaining_candidates: Candidates<U2> = vec![1, 2].try_into().unwrap();
 
         let value_deduction_1 =
-            Deduction::with_value(pos, previous_candidates, 1.try_into().unwrap()).unwrap();
-        let value_deduction_2 = Deduction::with_value(
+            OldDeduction::with_value(pos, previous_candidates, 1.try_into().unwrap()).unwrap();
+        let value_deduction_2 = OldDeduction::with_value(
             Position { row: 1, column: 1 },
             previous_candidates,
             2.try_into().unwrap(),
         )
         .unwrap();
         let remaining_candidates_deduction =
-            Deduction::with_remaining_candidates(pos, previous_candidates, remaining_candidates)
+            OldDeduction::with_remaining_candidates(pos, previous_candidates, remaining_candidates)
                 .unwrap();
 
-        let all_deductions: Vec<Deduction<U2>> = vec![
+        let all_deductions: Vec<OldDeduction<U2>> = vec![
             value_deduction_1,
             value_deduction_2,
             remaining_candidates_deduction,
@@ -400,14 +504,14 @@ mod tests {
 
         let pos = Position { row: 0, column: 1 };
         let value = 1.try_into().unwrap();
-        Deduction::with_value(pos, Candidates::single(1.try_into().unwrap()), value)
+        OldDeduction::with_value(pos, Candidates::single(1.try_into().unwrap()), value)
             .unwrap()
             .apply(&mut grid);
         assert_eq!(*grid.get(pos), Cell::with_value(value, false));
 
         let pos = Position { row: 3, column: 3 };
         let candidates = vec![2, 4].try_into().unwrap();
-        Deduction::with_remaining_candidates(pos, Candidates::all(), candidates)
+        OldDeduction::with_remaining_candidates(pos, Candidates::all(), candidates)
             .unwrap()
             .apply(&mut grid);
         assert_eq!(*grid.get(pos), Cell::with_candidates(candidates));
@@ -420,50 +524,50 @@ mod tests {
         let remaining_candidates: Candidates<U2> = Candidates::single(1.try_into().unwrap());
         let value: Value<U2> = 1.try_into().unwrap();
 
-        let cases: Vec<(Deduction<U2>, Deduction<U2>, Deduction<U2>)> = vec![
+        let cases: Vec<(OldDeduction<U2>, OldDeduction<U2>, OldDeduction<U2>)> = vec![
             // Equal
             (
-                Deduction::with_value(pos, previous_candidates, value).unwrap(),
-                Deduction::with_value(pos, previous_candidates, value).unwrap(),
-                Deduction::with_value(pos, previous_candidates, value).unwrap(),
+                OldDeduction::with_value(pos, previous_candidates, value).unwrap(),
+                OldDeduction::with_value(pos, previous_candidates, value).unwrap(),
+                OldDeduction::with_value(pos, previous_candidates, value).unwrap(),
             ),
             // Left Value overwrites right PruneCandidates
             (
-                Deduction::with_value(pos, previous_candidates, value).unwrap(),
-                Deduction::with_remaining_candidates(
+                OldDeduction::with_value(pos, previous_candidates, value).unwrap(),
+                OldDeduction::with_remaining_candidates(
                     pos,
                     previous_candidates,
                     remaining_candidates,
                 )
                 .unwrap(),
-                Deduction::with_value(pos, previous_candidates, value).unwrap(),
+                OldDeduction::with_value(pos, previous_candidates, value).unwrap(),
             ),
             // Right Value overwrites left PruneCandidates
             (
-                Deduction::with_remaining_candidates(
+                OldDeduction::with_remaining_candidates(
                     pos,
                     previous_candidates,
                     remaining_candidates,
                 )
                 .unwrap(),
-                Deduction::with_value(pos, previous_candidates, value).unwrap(),
-                Deduction::with_value(pos, previous_candidates, value).unwrap(),
+                OldDeduction::with_value(pos, previous_candidates, value).unwrap(),
+                OldDeduction::with_value(pos, previous_candidates, value).unwrap(),
             ),
             // Intersect PruneCandidates
             (
-                Deduction::with_remaining_candidates(
+                OldDeduction::with_remaining_candidates(
                     pos,
                     previous_candidates,
                     vec![1, 2, 4].try_into().unwrap(),
                 )
                 .unwrap(),
-                Deduction::with_remaining_candidates(
+                OldDeduction::with_remaining_candidates(
                     pos,
                     previous_candidates,
                     vec![1, 3, 4].try_into().unwrap(),
                 )
                 .unwrap(),
-                Deduction::with_remaining_candidates(
+                OldDeduction::with_remaining_candidates(
                     pos,
                     previous_candidates,
                     vec![1, 4].try_into().unwrap(),
@@ -491,20 +595,20 @@ mod tests {
         let value: Value<U2> = 1.try_into().unwrap();
         let different_value: Value<U2> = 2.try_into().unwrap();
 
-        let err_cases: Vec<(Deduction<U2>, Deduction<U2>)> = vec![
+        let err_cases: Vec<(OldDeduction<U2>, OldDeduction<U2>)> = vec![
             // Different pos
             (
-                Deduction::with_value(pos, previous_candidates, value).unwrap(),
-                Deduction::with_value(different_pos, previous_candidates, value).unwrap(),
+                OldDeduction::with_value(pos, previous_candidates, value).unwrap(),
+                OldDeduction::with_value(different_pos, previous_candidates, value).unwrap(),
             ),
             (
-                Deduction::with_remaining_candidates(
+                OldDeduction::with_remaining_candidates(
                     pos,
                     previous_candidates,
                     remaining_candidates,
                 )
                 .unwrap(),
-                Deduction::with_remaining_candidates(
+                OldDeduction::with_remaining_candidates(
                     different_pos,
                     previous_candidates,
                     remaining_candidates,
@@ -513,17 +617,17 @@ mod tests {
             ),
             // Different previous_candidates
             (
-                Deduction::with_value(pos, previous_candidates, value).unwrap(),
-                Deduction::with_value(pos, different_previous_candidates, value).unwrap(),
+                OldDeduction::with_value(pos, previous_candidates, value).unwrap(),
+                OldDeduction::with_value(pos, different_previous_candidates, value).unwrap(),
             ),
             (
-                Deduction::with_remaining_candidates(
+                OldDeduction::with_remaining_candidates(
                     pos,
                     previous_candidates,
                     remaining_candidates,
                 )
                 .unwrap(),
-                Deduction::with_remaining_candidates(
+                OldDeduction::with_remaining_candidates(
                     pos,
                     different_previous_candidates,
                     remaining_candidates,
@@ -532,18 +636,18 @@ mod tests {
             ),
             // Different value
             (
-                Deduction::with_value(pos, previous_candidates, value).unwrap(),
-                Deduction::with_value(pos, previous_candidates, different_value).unwrap(),
+                OldDeduction::with_value(pos, previous_candidates, value).unwrap(),
+                OldDeduction::with_value(pos, previous_candidates, different_value).unwrap(),
             ),
             // No intersection
             (
-                Deduction::with_remaining_candidates(
+                OldDeduction::with_remaining_candidates(
                     pos,
                     previous_candidates,
                     remaining_candidates,
                 )
                 .unwrap(),
-                Deduction::with_remaining_candidates(
+                OldDeduction::with_remaining_candidates(
                     pos,
                     previous_candidates,
                     different_remaining_candidates,

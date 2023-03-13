@@ -15,7 +15,7 @@ use crate::cell::Cell;
 use crate::error::{Error, Result};
 use crate::grid::serialization::GridFormat;
 use crate::position::Position;
-use crate::solver::strategic::deduction::{Deduction, DeductionKind};
+use crate::solver::strategic::deduction::{DeductionKind, OldDeduction};
 use crate::solver::strategic::strategies::DynamicStrategy;
 use crate::solver::{backtracking_bitset, strategic};
 
@@ -296,14 +296,14 @@ impl<Base: SudokuBase> Grid<Base> {
         &self,
         pos: impl Into<Position>,
         kind: TryIntoKind,
-    ) -> Result<Deduction<Base>>
+    ) -> Result<OldDeduction<Base>>
     where
         Error: From<TryIntoKind::Error>,
     {
         let pos = pos.into();
         let kind = kind.try_into()?;
 
-        Deduction::new(
+        OldDeduction::new(
             pos,
             self.get(pos).candidates().ok_or_else(|| {
                 anyhow!("A deduction must be made for a position containing candidates")

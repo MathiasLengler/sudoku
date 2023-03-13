@@ -9,8 +9,7 @@ use crate::position::Position;
 use crate::sudoku::DynamicSudoku;
 use crate::sudoku::Sudoku;
 
-#[cfg_attr(feature = "wasm", derive(TS))]
-#[cfg_attr(feature = "wasm", ts(export))]
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransportSudoku {
@@ -72,8 +71,7 @@ impl From<&DynamicSudoku> for TransportSudoku {
     }
 }
 
-#[cfg_attr(feature = "wasm", derive(TS))]
-#[cfg_attr(feature = "wasm", ts(export))]
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransportCell {

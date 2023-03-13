@@ -7,8 +7,7 @@ use ts_rs::TS;
 
 use crate::base::SudokuBase;
 
-#[cfg_attr(feature = "wasm", derive(TS))]
-#[cfg_attr(feature = "wasm", ts(export))]
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[derive(
     Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize, Default,
 )]

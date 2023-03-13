@@ -3,7 +3,7 @@ use crate::cell::compact::value::Value;
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
-use crate::solver::strategic::deduction::{Deduction, Deductions, TryIntoDeductions};
+use crate::solver::strategic::deduction::{Deductions, OldDeduction, TryIntoDeductions};
 use anyhow::ensure;
 
 use super::Strategy;
@@ -55,7 +55,7 @@ impl Strategy for HiddenSingles {
                                 Value::<Base>::try_from(u8::try_from(candidate_value + 1).unwrap())
                                     .unwrap();
 
-                            Some(Deduction::with_value(
+                            Some(OldDeduction::with_value(
                                 pos,
                                 grid.get(pos).candidates().unwrap(),
                                 candidate_value,
@@ -98,7 +98,7 @@ mod tests {
                 ]
                 .into_iter()
                 .map(|((row, column), previous_candidates, value)| {
-                    Deduction::with_value(
+                    OldDeduction::with_value(
                         Position { row, column },
                         previous_candidates.try_into().unwrap(),
                         value.try_into().unwrap(),

@@ -9,8 +9,7 @@ use crate::cell::compact::cell_state::CellState;
 use crate::cell::compact::value::Value;
 use crate::grid::Grid;
 
-#[cfg_attr(feature = "wasm", derive(TS))]
-#[cfg_attr(feature = "wasm", ts(export))]
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum GridFormat {

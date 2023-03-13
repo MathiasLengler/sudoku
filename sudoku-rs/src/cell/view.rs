@@ -20,8 +20,7 @@ pub(crate) mod parser;
 //  CellView: Unfixed value
 //  => Constructor now validates this, but Deserialize can break this contract
 
-#[cfg_attr(feature = "wasm", derive(TS))]
-#[cfg_attr(feature = "wasm", ts(export))]
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 #[serde(rename_all = "camelCase", tag = "kind")]
 pub enum CellView {

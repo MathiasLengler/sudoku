@@ -959,9 +959,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.85"
+version = "1.0.93"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e55a28e3aaef9d5ce0506d0a14dbba8054ddc7e499ef522dd8b26859ec9d4a44"
+checksum = "cad406b69c91885b5107daf2c29572f6c8cdb3c66826821e286c533490c0bc76"
 dependencies = [
  "itoa",
  "ryu",
@@ -1034,6 +1034,7 @@ dependencies = [
  "rand_xoshiro",
  "rayon",
  "serde",
+ "serde_json",
  "strip-ansi-escapes",
  "tabled",
  "ts-rs",
@@ -1149,7 +1150,6 @@ dependencies = [
 [[package]]
 name = "ts-rs"
 version = "6.2.0"
-source = "git+https://github.com/MathiasLengler/ts-rs#2ac35c3764a6bb06aad448ff0be4c38b6ab90083"
 dependencies = [
  "thiserror",
  "ts-rs-macros",
@@ -1158,7 +1158,6 @@ dependencies = [
 [[package]]
 name = "ts-rs-macros"
 version = "6.2.0"
-source = "git+https://github.com/MathiasLengler/ts-rs#2ac35c3764a6bb06aad448ff0be4c38b6ab90083"
 dependencies = [
  "Inflector",
  "proc-macro2",

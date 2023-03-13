@@ -26,4 +26,7 @@ inherits = "release"
 debug = true
 
 [patch.crates-io]
-ts-rs = { git = "https://github.com/MathiasLengler/ts-rs" }
+
+[patch.crates-io.ts-rs]
+#git = "https://github.com/MathiasLengler/ts-rs"
+path = "../ts-rs/ts-rs"

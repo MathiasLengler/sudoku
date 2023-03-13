@@ -4,6 +4,8 @@ use std::fmt::{Binary, Display, Formatter};
 
 use num::traits::{CheckedShl, WrappingSub};
 use num::{One, PrimInt, Zero};
+use serde::ser::SerializeSeq;
+use serde::{Serialize, Serializer};
 
 pub use iter::CandidatesIter;
 
@@ -247,6 +249,52 @@ impl<Base: SudokuBase> Binary for Candidates<Base> {
     }
 }
 
+impl<Base: SudokuBase> Serialize for Candidates<Base> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut seq = serializer.serialize_seq(Some(usize::from(self.count())))?;
+        for candidate in self.iter() {
+            seq.serialize_element(&candidate)?;
+        }
+        seq.end()
+    }
+}
+
+#[cfg(feature = "wasm")]
+mod wasm {
+    use ts_rs::TS;
+
+    use super::*;
+
+    impl<Base: SudokuBase> TS for Candidates<Base> {
+        const EXPORT_TO: Option<&'static str> = Some("bindings/Candidates.ts");
+        fn decl() -> String {
+            "type Candidates = Array<number>;".to_owned()
+        }
+        fn name() -> String {
+            "Candidates".to_owned()
+        }
+        fn inline() -> String {
+            "Array<number>".to_owned()
+        }
+        fn dependencies() -> Vec<ts_rs::Dependency> {
+            vec![]
+        }
+        fn transparent() -> bool {
+            false
+        }
+    }
+    #[cfg(test)]
+    #[test]
+    fn export_bindings_candidates() {
+        use crate::base::consts::Base3;
+
+        <Candidates<Base3> as ts_rs::TS>::export().expect("could not export type");
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::mem::size_of;
@@ -275,11 +323,11 @@ mod tests {
 
         #[test]
         fn test_new() {
-            assert_eq!(Candidates::<Base1>::new().to_vec_u8(), vec![]);
-            assert_eq!(Candidates::<Base2>::new().to_vec_u8(), vec![]);
-            assert_eq!(Candidates::<Base3>::new().to_vec_u8(), vec![]);
-            assert_eq!(Candidates::<Base4>::new().to_vec_u8(), vec![]);
-            assert_eq!(Candidates::<Base5>::new().to_vec_u8(), vec![]);
+            assert_eq!(Candidates::<Base1>::new().to_vec_u8(), Vec::<u8>::new());
+            assert_eq!(Candidates::<Base2>::new().to_vec_u8(), Vec::<u8>::new());
+            assert_eq!(Candidates::<Base3>::new().to_vec_u8(), Vec::<u8>::new());
+            assert_eq!(Candidates::<Base4>::new().to_vec_u8(), Vec::<u8>::new());
+            assert_eq!(Candidates::<Base5>::new().to_vec_u8(), Vec::<u8>::new());
         }
 
         #[test]
@@ -330,11 +378,14 @@ mod tests {
                 assert_integral_identity(i);
                 assert_eq!(
                     Candidates::<Base>::with_integral(i).to_vec_u8(),
-                    vec![(i.trailing_zeros() + 1).try_into().unwrap()]
+                    vec![u8::try_from(i.trailing_zeros() + 1).unwrap()]
                 );
             }
             assert_integral_identity(0);
-            assert_eq!(Candidates::<Base>::with_integral(0).to_vec_u8(), vec![]);
+            assert_eq!(
+                Candidates::<Base>::with_integral(0).to_vec_u8(),
+                Vec::<u8>::new()
+            );
             let all = 0b0000_0001_1111_1111_1111_1111_1111_1111;
             assert_integral_identity(all);
             assert_eq!(
@@ -393,7 +444,7 @@ mod tests {
             candidates.toggle(value1);
             assert_eq!(candidates.to_vec_u8(), vec![2]);
             candidates.toggle(value2);
-            assert_eq!(candidates.to_vec_u8(), vec![]);
+            assert_eq!(candidates.to_vec_u8(), Vec::<u8>::new());
         }
 
         #[test]
@@ -402,7 +453,7 @@ mod tests {
             let value1 = 1.try_into().unwrap();
             let value2 = 2.try_into().unwrap();
             candidates.set(value1, false);
-            assert_eq!(candidates.to_vec_u8(), vec![]);
+            assert_eq!(candidates.to_vec_u8(), Vec::<u8>::new());
             candidates.set(value1, true);
             assert_eq!(candidates.to_vec_u8(), vec![1]);
             candidates.set(value1, true);
@@ -412,7 +463,7 @@ mod tests {
             candidates.set(value1, false);
             assert_eq!(candidates.to_vec_u8(), vec![2]);
             candidates.set(value2, false);
-            assert_eq!(candidates.to_vec_u8(), vec![]);
+            assert_eq!(candidates.to_vec_u8(), Vec::<u8>::new());
         }
 
         #[test]
@@ -451,7 +502,7 @@ mod tests {
 
             let mut candidates = Candidates::<Base>::new();
             assert_eq!(candidates.integral(), 0);
-            assert_eq!(candidates.to_vec_u8(), vec![]);
+            assert_eq!(candidates.to_vec_u8(), Vec::<u8>::new());
             candidates.set(1.try_into().unwrap(), true);
             assert_eq!(candidates.integral(), 1);
             assert_eq!(candidates.to_vec_u8(), vec![1]);
@@ -522,7 +573,7 @@ mod tests {
             let one: Candidates<U2> = Candidates::single(1.try_into().unwrap());
             let all: Candidates<U2> = Candidates::all();
 
-            assert_eq!(empty.to_vec_u8(), vec![]);
+            assert_eq!(empty.to_vec_u8(), Vec::<u8>::new());
             assert_eq!(one.to_vec_u8(), vec![1]);
             assert_eq!(all.to_vec_u8(), vec![1, 2, 3, 4]);
         }

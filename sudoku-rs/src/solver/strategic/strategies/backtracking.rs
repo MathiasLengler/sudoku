@@ -2,7 +2,7 @@ use crate::base::SudokuBase;
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::solver::backtracking_bitset::Solver;
-use crate::solver::strategic::deduction::{Deduction, Deductions, TryIntoDeductions};
+use crate::solver::strategic::deduction::{Deductions, OldDeduction, TryIntoDeductions};
 
 use super::Strategy;
 
@@ -15,7 +15,7 @@ impl Strategy for Backtracking {
 
         if let Some(solved_grid) = solver.next() {
             TryIntoDeductions(grid.all_candidates_positions().into_iter().map(|pos| {
-                Deduction::with_value(
+                OldDeduction::with_value(
                     pos,
                     grid.get(pos).candidates().unwrap(),
                     solved_grid.get(pos).value().unwrap(),

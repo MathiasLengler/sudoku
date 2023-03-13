@@ -17,8 +17,7 @@ use crate::solver::strategic::strategies::{Backtracking, DynamicStrategy};
 // TODO: strategic
 //  target difficulty: sum of weighted strategy applications
 
-#[cfg_attr(feature = "wasm", derive(TS))]
-#[cfg_attr(feature = "wasm", ts(export))]
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[derive(Debug, Serialize, Deserialize, Copy, Clone)]
 #[serde(rename_all = "camelCase")]
 pub enum GeneratorTarget {
@@ -42,8 +41,7 @@ impl Default for GeneratorTarget {
     }
 }
 
-#[cfg_attr(feature = "wasm", derive(TS))]
-#[cfg_attr(feature = "wasm", ts(export))]
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GeneratorSettings {
@@ -53,8 +51,7 @@ pub struct GeneratorSettings {
     pub seed: Option<u64>,
 }
 
-#[cfg_attr(feature = "wasm", derive(TS))]
-#[cfg_attr(feature = "wasm", ts(export))]
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DynamicGeneratorSettings {

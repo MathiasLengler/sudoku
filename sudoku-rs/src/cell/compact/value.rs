@@ -5,6 +5,7 @@ use std::marker::PhantomData;
 use std::num::NonZeroU8;
 
 use anyhow::{ensure, format_err};
+use serde::{Serialize, Serializer};
 
 use crate::base::SudokuBase;
 use crate::error::{Error, Result};
@@ -52,6 +53,49 @@ impl<Base: SudokuBase> TryFrom<u8> for Value<Base> {
 impl<Base: SudokuBase> Display for Value<Base> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.value)
+    }
+}
+
+impl<Base: SudokuBase> Serialize for Value<Base> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_u8(self.value.get())
+    }
+}
+
+#[cfg(feature = "wasm")]
+mod wasm {
+    use ts_rs::TS;
+
+    use super::*;
+
+    impl<Base: SudokuBase> TS for Value<Base> {
+        const EXPORT_TO: Option<&'static str> = Some("bindings/Value.ts");
+        fn decl() -> String {
+            "type Value = number;".to_owned()
+        }
+        fn name() -> String {
+            "Value".to_owned()
+        }
+        fn inline() -> String {
+            "number".to_owned()
+        }
+        fn dependencies() -> Vec<ts_rs::Dependency> {
+            vec![]
+        }
+        fn transparent() -> bool {
+            false
+        }
+    }
+
+    #[cfg(test)]
+    #[test]
+    fn export_bindings_value() {
+        use crate::base::consts::Base3;
+
+        <Value<Base3> as ts_rs::TS>::export().expect("could not export type");
     }
 }
 

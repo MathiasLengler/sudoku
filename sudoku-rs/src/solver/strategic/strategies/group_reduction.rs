@@ -5,7 +5,7 @@ use crate::cell::compact::candidates::Candidates;
 use crate::cell::compact::value::Value;
 use crate::error::Result;
 use crate::grid::Grid;
-use crate::solver::strategic::deduction::{Deduction, Deductions, TryIntoDeductions};
+use crate::solver::strategic::deduction::{Deductions, OldDeduction, TryIntoDeductions};
 
 use super::Strategy;
 
@@ -32,7 +32,7 @@ impl Strategy for GroupReduction {
             izip!(positions, candidates_group, reduced_candidates_group).filter_map(
                 |(position, candidates, reduced_candidates)| {
                     if candidates != reduced_candidates {
-                        Some(Deduction::with_remaining_candidates(
+                        Some(OldDeduction::with_remaining_candidates(
                             position,
                             candidates,
                             reduced_candidates,

@@ -53,8 +53,7 @@ pub trait Strategy: Debug + Copy + Clone {
         format!("{:?}", self)
     }
 }
-#[cfg_attr(feature = "wasm", derive(TS))]
-#[cfg_attr(feature = "wasm", ts(export))]
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[enum_dispatch]
 #[derive(Debug, Copy, Clone)]
 pub enum DynamicStrategy {

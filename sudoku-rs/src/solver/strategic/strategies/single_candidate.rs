@@ -1,7 +1,7 @@
 use crate::base::SudokuBase;
 use crate::error::Result;
 use crate::grid::Grid;
-use crate::solver::strategic::deduction::{Deduction, Deductions, TryIntoDeductions};
+use crate::solver::strategic::deduction::{Deductions, OldDeduction, TryIntoDeductions};
 
 use super::Strategy;
 
@@ -18,7 +18,7 @@ impl Strategy for SingleCandidate {
 
                     if candidates.count() == 1 {
                         let single_candidate = candidates.iter().next().unwrap();
-                        Some(Deduction::with_value(
+                        Some(OldDeduction::with_value(
                             candidate_pos,
                             candidates,
                             single_candidate,
