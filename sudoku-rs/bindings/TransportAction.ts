@@ -2,4 +2,4 @@
 import type { Action } from "./Action";
 import type { Position } from "./Position";
 
-export type TransportAction<Base> = { position: Position, } & Action;
+export type TransportAction = { position: Position, } & Action;

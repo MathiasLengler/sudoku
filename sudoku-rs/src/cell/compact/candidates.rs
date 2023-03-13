@@ -276,6 +276,9 @@ mod wasm {
         fn name() -> String {
             "Candidates".to_owned()
         }
+        fn name_with_type_args(_args: Vec<String>) -> String {
+            Self::name()
+        }
         fn inline() -> String {
             "Array<number>".to_owned()
         }

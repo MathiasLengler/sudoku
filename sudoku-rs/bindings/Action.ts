@@ -2,7 +2,7 @@
 import type { Candidates } from "./Candidates";
 import type { Value } from "./Value";
 
-export type Action<Base> = ActionSetValue | ActionDeleteCandidate | ActionDeleteCandidates;
-export type ActionSetValue = { setValue: Value<Base> };
-export type ActionDeleteCandidate = { deleteCandidate: Value<Base> };
-export type ActionDeleteCandidates = { deleteCandidates: Candidates<Base> };
+export type Action = ActionSetValue | ActionDeleteCandidate | ActionDeleteCandidates;
+export type ActionSetValue = { setValue: Value };
+export type ActionDeleteCandidate = { deleteCandidate: Value };
+export type ActionDeleteCandidates = { deleteCandidates: Candidates };

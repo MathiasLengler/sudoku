@@ -2,4 +2,4 @@
 import type { Position } from "./Position";
 import type { Reason } from "./Reason";
 
-export type TransportReason<Base> = { position: Position, } & Reason;
+export type TransportReason = { position: Position, } & Reason;

@@ -2,6 +2,6 @@
 import type { Candidates } from "./Candidates";
 import type { Value } from "./Value";
 
-export type Reason<Base> = ReasonCandidate | ReasonCandidates;
-export type ReasonCandidate = { candidate: Value<Base> };
-export type ReasonCandidates = { candidates: Candidates<Base> };
+export type Reason = ReasonCandidate | ReasonCandidates;
+export type ReasonCandidate = { candidate: Value };
+export type ReasonCandidates = { candidates: Candidates };

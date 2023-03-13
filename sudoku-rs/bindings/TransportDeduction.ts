@@ -2,4 +2,4 @@
 import type { TransportAction } from "./TransportAction";
 import type { TransportReason } from "./TransportReason";
 
-export interface TransportDeduction<Base> { reasons: Array<TransportReason<Base>>, actions: Array<TransportAction<Base>>, }
+export interface TransportDeduction { reasons: Array<TransportReason>, actions: Array<TransportAction>, }

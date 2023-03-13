@@ -79,6 +79,9 @@ mod wasm {
         fn name() -> String {
             "Value".to_owned()
         }
+        fn name_with_type_args(_args: Vec<String>) -> String {
+            Self::name()
+        }
         fn inline() -> String {
             "number".to_owned()
         }
