@@ -1,6 +1,7 @@
 use std::collections::btree_map::Values;
 use std::collections::BTreeMap;
 use std::fmt::{Display, Formatter};
+use std::slice;
 
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
@@ -11,6 +12,7 @@ use crate::position::Position;
 use anyhow::{bail, ensure, Context};
 use serde::Serialize;
 
+use crate::cell::Cell;
 #[cfg(feature = "wasm")]
 use ts_rs::TS;
 
@@ -21,7 +23,7 @@ use ts_rs::TS;
 //   denormalized data if saved with each deduction
 
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
-pub struct Deductions<Base: SudokuBase> {
+pub struct OldDeductions<Base: SudokuBase> {
     // Invariant: K == V.pos
     deductions: BTreeMap<Position, OldDeduction<Base>>,
 }
@@ -33,7 +35,7 @@ pub struct Deductions<Base: SudokuBase> {
 pub struct IntoDeductions<I>(pub I);
 
 impl<Base: SudokuBase, I: IntoIterator<Item = OldDeduction<Base>>> TryFrom<IntoDeductions<I>>
-    for Deductions<Base>
+    for OldDeductions<Base>
 {
     type Error = Error;
 
@@ -56,7 +58,7 @@ impl<Base: SudokuBase, I: IntoIterator<Item = OldDeduction<Base>>> TryFrom<IntoD
 pub struct TryIntoDeductions<I>(pub I);
 
 impl<Base: SudokuBase, I: IntoIterator<Item = Result<OldDeduction<Base>>>>
-    TryFrom<TryIntoDeductions<I>> for Deductions<Base>
+    TryFrom<TryIntoDeductions<I>> for OldDeductions<Base>
 {
     type Error = Error;
 
@@ -72,7 +74,7 @@ impl<Base: SudokuBase, I: IntoIterator<Item = Result<OldDeduction<Base>>>>
     }
 }
 
-impl<Base: SudokuBase> IntoIterator for Deductions<Base> {
+impl<Base: SudokuBase> IntoIterator for OldDeductions<Base> {
     type Item = OldDeduction<Base>;
     type IntoIter = std::collections::btree_map::IntoValues<Position, OldDeduction<Base>>;
 
@@ -81,7 +83,7 @@ impl<Base: SudokuBase> IntoIterator for Deductions<Base> {
     }
 }
 
-impl<'a, Base: SudokuBase> IntoIterator for &'a Deductions<Base> {
+impl<'a, Base: SudokuBase> IntoIterator for &'a OldDeductions<Base> {
     type Item = &'a OldDeduction<Base>;
     type IntoIter = Values<'a, Position, OldDeduction<Base>>;
 
@@ -90,7 +92,7 @@ impl<'a, Base: SudokuBase> IntoIterator for &'a Deductions<Base> {
     }
 }
 
-impl<Base: SudokuBase> Deductions<Base> {
+impl<Base: SudokuBase> OldDeductions<Base> {
     pub fn iter(&self) -> Values<'_, Position, OldDeduction<Base>> {
         self.deductions.values()
     }
@@ -117,7 +119,7 @@ impl<Base: SudokuBase> Deductions<Base> {
 
         // Update candidates for all value deductions.
         for deduction in self {
-            if let DeductionKind::Value { value } = deduction.kind {
+            if let OldDeductionKind::Value { value } = deduction.kind {
                 grid.update_direct_candidates(deduction.pos, value);
             }
         }
@@ -127,7 +129,7 @@ impl<Base: SudokuBase> Deductions<Base> {
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct OldDeduction<Base: SudokuBase> {
     pos: Position,
-    kind: DeductionKind<Base>,
+    kind: OldDeductionKind<Base>,
     previous_candidates: Candidates<Base>,
 }
 
@@ -140,10 +142,10 @@ impl<Base: SudokuBase> Display for OldDeduction<Base> {
         } = self;
 
         match kind {
-            DeductionKind::Value { value } => {
+            OldDeductionKind::Value { value } => {
                 write!(f, "{pos}: {previous_candidates} => {value}")
             }
-            DeductionKind::PruneCandidates {
+            OldDeductionKind::PruneCandidates {
                 remaining_candidates,
             } => {
                 write!(f, "{pos}: {previous_candidates} => {remaining_candidates}")
@@ -156,7 +158,7 @@ impl<Base: SudokuBase> OldDeduction<Base> {
     pub fn new(
         pos: Position,
         previous_candidates: Candidates<Base>,
-        kind: DeductionKind<Base>,
+        kind: OldDeductionKind<Base>,
     ) -> Result<Self> {
         let this = Self {
             pos,
@@ -175,7 +177,11 @@ impl<Base: SudokuBase> OldDeduction<Base> {
         previous_candidates: Candidates<Base>,
         value: Value<Base>,
     ) -> Result<Self> {
-        Self::new(pos, previous_candidates, DeductionKind::with_value(value))
+        Self::new(
+            pos,
+            previous_candidates,
+            OldDeductionKind::with_value(value),
+        )
     }
 
     pub fn with_remaining_candidates(
@@ -186,7 +192,7 @@ impl<Base: SudokuBase> OldDeduction<Base> {
         Self::new(
             pos,
             previous_candidates,
-            DeductionKind::with_remaining_candidates(remaining_candidates)?,
+            OldDeductionKind::with_remaining_candidates(remaining_candidates)?,
         )
     }
 
@@ -200,11 +206,11 @@ impl<Base: SudokuBase> OldDeduction<Base> {
         let cell = grid.get_mut(pos);
         debug_assert_eq!(cell.candidates(), Some(previous_candidates));
         match kind {
-            DeductionKind::Value { value } => {
+            OldDeductionKind::Value { value } => {
                 cell.set_value(value);
                 // Don't update candidates, which would fail the assert of previous_candidates for subsequent deductions.
             }
-            DeductionKind::PruneCandidates {
+            OldDeductionKind::PruneCandidates {
                 remaining_candidates,
             } => {
                 cell.set_candidates(remaining_candidates);
@@ -225,13 +231,13 @@ impl<Base: SudokuBase> OldDeduction<Base> {
         );
 
         match kind {
-            DeductionKind::Value { value } => {
+            OldDeductionKind::Value { value } => {
                 ensure!(
                     previous_candidates.has(*value),
                     "Unexpected value deduction not in previous candidates: {self}"
                 );
             }
-            DeductionKind::PruneCandidates {
+            OldDeductionKind::PruneCandidates {
                 remaining_candidates,
             } => {
                 ensure!(
@@ -285,7 +291,7 @@ impl<Base: SudokuBase> OldDeduction<Base> {
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
-pub enum DeductionKind<Base: SudokuBase> {
+pub enum OldDeductionKind<Base: SudokuBase> {
     Value {
         value: Value<Base>,
     },
@@ -294,9 +300,9 @@ pub enum DeductionKind<Base: SudokuBase> {
     },
 }
 
-impl<Base: SudokuBase> DeductionKind<Base> {
+impl<Base: SudokuBase> OldDeductionKind<Base> {
     fn with_value(value: Value<Base>) -> Self {
-        DeductionKind::Value { value }
+        OldDeductionKind::Value { value }
     }
 
     fn with_remaining_candidates(remaining_candidates: Candidates<Base>) -> Result<Self> {
@@ -305,13 +311,13 @@ impl<Base: SudokuBase> DeductionKind<Base> {
             "At least one candidate must be remaining"
         );
 
-        Ok(DeductionKind::PruneCandidates {
+        Ok(OldDeductionKind::PruneCandidates {
             remaining_candidates,
         })
     }
 
     fn merge(&self, other: &Self) -> Result<Self> {
-        use DeductionKind::*;
+        use OldDeductionKind::*;
         Ok(match (*self, *other) {
             (Value { value: self_value }, Value { value: other_value }) => {
                 bail!("Conflicting values: {self_value} != {other_value}")
@@ -324,22 +330,22 @@ impl<Base: SudokuBase> DeductionKind<Base> {
                 PruneCandidates {
                     remaining_candidates: other_remaining_candidates,
                 },
-            ) => DeductionKind::with_remaining_candidates(
+            ) => OldDeductionKind::with_remaining_candidates(
                 self_remaining_candidates.intersection(&other_remaining_candidates),
             )?,
             // More specific Value overwrites PruneCandidates
-            (Value { value }, _) | (_, Value { value }) => DeductionKind::with_value(value),
+            (Value { value }, _) | (_, Value { value }) => OldDeductionKind::with_value(value),
         })
     }
 }
 
-impl<Base: SudokuBase> From<Value<Base>> for DeductionKind<Base> {
+impl<Base: SudokuBase> From<Value<Base>> for OldDeductionKind<Base> {
     fn from(value: Value<Base>) -> Self {
         Self::with_value(value)
     }
 }
 
-impl<Base: SudokuBase> TryFrom<Candidates<Base>> for DeductionKind<Base> {
+impl<Base: SudokuBase> TryFrom<Candidates<Base>> for OldDeductionKind<Base> {
     type Error = Error;
 
     fn try_from(remaining_candidates: Candidates<Base>) -> Result<Self> {
@@ -347,10 +353,92 @@ impl<Base: SudokuBase> TryFrom<Candidates<Base>> for DeductionKind<Base> {
     }
 }
 
+// /\ /\ /\
+// Old
+
+/// A list of results of a strategy.
+/// Some strategies can be applied multiple times on a single grid, e.g.:
+/// - multiple hidden singles
+/// - multiple pairs
+/// - multiple distinct X-Wings
+///
+/// Strategies are encouraged to report logically separate deductions as multiple instances of `Deduction`,
+/// in order to enable:
+/// - application of single `Deductions`
+/// - clear distinction of the reasoning for each `Deduction`
+/// - enabling the hint UI to only reveal a single `Deduction`
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+pub struct Deductions<Base: SudokuBase> {
+    deductions: Vec<Deduction<Base>>,
+}
+
+impl<Base: SudokuBase> Deductions<Base> {
+    pub fn iter(&self) -> slice::Iter<'_, Deduction<Base>> {
+        self.deductions.iter()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.deductions.is_empty()
+    }
+
+    fn merged_actions(&self) -> Result<BTreeMap<Position, Action<Base>>> {
+        let mut merged_actions: BTreeMap<Position, Action<Base>> = BTreeMap::new();
+
+        for deduction in self.deductions.iter() {
+            for (pos, action) in deduction.actions.iter() {
+                if let Some(existing_action) = merged_actions.get(pos) {
+                    merged_actions.insert(*pos, existing_action.merge(&action)?);
+                } else {
+                    merged_actions.insert(*pos, *action);
+                }
+            }
+        }
+        Ok(merged_actions)
+    }
+
+    fn apply(&self, grid: &mut Grid<Base>) -> Result<()> {
+        let merged_actions = self.merged_actions()?;
+
+        for (pos, action) in &merged_actions {
+            action.apply(grid.get_mut(*pos))?;
+        }
+
+        // Update candidates for all set value actions.
+        for (pos, action) in merged_actions {
+            action.update_direct_candidates(grid, pos)
+        }
+
+        Ok(())
+    }
+}
+
+impl<'a, Base: SudokuBase> IntoIterator for &'a Deductions<Base> {
+    type Item = &'a Deduction<Base>;
+    type IntoIter = slice::Iter<'a, Deduction<Base>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+/// A single, self-contained result of a strategy.
+/// Consists of actions to be taken on a Sudoku grid, as well as the reasons why.
+/// # Examples
+/// - a single hidden single
+/// - a single pair
+/// - a single X-Wing
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Deduction<Base: SudokuBase> {
     reasons: BTreeMap<Position, Reason<Base>>,
     actions: BTreeMap<Position, Action<Base>>,
+}
+
+impl<Base: SudokuBase> Deduction<Base> {
+    fn apply(&self, grid: &mut Grid<Base>) {
+        for (pos, action) in self.actions.iter() {
+            action.apply(grid.get_mut(*pos));
+        }
+    }
 }
 
 /// On what basis a deduction was made.
@@ -363,10 +451,50 @@ pub struct Deduction<Base: SudokuBase> {
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize)]
 #[serde(bound = "", rename_all = "camelCase")]
 pub enum Reason<Base: SudokuBase> {
-    Candidate(Value<Base>),
-    Candidates(Candidates<Base>),
+    Candidate { candidate: Value<Base> },
+    Candidates { candidates: Candidates<Base> },
 }
 
+impl<Base: SudokuBase> Reason<Base> {
+    fn merge(&self, other: &Self) -> Self {
+        match (*self, *other) {
+            (
+                Reason::Candidate {
+                    candidate: self_candidate,
+                },
+                Reason::Candidate {
+                    candidate: other_candidate,
+                },
+            ) => {
+                if self_candidate == other_candidate {
+                    Reason::Candidate {
+                        candidate: self_candidate,
+                    }
+                } else {
+                    Reason::Candidates {
+                        candidates: Candidates::from(vec![self_candidate, other_candidate]),
+                    }
+                }
+            }
+            (
+                Reason::Candidates { candidates },
+                Reason::Candidates {
+                    candidates: other_candidates,
+                },
+            ) => Reason::Candidates {
+                candidates: candidates.union(&other_candidates),
+            },
+            (Reason::Candidate { candidate }, Reason::Candidates { candidates })
+            | (Reason::Candidates { candidates }, Reason::Candidate { candidate }) => {
+                Reason::Candidates {
+                    candidates: candidates.union(&Candidates::single(candidate)),
+                }
+            }
+        }
+    }
+}
+
+/// What action should be taken for a specific cell.
 #[cfg_attr(
     feature = "wasm",
     derive(TS),
@@ -375,9 +503,133 @@ pub enum Reason<Base: SudokuBase> {
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize)]
 #[serde(bound = "", rename_all = "camelCase")]
 pub enum Action<Base: SudokuBase> {
-    SetValue(Value<Base>),
-    DeleteCandidate(Value<Base>),
-    DeleteCandidates(Candidates<Base>),
+    SetValue { value: Value<Base> },
+    DeleteCandidate { candidate: Value<Base> },
+    DeleteCandidates { candidates: Candidates<Base> },
+}
+
+impl<Base: SudokuBase> Display for Action<Base> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Action::SetValue { value } => {
+                write!(f, "set value {value}")
+            }
+            Action::DeleteCandidate { candidate } => {
+                write!(f, "delete candidate {candidate}")
+            }
+            Action::DeleteCandidates { candidates } => {
+                write!(f, "delete candidates {candidates}")
+            }
+        }
+    }
+}
+
+impl<Base: SudokuBase> Action<Base> {
+    fn apply(&self, cell: &mut Cell<Base>) -> Result<()> {
+        let Some(existing_candidates) = cell.candidates()  else {
+            bail!("expected cell to contain candidates")
+        };
+        match *self {
+            Action::SetValue { value } => {
+                ensure!(
+                    existing_candidates.has(value),
+                    "expected cell to contain the candidate {value}"
+                );
+                cell.set_value(value);
+                // Defer updating of direct candidates
+            }
+            Action::DeleteCandidate { candidate } => {
+                ensure!(
+                    existing_candidates.has(candidate),
+                    "expected cell to contain the candidate {candidate}"
+                );
+                cell.delete_candidate(candidate);
+            }
+            Action::DeleteCandidates { candidates } => {
+                ensure!(
+                    candidates.without(&existing_candidates).is_empty(),
+                    "expected cell to contain the candidates {candidates}"
+                );
+
+                cell.set_candidates(existing_candidates.without(&candidates));
+            }
+        }
+
+        Ok(())
+    }
+
+    fn update_direct_candidates(&self, grid: &mut Grid<Base>, pos: Position) {
+        match self {
+            Action::SetValue { value } => grid.update_direct_candidates(pos, *value),
+            _ => {}
+        }
+    }
+
+    fn merge(&self, other: &Self) -> Result<Self> {
+        use Action::*;
+        (|| {
+            Ok(match (*self, *other) {
+                (SetValue { value: self_value }, SetValue { value: other_value }) => {
+                    ensure!(
+                        self_value == other_value,
+                        "conflicting values: {self_value} != {other_value}"
+                    );
+                    SetValue { value: self_value }
+                }
+                (
+                    DeleteCandidate {
+                        candidate: self_candidate,
+                    },
+                    DeleteCandidate {
+                        candidate: other_candidate,
+                    },
+                ) => {
+                    if self_candidate == other_candidate {
+                        DeleteCandidate {
+                            candidate: self_candidate,
+                        }
+                    } else {
+                        DeleteCandidates {
+                            candidates: Candidates::from(vec![self_candidate, other_candidate]),
+                        }
+                    }
+                }
+                (
+                    DeleteCandidates {
+                        candidates: self_candidates,
+                    },
+                    DeleteCandidates {
+                        candidates: other_candidates,
+                    },
+                ) => DeleteCandidates {
+                    candidates: self_candidates.union(&other_candidates),
+                },
+                (SetValue { value }, DeleteCandidate { candidate })
+                | (DeleteCandidate { candidate }, SetValue { value }) => {
+                    ensure!(
+                        value != candidate,
+                        "can't set deleted candidate {value} as a value"
+                    );
+                    SetValue { value }
+                }
+                (SetValue { value }, DeleteCandidates { candidates })
+                | (DeleteCandidates { candidates }, SetValue { value }) => {
+                    ensure!(
+                        !candidates.has(value),
+                        "can't set deleted candidate {value} as a value"
+                    );
+                    SetValue { value }
+                }
+                (DeleteCandidate { candidate }, DeleteCandidates { candidates })
+                | (DeleteCandidates { candidates }, DeleteCandidate { candidate }) => {
+                    DeleteCandidates {
+                        candidates: candidates.union(&Candidates::single(candidate)),
+                    }
+                }
+            })
+        })()
+        .with_context(|| format!("Incompatible merge of two actions: {self}, {other}"))
+    }
 }
 
 mod transport {
@@ -394,6 +646,30 @@ mod transport {
         pub reasons: Vec<TransportReason<Base>>,
         pub actions: Vec<TransportAction<Base>>,
     }
+
+    impl<Base: SudokuBase> From<Deduction<Base>> for TransportDeduction<Base> {
+        fn from(deduction: Deduction<Base>) -> Self {
+            Self {
+                reasons: deduction
+                    .reasons
+                    .iter()
+                    .map(|(position, reason)| TransportReason {
+                        position: *position,
+                        reason: *reason,
+                    })
+                    .collect(),
+                actions: deduction
+                    .actions
+                    .iter()
+                    .map(|(position, action)| TransportAction {
+                        position: *position,
+                        action: *action,
+                    })
+                    .collect(),
+            }
+        }
+    }
+
     #[cfg_attr(
         feature = "wasm",
         derive(TS),
@@ -438,25 +714,35 @@ mod tests {
             reasons: vec![
                 TransportReason {
                     position: Position { row: 1, column: 1 },
-                    reason: Reason::Candidates(Candidates::all()),
+                    reason: Reason::Candidates {
+                        candidates: Candidates::all(),
+                    },
                 },
                 TransportReason {
                     position: Position { row: 1, column: 1 },
-                    reason: Reason::Candidate(Value::try_from(1).unwrap()),
+                    reason: Reason::Candidate {
+                        candidate: Value::try_from(1).unwrap(),
+                    },
                 },
             ],
             actions: vec![
                 TransportAction {
                     position: Position { row: 1, column: 1 },
-                    action: Action::SetValue(Value::try_from(1).unwrap()),
+                    action: Action::SetValue {
+                        value: Value::try_from(1).unwrap(),
+                    },
                 },
                 TransportAction {
                     position: Position { row: 1, column: 1 },
-                    action: Action::DeleteCandidate(Value::try_from(2).unwrap()),
+                    action: Action::DeleteCandidate {
+                        candidate: Value::try_from(2).unwrap(),
+                    },
                 },
                 TransportAction {
                     position: Position { row: 1, column: 1 },
-                    action: Action::DeleteCandidates(Candidates::all()),
+                    action: Action::DeleteCandidates {
+                        candidates: Candidates::all(),
+                    },
                 },
             ],
         };
@@ -489,10 +775,11 @@ mod tests {
             value_deduction_2,
             remaining_candidates_deduction,
         ];
-        let deductions: Deductions<U2> = IntoDeductions(all_deductions.clone()).try_into().unwrap();
+        let deductions: OldDeductions<U2> =
+            IntoDeductions(all_deductions.clone()).try_into().unwrap();
         for deduction_permutation in all_deductions.into_iter().permutations(3) {
             assert_eq!(
-                Deductions::<U2>::try_from(IntoDeductions(deduction_permutation)).unwrap(),
+                OldDeductions::<U2>::try_from(IntoDeductions(deduction_permutation)).unwrap(),
                 deductions
             );
         }

@@ -5,7 +5,7 @@ use crate::cell::compact::candidates::Candidates;
 use crate::cell::compact::value::Value;
 use crate::error::Result;
 use crate::grid::Grid;
-use crate::solver::strategic::deduction::{Deductions, OldDeduction, TryIntoDeductions};
+use crate::solver::strategic::deduction::{OldDeduction, OldDeductions, TryIntoDeductions};
 
 use super::Strategy;
 
@@ -17,7 +17,7 @@ use super::Strategy;
 pub struct GroupReduction;
 
 impl Strategy for GroupReduction {
-    fn execute<Base: SudokuBase>(&self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
+    fn execute<Base: SudokuBase>(&self, grid: &Grid<Base>) -> Result<OldDeductions<Base>> {
         TryIntoDeductions(Grid::<Base>::all_group_positions().flat_map(|group| {
             let (positions, candidates_group): (Vec<_>, Vec<_>) = group
                 .filter_map(|pos| {

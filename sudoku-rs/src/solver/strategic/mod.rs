@@ -1,6 +1,6 @@
 use log::trace;
 
-use deduction::Deductions;
+use deduction::OldDeductions;
 use strategies::Strategy;
 
 use crate::base::SudokuBase;
@@ -55,7 +55,7 @@ impl<'g, Base: SudokuBase> Solver<'g, Base> {
     }
 
     /// Tries strategies until a strategy is able to modify the grid.
-    pub fn try_strategies(&mut self) -> Result<Option<Deductions<Base>>> {
+    pub fn try_strategies(&mut self) -> Result<Option<OldDeductions<Base>>> {
         for strategy in &self.strategies {
             let deductions = strategy.execute(&mut self.grid)?;
 

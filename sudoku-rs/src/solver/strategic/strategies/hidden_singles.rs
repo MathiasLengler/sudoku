@@ -3,7 +3,7 @@ use crate::cell::compact::value::Value;
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
-use crate::solver::strategic::deduction::{Deductions, OldDeduction, TryIntoDeductions};
+use crate::solver::strategic::deduction::{OldDeduction, OldDeductions, TryIntoDeductions};
 use anyhow::ensure;
 
 use super::Strategy;
@@ -12,7 +12,7 @@ use super::Strategy;
 pub struct HiddenSingles;
 
 impl Strategy for HiddenSingles {
-    fn execute<Base: SudokuBase>(&self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
+    fn execute<Base: SudokuBase>(&self, grid: &Grid<Base>) -> Result<OldDeductions<Base>> {
         ensure!(
             grid.is_directly_consistent(),
             "HiddenSingles requires a directly consistent grid"

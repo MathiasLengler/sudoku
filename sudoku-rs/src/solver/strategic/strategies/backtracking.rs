@@ -2,7 +2,7 @@ use crate::base::SudokuBase;
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::solver::backtracking_bitset::Solver;
-use crate::solver::strategic::deduction::{Deductions, OldDeduction, TryIntoDeductions};
+use crate::solver::strategic::deduction::{OldDeduction, OldDeductions, TryIntoDeductions};
 
 use super::Strategy;
 
@@ -10,7 +10,7 @@ use super::Strategy;
 pub struct Backtracking;
 
 impl Strategy for Backtracking {
-    fn execute<Base: SudokuBase>(&self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
+    fn execute<Base: SudokuBase>(&self, grid: &Grid<Base>) -> Result<OldDeductions<Base>> {
         let mut solver = Solver::new(&grid);
 
         if let Some(solved_grid) = solver.next() {
@@ -23,7 +23,7 @@ impl Strategy for Backtracking {
             }))
             .try_into()
         } else {
-            Ok(Deductions::default())
+            Ok(OldDeductions::default())
         }
     }
 }

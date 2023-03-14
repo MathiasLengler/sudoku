@@ -3,5 +3,5 @@ import type { Candidates } from "./Candidates";
 import type { Value } from "./Value";
 
 export type Reason = ReasonCandidate | ReasonCandidates;
-export type ReasonCandidate = { candidate: Value };
-export type ReasonCandidates = { candidates: Candidates };
+export type ReasonCandidate = { candidate: { candidate: Value, } };
+export type ReasonCandidates = { candidates: { candidates: Candidates, } };

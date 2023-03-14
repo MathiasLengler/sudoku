@@ -36,7 +36,7 @@ pub use single_candidate::SingleCandidate;
 use crate::base::SudokuBase;
 use crate::error::{Error, Result};
 use crate::grid::Grid;
-use crate::solver::strategic::deduction::Deductions;
+use crate::solver::strategic::deduction::OldDeductions;
 
 // Strategies
 mod backtracking;
@@ -47,7 +47,7 @@ mod single_candidate;
 #[enum_dispatch(DynamicStrategy)]
 pub trait Strategy: Debug + Copy + Clone {
     /// Execute this strategy on the given grid. Returns a list of deductions.
-    fn execute<Base: SudokuBase>(&self, grid: &Grid<Base>) -> Result<Deductions<Base>>;
+    fn execute<Base: SudokuBase>(&self, grid: &Grid<Base>) -> Result<OldDeductions<Base>>;
 
     fn strategy_name(&self) -> String {
         format!("{:?}", self)

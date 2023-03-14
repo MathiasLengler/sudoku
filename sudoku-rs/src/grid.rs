@@ -15,7 +15,7 @@ use crate::cell::Cell;
 use crate::error::{Error, Result};
 use crate::grid::serialization::GridFormat;
 use crate::position::Position;
-use crate::solver::strategic::deduction::{DeductionKind, OldDeduction};
+use crate::solver::strategic::deduction::{OldDeduction, OldDeductionKind};
 use crate::solver::strategic::strategies::DynamicStrategy;
 use crate::solver::{backtracking_bitset, strategic};
 
@@ -292,7 +292,7 @@ impl<Base: SudokuBase> Grid<Base> {
         }
     }
 
-    pub fn deduction_at<TryIntoKind: TryInto<DeductionKind<Base>>>(
+    pub fn deduction_at<TryIntoKind: TryInto<OldDeductionKind<Base>>>(
         &self,
         pos: impl Into<Position>,
         kind: TryIntoKind,

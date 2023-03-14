@@ -1,7 +1,7 @@
 use crate::base::SudokuBase;
 use crate::error::Result;
 use crate::grid::Grid;
-use crate::solver::strategic::deduction::{Deductions, OldDeduction, TryIntoDeductions};
+use crate::solver::strategic::deduction::{OldDeduction, OldDeductions, TryIntoDeductions};
 
 use super::Strategy;
 
@@ -9,7 +9,7 @@ use super::Strategy;
 pub struct SingleCandidate;
 
 impl Strategy for SingleCandidate {
-    fn execute<Base: SudokuBase>(&self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
+    fn execute<Base: SudokuBase>(&self, grid: &Grid<Base>) -> Result<OldDeductions<Base>> {
         TryIntoDeductions(
             grid.all_candidates_positions()
                 .into_iter()
