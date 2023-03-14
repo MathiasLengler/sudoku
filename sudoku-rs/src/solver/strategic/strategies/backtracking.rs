@@ -2,7 +2,7 @@ use crate::base::SudokuBase;
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::solver::backtracking_bitset::Solver;
-use crate::solver::strategic::deduction::{OldDeduction, OldDeductions, TryIntoDeductions};
+use crate::solver::strategic::deduction::{Action, Deduction, Deductions};
 
 use super::Strategy;
 
@@ -10,20 +10,24 @@ use super::Strategy;
 pub struct Backtracking;
 
 impl Strategy for Backtracking {
-    fn execute<Base: SudokuBase>(&self, grid: &Grid<Base>) -> Result<OldDeductions<Base>> {
+    fn execute<Base: SudokuBase>(&self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
         let mut solver = Solver::new(&grid);
 
         if let Some(solved_grid) = solver.next() {
-            TryIntoDeductions(grid.all_candidates_positions().into_iter().map(|pos| {
-                OldDeduction::with_value(
-                    pos,
-                    grid.get(pos).candidates().unwrap(),
-                    solved_grid.get(pos).value().unwrap(),
-                )
-            }))
-            .try_into()
+            Ok(grid
+                .all_candidates_positions()
+                .into_iter()
+                .map(|pos| {
+                    Deduction::with_action(
+                        pos,
+                        Action::SetValue {
+                            value: solved_grid.get(pos).value().unwrap(),
+                        },
+                    )
+                })
+                .collect())
         } else {
-            Ok(OldDeductions::default())
+            Ok(Default::default())
         }
     }
 }
@@ -32,7 +36,6 @@ impl Strategy for Backtracking {
 mod tests {
     use crate::cell::compact::value::Value;
     use crate::samples;
-    use crate::solver::strategic::deduction::IntoDeductions;
 
     use super::*;
 
@@ -44,31 +47,34 @@ mod tests {
 
         let deductions = Backtracking.execute(&grid).unwrap();
 
+        let expected_deductions: Deductions<_> = vec![
+            ((0, 0), 2),
+            ((0, 3), 1),
+            ((1, 1), 1),
+            ((1, 2), 3),
+            ((2, 1), 4),
+            ((2, 2), 2),
+            ((3, 0), 3),
+            ((3, 3), 4),
+        ]
+        .into_iter()
+        .map(|(pos, value)| {
+            Deduction::with_action(
+                pos,
+                Action::SetValue {
+                    value: Value::try_from(value).unwrap(),
+                },
+            )
+        })
+        .collect();
+
         assert_eq!(
-            deductions,
-            IntoDeductions(vec![
-                grid.deduction_at((0, 0), Value::try_from(2).unwrap())
-                    .unwrap(),
-                grid.deduction_at((0, 3), Value::try_from(1).unwrap())
-                    .unwrap(),
-                grid.deduction_at((1, 1), Value::try_from(1).unwrap())
-                    .unwrap(),
-                grid.deduction_at((1, 2), Value::try_from(3).unwrap())
-                    .unwrap(),
-                grid.deduction_at((2, 1), Value::try_from(4).unwrap())
-                    .unwrap(),
-                grid.deduction_at((2, 2), Value::try_from(2).unwrap())
-                    .unwrap(),
-                grid.deduction_at((3, 0), Value::try_from(3).unwrap())
-                    .unwrap(),
-                grid.deduction_at((3, 3), Value::try_from(4).unwrap())
-                    .unwrap(),
-            ])
-            .try_into()
-            .unwrap()
+            deductions, expected_deductions,
+            "{deductions}\n!=\n{expected_deductions}"
         );
 
-        deductions.apply(&mut grid);
+        deductions.apply(&mut grid).unwrap();
+
         assert!(grid.is_solved());
     }
     #[test]
@@ -78,7 +84,7 @@ mod tests {
         grid.set_all_direct_candidates();
 
         let deductions = Backtracking.execute(&grid).unwrap();
-        deductions.apply(&mut grid);
+        deductions.apply(&mut grid).unwrap();
         assert!(grid.is_solved());
     }
 }

@@ -154,7 +154,7 @@ impl Generator {
             grid.get_mut(pos).delete();
 
             match grid.is_solvable_with_strategies(self.settings.strategies.clone()) {
-                Some(Ok(_)) if grid.has_unique_solution() => {
+                Ok(Some(_)) if grid.has_unique_solution() => {
                     // current position can be removed without losing uniqueness of the grid solution.
                     Some(value)
                 }

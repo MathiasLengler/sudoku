@@ -1,20 +1,22 @@
-use std::collections::btree_map::Values;
-use std::collections::BTreeMap;
+use std::collections::btree_map::{Iter, Values};
+use std::collections::{btree_map, btree_set, BTreeMap, BTreeSet};
 use std::fmt::{Display, Formatter};
-use std::slice;
+use std::iter::Map;
+
+use anyhow::{bail, ensure, Context};
+use itertools::Itertools;
+use serde::Serialize;
+#[cfg(feature = "wasm")]
+use ts_rs::TS;
 
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
+use crate::cell::compact::cell_state::CellState;
 use crate::cell::compact::value::Value;
+use crate::cell::Cell;
 use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::position::Position;
-use anyhow::{bail, ensure, Context};
-use serde::Serialize;
-
-use crate::cell::Cell;
-#[cfg(feature = "wasm")]
-use ts_rs::TS;
 
 // TODO: evaluate Deductions Builder
 //  enable grouping of Deductions
@@ -76,7 +78,7 @@ impl<Base: SudokuBase, I: IntoIterator<Item = Result<OldDeduction<Base>>>>
 
 impl<Base: SudokuBase> IntoIterator for OldDeductions<Base> {
     type Item = OldDeduction<Base>;
-    type IntoIter = std::collections::btree_map::IntoValues<Position, OldDeduction<Base>>;
+    type IntoIter = btree_map::IntoValues<Position, OldDeduction<Base>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.deductions.into_values()
@@ -356,7 +358,7 @@ impl<Base: SudokuBase> TryFrom<Candidates<Base>> for OldDeductionKind<Base> {
 // /\ /\ /\
 // Old
 
-/// A list of results of a strategy.
+/// A list of deductions made by a strategy.
 /// Some strategies can be applied multiple times on a single grid, e.g.:
 /// - multiple hidden singles
 /// - multiple pairs
@@ -367,13 +369,26 @@ impl<Base: SudokuBase> TryFrom<Candidates<Base>> for OldDeductionKind<Base> {
 /// - application of single `Deductions`
 /// - clear distinction of the reasoning for each `Deduction`
 /// - enabling the hint UI to only reveal a single `Deduction`
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Default)]
 pub struct Deductions<Base: SudokuBase> {
-    deductions: Vec<Deduction<Base>>,
+    deductions: BTreeSet<Deduction<Base>>,
+}
+
+impl<Base: SudokuBase> Display for Deductions<Base> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            self.deductions
+                .iter()
+                .map(|deduction| deduction.to_string())
+                .join("\n")
+        )
+    }
 }
 
 impl<Base: SudokuBase> Deductions<Base> {
-    pub fn iter(&self) -> slice::Iter<'_, Deduction<Base>> {
+    pub fn iter(&self) -> btree_set::Iter<'_, Deduction<Base>> {
         self.deductions.iter()
     }
 
@@ -381,32 +396,32 @@ impl<Base: SudokuBase> Deductions<Base> {
         self.deductions.is_empty()
     }
 
-    fn merged_actions(&self) -> Result<BTreeMap<Position, Action<Base>>> {
-        let mut merged_actions: BTreeMap<Position, Action<Base>> = BTreeMap::new();
+    fn as_merged_deduction(&self) -> Result<Deduction<Base>> {
+        let mut merged_deduction: Deduction<Base> = Default::default();
 
         for deduction in self.deductions.iter() {
             for (pos, action) in deduction.actions.iter() {
-                if let Some(existing_action) = merged_actions.get(pos) {
-                    merged_actions.insert(*pos, existing_action.merge(&action)?);
-                } else {
-                    merged_actions.insert(*pos, *action);
-                }
+                merged_deduction.actions.insert(pos, *action)?;
+            }
+            for (pos, reasons) in deduction.reasons.iter() {
+                merged_deduction.reasons.insert(pos, *reasons)?;
             }
         }
-        Ok(merged_actions)
+        Ok(merged_deduction)
     }
 
-    fn apply(&self, grid: &mut Grid<Base>) -> Result<()> {
-        let merged_actions = self.merged_actions()?;
-
-        for (pos, action) in &merged_actions {
-            action.apply(grid.get_mut(*pos))?;
+    fn validate(&self, grid: &Grid<Base>) -> Result<()> {
+        for deduction in &self.deductions {
+            deduction.validate(grid)?;
         }
+        Ok(())
+    }
 
-        // Update candidates for all set value actions.
-        for (pos, action) in merged_actions {
-            action.update_direct_candidates(grid, pos)
-        }
+    pub fn apply(&self, grid: &mut Grid<Base>) -> Result<()> {
+        self.validate(&grid)?;
+
+        let merged_deduction = self.as_merged_deduction()?;
+        merged_deduction.apply(grid)?;
 
         Ok(())
     }
@@ -414,10 +429,87 @@ impl<Base: SudokuBase> Deductions<Base> {
 
 impl<'a, Base: SudokuBase> IntoIterator for &'a Deductions<Base> {
     type Item = &'a Deduction<Base>;
-    type IntoIter = slice::Iter<'a, Deduction<Base>>;
+    type IntoIter = btree_set::Iter<'a, Deduction<Base>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
+    }
+}
+
+impl<Base: SudokuBase> FromIterator<Deduction<Base>> for Deductions<Base> {
+    fn from_iter<T: IntoIterator<Item = Deduction<Base>>>(iter: T) -> Self {
+        Self {
+            deductions: iter.into_iter().collect(),
+        }
+    }
+}
+
+pub trait Merge: Sized {
+    fn merge(&self, other: &Self) -> Result<Self>;
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+pub struct PositionMap<T: Merge> {
+    map: BTreeMap<Position, T>,
+}
+
+impl<T: Merge> Default for PositionMap<T> {
+    fn default() -> Self {
+        Self {
+            map: Default::default(),
+        }
+    }
+}
+
+impl<T: Merge> IntoIterator for PositionMap<T> {
+    type Item = (Position, T);
+    type IntoIter = btree_map::IntoIter<Position, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.map.into_iter()
+    }
+}
+
+impl<'a, T: Merge> IntoIterator for &'a PositionMap<T> {
+    type Item = (Position, &'a T);
+    type IntoIter = Map<Iter<'a, Position, T>, fn((&Position, &'a T)) -> (Position, &'a T)>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+impl<T: Merge> PositionMap<T> {
+    pub fn new() -> Self {
+        Default::default()
+    }
+
+    pub fn with_single(pos: Position, value: T) -> Self {
+        let mut this: Self = Default::default();
+        this.map.insert(pos, value);
+        this
+    }
+
+    // False positive
+    // noinspection RsNeedlessLifetimes
+    pub fn iter<'a>(
+        &'a self,
+    ) -> Map<Iter<'a, Position, T>, fn((&Position, &'a T)) -> (Position, &'a T)> {
+        self.map.iter().map(|(pos, value)| (*pos, value))
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.map.is_empty()
+    }
+
+    pub fn insert(&mut self, pos: Position, value: T) -> Result<()> {
+        if let Some(existing_value) = self.map.get(&pos) {
+            self.map.insert(pos, existing_value.merge(&value)?);
+        } else {
+            self.map.insert(pos, value);
+        }
+
+        Ok(())
     }
 }
 
@@ -429,15 +521,82 @@ impl<'a, Base: SudokuBase> IntoIterator for &'a Deductions<Base> {
 /// - a single X-Wing
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Deduction<Base: SudokuBase> {
-    reasons: BTreeMap<Position, Reason<Base>>,
-    actions: BTreeMap<Position, Action<Base>>,
+    pub actions: PositionMap<Action<Base>>,
+    pub reasons: PositionMap<Reason<Base>>,
+}
+
+impl<Base: SudokuBase> Display for Deduction<Base> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}, because of: {}",
+            self.actions
+                .iter()
+                .map(|(pos, action)| format!("{pos}: {action}"))
+                .join(", "),
+            self.reasons
+                .iter()
+                .map(|(pos, reason)| format!("{pos}: {reason}"))
+                .join(", ")
+        )
+    }
+}
+
+impl<Base: SudokuBase> Default for Deduction<Base> {
+    fn default() -> Self {
+        Self {
+            actions: Default::default(),
+            reasons: Default::default(),
+        }
+    }
 }
 
 impl<Base: SudokuBase> Deduction<Base> {
-    fn apply(&self, grid: &mut Grid<Base>) {
-        for (pos, action) in self.actions.iter() {
-            action.apply(grid.get_mut(*pos));
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn with_action(pos: impl Into<Position>, action: Action<Base>) -> Self {
+        Self {
+            actions: PositionMap::with_single(pos.into(), action),
+            ..Default::default()
         }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.actions.is_empty() && self.reasons.is_empty()
+    }
+
+    fn validate(&self, grid: &Grid<Base>) -> Result<()> {
+        ensure!(
+            !self.actions.is_empty(),
+            "expected deduction to contain at least one action"
+        );
+
+        for (pos, action) in &self.actions {
+            action.validate(&grid.get(pos))?;
+        }
+
+        for (pos, reason) in &self.reasons {
+            reason.validate(&grid.get(pos))?;
+        }
+
+        Ok(())
+    }
+
+    fn apply(&self, grid: &mut Grid<Base>) -> Result<()> {
+        self.validate(&grid)?;
+
+        for (pos, action) in &self.actions {
+            action.apply(grid.get_mut(pos))?;
+        }
+
+        // Update candidates for all set value actions.
+        for (pos, action) in &self.actions {
+            action.update_direct_candidates(grid, pos);
+        }
+
+        Ok(())
     }
 }
 
@@ -455,9 +614,48 @@ pub enum Reason<Base: SudokuBase> {
     Candidates { candidates: Candidates<Base> },
 }
 
+impl<Base: SudokuBase> Display for Reason<Base> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Reason::Candidate { candidate } => {
+                write!(f, "candidate {candidate}")
+            }
+            Reason::Candidates { candidates } => {
+                write!(f, "candidates {candidates}")
+            }
+        }
+    }
+}
+
 impl<Base: SudokuBase> Reason<Base> {
-    fn merge(&self, other: &Self) -> Self {
-        match (*self, *other) {
+    fn validate(&self, cell: &Cell<Base>) -> Result<()> {
+        (|| {
+            Ok(match cell.state() {
+                CellState::Value(value) | CellState::FixedValue(value) => {
+                    bail!("unexpected cell with value {value}")
+                }
+                CellState::Candidates(existing_candidates) => match *self {
+                    Reason::Candidate { candidate } => {
+                        ensure!(
+                            existing_candidates.has(candidate),
+                            "candidate {candidate} is missing from cell candidates {existing_candidates}"
+                        )
+                    }
+                    Reason::Candidates { candidates } => {
+                        ensure!(!candidates.is_empty(), "candidates must not be empty");
+                        let unexpected_candidates = candidates.without(existing_candidates);
+                        ensure!(unexpected_candidates.is_empty(), "unexpected candidates {unexpected_candidates}")
+                    }
+                },
+            })
+        })()
+        .with_context(|| format!("Invalid reason {self} for cell {cell}"))
+    }
+}
+
+impl<Base: SudokuBase> Merge for Reason<Base> {
+    fn merge(&self, other: &Self) -> Result<Self> {
+        Ok(match (*self, *other) {
             (
                 Reason::Candidate {
                     candidate: self_candidate,
@@ -490,7 +688,7 @@ impl<Base: SudokuBase> Reason<Base> {
                     candidates: candidates.union(&Candidates::single(candidate)),
                 }
             }
-        }
+        })
     }
 }
 
@@ -525,32 +723,56 @@ impl<Base: SudokuBase> Display for Action<Base> {
 }
 
 impl<Base: SudokuBase> Action<Base> {
+    fn validate(&self, cell: &Cell<Base>) -> Result<Candidates<Base>> {
+        (|| {
+            let Some(existing_candidates) = cell.candidates() else {
+                bail!("expected cell to contain candidates")
+            };
+            match *self {
+                Action::SetValue { value } => {
+                    ensure!(
+                        existing_candidates.has(value),
+                        "expected cell to contain the candidate {value}"
+                    );
+                }
+                Action::DeleteCandidate { candidate } => {
+                    ensure!(
+                        existing_candidates.has(candidate),
+                        "expected cell to contain the candidate {candidate}"
+                    );
+                    ensure!(
+                        existing_candidates.count() > 1,
+                        "can't delete last candidate {candidate}"
+                    );
+                }
+                Action::DeleteCandidates { candidates } => {
+                    ensure!(
+                        candidates.without(&existing_candidates).is_empty(),
+                        "expected cell to contain the candidates {candidates}"
+                    );
+                    let remaining_candidates = existing_candidates.without(&candidates);
+                    ensure!(
+                        !remaining_candidates.is_empty(),
+                        "can't delete all candidates {candidates}"
+                    );
+                }
+            }
+            Ok(existing_candidates)
+        })()
+        .with_context(|| format!("Invalid action {self} for cell {cell}"))
+    }
+
     fn apply(&self, cell: &mut Cell<Base>) -> Result<()> {
-        let Some(existing_candidates) = cell.candidates()  else {
-            bail!("expected cell to contain candidates")
-        };
+        let existing_candidates = self.validate(&cell)?;
         match *self {
             Action::SetValue { value } => {
-                ensure!(
-                    existing_candidates.has(value),
-                    "expected cell to contain the candidate {value}"
-                );
                 cell.set_value(value);
                 // Defer updating of direct candidates
             }
             Action::DeleteCandidate { candidate } => {
-                ensure!(
-                    existing_candidates.has(candidate),
-                    "expected cell to contain the candidate {candidate}"
-                );
                 cell.delete_candidate(candidate);
             }
             Action::DeleteCandidates { candidates } => {
-                ensure!(
-                    candidates.without(&existing_candidates).is_empty(),
-                    "expected cell to contain the candidates {candidates}"
-                );
-
                 cell.set_candidates(existing_candidates.without(&candidates));
             }
         }
@@ -564,7 +786,9 @@ impl<Base: SudokuBase> Action<Base> {
             _ => {}
         }
     }
+}
 
+impl<Base: SudokuBase> Merge for Action<Base> {
     fn merge(&self, other: &Self) -> Result<Self> {
         use Action::*;
         (|| {
@@ -654,7 +878,7 @@ mod transport {
                     .reasons
                     .iter()
                     .map(|(position, reason)| TransportReason {
-                        position: *position,
+                        position,
                         reason: *reason,
                     })
                     .collect(),
@@ -662,7 +886,7 @@ mod transport {
                     .actions
                     .iter()
                     .map(|(position, action)| TransportAction {
-                        position: *position,
+                        position,
                         action: *action,
                     })
                     .collect(),

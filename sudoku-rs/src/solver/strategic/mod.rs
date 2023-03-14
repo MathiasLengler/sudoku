@@ -1,16 +1,15 @@
 use log::trace;
 
-use deduction::OldDeductions;
 use strategies::Strategy;
 
 use crate::base::SudokuBase;
 use crate::error::Result;
 use crate::grid::Grid;
+use crate::solver::strategic::deduction::Deductions;
 use crate::solver::strategic::strategies::DynamicStrategy;
 
-pub mod strategies;
-// API
 pub mod deduction;
+pub mod strategies;
 
 // TODO: return/persist chain of deductions for complete solve
 
@@ -32,42 +31,29 @@ impl<'g, Base: SudokuBase> Solver<'g, Base> {
         Self { grid, strategies }
     }
 
-    pub fn try_solve(&mut self) -> Option<Result<Grid<Base>>> {
-        loop {
+    pub fn try_solve(&mut self) -> Result<Option<Grid<Base>>> {
+        Ok(loop {
             if self.grid.is_solved() {
-                return Some(Ok(self.grid.clone()));
+                break Some(self.grid.clone());
             }
 
-            match self.try_strategies() {
-                Ok(Some(deductions)) => {
-                    deductions.apply(self.grid);
-                    // Continue with strategy execution
-                }
-                Ok(None) => {
-                    // All strategies have failed.
-                    return None;
-                }
-                Err(err) => {
-                    return Some(Err(err));
-                }
+            if let Some(deductions) = self.try_strategies()? {
+                deductions.apply(self.grid)?;
+                // Continue with strategy execution
+            } else {
+                // All strategies failed to make progress.
+                break None;
             }
-        }
+        })
     }
 
     /// Tries strategies until a strategy is able to modify the grid.
-    pub fn try_strategies(&mut self) -> Result<Option<OldDeductions<Base>>> {
+    pub fn try_strategies(&mut self) -> Result<Option<Deductions<Base>>> {
         for strategy in &self.strategies {
-            let deductions = strategy.execute(&mut self.grid)?;
+            let deductions = Strategy::execute(strategy, &mut self.grid)?;
 
             if !(deductions.is_empty()) {
-                trace!(
-                    "{strategy:?}: {:?}\n{}",
-                    deductions
-                        .iter()
-                        .map(|pos| pos.to_string())
-                        .collect::<Vec<_>>(),
-                    self.grid
-                );
+                trace!("{strategy:?}:\n{}\n{}", deductions, self.grid);
 
                 return Ok(Some(deductions));
             }
@@ -88,7 +74,7 @@ mod tests {
 
         let mut solver = Solver::new(grid);
 
-        assert!(solver.try_solve().unwrap().is_ok());
+        assert!(solver.try_solve().unwrap().is_some());
 
         assert!(grid.is_solved());
     }
@@ -120,7 +106,7 @@ mod tests {
 
         let mut solver = Solver::new(&mut grid);
 
-        assert!(solver.try_solve().unwrap().is_ok());
+        assert!(solver.try_solve().unwrap().is_some());
 
         assert!(grid.is_solved());
     }

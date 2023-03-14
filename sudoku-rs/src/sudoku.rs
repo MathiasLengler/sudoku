@@ -8,11 +8,11 @@ use crate::base::SudokuBase;
 use crate::cell::compact::value::Value;
 use crate::error::Result;
 use crate::generator::{Generator, GeneratorSettings};
-use crate::grid::serialization::GridFormat;
 use crate::grid::Grid;
+use crate::grid::serialization::GridFormat;
 use crate::position::Position;
-use crate::solver::strategic::strategies::DynamicStrategy;
 use crate::solver::strategic::Solver as StrategicSolver;
+use crate::solver::strategic::strategies::DynamicStrategy;
 
 use self::settings::Settings;
 
@@ -170,7 +170,7 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
         let mut solver = StrategicSolver::new_with_strategies(&mut self.grid, vec![strategy]);
 
         Ok(if let Some(deductions) = solver.try_strategies()? {
-            deductions.apply(&mut self.grid);
+            deductions.apply(&mut self.grid)?;
 
             true
         } else {

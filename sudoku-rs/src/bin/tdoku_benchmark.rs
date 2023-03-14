@@ -11,8 +11,8 @@ use sudoku::base::SudokuBase;
 use sudoku::error::Result;
 use sudoku::grid::deserialization::read_grids_from_file;
 use sudoku::grid::Grid;
-use sudoku::solver::strategic;
 use sudoku::solver::{backtracking, backtracking_bitset};
+use sudoku::solver::strategic;
 
 enum SolverSelection {
     Backtracking,
@@ -40,7 +40,7 @@ fn main() -> Result<()> {
                 assert!(strategic::Solver::new(&mut grid)
                     .try_solve()
                     .unwrap()
-                    .is_ok());
+                    .is_some());
             }
             SolverSelection::BacktrackingBitset => {
                 let mut solver = backtracking_bitset::Solver::new(&grid);

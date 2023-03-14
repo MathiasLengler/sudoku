@@ -1,23 +1,23 @@
-use anyhow::{anyhow, ensure};
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
+use anyhow::{anyhow, ensure};
 use ndarray::Array2;
 
 use crate::base::SudokuBase;
+use crate::cell::Cell;
 use crate::cell::compact::candidates::Candidates;
 use crate::cell::compact::cell_state::CellState;
 use crate::cell::compact::value::Value;
-use crate::cell::view::parser::parse_cells;
 use crate::cell::view::CellView;
-use crate::cell::Cell;
+use crate::cell::view::parser::parse_cells;
 use crate::error::{Error, Result};
 use crate::grid::serialization::GridFormat;
 use crate::position::Position;
+use crate::solver::{backtracking_bitset, strategic};
 use crate::solver::strategic::deduction::{OldDeduction, OldDeductionKind};
 use crate::solver::strategic::strategies::DynamicStrategy;
-use crate::solver::{backtracking_bitset, strategic};
 
 pub mod deserialization;
 pub mod serialization;
@@ -188,7 +188,7 @@ impl<Base: SudokuBase> Grid<Base> {
     pub fn is_solvable_with_strategies(
         &self,
         strategies: Vec<DynamicStrategy>,
-    ) -> Option<Result<Self>> {
+    ) -> Result<Option<Self>> {
         let mut clone = self.clone();
         clone.fix_all_values();
         clone.set_all_direct_candidates();
@@ -292,6 +292,7 @@ impl<Base: SudokuBase> Grid<Base> {
         }
     }
 
+    #[deprecated]
     pub fn deduction_at<TryIntoKind: TryInto<OldDeductionKind<Base>>>(
         &self,
         pos: impl Into<Position>,
@@ -555,9 +556,9 @@ impl<Base: SudokuBase> Display for Grid<Base> {
 
 #[cfg(test)]
 mod tests {
-    use crate::base::consts::*;
     use itertools::{assert_equal, Itertools};
 
+    use crate::base::consts::*;
     use crate::samples;
 
     use super::*;
