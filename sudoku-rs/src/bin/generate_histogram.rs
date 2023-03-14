@@ -31,7 +31,7 @@ use sudoku::base::consts::U3;
 use sudoku::error::Result;
 use sudoku::generator::{Generator, GeneratorSettings, GeneratorTarget};
 use sudoku::grid::serialization::GridFormat;
-use sudoku::solver::strategic::strategies::SingleCandidate;
+use sudoku::solver::strategic::strategies::NakedSingles;
 
 type Base = U3;
 
@@ -48,7 +48,7 @@ fn main() -> Result<()> {
             target: GeneratorTarget::Minimal {
                 set_all_direct_candidates: true,
             },
-            strategies: vec![SingleCandidate.into()],
+            strategies: vec![NakedSingles.into()],
             seed: None,
         })
         .generate::<Base>();

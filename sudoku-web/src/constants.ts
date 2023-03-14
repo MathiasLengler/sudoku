@@ -7,7 +7,7 @@ const arrayOfAll =
         array;
 // Copy of sudokuController.allStrategies
 export const ALL_STRATEGIES = arrayOfAll<DynamicStrategy>()([
-    "SingleCandidate",
+    "NakedSingles",
     "HiddenSingles",
     "GroupReduction",
     "Backtracking",

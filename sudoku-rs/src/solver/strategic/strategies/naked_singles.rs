@@ -6,9 +6,9 @@ use crate::solver::strategic::deduction::{Action, Deduction, Deductions};
 use super::Strategy;
 
 #[derive(Debug, Copy, Clone)]
-pub struct SingleCandidate;
+pub struct NakedSingles;
 
-impl Strategy for SingleCandidate {
+impl Strategy for NakedSingles {
     fn execute<Base: SudokuBase>(&self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
         Ok(grid
             .all_candidates_positions()
@@ -45,7 +45,7 @@ mod tests {
         grid.set_all_direct_candidates();
         grid.fix_all_values();
 
-        let deductions = SingleCandidate.execute(&mut grid).unwrap();
+        let deductions = NakedSingles.execute(&mut grid).unwrap();
 
         let expected_deductions: Deductions<_> = vec![
             ((0, 0), 2),

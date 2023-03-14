@@ -23,15 +23,15 @@ use std::str::FromStr;
 
 use anyhow::anyhow;
 use enum_dispatch::enum_dispatch;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde::de::Visitor;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 #[cfg(feature = "wasm")]
 use ts_rs::TS;
 
 pub use backtracking::Backtracking;
 pub use group_reduction::GroupReduction;
 pub use hidden_singles::HiddenSingles;
-pub use single_candidate::SingleCandidate;
+pub use naked_singles::NakedSingles;
 
 use crate::base::SudokuBase;
 use crate::error::{Error, Result};
@@ -42,7 +42,7 @@ use crate::solver::strategic::deduction::Deductions;
 mod backtracking;
 pub mod group_reduction;
 mod hidden_singles;
-mod single_candidate;
+mod naked_singles;
 
 #[enum_dispatch(DynamicStrategy)]
 pub trait Strategy: Debug + Copy + Clone {
@@ -57,8 +57,9 @@ pub trait Strategy: Debug + Copy + Clone {
 #[enum_dispatch]
 #[derive(Debug, Copy, Clone)]
 pub enum DynamicStrategy {
-    SingleCandidate,
+    NakedSingles,
     HiddenSingles,
+    // NakedTuples,
     GroupReduction,
     Backtracking,
 }
@@ -69,7 +70,7 @@ impl Serialize for DynamicStrategy {
         S: Serializer,
     {
         let (variant_index, variant) = match *self {
-            Self::SingleCandidate(_) => (0, "SingleCandidate"),
+            Self::NakedSingles(_) => (0, "NakedSingles"),
             Self::HiddenSingles(_) => (1, "HiddenSingles"),
             Self::GroupReduction(_) => (2, "GroupReduction"),
             Self::Backtracking(_) => (3, "Backtracking"),
@@ -107,7 +108,7 @@ impl<'de> Deserialize<'de> for DynamicStrategy {
 impl DynamicStrategy {
     pub fn all() -> Vec<Self> {
         vec![
-            SingleCandidate.into(),
+            NakedSingles.into(),
             HiddenSingles.into(),
             GroupReduction.into(),
             Backtracking.into(),
