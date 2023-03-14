@@ -18,12 +18,6 @@ use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::position::Position;
 
-// TODO: evaluate Deductions Builder
-//  enable grouping of Deductions
-//   multiple independent Group Reduction inferences are currently merged together
-//  add Reason(s) for group of Deductions
-//   denormalized data if saved with each deduction
-
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct OldDeductions<Base: SudokuBase> {
     // Invariant: K == V.pos
