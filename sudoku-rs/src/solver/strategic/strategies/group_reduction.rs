@@ -105,7 +105,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_group_reduction() {
+    fn test_reduce_candidates_group() {
         let test_cases: Vec<(Vec<Vec<u8>>, Vec<Vec<u8>>)> = vec![
             (
                 vec![
@@ -296,8 +296,8 @@ mod tests {
                     vec![3, 4],
                 ],
             ),
-            // Hidden pair
-            // Reference (with a 4 in the first cell): https://www.sudokuwiki.org/sudoku.htm?bd=000000000904607000076804100309701080008000300050308702007502610000403208000000000
+            // Hidden pair 6,7
+            // Reference: https://www.sudokuwiki.org/sudoku.htm?bd=000000000904607000076804100309701080008000300050308702007502610000403208000000000
             (
                 vec![
                     vec![1, 2, 4, 5, 8], //

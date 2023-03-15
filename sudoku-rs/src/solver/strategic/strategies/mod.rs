@@ -31,6 +31,7 @@ use ts_rs::TS;
 pub use backtracking::Backtracking;
 pub use group_reduction::GroupReduction;
 pub use hidden_singles::HiddenSingles;
+pub use naked_pairs::NakedPairs;
 pub use naked_singles::NakedSingles;
 
 use crate::base::SudokuBase;
@@ -42,6 +43,7 @@ use crate::solver::strategic::deduction::Deductions;
 mod backtracking;
 pub mod group_reduction;
 mod hidden_singles;
+mod naked_pairs;
 mod naked_singles;
 
 #[enum_dispatch(DynamicStrategy)]
@@ -59,9 +61,21 @@ pub trait Strategy: Debug + Copy + Clone {
 pub enum DynamicStrategy {
     NakedSingles,
     HiddenSingles,
-    // NakedTuples,
+    NakedPairs,
     GroupReduction,
     Backtracking,
+}
+
+impl DynamicStrategy {
+    pub fn all() -> Vec<Self> {
+        vec![
+            NakedSingles.into(),
+            HiddenSingles.into(),
+            NakedPairs.into(),
+            GroupReduction.into(),
+            Backtracking.into(),
+        ]
+    }
 }
 
 impl Serialize for DynamicStrategy {
@@ -72,8 +86,9 @@ impl Serialize for DynamicStrategy {
         let (variant_index, variant) = match *self {
             Self::NakedSingles(_) => (0, "NakedSingles"),
             Self::HiddenSingles(_) => (1, "HiddenSingles"),
-            Self::GroupReduction(_) => (2, "GroupReduction"),
-            Self::Backtracking(_) => (3, "Backtracking"),
+            Self::NakedPairs(_) => (2, "NakedPairs"),
+            Self::GroupReduction(_) => (3, "GroupReduction"),
+            Self::Backtracking(_) => (4, "Backtracking"),
         };
 
         serializer.serialize_unit_variant("Strategy", variant_index, variant)
@@ -102,17 +117,6 @@ impl<'de> Deserialize<'de> for DynamicStrategy {
             }
         }
         deserializer.deserialize_str(StrategyVisitor)
-    }
-}
-
-impl DynamicStrategy {
-    pub fn all() -> Vec<Self> {
-        vec![
-            NakedSingles.into(),
-            HiddenSingles.into(),
-            GroupReduction.into(),
-            Backtracking.into(),
-        ]
     }
 }
 

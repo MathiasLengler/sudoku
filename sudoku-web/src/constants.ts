@@ -9,6 +9,7 @@ const arrayOfAll =
 export const ALL_STRATEGIES = arrayOfAll<DynamicStrategy>()([
     "NakedSingles",
     "HiddenSingles",
+    "NakedPairs",
     "GroupReduction",
     "Backtracking",
 ]);

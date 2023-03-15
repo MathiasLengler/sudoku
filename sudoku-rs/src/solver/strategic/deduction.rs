@@ -404,6 +404,25 @@ impl<Base: SudokuBase> Deductions<Base> {
         Ok(merged_deduction)
     }
 
+    /// If two deductions contain the same reasons, merge them into a single deduction by merging their actions.
+    pub fn merge_deductions_by_reasons(self) -> Result<Self> {
+        let mut reasons_to_actions: BTreeMap<PositionMap<Reason<Base>>, PositionMap<Action<Base>>> =
+            BTreeMap::new();
+
+        for Deduction { reasons, actions } in self.into_iter() {
+            if let Some(existing_actions) = reasons_to_actions.get_mut(&reasons) {
+                existing_actions.merge(actions)?;
+            } else {
+                reasons_to_actions.insert(reasons, actions);
+            }
+        }
+
+        Ok(reasons_to_actions
+            .into_iter()
+            .map(|(reasons, actions)| Deduction { reasons, actions })
+            .collect())
+    }
+
     fn validate(&self, grid: &Grid<Base>) -> Result<()> {
         for deduction in &self.deductions {
             deduction.validate(grid)?;
@@ -430,6 +449,15 @@ impl<'a, Base: SudokuBase> IntoIterator for &'a Deductions<Base> {
     }
 }
 
+impl<Base: SudokuBase> IntoIterator for Deductions<Base> {
+    type Item = Deduction<Base>;
+    type IntoIter = btree_set::IntoIter<Deduction<Base>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.deductions.into_iter()
+    }
+}
+
 impl<Base: SudokuBase> FromIterator<Deduction<Base>> for Deductions<Base> {
     fn from_iter<T: IntoIterator<Item = Deduction<Base>>>(iter: T) -> Self {
         Self {
@@ -439,12 +467,21 @@ impl<Base: SudokuBase> FromIterator<Deduction<Base>> for Deductions<Base> {
 }
 
 pub trait Merge: Sized {
-    fn merge(&self, other: &Self) -> Result<Self>;
+    fn merge(&mut self, other: Self) -> Result<()>;
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct PositionMap<T: Merge> {
     map: BTreeMap<Position, T>,
+}
+
+impl<T: Merge> Merge for PositionMap<T> {
+    fn merge(&mut self, other: Self) -> Result<()> {
+        for (pos, value) in other.into_iter() {
+            self.insert(pos, value)?;
+        }
+        Ok(())
+    }
 }
 
 impl<T: Merge> Default for PositionMap<T> {
@@ -497,8 +534,8 @@ impl<T: Merge> PositionMap<T> {
     }
 
     pub fn insert(&mut self, pos: Position, value: T) -> Result<()> {
-        if let Some(existing_value) = self.map.get(&pos) {
-            self.map.insert(pos, existing_value.merge(&value)?);
+        if let Some(existing_value) = self.map.get_mut(&pos) {
+            existing_value.merge(value)?;
         } else {
             self.map.insert(pos, value);
         }
@@ -506,6 +543,8 @@ impl<T: Merge> PositionMap<T> {
         Ok(())
     }
 }
+
+// TODO: easier instantiation of Deduction for test
 
 /// A single, self-contained result of a strategy.
 /// Consists of actions to be taken on a Sudoku grid, as well as the reasons why.
@@ -574,6 +613,10 @@ impl<Base: SudokuBase> Deduction<Base> {
         for (pos, reason) in &self.reasons {
             reason.validate(&grid.get(pos))?;
         }
+
+        // TODO: validate that actions and reasons are not in conflict, e.g. for the same position:
+        //  - SetValue and Reason
+        //  - DeleteCandidate and Reason share candidate
 
         Ok(())
     }
@@ -648,8 +691,8 @@ impl<Base: SudokuBase> Reason<Base> {
 }
 
 impl<Base: SudokuBase> Merge for Reason<Base> {
-    fn merge(&self, other: &Self) -> Result<Self> {
-        Ok(match (*self, *other) {
+    fn merge(&mut self, other: Self) -> Result<()> {
+        *self = match (*self, other) {
             (
                 Reason::Candidate {
                     candidate: self_candidate,
@@ -682,7 +725,9 @@ impl<Base: SudokuBase> Merge for Reason<Base> {
                     candidates: candidates.union(&Candidates::single(candidate)),
                 }
             }
-        })
+        };
+
+        Ok(())
     }
 }
 
@@ -783,10 +828,10 @@ impl<Base: SudokuBase> Action<Base> {
 }
 
 impl<Base: SudokuBase> Merge for Action<Base> {
-    fn merge(&self, other: &Self) -> Result<Self> {
+    fn merge(&mut self, other: Self) -> Result<()> {
         use Action::*;
-        (|| {
-            Ok(match (*self, *other) {
+        *self = (|| {
+            Ok(match (*self, other) {
                 (SetValue { value: self_value }, SetValue { value: other_value }) => {
                     ensure!(
                         self_value == other_value,
@@ -846,11 +891,13 @@ impl<Base: SudokuBase> Merge for Action<Base> {
                 }
             })
         })()
-        .with_context(|| format!("Incompatible merge of two actions: {self}, {other}"))
+        .with_context(|| format!("Incompatible merge of two actions: {self}, {other}"))?;
+
+        Ok(())
     }
 }
 
-mod transport {
+pub mod transport {
     use super::*;
 
     #[cfg_attr(
@@ -931,13 +978,13 @@ mod tests {
         let deduction = TransportDeduction::<Base3> {
             reasons: vec![
                 TransportReason {
-                    position: Position { row: 1, column: 1 },
+                    position: (1, 1).into(),
                     reason: Reason::Candidates {
                         candidates: Candidates::all(),
                     },
                 },
                 TransportReason {
-                    position: Position { row: 1, column: 1 },
+                    position: (1, 1).into(),
                     reason: Reason::Candidate {
                         candidate: Value::try_from(1).unwrap(),
                     },
@@ -945,19 +992,19 @@ mod tests {
             ],
             actions: vec![
                 TransportAction {
-                    position: Position { row: 1, column: 1 },
+                    position: (1, 1).into(),
                     action: Action::SetValue {
                         value: Value::try_from(1).unwrap(),
                     },
                 },
                 TransportAction {
-                    position: Position { row: 1, column: 1 },
+                    position: (1, 1).into(),
                     action: Action::DeleteCandidate {
                         candidate: Value::try_from(2).unwrap(),
                     },
                 },
                 TransportAction {
-                    position: Position { row: 1, column: 1 },
+                    position: (1, 1).into(),
                     action: Action::DeleteCandidates {
                         candidates: Candidates::all(),
                     },
