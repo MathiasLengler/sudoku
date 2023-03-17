@@ -225,30 +225,25 @@ mod tests {
                 deductions
                     .into_iter()
                     .map(|(reasons, actions)| {
-                        let mut deduction = Deduction::new();
-                        for (pos, candidates) in reasons {
-                            deduction
-                                .reasons
-                                .insert(
+                        Deduction::try_from_iters(
+                            reasons.into_iter().map(|(pos, candidates)| {
+                                (
                                     pos.into(),
                                     Reason::Candidates {
                                         candidates: Candidates::try_from(candidates).unwrap(),
                                     },
                                 )
-                                .unwrap();
-                        }
-                        for (pos, candidates) in actions {
-                            deduction
-                                .actions
-                                .insert(
+                            }),
+                            actions.into_iter().map(|(pos, candidates)| {
+                                (
                                     pos.into(),
                                     Action::DeleteCandidates {
                                         candidates: Candidates::try_from(candidates).unwrap(),
                                     },
                                 )
-                                .unwrap();
-                        }
-                        deduction
+                            }),
+                        )
+                        .unwrap()
                     })
                     .collect(),
             )

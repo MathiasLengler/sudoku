@@ -521,6 +521,16 @@ impl<T: Merge> PositionMap<T> {
         this
     }
 
+    pub fn try_from_iter(iter: impl Iterator<Item = (Position, T)>) -> Result<Self> {
+        let mut this = Self::new();
+
+        for (pos, value) in iter {
+            this.insert(pos, value)?;
+        }
+
+        Ok(this)
+    }
+
     // False positive
     // noinspection RsNeedlessLifetimes
     pub fn iter<'a>(
@@ -594,6 +604,25 @@ impl<Base: SudokuBase> Deduction<Base> {
             actions: PositionMap::with_single(pos.into(), action),
             ..Default::default()
         }
+    }
+
+    pub fn try_from_actions(
+        actions: impl Iterator<Item = (Position, Action<Base>)>,
+    ) -> Result<Self> {
+        Ok(Self {
+            actions: PositionMap::try_from_iter(actions)?,
+            ..Default::default()
+        })
+    }
+
+    pub fn try_from_iters(
+        reasons: impl Iterator<Item = (Position, Reason<Base>)>,
+        actions: impl Iterator<Item = (Position, Action<Base>)>,
+    ) -> Result<Self> {
+        Ok(Self {
+            reasons: PositionMap::try_from_iter(reasons)?,
+            actions: PositionMap::try_from_iter(actions)?,
+        })
     }
 
     pub fn is_empty(&self) -> bool {

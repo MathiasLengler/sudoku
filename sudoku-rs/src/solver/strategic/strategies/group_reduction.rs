@@ -389,19 +389,17 @@ mod tests {
         ]
         .into_iter()
         .map(|positioned_candidates| {
-            let mut deduction = Deduction::new();
-            for (pos, candidates) in positioned_candidates {
-                deduction
-                    .actions
-                    .insert(
+            Deduction::try_from_actions(positioned_candidates.into_iter().map(
+                |(pos, candidates)| {
+                    (
                         pos.into(),
                         Action::DeleteCandidates {
                             candidates: Candidates::try_from(candidates).unwrap(),
                         },
                     )
-                    .unwrap();
-            }
-            deduction
+                },
+            ))
+            .unwrap()
         })
         .collect();
 
@@ -454,19 +452,17 @@ mod tests {
         ]
         .into_iter()
         .map(|positioned_candidates| {
-            let mut deduction = Deduction::new();
-            for (pos, candidates) in positioned_candidates {
-                deduction
-                    .actions
-                    .insert(
+            Deduction::try_from_actions(positioned_candidates.into_iter().map(
+                |(pos, candidates)| {
+                    (
                         pos.into(),
                         Action::DeleteCandidates {
                             candidates: Candidates::try_from(candidates).unwrap(),
                         },
                     )
-                    .unwrap();
-            }
-            deduction
+                },
+            ))
+            .unwrap()
         })
         .collect();
 
