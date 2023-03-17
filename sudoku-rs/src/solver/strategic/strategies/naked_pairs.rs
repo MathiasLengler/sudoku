@@ -9,7 +9,7 @@ use crate::solver::strategic::deduction::{Action, Deduction, Deductions, Reason}
 
 use super::Strategy;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct NakedPairs;
 
 impl Strategy for NakedPairs {

@@ -47,7 +47,7 @@ mod naked_pairs;
 mod naked_singles;
 
 #[enum_dispatch(DynamicStrategy)]
-pub trait Strategy: Debug + Copy + Clone {
+pub trait Strategy: Debug + Copy + Clone + Eq {
     /// Execute this strategy on the given grid. Returns a list of deductions.
     fn execute<Base: SudokuBase>(&self, grid: &Grid<Base>) -> Result<Deductions<Base>>;
 
@@ -57,7 +57,7 @@ pub trait Strategy: Debug + Copy + Clone {
 }
 #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[enum_dispatch]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum DynamicStrategy {
     NakedSingles,
     HiddenSingles,
@@ -128,5 +128,24 @@ impl FromStr for DynamicStrategy {
             .into_iter()
             .find(|strategy| strategy.strategy_name() == strategy_name)
             .ok_or_else(|| anyhow!("Unexpected strategy name: {strategy_name}"))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use serde_json;
+
+    #[test]
+    fn test_serde_round_trip() {
+        let all_strategies = DynamicStrategy::all();
+
+        let json_string = serde_json::to_string(&all_strategies).unwrap();
+
+        let all_strategies_round_tripped: Vec<DynamicStrategy> =
+            serde_json::from_str(&json_string).unwrap();
+
+        assert_eq!(all_strategies, all_strategies_round_tripped);
     }
 }

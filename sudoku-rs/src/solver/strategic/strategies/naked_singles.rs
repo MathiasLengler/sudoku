@@ -5,7 +5,7 @@ use crate::solver::strategic::deduction::{Action, Deduction, Deductions};
 
 use super::Strategy;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct NakedSingles;
 
 impl Strategy for NakedSingles {
