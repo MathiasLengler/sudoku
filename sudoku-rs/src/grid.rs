@@ -263,6 +263,8 @@ impl<Base: SudokuBase> Grid<Base> {
         Ok(grid)
     }
 
+    // TODO: evaluate performance of Position<Base>: `self.cells.as_slice().unwrap{_unchecked}().get{_unchecked}(pos.i)`
+    //  Position should contain an u16/usize directly, which is prechecked against `Base`.
     pub fn get(&self, pos: Position) -> &Cell<Base> {
         Self::assert_position(pos);
 
