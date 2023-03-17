@@ -4,20 +4,21 @@ use std::fmt::{Display, Formatter};
 
 use anyhow::{anyhow, ensure};
 use ndarray::Array2;
+use num::Integer;
 
 use crate::base::SudokuBase;
-use crate::cell::Cell;
 use crate::cell::compact::candidates::Candidates;
 use crate::cell::compact::cell_state::CellState;
 use crate::cell::compact::value::Value;
-use crate::cell::view::CellView;
 use crate::cell::view::parser::parse_cells;
+use crate::cell::view::CellView;
+use crate::cell::Cell;
 use crate::error::{Error, Result};
 use crate::grid::serialization::GridFormat;
 use crate::position::Position;
-use crate::solver::{backtracking_bitset, strategic};
 use crate::solver::strategic::deduction::{OldDeduction, OldDeductionKind};
 use crate::solver::strategic::strategies::DynamicStrategy;
+use crate::solver::{backtracking_bitset, strategic};
 
 pub mod deserialization;
 pub mod serialization;
@@ -434,12 +435,22 @@ impl<Base: SudokuBase> Grid<Base> {
     pub fn block_positions(pos: Position) -> impl Iterator<Item = Position> {
         Self::assert_position(pos);
 
+        let block_index = Base::cell_index_to_block_index(pos.cell_index::<Base>());
+
+        // TODO: evaluate block_index_to_cell_indexes
+        //  hypothesis: div_rem is still expensive
+
         let base = Self::base();
 
+        let (block_row, block_column) = block_index.div_rem(&base);
+
         let Position {
-            column: base_column,
             row: base_row,
-        } = (pos / base) * base;
+            column: base_column,
+        } = Position {
+            row: block_row,
+            column: block_column,
+        } * base;
 
         (base_row..base_row + base).flat_map(move |row| {
             (base_column..base_column + base).map(move |column| Position { column, row })
