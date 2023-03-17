@@ -101,6 +101,7 @@ mod tests {
     use std::convert::TryInto;
 
     use crate::base::consts::*;
+    use crate::solver::strategic::strategies::test_util::assert_deductions_with_grid;
 
     use super::*;
 
@@ -403,12 +404,7 @@ mod tests {
         })
         .collect();
 
-        assert_eq!(
-            deductions, expected_deductions,
-            "{deductions}\n!=\n{expected_deductions}"
-        );
-
-        deductions.apply(&mut grid).unwrap();
+        assert_deductions_with_grid(deductions, expected_deductions, &mut grid);
     }
 
     /// Reference:
@@ -466,11 +462,6 @@ mod tests {
         })
         .collect();
 
-        assert_eq!(
-            deductions, expected_deductions,
-            "{deductions}\n!=\n{expected_deductions}"
-        );
-
-        deductions.apply(&mut grid).unwrap();
+        assert_deductions_with_grid(deductions, expected_deductions, &mut grid);
     }
 }

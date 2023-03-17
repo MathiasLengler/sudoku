@@ -112,6 +112,7 @@ impl NakedPairs {
 #[cfg(test)]
 mod tests {
     use crate::base::consts::*;
+    use crate::solver::strategic::strategies::test_util::assert_deductions;
 
     use super::*;
 
@@ -254,10 +255,7 @@ mod tests {
             let deductions: Deductions<Base3> =
                 NakedPairs::find_naked_pairs(candidates_group).collect();
 
-            assert_eq!(
-                deductions, expected_deductions,
-                "{deductions}\n!=\n{expected_deductions}"
-            );
+            assert_deductions(deductions, expected_deductions);
         }
     }
 }

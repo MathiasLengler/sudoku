@@ -147,3 +147,32 @@ mod tests {
         assert_eq!(all_strategies, all_strategies_round_tripped);
     }
 }
+
+#[cfg(test)]
+mod test_util {
+    use crate::base::SudokuBase;
+    use crate::grid::Grid;
+    use crate::solver::strategic::deduction::Deductions;
+
+    pub fn assert_deductions<Base: SudokuBase>(
+        deductions: Deductions<Base>,
+        expected_deductions: Deductions<Base>,
+    ) -> Deductions<Base> {
+        assert_eq!(
+            deductions, expected_deductions,
+            "{deductions}\n!=\n{expected_deductions}"
+        );
+
+        deductions
+    }
+
+    pub fn assert_deductions_with_grid<Base: SudokuBase>(
+        deductions: Deductions<Base>,
+        expected_deductions: Deductions<Base>,
+        grid: &mut Grid<Base>,
+    ) {
+        let deductions = assert_deductions(deductions, expected_deductions);
+
+        deductions.apply(grid).unwrap();
+    }
+}

@@ -36,6 +36,7 @@ impl Strategy for Backtracking {
 mod tests {
     use crate::cell::compact::value::Value;
     use crate::samples;
+    use crate::solver::strategic::strategies::test_util::assert_deductions_with_grid;
 
     use super::*;
 
@@ -68,12 +69,7 @@ mod tests {
         })
         .collect();
 
-        assert_eq!(
-            deductions, expected_deductions,
-            "{deductions}\n!=\n{expected_deductions}"
-        );
-
-        deductions.apply(&mut grid).unwrap();
+        assert_deductions_with_grid(deductions, expected_deductions, &mut grid);
 
         assert!(grid.is_solved());
     }
