@@ -135,8 +135,6 @@ impl FromStr for DynamicStrategy {
 mod tests {
     use super::*;
 
-    use serde_json;
-
     #[test]
     fn test_serde_round_trip() {
         let all_strategies = DynamicStrategy::all();
