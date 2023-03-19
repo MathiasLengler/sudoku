@@ -5,6 +5,10 @@ use crate::position::Position;
 use anyhow::ensure;
 use std::marker::PhantomData;
 
+// TODO: use for all non-public APIs
+//  rename:
+//  BasePosition<Base> => Position<Base>
+//  Position => DynamicPosition
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Default)]
 pub struct BasePosition<Base: SudokuBase> {
     /// # Safety invariants
