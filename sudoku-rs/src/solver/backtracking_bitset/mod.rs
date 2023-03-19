@@ -1,6 +1,7 @@
+//! Fork of [tdoku `solver_basic.cc`](https://github.com/t-dillon/tdoku/blob/master/src/solver_basic.cc)
+
 use log::trace;
 
-/// Fork of: https://github.com/t-dillon/tdoku/blob/master/src/solver_basic.cc
 use crate::base::SudokuBase;
 use crate::cell::candidates_cell::CandidatesCell;
 use crate::cell::compact::candidates::{Candidates, CandidatesIter};
@@ -32,7 +33,7 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
         let mut this = Self {
             grid,
             availability: GroupAvailability::all(),
-            availability_indices: Default::default(),
+            availability_indices: vec![],
             candidates_iters: vec![],
             guess_count: 0,
             has_returned_pre_filled_grid_solution: false,
@@ -114,7 +115,7 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
         {
             solution_grid
                 .get_mut(choice_index.into())
-                .set_value(candidates_iter.peek().unwrap())
+                .set_value(candidates_iter.peek().unwrap());
         }
         solution_grid
     }
@@ -192,7 +193,7 @@ struct GroupAvailability<Base: SudokuBase> {
 
 impl<Base: SudokuBase> GroupAvailability<Base> {
     fn new() -> Self {
-        Default::default()
+        Self::default()
     }
 
     fn all() -> Self {

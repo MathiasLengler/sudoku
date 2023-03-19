@@ -26,7 +26,7 @@ pub struct OldDeductions<Base: SudokuBase> {
 
 /// Specialization workaround.
 ///
-/// Reference: https://github.com/rust-lang/rust/issues/50133#issuecomment-646908391
+/// [Reference](https://github.com/rust-lang/rust/issues/50133#issuecomment-646908391)
 #[derive(Debug)]
 pub struct IntoDeductions<I>(pub I);
 
@@ -49,7 +49,7 @@ impl<Base: SudokuBase, I: IntoIterator<Item = OldDeduction<Base>>> TryFrom<IntoD
 
 /// Specialization workaround.
 ///
-/// Reference: https://github.com/rust-lang/rust/issues/50133#issuecomment-646908391
+/// [Reference](https://github.com/rust-lang/rust/issues/50133#issuecomment-646908391)
 #[derive(Debug)]
 pub struct TryIntoDeductions<I>(pub I);
 
@@ -64,7 +64,7 @@ impl<Base: SudokuBase, I: IntoIterator<Item = Result<OldDeduction<Base>>>>
         let mut this = Self::default();
 
         for deduction in deduction_results {
-            this.try_append(deduction?)?
+            this.try_append(deduction?)?;
         }
         Ok(this)
     }
@@ -245,7 +245,7 @@ impl<Base: SudokuBase> OldDeduction<Base> {
                 ensure!(
                     added_candidates.is_empty(),
                     "Unexpected candidate(s) addition: {self}"
-                )
+                );
             }
         }
 
@@ -391,7 +391,7 @@ impl<Base: SudokuBase> Deductions<Base> {
     }
 
     fn as_merged_deduction(&self) -> Result<Deduction<Base>> {
-        let mut merged_deduction: Deduction<Base> = Default::default();
+        let mut merged_deduction = Deduction::default();
 
         for deduction in &self.deductions {
             for (pos, action) in deduction.actions.iter() {
@@ -486,9 +486,7 @@ impl<T: Merge> Merge for PositionMap<T> {
 
 impl<T: Merge> Default for PositionMap<T> {
     fn default() -> Self {
-        Self {
-            map: Default::default(),
-        }
+        Self::new()
     }
 }
 
@@ -515,11 +513,13 @@ impl<'a, T: Merge> IntoIterator for &'a PositionMap<T> {
 
 impl<T: Merge> PositionMap<T> {
     pub fn new() -> Self {
-        Default::default()
+        Self {
+            map: BTreeMap::default(),
+        }
     }
 
     pub fn with_single(pos: Position, value: T) -> Self {
-        let mut this: Self = Default::default();
+        let mut this: Self = Self::new();
         this.map.insert(pos, value);
         this
     }
@@ -587,16 +587,16 @@ impl<Base: SudokuBase> Display for Deduction<Base> {
 
 impl<Base: SudokuBase> Default for Deduction<Base> {
     fn default() -> Self {
-        Self {
-            actions: Default::default(),
-            reasons: Default::default(),
-        }
+        Self::new()
     }
 }
 
 impl<Base: SudokuBase> Deduction<Base> {
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            actions: PositionMap::new(),
+            reasons: PositionMap::new(),
+        }
     }
 
     pub fn with_action(pos: impl Into<Position>, action: Action<Base>) -> Self {
@@ -705,12 +705,12 @@ impl<Base: SudokuBase> Reason<Base> {
                         ensure!(
                             existing_candidates.has(candidate),
                             "candidate {candidate} is missing from cell candidates {existing_candidates}"
-                        )
+                        );
                     }
                     Reason::Candidates { candidates } => {
                         ensure!(!candidates.is_empty(), "candidates must not be empty");
                         let unexpected_candidates = candidates.without(existing_candidates);
-                        ensure!(unexpected_candidates.is_empty(), "unexpected candidates {unexpected_candidates}")
+                        ensure!(unexpected_candidates.is_empty(), "unexpected candidates {unexpected_candidates}");
                     }
                 },
             }
@@ -851,7 +851,7 @@ impl<Base: SudokuBase> Action<Base> {
 
     fn update_direct_candidates(&self, grid: &mut Grid<Base>, pos: Position) {
         if let Action::SetValue { value } = self {
-            grid.update_direct_candidates(pos, *value)
+            grid.update_direct_candidates(pos, *value);
         }
     }
 }

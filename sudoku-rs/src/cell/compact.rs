@@ -59,12 +59,12 @@ impl<Base: SudokuBase> Cell<Base> {
     ///
     /// Panics it the cell does not contain a value
     pub fn fix(&mut self) {
-        self.0.fix()
+        self.0.fix();
     }
 
     /// Unfix a value if it was fixed.
     pub fn unfix(&mut self) {
-        self.0.unfix()
+        self.0.unfix();
     }
 
     /// Value if any, either fixed or unfixed.
@@ -83,7 +83,7 @@ impl<Base: SudokuBase> Cell<Base> {
     ///
     /// Panics it the cell is fixed.
     pub fn delete(&mut self) {
-        self.0.delete()
+        self.0.delete();
     }
 
     /// Set the cell to a unfixed value.
@@ -93,7 +93,7 @@ impl<Base: SudokuBase> Cell<Base> {
     ///
     /// Panics it the cell is fixed.
     pub fn set_value(&mut self, value: Value<Base>) {
-        self.0.set_value(value)
+        self.0.set_value(value);
     }
 
     /// Set the cell to a unfixed value.
@@ -116,7 +116,7 @@ impl<Base: SudokuBase> Cell<Base> {
     ///
     /// Panics it the cell is fixed.
     pub fn set_candidates(&mut self, candidates: Candidates<Base>) {
-        self.0.set_candidates(candidates)
+        self.0.set_candidates(candidates);
     }
 
     /// Toggle the given candidate.
@@ -126,7 +126,7 @@ impl<Base: SudokuBase> Cell<Base> {
     ///
     /// Panics it the cell is fixed.
     pub fn toggle_candidate(&mut self, candidate: Value<Base>) {
-        self.0.toggle_candidate(candidate)
+        self.0.toggle_candidate(candidate);
     }
 
     /// Set the given candidate if the cell contains candidates.
@@ -135,7 +135,7 @@ impl<Base: SudokuBase> Cell<Base> {
     ///
     /// Panics it the cell is fixed.
     pub fn set_candidate(&mut self, candidate: Value<Base>) {
-        self.0.set_candidate(candidate)
+        self.0.set_candidate(candidate);
     }
 
     /// Deletes the given candidate if the cell contains candidates.
@@ -144,7 +144,7 @@ impl<Base: SudokuBase> Cell<Base> {
     ///
     /// Panics it the cell is fixed.
     pub fn delete_candidate(&mut self, candidate: Value<Base>) {
-        self.0.delete_candidate(candidate)
+        self.0.delete_candidate(candidate);
     }
 }
 

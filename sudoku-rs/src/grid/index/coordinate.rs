@@ -33,7 +33,7 @@ impl<Base: SudokuBase> BaseCoordinate<Base> {
     pub(super) unsafe fn new_unchecked(coordinate: u8) -> Self {
         let this = Self {
             coordinate,
-            _base: Default::default(),
+            _base: PhantomData::default(),
         };
         this.debug_assert();
         this
@@ -49,6 +49,7 @@ impl<Base: SudokuBase> BaseCoordinate<Base> {
             true
         });
 
+        #[allow(clippy::cast_possible_truncation)]
         let coordinate = coordinate as u8;
 
         Self::new_unchecked(coordinate)
@@ -67,7 +68,7 @@ impl<Base: SudokuBase> BaseCoordinate<Base> {
     }
 
     fn assert(&self) {
-        self.validate().unwrap()
+        self.validate().unwrap();
     }
 
     pub(crate) fn debug_assert(&self) {
@@ -88,7 +89,9 @@ impl<Base: SudokuBase> BaseCoordinate<Base> {
 /// Iterators
 impl<Base: SudokuBase> BaseCoordinate<Base> {
     pub fn all() -> impl Iterator<Item = Self> {
-        (0..Base::SIDE_LENGTH).map(|coordinate| unsafe { Self::new_unchecked(coordinate) })
+        (0..Base::SIDE_LENGTH).map(|coordinate|
+            // Safety: `coordinate` remains in-bounds
+            unsafe { Self::new_unchecked(coordinate) })
     }
 }
 

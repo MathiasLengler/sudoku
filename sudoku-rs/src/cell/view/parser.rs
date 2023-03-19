@@ -54,7 +54,7 @@ fn from_binary_candidates_line(input: &str) -> Result<Vec<CellView>> {
 
     for cell_str in input.split(',') {
         let bits = cell_str.parse::<u32>()?;
-        cell_views.push(bits.try_into()?)
+        cell_views.push(bits.try_into()?);
     }
 
     Ok(cell_views)
@@ -136,7 +136,7 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn test_from_givens_grid() -> Result<()> {
+    fn test_from_givens_grid() {
         let cells = from_givens_grid(INPUT_GIVENS_GRID);
 
         let expected_cells = vec![
@@ -149,8 +149,6 @@ pub(crate) mod tests {
         .collect::<Vec<_>>();
 
         assert_eq!(cells, expected_cells);
-
-        Ok(())
     }
 
     #[test]
@@ -261,18 +259,10 @@ pub(crate) mod tests {
 
     #[test]
     fn test_parse_cells_roundtrip() {
-        let grid_formats = vec![
-            GridFormat::GivensLine,
-            GridFormat::GivensGrid,
-            GridFormat::BinaryCandidatesLine,
-            // FIXME: handle formats in parse_cells
-            // GridFormat::CandidatesGrid,
-        ];
-
         fn assert_grid_roundtrip<Base: SudokuBase>(
             grid_format: GridFormat,
             grid_string: &str,
-            grid: Grid<Base>,
+            grid: &Grid<Base>,
         ) {
             let cell_views = parse_cells(grid_string)
                 .with_context(|| {
@@ -283,7 +273,7 @@ pub(crate) mod tests {
                 })
                 .unwrap();
 
-            let parsed_grid = cell_views
+            let parsed_grid: Grid<Base> = cell_views
                 .try_into()
                 .with_context(|| {
                     format!(
@@ -295,7 +285,7 @@ pub(crate) mod tests {
                 .unwrap();
 
             assert_eq!(
-                grid, parsed_grid,
+                grid, &parsed_grid,
                 "Failed to roundtrip format {grid_format:?}:\n\
                     Original:\n\
                     {grid}\n\
@@ -307,19 +297,27 @@ pub(crate) mod tests {
             );
         }
 
+        let grid_formats = vec![
+            GridFormat::GivensLine,
+            GridFormat::GivensGrid,
+            GridFormat::BinaryCandidatesLine,
+            // FIXME: handle formats in parse_cells
+            // GridFormat::CandidatesGrid,
+        ];
+
         for grid_format in grid_formats {
             for (grid_string, grid) in samples::base_2()
                 .into_iter()
                 .map(|grid| (grid_format.render(&grid), grid))
             {
-                assert_grid_roundtrip(grid_format, &grid_string, grid);
+                assert_grid_roundtrip(grid_format, &grid_string, &grid);
             }
 
             for (grid_string, grid) in samples::base_3()
                 .into_iter()
                 .map(|grid| (grid_format.render(&grid), grid))
             {
-                assert_grid_roundtrip(grid_format, &grid_string, grid);
+                assert_grid_roundtrip(grid_format, &grid_string, &grid);
             }
         }
     }

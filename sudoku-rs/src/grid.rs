@@ -122,7 +122,7 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 
     fn assert(&self) {
-        self.validate().unwrap()
+        self.validate().unwrap();
     }
 
     fn debug_assert(&self) {
@@ -208,10 +208,10 @@ impl<Base: SudokuBase> Grid<Base> {
                         return false;
                     }
                     seen_values.set(value, true);
-                    seen_candidates_or_values.set(value, true)
+                    seen_candidates_or_values.set(value, true);
                 }
                 CellState::Candidates(candidates) => {
-                    seen_candidates_or_values = seen_candidates_or_values.union(&candidates)
+                    seen_candidates_or_values = seen_candidates_or_values.union(&candidates);
                 }
             }
         }
@@ -306,14 +306,14 @@ impl<Base: SudokuBase> Grid<Base> {
 
 impl<Base: SudokuBase> Default for Grid<Base> {
     fn default() -> Self {
-        Self::with_cells(vec![Cell::new(); Self::cell_count_usize()]).unwrap()
+        Grid::new()
     }
 }
 
 /// Public Grid API
 impl<Base: SudokuBase> Grid<Base> {
     pub fn new() -> Self {
-        Default::default()
+        Self::with_cells(vec![Cell::new(); Self::cell_count_usize()]).unwrap()
     }
 
     pub fn with_cells(cells: Vec<Cell<Base>>) -> Result<Self> {
@@ -350,7 +350,7 @@ impl<Base: SudokuBase> Grid<Base> {
                 block.len() == side_length,
                 "Invalid block size for block {i}, expected {side_length}, instead got: {}",
                 block.len()
-            )
+            );
         }
 
         let mut grid = Self::new();
@@ -623,7 +623,7 @@ impl<Base: SudokuBase> Grid<Base> {
 /// Asserts
 impl<Base: SudokuBase> Grid<Base> {
     fn assert_coordinate(coordinate: u8) {
-        assert!(coordinate < Self::side_length())
+        assert!(coordinate < Self::side_length());
     }
 
     fn assert_position(pos: Position) {
@@ -828,7 +828,7 @@ mod tests {
                 assert_equal(
                     actual_row,
                     expected_row.into_iter().map(|pos| grid.get(pos.into())),
-                )
+                );
             });
     }
     #[test]
@@ -859,7 +859,7 @@ mod tests {
                 assert_equal(
                     actual_row,
                     expected_row.into_iter().map(|pos| grid.get(pos.into())),
-                )
+                );
             });
     }
     #[test]
@@ -907,7 +907,7 @@ mod tests {
                 assert_equal(
                     actual_row,
                     expected_row.into_iter().map(|pos| grid.get(pos.into())),
-                )
+                );
             });
     }
     #[test]
@@ -936,7 +936,7 @@ mod tests {
                 assert_equal(
                     actual_row,
                     expected_row.into_iter().map(|pos| grid.get(pos.into())),
-                )
+                );
             });
     }
 

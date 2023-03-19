@@ -31,7 +31,7 @@ pub struct Sudoku<Base: SudokuBase> {
 
 impl<Base: SudokuBase> Default for Sudoku<Base> {
     fn default() -> Self {
-        Self::with_grid(Grid::new())
+        Self::new()
     }
 }
 
@@ -39,11 +39,11 @@ impl<Base: SudokuBase> Default for Sudoku<Base> {
 // TODO: return result in all asserts
 impl<Base: SudokuBase> Sudoku<Base> {
     pub fn new() -> Self {
-        Default::default()
+        Self::with_grid(Grid::new())
     }
 
     pub fn with_grid(grid: Grid<Base>) -> Self {
-        Self::with_grid_and_settings(grid, Default::default())
+        Self::with_grid_and_settings(grid, Settings::default())
     }
 
     pub fn with_grid_and_settings(grid: Grid<Base>, settings: Settings) -> Self {
@@ -207,7 +207,7 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
 
 impl<Base: SudokuBase> Sudoku<Base> {
     fn push_history(&mut self) {
-        self.history.push(self.grid.clone())
+        self.history.push(self.grid.clone());
     }
 }
 

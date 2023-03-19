@@ -67,6 +67,7 @@ impl<Base: SudokuBase> Candidates<Base> {
     /// `self ∪ other`
     ///
     /// [Reference](https://en.wikipedia.org/wiki/Union_(set_theory))
+    #[must_use]
     pub fn union(&self, other: &Self) -> Self {
         Self::with_integral_unchecked(self.bits | other.bits)
     }
@@ -74,6 +75,7 @@ impl<Base: SudokuBase> Candidates<Base> {
     /// `self ∩ other`
     ///
     /// [Reference](https://en.wikipedia.org/wiki/Intersection_(set_theory))
+    #[must_use]
     pub fn intersection(&self, other: &Self) -> Self {
         Self::with_integral_unchecked(self.bits & other.bits)
     }
@@ -81,6 +83,7 @@ impl<Base: SudokuBase> Candidates<Base> {
     /// `self ∖ other`
     ///
     /// [Reference](https://en.wikipedia.org/wiki/Complement_(set_theory)#Relative_complement)
+    #[must_use]
     pub fn without(&self, other: &Self) -> Self {
         Self::with_integral_unchecked(self.bits & !other.bits)
     }
@@ -319,7 +322,7 @@ mod tests {
                 size_of::<Candidates<U5>>()
             ],
             vec![1, 1, 2, 2, 4,]
-        )
+        );
     }
 
     mod constructors {

@@ -34,7 +34,7 @@ impl<Base: SudokuBase> BasePosition<Base> {
     pub(crate) unsafe fn new_unchecked(cell_index: u16) -> Self {
         let this = Self {
             cell_index,
-            _base: Default::default(),
+            _base: PhantomData::default(),
         };
         this.debug_assert();
         this
@@ -53,7 +53,7 @@ impl<Base: SudokuBase> BasePosition<Base> {
     }
 
     fn assert(&self) {
-        self.validate().unwrap()
+        self.validate().unwrap();
     }
 
     pub(crate) fn debug_assert(&self) {

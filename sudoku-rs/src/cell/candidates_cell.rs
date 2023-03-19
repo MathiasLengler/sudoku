@@ -65,13 +65,13 @@ impl<Base: SudokuBase> CandidatesCell<Base> {
 
     /// Delete contents of the cell
     pub(crate) fn delete(&mut self) {
-        *self = Self::new()
+        *self = Self::new();
     }
 
     /// Set the cell to a unfixed value.
     /// Deletes candidates if present.
     pub(crate) fn set_value(&mut self, value: Value<Base>) {
-        *self = Self::with_value(value)
+        *self = Self::with_value(value);
     }
 
     /// Set the cell to a value.
@@ -92,21 +92,21 @@ impl<Base: SudokuBase> CandidatesCell<Base> {
     /// Set the cell to the given candidates.
     /// Deletes value if present.
     pub(crate) fn set_candidates(&mut self, candidates: Candidates<Base>) {
-        *self = Self::with_candidates(candidates)
+        *self = Self::with_candidates(candidates);
     }
 
     /// Toggle the given candidate or last value.
     pub(crate) fn toggle_candidate(&mut self, candidate: Value<Base>) {
-        self.candidates.toggle(candidate)
+        self.candidates.toggle(candidate);
     }
 
     /// Deletes the given candidate or last value.
     pub(crate) fn delete_candidate(&mut self, candidate: Value<Base>) {
-        self.candidates.delete(candidate)
+        self.candidates.delete(candidate);
     }
 
     /// Set the given candidate to the given enabled state.
     pub(crate) fn set_candidate(&mut self, candidate: Value<Base>, enabled: bool) {
-        self.candidates.set(candidate, enabled)
+        self.candidates.set(candidate, enabled);
     }
 }

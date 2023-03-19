@@ -37,6 +37,7 @@ impl<Base: SudokuBase> CellState<Base> {
     }
 
     pub(super) fn has_value(&self) -> bool {
+        #[allow(clippy::match_same_arms)]
         match self {
             CellState::Value(_) => true,
             CellState::FixedValue(_) => true,
@@ -44,6 +45,7 @@ impl<Base: SudokuBase> CellState<Base> {
         }
     }
     pub(super) fn has_unfixed_value(&self) -> bool {
+        #[allow(clippy::match_same_arms)]
         match self {
             CellState::Value(_) => true,
             CellState::FixedValue(_) => false,
@@ -51,6 +53,7 @@ impl<Base: SudokuBase> CellState<Base> {
         }
     }
     pub(super) fn has_fixed_value(&self) -> bool {
+        #[allow(clippy::match_same_arms)]
         match self {
             CellState::Value(_) => false,
             CellState::FixedValue(_) => true,
@@ -58,6 +61,7 @@ impl<Base: SudokuBase> CellState<Base> {
         }
     }
     pub(super) fn has_candidates(&self) -> bool {
+        #[allow(clippy::match_same_arms)]
         match self {
             CellState::Value(_) => false,
             CellState::FixedValue(_) => false,
@@ -67,16 +71,14 @@ impl<Base: SudokuBase> CellState<Base> {
 
     pub(super) fn fix(&mut self) {
         *self = match *self {
-            CellState::Value(value) => CellState::FixedValue(value),
-            CellState::FixedValue(value) => CellState::FixedValue(value),
+            CellState::Value(value) | CellState::FixedValue(value) => CellState::FixedValue(value),
             CellState::Candidates(_) => panic!("Candidates can't be fixed: {self}"),
         };
     }
 
     pub(super) fn unfix(&mut self) {
         *self = match self {
-            CellState::Value(value) => CellState::Value(*value),
-            CellState::FixedValue(value) => CellState::Value(*value),
+            CellState::Value(value) | CellState::FixedValue(value) => CellState::Value(*value),
             CellState::Candidates(candidates) => CellState::Candidates(*candidates),
         };
     }
@@ -124,7 +126,7 @@ impl<Base: SudokuBase> CellState<Base> {
                 self.set_value(value);
                 true
             }
-            _ => unreachable!(),
+            CellState::FixedValue(_) => unreachable!(),
         }
     }
 
@@ -144,7 +146,7 @@ impl<Base: SudokuBase> CellState<Base> {
             CellState::Value(_) => {
                 *self = Self::with_candidates(Candidates::single(candidate));
             }
-            _ => unreachable!(),
+            CellState::FixedValue(_) => unreachable!(),
         }
     }
 
@@ -154,7 +156,7 @@ impl<Base: SudokuBase> CellState<Base> {
         match self {
             CellState::Candidates(candidates) => candidates.set(candidate, true),
             CellState::Value(_) => {}
-            _ => unreachable!(),
+            CellState::FixedValue(_) => unreachable!(),
         };
     }
     pub(super) fn delete_candidate(&mut self, candidate: Value<Base>) {
@@ -163,7 +165,7 @@ impl<Base: SudokuBase> CellState<Base> {
         match self {
             CellState::Candidates(candidates) => candidates.delete(candidate),
             CellState::Value(_) => {}
-            _ => unreachable!(),
+            CellState::FixedValue(_) => unreachable!(),
         };
     }
 }
@@ -250,7 +252,7 @@ mod tests {
                 size_of::<CellState<Base5>>()
             ],
             vec![2, 2, 4, 4, 8]
-        )
+        );
     }
 
     #[test]
@@ -351,7 +353,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "Fixed cell can't be modified")]
     fn test_delete_panic() {
-        setup().cell_state_fixed_value.delete()
+        setup().cell_state_fixed_value.delete();
     }
 
     #[test]

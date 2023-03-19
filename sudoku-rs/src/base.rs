@@ -266,7 +266,7 @@ mod tests {
         use std::mem::size_of;
 
         // MAX_VALUE must be representable at the highest bit position.
-        assert!(size_of::<Base::CandidatesIntegral>() * 8 >= usize::from(Base::MAX_VALUE))
+        assert!(size_of::<Base::CandidatesIntegral>() * 8 >= usize::from(Base::MAX_VALUE));
     }
 
     #[test]

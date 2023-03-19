@@ -1,7 +1,7 @@
 use std::any::{Any, TypeId};
 use std::convert::{TryFrom, TryInto};
 
-use anyhow::{bail, ensure, format_err};
+use anyhow::{anyhow, bail, format_err};
 
 pub use game::DynamicSudoku;
 pub use game::Game;
@@ -139,19 +139,17 @@ impl DynamicSudoku {
     }
 
     fn cell_count_to_base(cell_count: usize) -> Result<u8> {
-        let approx_base = (cell_count as f64).sqrt().sqrt().round() as u8;
-
-        ensure!(
-            Self::base_to_cell_count(approx_base) == cell_count && approx_base >= 2,
-            "Cell count {} has no valid sudoku base",
-            cell_count
-        );
-
-        Ok(approx_base)
-    }
-
-    fn base_to_cell_count(base: u8) -> usize {
-        (base as usize).pow(4)
+        Ok(
+            match u16::try_from(cell_count)
+                .map_err(|_| anyhow!("Cell count {cell_count} too large"))?
+            {
+                Base2::CELL_COUNT => 2,
+                Base3::CELL_COUNT => 3,
+                Base4::CELL_COUNT => 4,
+                Base5::CELL_COUNT => 5,
+                _ => bail!("Cell count {cell_count} has no valid sudoku base"),
+            },
+        )
     }
 }
 

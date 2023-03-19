@@ -53,7 +53,7 @@ enum StepResult {
 
 impl<'s, Base: SudokuBase> Solver<'s, Base> {
     pub fn new(grid: &'s mut Grid<Base>) -> Solver<'s, Base> {
-        Self::new_with_settings(grid, Default::default())
+        Self::new_with_settings(grid, Settings::default())
     }
 
     pub fn new_with_settings(grid: &'s mut Grid<Base>, settings: Settings) -> Solver<'s, Base> {
@@ -83,7 +83,7 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
         self.choices.push(Choice::new(
             self.grid.direct_candidates(pos).to_vec_value(),
             &mut self.candidates_processor,
-        ))
+        ));
     }
 
     fn try_solve(&mut self) -> Option<Grid<Base>> {
@@ -127,23 +127,18 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
                     self.choices.pop();
 
                     if let Some(prev_choice) = self.choices.last_mut() {
-                        prev_choice.set_next()
+                        prev_choice.set_next();
                     }
 
                     StepResult::Backtrack
+                } else if let Some(next_position) = self.empty_positions.get(choices_len).copied() {
+                    self.push_choice(next_position);
+
+                    StepResult::NextCell
                 } else {
-                    match self.empty_positions.get(choices_len).copied() {
-                        Some(next_position) => {
-                            self.push_choice(next_position);
+                    choice.set_next();
 
-                            StepResult::NextCell
-                        }
-                        None => {
-                            choice.set_next();
-
-                            StepResult::Solution
-                        }
-                    }
+                    StepResult::Solution
                 }
             }
             None => {

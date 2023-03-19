@@ -216,7 +216,7 @@ impl Generator {
                 let deleted_count = deleted.len();
                 debug!("Position {i}/{all_positions_count} deleted, totaling {deleted_count}/{distance} deleted positions");
 
-                deleted.push((pos, deleted_value))
+                deleted.push((pos, deleted_value));
             } else {
                 debug!("Position {i}/{all_positions_count} is required for unique solution");
             }
