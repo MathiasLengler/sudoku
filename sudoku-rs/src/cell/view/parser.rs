@@ -1,7 +1,8 @@
-use crate::base::consts::ALL_CELL_COUNTS;
-use anyhow::ensure;
 use std::convert::TryInto;
 
+use anyhow::ensure;
+
+use crate::base::consts::ALL_CELL_COUNTS;
 use crate::cell::view::CellView;
 use crate::error::Result;
 
@@ -92,12 +93,14 @@ fn from_terminal_candidates_grid(input: &str) -> Result<Vec<CellView>> {
 
 #[cfg(test)]
 pub(crate) mod tests {
-    use super::*;
+    use anyhow::Context;
+
     use crate::base::SudokuBase;
     use crate::grid::serialization::GridFormat;
     use crate::grid::Grid;
     use crate::samples;
-    use anyhow::Context;
+
+    use super::*;
 
     pub(crate) static INPUT_GIVENS_LINE: &'static str = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),

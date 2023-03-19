@@ -1,7 +1,7 @@
-use rand::{thread_rng, SeedableRng};
 use std::fmt::{self, Display};
 
 use rand::seq::SliceRandom;
+use rand::{thread_rng, SeedableRng};
 use rand_xoshiro::Xoshiro256StarStar;
 
 use crate::base::SudokuBase;

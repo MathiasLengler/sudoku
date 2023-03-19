@@ -1,12 +1,12 @@
 use std::convert::TryFrom;
 use std::convert::TryInto;
 
-use crate::base::consts::BaseMax;
 use anyhow::bail;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "wasm")]
 use ts_rs::TS;
 
+use crate::base::consts::BaseMax;
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
 use crate::cell::compact::cell_state::CellState;

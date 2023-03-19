@@ -1,9 +1,11 @@
+use std::marker::PhantomData;
+
+use anyhow::ensure;
+
 use crate::base::SudokuBase;
 use crate::error::{Error, Result};
 use crate::grid::index::coordinate::BaseCoordinate;
 use crate::position::Position;
-use anyhow::ensure;
-use std::marker::PhantomData;
 
 // TODO: use for all non-public APIs
 //  rename:
@@ -129,8 +131,9 @@ impl<Base: SudokuBase> TryFrom<Position> for BasePosition<Base> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::base::consts::{Base2, Base3};
+
+    use super::*;
 
     #[test]
     fn test_new() {

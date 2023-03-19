@@ -6,10 +6,11 @@ pub mod strategic;
 
 #[cfg(test)]
 mod test_util {
+    use std::collections::HashSet;
+
     use crate::base::consts::Base2;
     use crate::base::SudokuBase;
     use crate::grid::Grid;
-    use std::collections::HashSet;
 
     pub fn assert_solve_result<Base: SudokuBase>(solve_result: Option<Grid<Base>>) {
         assert!(solve_result.is_some());

@@ -8,10 +8,20 @@ use num::traits::{
 };
 use num::PrimInt;
 
-use crate::cell::candidates_cell::CandidatesCell;
 use consts::*;
 
+use crate::cell::candidates_cell::CandidatesCell;
+
 pub mod consts {
+    pub use Base1 as U1;
+    pub use Base2 as U2;
+    pub use Base3 as U3;
+    pub use Base4 as U4;
+    pub use Base5 as U5;
+    pub use Base5 as BaseMax;
+
+    use crate::base::SudokuBase;
+
     #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
     pub struct Base1;
     #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -22,16 +32,6 @@ pub mod consts {
     pub struct Base4;
     #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
     pub struct Base5;
-
-    pub use Base1 as U1;
-    pub use Base2 as U2;
-    pub use Base3 as U3;
-    pub use Base4 as U4;
-    pub use Base5 as U5;
-
-    pub use Base5 as BaseMax;
-
-    use crate::base::SudokuBase;
 
     pub const ALL_CELL_COUNTS: [u16; 5] = [
         Base1::CELL_COUNT,

@@ -1,8 +1,10 @@
 #![allow(clippy::inline_always)]
+
+use num::{One, PrimInt, Zero};
+
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
 use crate::cell::compact::value::Value;
-use num::{One, PrimInt, Zero};
 
 #[derive(Debug, Clone)]
 struct IterOnes<Base: SudokuBase> {
@@ -99,8 +101,9 @@ impl<Base: SudokuBase> From<&Candidates<Base>> for CandidatesIter<Base> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::base::consts::Base2;
+
+    use super::*;
 
     #[test]
     fn test_iter_ones() {
