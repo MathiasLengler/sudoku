@@ -86,7 +86,7 @@ fn render_givens_grid<Base: SudokuBase>(grid: &Grid<Base>) -> String {
         .into_iter()
         .collect();
 
-    return builder
+    builder
         .build()
         .with(
             Style::modern()
@@ -95,7 +95,7 @@ fn render_givens_grid<Base: SudokuBase>(grid: &Grid<Base>) -> String {
                 .off_right()
                 .off_bottom(),
         )
-        .to_string();
+        .to_string()
 }
 
 fn render_binary_candidates_line<Base: SudokuBase>(grid: &Grid<Base>) -> String {
@@ -129,7 +129,7 @@ fn render_candidates_grid<Base: SudokuBase>(grid: &Grid<Base>) -> String {
     let mut grid_builder: Builder = all_block_cells
         .chunks(usize::from(Base::BASE))
         .map(|row_of_blocks| {
-            row_of_blocks.into_iter().map(|block| {
+            row_of_blocks.iter().map(|block| {
                 let mut block_builder: Builder = block
                     .chunks(usize::from(Base::BASE))
                     .map(|block_row| {

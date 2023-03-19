@@ -241,7 +241,7 @@ impl<Base: SudokuBase> OldDeduction<Base> {
                     "Unexpected no-op deduction: {self}"
                 );
 
-                let added_candidates = remaining_candidates.without(&previous_candidates);
+                let added_candidates = remaining_candidates.without(previous_candidates);
                 ensure!(
                     added_candidates.is_empty(),
                     "Unexpected candidate(s) addition: {self}"
@@ -281,7 +281,7 @@ impl<Base: SudokuBase> OldDeduction<Base> {
                 "Conflicting previous_candidates: {self_previous_candidates} != {other_previous_candidates}"
             );
 
-            Self::new(*self_pos, *self_previous_candidates, self_kind.merge(&other_kind)?)
+            Self::new(*self_pos, *self_previous_candidates, self_kind.merge(other_kind)?)
         })().with_context(|| format!("Incompatible merge of two deductions: {self}, {other}"))
     }
 }
@@ -431,7 +431,7 @@ impl<Base: SudokuBase> Deductions<Base> {
     }
 
     pub fn apply(&self, grid: &mut Grid<Base>) -> Result<()> {
-        self.validate(&grid)?;
+        self.validate(grid)?;
 
         let merged_deduction = self.as_merged_deduction()?;
         merged_deduction.apply(grid)?;
@@ -501,9 +501,12 @@ impl<T: Merge> IntoIterator for PositionMap<T> {
     }
 }
 
+type PositionMapIter<'a, T> =
+    Map<Iter<'a, Position, T>, fn((&Position, &'a T)) -> (Position, &'a T)>;
+
 impl<'a, T: Merge> IntoIterator for &'a PositionMap<T> {
     type Item = (Position, &'a T);
-    type IntoIter = Map<Iter<'a, Position, T>, fn((&Position, &'a T)) -> (Position, &'a T)>;
+    type IntoIter = PositionMapIter<'a, T>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
@@ -532,10 +535,7 @@ impl<T: Merge> PositionMap<T> {
     }
 
     // False positive
-    // noinspection RsNeedlessLifetimes
-    pub fn iter<'a>(
-        &'a self,
-    ) -> Map<Iter<'a, Position, T>, fn((&Position, &'a T)) -> (Position, &'a T)> {
+    pub fn iter(&self) -> PositionMapIter<'_, T> {
         self.map.iter().map(|(pos, value)| (*pos, value))
     }
 
@@ -636,11 +636,11 @@ impl<Base: SudokuBase> Deduction<Base> {
         );
 
         for (pos, action) in &self.actions {
-            action.validate(&grid.get(pos))?;
+            action.validate(grid.get(pos))?;
         }
 
         for (pos, reason) in &self.reasons {
-            reason.validate(&grid.get(pos))?;
+            reason.validate(grid.get(pos))?;
         }
 
         // TODO: validate that actions and reasons are not in conflict, e.g. for the same position:
@@ -651,7 +651,7 @@ impl<Base: SudokuBase> Deduction<Base> {
     }
 
     fn apply(&self, grid: &mut Grid<Base>) -> Result<()> {
-        self.validate(&grid)?;
+        self.validate(grid)?;
 
         for (pos, action) in &self.actions {
             action.apply(grid.get_mut(pos))?;
@@ -696,7 +696,7 @@ impl<Base: SudokuBase> Display for Reason<Base> {
 impl<Base: SudokuBase> Reason<Base> {
     fn validate(&self, cell: &Cell<Base>) -> Result<()> {
         (|| {
-            Ok(match cell.state() {
+            match cell.state() {
                 CellState::Value(value) | CellState::FixedValue(value) => {
                     bail!("unexpected cell with value {value}")
                 }
@@ -713,7 +713,8 @@ impl<Base: SudokuBase> Reason<Base> {
                         ensure!(unexpected_candidates.is_empty(), "unexpected candidates {unexpected_candidates}")
                     }
                 },
-            })
+            }
+            Ok(())
         })()
         .with_context(|| format!("Invalid reason {self} for cell {cell}"))
     }
@@ -831,7 +832,7 @@ impl<Base: SudokuBase> Action<Base> {
     }
 
     fn apply(&self, cell: &mut Cell<Base>) -> Result<()> {
-        let existing_candidates = self.validate(&cell)?;
+        let existing_candidates = self.validate(cell)?;
         match *self {
             Action::SetValue { value } => {
                 cell.set_value(value);
@@ -849,9 +850,8 @@ impl<Base: SudokuBase> Action<Base> {
     }
 
     fn update_direct_candidates(&self, grid: &mut Grid<Base>, pos: Position) {
-        match self {
-            Action::SetValue { value } => grid.update_direct_candidates(pos, *value),
-            _ => {}
+        if let Action::SetValue { value } = self {
+            grid.update_direct_candidates(pos, *value)
         }
     }
 }

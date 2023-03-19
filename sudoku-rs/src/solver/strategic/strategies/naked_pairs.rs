@@ -14,7 +14,7 @@ pub struct NakedPairs;
 
 impl Strategy for NakedPairs {
     fn execute<Base: SudokuBase>(&self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
-        Ok(Grid::<Base>::all_group_positions()
+        Grid::<Base>::all_group_positions()
             .flat_map(|group| {
                 let candidates_group: Vec<_> = group
                     .filter_map(|pos| {
@@ -27,7 +27,7 @@ impl Strategy for NakedPairs {
                 Self::find_naked_pairs(candidates_group)
             })
             .collect::<Deductions<Base>>()
-            .merge_deductions_by_reasons()?)
+            .merge_deductions_by_reasons()
     }
 }
 

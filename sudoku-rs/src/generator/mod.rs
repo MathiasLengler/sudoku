@@ -18,9 +18,10 @@ use crate::solver::strategic::strategies::{Backtracking, DynamicStrategy};
 //  target difficulty: sum of weighted strategy applications
 
 #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
-#[derive(Debug, Serialize, Deserialize, Copy, Clone)]
+#[derive(Debug, Serialize, Deserialize, Copy, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub enum GeneratorTarget {
+    #[default]
     Filled,
     FromFilled {
         distance: usize,
@@ -33,12 +34,6 @@ pub enum GeneratorTarget {
         distance: usize,
         set_all_direct_candidates: bool,
     },
-}
-
-impl Default for GeneratorTarget {
-    fn default() -> Self {
-        GeneratorTarget::Filled
-    }
 }
 
 #[cfg_attr(feature = "wasm", derive(TS), ts(export))]

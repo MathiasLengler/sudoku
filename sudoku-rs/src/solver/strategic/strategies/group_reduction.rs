@@ -65,11 +65,7 @@ impl GroupReduction {
         let mut values = Vec::with_capacity(candidates_group.len());
         let mut reduced_candidates_group = vec![Candidates::new(); candidates_group.len()];
 
-        Self::walk_value_assignments(
-            &candidates_group,
-            &mut values,
-            &mut reduced_candidates_group,
-        );
+        Self::walk_value_assignments(candidates_group, &mut values, &mut reduced_candidates_group);
 
         reduced_candidates_group
     }

@@ -22,13 +22,12 @@ pub(crate) fn parse_cells(input: &str) -> Result<Vec<CellView>> {
     );
 
     // Fix all values
-    cell_views.iter_mut().for_each(|cell_view| match cell_view {
-        CellView::Value { fixed, value } => {
+    cell_views.iter_mut().for_each(|cell_view| {
+        if let CellView::Value { fixed, value } = cell_view {
             if *value != 0 {
                 *fixed = true;
             }
         }
-        _ => {}
     });
 
     Ok(cell_views)
@@ -52,7 +51,7 @@ fn from_givens_grid(input: &str) -> Vec<CellView> {
 fn from_binary_candidates_line(input: &str) -> Result<Vec<CellView>> {
     let mut cell_views = vec![];
 
-    for cell_str in input.split(",") {
+    for cell_str in input.split(',') {
         let bits = cell_str.parse::<u32>()?;
         cell_views.push(bits.try_into()?)
     }

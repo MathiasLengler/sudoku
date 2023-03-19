@@ -50,7 +50,7 @@ impl<'g, Base: SudokuBase> Solver<'g, Base> {
     /// Tries strategies until a strategy is able to modify the grid.
     pub fn try_strategies(&mut self) -> Result<Option<Deductions<Base>>> {
         for strategy in &self.strategies {
-            let deductions = Strategy::execute(strategy, &mut self.grid)?;
+            let deductions = Strategy::execute(strategy, self.grid)?;
 
             if !(deductions.is_empty()) {
                 trace!("{strategy:?}:\n{}\n{}", deductions, self.grid);

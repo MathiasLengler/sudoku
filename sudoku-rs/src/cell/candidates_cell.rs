@@ -52,7 +52,7 @@ impl<Base: SudokuBase> CandidatesCell<Base> {
         let mut values = self.candidates.iter();
 
         if let Some(value) = values.next() {
-            if let None = values.next() {
+            if values.next().is_none() {
                 return Some(value);
             }
         }

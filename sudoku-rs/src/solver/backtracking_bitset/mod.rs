@@ -252,11 +252,11 @@ struct GroupAvailabilityIndex {
     block: u8,
 }
 
-impl Into<Position> for &GroupAvailabilityIndex {
-    fn into(self) -> Position {
+impl From<&GroupAvailabilityIndex> for Position {
+    fn from(index: &GroupAvailabilityIndex) -> Self {
         Position {
-            row: self.row,
-            column: self.column,
+            row: index.row,
+            column: index.column,
         }
     }
 }

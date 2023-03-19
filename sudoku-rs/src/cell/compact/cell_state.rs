@@ -90,7 +90,7 @@ impl<Base: SudokuBase> CellState<Base> {
 
     pub(super) fn candidates(&self) -> Option<Candidates<Base>> {
         match self {
-            CellState::Candidates(candidates) => Some(candidates.clone()),
+            CellState::Candidates(candidates) => Some(*candidates),
             _ => None,
         }
     }

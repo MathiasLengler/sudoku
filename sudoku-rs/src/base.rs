@@ -132,7 +132,8 @@ mod cell_index_to_block_index {
 ///
 /// Implementations for bases `1..=5` are provided by this crate.
 ///
-/// This trait is unsafe to implement, since this crate makes assumptions about the correct implementation of this trait.
+/// # Safety
+/// This crate makes assumptions about the correct implementation of this trait.
 /// An incorrect implementation could result in undefined behaviour.
 pub unsafe trait SudokuBase
 where

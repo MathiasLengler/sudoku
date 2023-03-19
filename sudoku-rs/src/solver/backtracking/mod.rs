@@ -10,18 +10,13 @@ mod choice;
 // TODO: how to externally drive and visualize solver (steps)
 //  make step into an iterator over step results
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Default)]
 pub enum CandidatesVisitOrder {
+    #[default]
     Asc,
     Desc,
     Random,
     RandomSeed(u64),
-}
-
-impl Default for CandidatesVisitOrder {
-    fn default() -> Self {
-        CandidatesVisitOrder::Asc
-    }
 }
 
 #[derive(Debug)]
