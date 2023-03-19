@@ -1,3 +1,4 @@
+#![allow(clippy::inline_always)]
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
 use crate::cell::compact::value::Value;

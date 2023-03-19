@@ -85,6 +85,13 @@ impl<Base: SudokuBase> BaseCoordinate<Base> {
     }
 }
 
+/// Iterators
+impl<Base: SudokuBase> BaseCoordinate<Base> {
+    pub fn all() -> impl Iterator<Item = Self> {
+        (0..Base::SIDE_LENGTH).map(|coordinate| unsafe { Self::new_unchecked(coordinate) })
+    }
+}
+
 impl<Base: SudokuBase> TryFrom<u8> for BaseCoordinate<Base> {
     type Error = Error;
 

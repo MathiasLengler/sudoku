@@ -65,21 +65,22 @@ impl<Base: SudokuBase> Candidates<Base> {
 /// Set constructors
 impl<Base: SudokuBase> Candidates<Base> {
     /// `self ∪ other`
-    /// https://en.wikipedia.org/wiki/Set_(mathematics)#Unions
+    ///
+    /// [Reference](https://en.wikipedia.org/wiki/Union_(set_theory))
     pub fn union(&self, other: &Self) -> Self {
         Self::with_integral_unchecked(self.bits | other.bits)
     }
 
     /// `self ∩ other`
-    /// Reference:
-    /// https://en.wikipedia.org/wiki/Set_(mathematics)#Intersections
+    ///
+    /// [Reference](https://en.wikipedia.org/wiki/Intersection_(set_theory))
     pub fn intersection(&self, other: &Self) -> Self {
         Self::with_integral_unchecked(self.bits & other.bits)
     }
 
     /// `self ∖ other`
-    /// Reference:
-    /// https://en.wikipedia.org/wiki/Set_(mathematics)#Unions:~:text=be%20%22subtracted%22.%20The-,relative%20complement,-of%20B%20in
+    ///
+    /// [Reference](https://en.wikipedia.org/wiki/Complement_(set_theory)#Relative_complement)
     pub fn without(&self, other: &Self) -> Self {
         Self::with_integral_unchecked(self.bits & !other.bits)
     }

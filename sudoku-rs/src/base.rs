@@ -194,6 +194,7 @@ where
 macro_rules! impl_sudoku_base {
     ($($type_num:ty,$base_u8:expr,$type_integral:ty,$CELL_INDEX_TO_BLOCK_INDEX:expr;)+) => {
         $(
+// Safety: this private macro is only instantiated below and the correctness of the generated impls are tested.
 unsafe impl SudokuBase for $type_num {
     const BASE: u8 = $base_u8;
     const SIDE_LENGTH: u8 = base_to_side_length(Self::BASE);

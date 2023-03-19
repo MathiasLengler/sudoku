@@ -1,4 +1,4 @@
-//! Source: https://www.sudokuoftheday.com/about/difficulty/
+//! [Source](https://www.sudokuoftheday.com/difficulty)
 //!
 //! Technique | Code | Cost for first use | Cost for subsequent uses
 //! --- | --- | --- | ---
@@ -52,7 +52,7 @@ pub trait Strategy: Debug + Copy + Clone + Eq {
     fn execute<Base: SudokuBase>(&self, grid: &Grid<Base>) -> Result<Deductions<Base>>;
 
     fn strategy_name(&self) -> String {
-        format!("{:?}", self)
+        format!("{self:?}")
     }
 }
 #[cfg_attr(feature = "wasm", derive(TS), ts(export))]

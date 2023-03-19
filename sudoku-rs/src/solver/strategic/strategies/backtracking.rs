@@ -27,7 +27,7 @@ impl Strategy for Backtracking {
                 })
                 .collect())
         } else {
-            Ok(Default::default())
+            Ok(Deductions::default())
         }
     }
 }

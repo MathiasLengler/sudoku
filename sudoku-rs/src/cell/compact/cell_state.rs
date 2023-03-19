@@ -15,13 +15,13 @@ pub(crate) enum CellState<Base: SudokuBase> {
 
 impl<Base: SudokuBase> Default for CellState<Base> {
     fn default() -> Self {
-        Self::with_candidates(Candidates::new())
+        Self::new()
     }
 }
 
 impl<Base: SudokuBase> CellState<Base> {
     pub(super) fn new() -> Self {
-        Default::default()
+        Self::with_candidates(Candidates::new())
     }
 
     pub(super) fn with_value(value: Value<Base>, fixed: bool) -> Self {
