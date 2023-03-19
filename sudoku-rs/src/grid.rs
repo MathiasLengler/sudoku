@@ -3,7 +3,6 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::ops::{Index, IndexMut};
 
-use crate::base::consts::Base3;
 use anyhow::{anyhow, ensure};
 use ndarray::Array2;
 use num::Integer;
