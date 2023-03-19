@@ -28,6 +28,8 @@ pub mod serialization;
 
 pub mod index;
 
+// TODO: run tests under miri in release mode
+
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub struct Grid<Base: SudokuBase> {
     /// The cells of this grid.
