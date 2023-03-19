@@ -329,9 +329,13 @@ impl<Base: SudokuBase> Grid<Base> {
 
         let side_length = Self::side_length_usize();
 
-        Ok(Grid {
+        // This is the only direct instantiation of Grid.
+        let grid = Grid {
             cells: Array2::from_shape_vec((side_length, side_length), cells)?,
-        })
+        };
+        // Check for safety invariants in debug builds.
+        grid.debug_assert();
+        Ok(grid)
     }
 
     pub fn try_from_blocks(blocks: Vec<Vec<CellView>>) -> Result<Self> {
