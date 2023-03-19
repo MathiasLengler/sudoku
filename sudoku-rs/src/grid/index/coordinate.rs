@@ -121,4 +121,14 @@ mod tests {
         assert_eq!(BaseCoordinate::<Base3>::new(8).unwrap().coordinate, 8);
         assert!(BaseCoordinate::<Base3>::new(9).is_err());
     }
+
+    #[test]
+    fn test_all() {
+        use itertools::assert_equal;
+
+        assert_equal(
+            BaseCoordinate::<Base3>::all(),
+            (0..9).map(|coordinate| BaseCoordinate::new(coordinate).unwrap()),
+        );
+    }
 }
