@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::base::SudokuBase;
+use crate::grid::index::position::BasePosition;
 
 #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[derive(
@@ -22,6 +23,12 @@ impl From<(u8, u8)> for Position {
     }
 }
 
+impl<Base: SudokuBase> From<BasePosition<Base>> for Position {
+    fn from(base_position: BasePosition<Base>) -> Self {
+        let (row, column) = base_position.row_and_column();
+        (row.get(), column.get()).into()
+    }
+}
 impl Position {
     pub fn index_tuple(&self) -> (usize, usize) {
         let &Position { row, column } = self;

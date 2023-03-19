@@ -126,18 +126,40 @@ mod cell_index_to_block_index {
     ];
 }
 
-// TODO: evaluate `as` casting of constants
-pub trait SudokuBase
+/// A size of a square, standard sudoku.
+///
+/// The base of sudoku equals the
+///
+/// Implementations for bases `1..=5` are provided by this crate.
+///
+/// This trait is unsafe to implement, since this crate makes assumptions about the correct implementation of this trait.
+/// An incorrect implementation could result in undefined behaviour.
+pub unsafe trait SudokuBase
 where
     Self: Ord + Hash + Clone + Copy + Debug + Default + 'static,
 {
+    // TODO: evaluate `as` casting of constants
+    /// The side length of a sudoku block.
+    ///
+    /// # Examples
+    /// - `4x4`: `2`
+    /// - `9x9`: `3`
+    /// - `16x16`: `4`
+    /// - `25x25`: `5`
     const BASE: u8;
+    /// The side length of the complete sudoku. Equals this size of a row or column.
+    /// Must equal `MAX_VALUE`.
     const SIDE_LENGTH: u8;
+    /// The max value a value can be set to.
+    /// Must equal `SIDE_LENGTH`.
     const MAX_VALUE: u8;
+    /// The total cell count of the sudoku.
     const CELL_COUNT: u16;
 
+    /// Get the the block index for a specific cell index.
     fn cell_index_to_block_index(cell_index: u16) -> u8;
 
+    /// Bit field type for candidates storage.
     type CandidatesIntegral: Copy
         + Clone
         + Debug
@@ -160,6 +182,7 @@ where
         + BitAndAssign
         + Shl<u8, Output = Self::CandidatesIntegral>;
 
+    /// Data structure for `backtracking_bitset::Solver`
     type CandidatesCells: AsRef<[CandidatesCell<Self>]>
         + AsMut<[CandidatesCell<Self>]>
         + Clone
@@ -170,7 +193,7 @@ where
 macro_rules! impl_sudoku_base {
     ($($type_num:ty,$base_u8:expr,$type_integral:ty,$CELL_INDEX_TO_BLOCK_INDEX:expr;)+) => {
         $(
-impl SudokuBase for $type_num {
+unsafe impl SudokuBase for $type_num {
     const BASE: u8 = $base_u8;
     const SIDE_LENGTH: u8 = base_to_side_length(Self::BASE);
     const MAX_VALUE: u8 = base_to_max_value(Self::BASE);

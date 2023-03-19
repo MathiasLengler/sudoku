@@ -1,7 +1,9 @@
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::fmt::{Display, Formatter};
+use std::ops::{Index, IndexMut};
 
+use crate::base::consts::Base3;
 use anyhow::{anyhow, ensure};
 use ndarray::Array2;
 use num::Integer;
@@ -14,6 +16,7 @@ use crate::cell::view::parser::parse_cells;
 use crate::cell::view::CellView;
 use crate::cell::Cell;
 use crate::error::{Error, Result};
+use crate::grid::index::position::BasePosition;
 use crate::grid::serialization::GridFormat;
 use crate::position::Position;
 use crate::solver::strategic::deduction::{OldDeduction, OldDeductionKind};
@@ -23,9 +26,110 @@ use crate::solver::{backtracking_bitset, strategic};
 pub mod deserialization;
 pub mod serialization;
 
+pub mod index;
+
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub struct Grid<Base: SudokuBase> {
+    /// The cells of this grid.
+    ///
+    /// # Safety invariants
+    /// - `cells.len() == Base::CELL_COUNT`
+    /// - `cells.is_standard_layout()`
     cells: Array2<Cell<Base>>,
+}
+
+impl<Base: SudokuBase> Index<BasePosition<Base>> for Grid<Base> {
+    type Output = Cell<Base>;
+
+    fn index(&self, base_position: BasePosition<Base>) -> &Self::Output {
+        // Debug validation
+        base_position.debug_assert();
+        self.debug_assert();
+
+        let cells_slice = self.cells_slice();
+
+        let cell_index = base_position.cell_index() as usize;
+
+        debug_assert!(cells_slice.get(cell_index).is_some());
+
+        // Safety:
+        // - `cell_index < Base::CELL_COUNT` is guaranteed by `BasePosition`
+        // - `cells.len() == Base::CELL_COUNT` is guaranteed by `Grid`
+        let cell = unsafe { cells_slice.get_unchecked(cell_index) };
+
+        cell
+    }
+}
+
+impl<Base: SudokuBase> IndexMut<BasePosition<Base>> for Grid<Base> {
+    fn index_mut(&mut self, base_position: BasePosition<Base>) -> &mut Self::Output {
+        // Debug validation
+        base_position.debug_assert();
+        self.debug_assert();
+
+        let cells_slice = self.cells_slice_mut();
+
+        let cell_index = base_position.cell_index() as usize;
+
+        debug_assert!(cells_slice.get_mut(cell_index).is_some());
+
+        // Safety:
+        // - `cell_index < Base::CELL_COUNT` is guaranteed by `BasePosition`
+        // - `cells.len() == Base::CELL_COUNT` is guaranteed by `Grid`
+        let cell = unsafe { cells_slice.get_unchecked_mut(cell_index) };
+
+        cell
+    }
+}
+
+/// Indexing
+impl<Base: SudokuBase> Grid<Base> {
+    // TODO: evaluate `cells: Box<[Cell<Base>; Base::CELL_COUNT]>`
+    //  requires new associated type in `Base`, but could reduce the amount of unsafe code for slice conversions.
+    fn cells_slice(&self) -> &[Cell<Base>] {
+        self.debug_assert();
+
+        // Safety: this is a unsafe fork of ndarray `ArrayBase::as_slice()`.
+        // The `is_standard_layout` check is removed, since `Grid` guarantees that this is always the case.
+        // The length is inlined, since `Grid` guarantees it.
+        unsafe { std::slice::from_raw_parts(self.cells.as_ptr(), usize::from(Base::CELL_COUNT)) }
+    }
+    fn cells_slice_mut(&mut self) -> &mut [Cell<Base>] {
+        self.debug_assert();
+
+        // Safety: this is a unsafe fork of ndarray `ArrayBase::as_slice_mut()`.
+        // The `is_standard_layout` check is removed, since `Grid` guarantees that this is always the case.
+        // The call to `ensure_unique` is removed, since cells contain a `OwnedRepr`, where this call is a noop.
+        // The length is inlined, since `Grid` guarantees it.
+        unsafe {
+            std::slice::from_raw_parts_mut(self.cells.as_mut_ptr(), usize::from(Base::CELL_COUNT))
+        }
+    }
+}
+
+/// Validation
+impl<Base: SudokuBase> Grid<Base> {
+    fn validate_cells(cells: &Array2<Cell<Base>>) -> Result<()> {
+        ensure!(cells.len() == usize::from(Base::CELL_COUNT));
+        ensure!(cells.is_standard_layout());
+
+        Ok(())
+    }
+
+    fn validate(&self) -> Result<()> {
+        Self::validate_cells(&self.cells)
+    }
+
+    fn assert(&self) {
+        self.validate().unwrap()
+    }
+
+    fn debug_assert(&self) {
+        debug_assert!({
+            self.assert();
+            true
+        });
+    }
 }
 
 /// Direct Candidates
@@ -912,5 +1016,68 @@ mod tests {
         // Invalid fixed value
         grid.get_mut(Position { row: 0, column: 0 }).fix();
         assert!(grid.unique_solution_for_fixed_values().is_none());
+    }
+
+    #[test]
+    fn test_index() {
+        let grid = samples::base_2_candidates_coordinates();
+
+        let expected_cell = Cell::with_candidates(Candidates::new());
+        assert_eq!(grid[BasePosition::new(0).unwrap()], expected_cell);
+        assert_eq!(grid[(0, 0).try_into().unwrap()], expected_cell);
+        assert_eq!(
+            grid[Position { row: 0, column: 0 }.try_into().unwrap()],
+            expected_cell
+        );
+        let expected_cell = Cell::with_candidates(Candidates::single(1.try_into().unwrap()));
+        assert_eq!(grid[BasePosition::new(1).unwrap()], expected_cell);
+        assert_eq!(grid[(0, 1).try_into().unwrap()], expected_cell);
+        assert_eq!(
+            grid[Position { row: 0, column: 1 }.try_into().unwrap()],
+            expected_cell
+        );
+        let expected_cell = Cell::with_candidates(Candidates::all());
+        assert_eq!(grid[BasePosition::new(15).unwrap()], expected_cell);
+        assert_eq!(grid[(3, 3).try_into().unwrap()], expected_cell);
+        assert_eq!(
+            grid[Position { row: 3, column: 3 }.try_into().unwrap()],
+            expected_cell
+        );
+    }
+
+    #[test]
+    fn test_index_mut() {
+        let mut grid = samples::base_2_candidates_coordinates();
+
+        let expected_cell = Cell::with_candidates(Candidates::new());
+        assert_eq!(
+            *grid.index_mut(BasePosition::new(0).unwrap()),
+            expected_cell
+        );
+        assert_eq!(*grid.index_mut((0, 0).try_into().unwrap()), expected_cell);
+        assert_eq!(
+            *grid.index_mut(Position { row: 0, column: 0 }.try_into().unwrap()),
+            expected_cell
+        );
+        let expected_cell = Cell::with_candidates(Candidates::single(1.try_into().unwrap()));
+        assert_eq!(
+            *grid.index_mut(BasePosition::new(1).unwrap()),
+            expected_cell
+        );
+        assert_eq!(*grid.index_mut((0, 1).try_into().unwrap()), expected_cell);
+        assert_eq!(
+            *grid.index_mut(Position { row: 0, column: 1 }.try_into().unwrap()),
+            expected_cell
+        );
+        let expected_cell = Cell::with_candidates(Candidates::all());
+        assert_eq!(
+            *grid.index_mut(BasePosition::new(15).unwrap()),
+            expected_cell
+        );
+        assert_eq!(*grid.index_mut((3, 3).try_into().unwrap()), expected_cell);
+        assert_eq!(
+            *grid.index_mut(Position { row: 3, column: 3 }.try_into().unwrap()),
+            expected_cell
+        );
     }
 }
