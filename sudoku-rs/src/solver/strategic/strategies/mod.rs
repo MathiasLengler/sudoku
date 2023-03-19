@@ -154,7 +154,7 @@ mod test_util {
     use crate::grid::Grid;
     use crate::solver::strategic::deduction::Deductions;
 
-    pub fn assert_deductions<Base: SudokuBase>(
+    pub(crate) fn assert_deductions<Base: SudokuBase>(
         deductions: Deductions<Base>,
         expected_deductions: Deductions<Base>,
     ) -> Deductions<Base> {
@@ -166,7 +166,7 @@ mod test_util {
         deductions
     }
 
-    pub fn assert_deductions_with_grid<Base: SudokuBase>(
+    pub(crate) fn assert_deductions_with_grid<Base: SudokuBase>(
         deductions: Deductions<Base>,
         expected_deductions: Deductions<Base>,
         grid: &mut Grid<Base>,

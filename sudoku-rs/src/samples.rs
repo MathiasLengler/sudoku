@@ -35,9 +35,9 @@ pub fn base_2() -> Vec<Grid<U2>> {
     .collect::<Result<Vec<_>>>()
     .unwrap();
 
-    grids.iter_mut().for_each(|grid| {
+    for grid in &mut grids {
         grid.fix_all_values();
-    });
+    }
 
     grids
 }
@@ -81,9 +81,9 @@ pub fn base_3() -> Vec<Grid<U3>> {
     .collect::<Result<Vec<_>>>()
     .unwrap();
 
-    grids.iter_mut().for_each(|grid| {
+    for grid in &mut grids {
         grid.fix_all_values();
-    });
+    }
 
     grids
 }

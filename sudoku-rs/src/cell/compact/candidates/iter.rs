@@ -13,11 +13,12 @@ struct IterOnes<Base: SudokuBase> {
 
 impl<Base: SudokuBase> IterOnes<Base> {
     #[inline(always)]
-    pub fn peek(&self) -> Option<u8> {
+    fn peek(&self) -> Option<u8> {
         if self.bits.is_zero() {
             None
         } else {
             let trailing_zeros = self.bits.trailing_zeros();
+            // TODO: optimize/debug_validate
             Some(u8::try_from(trailing_zeros).unwrap())
         }
     }

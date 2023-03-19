@@ -280,7 +280,7 @@ mod tests {
     fn test_base_2() {
         let grids = crate::samples::base_2();
 
-        for grid in grids.into_iter() {
+        for grid in grids {
             let mut solver = Solver::new(&grid);
 
             let solve_result = solver.try_solve();
@@ -293,7 +293,7 @@ mod tests {
     fn test_base_3() {
         let grids = crate::samples::base_3();
 
-        for mut grid in grids.into_iter() {
+        for mut grid in grids {
             let mut solver = Solver::new(&mut grid);
 
             let solve_result = solver.try_solve();

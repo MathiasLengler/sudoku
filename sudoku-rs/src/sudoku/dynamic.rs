@@ -182,9 +182,7 @@ mod tests {
             let res_base = DynamicSudoku::cell_count_to_base(cell_count);
             assert!(
                 res_base.is_err(),
-                "Expected err, got {:?} for cell_count: {}",
-                res_base,
-                cell_count
+                "Expected err, got {res_base:?} for cell_count: {cell_count}"
             );
         }
         Ok(())

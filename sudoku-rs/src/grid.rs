@@ -521,7 +521,7 @@ impl<Base: SudokuBase> Grid<Base> {
     pub fn row_positions(row: u8) -> impl Iterator<Item = Position> {
         Self::assert_coordinate(row);
 
-        (0..Self::side_length()).map(move |column| Position { column, row })
+        (0..Self::side_length()).map(move |column| Position { row, column })
     }
 
     pub fn all_row_positions() -> impl Iterator<Item = impl Iterator<Item = Position>> {
@@ -531,7 +531,7 @@ impl<Base: SudokuBase> Grid<Base> {
     pub fn column_positions(column: u8) -> impl Iterator<Item = Position> {
         Self::assert_coordinate(column);
 
-        (0..Self::side_length()).map(move |row| Position { column, row })
+        (0..Self::side_length()).map(move |row| Position { row, column })
     }
 
     pub fn all_column_positions() -> impl Iterator<Item = impl Iterator<Item = Position>> {
@@ -559,13 +559,13 @@ impl<Base: SudokuBase> Grid<Base> {
         } * base;
 
         (base_row..base_row + base).flat_map(move |row| {
-            (base_column..base_column + base).map(move |column| Position { column, row })
+            (base_column..base_column + base).map(move |column| Position { row, column })
         })
     }
 
     pub fn all_block_positions() -> impl Iterator<Item = impl Iterator<Item = Position>> {
         let all_block_base_pos = (0..Self::base())
-            .flat_map(move |row| (0..Self::base()).map(move |column| Position { column, row }))
+            .flat_map(move |row| (0..Self::base()).map(move |column| Position { row, column }))
             .map(move |pos| pos * Self::base());
 
         all_block_base_pos.map(|block_base_pos| Self::block_positions(block_base_pos))

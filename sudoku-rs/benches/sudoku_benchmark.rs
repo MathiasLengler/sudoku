@@ -131,9 +131,7 @@ fn bench_solver_tdoku_group(solver_tdoku_group: &mut BenchmarkGroup<WallTime>) {
             |b, grids| {
                 b.iter(|| {
                     for grid in grids {
-                        assert!(backtracking_bitset::Solver::new(&grid)
-                            .try_solve()
-                            .is_some())
+                        assert!(backtracking_bitset::Solver::new(grid).try_solve().is_some())
                     }
                 })
             },
@@ -151,12 +149,12 @@ fn bench_solver_micro_group<Base: SudokuBase + 'static>(
     solver_group.bench_with_input(
         BenchmarkId::new(
             "backtracking_bitset_move_best_choice_to_front",
-            &parameter_string,
+            parameter_string,
         ),
         &grid,
         |b, grid| {
             b.iter_batched_ref(
-                || backtracking_bitset::Solver::new(&grid),
+                || backtracking_bitset::Solver::new(grid),
                 |solver| solver.move_best_choice_to_front(1),
                 BatchSize::SmallInput,
             )
@@ -316,7 +314,7 @@ fn bench_strategy_group(strategy_group: &mut BenchmarkGroup<WallTime>) {
     strategy_group.bench_with_input(
         BenchmarkId::new("reduce_candidates_group", "basic"),
         &candidates_group,
-        |b, candidates_group| b.iter(|| GroupReduction::reduce_candidates_group(&candidates_group)),
+        |b, candidates_group| b.iter(|| GroupReduction::reduce_candidates_group(candidates_group)),
     );
 }
 

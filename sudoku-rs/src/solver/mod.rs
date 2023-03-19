@@ -12,7 +12,7 @@ mod test_util {
     use crate::base::SudokuBase;
     use crate::grid::Grid;
 
-    pub fn assert_solve_result<Base: SudokuBase>(solve_result: Option<Grid<Base>>) {
+    pub(crate) fn assert_solve_result<Base: SudokuBase>(solve_result: Option<Grid<Base>>) {
         assert!(solve_result.is_some());
 
         let grid = solve_result.unwrap();
@@ -20,7 +20,7 @@ mod test_util {
         assert!(grid.is_solved());
     }
 
-    pub fn assert_solver_solutions_base_2(solver: impl Iterator<Item = Grid<Base2>>) {
+    pub(crate) fn assert_solver_solutions_base_2(solver: impl Iterator<Item = Grid<Base2>>) {
         const NUMBER_OF_BASE_2_SOLUTIONS: usize = 288;
 
         let solutions = solver.take(300).collect::<Vec<_>>();

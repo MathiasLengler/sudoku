@@ -81,7 +81,7 @@ mod tests {
 
     #[test]
     fn test_hidden_singles() {
-        let mut grid = samples::base_2().into_iter().nth(1).unwrap().clone();
+        let mut grid = samples::base_2().into_iter().nth(1).unwrap();
 
         grid.set_all_direct_candidates();
         grid.fix_all_values();

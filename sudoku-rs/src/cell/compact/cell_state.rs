@@ -69,7 +69,7 @@ impl<Base: SudokuBase> CellState<Base> {
         *self = match *self {
             CellState::Value(value) => CellState::FixedValue(value),
             CellState::FixedValue(value) => CellState::FixedValue(value),
-            CellState::Candidates(_) => panic!("Candidates can't be fixed: {}", self),
+            CellState::Candidates(_) => panic!("Candidates can't be fixed: {self}"),
         };
     }
 
@@ -231,11 +231,11 @@ mod tests {
             candidates,
             candidates_2,
             cell_state_unfixed_value,
+            cell_state_unfixed_value_2,
             cell_state_fixed_value,
             cell_state_candidates,
             cell_state_candidates_2,
             cell_state_empty_candidates,
-            cell_state_unfixed_value_2,
         }
     }
 

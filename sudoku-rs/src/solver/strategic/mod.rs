@@ -83,7 +83,7 @@ mod tests {
     fn test_base_2() {
         let grids = crate::samples::base_2();
 
-        for mut grid in grids.into_iter() {
+        for mut grid in grids {
             assert_solvable(&mut grid);
         }
     }
@@ -92,7 +92,7 @@ mod tests {
     fn test_base_3() {
         let grids = crate::samples::base_3();
 
-        for mut grid in grids.into_iter() {
+        for mut grid in grids {
             assert_solvable(&mut grid);
         }
     }

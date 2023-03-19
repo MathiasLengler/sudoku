@@ -74,7 +74,7 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
     }
 
     fn init(&mut self) {
-        if let Some(first_pos) = self.empty_positions.first().cloned() {
+        if let Some(first_pos) = self.empty_positions.first().copied() {
             self.push_choice(first_pos);
         };
     }
@@ -132,7 +132,7 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
 
                     StepResult::Backtrack
                 } else {
-                    match self.empty_positions.get(choices_len).cloned() {
+                    match self.empty_positions.get(choices_len).copied() {
                         Some(next_position) => {
                             self.push_choice(next_position);
 
@@ -242,7 +242,7 @@ mod tests {
     fn test_base_2() {
         let grids = crate::samples::base_2();
 
-        for mut grid in grids.into_iter() {
+        for mut grid in grids {
             let mut solver = Solver::new(&mut grid);
 
             let solve_result = solver.try_solve();
@@ -255,7 +255,7 @@ mod tests {
     fn test_base_3() {
         let grids = crate::samples::base_3();
 
-        for mut grid in grids.into_iter() {
+        for mut grid in grids {
             let mut solver = Solver::new(&mut grid);
 
             let solve_result = solver.try_solve();

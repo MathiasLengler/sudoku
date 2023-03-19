@@ -2,14 +2,14 @@ use std::collections::VecDeque;
 use std::fmt::Debug;
 
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
-pub struct History<T: Clone + Debug> {
+pub(super) struct History<T: Clone + Debug> {
     limit: usize,
     past_records: VecDeque<T>,
     future_records: VecDeque<T>,
 }
 
 impl<T: Clone + Debug> History<T> {
-    pub fn with_limit(limit: usize) -> Self {
+    pub(super) fn with_limit(limit: usize) -> Self {
         Self {
             limit,
             past_records: VecDeque::with_capacity(limit),
@@ -17,7 +17,7 @@ impl<T: Clone + Debug> History<T> {
         }
     }
 
-    pub fn set_limit(&mut self, limit: usize) {
+    pub(super) fn set_limit(&mut self, limit: usize) {
         self.limit = limit;
         self.past_records.truncate(limit);
         self.past_records.truncate(limit);
@@ -40,13 +40,13 @@ impl<T: Clone + Debug> History<T> {
         queue.push_front(value);
     }
 
-    pub fn push(&mut self, record: T) {
+    pub(super) fn push(&mut self, record: T) {
         self.future_records.clear();
 
         self.push_bounded(true, record);
     }
 
-    pub fn go_back(&mut self, current_record: &T) -> Option<T> {
+    pub(super) fn go_back(&mut self, current_record: &T) -> Option<T> {
         if let Some(past_record) = self.past_records.pop_front() {
             self.push_bounded(false, current_record.clone());
             Some(past_record)
@@ -55,11 +55,11 @@ impl<T: Clone + Debug> History<T> {
         }
     }
 
-    pub fn can_go_back(&self) -> bool {
+    pub(super) fn can_go_back(&self) -> bool {
         !self.past_records.is_empty()
     }
 
-    pub fn go_forward(&mut self, current_record: &T) -> Option<T> {
+    pub(super) fn go_forward(&mut self, current_record: &T) -> Option<T> {
         if let Some(future_record) = self.future_records.pop_front() {
             self.push_bounded(true, current_record.clone());
             Some(future_record)
@@ -68,12 +68,12 @@ impl<T: Clone + Debug> History<T> {
         }
     }
 
-    pub fn can_go_forward(&self) -> bool {
+    pub(super) fn can_go_forward(&self) -> bool {
         !self.future_records.is_empty()
     }
 }
 
-pub const DEFAULT_LIMIT: usize = 255;
+pub(super) const DEFAULT_LIMIT: usize = 255;
 
 impl<T: Clone + Debug> Default for History<T> {
     fn default() -> Self {

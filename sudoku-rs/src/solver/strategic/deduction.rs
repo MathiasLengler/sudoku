@@ -158,8 +158,8 @@ impl<Base: SudokuBase> OldDeduction<Base> {
     ) -> Result<Self> {
         let this = Self {
             pos,
-            previous_candidates,
             kind,
+            previous_candidates,
         };
 
         // Invariant: only validated Deductions must be returned.
@@ -393,7 +393,7 @@ impl<Base: SudokuBase> Deductions<Base> {
     fn as_merged_deduction(&self) -> Result<Deduction<Base>> {
         let mut merged_deduction: Deduction<Base> = Default::default();
 
-        for deduction in self.deductions.iter() {
+        for deduction in &self.deductions {
             for (pos, action) in deduction.actions.iter() {
                 merged_deduction.actions.insert(pos, *action)?;
             }
@@ -409,7 +409,7 @@ impl<Base: SudokuBase> Deductions<Base> {
         let mut reasons_to_actions: BTreeMap<PositionMap<Reason<Base>>, PositionMap<Action<Base>>> =
             BTreeMap::new();
 
-        for Deduction { reasons, actions } in self.into_iter() {
+        for Deduction { reasons, actions } in self {
             if let Some(existing_actions) = reasons_to_actions.get_mut(&reasons) {
                 existing_actions.merge(actions)?;
             } else {
@@ -419,7 +419,7 @@ impl<Base: SudokuBase> Deductions<Base> {
 
         Ok(reasons_to_actions
             .into_iter()
-            .map(|(reasons, actions)| Deduction { reasons, actions })
+            .map(|(reasons, actions)| Deduction { actions, reasons })
             .collect())
     }
 
@@ -477,7 +477,7 @@ pub struct PositionMap<T: Merge> {
 
 impl<T: Merge> Merge for PositionMap<T> {
     fn merge(&mut self, other: Self) -> Result<()> {
-        for (pos, value) in other.into_iter() {
+        for (pos, value) in other {
             self.insert(pos, value)?;
         }
         Ok(())

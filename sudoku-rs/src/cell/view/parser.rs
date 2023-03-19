@@ -23,13 +23,13 @@ pub(crate) fn parse_cells(input: &str) -> Result<Vec<CellView>> {
     );
 
     // Fix all values
-    cell_views.iter_mut().for_each(|cell_view| {
+    for cell_view in &mut cell_views {
         if let CellView::Value { fixed, value } = cell_view {
             if *value != 0 {
                 *fixed = true;
             }
         }
-    });
+    }
 
     Ok(cell_views)
 }
@@ -102,17 +102,17 @@ pub(crate) mod tests {
 
     use super::*;
 
-    pub(crate) static INPUT_GIVENS_LINE: &'static str = include_str!(concat!(
+    pub(crate) static INPUT_GIVENS_LINE: &str = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/tests/res/parser/givens_line.txt"
     ));
 
-    pub(crate) static INPUT_GIVENS_GRID: &'static str = include_str!(concat!(
+    pub(crate) static INPUT_GIVENS_GRID: &str = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/tests/res/parser/givens_grid.txt"
     ));
 
-    pub(crate) static INPUT_CANDIDATES: &'static str = include_str!(concat!(
+    pub(crate) static INPUT_CANDIDATES: &str = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/tests/res/parser/candidates.txt"
     ));
@@ -274,7 +274,7 @@ pub(crate) mod tests {
             grid_string: &str,
             grid: Grid<Base>,
         ) {
-            let cell_views = parse_cells(&grid_string)
+            let cell_views = parse_cells(grid_string)
                 .with_context(|| {
                     format!(
                         "parse_cells to parse:\n\
