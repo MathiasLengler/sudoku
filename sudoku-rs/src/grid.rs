@@ -311,9 +311,6 @@ impl<Base: SudokuBase> Default for Grid<Base> {
     }
 }
 
-// TODO: rethink indexing story (internal/cell position/block position)
-//  => use Index/IndexMut with custom index type:
-//     Cell, Row, Column, Block
 /// Public Grid API
 impl<Base: SudokuBase> Grid<Base> {
     pub fn new() -> Self {
