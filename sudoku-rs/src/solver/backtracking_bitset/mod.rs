@@ -271,7 +271,7 @@ mod tests {
 
     #[test]
     fn test_iter_all_solutions() {
-        let grid = Grid::<U2>::new();
+        let grid = Grid::<Base2>::new();
         let solver = Solver::new(&grid);
 
         assert_solver_solutions_base_2(solver);

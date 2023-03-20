@@ -682,7 +682,7 @@ mod tests {
 
     #[test]
     fn test_has_conflict() -> Result<()> {
-        let mut grid = Grid::<U3>::new();
+        let mut grid = Grid::<Base3>::new();
         assert!(!grid.has_value_conflict());
 
         grid.get_mut(Position { column: 0, row: 0 })
@@ -967,7 +967,7 @@ mod tests {
             .unwrap(),
         ];
 
-        assert!(!Grid::<U2>::has_duplicate_value(
+        assert!(!Grid::<Base2>::has_duplicate_value(
             cells_with_no_duplicate_value.iter()
         ));
         let cells_with_duplicate_value = vec![
@@ -995,7 +995,7 @@ mod tests {
             .unwrap(),
         ];
 
-        assert!(Grid::<U2>::has_duplicate_value(
+        assert!(Grid::<Base2>::has_duplicate_value(
             cells_with_duplicate_value.iter()
         ));
     }

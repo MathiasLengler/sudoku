@@ -1049,8 +1049,8 @@ mod tests {
         use itertools::Itertools;
 
         let pos = Position { row: 0, column: 0 };
-        let previous_candidates: Candidates<U2> = Candidates::all();
-        let remaining_candidates: Candidates<U2> = vec![1, 2].try_into().unwrap();
+        let previous_candidates: Candidates<Base2> = Candidates::all();
+        let remaining_candidates: Candidates<Base2> = vec![1, 2].try_into().unwrap();
 
         let value_deduction_1 =
             OldDeduction::with_value(pos, previous_candidates, 1.try_into().unwrap()).unwrap();
@@ -1064,16 +1064,16 @@ mod tests {
             OldDeduction::with_remaining_candidates(pos, previous_candidates, remaining_candidates)
                 .unwrap();
 
-        let all_deductions: Vec<OldDeduction<U2>> = vec![
+        let all_deductions: Vec<OldDeduction<Base2>> = vec![
             value_deduction_1,
             value_deduction_2,
             remaining_candidates_deduction,
         ];
-        let deductions: OldDeductions<U2> =
+        let deductions: OldDeductions<Base2> =
             IntoDeductions(all_deductions.clone()).try_into().unwrap();
         for deduction_permutation in all_deductions.into_iter().permutations(3) {
             assert_eq!(
-                OldDeductions::<U2>::try_from(IntoDeductions(deduction_permutation)).unwrap(),
+                OldDeductions::<Base2>::try_from(IntoDeductions(deduction_permutation)).unwrap(),
                 deductions
             );
         }
@@ -1101,11 +1101,15 @@ mod tests {
     #[test]
     fn test_deduction_merge() {
         let pos = Position { row: 1, column: 1 };
-        let previous_candidates: Candidates<U2> = Candidates::all();
-        let remaining_candidates: Candidates<U2> = Candidates::single(1.try_into().unwrap());
-        let value: Value<U2> = 1.try_into().unwrap();
+        let previous_candidates: Candidates<Base2> = Candidates::all();
+        let remaining_candidates: Candidates<Base2> = Candidates::single(1.try_into().unwrap());
+        let value: Value<Base2> = 1.try_into().unwrap();
 
-        let cases: Vec<(OldDeduction<U2>, OldDeduction<U2>, OldDeduction<U2>)> = vec![
+        let cases: Vec<(
+            OldDeduction<Base2>,
+            OldDeduction<Base2>,
+            OldDeduction<Base2>,
+        )> = vec![
             // Equal
             (
                 OldDeduction::with_value(pos, previous_candidates, value).unwrap(),
@@ -1168,15 +1172,15 @@ mod tests {
     fn test_deduction_merge_err() {
         let pos = Position { row: 1, column: 1 };
         let different_pos = Position { row: 2, column: 2 };
-        let previous_candidates: Candidates<U2> = Candidates::all();
-        let different_previous_candidates: Candidates<U2> = vec![1, 2].try_into().unwrap();
-        let remaining_candidates: Candidates<U2> = Candidates::single(1.try_into().unwrap());
-        let different_remaining_candidates: Candidates<U2> =
+        let previous_candidates: Candidates<Base2> = Candidates::all();
+        let different_previous_candidates: Candidates<Base2> = vec![1, 2].try_into().unwrap();
+        let remaining_candidates: Candidates<Base2> = Candidates::single(1.try_into().unwrap());
+        let different_remaining_candidates: Candidates<Base2> =
             Candidates::single(2.try_into().unwrap());
-        let value: Value<U2> = 1.try_into().unwrap();
-        let different_value: Value<U2> = 2.try_into().unwrap();
+        let value: Value<Base2> = 1.try_into().unwrap();
+        let different_value: Value<Base2> = 2.try_into().unwrap();
 
-        let err_cases: Vec<(OldDeduction<U2>, OldDeduction<U2>)> = vec![
+        let err_cases: Vec<(OldDeduction<Base2>, OldDeduction<Base2>)> = vec![
             // Different pos
             (
                 OldDeduction::with_value(pos, previous_candidates, value).unwrap(),

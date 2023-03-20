@@ -86,7 +86,7 @@ mod tests {
 
     #[test]
     fn test_choice() {
-        let mut choice = Choice::<U2>::new(
+        let mut choice = Choice::<Base2>::new(
             vec![1, 2, 4]
                 .into_iter()
                 .map(|v| v.try_into().unwrap())

@@ -27,13 +27,13 @@ use indexmap::IndexMap;
 use indicatif::{ParallelProgressIterator, ProgressBar, ProgressStyle};
 use rayon::prelude::*;
 
-use sudoku::base::consts::U3;
+use sudoku::base::consts::Base3;
 use sudoku::error::Result;
 use sudoku::generator::{Generator, GeneratorSettings, GeneratorTarget};
 use sudoku::grid::serialization::GridFormat;
 use sudoku::solver::strategic::strategies::NakedSingles;
 
-type Base = U3;
+type Base = Base3;
 
 fn main() -> Result<()> {
     let num_values_histogram = Mutex::new(IndexMap::new());

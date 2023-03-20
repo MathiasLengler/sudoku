@@ -99,7 +99,7 @@ fn bench_solver_group<Base: SudokuBase + 'static>(solver_group: &mut BenchmarkGr
 }
 
 fn bench_solver_tdoku_group(solver_tdoku_group: &mut BenchmarkGroup<WallTime>) {
-    type Base = U3;
+    type Base = Base3;
 
     let tdoku_datasets_dir = Path::new("./tests/res/tdoku/");
 
@@ -299,7 +299,7 @@ fn bench_grid_group<Base: SudokuBase + 'static>(grid_group: &mut BenchmarkGroup<
 }
 
 fn bench_strategy_group(strategy_group: &mut BenchmarkGroup<WallTime>) {
-    let candidates_group: Vec<Candidates<U3>> = vec![
+    let candidates_group: Vec<Candidates<Base3>> = vec![
         vec![1, 2],
         vec![1, 3],
         vec![2, 3],
@@ -323,7 +323,7 @@ fn bench_candidates_group(candidates_group: &mut BenchmarkGroup<WallTime>) {
         b.iter_batched(
             || {
                 (
-                    Candidates::<U3>::new(),
+                    Candidates::<Base3>::new(),
                     vec![1, 2, 4, 5, 9]
                         .into_iter()
                         .map(|value| Value::try_from(value).unwrap())
@@ -344,7 +344,7 @@ fn bench_candidates_group(candidates_group: &mut BenchmarkGroup<WallTime>) {
             || {
                 vec![1, 2, 4, 5, 9]
                     .into_iter()
-                    .map(|value| Value::<U3>::try_from(value).unwrap())
+                    .map(|value| Value::<Base3>::try_from(value).unwrap())
                     .collect::<Vec<_>>()
             },
             |candidates_to_set| {
@@ -361,14 +361,14 @@ fn bench_candidates_group(candidates_group: &mut BenchmarkGroup<WallTime>) {
 
 fn criterion_benchmark(c: &mut Criterion) {
     let mut generator_group: BenchmarkGroup<WallTime> = c.benchmark_group("Generator");
-    bench_generator_group::<U2>(&mut generator_group);
-    bench_generator_group::<U3>(&mut generator_group);
+    bench_generator_group::<Base2>(&mut generator_group);
+    bench_generator_group::<Base3>(&mut generator_group);
     generator_group.finish();
 
     let mut solver_sample_group = c.benchmark_group("SolverSample");
     solver_sample_group.sample_size(20);
-    bench_solver_group::<U2>(&mut solver_sample_group);
-    bench_solver_group::<U3>(&mut solver_sample_group);
+    bench_solver_group::<Base2>(&mut solver_sample_group);
+    bench_solver_group::<Base3>(&mut solver_sample_group);
     solver_sample_group.finish();
 
     let mut solver_tdoku_group = c.benchmark_group("SolverTdoku");
@@ -378,13 +378,13 @@ fn criterion_benchmark(c: &mut Criterion) {
 
     let mut solver_micro_group = c.benchmark_group("SolverMicro");
     solver_micro_group.sample_size(20);
-    bench_solver_micro_group::<U2>(&mut solver_micro_group);
-    bench_solver_micro_group::<U3>(&mut solver_micro_group);
+    bench_solver_micro_group::<Base2>(&mut solver_micro_group);
+    bench_solver_micro_group::<Base3>(&mut solver_micro_group);
     solver_micro_group.finish();
 
     let mut grid_group = c.benchmark_group("Grid");
-    bench_grid_group::<U2>(&mut grid_group);
-    bench_grid_group::<U3>(&mut grid_group);
+    bench_grid_group::<Base2>(&mut grid_group);
+    bench_grid_group::<Base3>(&mut grid_group);
     grid_group.finish();
 
     let mut strategy_group = c.benchmark_group("Strategies");

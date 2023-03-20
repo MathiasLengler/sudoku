@@ -60,7 +60,7 @@ impl From<DynamicSudoku> for WasmSudoku {
 impl WasmSudoku {
     #[wasm_bindgen(constructor)]
     pub fn new() -> Self {
-        let grid: Grid<U3> = sudoku::samples::minimal();
+        let grid: Grid<Base3> = sudoku::samples::minimal();
 
         DynamicSudoku::with_sudoku(Sudoku::with_grid(grid))
             .unwrap()

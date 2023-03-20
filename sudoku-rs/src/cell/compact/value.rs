@@ -110,13 +110,13 @@ mod tests {
 
     #[test]
     fn test_new() -> Result<()> {
-        let value = Value::<U3>::new(0)?;
+        let value = Value::<Base3>::new(0)?;
         assert!(value.is_none());
 
-        let value = Value::<U3>::new(9)?;
+        let value = Value::<Base3>::new(9)?;
         assert_eq!(value.map(|value| value.into_u8()), Some(9));
 
-        let value = Value::<U3>::new(10);
+        let value = Value::<Base3>::new(10);
         assert!(value.is_err());
 
         Ok(())
@@ -124,13 +124,13 @@ mod tests {
 
     #[test]
     fn test_try_from() -> Result<()> {
-        let value = Value::<U3>::try_from(0);
+        let value = Value::<Base3>::try_from(0);
         assert!(value.is_err());
 
-        let value = Value::<U3>::try_from(9)?;
+        let value = Value::<Base3>::try_from(9)?;
         assert_eq!(value.into_u8(), 9);
 
-        let value = Value::<U3>::try_from(10);
+        let value = Value::<Base3>::try_from(10);
         assert!(value.is_err());
 
         Ok(())

@@ -13,10 +13,6 @@ use consts::*;
 use crate::cell::candidates_cell::CandidatesCell;
 
 pub mod consts {
-    pub use Base2 as U2;
-    pub use Base3 as U3;
-    pub use Base4 as U4;
-    pub use Base5 as U5;
     pub use Base5 as BaseMax;
 
     use crate::base::SudokuBase;
@@ -268,7 +264,7 @@ mod tests {
 
     #[test]
     fn test_base_2() {
-        type Base = U2;
+        type Base = Base2;
 
         assert_eq!(Base::BASE, 2);
         assert_eq!(Base::SIDE_LENGTH, 4);
@@ -282,7 +278,7 @@ mod tests {
 
     #[test]
     fn test_base_3() {
-        type Base = U3;
+        type Base = Base3;
 
         assert_eq!(Base::BASE, 3);
         assert_eq!(Base::SIDE_LENGTH, 9);
@@ -296,7 +292,7 @@ mod tests {
 
     #[test]
     fn test_base_4() {
-        type Base = U4;
+        type Base = Base4;
 
         assert_eq!(Base::BASE, 4);
         assert_eq!(Base::SIDE_LENGTH, 16);
@@ -310,7 +306,7 @@ mod tests {
 
     #[test]
     fn test_base_5() {
-        type Base = U5;
+        type Base = Base5;
 
         assert_eq!(Base::BASE, 5);
         assert_eq!(Base::SIDE_LENGTH, 25);

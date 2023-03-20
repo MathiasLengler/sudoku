@@ -258,14 +258,14 @@ mod tests {
         let grid = Generator::with_target(GeneratorTarget::Minimal {
             set_all_direct_candidates: false,
         })
-        .generate::<U2>();
+        .generate::<Base2>();
 
         assert!(is_minimal(&grid));
     }
 
     #[test]
     fn test_filled() {
-        let grid = Generator::with_target(GeneratorTarget::Filled).generate::<U2>();
+        let grid = Generator::with_target(GeneratorTarget::Filled).generate::<Base2>();
 
         assert!(grid.is_solved());
     }
@@ -276,7 +276,7 @@ mod tests {
             distance: 2,
             set_all_direct_candidates: false,
         })
-        .generate::<U2>();
+        .generate::<Base2>();
 
         assert_eq!(grid.all_candidates_positions().len(), 2);
 

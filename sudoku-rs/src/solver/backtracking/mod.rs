@@ -213,7 +213,7 @@ mod tests {
 
     #[test]
     fn test_iter_all_solutions() {
-        let mut grid = Grid::<U2>::new();
+        let mut grid = Grid::<Base2>::new();
         let solver = Solver::new(&mut grid);
 
         assert_solver_solutions_base_2(solver);
@@ -221,7 +221,7 @@ mod tests {
 
     #[test]
     fn test_test_iter_all_solutions_shuffle_candidates() {
-        let mut grid = Grid::<U2>::new();
+        let mut grid = Grid::<Base2>::new();
         let solver = Solver::new_with_settings(
             &mut grid,
             Settings {

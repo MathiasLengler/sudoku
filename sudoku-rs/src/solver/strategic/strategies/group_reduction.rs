@@ -322,7 +322,7 @@ mod tests {
         ];
 
         for (candidates_group_data, expected_reduced_candidate_group_data) in test_cases {
-            let candidates_group: Vec<Candidates<U3>> = candidates_group_data
+            let candidates_group: Vec<Candidates<Base3>> = candidates_group_data
                 .into_iter()
                 .map(|candidates_data| candidates_data.try_into().unwrap())
                 .collect();
@@ -348,7 +348,7 @@ mod tests {
     ///  https://www.sudokuwiki.org/sudoku.htm?bd=400000938032094100095300240370609004529001673604703090957008300003900400240030709
     #[test]
     fn test_naked_pairs() {
-        let mut grid: Grid<U3> =
+        let mut grid: Grid<Base3> =
             "400000938032094100095300240370609004529001673604703090957008300003900400240030709"
                 .try_into()
                 .unwrap();
@@ -409,7 +409,7 @@ mod tests {
     ///  https://www.sudokuwiki.org/sudoku.htm?bd=720408030080000047401076802810739000000851000000264080209680413340000008168943275
     #[test]
     fn test_hidden_pairs() {
-        let mut grid: Grid<U3> =
+        let mut grid: Grid<Base3> =
             "720408030080000047401076802810739000000851000000264080209680413340000008168943275"
                 .try_into()
                 .unwrap();

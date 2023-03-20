@@ -6,7 +6,7 @@ use std::path::Path;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
-use sudoku::base::consts::U3;
+use sudoku::base::consts::Base3;
 use sudoku::base::SudokuBase;
 use sudoku::error::Result;
 use sudoku::grid::deserialization::read_grids_from_file;
@@ -23,7 +23,7 @@ enum SolverSelection {
 fn main() -> Result<()> {
     let solver_selection = SolverSelection::BacktrackingBitset;
 
-    let grids = read_grids_from_file::<U3>("./sudoku-rs/tests/res/tdoku/puzzles1_unbiased")?;
+    let grids = read_grids_from_file::<Base3>("./sudoku-rs/tests/res/tdoku/puzzles1_unbiased")?;
 
     let before = Instant::now();
 

@@ -46,10 +46,10 @@ mod game {
     #[enum_dispatch(Game)]
     #[derive(Eq, PartialEq, Hash, Clone, Debug)]
     pub enum DynamicSudoku {
-        Base2(Sudoku<U2>),
-        Base3(Sudoku<U3>),
-        Base4(Sudoku<U4>),
-        Base5(Sudoku<U5>),
+        Base2(Sudoku<Base2>),
+        Base3(Sudoku<Base3>),
+        Base4(Sudoku<Base4>),
+        Base5(Sudoku<Base5>),
     }
 }
 
@@ -57,10 +57,10 @@ mod game {
 impl DynamicSudoku {
     pub fn new(base: u8) -> Result<Self> {
         Ok(match base {
-            2 => Self::Base2(Sudoku::<U2>::new()),
-            3 => Self::Base3(Sudoku::<U3>::new()),
-            4 => Self::Base4(Sudoku::<U4>::new()),
-            5 => Self::Base5(Sudoku::<U5>::new()),
+            2 => Self::Base2(Sudoku::<Base2>::new()),
+            3 => Self::Base3(Sudoku::<Base3>::new()),
+            4 => Self::Base4(Sudoku::<Base4>::new()),
+            5 => Self::Base5(Sudoku::<Base5>::new()),
             unexpected_base => bail!(Self::unexpected_base_err(unexpected_base)),
         })
     }
@@ -68,10 +68,10 @@ impl DynamicSudoku {
         let any_sudoku: Box<dyn Any> = Box::new(sudoku);
 
         Ok(match TypeId::of::<Base>() {
-            id if id == TypeId::of::<U2>() => Self::Base2(*(any_sudoku.downcast().unwrap())),
-            id if id == TypeId::of::<U3>() => Self::Base3(*(any_sudoku.downcast().unwrap())),
-            id if id == TypeId::of::<U4>() => Self::Base4(*(any_sudoku.downcast().unwrap())),
-            id if id == TypeId::of::<U5>() => Self::Base5(*(any_sudoku.downcast().unwrap())),
+            id if id == TypeId::of::<Base2>() => Self::Base2(*(any_sudoku.downcast().unwrap())),
+            id if id == TypeId::of::<Base3>() => Self::Base3(*(any_sudoku.downcast().unwrap())),
+            id if id == TypeId::of::<Base4>() => Self::Base4(*(any_sudoku.downcast().unwrap())),
+            id if id == TypeId::of::<Base5>() => Self::Base5(*(any_sudoku.downcast().unwrap())),
             _ => bail!(Self::unexpected_base_err(Base::BASE)),
         })
     }
@@ -79,10 +79,10 @@ impl DynamicSudoku {
         let DynamicGeneratorSettings { base, settings } = dynamic_generator_settings;
 
         *self = match base {
-            2 => Self::Base2(Sudoku::<U2>::generate(settings, self.settings())?),
-            3 => Self::Base3(Sudoku::<U3>::generate(settings, self.settings())?),
-            4 => Self::Base4(Sudoku::<U4>::generate(settings, self.settings())?),
-            5 => Self::Base5(Sudoku::<U5>::generate(settings, self.settings())?),
+            2 => Self::Base2(Sudoku::<Base2>::generate(settings, self.settings())?),
+            3 => Self::Base3(Sudoku::<Base3>::generate(settings, self.settings())?),
+            4 => Self::Base4(Sudoku::<Base4>::generate(settings, self.settings())?),
+            5 => Self::Base5(Sudoku::<Base5>::generate(settings, self.settings())?),
             unexpected_base => bail!(Self::unexpected_base_err(unexpected_base)),
         };
 
@@ -100,10 +100,10 @@ impl TryFrom<Vec<CellView>> for DynamicSudoku {
 
     fn try_from(views: Vec<CellView>) -> Result<Self> {
         Ok(match Self::cell_count_to_base(views.len())? {
-            2 => Self::Base2(Sudoku::<U2>::with_grid(views.try_into()?)),
-            3 => Self::Base3(Sudoku::<U3>::with_grid(views.try_into()?)),
-            4 => Self::Base4(Sudoku::<U4>::with_grid(views.try_into()?)),
-            5 => Self::Base5(Sudoku::<U5>::with_grid(views.try_into()?)),
+            2 => Self::Base2(Sudoku::<Base2>::with_grid(views.try_into()?)),
+            3 => Self::Base3(Sudoku::<Base3>::with_grid(views.try_into()?)),
+            4 => Self::Base4(Sudoku::<Base4>::with_grid(views.try_into()?)),
+            5 => Self::Base5(Sudoku::<Base5>::with_grid(views.try_into()?)),
             unexpected_base => bail!(Self::unexpected_base_err(unexpected_base)),
         })
     }
@@ -114,10 +114,10 @@ impl TryFrom<Vec<Vec<CellView>>> for DynamicSudoku {
 
     fn try_from(blocks: Vec<Vec<CellView>>) -> Result<Self> {
         let sudoku = match Self::cell_count_to_base(blocks.iter().map(|block| block.len()).sum())? {
-            2 => Self::Base2(Sudoku::with_grid(Grid::<U2>::try_from_blocks(blocks)?)),
-            3 => Self::Base3(Sudoku::with_grid(Grid::<U3>::try_from_blocks(blocks)?)),
-            4 => Self::Base4(Sudoku::with_grid(Grid::<U4>::try_from_blocks(blocks)?)),
-            5 => Self::Base5(Sudoku::with_grid(Grid::<U5>::try_from_blocks(blocks)?)),
+            2 => Self::Base2(Sudoku::with_grid(Grid::<Base2>::try_from_blocks(blocks)?)),
+            3 => Self::Base3(Sudoku::with_grid(Grid::<Base3>::try_from_blocks(blocks)?)),
+            4 => Self::Base4(Sudoku::with_grid(Grid::<Base4>::try_from_blocks(blocks)?)),
+            5 => Self::Base5(Sudoku::with_grid(Grid::<Base5>::try_from_blocks(blocks)?)),
             unexpected_base => bail!(Self::unexpected_base_err(unexpected_base)),
         };
 

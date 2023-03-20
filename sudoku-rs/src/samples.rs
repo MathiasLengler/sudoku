@@ -9,7 +9,7 @@ use crate::generator::{Generator, GeneratorTarget};
 use crate::grid::Grid;
 
 // TODO: rethink API (unwrap, clone for consumer of specific sudoku)
-pub fn base_2() -> Vec<Grid<U2>> {
+pub fn base_2() -> Vec<Grid<Base2>> {
     let mut grids = vec![
         vec![
             vec![0, 3, 4, 0],
@@ -31,7 +31,7 @@ pub fn base_2() -> Vec<Grid<U2>> {
         ],
     ]
     .into_iter()
-    .map(TryInto::<Grid<U2>>::try_into)
+    .map(TryInto::<Grid<Base2>>::try_into)
     .collect::<Result<Vec<_>>>()
     .unwrap();
 
@@ -42,7 +42,7 @@ pub fn base_2() -> Vec<Grid<U2>> {
     grids
 }
 
-pub fn base_2_solved() -> Grid<U2> {
+pub fn base_2_solved() -> Grid<Base2> {
     Grid::<Base2>::try_from(vec![
         vec![2, 3, 4, 1],
         vec![4, 1, 3, 2],
@@ -52,16 +52,16 @@ pub fn base_2_solved() -> Grid<U2> {
     .unwrap()
 }
 
-pub fn base_2_candidates_coordinates() -> Grid<U2> {
-    Grid::<U2>::with_cells(
-        (0..u8::try_from(<U2 as SudokuBase>::CELL_COUNT).unwrap())
+pub fn base_2_candidates_coordinates() -> Grid<Base2> {
+    Grid::<Base2>::with_cells(
+        (0..u8::try_from(<Base2 as SudokuBase>::CELL_COUNT).unwrap())
             .map(|i| Cell::with_candidates(Candidates::with_integral(i)))
             .collect(),
     )
     .unwrap()
 }
 
-pub fn base_3() -> Vec<Grid<U3>> {
+pub fn base_3() -> Vec<Grid<Base3>> {
     let mut grids = vec![
         // 11 Star difficulty
         vec![
@@ -77,7 +77,7 @@ pub fn base_3() -> Vec<Grid<U3>> {
         ],
     ]
     .into_iter()
-    .map(TryInto::<Grid<U3>>::try_into)
+    .map(TryInto::<Grid<Base3>>::try_into)
     .collect::<Result<Vec<_>>>()
     .unwrap();
 
