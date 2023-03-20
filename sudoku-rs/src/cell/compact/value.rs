@@ -33,7 +33,7 @@ impl<Base: SudokuBase> Value<Base> {
 
         Ok(NonZeroU8::new(value).map(|value| Self {
             value,
-            base: PhantomData::default(),
+            base: PhantomData,
         }))
     }
 
