@@ -27,13 +27,20 @@ impl<Base: SudokuBase> BaseCoordinate<Base> {
         Ok(this)
     }
 
+    pub fn max() -> Self {
+        let max_coordinate = Base::SIDE_LENGTH - 1;
+
+        // Safety: `Base::SIDE_LENGTH` is always non-zero, so `max_coordinate` remains in-bounds.
+        unsafe { Self::new_unchecked(max_coordinate) }
+    }
+
     /// # Safety
     ///
     /// `coordinate < Base::SIDE_LENGTH` must be true.
     pub(super) unsafe fn new_unchecked(coordinate: u8) -> Self {
         let this = Self {
             coordinate,
-            _base: PhantomData::default(),
+            _base: PhantomData,
         };
         this.debug_assert();
         this
@@ -84,6 +91,10 @@ impl<Base: SudokuBase> BaseCoordinate<Base> {
     pub fn get(&self) -> u8 {
         self.coordinate
     }
+
+    pub fn get_u16(&self) -> u16 {
+        u16::from(self.coordinate)
+    }
 }
 
 /// Iterators
@@ -115,11 +126,6 @@ mod tests {
         assert_eq!(BaseCoordinate::<Base2>::new(0).unwrap().coordinate, 0);
         assert_eq!(BaseCoordinate::<Base2>::new(3).unwrap().coordinate, 3);
         assert!(BaseCoordinate::<Base2>::new(4).is_err());
-
-        // Base 3
-        assert_eq!(BaseCoordinate::<Base3>::new(0).unwrap().coordinate, 0);
-        assert_eq!(BaseCoordinate::<Base3>::new(8).unwrap().coordinate, 8);
-        assert!(BaseCoordinate::<Base3>::new(9).is_err());
     }
 
     #[test]
@@ -130,5 +136,11 @@ mod tests {
             BaseCoordinate::<Base3>::all(),
             (0..9).map(|coordinate| BaseCoordinate::new(coordinate).unwrap()),
         );
+    }
+
+    #[test]
+    fn test_max() {
+        assert_eq!(BaseCoordinate::<Base2>::max().get(), 3);
+        assert_eq!(BaseCoordinate::<Base3>::max().get(), 8);
     }
 }

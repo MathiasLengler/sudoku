@@ -34,58 +34,10 @@ impl<Base: SudokuBase> BasePosition<Base> {
     pub(crate) unsafe fn new_unchecked(cell_index: u16) -> Self {
         let this = Self {
             cell_index,
-            _base: PhantomData::default(),
+            _base: PhantomData,
         };
         this.debug_assert();
         this
-    }
-}
-
-/// Validation
-impl<Base: SudokuBase> BasePosition<Base> {
-    fn validate_cell_index(cell_index: u16) -> Result<()> {
-        ensure!(cell_index < Base::CELL_COUNT);
-        Ok(())
-    }
-
-    fn validate(&self) -> Result<()> {
-        Self::validate_cell_index(self.cell_index)
-    }
-
-    fn assert(&self) {
-        self.validate().unwrap();
-    }
-
-    pub(crate) fn debug_assert(&self) {
-        debug_assert!({
-            self.assert();
-            true
-        });
-    }
-}
-
-/// Getters
-impl<Base: SudokuBase> BasePosition<Base> {
-    pub fn cell_index(&self) -> u16 {
-        self.cell_index
-    }
-
-    pub fn row(&self) -> BaseCoordinate<Base> {
-        let row = self.cell_index / u16::from(Base::SIDE_LENGTH);
-
-        // Safety: the calculation for `row` always remains in-bounds.
-        unsafe { BaseCoordinate::new_unchecked_u16(row) }
-    }
-
-    pub fn column(&self) -> BaseCoordinate<Base> {
-        let column = self.cell_index % u16::from(Base::SIDE_LENGTH);
-
-        // Safety: the calculation for `column` always remains in-bounds.
-        unsafe { BaseCoordinate::new_unchecked_u16(column) }
-    }
-
-    pub fn row_and_column(&self) -> (BaseCoordinate<Base>, BaseCoordinate<Base>) {
-        (self.row(), self.column())
     }
 }
 
@@ -129,22 +81,311 @@ impl<Base: SudokuBase> TryFrom<Position> for BasePosition<Base> {
     }
 }
 
+/// Validation
+impl<Base: SudokuBase> BasePosition<Base> {
+    fn validate_cell_index(cell_index: u16) -> Result<()> {
+        ensure!(cell_index < Base::CELL_COUNT);
+        Ok(())
+    }
+
+    fn validate(&self) -> Result<()> {
+        Self::validate_cell_index(self.cell_index)
+    }
+
+    fn assert(&self) {
+        self.validate().unwrap();
+    }
+
+    pub(crate) fn debug_assert(&self) {
+        debug_assert!({
+            self.assert();
+            true
+        });
+    }
+}
+
+/// Getters
+impl<Base: SudokuBase> BasePosition<Base> {
+    pub fn cell_index(&self) -> u16 {
+        self.cell_index
+    }
+
+    pub fn to_row(self) -> BaseCoordinate<Base> {
+        let row = self.cell_index / u16::from(Base::SIDE_LENGTH);
+
+        // Safety: the calculation for `row` always remains in-bounds.
+        unsafe { BaseCoordinate::new_unchecked_u16(row) }
+    }
+
+    pub fn to_column(self) -> BaseCoordinate<Base> {
+        let column = self.cell_index % u16::from(Base::SIDE_LENGTH);
+
+        // Safety: the calculation for `column` always remains in-bounds.
+        unsafe { BaseCoordinate::new_unchecked_u16(column) }
+    }
+
+    pub fn to_row_and_column(self) -> (BaseCoordinate<Base>, BaseCoordinate<Base>) {
+        (self.to_row(), self.to_column())
+    }
+}
+
+// TODO: benchmark/optimize
+/// Iterators
+impl<Base: SudokuBase> BasePosition<Base> {
+    pub fn all() -> impl Iterator<Item = Self> {
+        (0..Base::CELL_COUNT).map(|cell_index|
+            // Safety: `cell_index` remains in-bounds
+            unsafe { Self::new_unchecked(cell_index) })
+    }
+
+    pub fn row(row: BaseCoordinate<Base>) -> impl Iterator<Item = Self> {
+        let first_cell_index = row.get_u16() * u16::from(Base::SIDE_LENGTH);
+        (first_cell_index..first_cell_index + u16::from(Base::SIDE_LENGTH)).map(|cell_index|
+            // Safety: `cell_index` remains in-bounds
+            unsafe { Self::new_unchecked(cell_index) })
+    }
+
+    pub fn all_rows() -> impl Iterator<Item = impl Iterator<Item = Self>> {
+        BaseCoordinate::all().map(Self::row)
+    }
+
+    pub fn column(column: BaseCoordinate<Base>) -> impl Iterator<Item = Self> {
+        let first_cell_index = column.get_u16();
+
+        (first_cell_index..Base::CELL_COUNT)
+            .step_by(usize::from(Base::SIDE_LENGTH))
+            .map(|cell_index|
+            // Safety: `cell_index` remains in-bounds
+            unsafe { Self::new_unchecked(cell_index) })
+    }
+
+    pub fn all_columns() -> impl Iterator<Item = impl Iterator<Item = Self>> {
+        BaseCoordinate::all().map(Self::column)
+    }
+
+    pub fn block(block: BaseCoordinate<Base>) -> impl Iterator<Item = Self> {
+        use num::Integer;
+
+        let (block_row, block_column) = block.get().div_rem(&Base::BASE);
+
+        let base_row = block_row * Base::BASE;
+        let base_column = block_column * Base::BASE;
+
+        (base_row..base_row + Base::BASE).flat_map(move |row| {
+            (base_column..base_column + Base::BASE).map(move |column| {
+                // Safety: `row` remains in-bounds
+                let row = unsafe { BaseCoordinate::new_unchecked(row) };
+                // Safety: `column` remains in-bounds
+                let column = unsafe { BaseCoordinate::new_unchecked(column) };
+                (row, column).into()
+            })
+        })
+    }
+
+    pub fn all_blocks() -> impl Iterator<Item = impl Iterator<Item = Self>> {
+        BaseCoordinate::all().map(Self::block)
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::base::consts::{Base2, Base3};
+    use crate::base::consts::Base2;
+    use itertools::Itertools;
 
     use super::*;
 
     #[test]
     fn test_new() {
-        // Base 2
         assert_eq!(BasePosition::<Base2>::new(0).unwrap().cell_index, 0);
         assert_eq!(BasePosition::<Base2>::new(15).unwrap().cell_index, 15);
         assert!(BasePosition::<Base2>::new(16).is_err());
+    }
 
-        // Base 3
-        assert_eq!(BasePosition::<Base3>::new(0).unwrap().cell_index, 0);
-        assert_eq!(BasePosition::<Base3>::new(80).unwrap().cell_index, 80);
-        assert!(BasePosition::<Base3>::new(81).is_err());
+    mod iterators {
+        use super::*;
+        use crate::base::consts::Base5;
+
+        #[test]
+        fn test_all() {
+            itertools::assert_equal(
+                BasePosition::<Base2>::all(),
+                vec![
+                    (0, 0),
+                    (0, 1),
+                    (0, 2),
+                    (0, 3),
+                    (1, 0),
+                    (1, 1),
+                    (1, 2),
+                    (1, 3),
+                    (2, 0),
+                    (2, 1),
+                    (2, 2),
+                    (2, 3),
+                    (3, 0),
+                    (3, 1),
+                    (3, 2),
+                    (3, 3),
+                ]
+                .into_iter()
+                .map(|pos| pos.try_into().unwrap()),
+            );
+        }
+
+        #[test]
+        fn test_row() {
+            itertools::assert_equal(
+                BasePosition::<Base2>::row(0.try_into().unwrap()),
+                vec![(0, 0), (0, 1), (0, 2), (0, 3)]
+                    .into_iter()
+                    .map(|pos| pos.try_into().unwrap()),
+            );
+            itertools::assert_equal(
+                BasePosition::<Base2>::row(1.try_into().unwrap()),
+                vec![(1, 0), (1, 1), (1, 2), (1, 3)]
+                    .into_iter()
+                    .map(|pos| pos.try_into().unwrap()),
+            );
+            itertools::assert_equal(
+                BasePosition::<Base2>::row(2.try_into().unwrap()),
+                vec![(2, 0), (2, 1), (2, 2), (2, 3)]
+                    .into_iter()
+                    .map(|pos| pos.try_into().unwrap()),
+            );
+            itertools::assert_equal(
+                BasePosition::<Base2>::row(3.try_into().unwrap()),
+                vec![(3, 0), (3, 1), (3, 2), (3, 3)]
+                    .into_iter()
+                    .map(|pos| pos.try_into().unwrap()),
+            );
+        }
+
+        #[test]
+        fn test_all_rows() {
+            BasePosition::<Base2>::all_rows()
+                .zip_eq(vec![
+                    vec![(0, 0), (0, 1), (0, 2), (0, 3)],
+                    vec![(1, 0), (1, 1), (1, 2), (1, 3)],
+                    vec![(2, 0), (2, 1), (2, 2), (2, 3)],
+                    vec![(3, 0), (3, 1), (3, 2), (3, 3)],
+                ])
+                .for_each(|(actual_row, expected_row)| {
+                    itertools::assert_equal(
+                        actual_row,
+                        expected_row.into_iter().map(|pos| pos.try_into().unwrap()),
+                    );
+                });
+        }
+
+        #[test]
+        fn test_column() {
+            itertools::assert_equal(
+                BasePosition::<Base2>::column(0.try_into().unwrap()),
+                vec![(0, 0), (1, 0), (2, 0), (3, 0)]
+                    .into_iter()
+                    .map(|pos| pos.try_into().unwrap()),
+            );
+            itertools::assert_equal(
+                BasePosition::<Base2>::column(1.try_into().unwrap()),
+                vec![(0, 1), (1, 1), (2, 1), (3, 1)]
+                    .into_iter()
+                    .map(|pos| pos.try_into().unwrap()),
+            );
+            itertools::assert_equal(
+                BasePosition::<Base2>::column(2.try_into().unwrap()),
+                vec![(0, 2), (1, 2), (2, 2), (3, 2)]
+                    .into_iter()
+                    .map(|pos| pos.try_into().unwrap()),
+            );
+            itertools::assert_equal(
+                BasePosition::<Base2>::column(3.try_into().unwrap()),
+                vec![(0, 3), (1, 3), (2, 3), (3, 3)]
+                    .into_iter()
+                    .map(|pos| pos.try_into().unwrap()),
+            );
+        }
+
+        #[test]
+        fn test_all_columns() {
+            BasePosition::<Base2>::all_columns()
+                .zip_eq(vec![
+                    vec![(0, 0), (1, 0), (2, 0), (3, 0)],
+                    vec![(0, 1), (1, 1), (2, 1), (3, 1)],
+                    vec![(0, 2), (1, 2), (2, 2), (3, 2)],
+                    vec![(0, 3), (1, 3), (2, 3), (3, 3)],
+                ])
+                .for_each(|(actual_row, expected_row)| {
+                    itertools::assert_equal(
+                        actual_row,
+                        expected_row.into_iter().map(|pos| pos.try_into().unwrap()),
+                    );
+                });
+        }
+
+        #[test]
+        fn test_block() {
+            itertools::assert_equal(
+                BasePosition::<Base2>::block(0.try_into().unwrap()),
+                vec![(0, 0), (0, 1), (1, 0), (1, 1)]
+                    .into_iter()
+                    .map(|pos| pos.try_into().unwrap()),
+            );
+            itertools::assert_equal(
+                BasePosition::<Base2>::block(1.try_into().unwrap()),
+                vec![(0, 2), (0, 3), (1, 2), (1, 3)]
+                    .into_iter()
+                    .map(|pos| pos.try_into().unwrap()),
+            );
+            itertools::assert_equal(
+                BasePosition::<Base2>::block(2.try_into().unwrap()),
+                vec![(2, 0), (2, 1), (3, 0), (3, 1)]
+                    .into_iter()
+                    .map(|pos| pos.try_into().unwrap()),
+            );
+            itertools::assert_equal(
+                BasePosition::<Base2>::block(3.try_into().unwrap()),
+                vec![(2, 2), (2, 3), (3, 2), (3, 3)]
+                    .into_iter()
+                    .map(|pos| pos.try_into().unwrap()),
+            );
+        }
+
+        #[test]
+        fn test_all_blocks() {
+            BasePosition::<Base2>::all_blocks()
+                .zip_eq(vec![
+                    vec![(0, 0), (0, 1), (1, 0), (1, 1)],
+                    vec![(0, 2), (0, 3), (1, 2), (1, 3)],
+                    vec![(2, 0), (2, 1), (3, 0), (3, 1)],
+                    vec![(2, 2), (2, 3), (3, 2), (3, 3)],
+                ])
+                .for_each(|(actual_row, expected_row)| {
+                    itertools::assert_equal(
+                        actual_row,
+                        expected_row.into_iter().map(|pos| pos.try_into().unwrap()),
+                    );
+                });
+        }
+
+        #[test]
+        fn test_iter_overflow() {
+            fn consume_iter(iter: impl Iterator<Item = BasePosition<Base5>>) {
+                iter.for_each(drop);
+            }
+
+            fn consume_nested_iter(
+                iter: impl Iterator<Item = impl Iterator<Item = BasePosition<Base5>>>,
+            ) {
+                iter.for_each(|nested_iter| nested_iter.for_each(drop));
+            }
+
+            consume_iter(BasePosition::<Base5>::all());
+            consume_iter(BasePosition::<Base5>::row(BaseCoordinate::max()));
+            consume_nested_iter(BasePosition::<Base5>::all_rows());
+            consume_iter(BasePosition::<Base5>::column(BaseCoordinate::max()));
+            consume_nested_iter(BasePosition::<Base5>::all_columns());
+            consume_iter(BasePosition::<Base5>::block(BaseCoordinate::max()));
+            consume_nested_iter(BasePosition::<Base5>::all_blocks());
+        }
     }
 }

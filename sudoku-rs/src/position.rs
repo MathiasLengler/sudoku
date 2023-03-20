@@ -25,7 +25,7 @@ impl From<(u8, u8)> for Position {
 
 impl<Base: SudokuBase> From<BasePosition<Base>> for Position {
     fn from(base_position: BasePosition<Base>) -> Self {
-        let (row, column) = base_position.row_and_column();
+        let (row, column) = base_position.to_row_and_column();
         (row.get(), column.get()).into()
     }
 }
