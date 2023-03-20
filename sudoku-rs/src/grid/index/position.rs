@@ -127,7 +127,7 @@ impl<Base: SudokuBase> Position<Base> {
     }
 }
 
-// TODO: benchmark/optimize
+// TODO: optimize
 /// Iterators
 impl<Base: SudokuBase> Position<Base> {
     pub fn all() -> impl Iterator<Item = Self> {
@@ -202,6 +202,7 @@ mod tests {
     mod iterators {
         use super::*;
         use crate::base::consts::Base5;
+        use crate::grid::index::test_utils::{consume_iter, consume_nested_iter};
 
         #[test]
         fn test_all() {
@@ -367,16 +368,6 @@ mod tests {
 
         #[test]
         fn test_iter_overflow() {
-            fn consume_iter(iter: impl Iterator<Item = Position<Base5>>) {
-                iter.for_each(drop);
-            }
-
-            fn consume_nested_iter(
-                iter: impl Iterator<Item = impl Iterator<Item = Position<Base5>>>,
-            ) {
-                iter.for_each(|nested_iter| nested_iter.for_each(drop));
-            }
-
             consume_iter(Position::<Base5>::all());
             consume_iter(Position::<Base5>::row(Coordinate::max()));
             consume_nested_iter(Position::<Base5>::all_rows());

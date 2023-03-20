@@ -3,6 +3,7 @@ extern crate criterion;
 
 use std::any::Any;
 use std::convert::TryInto;
+use std::hint::black_box;
 use std::path::Path;
 
 use criterion::measurement::WallTime;
@@ -14,17 +15,20 @@ use sudoku::cell::compact::candidates::Candidates;
 use sudoku::cell::compact::value::Value;
 use sudoku::generator::{Generator, GeneratorTarget};
 use sudoku::grid::deserialization::read_grids_from_file;
+use sudoku::grid::index::coordinate::Coordinate;
+use sudoku::grid::index::position::Position;
+use sudoku::grid::index::test_utils::{consume_iter, consume_nested_iter};
 use sudoku::grid::Grid;
 use sudoku::position::DynamicPosition;
 use sudoku::samples::{base_2, base_3};
 use sudoku::solver::strategic::strategies::GroupReduction;
 use sudoku::solver::{backtracking, backtracking_bitset, strategic};
 
-fn cast_grid<Base: SudokuBase + 'static>(any_grid: Box<dyn Any>) -> Grid<Base> {
+fn cast_grid<Base: SudokuBase>(any_grid: Box<dyn Any>) -> Grid<Base> {
     *any_grid.downcast().unwrap()
 }
 
-fn sample_grid<Base: SudokuBase + 'static>() -> Grid<Base> {
+fn sample_grid<Base: SudokuBase>() -> Grid<Base> {
     match Base::BASE {
         2 => cast_grid(Box::new(base_2().into_iter().next().unwrap())),
         3 => cast_grid(Box::new(base_3().into_iter().next().unwrap())),
@@ -56,7 +60,7 @@ fn bench_generator_group<Base: SudokuBase>(generator_group: &mut BenchmarkGroup<
     }
 }
 
-fn bench_solver_group<Base: SudokuBase + 'static>(solver_group: &mut BenchmarkGroup<WallTime>) {
+fn bench_solver_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup<WallTime>) {
     let base = Base::BASE;
     let parameter_string = format!("Base={}", base);
     let grid = sample_grid::<Base>();
@@ -139,9 +143,7 @@ fn bench_solver_tdoku_group(solver_tdoku_group: &mut BenchmarkGroup<WallTime>) {
     }
 }
 
-fn bench_solver_micro_group<Base: SudokuBase + 'static>(
-    solver_group: &mut BenchmarkGroup<WallTime>,
-) {
+fn bench_solver_micro_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup<WallTime>) {
     let base = Base::BASE;
     let parameter_string = format!("Base={}", base);
     let grid = sample_grid::<Base>();
@@ -162,7 +164,7 @@ fn bench_solver_micro_group<Base: SudokuBase + 'static>(
     );
 }
 
-fn bench_grid_group<Base: SudokuBase + 'static>(grid_group: &mut BenchmarkGroup<WallTime>) {
+fn bench_grid_group<Base: SudokuBase>(grid_group: &mut BenchmarkGroup<WallTime>) {
     let base = Base::BASE;
     let parameter_string = format!("Base={}", base);
     let grid = sample_grid::<Base>();
@@ -179,91 +181,50 @@ fn bench_grid_group<Base: SudokuBase + 'static>(grid_group: &mut BenchmarkGroup<
         },
     );
     grid_group.bench_function(BenchmarkId::new("all_positions", &parameter_string), |b| {
-        b.iter(|| {
-            Grid::<Base>::all_positions().for_each(|pos| {
-                criterion::black_box(pos);
-            })
-        })
+        b.iter(|| consume_iter(Grid::<Base>::all_positions()))
     });
 
     // Cell iterators
     grid_group.bench_with_input(
         BenchmarkId::new("iter_cells/row_cells", &parameter_string),
         &grid,
-        |b, grid| {
-            b.iter(|| {
-                grid.row_cells(1).for_each(|cell| {
-                    criterion::black_box(cell);
-                })
-            })
-        },
+        |b, grid| b.iter(|| consume_iter(grid.row_cells(1))),
     );
     grid_group.bench_with_input(
         BenchmarkId::new("iter_cells/all_row_cells", &parameter_string),
         &grid,
-        |b, grid| {
-            b.iter(|| {
-                grid.all_row_cells().for_each(|row| {
-                    row.for_each(|cell| {
-                        criterion::black_box(cell);
-                    });
-                })
-            })
-        },
+        |b, grid| b.iter(|| consume_nested_iter(grid.all_row_cells())),
     );
     grid_group.bench_with_input(
         BenchmarkId::new("iter_cells/column_cells", &parameter_string),
         &grid,
-        |b, grid| {
-            b.iter(|| {
-                grid.column_cells(1).for_each(|cell| {
-                    criterion::black_box(cell);
-                })
-            })
-        },
+        |b, grid| b.iter(|| consume_iter(grid.column_cells(1))),
     );
     grid_group.bench_with_input(
         BenchmarkId::new("iter_cells/all_column_cells", &parameter_string),
         &grid,
-        |b, grid| {
-            b.iter(|| {
-                grid.all_column_cells().for_each(|column| {
-                    column.for_each(|cell| {
-                        criterion::black_box(cell);
-                    });
-                })
-            })
-        },
+        |b, grid| b.iter(|| consume_nested_iter(grid.all_column_cells())),
     );
     grid_group.bench_with_input(
         BenchmarkId::new("iter_cells/block_cells", &parameter_string),
         &grid,
         |b, grid| {
             b.iter(|| {
-                grid.block_cells(DynamicPosition { row: 3, column: 3 })
-                    .for_each(|cell| {
-                        criterion::black_box(cell);
-                    })
+                consume_iter(grid.block_cells(black_box(DynamicPosition { row: 3, column: 3 })))
             })
         },
     );
     grid_group.bench_with_input(
         BenchmarkId::new("iter_cells/all_block_cells", &parameter_string),
         &grid,
-        |b, grid| {
-            b.iter(|| {
-                grid.all_block_cells().for_each(|block| {
-                    block.for_each(|cell| {
-                        criterion::black_box(cell);
-                    });
-                })
-            })
-        },
+        |b, grid| b.iter(|| consume_nested_iter(grid.all_block_cells())),
     );
     grid_group.bench_with_input(
         BenchmarkId::new("direct_candidates", &parameter_string),
         &grid,
-        |b, grid| b.iter(|| grid.direct_candidates(DynamicPosition { column: 1, row: 1 })),
+        |b, grid| {
+            b.iter(|| grid.direct_candidates(black_box(DynamicPosition { column: 1, row: 1 })))
+        },
     );
     grid_group.bench_with_input(
         BenchmarkId::new("update_direct_candidates", &parameter_string),
@@ -359,6 +320,36 @@ fn bench_candidates_group(candidates_group: &mut BenchmarkGroup<WallTime>) {
     });
 }
 
+fn bench_position_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup<WallTime>) {
+    let base = Base::BASE;
+    let parameter_string = format!("Base={}", base);
+    let coordinate = Coordinate::<Base>::new(3).unwrap();
+
+    solver_group.bench_function(BenchmarkId::new("iter/all", &parameter_string), |b| {
+        b.iter(|| consume_iter(Position::<Base>::all()))
+    });
+    solver_group.bench_function(BenchmarkId::new("iter/row", &parameter_string), |b| {
+        b.iter(|| consume_iter(Position::<Base>::row(black_box(coordinate))))
+    });
+    solver_group.bench_function(BenchmarkId::new("iter/column", &parameter_string), |b| {
+        b.iter(|| consume_iter(Position::<Base>::column(black_box(coordinate))))
+    });
+    solver_group.bench_function(BenchmarkId::new("iter/block", &parameter_string), |b| {
+        b.iter(|| consume_iter(Position::<Base>::block(black_box(coordinate))))
+    });
+    solver_group.bench_function(BenchmarkId::new("iter/all_rows", &parameter_string), |b| {
+        b.iter(|| consume_nested_iter(Position::<Base>::all_rows()))
+    });
+    solver_group.bench_function(
+        BenchmarkId::new("iter/all_columns", &parameter_string),
+        |b| b.iter(|| consume_nested_iter(Position::<Base>::all_columns())),
+    );
+    solver_group.bench_function(
+        BenchmarkId::new("iter/all_blocks", &parameter_string),
+        |b| b.iter(|| consume_nested_iter(Position::<Base>::all_blocks())),
+    );
+}
+
 fn criterion_benchmark(c: &mut Criterion) {
     let mut generator_group: BenchmarkGroup<WallTime> = c.benchmark_group("Generator");
     bench_generator_group::<Base2>(&mut generator_group);
@@ -394,6 +385,12 @@ fn criterion_benchmark(c: &mut Criterion) {
     let mut candidates_group = c.benchmark_group("Candidates");
     bench_candidates_group(&mut candidates_group);
     candidates_group.finish();
+
+    let mut position_group = c.benchmark_group("Position");
+    bench_position_group::<Base2>(&mut position_group);
+    bench_position_group::<Base3>(&mut position_group);
+    bench_position_group::<Base4>(&mut position_group);
+    position_group.finish();
 }
 
 criterion_group!(benches, criterion_benchmark);
