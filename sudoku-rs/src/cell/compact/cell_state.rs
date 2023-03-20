@@ -245,13 +245,12 @@ mod tests {
     fn test_cell_state_size() {
         assert_eq!(
             vec![
-                size_of::<CellState<Base1>>(),
                 size_of::<CellState<Base2>>(),
                 size_of::<CellState<Base3>>(),
                 size_of::<CellState<Base4>>(),
                 size_of::<CellState<Base5>>()
             ],
-            vec![2, 2, 4, 4, 8]
+            vec![2, 4, 4, 8]
         );
     }
 

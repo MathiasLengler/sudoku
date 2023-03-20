@@ -315,13 +315,12 @@ mod tests {
     fn test_size_of() {
         assert_eq!(
             vec![
-                size_of::<Candidates<U1>>(),
                 size_of::<Candidates<U2>>(),
                 size_of::<Candidates<U3>>(),
                 size_of::<Candidates<U4>>(),
                 size_of::<Candidates<U5>>()
             ],
-            vec![1, 1, 2, 2, 4,]
+            vec![1, 2, 2, 4,]
         );
     }
 
@@ -330,7 +329,6 @@ mod tests {
 
         #[test]
         fn test_new() {
-            assert_eq!(Candidates::<Base1>::new().to_vec_u8(), Vec::<u8>::new());
             assert_eq!(Candidates::<Base2>::new().to_vec_u8(), Vec::<u8>::new());
             assert_eq!(Candidates::<Base3>::new().to_vec_u8(), Vec::<u8>::new());
             assert_eq!(Candidates::<Base4>::new().to_vec_u8(), Vec::<u8>::new());

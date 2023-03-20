@@ -13,7 +13,6 @@ use consts::*;
 use crate::cell::candidates_cell::CandidatesCell;
 
 pub mod consts {
-    pub use Base1 as U1;
     pub use Base2 as U2;
     pub use Base3 as U3;
     pub use Base4 as U4;
@@ -23,8 +22,6 @@ pub mod consts {
     use crate::base::SudokuBase;
 
     #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
-    pub struct Base1;
-    #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
     pub struct Base2;
     #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
     pub struct Base3;
@@ -33,8 +30,7 @@ pub mod consts {
     #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
     pub struct Base5;
 
-    pub const ALL_CELL_COUNTS: [u16; 5] = [
-        Base1::CELL_COUNT,
+    pub const ALL_CELL_COUNTS: [u16; 4] = [
         Base2::CELL_COUNT,
         Base3::CELL_COUNT,
         Base4::CELL_COUNT,
@@ -59,7 +55,6 @@ const fn base_to_cell_count(base: u8) -> u16 {
 mod cell_index_to_block_index {
     use super::*;
 
-    pub(super) static BASE_1: &[u8; base_to_cell_count(1) as usize] = &[0];
     pub(super) static BASE_2: &[u8; base_to_cell_count(2) as usize] = &[
         0, 0, 1, 1, //
         0, 0, 1, 1, //
@@ -140,7 +135,7 @@ where
     Self: Ord + Hash + Clone + Copy + Debug + Default + 'static,
 {
     // TODO: evaluate `as` casting of constants
-    /// The side length of a sudoku block.
+    /// The side length of a sudoku block. Must be non-zero.
     ///
     /// # Examples
     /// - `4x4`: `2`
@@ -189,12 +184,15 @@ where
         + Clone
         + Debug
         + Default;
+
+    // TODO:
+    // type BLOCK_INDEX_TO_CELL_INDEX: []
 }
 
 macro_rules! impl_sudoku_base {
     ($($type_num:ty,$base_u8:expr,$type_integral:ty,$CELL_INDEX_TO_BLOCK_INDEX:expr;)+) => {
         $(
-// Safety: this private macro is only instantiated below and the correctness of the generated impls are tested.
+// Safety: this private macro is only instantiated below and the correctness of the generated impls is tested.
 unsafe impl SudokuBase for $type_num {
     const BASE: u8 = $base_u8;
     const SIDE_LENGTH: u8 = base_to_side_length(Self::BASE);
@@ -215,7 +213,6 @@ unsafe impl SudokuBase for $type_num {
 
 // All sudoku bases supported by DynamicSudoku, and U1 for testing.
 impl_sudoku_base!(
-    Base1, 1, u8, cell_index_to_block_index::BASE_1;
     Base2, 2, u8, cell_index_to_block_index::BASE_2;
     Base3, 3, u16, cell_index_to_block_index::BASE_3;
     Base4, 4, u16, cell_index_to_block_index::BASE_4;
@@ -342,10 +339,6 @@ mod tests {
                 .collect::<Vec<_>>()
         }
 
-        assert_eq!(
-            cell_index_to_block_index::BASE_1,
-            generate_cell_index_to_block_index(1).as_slice()
-        );
         assert_eq!(
             cell_index_to_block_index::BASE_2,
             generate_cell_index_to_block_index(2).as_slice()
