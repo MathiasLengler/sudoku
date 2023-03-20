@@ -4,7 +4,7 @@ use crate::base::SudokuBase;
 use crate::cell::compact::value::Value;
 use crate::error::Result;
 use crate::grid::Grid;
-use crate::position::Position;
+use crate::position::DynamicPosition;
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions};
 
 use super::Strategy;
@@ -24,7 +24,7 @@ impl Strategy for HiddenSingles {
                 #[derive(Debug, Copy, Clone, Default)]
                 struct CandidateStats {
                     count: u8,
-                    last_pos: Option<Position>,
+                    last_pos: Option<DynamicPosition>,
                 }
 
                 // TODO: evaluate better data structure

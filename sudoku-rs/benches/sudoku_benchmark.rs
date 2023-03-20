@@ -15,7 +15,7 @@ use sudoku::cell::compact::value::Value;
 use sudoku::generator::{Generator, GeneratorTarget};
 use sudoku::grid::deserialization::read_grids_from_file;
 use sudoku::grid::Grid;
-use sudoku::position::Position;
+use sudoku::position::DynamicPosition;
 use sudoku::samples::{base_2, base_3};
 use sudoku::solver::strategic::strategies::GroupReduction;
 use sudoku::solver::{backtracking, backtracking_bitset, strategic};
@@ -240,7 +240,7 @@ fn bench_grid_group<Base: SudokuBase + 'static>(grid_group: &mut BenchmarkGroup<
         &grid,
         |b, grid| {
             b.iter(|| {
-                grid.block_cells(Position { row: 3, column: 3 })
+                grid.block_cells(DynamicPosition { row: 3, column: 3 })
                     .for_each(|cell| {
                         criterion::black_box(cell);
                     })
@@ -263,7 +263,7 @@ fn bench_grid_group<Base: SudokuBase + 'static>(grid_group: &mut BenchmarkGroup<
     grid_group.bench_with_input(
         BenchmarkId::new("direct_candidates", &parameter_string),
         &grid,
-        |b, grid| b.iter(|| grid.direct_candidates(Position { column: 1, row: 1 })),
+        |b, grid| b.iter(|| grid.direct_candidates(DynamicPosition { column: 1, row: 1 })),
     );
     grid_group.bench_with_input(
         BenchmarkId::new("update_direct_candidates", &parameter_string),
@@ -276,7 +276,7 @@ fn bench_grid_group<Base: SudokuBase + 'static>(grid_group: &mut BenchmarkGroup<
             b.iter_batched(
                 || grid.clone(),
                 |mut grid: Grid<Base>| {
-                    let pos = Position { column: 1, row: 1 };
+                    let pos = DynamicPosition { column: 1, row: 1 };
                     let value = Value::new(2).unwrap().unwrap();
                     grid.get_mut(pos).set_or_toggle_value(value);
                     grid.update_direct_candidates(pos, value);

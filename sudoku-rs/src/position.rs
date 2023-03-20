@@ -6,32 +6,33 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::base::SudokuBase;
-use crate::grid::index::position::BasePosition;
+use crate::grid::index::position::Position;
 
+/// The position of a cell in a grid of unknown size.
 #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[derive(
     Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize, Default,
 )]
-pub struct Position {
+pub struct DynamicPosition {
     pub row: u8,
     pub column: u8,
 }
 
-impl From<(u8, u8)> for Position {
+impl From<(u8, u8)> for DynamicPosition {
     fn from((row, column): (u8, u8)) -> Self {
         Self { row, column }
     }
 }
 
-impl<Base: SudokuBase> From<BasePosition<Base>> for Position {
-    fn from(base_position: BasePosition<Base>) -> Self {
+impl<Base: SudokuBase> From<Position<Base>> for DynamicPosition {
+    fn from(base_position: Position<Base>) -> Self {
         let (row, column) = base_position.to_row_and_column();
         (row.get(), column.get()).into()
     }
 }
-impl Position {
+impl DynamicPosition {
     pub fn index_tuple(&self) -> (usize, usize) {
-        let &Position { row, column } = self;
+        let &DynamicPosition { row, column } = self;
         (row.into(), column.into())
     }
 
@@ -40,50 +41,50 @@ impl Position {
     }
 }
 
-impl Display for Position {
+impl Display for DynamicPosition {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "r{}c{}", self.row, self.column)
     }
 }
 
-impl Div for Position {
-    type Output = Position;
+impl Div for DynamicPosition {
+    type Output = DynamicPosition;
 
     fn div(self, rhs: Self) -> Self::Output {
-        Position {
+        DynamicPosition {
             row: self.row / rhs.row,
             column: self.column / rhs.column,
         }
     }
 }
 
-impl Div<u8> for Position {
-    type Output = Position;
+impl Div<u8> for DynamicPosition {
+    type Output = DynamicPosition;
 
     fn div(self, rhs: u8) -> Self::Output {
-        self / Position {
+        self / DynamicPosition {
             row: rhs,
             column: rhs,
         }
     }
 }
 
-impl Mul for Position {
-    type Output = Position;
+impl Mul for DynamicPosition {
+    type Output = DynamicPosition;
 
-    fn mul(self, rhs: Position) -> Self::Output {
-        Position {
+    fn mul(self, rhs: DynamicPosition) -> Self::Output {
+        DynamicPosition {
             row: self.row * rhs.row,
             column: self.column * rhs.column,
         }
     }
 }
 
-impl Mul<u8> for Position {
-    type Output = Position;
+impl Mul<u8> for DynamicPosition {
+    type Output = DynamicPosition;
 
     fn mul(self, rhs: u8) -> Self::Output {
-        self * Position {
+        self * DynamicPosition {
             row: rhs,
             column: rhs,
         }

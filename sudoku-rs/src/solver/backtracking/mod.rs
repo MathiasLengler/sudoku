@@ -2,7 +2,7 @@ use std::num::NonZeroUsize;
 
 use crate::base::SudokuBase;
 use crate::grid::Grid;
-use crate::position::Position;
+use crate::position::DynamicPosition;
 use crate::solver::backtracking::choice::{CandidatesProcessor, Choice};
 
 mod choice;
@@ -23,7 +23,7 @@ pub enum CandidatesVisitOrder {
 pub struct Solver<'s, Base: SudokuBase> {
     grid: &'s mut Grid<Base>,
     /// Cached
-    empty_positions: Vec<Position>,
+    empty_positions: Vec<DynamicPosition>,
     /// Choices stack
     choices: Vec<Choice<Base>>,
     /// Step limit checking
@@ -79,7 +79,7 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
         };
     }
 
-    fn push_choice(&mut self, pos: Position) {
+    fn push_choice(&mut self, pos: DynamicPosition) {
         self.choices.push(Choice::new(
             self.grid.direct_candidates(pos).to_vec_value(),
             &mut self.candidates_processor,

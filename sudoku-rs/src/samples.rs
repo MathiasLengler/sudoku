@@ -97,7 +97,7 @@ pub fn minimal<Base: SudokuBase>() -> Grid<Base> {
 
 #[cfg(test)]
 mod tests {
-    use crate::position::Position;
+    use crate::position::DynamicPosition;
 
     use super::*;
 
@@ -115,10 +115,10 @@ mod tests {
     fn test_base_2_candidates_coordinates() {
         let grid = base_2_candidates_coordinates();
 
-        let top_left_cell = grid.get(Position { row: 0, column: 0 });
+        let top_left_cell = grid.get(DynamicPosition { row: 0, column: 0 });
         assert_eq!(*top_left_cell, Cell::with_candidates(Candidates::new()));
 
-        let bottom_right = grid.get(Position { row: 3, column: 3 });
+        let bottom_right = grid.get(DynamicPosition { row: 3, column: 3 });
         assert_eq!(*bottom_right, Cell::with_candidates(Candidates::all()));
     }
 

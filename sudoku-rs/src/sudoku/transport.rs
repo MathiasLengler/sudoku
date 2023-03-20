@@ -5,7 +5,7 @@ use ts_rs::TS;
 use crate::base::SudokuBase;
 use crate::cell::view::CellView;
 use crate::grid::Grid;
-use crate::position::Position;
+use crate::position::DynamicPosition;
 use crate::sudoku::DynamicSudoku;
 use crate::sudoku::Sudoku;
 
@@ -76,6 +76,6 @@ impl From<&DynamicSudoku> for TransportSudoku {
 pub struct TransportCell {
     #[serde(flatten)]
     cell_view: CellView,
-    position: Position,
+    position: DynamicPosition,
     incorrect_value: bool,
 }

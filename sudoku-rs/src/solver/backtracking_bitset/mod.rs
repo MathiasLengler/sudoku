@@ -7,7 +7,7 @@ use crate::cell::candidates_cell::CandidatesCell;
 use crate::cell::compact::candidates::{Candidates, CandidatesIter};
 use crate::cell::compact::value::Value;
 use crate::grid::Grid;
-use crate::position::Position;
+use crate::position::DynamicPosition;
 
 // TODO: implement shuffle_candidates
 
@@ -47,7 +47,7 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
     fn initialize(&mut self, grid: &Grid<Base>) {
         for row in 0..Base::SIDE_LENGTH {
             for column in 0..Base::SIDE_LENGTH {
-                let pos = Position { row, column };
+                let pos = DynamicPosition { row, column };
 
                 let cell_index = pos.cell_index::<Base>();
 
@@ -253,9 +253,9 @@ struct GroupAvailabilityIndex {
     block: u8,
 }
 
-impl From<&GroupAvailabilityIndex> for Position {
+impl From<&GroupAvailabilityIndex> for DynamicPosition {
     fn from(index: &GroupAvailabilityIndex) -> Self {
-        Position {
+        DynamicPosition {
             row: index.row,
             column: index.column,
         }

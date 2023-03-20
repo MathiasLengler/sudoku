@@ -9,7 +9,7 @@ export * from "./DynamicStrategy";
 export * from "./GeneratorSettings";
 export * from "./GeneratorTarget";
 export * from "./GridFormat";
-export * from "./Position";
+export type { DynamicPosition as Position } from "./DynamicPosition";
 export * from "./Reason";
 export * from "./TransportAction";
 export * from "./TransportCell";

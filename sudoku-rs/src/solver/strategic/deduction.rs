@@ -16,12 +16,12 @@ use crate::cell::compact::value::Value;
 use crate::cell::Cell;
 use crate::error::{Error, Result};
 use crate::grid::Grid;
-use crate::position::Position;
+use crate::position::DynamicPosition;
 
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct OldDeductions<Base: SudokuBase> {
     // Invariant: K == V.pos
-    deductions: BTreeMap<Position, OldDeduction<Base>>,
+    deductions: BTreeMap<DynamicPosition, OldDeduction<Base>>,
 }
 
 /// Specialization workaround.
@@ -72,7 +72,7 @@ impl<Base: SudokuBase, I: IntoIterator<Item = Result<OldDeduction<Base>>>>
 
 impl<Base: SudokuBase> IntoIterator for OldDeductions<Base> {
     type Item = OldDeduction<Base>;
-    type IntoIter = btree_map::IntoValues<Position, OldDeduction<Base>>;
+    type IntoIter = btree_map::IntoValues<DynamicPosition, OldDeduction<Base>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.deductions.into_values()
@@ -81,7 +81,7 @@ impl<Base: SudokuBase> IntoIterator for OldDeductions<Base> {
 
 impl<'a, Base: SudokuBase> IntoIterator for &'a OldDeductions<Base> {
     type Item = &'a OldDeduction<Base>;
-    type IntoIter = Values<'a, Position, OldDeduction<Base>>;
+    type IntoIter = Values<'a, DynamicPosition, OldDeduction<Base>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
@@ -89,7 +89,7 @@ impl<'a, Base: SudokuBase> IntoIterator for &'a OldDeductions<Base> {
 }
 
 impl<Base: SudokuBase> OldDeductions<Base> {
-    pub fn iter(&self) -> Values<'_, Position, OldDeduction<Base>> {
+    pub fn iter(&self) -> Values<'_, DynamicPosition, OldDeduction<Base>> {
         self.deductions.values()
     }
 
@@ -124,7 +124,7 @@ impl<Base: SudokuBase> OldDeductions<Base> {
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct OldDeduction<Base: SudokuBase> {
-    pos: Position,
+    pos: DynamicPosition,
     kind: OldDeductionKind<Base>,
     previous_candidates: Candidates<Base>,
 }
@@ -152,7 +152,7 @@ impl<Base: SudokuBase> Display for OldDeduction<Base> {
 
 impl<Base: SudokuBase> OldDeduction<Base> {
     pub fn new(
-        pos: Position,
+        pos: DynamicPosition,
         previous_candidates: Candidates<Base>,
         kind: OldDeductionKind<Base>,
     ) -> Result<Self> {
@@ -169,7 +169,7 @@ impl<Base: SudokuBase> OldDeduction<Base> {
     }
 
     pub fn with_value(
-        pos: Position,
+        pos: DynamicPosition,
         previous_candidates: Candidates<Base>,
         value: Value<Base>,
     ) -> Result<Self> {
@@ -181,7 +181,7 @@ impl<Base: SudokuBase> OldDeduction<Base> {
     }
 
     pub fn with_remaining_candidates(
-        pos: Position,
+        pos: DynamicPosition,
         previous_candidates: Candidates<Base>,
         remaining_candidates: Candidates<Base>,
     ) -> Result<Self> {
@@ -472,7 +472,7 @@ pub trait Merge: Sized {
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct PositionMap<T: Merge> {
-    map: BTreeMap<Position, T>,
+    map: BTreeMap<DynamicPosition, T>,
 }
 
 impl<T: Merge> Merge for PositionMap<T> {
@@ -491,8 +491,8 @@ impl<T: Merge> Default for PositionMap<T> {
 }
 
 impl<T: Merge> IntoIterator for PositionMap<T> {
-    type Item = (Position, T);
-    type IntoIter = btree_map::IntoIter<Position, T>;
+    type Item = (DynamicPosition, T);
+    type IntoIter = btree_map::IntoIter<DynamicPosition, T>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.map.into_iter()
@@ -500,10 +500,10 @@ impl<T: Merge> IntoIterator for PositionMap<T> {
 }
 
 type PositionMapIter<'a, T> =
-    Map<Iter<'a, Position, T>, fn((&Position, &'a T)) -> (Position, &'a T)>;
+    Map<Iter<'a, DynamicPosition, T>, fn((&DynamicPosition, &'a T)) -> (DynamicPosition, &'a T)>;
 
 impl<'a, T: Merge> IntoIterator for &'a PositionMap<T> {
-    type Item = (Position, &'a T);
+    type Item = (DynamicPosition, &'a T);
     type IntoIter = PositionMapIter<'a, T>;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -518,13 +518,13 @@ impl<T: Merge> PositionMap<T> {
         }
     }
 
-    pub fn with_single(pos: Position, value: T) -> Self {
+    pub fn with_single(pos: DynamicPosition, value: T) -> Self {
         let mut this: Self = Self::new();
         this.map.insert(pos, value);
         this
     }
 
-    pub fn try_from_iter(iter: impl Iterator<Item = (Position, T)>) -> Result<Self> {
+    pub fn try_from_iter(iter: impl Iterator<Item = (DynamicPosition, T)>) -> Result<Self> {
         let mut this = Self::new();
 
         for (pos, value) in iter {
@@ -543,7 +543,7 @@ impl<T: Merge> PositionMap<T> {
         self.map.is_empty()
     }
 
-    pub fn insert(&mut self, pos: Position, value: T) -> Result<()> {
+    pub fn insert(&mut self, pos: DynamicPosition, value: T) -> Result<()> {
         if let Some(existing_value) = self.map.get_mut(&pos) {
             existing_value.merge(value)?;
         } else {
@@ -599,7 +599,7 @@ impl<Base: SudokuBase> Deduction<Base> {
         }
     }
 
-    pub fn with_action(pos: impl Into<Position>, action: Action<Base>) -> Self {
+    pub fn with_action(pos: impl Into<DynamicPosition>, action: Action<Base>) -> Self {
         Self {
             actions: PositionMap::with_single(pos.into(), action),
             ..Default::default()
@@ -607,7 +607,7 @@ impl<Base: SudokuBase> Deduction<Base> {
     }
 
     pub fn try_from_actions(
-        actions: impl Iterator<Item = (Position, Action<Base>)>,
+        actions: impl Iterator<Item = (DynamicPosition, Action<Base>)>,
     ) -> Result<Self> {
         Ok(Self {
             actions: PositionMap::try_from_iter(actions)?,
@@ -616,8 +616,8 @@ impl<Base: SudokuBase> Deduction<Base> {
     }
 
     pub fn try_from_iters(
-        reasons: impl Iterator<Item = (Position, Reason<Base>)>,
-        actions: impl Iterator<Item = (Position, Action<Base>)>,
+        reasons: impl Iterator<Item = (DynamicPosition, Reason<Base>)>,
+        actions: impl Iterator<Item = (DynamicPosition, Action<Base>)>,
     ) -> Result<Self> {
         Ok(Self {
             reasons: PositionMap::try_from_iter(reasons)?,
@@ -849,7 +849,7 @@ impl<Base: SudokuBase> Action<Base> {
         Ok(())
     }
 
-    fn update_direct_candidates(&self, grid: &mut Grid<Base>, pos: Position) {
+    fn update_direct_candidates(&self, grid: &mut Grid<Base>, pos: DynamicPosition) {
         if let Action::SetValue { value } = self {
             grid.update_direct_candidates(pos, *value);
         }
@@ -972,7 +972,7 @@ pub mod transport {
     #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize)]
     #[serde(bound = "", rename_all = "camelCase")]
     pub struct TransportReason<Base: SudokuBase> {
-        pub position: Position,
+        pub position: DynamicPosition,
         #[serde(flatten)]
         pub reason: Reason<Base>,
     }
@@ -984,7 +984,7 @@ pub mod transport {
     #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize)]
     #[serde(bound = "", rename_all = "camelCase")]
     pub struct TransportAction<Base: SudokuBase> {
-        pub position: Position,
+        pub position: DynamicPosition,
         #[serde(flatten)]
         pub action: Action<Base>,
     }
@@ -1048,14 +1048,14 @@ mod tests {
     fn test_deductions_order_independence() {
         use itertools::Itertools;
 
-        let pos = Position { row: 0, column: 0 };
+        let pos = DynamicPosition { row: 0, column: 0 };
         let previous_candidates: Candidates<Base2> = Candidates::all();
         let remaining_candidates: Candidates<Base2> = vec![1, 2].try_into().unwrap();
 
         let value_deduction_1 =
             OldDeduction::with_value(pos, previous_candidates, 1.try_into().unwrap()).unwrap();
         let value_deduction_2 = OldDeduction::with_value(
-            Position { row: 1, column: 1 },
+            DynamicPosition { row: 1, column: 1 },
             previous_candidates,
             2.try_into().unwrap(),
         )
@@ -1083,14 +1083,14 @@ mod tests {
     fn test_deduction_apply() {
         let mut grid = samples::base_2_candidates_coordinates();
 
-        let pos = Position { row: 0, column: 1 };
+        let pos = DynamicPosition { row: 0, column: 1 };
         let value = 1.try_into().unwrap();
         OldDeduction::with_value(pos, Candidates::single(1.try_into().unwrap()), value)
             .unwrap()
             .apply(&mut grid);
         assert_eq!(*grid.get(pos), Cell::with_value(value, false));
 
-        let pos = Position { row: 3, column: 3 };
+        let pos = DynamicPosition { row: 3, column: 3 };
         let candidates = vec![2, 4].try_into().unwrap();
         OldDeduction::with_remaining_candidates(pos, Candidates::all(), candidates)
             .unwrap()
@@ -1100,7 +1100,7 @@ mod tests {
 
     #[test]
     fn test_deduction_merge() {
-        let pos = Position { row: 1, column: 1 };
+        let pos = DynamicPosition { row: 1, column: 1 };
         let previous_candidates: Candidates<Base2> = Candidates::all();
         let remaining_candidates: Candidates<Base2> = Candidates::single(1.try_into().unwrap());
         let value: Value<Base2> = 1.try_into().unwrap();
@@ -1170,8 +1170,8 @@ mod tests {
     }
     #[test]
     fn test_deduction_merge_err() {
-        let pos = Position { row: 1, column: 1 };
-        let different_pos = Position { row: 2, column: 2 };
+        let pos = DynamicPosition { row: 1, column: 1 };
+        let different_pos = DynamicPosition { row: 2, column: 2 };
         let previous_candidates: Candidates<Base2> = Candidates::all();
         let different_previous_candidates: Candidates<Base2> = vec![1, 2].try_into().unwrap();
         let remaining_candidates: Candidates<Base2> = Candidates::single(1.try_into().unwrap());

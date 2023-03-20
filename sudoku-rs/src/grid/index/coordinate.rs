@@ -5,13 +5,8 @@ use anyhow::ensure;
 use crate::base::SudokuBase;
 use crate::error::{Error, Result};
 
-// TODO: index wrappers for:
-//  Row(BaseCoordinate)
-//  Column(BaseCoordinate)
-//  Block(BaseCoordinate)
-
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Default)]
-pub struct BaseCoordinate<Base: SudokuBase> {
+pub struct Coordinate<Base: SudokuBase> {
     /// # Safety invariants
     /// - `coordinate < Base::SIDE_LENGTH`
     coordinate: u8,
@@ -19,7 +14,7 @@ pub struct BaseCoordinate<Base: SudokuBase> {
 }
 
 /// Constructors
-impl<Base: SudokuBase> BaseCoordinate<Base> {
+impl<Base: SudokuBase> Coordinate<Base> {
     pub fn new(coordinate: u8) -> Result<Self> {
         Self::validate_coordinate(coordinate)?;
         // Safety: we have validated `coordinate` above.
@@ -64,7 +59,7 @@ impl<Base: SudokuBase> BaseCoordinate<Base> {
 }
 
 /// Validation
-impl<Base: SudokuBase> BaseCoordinate<Base> {
+impl<Base: SudokuBase> Coordinate<Base> {
     fn validate_coordinate(coordinate: u8) -> Result<()> {
         ensure!(coordinate < Base::SIDE_LENGTH);
         Ok(())
@@ -87,7 +82,7 @@ impl<Base: SudokuBase> BaseCoordinate<Base> {
 }
 
 /// Getters
-impl<Base: SudokuBase> BaseCoordinate<Base> {
+impl<Base: SudokuBase> Coordinate<Base> {
     pub fn get(&self) -> u8 {
         self.coordinate
     }
@@ -98,7 +93,7 @@ impl<Base: SudokuBase> BaseCoordinate<Base> {
 }
 
 /// Iterators
-impl<Base: SudokuBase> BaseCoordinate<Base> {
+impl<Base: SudokuBase> Coordinate<Base> {
     pub fn all() -> impl Iterator<Item = Self> {
         (0..Base::SIDE_LENGTH).map(|coordinate|
             // Safety: `coordinate` remains in-bounds
@@ -106,7 +101,7 @@ impl<Base: SudokuBase> BaseCoordinate<Base> {
     }
 }
 
-impl<Base: SudokuBase> TryFrom<u8> for BaseCoordinate<Base> {
+impl<Base: SudokuBase> TryFrom<u8> for Coordinate<Base> {
     type Error = Error;
 
     fn try_from(coordinate: u8) -> Result<Self> {
@@ -123,9 +118,9 @@ mod tests {
     #[test]
     fn test_new() {
         // Base 2
-        assert_eq!(BaseCoordinate::<Base2>::new(0).unwrap().coordinate, 0);
-        assert_eq!(BaseCoordinate::<Base2>::new(3).unwrap().coordinate, 3);
-        assert!(BaseCoordinate::<Base2>::new(4).is_err());
+        assert_eq!(Coordinate::<Base2>::new(0).unwrap().coordinate, 0);
+        assert_eq!(Coordinate::<Base2>::new(3).unwrap().coordinate, 3);
+        assert!(Coordinate::<Base2>::new(4).is_err());
     }
 
     #[test]
@@ -133,14 +128,14 @@ mod tests {
         use itertools::assert_equal;
 
         assert_equal(
-            BaseCoordinate::<Base3>::all(),
-            (0..9).map(|coordinate| BaseCoordinate::new(coordinate).unwrap()),
+            Coordinate::<Base3>::all(),
+            (0..9).map(|coordinate| Coordinate::new(coordinate).unwrap()),
         );
     }
 
     #[test]
     fn test_max() {
-        assert_eq!(BaseCoordinate::<Base2>::max().get(), 3);
-        assert_eq!(BaseCoordinate::<Base3>::max().get(), 8);
+        assert_eq!(Coordinate::<Base2>::max().get(), 3);
+        assert_eq!(Coordinate::<Base3>::max().get(), 8);
     }
 }

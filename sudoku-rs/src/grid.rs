@@ -15,9 +15,9 @@ use crate::cell::view::parser::parse_cells;
 use crate::cell::view::CellView;
 use crate::cell::Cell;
 use crate::error::{Error, Result};
-use crate::grid::index::position::BasePosition;
+use crate::grid::index::position::Position;
 use crate::grid::serialization::GridFormat;
-use crate::position::Position;
+use crate::position::DynamicPosition;
 use crate::solver::strategic::deduction::{OldDeduction, OldDeductionKind};
 use crate::solver::strategic::strategies::DynamicStrategy;
 use crate::solver::{backtracking_bitset, strategic};
@@ -39,10 +39,10 @@ pub struct Grid<Base: SudokuBase> {
     cells: Array2<Cell<Base>>,
 }
 
-impl<Base: SudokuBase> Index<BasePosition<Base>> for Grid<Base> {
+impl<Base: SudokuBase> Index<Position<Base>> for Grid<Base> {
     type Output = Cell<Base>;
 
-    fn index(&self, base_position: BasePosition<Base>) -> &Self::Output {
+    fn index(&self, base_position: Position<Base>) -> &Self::Output {
         // Debug validation
         base_position.debug_assert();
         self.debug_assert();
@@ -54,7 +54,7 @@ impl<Base: SudokuBase> Index<BasePosition<Base>> for Grid<Base> {
         debug_assert!(cells_slice.get(cell_index).is_some());
 
         // Safety:
-        // - `cell_index < Base::CELL_COUNT` is guaranteed by `BasePosition`
+        // - `cell_index < Base::CELL_COUNT` is guaranteed by `Position`
         // - `cells.len() == Base::CELL_COUNT` is guaranteed by `Grid`
         let cell = unsafe { cells_slice.get_unchecked(cell_index) };
 
@@ -62,8 +62,8 @@ impl<Base: SudokuBase> Index<BasePosition<Base>> for Grid<Base> {
     }
 }
 
-impl<Base: SudokuBase> IndexMut<BasePosition<Base>> for Grid<Base> {
-    fn index_mut(&mut self, base_position: BasePosition<Base>) -> &mut Self::Output {
+impl<Base: SudokuBase> IndexMut<Position<Base>> for Grid<Base> {
+    fn index_mut(&mut self, base_position: Position<Base>) -> &mut Self::Output {
         // Debug validation
         base_position.debug_assert();
         self.debug_assert();
@@ -75,7 +75,7 @@ impl<Base: SudokuBase> IndexMut<BasePosition<Base>> for Grid<Base> {
         debug_assert!(cells_slice.get_mut(cell_index).is_some());
 
         // Safety:
-        // - `cell_index < Base::CELL_COUNT` is guaranteed by `BasePosition`
+        // - `cell_index < Base::CELL_COUNT` is guaranteed by `Position`
         // - `cells.len() == Base::CELL_COUNT` is guaranteed by `Grid`
         let cell = unsafe { cells_slice.get_unchecked_mut(cell_index) };
 
@@ -142,7 +142,7 @@ impl<Base: SudokuBase> Grid<Base> {
             self.get_mut(pos).set_candidates(candidates);
         });
     }
-    pub fn update_direct_candidates(&mut self, pos: Position, value: Value<Base>) {
+    pub fn update_direct_candidates(&mut self, pos: DynamicPosition, value: Value<Base>) {
         // TODO: assert params
         Self::neighbor_positions_with_duplicates(pos).for_each(|pos| {
             let cell = self.get_mut(pos);
@@ -152,7 +152,7 @@ impl<Base: SudokuBase> Grid<Base> {
         });
     }
 
-    pub fn direct_candidates(&self, pos: Position) -> Candidates<Base> {
+    pub fn direct_candidates(&self, pos: DynamicPosition) -> Candidates<Base> {
         assert!(self.get(pos).has_candidates());
 
         let mut candidates = Candidates::<Base>::all();
@@ -223,7 +223,7 @@ impl<Base: SudokuBase> Grid<Base> {
     /// A cell with candidates is directly consistent, if its candidates:
     /// - are non-empty.
     /// - contain no candidate which is deletable based on a group-adjacent value.
-    fn is_directly_consistent_at(&self, pos: Position) -> bool {
+    fn is_directly_consistent_at(&self, pos: DynamicPosition) -> bool {
         let cell = self.get(pos);
         assert!(cell.has_candidates());
         let actual_candidates = cell.candidates().unwrap();
@@ -369,13 +369,13 @@ impl<Base: SudokuBase> Grid<Base> {
         Ok(grid)
     }
 
-    pub fn get(&self, pos: Position) -> &Cell<Base> {
+    pub fn get(&self, pos: DynamicPosition) -> &Cell<Base> {
         Self::assert_position(pos);
 
         &self.cells[pos.index_tuple()]
     }
 
-    pub fn get_mut(&mut self, pos: Position) -> &mut Cell<Base> {
+    pub fn get_mut(&mut self, pos: DynamicPosition) -> &mut Cell<Base> {
         Self::assert_position(pos);
 
         &mut self.cells[pos.index_tuple()]
@@ -402,7 +402,7 @@ impl<Base: SudokuBase> Grid<Base> {
     #[deprecated]
     pub fn deduction_at<TryIntoKind: TryInto<OldDeductionKind<Base>>>(
         &self,
-        pos: impl Into<Position>,
+        pos: impl Into<DynamicPosition>,
         kind: TryIntoKind,
     ) -> Result<OldDeduction<Base>>
     where
@@ -459,14 +459,14 @@ impl<Base: SudokuBase> Grid<Base> {
 impl<Base: SudokuBase> Grid<Base> {
     fn positions_to_cells(
         &self,
-        positions: impl Iterator<Item = Position>,
+        positions: impl Iterator<Item = DynamicPosition>,
     ) -> impl Iterator<Item = &Cell<Base>> {
         positions.map(move |pos| self.get(pos))
     }
 
     fn nested_positions_to_nested_cells(
         &self,
-        nested_positions: impl Iterator<Item = impl Iterator<Item = Position>>,
+        nested_positions: impl Iterator<Item = impl Iterator<Item = DynamicPosition>>,
     ) -> impl Iterator<Item = impl Iterator<Item = &Cell<Base>>> {
         nested_positions.map(move |row_pos| row_pos.map(move |pos| self.get(pos)))
     }
@@ -498,7 +498,7 @@ impl<Base: SudokuBase> Grid<Base> {
             .map(|column| column.into_iter())
     }
 
-    pub fn block_cells(&self, pos: Position) -> impl Iterator<Item = &Cell<Base>> {
+    pub fn block_cells(&self, pos: DynamicPosition) -> impl Iterator<Item = &Cell<Base>> {
         self.positions_to_cells(Self::block_positions(pos))
     }
 
@@ -514,31 +514,31 @@ impl<Base: SudokuBase> Grid<Base> {
 
 /// Position iterators
 impl<Base: SudokuBase> Grid<Base> {
-    pub fn all_positions() -> impl Iterator<Item = Position> {
+    pub fn all_positions() -> impl Iterator<Item = DynamicPosition> {
         Self::all_row_positions().flatten()
     }
 
-    pub fn row_positions(row: u8) -> impl Iterator<Item = Position> {
+    pub fn row_positions(row: u8) -> impl Iterator<Item = DynamicPosition> {
         Self::assert_coordinate(row);
 
-        (0..Self::side_length()).map(move |column| Position { row, column })
+        (0..Self::side_length()).map(move |column| DynamicPosition { row, column })
     }
 
-    pub fn all_row_positions() -> impl Iterator<Item = impl Iterator<Item = Position>> {
+    pub fn all_row_positions() -> impl Iterator<Item = impl Iterator<Item = DynamicPosition>> {
         (0..Self::side_length()).map(move |row_index| Self::row_positions(row_index))
     }
 
-    pub fn column_positions(column: u8) -> impl Iterator<Item = Position> {
+    pub fn column_positions(column: u8) -> impl Iterator<Item = DynamicPosition> {
         Self::assert_coordinate(column);
 
-        (0..Self::side_length()).map(move |row| Position { row, column })
+        (0..Self::side_length()).map(move |row| DynamicPosition { row, column })
     }
 
-    pub fn all_column_positions() -> impl Iterator<Item = impl Iterator<Item = Position>> {
+    pub fn all_column_positions() -> impl Iterator<Item = impl Iterator<Item = DynamicPosition>> {
         (0..Self::side_length()).map(move |column| Self::column_positions(column))
     }
 
-    pub fn block_positions(pos: Position) -> impl Iterator<Item = Position> {
+    pub fn block_positions(pos: DynamicPosition) -> impl Iterator<Item = DynamicPosition> {
         Self::assert_position(pos);
 
         let block_index = Base::cell_index_to_block_index(pos.cell_index::<Base>());
@@ -550,29 +550,31 @@ impl<Base: SudokuBase> Grid<Base> {
 
         let (block_row, block_column) = block_index.div_rem(&base);
 
-        let Position {
+        let DynamicPosition {
             row: base_row,
             column: base_column,
-        } = Position {
+        } = DynamicPosition {
             row: block_row,
             column: block_column,
         } * base;
 
         (base_row..base_row + base).flat_map(move |row| {
-            (base_column..base_column + base).map(move |column| Position { row, column })
+            (base_column..base_column + base).map(move |column| DynamicPosition { row, column })
         })
     }
 
-    pub fn all_block_positions() -> impl Iterator<Item = impl Iterator<Item = Position>> {
+    pub fn all_block_positions() -> impl Iterator<Item = impl Iterator<Item = DynamicPosition>> {
         let all_block_base_pos = (0..Self::base())
-            .flat_map(move |row| (0..Self::base()).map(move |column| Position { row, column }))
+            .flat_map(move |row| {
+                (0..Self::base()).map(move |column| DynamicPosition { row, column })
+            })
             .map(move |pos| pos * Self::base());
 
         all_block_base_pos.map(|block_base_pos| Self::block_positions(block_base_pos))
     }
 
     // TODO: optimize
-    pub fn all_group_positions() -> impl Iterator<Item = impl Iterator<Item = Position>> {
+    pub fn all_group_positions() -> impl Iterator<Item = impl Iterator<Item = DynamicPosition>> {
         Self::all_row_positions()
             .map(|rows| rows.collect::<Vec<_>>().into_iter())
             .chain(
@@ -584,19 +586,19 @@ impl<Base: SudokuBase> Grid<Base> {
 
 /// Filtered position vec
 impl<Base: SudokuBase> Grid<Base> {
-    pub fn all_value_positions(&self) -> Vec<Position> {
+    pub fn all_value_positions(&self) -> Vec<DynamicPosition> {
         Self::all_positions()
             .filter(|pos| self.get(*pos).has_value())
             .collect()
     }
 
-    pub fn all_unfixed_value_positions(&self) -> Vec<Position> {
+    pub fn all_unfixed_value_positions(&self) -> Vec<DynamicPosition> {
         Self::all_positions()
             .filter(|pos| self.get(*pos).has_unfixed_value())
             .collect()
     }
 
-    pub fn all_candidates_positions(&self) -> Vec<Position> {
+    pub fn all_candidates_positions(&self) -> Vec<DynamicPosition> {
         Self::all_positions()
             .filter(|pos| self.get(*pos).has_candidates())
             .collect()
@@ -605,7 +607,9 @@ impl<Base: SudokuBase> Grid<Base> {
 
 /// Neighbor iterators
 impl<Base: SudokuBase> Grid<Base> {
-    fn neighbor_positions_with_duplicates(pos: Position) -> impl Iterator<Item = Position> {
+    fn neighbor_positions_with_duplicates(
+        pos: DynamicPosition,
+    ) -> impl Iterator<Item = DynamicPosition> {
         // TODO: reimplement without chain (VTune: bad speculation + unique version)
         Self::row_positions(pos.row)
             .chain(Self::column_positions(pos.column))
@@ -613,7 +617,7 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 
     #[allow(dead_code)]
-    fn neighbor_positions(pos: Position) -> impl Iterator<Item = Position> {
+    fn neighbor_positions(pos: DynamicPosition) -> impl Iterator<Item = DynamicPosition> {
         use itertools::Itertools;
 
         Self::neighbor_positions_with_duplicates(pos).unique()
@@ -626,7 +630,7 @@ impl<Base: SudokuBase> Grid<Base> {
         assert!(coordinate < Self::side_length());
     }
 
-    fn assert_position(pos: Position) {
+    fn assert_position(pos: DynamicPosition) {
         Self::assert_coordinate(pos.column);
         Self::assert_coordinate(pos.row);
     }
@@ -685,29 +689,29 @@ mod tests {
         let mut grid = Grid::<Base3>::new();
         assert!(!grid.has_value_conflict());
 
-        grid.get_mut(Position { column: 0, row: 0 })
+        grid.get_mut(DynamicPosition { column: 0, row: 0 })
             .set_value(1.try_into()?);
         assert!(!grid.has_value_conflict());
 
-        grid.get_mut(Position { column: 1, row: 0 })
+        grid.get_mut(DynamicPosition { column: 1, row: 0 })
             .set_value(1.try_into()?);
         assert!(grid.has_value_conflict());
 
-        grid.get_mut(Position { column: 1, row: 0 }).delete();
+        grid.get_mut(DynamicPosition { column: 1, row: 0 }).delete();
         assert!(!grid.has_value_conflict());
 
-        grid.get_mut(Position { column: 0, row: 1 })
+        grid.get_mut(DynamicPosition { column: 0, row: 1 })
             .set_value(1.try_into()?);
         assert!(grid.has_value_conflict());
 
-        grid.get_mut(Position { column: 0, row: 1 }).delete();
+        grid.get_mut(DynamicPosition { column: 0, row: 1 }).delete();
         assert!(!grid.has_value_conflict());
 
-        grid.get_mut(Position { column: 1, row: 1 })
+        grid.get_mut(DynamicPosition { column: 1, row: 1 })
             .set_value(1.try_into()?);
         assert!(grid.has_value_conflict());
 
-        grid.get_mut(Position { column: 1, row: 1 }).delete();
+        grid.get_mut(DynamicPosition { column: 1, row: 1 }).delete();
         assert!(!grid.has_value_conflict());
 
         Ok(())
@@ -717,7 +721,7 @@ mod tests {
     fn test_direct_candidates() -> Result<()> {
         let grid = samples::base_3().pop().unwrap();
 
-        let direct_candidates = grid.direct_candidates(Position { column: 1, row: 1 });
+        let direct_candidates = grid.direct_candidates(DynamicPosition { column: 1, row: 1 });
 
         assert_eq!(direct_candidates, vec![1, 2, 4].try_into()?);
 
@@ -733,7 +737,7 @@ mod tests {
         assert_eq!(
             {
                 let mut grid = grid.clone();
-                let pos = Position { column: 0, row: 3 };
+                let pos = DynamicPosition { column: 0, row: 3 };
                 grid.update_direct_candidates(pos, 1.try_into()?);
                 grid
             },
@@ -743,27 +747,27 @@ mod tests {
         assert_eq!(
             {
                 let mut grid = grid.clone();
-                let pos = Position { column: 0, row: 3 };
+                let pos = DynamicPosition { column: 0, row: 3 };
                 grid.update_direct_candidates(pos, 2.try_into()?);
                 grid
             },
             {
                 let mut grid = grid.clone();
-                grid.get_mut(Position { column: 0, row: 0 }).delete();
+                grid.get_mut(DynamicPosition { column: 0, row: 0 }).delete();
                 grid
             }
         );
         assert_eq!(
             {
                 let mut grid = grid.clone();
-                let pos = Position { column: 0, row: 3 };
+                let pos = DynamicPosition { column: 0, row: 3 };
                 grid.update_direct_candidates(pos, 4.try_into()?);
                 grid
             },
             {
                 let mut grid = grid.clone();
-                grid.get_mut(Position { column: 1, row: 2 }).delete();
-                grid.get_mut(Position { column: 3, row: 3 }).delete();
+                grid.get_mut(DynamicPosition { column: 1, row: 2 }).delete();
+                grid.get_mut(DynamicPosition { column: 3, row: 3 }).delete();
                 grid
             }
         );
@@ -1009,12 +1013,12 @@ mod tests {
         assert!(grid.unique_solution_for_fixed_values().is_some());
 
         // Invalid unfixed value
-        grid.get_mut(Position { row: 0, column: 0 })
+        grid.get_mut(DynamicPosition { row: 0, column: 0 })
             .set_value(1.try_into().unwrap());
         assert!(grid.unique_solution_for_fixed_values().is_some());
 
         // Invalid fixed value
-        grid.get_mut(Position { row: 0, column: 0 }).fix();
+        grid.get_mut(DynamicPosition { row: 0, column: 0 }).fix();
         assert!(grid.unique_solution_for_fixed_values().is_none());
     }
 
@@ -1023,24 +1027,24 @@ mod tests {
         let grid = samples::base_2_candidates_coordinates();
 
         let expected_cell = Cell::with_candidates(Candidates::new());
-        assert_eq!(grid[BasePosition::new(0).unwrap()], expected_cell);
+        assert_eq!(grid[Position::new(0).unwrap()], expected_cell);
         assert_eq!(grid[(0, 0).try_into().unwrap()], expected_cell);
         assert_eq!(
-            grid[Position { row: 0, column: 0 }.try_into().unwrap()],
+            grid[DynamicPosition { row: 0, column: 0 }.try_into().unwrap()],
             expected_cell
         );
         let expected_cell = Cell::with_candidates(Candidates::single(1.try_into().unwrap()));
-        assert_eq!(grid[BasePosition::new(1).unwrap()], expected_cell);
+        assert_eq!(grid[Position::new(1).unwrap()], expected_cell);
         assert_eq!(grid[(0, 1).try_into().unwrap()], expected_cell);
         assert_eq!(
-            grid[Position { row: 0, column: 1 }.try_into().unwrap()],
+            grid[DynamicPosition { row: 0, column: 1 }.try_into().unwrap()],
             expected_cell
         );
         let expected_cell = Cell::with_candidates(Candidates::all());
-        assert_eq!(grid[BasePosition::new(15).unwrap()], expected_cell);
+        assert_eq!(grid[Position::new(15).unwrap()], expected_cell);
         assert_eq!(grid[(3, 3).try_into().unwrap()], expected_cell);
         assert_eq!(
-            grid[Position { row: 3, column: 3 }.try_into().unwrap()],
+            grid[DynamicPosition { row: 3, column: 3 }.try_into().unwrap()],
             expected_cell
         );
     }
@@ -1050,33 +1054,24 @@ mod tests {
         let mut grid = samples::base_2_candidates_coordinates();
 
         let expected_cell = Cell::with_candidates(Candidates::new());
-        assert_eq!(
-            *grid.index_mut(BasePosition::new(0).unwrap()),
-            expected_cell
-        );
+        assert_eq!(*grid.index_mut(Position::new(0).unwrap()), expected_cell);
         assert_eq!(*grid.index_mut((0, 0).try_into().unwrap()), expected_cell);
         assert_eq!(
-            *grid.index_mut(Position { row: 0, column: 0 }.try_into().unwrap()),
+            *grid.index_mut(DynamicPosition { row: 0, column: 0 }.try_into().unwrap()),
             expected_cell
         );
         let expected_cell = Cell::with_candidates(Candidates::single(1.try_into().unwrap()));
-        assert_eq!(
-            *grid.index_mut(BasePosition::new(1).unwrap()),
-            expected_cell
-        );
+        assert_eq!(*grid.index_mut(Position::new(1).unwrap()), expected_cell);
         assert_eq!(*grid.index_mut((0, 1).try_into().unwrap()), expected_cell);
         assert_eq!(
-            *grid.index_mut(Position { row: 0, column: 1 }.try_into().unwrap()),
+            *grid.index_mut(DynamicPosition { row: 0, column: 1 }.try_into().unwrap()),
             expected_cell
         );
         let expected_cell = Cell::with_candidates(Candidates::all());
-        assert_eq!(
-            *grid.index_mut(BasePosition::new(15).unwrap()),
-            expected_cell
-        );
+        assert_eq!(*grid.index_mut(Position::new(15).unwrap()), expected_cell);
         assert_eq!(*grid.index_mut((3, 3).try_into().unwrap()), expected_cell);
         assert_eq!(
-            *grid.index_mut(Position { row: 3, column: 3 }.try_into().unwrap()),
+            *grid.index_mut(DynamicPosition { row: 3, column: 3 }.try_into().unwrap()),
             expected_cell
         );
     }

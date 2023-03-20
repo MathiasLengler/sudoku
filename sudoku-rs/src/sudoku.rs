@@ -10,7 +10,7 @@ use crate::error::Result;
 use crate::generator::{Generator, GeneratorSettings};
 use crate::grid::serialization::GridFormat;
 use crate::grid::Grid;
-use crate::position::Position;
+use crate::position::DynamicPosition;
 use crate::solver::strategic::strategies::DynamicStrategy;
 use crate::solver::strategic::Solver as StrategicSolver;
 
@@ -77,7 +77,7 @@ impl<Base: SudokuBase> Sudoku<Base> {
 }
 
 impl<Base: SudokuBase> Game for Sudoku<Base> {
-    fn set_value(&mut self, pos: Position, value: u8) -> Result<()> {
+    fn set_value(&mut self, pos: DynamicPosition, value: u8) -> Result<()> {
         self.push_history();
 
         let cell = self.grid.get_mut(pos);
@@ -95,7 +95,7 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
         Ok(())
     }
 
-    fn set_or_toggle_value(&mut self, pos: Position, value: u8) -> Result<()> {
+    fn set_or_toggle_value(&mut self, pos: DynamicPosition, value: u8) -> Result<()> {
         self.push_history();
 
         let cell = self.grid.get_mut(pos);
@@ -113,7 +113,7 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
         Ok(())
     }
 
-    fn set_candidates(&mut self, pos: Position, candidates: Vec<u8>) -> Result<()> {
+    fn set_candidates(&mut self, pos: DynamicPosition, candidates: Vec<u8>) -> Result<()> {
         self.push_history();
 
         self.grid
@@ -123,7 +123,7 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
         Ok(())
     }
 
-    fn toggle_candidate(&mut self, pos: Position, candidate: u8) -> Result<()> {
+    fn toggle_candidate(&mut self, pos: DynamicPosition, candidate: u8) -> Result<()> {
         self.push_history();
 
         self.grid
@@ -132,14 +132,14 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
 
         Ok(())
     }
-    fn set_candidate(&mut self, pos: Position, candidate: u8) -> Result<()> {
+    fn set_candidate(&mut self, pos: DynamicPosition, candidate: u8) -> Result<()> {
         self.push_history();
 
         self.grid.get_mut(pos).set_candidate(candidate.try_into()?);
 
         Ok(())
     }
-    fn delete_candidate(&mut self, pos: Position, candidate: u8) -> Result<()> {
+    fn delete_candidate(&mut self, pos: DynamicPosition, candidate: u8) -> Result<()> {
         self.push_history();
 
         self.grid
@@ -149,7 +149,7 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
         Ok(())
     }
 
-    fn delete(&mut self, pos: Position) {
+    fn delete(&mut self, pos: DynamicPosition) {
         self.push_history();
 
         self.grid.get_mut(pos).delete();

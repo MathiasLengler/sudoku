@@ -4,7 +4,7 @@ use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
 use crate::error::Result;
 use crate::grid::Grid;
-use crate::position::Position;
+use crate::position::DynamicPosition;
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions, Reason};
 
 use super::Strategy;
@@ -33,9 +33,9 @@ impl Strategy for NakedPairs {
 
 impl NakedPairs {
     fn find_naked_pairs<Base: SudokuBase>(
-        candidates_group: Vec<(Position, Candidates<Base>)>,
+        candidates_group: Vec<(DynamicPosition, Candidates<Base>)>,
     ) -> impl Iterator<Item = Deduction<Base>> {
-        let mut pair_candidates_histogram: BTreeMap<Candidates<Base>, Vec<Position>> =
+        let mut pair_candidates_histogram: BTreeMap<Candidates<Base>, Vec<DynamicPosition>> =
             BTreeMap::new();
 
         for (pos, pair_candidates) in candidates_group
@@ -51,61 +51,63 @@ impl NakedPairs {
         pair_candidates_histogram
             .into_iter()
             .filter_map(|(pair_candidates, positions)| {
-                <[Position; 2]>::try_from(positions)
+                <[DynamicPosition; 2]>::try_from(positions)
                     .ok()
                     .map(|positions| (pair_candidates, positions))
             })
-            .filter_map(move |(pair_candidates, positions): (_, [Position; 2])| {
-                // pair_candidates is a naked pair
-                let mut deduction = Deduction::new();
+            .filter_map(
+                move |(pair_candidates, positions): (_, [DynamicPosition; 2])| {
+                    // pair_candidates is a naked pair
+                    let mut deduction = Deduction::new();
 
-                candidates_group
-                    .iter()
-                    .filter(|(pos, _)| !positions.contains(pos))
-                    .filter_map(|(pos, candidates)| {
-                        let deleted_candidates = candidates.intersection(&pair_candidates);
-                        if deleted_candidates.is_empty() {
-                            None
-                        } else {
-                            Some((
-                                pos,
-                                Action::DeleteCandidates {
-                                    candidates: deleted_candidates,
+                    candidates_group
+                        .iter()
+                        .filter(|(pos, _)| !positions.contains(pos))
+                        .filter_map(|(pos, candidates)| {
+                            let deleted_candidates = candidates.intersection(&pair_candidates);
+                            if deleted_candidates.is_empty() {
+                                None
+                            } else {
+                                Some((
+                                    pos,
+                                    Action::DeleteCandidates {
+                                        candidates: deleted_candidates,
+                                    },
+                                ))
+                            }
+                        })
+                        .for_each(|(pos, action)| {
+                            deduction.actions.insert(*pos, action).unwrap();
+                        });
+
+                    if deduction.actions.is_empty() {
+                        None
+                    } else {
+                        // Add reasons
+                        let [first_pos, second_pos] = positions;
+                        deduction
+                            .reasons
+                            .insert(
+                                first_pos,
+                                Reason::Candidates {
+                                    candidates: pair_candidates,
                                 },
-                            ))
-                        }
-                    })
-                    .for_each(|(pos, action)| {
-                        deduction.actions.insert(*pos, action).unwrap();
-                    });
+                            )
+                            .unwrap();
+                        deduction
+                            .reasons
+                            .insert(
+                                second_pos,
+                                Reason::Candidates {
+                                    candidates: pair_candidates,
+                                },
+                            )
+                            .unwrap();
 
-                if deduction.actions.is_empty() {
-                    None
-                } else {
-                    // Add reasons
-                    let [first_pos, second_pos] = positions;
-                    deduction
-                        .reasons
-                        .insert(
-                            first_pos,
-                            Reason::Candidates {
-                                candidates: pair_candidates,
-                            },
-                        )
-                        .unwrap();
-                    deduction
-                        .reasons
-                        .insert(
-                            second_pos,
-                            Reason::Candidates {
-                                candidates: pair_candidates,
-                            },
-                        )
-                        .unwrap();
-
-                    Some(deduction)
-                }
-            })
+                        Some(deduction)
+                    }
+                },
+            )
     }
 }
 
@@ -120,7 +122,7 @@ mod tests {
     fn test_find_naked_pairs() {
         type Base = Base3;
 
-        let test_cases: Vec<(Vec<(Position, Candidates<Base>)>, Deductions<Base>)> = vec![
+        let test_cases: Vec<(Vec<(DynamicPosition, Candidates<Base>)>, Deductions<Base>)> = vec![
             // Single naked pair
             (
                 // candidates group

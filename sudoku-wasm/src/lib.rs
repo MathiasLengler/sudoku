@@ -9,7 +9,7 @@ use sudoku::error::Error as SudokuError;
 use sudoku::generator::DynamicGeneratorSettings;
 use sudoku::grid::serialization::GridFormat;
 use sudoku::grid::Grid;
-use sudoku::position::Position;
+use sudoku::position::DynamicPosition;
 use sudoku::solver::strategic::strategies::DynamicStrategy;
 use sudoku::transport::TransportSudoku;
 use sudoku::{DynamicSudoku, Game, Sudoku};
@@ -163,7 +163,7 @@ impl WasmSudoku {
 }
 
 // Import helpers
-fn import_pos(pos: IPosition) -> Result<Position> {
+fn import_pos(pos: IPosition) -> Result<DynamicPosition> {
     Ok(serde_wasm_bindgen::from_value(pos.into())?)
 }
 
