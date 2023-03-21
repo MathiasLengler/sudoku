@@ -11,6 +11,7 @@ use num::PrimInt;
 use consts::*;
 
 use crate::cell::candidates_cell::CandidatesCell;
+use crate::grid::index::coordinate::Coordinate;
 
 pub mod consts {
     pub use Base5 as BaseMax;
@@ -117,6 +118,21 @@ mod cell_index_to_block_index {
     ];
 }
 
+mod block_to_top_left_cell_index {
+    use super::*;
+
+    pub(super) static BASE_2: [u16; base_to_side_length(2) as usize] = [0, 2, 8, 10];
+    pub(super) static BASE_3: [u16; base_to_side_length(3) as usize] =
+        [0, 3, 6, 27, 30, 33, 54, 57, 60];
+    pub(super) static BASE_4: [u16; base_to_side_length(4) as usize] = [
+        0, 4, 8, 12, 64, 68, 72, 76, 128, 132, 136, 140, 192, 196, 200, 204,
+    ];
+    pub(super) static BASE_5: [u16; base_to_side_length(5) as usize] = [
+        0, 5, 10, 15, 20, 125, 130, 135, 140, 145, 250, 255, 260, 265, 270, 375, 380, 385, 390,
+        395, 500, 505, 510, 515, 520,
+    ];
+}
+
 /// A size of a square, standard sudoku.
 ///
 /// The base of sudoku equals the
@@ -151,6 +167,13 @@ where
     /// Get the the block index for a specific cell index.
     fn cell_index_to_block_index(cell_index: u16) -> u8;
 
+    /// Get the cell index of the top left cell in a block based on its index.
+    ///
+    /// # Safety
+    ///
+    /// The returned `cell_index` must fulfill `cell_index < Base::CELL_COUNT`.
+    fn block_to_top_left_cell_index(block: Coordinate<Self>) -> u16;
+
     /// Bit field type for candidates storage.
     type CandidatesIntegral: Copy
         + Clone
@@ -180,13 +203,10 @@ where
         + Clone
         + Debug
         + Default;
-
-    // TODO:
-    // type BLOCK_INDEX_TO_CELL_INDEX: []
 }
 
 macro_rules! impl_sudoku_base {
-    ($($type_num:ty,$base_u8:expr,$type_integral:ty,$CELL_INDEX_TO_BLOCK_INDEX:expr;)+) => {
+    ($($type_num:ty,$base_u8:expr,$type_integral:ty,$CELL_INDEX_TO_BLOCK_INDEX:expr,$BLOCK_TO_TOP_LEFT_CELL_INDEX:expr;)+) => {
         $(
 // Safety: this private macro is only instantiated below and the correctness of the generated impls is tested.
 unsafe impl SudokuBase for $type_num {
@@ -199,6 +219,13 @@ unsafe impl SudokuBase for $type_num {
         $CELL_INDEX_TO_BLOCK_INDEX[usize::from(cell_index)]
     }
 
+    fn block_to_top_left_cell_index(block: Coordinate<Self>) -> u16 {
+        let index = usize::from(block.get());
+        debug_assert!($BLOCK_TO_TOP_LEFT_CELL_INDEX.get(index).is_some());
+        // Safety: `BLOCK_TO_TOP_LEFT_CELL_INDEX` has at least `Base::SIDE_LENGTH` elements.
+        unsafe { *$BLOCK_TO_TOP_LEFT_CELL_INDEX.get_unchecked(index) }
+    }
+
     type CandidatesIntegral = $type_integral;
 
     type CandidatesCells = [CandidatesCell<Self>; Self::SIDE_LENGTH as usize];
@@ -209,10 +236,10 @@ unsafe impl SudokuBase for $type_num {
 
 // All sudoku bases supported by DynamicSudoku, and U1 for testing.
 impl_sudoku_base!(
-    Base2, 2, u8, cell_index_to_block_index::BASE_2;
-    Base3, 3, u16, cell_index_to_block_index::BASE_3;
-    Base4, 4, u16, cell_index_to_block_index::BASE_4;
-    Base5, 5, u32, cell_index_to_block_index::BASE_5;
+    Base2, 2, u8, cell_index_to_block_index::BASE_2, block_to_top_left_cell_index::BASE_2;
+    Base3, 3, u16, cell_index_to_block_index::BASE_3, block_to_top_left_cell_index::BASE_3;
+    Base4, 4, u16, cell_index_to_block_index::BASE_4, block_to_top_left_cell_index::BASE_4;
+    Base5, 5, u32, cell_index_to_block_index::BASE_5, block_to_top_left_cell_index::BASE_5;
 );
 
 #[cfg(test)]
@@ -351,5 +378,10 @@ mod tests {
             cell_index_to_block_index::BASE_5,
             generate_cell_index_to_block_index(5).as_slice()
         );
+    }
+
+    #[test]
+    fn test_block_to_top_left_cell_index() {
+        todo!()
     }
 }

@@ -104,7 +104,7 @@ impl<Base: SudokuBase> Position<Base> {
 
 /// Getters
 impl<Base: SudokuBase> Position<Base> {
-    pub fn cell_index(&self) -> u16 {
+    pub fn cell_index(self) -> u16 {
         self.cell_index
     }
 
@@ -161,23 +161,24 @@ impl<Base: SudokuBase> Position<Base> {
         Coordinate::all().map(Self::column)
     }
 
+    pub fn block_top_left(block: Coordinate<Base>) -> Self {
+        // Safety: the `cell_index` returned by `block_to_top_left_cell_index` remains in-bounds.
+        unsafe { Self::new_unchecked(Base::block_to_top_left_cell_index(block)) }
+    }
+
     pub fn block(block: Coordinate<Base>) -> impl Iterator<Item = Self> {
-        use num::Integer;
+        let block_top_left = Self::block_top_left(block);
 
-        let (block_row, block_column) = block.get().div_rem(&Base::BASE);
-
-        let base_row = block_row * Base::BASE;
-        let base_column = block_column * Base::BASE;
-
-        (base_row..base_row + Base::BASE).flat_map(move |row| {
-            (base_column..base_column + Base::BASE).map(move |column| {
-                // Safety: `row` remains in-bounds
-                let row = unsafe { Coordinate::new_unchecked(row) };
-                // Safety: `column` remains in-bounds
-                let column = unsafe { Coordinate::new_unchecked(column) };
-                (row, column).into()
+        (block_top_left.cell_index()..)
+            .step_by(usize::from(Base::SIDE_LENGTH))
+            .take(usize::from(Base::BASE))
+            .flat_map(|block_cell_index_left| {
+                (block_cell_index_left..(block_cell_index_left + u16::from(Base::BASE))).map(
+                    |cell_index|
+                        // Safety: `cell_index` remains in-bounds
+                        unsafe { Position::new_unchecked(cell_index) },
+                )
             })
-        })
     }
 
     pub fn all_blocks() -> impl Iterator<Item = impl Iterator<Item = Self>> {
@@ -201,7 +202,7 @@ mod tests {
 
     mod iterators {
         use super::*;
-        use crate::base::consts::Base5;
+        use crate::base::consts::{Base3, Base4, Base5};
         use crate::grid::index::test_utils::{consume_iter, consume_nested_iter};
 
         #[test]
@@ -364,6 +365,32 @@ mod tests {
                         expected_row.into_iter().map(|pos| pos.try_into().unwrap()),
                     );
                 });
+        }
+
+        #[test]
+        fn test_block_top_left() {
+            let base2: Vec<_> = Coordinate::<Base2>::all()
+                .map(Position::block_top_left)
+                .map(Position::cell_index)
+                .collect();
+            dbg!(base2);
+            let base3: Vec<_> = Coordinate::<Base3>::all()
+                .map(Position::block_top_left)
+                .map(Position::cell_index)
+                .collect();
+            dbg!(base3);
+            let base4: Vec<_> = Coordinate::<Base4>::all()
+                .map(Position::block_top_left)
+                .map(Position::cell_index)
+                .collect();
+            dbg!(base4);
+            let base5: Vec<_> = Coordinate::<Base5>::all()
+                .map(Position::block_top_left)
+                .map(Position::cell_index)
+                .collect();
+            dbg!(base5);
+
+            todo!()
         }
 
         #[test]
