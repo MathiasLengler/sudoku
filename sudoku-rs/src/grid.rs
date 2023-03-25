@@ -111,8 +111,17 @@ impl<Base: SudokuBase> Grid<Base> {
             self.get_mut(pos).set_candidates(candidates);
         });
     }
+    pub fn set_all_direct_candidates_if_all_candidates_are_empty(&mut self) {
+        let all_candidates_are_empty = self
+            .all_candidates_positions()
+            .into_iter()
+            .all(|pos| self.get(pos).candidates().unwrap().is_empty());
+
+        if all_candidates_are_empty {
+            self.set_all_direct_candidates();
+        }
+    }
     pub fn update_direct_candidates(&mut self, pos: Position<Base>, value: Value<Base>) {
-        // TODO: assert params
         Self::neighbor_positions_with_duplicates(pos).for_each(|pos| {
             let cell = self.get_mut(pos);
             if cell.has_candidates() {

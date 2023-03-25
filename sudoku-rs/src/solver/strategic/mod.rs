@@ -28,6 +28,8 @@ impl<'g, Base: SudokuBase> Solver<'g, Base> {
         grid: &'g mut Grid<Base>,
         strategies: Vec<DynamicStrategy>,
     ) -> Solver<'g, Base> {
+        grid.set_all_direct_candidates_if_all_candidates_are_empty();
+
         Self { grid, strategies }
     }
 
