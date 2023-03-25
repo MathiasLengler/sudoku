@@ -40,44 +40,14 @@ pub struct Grid<Base: SudokuBase> {
 impl<Base: SudokuBase> Index<Position<Base>> for Grid<Base> {
     type Output = Cell<Base>;
 
-    fn index(&self, base_position: Position<Base>) -> &Self::Output {
-        // Debug validation
-        base_position.debug_assert();
-        self.debug_assert();
-
-        let cells_slice = self.cells_slice();
-
-        let cell_index = base_position.cell_index() as usize;
-
-        debug_assert!(cells_slice.get(cell_index).is_some());
-
-        // Safety:
-        // - `cell_index < Base::CELL_COUNT` is guaranteed by `Position`
-        // - `cells.len() == Base::CELL_COUNT` is guaranteed by `Grid`
-        let cell = unsafe { cells_slice.get_unchecked(cell_index) };
-
-        cell
+    fn index(&self, pos: Position<Base>) -> &Self::Output {
+        self.get(pos)
     }
 }
 
 impl<Base: SudokuBase> IndexMut<Position<Base>> for Grid<Base> {
-    fn index_mut(&mut self, base_position: Position<Base>) -> &mut Self::Output {
-        // Debug validation
-        base_position.debug_assert();
-        self.debug_assert();
-
-        let cells_slice = self.cells_slice_mut();
-
-        let cell_index = base_position.cell_index() as usize;
-
-        debug_assert!(cells_slice.get_mut(cell_index).is_some());
-
-        // Safety:
-        // - `cell_index < Base::CELL_COUNT` is guaranteed by `Position`
-        // - `cells.len() == Base::CELL_COUNT` is guaranteed by `Grid`
-        let cell = unsafe { cells_slice.get_unchecked_mut(cell_index) };
-
-        cell
+    fn index_mut(&mut self, pos: Position<Base>) -> &mut Self::Output {
+        self.get_mut(pos)
     }
 }
 
@@ -368,11 +338,41 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 
     pub fn get(&self, pos: Position<Base>) -> &Cell<Base> {
-        &self[pos]
+        // Debug validation
+        pos.debug_assert();
+        self.debug_assert();
+
+        let cells_slice = self.cells_slice();
+
+        let cell_index = pos.cell_index() as usize;
+
+        debug_assert!(cells_slice.get(cell_index).is_some());
+
+        // Safety:
+        // - `cell_index < Base::CELL_COUNT` is guaranteed by `Position`
+        // - `cells.len() == Base::CELL_COUNT` is guaranteed by `Grid`
+        let cell = unsafe { cells_slice.get_unchecked(cell_index) };
+
+        cell
     }
 
     pub fn get_mut(&mut self, pos: Position<Base>) -> &mut Cell<Base> {
-        &mut self[pos]
+        // Debug validation
+        pos.debug_assert();
+        self.debug_assert();
+
+        let cells_slice = self.cells_slice_mut();
+
+        let cell_index = pos.cell_index() as usize;
+
+        debug_assert!(cells_slice.get_mut(cell_index).is_some());
+
+        // Safety:
+        // - `cell_index < Base::CELL_COUNT` is guaranteed by `Position`
+        // - `cells.len() == Base::CELL_COUNT` is guaranteed by `Grid`
+        let cell = unsafe { cells_slice.get_unchecked_mut(cell_index) };
+
+        cell
     }
 
     pub fn fix_all_values(&mut self) {
