@@ -10,9 +10,41 @@ use crate::error::{Error, Result};
 /// Can represent three different dimensions:
 ///
 /// # Row
+/// ```plaintext
+/// ╔═════════╦═════════╗
+/// ║  0 │ 0  ║  0 │ 0  ║
+/// ║ ───┼─── ║ ───┼─── ║
+/// ║  1 │ 1  ║  1 │ 1  ║
+/// ╠═════════╬═════════╣
+/// ║  2 │ 2  ║  2 │ 2  ║
+/// ║ ───┼─── ║ ───┼─── ║
+/// ║  3 │ 3  ║  3 │ 3  ║
+/// ╚═════════╩═════════╝
+/// ```
 /// # Column
+/// ```plaintext
+/// ╔═════════╦═════════╗
+/// ║  0 │ 1  ║  2 │ 3  ║
+/// ║ ───┼─── ║ ───┼─── ║
+/// ║  0 │ 1  ║  2 │ 3  ║
+/// ╠═════════╬═════════╣
+/// ║  0 │ 1  ║  2 │ 3  ║
+/// ║ ───┼─── ║ ───┼─── ║
+/// ║  0 │ 1  ║  2 │ 3  ║
+/// ╚═════════╩═════════╝
+/// ```
 /// # Block
-/// TODO: visualize
+/// ```plaintext
+/// ╔═════════╦═════════╗
+/// ║  0 │ 0  ║  1 │ 1  ║
+/// ║ ───┼─── ║ ───┼─── ║
+/// ║  0 │ 0  ║  1 │ 1  ║
+/// ╠═════════╬═════════╣
+/// ║  2 │ 2  ║  3 │ 3  ║
+/// ║ ───┼─── ║ ───┼─── ║
+/// ║  2 │ 2  ║  3 │ 3  ║
+/// ╚═════════╩═════════╝
+/// ```
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Default)]
 pub struct Coordinate<Base: SudokuBase> {
     /// # Safety invariants
@@ -120,6 +152,7 @@ impl<Base: SudokuBase> TryFrom<u8> for Coordinate<Base> {
 #[cfg(test)]
 mod tests {
     use crate::base::consts::{Base2, Base3};
+    use crate::grid::Grid;
 
     use super::*;
 
