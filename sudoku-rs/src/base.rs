@@ -242,10 +242,10 @@ unsafe impl SudokuBase for $type_num {
 
     fn pos_to_block(pos: Position<Self>) -> Coordinate<Self> {
         let cell_index = usize::from(pos.cell_index());
-        // Safety:
-        // Relies on invariants:
-        // - `CELL_INDEX_TO_BLOCK_INDEX.len() == Base::CELL_COUNT` from module `cell_index_to_block_index`
-        // - `pos.cell_index < Base::CELL_COUNT` from `Position<Base>`
+        // Safety: relies on invariants:
+        // - module `cell_index_to_block_index`: `CELL_INDEX_TO_BLOCK_INDEX.len() == Base::CELL_COUNT`
+        // - `Position::<Base>::cell_index`: `pos.cell_index < Base::CELL_COUNT`
+        // Therefore the index remains in-bounds.
         let block_index = unsafe { get_unchecked($CELL_INDEX_TO_BLOCK_INDEX.as_slice(), cell_index) };
         // Safety: `block_index` remains in-bounds, guaranteed by module `cell_index_to_block_index`
         unsafe { Coordinate::new_unchecked(*block_index) }
@@ -253,8 +253,10 @@ unsafe impl SudokuBase for $type_num {
 
     fn block_to_top_left_pos(block: Coordinate<Self>) -> Position<Self> {
         let index = usize::from(block.get());
-        debug_assert!($BLOCK_INDEX_TO_TOP_LEFT_CELL_INDEX.get(index).is_some());
-        // Safety: `BLOCK_TO_TOP_LEFT_CELL_INDEX` has at least `Base::SIDE_LENGTH` elements.
+        // Safety: relies on invariants:
+        // - module `block_index_to_top_left_cell_index`: `BLOCK_TO_TOP_LEFT_CELL_INDEX.len() == Base::SIDE_LENGTH`
+        // - `Coordinate::<Base>::get`: `coordinate < Base::SIDE_LENGTH`
+        // Therefore the index remains in-bounds.
         let cell_index = unsafe { get_unchecked($BLOCK_INDEX_TO_TOP_LEFT_CELL_INDEX.as_slice(), index) };
 
         // Safety: `cell_index` remains in-bounds, guaranteed by module `block_to_top_left_cell_index`
@@ -284,7 +286,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_base_to_side_length() {
+    fn test_base_to_side_length_or_max_value() {
         assert_eq!(base_to_side_length(0), 0);
         assert_eq!(base_to_side_length(1), 1);
         assert_eq!(base_to_side_length(2), 4);

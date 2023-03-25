@@ -461,7 +461,7 @@ mod tests {
         assert_eq!(cell_state_candidates, cell_state_empty_candidates);
         assert_eq!(
             cell_state_candidates_2.candidates(),
-            Some(candidates.union(&candidates_2))
+            Some(candidates.union(candidates_2))
         );
     }
 
@@ -496,7 +496,7 @@ mod tests {
         assert_eq!(cell_state_candidates.candidates(), Some(candidates));
         assert_eq!(
             cell_state_candidates_2.candidates(),
-            Some(candidates.union(&candidates_2))
+            Some(candidates.union(candidates_2))
         );
     }
 

@@ -180,7 +180,7 @@ impl<Base: SudokuBase> Grid<Base> {
                     seen_candidates_or_values.set(value, true);
                 }
                 CellState::Candidates(candidates) => {
-                    seen_candidates_or_values = seen_candidates_or_values.union(&candidates);
+                    seen_candidates_or_values = seen_candidates_or_values.union(candidates);
                 }
             }
         }
@@ -203,7 +203,7 @@ impl<Base: SudokuBase> Grid<Base> {
 
         let direct_candidates = self.direct_candidates(pos);
         // No actual candidate is deletable via direct candidates.
-        actual_candidates.without(&direct_candidates).is_empty()
+        actual_candidates.without(direct_candidates).is_empty()
     }
 }
 

@@ -377,7 +377,7 @@ impl<Base: SudokuBase> Reason<Base> {
                     }
                     Reason::Candidates { candidates } => {
                         ensure!(!candidates.is_empty(), "candidates must not be empty");
-                        let unexpected_candidates = candidates.without(existing_candidates);
+                        let unexpected_candidates = candidates.without(*existing_candidates);
                         ensure!(unexpected_candidates.is_empty(), "unexpected candidates {unexpected_candidates}");
                     }
                 },
@@ -415,12 +415,12 @@ impl<Base: SudokuBase> Merge for Reason<Base> {
                     candidates: other_candidates,
                 },
             ) => Reason::Candidates {
-                candidates: candidates.union(&other_candidates),
+                candidates: candidates.union(other_candidates),
             },
             (Reason::Candidate { candidate }, Reason::Candidates { candidates })
             | (Reason::Candidates { candidates }, Reason::Candidate { candidate }) => {
                 Reason::Candidates {
-                    candidates: candidates.union(&Candidates::single(candidate)),
+                    candidates: candidates.union(Candidates::single(candidate)),
                 }
             }
         };
@@ -484,10 +484,10 @@ impl<Base: SudokuBase> Action<Base> {
                 }
                 Action::DeleteCandidates { candidates } => {
                     ensure!(
-                        candidates.without(&existing_candidates).is_empty(),
+                        candidates.without(existing_candidates).is_empty(),
                         "expected cell to contain the candidates {candidates}"
                     );
-                    let remaining_candidates = existing_candidates.without(&candidates);
+                    let remaining_candidates = existing_candidates.without(candidates);
                     ensure!(
                         !remaining_candidates.is_empty(),
                         "can't delete all candidates {candidates}"
@@ -510,7 +510,7 @@ impl<Base: SudokuBase> Action<Base> {
                 cell.delete_candidate(candidate);
             }
             Action::DeleteCandidates { candidates } => {
-                cell.set_candidates(existing_candidates.without(&candidates));
+                cell.set_candidates(existing_candidates.without(candidates));
             }
         }
 
@@ -562,7 +562,7 @@ impl<Base: SudokuBase> Merge for Action<Base> {
                         candidates: other_candidates,
                     },
                 ) => DeleteCandidates {
-                    candidates: self_candidates.union(&other_candidates),
+                    candidates: self_candidates.union(other_candidates),
                 },
                 (SetValue { value }, DeleteCandidate { candidate })
                 | (DeleteCandidate { candidate }, SetValue { value }) => {
@@ -583,7 +583,7 @@ impl<Base: SudokuBase> Merge for Action<Base> {
                 (DeleteCandidate { candidate }, DeleteCandidates { candidates })
                 | (DeleteCandidates { candidates }, DeleteCandidate { candidate }) => {
                     DeleteCandidates {
-                        candidates: candidates.union(&Candidates::single(candidate)),
+                        candidates: candidates.union(Candidates::single(candidate)),
                     }
                 }
             })

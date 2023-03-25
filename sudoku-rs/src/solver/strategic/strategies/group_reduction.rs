@@ -39,7 +39,7 @@ impl Strategy for GroupReduction {
                         deduction.actions.insert(
                             position,
                             Action::DeleteCandidates {
-                                candidates: candidates.without(&reduced_candidates),
+                                candidates: candidates.without(reduced_candidates),
                             },
                         )?;
                     }

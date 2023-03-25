@@ -64,7 +64,7 @@ impl NakedPairs {
                         .iter()
                         .filter(|(pos, _)| !positions.contains(pos))
                         .filter_map(|(pos, candidates)| {
-                            let deleted_candidates = candidates.intersection(&pair_candidates);
+                            let deleted_candidates = candidates.intersection(pair_candidates);
                             if deleted_candidates.is_empty() {
                                 None
                             } else {

@@ -123,10 +123,14 @@ impl<Base: SudokuBase> Coordinate<Base> {
 
 /// Getters
 impl<Base: SudokuBase> Coordinate<Base> {
+    /// Get the `coordinate` as a `u8`.
+    /// Guaranteed to satisfy `coordinate < Base::SIDE_LENGTH`
     pub fn get(self) -> u8 {
         self.coordinate
     }
 
+    /// Get the `coordinate` as a `u16`.
+    /// Guaranteed to satisfy `coordinate < Base::SIDE_LENGTH`
     pub fn get_u16(self) -> u16 {
         u16::from(self.coordinate)
     }

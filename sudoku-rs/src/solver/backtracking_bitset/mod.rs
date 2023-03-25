@@ -9,6 +9,7 @@ use crate::cell::compact::value::Value;
 use crate::grid::index::coordinate::Coordinate;
 use crate::grid::index::position::Position;
 use crate::grid::Grid;
+use crate::unsafe_utils::{get_unchecked, get_unchecked_mut};
 
 // TODO: implement shuffle_candidates
 
@@ -232,18 +233,44 @@ impl<Base: SudokuBase> GroupAvailability<Base> {
         index: GroupAvailabilityIndex<Base>,
         mut f: impl FnMut(&mut CandidatesCell<Base>),
     ) {
-        let GroupAvailabilityIndex { row, column, block } = index;
-        f(&mut self.rows.as_mut()[usize::from(row.get())]);
-        f(&mut self.columns.as_mut()[usize::from(column.get())]);
-        f(&mut self.blocks.as_mut()[usize::from(block.get())]);
+        let (row, column, block) = index.into_usize_tuple();
+
+        // Safety: relies on invariants:
+        // - Coordinate::<Base>::get: `coordinate < Base::SIDE_LENGTH`
+        // - Base::CandidatesCells: array length equals `Base::SIDE_LENGTH`
+        // Therefore the indexes remain in-bounds.
+        let (row_candidates_cell, column_candidates_cell, block_candidates_cell) = unsafe {
+            (
+                get_unchecked_mut(self.rows.as_mut(), row),
+                get_unchecked_mut(self.columns.as_mut(), column),
+                get_unchecked_mut(self.blocks.as_mut(), block),
+            )
+        };
+
+        f(row_candidates_cell);
+        f(column_candidates_cell);
+        f(block_candidates_cell);
     }
 
     fn intersection(&self, index: GroupAvailabilityIndex<Base>) -> Candidates<Base> {
-        let GroupAvailabilityIndex { row, column, block } = index;
-        self.rows.as_ref()[usize::from(row.get())]
+        let (row, column, block) = index.into_usize_tuple();
+
+        // Safety: relies on invariants:
+        // - Coordinate::<Base>::get: `coordinate < Base::SIDE_LENGTH`
+        // - Base::CandidatesCells: array length equals `Base::SIDE_LENGTH`
+        // Therefore the indexes remain in-bounds.
+        let (row_candidates_cell, column_candidates_cell, block_candidates_cell) = unsafe {
+            (
+                get_unchecked(self.rows.as_ref(), row),
+                get_unchecked(self.columns.as_ref(), column),
+                get_unchecked(self.blocks.as_ref(), block),
+            )
+        };
+
+        row_candidates_cell
             .candidates
-            .intersection(&self.columns.as_ref()[usize::from(column.get())].candidates)
-            .intersection(&self.blocks.as_ref()[usize::from(block.get())].candidates)
+            .intersection(column_candidates_cell.candidates)
+            .intersection(block_candidates_cell.candidates)
     }
 }
 
@@ -252,6 +279,16 @@ struct GroupAvailabilityIndex<Base: SudokuBase> {
     row: Coordinate<Base>,
     column: Coordinate<Base>,
     block: Coordinate<Base>,
+}
+
+impl<Base: SudokuBase> GroupAvailabilityIndex<Base> {
+    fn into_usize_tuple(self) -> (usize, usize, usize) {
+        let GroupAvailabilityIndex { row, column, block } = self;
+        let row = usize::from(row.get());
+        let column = usize::from(column.get());
+        let block = usize::from(block.get());
+        (row, column, block)
+    }
 }
 
 impl<Base: SudokuBase> From<GroupAvailabilityIndex<Base>> for Position<Base> {

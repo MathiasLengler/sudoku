@@ -81,7 +81,7 @@ impl<Base: SudokuBase> CandidatesCell<Base> {
     /// Returns true if a new value has been set.
     pub(crate) fn set_or_toggle_value(&mut self, value: Value<Base>) -> bool {
         // Remove other candidates
-        self.candidates = self.candidates.intersection(&Candidates::single(value));
+        self.candidates = self.candidates.intersection(Candidates::single(value));
 
         // Toggle value
         self.candidates.toggle(value);

@@ -68,7 +68,7 @@ impl<Base: SudokuBase> Candidates<Base> {
     ///
     /// [Reference](https://en.wikipedia.org/wiki/Union_(set_theory))
     #[must_use]
-    pub fn union(&self, other: &Self) -> Self {
+    pub fn union(self, other: Self) -> Self {
         Self::with_integral_unchecked(self.bits | other.bits)
     }
 
@@ -76,7 +76,7 @@ impl<Base: SudokuBase> Candidates<Base> {
     ///
     /// [Reference](https://en.wikipedia.org/wiki/Intersection_(set_theory))
     #[must_use]
-    pub fn intersection(&self, other: &Self) -> Self {
+    pub fn intersection(self, other: Self) -> Self {
         Self::with_integral_unchecked(self.bits & other.bits)
     }
 
@@ -84,7 +84,7 @@ impl<Base: SudokuBase> Candidates<Base> {
     ///
     /// [Reference](https://en.wikipedia.org/wiki/Complement_(set_theory)#Relative_complement)
     #[must_use]
-    pub fn without(&self, other: &Self) -> Self {
+    pub fn without(self, other: Self) -> Self {
         Self::with_integral_unchecked(self.bits & !other.bits)
     }
 }
@@ -404,14 +404,14 @@ mod tests {
             let a: Candidates<Base2> = vec![1, 2].try_into().unwrap();
             let b: Candidates<Base2> = vec![2, 3].try_into().unwrap();
 
-            assert_eq!(a.union(&b).to_vec_u8(), vec![1, 2, 3]);
-            assert_eq!(b.union(&a).to_vec_u8(), vec![1, 2, 3]);
+            assert_eq!(a.union(b).to_vec_u8(), vec![1, 2, 3]);
+            assert_eq!(b.union(a).to_vec_u8(), vec![1, 2, 3]);
 
-            assert_eq!(a.intersection(&b).to_vec_u8(), vec![2]);
-            assert_eq!(b.intersection(&a).to_vec_u8(), vec![2]);
+            assert_eq!(a.intersection(b).to_vec_u8(), vec![2]);
+            assert_eq!(b.intersection(a).to_vec_u8(), vec![2]);
 
-            assert_eq!(a.without(&b).to_vec_u8(), vec![1]);
-            assert_eq!(b.without(&a).to_vec_u8(), vec![3]);
+            assert_eq!(a.without(b).to_vec_u8(), vec![1]);
+            assert_eq!(b.without(a).to_vec_u8(), vec![3]);
         }
 
         #[test]

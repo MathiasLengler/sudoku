@@ -114,6 +114,8 @@ impl<Base: SudokuBase> Position<Base> {
 
 /// Getters
 impl<Base: SudokuBase> Position<Base> {
+    /// Get `cell_index` as a `u16`.
+    /// Guaranteed to satisfy `cell_index < Base::CELL_COUNT`
     pub fn cell_index(self) -> u16 {
         self.cell_index
     }
