@@ -19,6 +19,7 @@ use crate::grid::index::position::Position;
 use crate::grid::serialization::GridFormat;
 use crate::solver::strategic::strategies::DynamicStrategy;
 use crate::solver::{backtracking_bitset, strategic};
+use crate::unsafe_utils::{get_unchecked, get_unchecked_mut};
 
 pub mod deserialization;
 pub mod serialization;
@@ -346,12 +347,10 @@ impl<Base: SudokuBase> Grid<Base> {
 
         let cell_index = pos.cell_index() as usize;
 
-        debug_assert!(cells_slice.get(cell_index).is_some());
-
         // Safety:
         // - `cell_index < Base::CELL_COUNT` is guaranteed by `Position`
         // - `cells.len() == Base::CELL_COUNT` is guaranteed by `Grid`
-        let cell = unsafe { cells_slice.get_unchecked(cell_index) };
+        let cell = unsafe { get_unchecked(cells_slice, cell_index) };
 
         cell
     }
@@ -365,12 +364,10 @@ impl<Base: SudokuBase> Grid<Base> {
 
         let cell_index = pos.cell_index() as usize;
 
-        debug_assert!(cells_slice.get_mut(cell_index).is_some());
-
         // Safety:
         // - `cell_index < Base::CELL_COUNT` is guaranteed by `Position`
         // - `cells.len() == Base::CELL_COUNT` is guaranteed by `Grid`
-        let cell = unsafe { cells_slice.get_unchecked_mut(cell_index) };
+        let cell = unsafe { get_unchecked_mut(cells_slice, cell_index) };
 
         cell
     }

@@ -13,6 +13,7 @@ use consts::*;
 use crate::cell::candidates_cell::CandidatesCell;
 use crate::grid::index::coordinate::Coordinate;
 use crate::grid::index::position::Position;
+use crate::unsafe_utils::get_unchecked;
 
 pub mod consts {
     pub use Base5 as BaseMax;
@@ -144,8 +145,6 @@ mod block_index_to_top_left_cell_index {
 
 /// A size of a square, standard sudoku.
 ///
-/// The base of sudoku equals the
-///
 /// Implementations for bases `2..=5` are provided by this crate.
 ///
 /// # Safety
@@ -158,6 +157,9 @@ where
     // TODO: evaluate `as` casting of constants
     /// The side length of a sudoku block. Must be non-zero.
     ///
+    /// # Safety
+    /// Must be non-zero.
+    ///
     /// # Examples
     /// - `4x4`: `2`
     /// - `9x9`: `3`
@@ -165,12 +167,21 @@ where
     /// - `25x25`: `5`
     const BASE: u8;
     /// The side length of the complete sudoku. Equals this size of a row or column.
-    /// Must equal `MAX_VALUE`.
+    ///
+    /// # Safety
+    /// - must equal `BASE.pow(2)`
+    /// - must equal `MAX_VALUE`
     const SIDE_LENGTH: u8;
     /// The max value a value can be set to.
-    /// Must equal `SIDE_LENGTH`.
+    ///
+    /// # Safety
+    /// - must equal `BASE.pow(2)`
+    /// - must equal `SIDE_LENGTH`
     const MAX_VALUE: u8;
     /// The total cell count of the sudoku.
+    ///
+    /// # Safety
+    /// - must equal `(base as u16).pow(4)`
     const CELL_COUNT: u16;
 
     /// For a given cell position, returns the coordinate of the block it is contained in.
@@ -180,6 +191,11 @@ where
     fn block_to_top_left_pos(block: Coordinate<Self>) -> Position<Self>;
 
     /// Bit field type for candidates storage.
+    ///
+    /// # Safety
+    ///
+    /// `MAX_VALUE` must be representable at the highest bit position,
+    /// e.g. the size of the unsigned primitive must be equal to or greater than `MAX_VALUE`.
     type CandidatesIntegral: Copy
         + Clone
         + Debug
@@ -202,7 +218,11 @@ where
         + BitAndAssign
         + Shl<u8, Output = Self::CandidatesIntegral>;
 
-    /// Data structure for `backtracking_bitset::Solver`
+    /// Data structure for `backtracking_bitset::Solver`.
+    ///
+    /// # Safety
+    ///
+    /// The length of the array must equal `Base::SIDE_LENGTH`.
     type CandidatesCells: AsRef<[CandidatesCell<Self>]>
         + AsMut<[CandidatesCell<Self>]>
         + Clone
@@ -222,24 +242,23 @@ unsafe impl SudokuBase for $type_num {
 
     fn pos_to_block(pos: Position<Self>) -> Coordinate<Self> {
         let cell_index = usize::from(pos.cell_index());
-        debug_assert!($CELL_INDEX_TO_BLOCK_INDEX.get(cell_index).is_some());
         // Safety:
         // Relies on invariants:
         // - `CELL_INDEX_TO_BLOCK_INDEX.len() == Base::CELL_COUNT` from module `cell_index_to_block_index`
         // - `pos.cell_index < Base::CELL_COUNT` from `Position<Base>`
-        let block_index = unsafe { *$CELL_INDEX_TO_BLOCK_INDEX.get_unchecked(cell_index) };
+        let block_index = unsafe { get_unchecked($CELL_INDEX_TO_BLOCK_INDEX.as_slice(), cell_index) };
         // Safety: `block_index` remains in-bounds, guaranteed by module `cell_index_to_block_index`
-        unsafe { Coordinate::new_unchecked(block_index) }
+        unsafe { Coordinate::new_unchecked(*block_index) }
     }
 
     fn block_to_top_left_pos(block: Coordinate<Self>) -> Position<Self> {
         let index = usize::from(block.get());
         debug_assert!($BLOCK_INDEX_TO_TOP_LEFT_CELL_INDEX.get(index).is_some());
         // Safety: `BLOCK_TO_TOP_LEFT_CELL_INDEX` has at least `Base::SIDE_LENGTH` elements.
-        let cell_index = unsafe { *$BLOCK_INDEX_TO_TOP_LEFT_CELL_INDEX.get_unchecked(index) };
+        let cell_index = unsafe { get_unchecked($BLOCK_INDEX_TO_TOP_LEFT_CELL_INDEX.as_slice(), index) };
 
         // Safety: `cell_index` remains in-bounds, guaranteed by module `block_to_top_left_cell_index`
-        unsafe { Position::new_unchecked(cell_index) }
+        unsafe { Position::new_unchecked(*cell_index) }
     }
 
     type CandidatesIntegral = $type_integral;
@@ -260,8 +279,9 @@ impl_sudoku_base!(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::position::DynamicPosition;
+
+    use super::*;
 
     #[test]
     fn test_base_to_side_length() {
@@ -302,8 +322,30 @@ mod tests {
     fn assert_base_invariants<Base: SudokuBase>() {
         use std::mem::size_of;
 
+        // Safety invariant of Base::BASE
+        assert_ne!(Base::BASE, 0);
+
+        // Safety invariants of Base::SIDE_LENGTH/Base::MAX_VALUE
+        assert_eq!(Base::SIDE_LENGTH, Base::MAX_VALUE);
+        assert_eq!(Base::SIDE_LENGTH, base_to_side_length(Base::BASE));
+        assert_eq!(Base::MAX_VALUE, base_to_max_value(Base::BASE));
+
+        // Safety invariant of Base::CELL_COUNT
+        assert_eq!(Base::CELL_COUNT, base_to_cell_count(Base::BASE));
+
+        // Safety invariant of Base::CandidatesIntegral
         // MAX_VALUE must be representable at the highest bit position.
         assert!(size_of::<Base::CandidatesIntegral>() * 8 >= usize::from(Base::MAX_VALUE));
+        // Safety invariant of Base::CandidatesCells
+        let mut candidates_cells = <Base as SudokuBase>::CandidatesCells::default();
+        assert_eq!(
+            candidates_cells.as_ref().len(),
+            usize::from(Base::SIDE_LENGTH)
+        );
+        assert_eq!(
+            candidates_cells.as_mut().len(),
+            usize::from(Base::SIDE_LENGTH)
+        );
     }
 
     #[test]

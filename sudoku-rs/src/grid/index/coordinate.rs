@@ -152,7 +152,6 @@ impl<Base: SudokuBase> TryFrom<u8> for Coordinate<Base> {
 #[cfg(test)]
 mod tests {
     use crate::base::consts::{Base2, Base3};
-    use crate::grid::Grid;
 
     use super::*;
 
