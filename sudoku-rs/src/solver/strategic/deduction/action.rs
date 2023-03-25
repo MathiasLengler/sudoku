@@ -1,0 +1,186 @@
+use std::fmt::{Display, Formatter};
+
+use anyhow::{bail, ensure, Context};
+use serde::Serialize;
+#[cfg(feature = "wasm")]
+use ts_rs::TS;
+
+use crate::base::SudokuBase;
+use crate::cell::compact::candidates::Candidates;
+use crate::cell::compact::value::Value;
+use crate::cell::Cell;
+use crate::error::Result;
+use crate::grid::index::position::Position;
+use crate::grid::Grid;
+use crate::solver::strategic::deduction::Merge;
+
+/// What action should be taken for a specific cell.
+#[cfg_attr(
+    feature = "wasm",
+    derive(TS),
+    ts(export, export_generic_params = "crate::base::consts::Base3")
+)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize)]
+#[serde(bound = "", rename_all = "camelCase")]
+pub enum Action<Base: SudokuBase> {
+    SetValue { value: Value<Base> },
+    DeleteCandidates { candidates: Candidates<Base> },
+}
+
+impl<Base: SudokuBase> Display for Action<Base> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Action::SetValue { value } => {
+                write!(f, "set value {value}")
+            }
+            Action::DeleteCandidates { candidates } => {
+                write!(f, "delete candidates {candidates}")
+            }
+        }
+    }
+}
+
+impl<Base: SudokuBase> Action<Base> {
+    pub fn set_value(value: Value<Base>) -> Self {
+        Self::SetValue { value }
+    }
+
+    pub fn delete_candidate(candidate: Value<Base>) -> Self {
+        Self::DeleteCandidates {
+            candidates: Candidates::single(candidate),
+        }
+    }
+
+    pub fn delete_candidates(candidates: Candidates<Base>) -> Self {
+        Self::DeleteCandidates { candidates }
+    }
+
+    pub fn validate(&self, cell: &Cell<Base>) -> Result<Candidates<Base>> {
+        (|| {
+            let Some(existing_candidates) = cell.candidates() else {
+            bail!("expected cell to contain candidates")
+        };
+            match *self {
+                Action::SetValue { value } => {
+                    ensure!(
+                        existing_candidates.has(value),
+                        "expected cell to contain the candidate {value}"
+                    );
+                }
+                Action::DeleteCandidates { candidates } => {
+                    ensure!(
+                        candidates.without(existing_candidates).is_empty(),
+                        "expected cell to contain the candidates {candidates}"
+                    );
+                    let remaining_candidates = existing_candidates.without(candidates);
+                    ensure!(
+                        !remaining_candidates.is_empty(),
+                        "can't delete all candidates {candidates}"
+                    );
+                }
+            }
+            Ok(existing_candidates)
+        })()
+        .with_context(|| format!("Invalid action {self} for cell {cell}"))
+    }
+
+    pub fn apply(&self, cell: &mut Cell<Base>) -> Result<()> {
+        let existing_candidates = self.validate(cell)?;
+        match *self {
+            Action::SetValue { value } => {
+                cell.set_value(value);
+                // Defer updating of direct candidates
+            }
+            Action::DeleteCandidates { candidates } => {
+                cell.set_candidates(existing_candidates.without(candidates));
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn update_direct_candidates(&self, grid: &mut Grid<Base>, pos: Position<Base>) {
+        if let Action::SetValue { value } = self {
+            grid.update_direct_candidates(pos, *value);
+        }
+    }
+}
+
+impl<Base: SudokuBase> Merge for Action<Base> {
+    fn merge(self, other: Self) -> Result<Self> {
+        use Action::*;
+        (|| {
+            Ok(match (self, other) {
+                (SetValue { value: self_value }, SetValue { value: other_value }) => {
+                    ensure!(
+                        self_value == other_value,
+                        "conflicting values: {self_value} != {other_value}"
+                    );
+                    SetValue { value: self_value }
+                }
+                (
+                    DeleteCandidates {
+                        candidates: self_candidates,
+                    },
+                    DeleteCandidates {
+                        candidates: other_candidates,
+                    },
+                ) => DeleteCandidates {
+                    candidates: self_candidates.union(other_candidates),
+                },
+                (SetValue { value }, DeleteCandidates { candidates })
+                | (DeleteCandidates { candidates }, SetValue { value }) => {
+                    ensure!(
+                        !candidates.has(value),
+                        "can't set deleted candidate {value} as a value"
+                    );
+                    SetValue { value }
+                }
+            })
+        })()
+        .with_context(|| format!("Incompatible merge of two actions: {self}, {other}"))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::base::consts::Base2;
+
+    #[test]
+    fn test_merge() {
+        type Base = Base2;
+        let value_1 = 1.try_into().unwrap();
+        let value_2 = 2.try_into().unwrap();
+
+        let set_1 = Action::<Base>::SetValue { value: value_1 };
+        let set_2 = Action::<Base>::SetValue { value: value_2 };
+        let delete_1 = Action::DeleteCandidates {
+            candidates: Candidates::single(value_1),
+        };
+        let delete_2 = Action::DeleteCandidates {
+            candidates: Candidates::single(value_2),
+        };
+        let delete_1_2 = Action::DeleteCandidates {
+            candidates: [value_1, value_2].into_iter().collect(),
+        };
+        let delete_none = Action::DeleteCandidates {
+            candidates: Candidates::<Base>::new(),
+        };
+
+        // TODO: test all 15 (6 choose 2) combinations
+        let test_cases_ok = vec![(set_1, set_1, set_1)];
+        let test_cases_err = vec![(set_1, delete_1)];
+
+        for (action_1, action_2, expected_merged_action) in test_cases_ok {
+            let merged_action_1_2 = action_1.merge(action_2).unwrap();
+            let merged_action_2_1 = action_2.merge(action_1).unwrap();
+            assert_eq!(merged_action_1_2, expected_merged_action);
+            assert_eq!(merged_action_2_1, expected_merged_action);
+        }
+        for (action_1, action_2) in test_cases_err {
+            action_1.merge(action_2).unwrap_err();
+            action_2.merge(action_1).unwrap_err();
+        }
+    }
+}
