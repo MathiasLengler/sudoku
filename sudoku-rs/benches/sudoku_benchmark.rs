@@ -19,7 +19,6 @@ use sudoku::grid::index::coordinate::Coordinate;
 use sudoku::grid::index::position::Position;
 use sudoku::grid::index::test_utils::{consume_iter, consume_nested_iter};
 use sudoku::grid::Grid;
-use sudoku::position::DynamicPosition;
 use sudoku::samples::{base_2, base_3};
 use sudoku::solver::strategic::strategies::GroupReduction;
 use sudoku::solver::{backtracking, backtracking_bitset, strategic};
@@ -174,7 +173,7 @@ fn bench_grid_group<Base: SudokuBase>(grid_group: &mut BenchmarkGroup<WallTime>)
         &grid,
         |b, grid| {
             b.iter_batched(
-                || grid.row_cells(1),
+                || grid.row_cells(1.try_into().unwrap()),
                 |row_cells| Grid::<Base>::has_duplicate_value(row_cells),
                 BatchSize::SmallInput,
             )
@@ -184,11 +183,13 @@ fn bench_grid_group<Base: SudokuBase>(grid_group: &mut BenchmarkGroup<WallTime>)
         b.iter(|| consume_iter(Grid::<Base>::all_positions()))
     });
 
+    let coordinate: Coordinate<Base> = 1.try_into().unwrap();
+
     // Cell iterators
     grid_group.bench_with_input(
         BenchmarkId::new("iter_cells/row_cells", &parameter_string),
         &grid,
-        |b, grid| b.iter(|| consume_iter(grid.row_cells(1))),
+        |b, grid| b.iter(|| consume_iter(grid.row_cells(coordinate))),
     );
     grid_group.bench_with_input(
         BenchmarkId::new("iter_cells/all_row_cells", &parameter_string),
@@ -198,7 +199,7 @@ fn bench_grid_group<Base: SudokuBase>(grid_group: &mut BenchmarkGroup<WallTime>)
     grid_group.bench_with_input(
         BenchmarkId::new("iter_cells/column_cells", &parameter_string),
         &grid,
-        |b, grid| b.iter(|| consume_iter(grid.column_cells(1))),
+        |b, grid| b.iter(|| consume_iter(grid.column_cells(coordinate))),
     );
     grid_group.bench_with_input(
         BenchmarkId::new("iter_cells/all_column_cells", &parameter_string),
@@ -208,23 +209,20 @@ fn bench_grid_group<Base: SudokuBase>(grid_group: &mut BenchmarkGroup<WallTime>)
     grid_group.bench_with_input(
         BenchmarkId::new("iter_cells/block_cells", &parameter_string),
         &grid,
-        |b, grid| {
-            b.iter(|| {
-                consume_iter(grid.block_cells(black_box(DynamicPosition { row: 3, column: 3 })))
-            })
-        },
+        |b, grid| b.iter(|| consume_iter(grid.block_cells(coordinate))),
     );
     grid_group.bench_with_input(
         BenchmarkId::new("iter_cells/all_block_cells", &parameter_string),
         &grid,
         |b, grid| b.iter(|| consume_nested_iter(grid.all_block_cells())),
     );
+
+    let pos: Position<Base> = (1, 1).try_into().unwrap();
+
     grid_group.bench_with_input(
         BenchmarkId::new("direct_candidates", &parameter_string),
         &grid,
-        |b, grid| {
-            b.iter(|| grid.direct_candidates(black_box(DynamicPosition { column: 1, row: 1 })))
-        },
+        |b, grid| b.iter(|| grid.direct_candidates(black_box(pos))),
     );
     grid_group.bench_with_input(
         BenchmarkId::new("update_direct_candidates", &parameter_string),
@@ -235,10 +233,8 @@ fn bench_grid_group<Base: SudokuBase>(grid_group: &mut BenchmarkGroup<WallTime>)
             grid.set_all_direct_candidates();
 
             b.iter_batched(
-                || grid.clone(),
-                |mut grid: Grid<Base>| {
-                    let pos = DynamicPosition { column: 1, row: 1 };
-                    let value = Value::new(2).unwrap().unwrap();
+                || (grid.clone(), Value::try_from(2).unwrap()),
+                |(mut grid, value)| {
                     grid.get_mut(pos).set_or_toggle_value(value);
                     grid.update_direct_candidates(pos, value);
                 },
