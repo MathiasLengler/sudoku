@@ -41,13 +41,13 @@ impl<Base: SudokuBase> From<&Sudoku<Base>> for TransportSudoku {
                     };
                     TransportCell {
                         cell_view: cell.into(),
-                        position: pos,
+                        position: pos.into(),
                         incorrect_value,
                     }
                 })
                 .collect(),
             blocks_indices: Grid::<Base>::all_block_positions()
-                .map(|block| block.map(|pos| pos.cell_index::<Base>()).collect())
+                .map(|block| block.map(|pos| pos.cell_index()).collect())
                 .collect(),
             base: Grid::<Base>::base(),
             side_length: Grid::<Base>::side_length(),

@@ -3,8 +3,8 @@ use std::collections::BTreeMap;
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
 use crate::error::Result;
+use crate::grid::index::position::Position;
 use crate::grid::Grid;
-use crate::position::DynamicPosition;
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions, Reason};
 
 use super::Strategy;
@@ -33,9 +33,9 @@ impl Strategy for NakedPairs {
 
 impl NakedPairs {
     fn find_naked_pairs<Base: SudokuBase>(
-        candidates_group: Vec<(DynamicPosition, Candidates<Base>)>,
+        candidates_group: Vec<(Position<Base>, Candidates<Base>)>,
     ) -> impl Iterator<Item = Deduction<Base>> {
-        let mut pair_candidates_histogram: BTreeMap<Candidates<Base>, Vec<DynamicPosition>> =
+        let mut pair_candidates_histogram: BTreeMap<Candidates<Base>, Vec<Position<Base>>> =
             BTreeMap::new();
 
         for (pos, pair_candidates) in candidates_group
@@ -51,12 +51,12 @@ impl NakedPairs {
         pair_candidates_histogram
             .into_iter()
             .filter_map(|(pair_candidates, positions)| {
-                <[DynamicPosition; 2]>::try_from(positions)
+                <[Position<Base>; 2]>::try_from(positions)
                     .ok()
                     .map(|positions| (pair_candidates, positions))
             })
             .filter_map(
-                move |(pair_candidates, positions): (_, [DynamicPosition; 2])| {
+                move |(pair_candidates, positions): (_, [Position<Base>; 2])| {
                     // pair_candidates is a naked pair
                     let mut deduction = Deduction::new();
 
@@ -122,7 +122,7 @@ mod tests {
     fn test_find_naked_pairs() {
         type Base = Base3;
 
-        let test_cases: Vec<(Vec<(DynamicPosition, Candidates<Base>)>, Deductions<Base>)> = vec![
+        let test_cases: Vec<(Vec<(Position<Base>, Candidates<Base>)>, Deductions<Base>)> = vec![
             // Single naked pair
             (
                 // candidates group
@@ -222,7 +222,10 @@ mod tests {
                 candidates_group
                     .into_iter()
                     .map(|(pos, candidates)| {
-                        (pos.into(), Candidates::try_from(candidates).unwrap())
+                        (
+                            pos.try_into().unwrap(),
+                            Candidates::try_from(candidates).unwrap(),
+                        )
                     })
                     .collect(),
                 deductions
@@ -231,7 +234,7 @@ mod tests {
                         Deduction::try_from_iters(
                             reasons.into_iter().map(|(pos, candidates)| {
                                 (
-                                    pos.into(),
+                                    pos.try_into().unwrap(),
                                     Reason::Candidates {
                                         candidates: Candidates::try_from(candidates).unwrap(),
                                     },
@@ -239,7 +242,7 @@ mod tests {
                             }),
                             actions.into_iter().map(|(pos, candidates)| {
                                 (
-                                    pos.into(),
+                                    pos.try_into().unwrap(),
                                     Action::DeleteCandidates {
                                         candidates: Candidates::try_from(candidates).unwrap(),
                                     },
@@ -254,7 +257,7 @@ mod tests {
         .collect();
 
         for (candidates_group, expected_deductions) in test_cases {
-            let deductions: Deductions<Base3> =
+            let deductions: Deductions<Base> =
                 NakedPairs::find_naked_pairs(candidates_group).collect();
 
             assert_deductions(deductions, expected_deductions);

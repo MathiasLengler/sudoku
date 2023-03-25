@@ -78,11 +78,14 @@ impl<Base: SudokuBase> Sudoku<Base> {
 
 impl<Base: SudokuBase> Game for Sudoku<Base> {
     fn set_value(&mut self, pos: DynamicPosition, value: u8) -> Result<()> {
+        let pos = pos.try_into()?;
+        let value = Value::new(value)?;
+
         self.push_history();
 
         let cell = self.grid.get_mut(pos);
 
-        if let Some(value) = Value::new(value)? {
+        if let Some(value) = value {
             cell.set_value(value);
 
             if self.settings.update_candidates {
@@ -96,11 +99,14 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
     }
 
     fn set_or_toggle_value(&mut self, pos: DynamicPosition, value: u8) -> Result<()> {
+        let pos = pos.try_into()?;
+        let value = Value::new(value)?;
+
         self.push_history();
 
         let cell = self.grid.get_mut(pos);
 
-        if let Some(value) = Value::new(value)? {
+        if let Some(value) = value {
             let set_value = cell.set_or_toggle_value(value);
 
             if self.settings.update_candidates && set_value {
@@ -114,45 +120,55 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
     }
 
     fn set_candidates(&mut self, pos: DynamicPosition, candidates: Vec<u8>) -> Result<()> {
+        let pos = pos.try_into()?;
+        let candidates = candidates.try_into()?;
+
         self.push_history();
 
-        self.grid
-            .get_mut(pos)
-            .set_candidates(candidates.try_into()?);
+        self.grid.get_mut(pos).set_candidates(candidates);
 
         Ok(())
     }
 
     fn toggle_candidate(&mut self, pos: DynamicPosition, candidate: u8) -> Result<()> {
+        let pos = pos.try_into()?;
+        let candidate = candidate.try_into()?;
+
         self.push_history();
 
-        self.grid
-            .get_mut(pos)
-            .toggle_candidate(candidate.try_into()?);
+        self.grid.get_mut(pos).toggle_candidate(candidate);
 
         Ok(())
     }
     fn set_candidate(&mut self, pos: DynamicPosition, candidate: u8) -> Result<()> {
+        let pos = pos.try_into()?;
+        let candidate = candidate.try_into()?;
+
         self.push_history();
 
-        self.grid.get_mut(pos).set_candidate(candidate.try_into()?);
+        self.grid.get_mut(pos).set_candidate(candidate);
 
         Ok(())
     }
     fn delete_candidate(&mut self, pos: DynamicPosition, candidate: u8) -> Result<()> {
+        let pos = pos.try_into()?;
+        let candidate = candidate.try_into()?;
+
         self.push_history();
 
-        self.grid
-            .get_mut(pos)
-            .delete_candidate(candidate.try_into()?);
+        self.grid.get_mut(pos).delete_candidate(candidate);
 
         Ok(())
     }
 
-    fn delete(&mut self, pos: DynamicPosition) {
+    fn delete(&mut self, pos: DynamicPosition) -> Result<()> {
+        let pos = pos.try_into()?;
+
         self.push_history();
 
         self.grid.get_mut(pos).delete();
+
+        Ok(())
     }
 
     fn set_all_direct_candidates(&mut self) {

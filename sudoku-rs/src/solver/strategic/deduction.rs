@@ -1,4 +1,4 @@
-use std::collections::btree_map::{Iter, Values};
+use std::collections::btree_map::Iter;
 use std::collections::{btree_map, btree_set, BTreeMap, BTreeSet};
 use std::fmt::{Display, Formatter};
 use std::iter::Map;
@@ -14,343 +14,9 @@ use crate::cell::compact::candidates::Candidates;
 use crate::cell::compact::cell_state::CellState;
 use crate::cell::compact::value::Value;
 use crate::cell::Cell;
-use crate::error::{Error, Result};
+use crate::error::Result;
+use crate::grid::index::position::Position;
 use crate::grid::Grid;
-use crate::position::DynamicPosition;
-
-#[derive(Debug, Clone, Eq, PartialEq, Default)]
-pub struct OldDeductions<Base: SudokuBase> {
-    // Invariant: K == V.pos
-    deductions: BTreeMap<DynamicPosition, OldDeduction<Base>>,
-}
-
-/// Specialization workaround.
-///
-/// [Reference](https://github.com/rust-lang/rust/issues/50133#issuecomment-646908391)
-#[derive(Debug)]
-pub struct IntoDeductions<I>(pub I);
-
-impl<Base: SudokuBase, I: IntoIterator<Item = OldDeduction<Base>>> TryFrom<IntoDeductions<I>>
-    for OldDeductions<Base>
-{
-    type Error = Error;
-
-    fn try_from(into_deductions: IntoDeductions<I>) -> Result<Self> {
-        let deductions = into_deductions.0;
-
-        let mut this = Self::default();
-
-        for deduction in deductions {
-            this.try_append(deduction)?;
-        }
-        Ok(this)
-    }
-}
-
-/// Specialization workaround.
-///
-/// [Reference](https://github.com/rust-lang/rust/issues/50133#issuecomment-646908391)
-#[derive(Debug)]
-pub struct TryIntoDeductions<I>(pub I);
-
-impl<Base: SudokuBase, I: IntoIterator<Item = Result<OldDeduction<Base>>>>
-    TryFrom<TryIntoDeductions<I>> for OldDeductions<Base>
-{
-    type Error = Error;
-
-    fn try_from(into_deduction_results: TryIntoDeductions<I>) -> Result<Self> {
-        let deduction_results = into_deduction_results.0;
-
-        let mut this = Self::default();
-
-        for deduction in deduction_results {
-            this.try_append(deduction?)?;
-        }
-        Ok(this)
-    }
-}
-
-impl<Base: SudokuBase> IntoIterator for OldDeductions<Base> {
-    type Item = OldDeduction<Base>;
-    type IntoIter = btree_map::IntoValues<DynamicPosition, OldDeduction<Base>>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.deductions.into_values()
-    }
-}
-
-impl<'a, Base: SudokuBase> IntoIterator for &'a OldDeductions<Base> {
-    type Item = &'a OldDeduction<Base>;
-    type IntoIter = Values<'a, DynamicPosition, OldDeduction<Base>>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.iter()
-    }
-}
-
-impl<Base: SudokuBase> OldDeductions<Base> {
-    pub fn iter(&self) -> Values<'_, DynamicPosition, OldDeduction<Base>> {
-        self.deductions.values()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.deductions.is_empty()
-    }
-
-    fn try_append(&mut self, deduction: OldDeduction<Base>) -> Result<()> {
-        if let Some(existing_deduction) = self.deductions.get(&deduction.pos) {
-            self.deductions
-                .insert(deduction.pos, existing_deduction.merge(&deduction)?);
-        } else {
-            self.deductions.insert(deduction.pos, deduction);
-        }
-
-        Ok(())
-    }
-
-    pub fn apply(&self, grid: &mut Grid<Base>) {
-        for deduction in self {
-            deduction.apply(grid);
-        }
-
-        // Update candidates for all value deductions.
-        for deduction in self {
-            if let OldDeductionKind::Value { value } = deduction.kind {
-                grid.update_direct_candidates(deduction.pos, value);
-            }
-        }
-    }
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
-pub struct OldDeduction<Base: SudokuBase> {
-    pos: DynamicPosition,
-    kind: OldDeductionKind<Base>,
-    previous_candidates: Candidates<Base>,
-}
-
-impl<Base: SudokuBase> Display for OldDeduction<Base> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let OldDeduction {
-            pos,
-            previous_candidates,
-            kind,
-        } = self;
-
-        match kind {
-            OldDeductionKind::Value { value } => {
-                write!(f, "{pos}: {previous_candidates} => {value}")
-            }
-            OldDeductionKind::PruneCandidates {
-                remaining_candidates,
-            } => {
-                write!(f, "{pos}: {previous_candidates} => {remaining_candidates}")
-            }
-        }
-    }
-}
-
-impl<Base: SudokuBase> OldDeduction<Base> {
-    pub fn new(
-        pos: DynamicPosition,
-        previous_candidates: Candidates<Base>,
-        kind: OldDeductionKind<Base>,
-    ) -> Result<Self> {
-        let this = Self {
-            pos,
-            kind,
-            previous_candidates,
-        };
-
-        // Invariant: only validated Deductions must be returned.
-        this.validate()?;
-
-        Ok(this)
-    }
-
-    pub fn with_value(
-        pos: DynamicPosition,
-        previous_candidates: Candidates<Base>,
-        value: Value<Base>,
-    ) -> Result<Self> {
-        Self::new(
-            pos,
-            previous_candidates,
-            OldDeductionKind::with_value(value),
-        )
-    }
-
-    pub fn with_remaining_candidates(
-        pos: DynamicPosition,
-        previous_candidates: Candidates<Base>,
-        remaining_candidates: Candidates<Base>,
-    ) -> Result<Self> {
-        Self::new(
-            pos,
-            previous_candidates,
-            OldDeductionKind::with_remaining_candidates(remaining_candidates)?,
-        )
-    }
-
-    pub fn apply(&self, grid: &mut Grid<Base>) {
-        let OldDeduction {
-            pos,
-            previous_candidates,
-            kind,
-        } = *self;
-
-        let cell = grid.get_mut(pos);
-        debug_assert_eq!(cell.candidates(), Some(previous_candidates));
-        match kind {
-            OldDeductionKind::Value { value } => {
-                cell.set_value(value);
-                // Don't update candidates, which would fail the assert of previous_candidates for subsequent deductions.
-            }
-            OldDeductionKind::PruneCandidates {
-                remaining_candidates,
-            } => {
-                cell.set_candidates(remaining_candidates);
-            }
-        }
-    }
-
-    fn validate(&self) -> Result<()> {
-        let OldDeduction {
-            previous_candidates,
-            kind,
-            ..
-        } = self;
-
-        ensure!(
-            !previous_candidates.is_empty(),
-            "Unexpected deduction for previously empty candidates: {self}"
-        );
-
-        match kind {
-            OldDeductionKind::Value { value } => {
-                ensure!(
-                    previous_candidates.has(*value),
-                    "Unexpected value deduction not in previous candidates: {self}"
-                );
-            }
-            OldDeductionKind::PruneCandidates {
-                remaining_candidates,
-            } => {
-                ensure!(
-                    previous_candidates != remaining_candidates,
-                    "Unexpected no-op deduction: {self}"
-                );
-
-                let added_candidates = remaining_candidates.without(previous_candidates);
-                ensure!(
-                    added_candidates.is_empty(),
-                    "Unexpected candidate(s) addition: {self}"
-                );
-            }
-        }
-
-        Ok(())
-    }
-
-    fn merge(&self, other: &Self) -> Result<Self> {
-        if self == other {
-            return Ok(*self);
-        }
-
-        let OldDeduction {
-            pos: self_pos,
-            previous_candidates: self_previous_candidates,
-            kind: self_kind,
-        } = self;
-
-        let OldDeduction {
-            pos: other_pos,
-            previous_candidates: other_previous_candidates,
-            kind: other_kind,
-        } = other;
-
-        // "Try block"
-        (|| {
-            ensure!(
-                self_pos == other_pos,
-                "Conflicting positions: {self_pos} != {other_pos}"
-            );
-
-            ensure!(
-                self_previous_candidates == other_previous_candidates,
-                "Conflicting previous_candidates: {self_previous_candidates} != {other_previous_candidates}"
-            );
-
-            Self::new(*self_pos, *self_previous_candidates, self_kind.merge(other_kind)?)
-        })().with_context(|| format!("Incompatible merge of two deductions: {self}, {other}"))
-    }
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
-pub enum OldDeductionKind<Base: SudokuBase> {
-    Value {
-        value: Value<Base>,
-    },
-    PruneCandidates {
-        remaining_candidates: Candidates<Base>,
-    },
-}
-
-impl<Base: SudokuBase> OldDeductionKind<Base> {
-    fn with_value(value: Value<Base>) -> Self {
-        OldDeductionKind::Value { value }
-    }
-
-    fn with_remaining_candidates(remaining_candidates: Candidates<Base>) -> Result<Self> {
-        ensure!(
-            !remaining_candidates.is_empty(),
-            "At least one candidate must be remaining"
-        );
-
-        Ok(OldDeductionKind::PruneCandidates {
-            remaining_candidates,
-        })
-    }
-
-    fn merge(&self, other: &Self) -> Result<Self> {
-        use OldDeductionKind::*;
-        Ok(match (*self, *other) {
-            (Value { value: self_value }, Value { value: other_value }) => {
-                bail!("Conflicting values: {self_value} != {other_value}")
-            }
-            // Merge PruneCandidates by intersecting their candidates.
-            (
-                PruneCandidates {
-                    remaining_candidates: self_remaining_candidates,
-                },
-                PruneCandidates {
-                    remaining_candidates: other_remaining_candidates,
-                },
-            ) => OldDeductionKind::with_remaining_candidates(
-                self_remaining_candidates.intersection(&other_remaining_candidates),
-            )?,
-            // More specific Value overwrites PruneCandidates
-            (Value { value }, _) | (_, Value { value }) => OldDeductionKind::with_value(value),
-        })
-    }
-}
-
-impl<Base: SudokuBase> From<Value<Base>> for OldDeductionKind<Base> {
-    fn from(value: Value<Base>) -> Self {
-        Self::with_value(value)
-    }
-}
-
-impl<Base: SudokuBase> TryFrom<Candidates<Base>> for OldDeductionKind<Base> {
-    type Error = Error;
-
-    fn try_from(remaining_candidates: Candidates<Base>) -> Result<Self> {
-        Self::with_remaining_candidates(remaining_candidates)
-    }
-}
-
-// /\ /\ /\
-// Old
 
 /// A list of deductions made by a strategy.
 /// Some strategies can be applied multiple times on a single grid, e.g.:
@@ -406,8 +72,10 @@ impl<Base: SudokuBase> Deductions<Base> {
 
     /// If two deductions contain the same reasons, merge them into a single deduction by merging their actions.
     pub fn merge_deductions_by_reasons(self) -> Result<Self> {
-        let mut reasons_to_actions: BTreeMap<PositionMap<Reason<Base>>, PositionMap<Action<Base>>> =
-            BTreeMap::new();
+        let mut reasons_to_actions: BTreeMap<
+            PositionMap<Base, Reason<Base>>,
+            PositionMap<Base, Action<Base>>,
+        > = BTreeMap::new();
 
         for Deduction { reasons, actions } in self {
             if let Some(existing_actions) = reasons_to_actions.get_mut(&reasons) {
@@ -471,11 +139,11 @@ pub trait Merge: Sized {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
-pub struct PositionMap<T: Merge> {
-    map: BTreeMap<DynamicPosition, T>,
+pub struct PositionMap<Base: SudokuBase, T: Merge> {
+    map: BTreeMap<Position<Base>, T>,
 }
 
-impl<T: Merge> Merge for PositionMap<T> {
+impl<Base: SudokuBase, T: Merge> Merge for PositionMap<Base, T> {
     fn merge(&mut self, other: Self) -> Result<()> {
         for (pos, value) in other {
             self.insert(pos, value)?;
@@ -484,47 +152,47 @@ impl<T: Merge> Merge for PositionMap<T> {
     }
 }
 
-impl<T: Merge> Default for PositionMap<T> {
+impl<Base: SudokuBase, T: Merge> Default for PositionMap<Base, T> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<T: Merge> IntoIterator for PositionMap<T> {
-    type Item = (DynamicPosition, T);
-    type IntoIter = btree_map::IntoIter<DynamicPosition, T>;
+impl<Base: SudokuBase, T: Merge> IntoIterator for PositionMap<Base, T> {
+    type Item = (Position<Base>, T);
+    type IntoIter = btree_map::IntoIter<Position<Base>, T>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.map.into_iter()
     }
 }
 
-type PositionMapIter<'a, T> =
-    Map<Iter<'a, DynamicPosition, T>, fn((&DynamicPosition, &'a T)) -> (DynamicPosition, &'a T)>;
+type PositionMapIter<'a, Base, T> =
+    Map<Iter<'a, Position<Base>, T>, fn((&Position<Base>, &'a T)) -> (Position<Base>, &'a T)>;
 
-impl<'a, T: Merge> IntoIterator for &'a PositionMap<T> {
-    type Item = (DynamicPosition, &'a T);
-    type IntoIter = PositionMapIter<'a, T>;
+impl<'a, Base: SudokuBase, T: Merge> IntoIterator for &'a PositionMap<Base, T> {
+    type Item = (Position<Base>, &'a T);
+    type IntoIter = PositionMapIter<'a, Base, T>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
     }
 }
 
-impl<T: Merge> PositionMap<T> {
+impl<Base: SudokuBase, T: Merge> PositionMap<Base, T> {
     pub fn new() -> Self {
         Self {
             map: BTreeMap::default(),
         }
     }
 
-    pub fn with_single(pos: DynamicPosition, value: T) -> Self {
+    pub fn with_single(pos: Position<Base>, value: T) -> Self {
         let mut this: Self = Self::new();
         this.map.insert(pos, value);
         this
     }
 
-    pub fn try_from_iter(iter: impl Iterator<Item = (DynamicPosition, T)>) -> Result<Self> {
+    pub fn try_from_iter(iter: impl Iterator<Item = (Position<Base>, T)>) -> Result<Self> {
         let mut this = Self::new();
 
         for (pos, value) in iter {
@@ -535,7 +203,7 @@ impl<T: Merge> PositionMap<T> {
     }
 
     // False positive
-    pub fn iter(&self) -> PositionMapIter<'_, T> {
+    pub fn iter(&self) -> PositionMapIter<'_, Base, T> {
         self.map.iter().map(|(pos, value)| (*pos, value))
     }
 
@@ -543,7 +211,7 @@ impl<T: Merge> PositionMap<T> {
         self.map.is_empty()
     }
 
-    pub fn insert(&mut self, pos: DynamicPosition, value: T) -> Result<()> {
+    pub fn insert(&mut self, pos: Position<Base>, value: T) -> Result<()> {
         if let Some(existing_value) = self.map.get_mut(&pos) {
             existing_value.merge(value)?;
         } else {
@@ -564,8 +232,8 @@ impl<T: Merge> PositionMap<T> {
 /// - a single X-Wing
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Deduction<Base: SudokuBase> {
-    pub actions: PositionMap<Action<Base>>,
-    pub reasons: PositionMap<Reason<Base>>,
+    pub actions: PositionMap<Base, Action<Base>>,
+    pub reasons: PositionMap<Base, Reason<Base>>,
 }
 
 impl<Base: SudokuBase> Display for Deduction<Base> {
@@ -599,7 +267,7 @@ impl<Base: SudokuBase> Deduction<Base> {
         }
     }
 
-    pub fn with_action(pos: impl Into<DynamicPosition>, action: Action<Base>) -> Self {
+    pub fn with_action(pos: Position<Base>, action: Action<Base>) -> Self {
         Self {
             actions: PositionMap::with_single(pos.into(), action),
             ..Default::default()
@@ -607,7 +275,7 @@ impl<Base: SudokuBase> Deduction<Base> {
     }
 
     pub fn try_from_actions(
-        actions: impl Iterator<Item = (DynamicPosition, Action<Base>)>,
+        actions: impl Iterator<Item = (Position<Base>, Action<Base>)>,
     ) -> Result<Self> {
         Ok(Self {
             actions: PositionMap::try_from_iter(actions)?,
@@ -616,8 +284,8 @@ impl<Base: SudokuBase> Deduction<Base> {
     }
 
     pub fn try_from_iters(
-        reasons: impl Iterator<Item = (DynamicPosition, Reason<Base>)>,
-        actions: impl Iterator<Item = (DynamicPosition, Action<Base>)>,
+        reasons: impl Iterator<Item = (Position<Base>, Reason<Base>)>,
+        actions: impl Iterator<Item = (Position<Base>, Action<Base>)>,
     ) -> Result<Self> {
         Ok(Self {
             reasons: PositionMap::try_from_iter(reasons)?,
@@ -849,7 +517,7 @@ impl<Base: SudokuBase> Action<Base> {
         Ok(())
     }
 
-    fn update_direct_candidates(&self, grid: &mut Grid<Base>, pos: DynamicPosition) {
+    fn update_direct_candidates(&self, grid: &mut Grid<Base>, pos: Position<Base>) {
         if let Action::SetValue { value } = self {
             grid.update_direct_candidates(pos, *value);
         }
@@ -972,7 +640,7 @@ pub mod transport {
     #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize)]
     #[serde(bound = "", rename_all = "camelCase")]
     pub struct TransportReason<Base: SudokuBase> {
-        pub position: DynamicPosition,
+        pub position: Position<Base>,
         #[serde(flatten)]
         pub reason: Reason<Base>,
     }
@@ -984,7 +652,7 @@ pub mod transport {
     #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize)]
     #[serde(bound = "", rename_all = "camelCase")]
     pub struct TransportAction<Base: SudokuBase> {
-        pub position: DynamicPosition,
+        pub position: Position<Base>,
         #[serde(flatten)]
         pub action: Action<Base>,
     }
@@ -993,8 +661,6 @@ pub mod transport {
 #[cfg(test)]
 mod tests {
     use crate::base::consts::*;
-    use crate::cell::Cell;
-    use crate::samples;
     use crate::solver::strategic::deduction::transport::{TransportAction, TransportReason};
 
     use super::*;
@@ -1007,13 +673,13 @@ mod tests {
         let deduction = TransportDeduction::<Base3> {
             reasons: vec![
                 TransportReason {
-                    position: (1, 1).into(),
+                    position: (1, 1).try_into().unwrap(),
                     reason: Reason::Candidates {
                         candidates: Candidates::all(),
                     },
                 },
                 TransportReason {
-                    position: (1, 1).into(),
+                    position: (1, 1).try_into().unwrap(),
                     reason: Reason::Candidate {
                         candidate: Value::try_from(1).unwrap(),
                     },
@@ -1021,19 +687,19 @@ mod tests {
             ],
             actions: vec![
                 TransportAction {
-                    position: (1, 1).into(),
+                    position: (1, 1).try_into().unwrap(),
                     action: Action::SetValue {
                         value: Value::try_from(1).unwrap(),
                     },
                 },
                 TransportAction {
-                    position: (1, 1).into(),
+                    position: (1, 1).try_into().unwrap(),
                     action: Action::DeleteCandidate {
                         candidate: Value::try_from(2).unwrap(),
                     },
                 },
                 TransportAction {
-                    position: (1, 1).into(),
+                    position: (1, 1).try_into().unwrap(),
                     action: Action::DeleteCandidates {
                         candidates: Candidates::all(),
                     },
@@ -1044,205 +710,207 @@ mod tests {
         println!("{}", serde_json::to_string_pretty(&deduction).unwrap());
     }
 
-    #[test]
-    fn test_deductions_order_independence() {
-        use itertools::Itertools;
+    // TODO: port test to new Deductions
 
-        let pos = DynamicPosition { row: 0, column: 0 };
-        let previous_candidates: Candidates<Base2> = Candidates::all();
-        let remaining_candidates: Candidates<Base2> = vec![1, 2].try_into().unwrap();
-
-        let value_deduction_1 =
-            OldDeduction::with_value(pos, previous_candidates, 1.try_into().unwrap()).unwrap();
-        let value_deduction_2 = OldDeduction::with_value(
-            DynamicPosition { row: 1, column: 1 },
-            previous_candidates,
-            2.try_into().unwrap(),
-        )
-        .unwrap();
-        let remaining_candidates_deduction =
-            OldDeduction::with_remaining_candidates(pos, previous_candidates, remaining_candidates)
-                .unwrap();
-
-        let all_deductions: Vec<OldDeduction<Base2>> = vec![
-            value_deduction_1,
-            value_deduction_2,
-            remaining_candidates_deduction,
-        ];
-        let deductions: OldDeductions<Base2> =
-            IntoDeductions(all_deductions.clone()).try_into().unwrap();
-        for deduction_permutation in all_deductions.into_iter().permutations(3) {
-            assert_eq!(
-                OldDeductions::<Base2>::try_from(IntoDeductions(deduction_permutation)).unwrap(),
-                deductions
-            );
-        }
-    }
-
-    #[test]
-    fn test_deduction_apply() {
-        let mut grid = samples::base_2_candidates_coordinates();
-
-        let pos = DynamicPosition { row: 0, column: 1 };
-        let value = 1.try_into().unwrap();
-        OldDeduction::with_value(pos, Candidates::single(1.try_into().unwrap()), value)
-            .unwrap()
-            .apply(&mut grid);
-        assert_eq!(*grid.get(pos), Cell::with_value(value, false));
-
-        let pos = DynamicPosition { row: 3, column: 3 };
-        let candidates = vec![2, 4].try_into().unwrap();
-        OldDeduction::with_remaining_candidates(pos, Candidates::all(), candidates)
-            .unwrap()
-            .apply(&mut grid);
-        assert_eq!(*grid.get(pos), Cell::with_candidates(candidates));
-    }
-
-    #[test]
-    fn test_deduction_merge() {
-        let pos = DynamicPosition { row: 1, column: 1 };
-        let previous_candidates: Candidates<Base2> = Candidates::all();
-        let remaining_candidates: Candidates<Base2> = Candidates::single(1.try_into().unwrap());
-        let value: Value<Base2> = 1.try_into().unwrap();
-
-        let cases: Vec<(
-            OldDeduction<Base2>,
-            OldDeduction<Base2>,
-            OldDeduction<Base2>,
-        )> = vec![
-            // Equal
-            (
-                OldDeduction::with_value(pos, previous_candidates, value).unwrap(),
-                OldDeduction::with_value(pos, previous_candidates, value).unwrap(),
-                OldDeduction::with_value(pos, previous_candidates, value).unwrap(),
-            ),
-            // Left Value overwrites right PruneCandidates
-            (
-                OldDeduction::with_value(pos, previous_candidates, value).unwrap(),
-                OldDeduction::with_remaining_candidates(
-                    pos,
-                    previous_candidates,
-                    remaining_candidates,
-                )
-                .unwrap(),
-                OldDeduction::with_value(pos, previous_candidates, value).unwrap(),
-            ),
-            // Right Value overwrites left PruneCandidates
-            (
-                OldDeduction::with_remaining_candidates(
-                    pos,
-                    previous_candidates,
-                    remaining_candidates,
-                )
-                .unwrap(),
-                OldDeduction::with_value(pos, previous_candidates, value).unwrap(),
-                OldDeduction::with_value(pos, previous_candidates, value).unwrap(),
-            ),
-            // Intersect PruneCandidates
-            (
-                OldDeduction::with_remaining_candidates(
-                    pos,
-                    previous_candidates,
-                    vec![1, 2, 4].try_into().unwrap(),
-                )
-                .unwrap(),
-                OldDeduction::with_remaining_candidates(
-                    pos,
-                    previous_candidates,
-                    vec![1, 3, 4].try_into().unwrap(),
-                )
-                .unwrap(),
-                OldDeduction::with_remaining_candidates(
-                    pos,
-                    previous_candidates,
-                    vec![1, 4].try_into().unwrap(),
-                )
-                .unwrap(),
-            ),
-        ];
-
-        for (left_strategy, right_strategy, expected_strategy) in cases {
-            assert_eq!(
-                left_strategy.merge(&right_strategy).unwrap(),
-                expected_strategy
-            );
-        }
-    }
-    #[test]
-    fn test_deduction_merge_err() {
-        let pos = DynamicPosition { row: 1, column: 1 };
-        let different_pos = DynamicPosition { row: 2, column: 2 };
-        let previous_candidates: Candidates<Base2> = Candidates::all();
-        let different_previous_candidates: Candidates<Base2> = vec![1, 2].try_into().unwrap();
-        let remaining_candidates: Candidates<Base2> = Candidates::single(1.try_into().unwrap());
-        let different_remaining_candidates: Candidates<Base2> =
-            Candidates::single(2.try_into().unwrap());
-        let value: Value<Base2> = 1.try_into().unwrap();
-        let different_value: Value<Base2> = 2.try_into().unwrap();
-
-        let err_cases: Vec<(OldDeduction<Base2>, OldDeduction<Base2>)> = vec![
-            // Different pos
-            (
-                OldDeduction::with_value(pos, previous_candidates, value).unwrap(),
-                OldDeduction::with_value(different_pos, previous_candidates, value).unwrap(),
-            ),
-            (
-                OldDeduction::with_remaining_candidates(
-                    pos,
-                    previous_candidates,
-                    remaining_candidates,
-                )
-                .unwrap(),
-                OldDeduction::with_remaining_candidates(
-                    different_pos,
-                    previous_candidates,
-                    remaining_candidates,
-                )
-                .unwrap(),
-            ),
-            // Different previous_candidates
-            (
-                OldDeduction::with_value(pos, previous_candidates, value).unwrap(),
-                OldDeduction::with_value(pos, different_previous_candidates, value).unwrap(),
-            ),
-            (
-                OldDeduction::with_remaining_candidates(
-                    pos,
-                    previous_candidates,
-                    remaining_candidates,
-                )
-                .unwrap(),
-                OldDeduction::with_remaining_candidates(
-                    pos,
-                    different_previous_candidates,
-                    remaining_candidates,
-                )
-                .unwrap(),
-            ),
-            // Different value
-            (
-                OldDeduction::with_value(pos, previous_candidates, value).unwrap(),
-                OldDeduction::with_value(pos, previous_candidates, different_value).unwrap(),
-            ),
-            // No intersection
-            (
-                OldDeduction::with_remaining_candidates(
-                    pos,
-                    previous_candidates,
-                    remaining_candidates,
-                )
-                .unwrap(),
-                OldDeduction::with_remaining_candidates(
-                    pos,
-                    previous_candidates,
-                    different_remaining_candidates,
-                )
-                .unwrap(),
-            ),
-        ];
-
-        for (left_strategy, right_strategy) in err_cases {
-            assert!(left_strategy.merge(&right_strategy).is_err());
-        }
-    }
+    // #[test]
+    // fn test_deductions_order_independence() {
+    //     use itertools::Itertools;
+    //
+    //     let pos = DynamicPosition { row: 0, column: 0 };
+    //     let previous_candidates: Candidates<Base2> = Candidates::all();
+    //     let remaining_candidates: Candidates<Base2> = vec![1, 2].try_into().unwrap();
+    //
+    //     let value_deduction_1 =
+    //         OldDeduction::with_value(pos, previous_candidates, 1.try_into().unwrap()).unwrap();
+    //     let value_deduction_2 = OldDeduction::with_value(
+    //         DynamicPosition { row: 1, column: 1 },
+    //         previous_candidates,
+    //         2.try_into().unwrap(),
+    //     )
+    //     .unwrap();
+    //     let remaining_candidates_deduction =
+    //         OldDeduction::with_remaining_candidates(pos, previous_candidates, remaining_candidates)
+    //             .unwrap();
+    //
+    //     let all_deductions: Vec<OldDeduction<Base2>> = vec![
+    //         value_deduction_1,
+    //         value_deduction_2,
+    //         remaining_candidates_deduction,
+    //     ];
+    //     let deductions: OldDeductions<Base2> =
+    //         IntoDeductions(all_deductions.clone()).try_into().unwrap();
+    //     for deduction_permutation in all_deductions.into_iter().permutations(3) {
+    //         assert_eq!(
+    //             OldDeductions::<Base2>::try_from(IntoDeductions(deduction_permutation)).unwrap(),
+    //             deductions
+    //         );
+    //     }
+    // }
+    //
+    // #[test]
+    // fn test_deduction_apply() {
+    //     let mut grid = samples::base_2_candidates_coordinates();
+    //
+    //     let pos = DynamicPosition { row: 0, column: 1 };
+    //     let value = 1.try_into().unwrap();
+    //     OldDeduction::with_value(pos, Candidates::single(1.try_into().unwrap()), value)
+    //         .unwrap()
+    //         .apply(&mut grid);
+    //     assert_eq!(*grid.get(pos), Cell::with_value(value, false));
+    //
+    //     let pos = DynamicPosition { row: 3, column: 3 };
+    //     let candidates = vec![2, 4].try_into().unwrap();
+    //     OldDeduction::with_remaining_candidates(pos, Candidates::all(), candidates)
+    //         .unwrap()
+    //         .apply(&mut grid);
+    //     assert_eq!(*grid.get(pos), Cell::with_candidates(candidates));
+    // }
+    //
+    // #[test]
+    // fn test_deduction_merge() {
+    //     let pos = DynamicPosition { row: 1, column: 1 };
+    //     let previous_candidates: Candidates<Base2> = Candidates::all();
+    //     let remaining_candidates: Candidates<Base2> = Candidates::single(1.try_into().unwrap());
+    //     let value: Value<Base2> = 1.try_into().unwrap();
+    //
+    //     let cases: Vec<(
+    //         OldDeduction<Base2>,
+    //         OldDeduction<Base2>,
+    //         OldDeduction<Base2>,
+    //     )> = vec![
+    //         // Equal
+    //         (
+    //             OldDeduction::with_value(pos, previous_candidates, value).unwrap(),
+    //             OldDeduction::with_value(pos, previous_candidates, value).unwrap(),
+    //             OldDeduction::with_value(pos, previous_candidates, value).unwrap(),
+    //         ),
+    //         // Left Value overwrites right PruneCandidates
+    //         (
+    //             OldDeduction::with_value(pos, previous_candidates, value).unwrap(),
+    //             OldDeduction::with_remaining_candidates(
+    //                 pos,
+    //                 previous_candidates,
+    //                 remaining_candidates,
+    //             )
+    //             .unwrap(),
+    //             OldDeduction::with_value(pos, previous_candidates, value).unwrap(),
+    //         ),
+    //         // Right Value overwrites left PruneCandidates
+    //         (
+    //             OldDeduction::with_remaining_candidates(
+    //                 pos,
+    //                 previous_candidates,
+    //                 remaining_candidates,
+    //             )
+    //             .unwrap(),
+    //             OldDeduction::with_value(pos, previous_candidates, value).unwrap(),
+    //             OldDeduction::with_value(pos, previous_candidates, value).unwrap(),
+    //         ),
+    //         // Intersect PruneCandidates
+    //         (
+    //             OldDeduction::with_remaining_candidates(
+    //                 pos,
+    //                 previous_candidates,
+    //                 vec![1, 2, 4].try_into().unwrap(),
+    //             )
+    //             .unwrap(),
+    //             OldDeduction::with_remaining_candidates(
+    //                 pos,
+    //                 previous_candidates,
+    //                 vec![1, 3, 4].try_into().unwrap(),
+    //             )
+    //             .unwrap(),
+    //             OldDeduction::with_remaining_candidates(
+    //                 pos,
+    //                 previous_candidates,
+    //                 vec![1, 4].try_into().unwrap(),
+    //             )
+    //             .unwrap(),
+    //         ),
+    //     ];
+    //
+    //     for (left_strategy, right_strategy, expected_strategy) in cases {
+    //         assert_eq!(
+    //             left_strategy.merge(&right_strategy).unwrap(),
+    //             expected_strategy
+    //         );
+    //     }
+    // }
+    // #[test]
+    // fn test_deduction_merge_err() {
+    //     let pos = DynamicPosition { row: 1, column: 1 };
+    //     let different_pos = DynamicPosition { row: 2, column: 2 };
+    //     let previous_candidates: Candidates<Base2> = Candidates::all();
+    //     let different_previous_candidates: Candidates<Base2> = vec![1, 2].try_into().unwrap();
+    //     let remaining_candidates: Candidates<Base2> = Candidates::single(1.try_into().unwrap());
+    //     let different_remaining_candidates: Candidates<Base2> =
+    //         Candidates::single(2.try_into().unwrap());
+    //     let value: Value<Base2> = 1.try_into().unwrap();
+    //     let different_value: Value<Base2> = 2.try_into().unwrap();
+    //
+    //     let err_cases: Vec<(OldDeduction<Base2>, OldDeduction<Base2>)> = vec![
+    //         // Different pos
+    //         (
+    //             OldDeduction::with_value(pos, previous_candidates, value).unwrap(),
+    //             OldDeduction::with_value(different_pos, previous_candidates, value).unwrap(),
+    //         ),
+    //         (
+    //             OldDeduction::with_remaining_candidates(
+    //                 pos,
+    //                 previous_candidates,
+    //                 remaining_candidates,
+    //             )
+    //             .unwrap(),
+    //             OldDeduction::with_remaining_candidates(
+    //                 different_pos,
+    //                 previous_candidates,
+    //                 remaining_candidates,
+    //             )
+    //             .unwrap(),
+    //         ),
+    //         // Different previous_candidates
+    //         (
+    //             OldDeduction::with_value(pos, previous_candidates, value).unwrap(),
+    //             OldDeduction::with_value(pos, different_previous_candidates, value).unwrap(),
+    //         ),
+    //         (
+    //             OldDeduction::with_remaining_candidates(
+    //                 pos,
+    //                 previous_candidates,
+    //                 remaining_candidates,
+    //             )
+    //             .unwrap(),
+    //             OldDeduction::with_remaining_candidates(
+    //                 pos,
+    //                 different_previous_candidates,
+    //                 remaining_candidates,
+    //             )
+    //             .unwrap(),
+    //         ),
+    //         // Different value
+    //         (
+    //             OldDeduction::with_value(pos, previous_candidates, value).unwrap(),
+    //             OldDeduction::with_value(pos, previous_candidates, different_value).unwrap(),
+    //         ),
+    //         // No intersection
+    //         (
+    //             OldDeduction::with_remaining_candidates(
+    //                 pos,
+    //                 previous_candidates,
+    //                 remaining_candidates,
+    //             )
+    //             .unwrap(),
+    //             OldDeduction::with_remaining_candidates(
+    //                 pos,
+    //                 previous_candidates,
+    //                 different_remaining_candidates,
+    //             )
+    //             .unwrap(),
+    //         ),
+    //     ];
+    //
+    //     for (left_strategy, right_strategy) in err_cases {
+    //         assert!(left_strategy.merge(&right_strategy).is_err());
+    //     }
+    // }
 }

@@ -5,6 +5,14 @@ use anyhow::ensure;
 use crate::base::SudokuBase;
 use crate::error::{Error, Result};
 
+/// A coordinate/index in a sudoku grid.
+///
+/// Can represent three different dimensions:
+///
+/// # Row
+/// # Column
+/// # Block
+/// TODO: visualize
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Default)]
 pub struct Coordinate<Base: SudokuBase> {
     /// # Safety invariants
@@ -32,7 +40,7 @@ impl<Base: SudokuBase> Coordinate<Base> {
     /// # Safety
     ///
     /// `coordinate < Base::SIDE_LENGTH` must be true.
-    pub(super) unsafe fn new_unchecked(coordinate: u8) -> Self {
+    pub(crate) unsafe fn new_unchecked(coordinate: u8) -> Self {
         let this = Self {
             coordinate,
             _base: PhantomData,
@@ -83,11 +91,11 @@ impl<Base: SudokuBase> Coordinate<Base> {
 
 /// Getters
 impl<Base: SudokuBase> Coordinate<Base> {
-    pub fn get(&self) -> u8 {
+    pub fn get(self) -> u8 {
         self.coordinate
     }
 
-    pub fn get_u16(&self) -> u16 {
+    pub fn get_u16(self) -> u16 {
         u16::from(self.coordinate)
     }
 }

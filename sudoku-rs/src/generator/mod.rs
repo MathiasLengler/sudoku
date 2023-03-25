@@ -8,8 +8,8 @@ use ts_rs::TS;
 
 use crate::base::SudokuBase;
 use crate::cell::compact::value::Value;
+use crate::grid::index::position::Position;
 use crate::grid::Grid;
-use crate::position::DynamicPosition;
 use crate::solver::backtracking;
 use crate::solver::backtracking::CandidatesVisitOrder;
 use crate::solver::strategic::strategies::{Backtracking, DynamicStrategy};
@@ -141,7 +141,7 @@ impl Generator {
     fn try_delete_cell_at_pos<Base: SudokuBase>(
         &self,
         grid: &mut Grid<Base>,
-        pos: DynamicPosition,
+        pos: Position<Base>,
     ) -> Option<Value<Base>> {
         let cell = grid.get(pos);
 
@@ -206,7 +206,7 @@ impl Generator {
         all_positions.shuffle(&mut self.rng());
         let all_positions_count = Grid::<Base>::cell_count_usize();
 
-        let mut deleted: Vec<(DynamicPosition, Value<Base>)> = vec![];
+        let mut deleted: Vec<(Position<Base>, Value<Base>)> = vec![];
 
         // Reduce grid to a minimal solution.
         for (i, pos) in all_positions.into_iter().enumerate() {

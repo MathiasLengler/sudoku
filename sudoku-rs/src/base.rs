@@ -12,6 +12,7 @@ use consts::*;
 
 use crate::cell::candidates_cell::CandidatesCell;
 use crate::grid::index::coordinate::Coordinate;
+use crate::grid::index::position::Position;
 
 pub mod consts {
     pub use Base5 as BaseMax;
@@ -50,6 +51,10 @@ const fn base_to_cell_count(base: u8) -> u16 {
 }
 
 mod cell_index_to_block_index {
+    //! # Safety
+    //! Each `array` must fulfill the following properties for its respective `Base`:
+    //! - For all values (`block_index`): `block_index < Base::SIDE_LENGTH`
+    //! - `array.len() == Base::CELL_COUNT`
     use super::*;
 
     pub(super) static BASE_2: &[u8; base_to_cell_count(2) as usize] = &[
@@ -118,7 +123,11 @@ mod cell_index_to_block_index {
     ];
 }
 
-mod block_to_top_left_cell_index {
+mod block_index_to_top_left_cell_index {
+    //! # Safety
+    //! Each `array` must fulfill the following properties for its respective `Base`:
+    //! - For all values (`cell_index`): `cell_index < Base::CELL_COUNT`
+    //! - `array.len() == Base::SIDE_LENGTH`
     use super::*;
 
     pub(super) static BASE_2: [u16; base_to_side_length(2) as usize] = [0, 2, 8, 10];
@@ -137,7 +146,7 @@ mod block_to_top_left_cell_index {
 ///
 /// The base of sudoku equals the
 ///
-/// Implementations for bases `1..=5` are provided by this crate.
+/// Implementations for bases `2..=5` are provided by this crate.
 ///
 /// # Safety
 /// This crate makes assumptions about the correct implementation of this trait.
@@ -164,15 +173,11 @@ where
     /// The total cell count of the sudoku.
     const CELL_COUNT: u16;
 
-    /// Get the the block index for a specific cell index.
-    fn cell_index_to_block_index(cell_index: u16) -> u8;
+    /// For a given cell position, returns the coordinate of the block it is contained in.
+    fn pos_to_block(pos: Position<Self>) -> Coordinate<Self>;
 
-    /// Get the cell index of the top left cell in a block based on its index.
-    ///
-    /// # Safety
-    ///
-    /// The returned `cell_index` must fulfill `cell_index < Base::CELL_COUNT`.
-    fn block_to_top_left_cell_index(block: Coordinate<Self>) -> u16;
+    /// For a given block, returns the position of the top left cell in this block.
+    fn block_to_top_left_pos(block: Coordinate<Self>) -> Position<Self>;
 
     /// Bit field type for candidates storage.
     type CandidatesIntegral: Copy
@@ -206,7 +211,7 @@ where
 }
 
 macro_rules! impl_sudoku_base {
-    ($($type_num:ty,$base_u8:expr,$type_integral:ty,$CELL_INDEX_TO_BLOCK_INDEX:expr,$BLOCK_TO_TOP_LEFT_CELL_INDEX:expr;)+) => {
+    ($($type_num:ty,$base_u8:expr,$type_integral:ty,$CELL_INDEX_TO_BLOCK_INDEX:expr,$BLOCK_INDEX_TO_TOP_LEFT_CELL_INDEX:expr;)+) => {
         $(
 // Safety: this private macro is only instantiated below and the correctness of the generated impls is tested.
 unsafe impl SudokuBase for $type_num {
@@ -215,15 +220,26 @@ unsafe impl SudokuBase for $type_num {
     const MAX_VALUE: u8 = base_to_max_value(Self::BASE);
     const CELL_COUNT: u16 = base_to_cell_count(Self::BASE);
 
-    fn cell_index_to_block_index(cell_index: u16) -> u8 {
-        $CELL_INDEX_TO_BLOCK_INDEX[usize::from(cell_index)]
+    fn pos_to_block(pos: Position<Self>) -> Coordinate<Self> {
+        let cell_index = usize::from(pos.cell_index());
+        debug_assert!($CELL_INDEX_TO_BLOCK_INDEX.get(cell_index).is_some());
+        // Safety:
+        // Relies on invariants:
+        // - `CELL_INDEX_TO_BLOCK_INDEX.len() == Base::CELL_COUNT` from module `cell_index_to_block_index`
+        // - `pos.cell_index < Base::CELL_COUNT` from `Position<Base>`
+        let block_index = unsafe { *$CELL_INDEX_TO_BLOCK_INDEX.get_unchecked(cell_index) };
+        // Safety: `block_index` remains in-bounds, guaranteed by module `cell_index_to_block_index`
+        unsafe { Coordinate::new_unchecked(block_index) }
     }
 
-    fn block_to_top_left_cell_index(block: Coordinate<Self>) -> u16 {
+    fn block_to_top_left_pos(block: Coordinate<Self>) -> Position<Self> {
         let index = usize::from(block.get());
-        debug_assert!($BLOCK_TO_TOP_LEFT_CELL_INDEX.get(index).is_some());
+        debug_assert!($BLOCK_INDEX_TO_TOP_LEFT_CELL_INDEX.get(index).is_some());
         // Safety: `BLOCK_TO_TOP_LEFT_CELL_INDEX` has at least `Base::SIDE_LENGTH` elements.
-        unsafe { *$BLOCK_TO_TOP_LEFT_CELL_INDEX.get_unchecked(index) }
+        let cell_index = unsafe { *$BLOCK_INDEX_TO_TOP_LEFT_CELL_INDEX.get_unchecked(index) };
+
+        // Safety: `cell_index` remains in-bounds, guaranteed by module `block_to_top_left_cell_index`
+        unsafe { Position::new_unchecked(cell_index) }
     }
 
     type CandidatesIntegral = $type_integral;
@@ -236,15 +252,16 @@ unsafe impl SudokuBase for $type_num {
 
 // All sudoku bases supported by DynamicSudoku, and U1 for testing.
 impl_sudoku_base!(
-    Base2, 2, u8, cell_index_to_block_index::BASE_2, block_to_top_left_cell_index::BASE_2;
-    Base3, 3, u16, cell_index_to_block_index::BASE_3, block_to_top_left_cell_index::BASE_3;
-    Base4, 4, u16, cell_index_to_block_index::BASE_4, block_to_top_left_cell_index::BASE_4;
-    Base5, 5, u32, cell_index_to_block_index::BASE_5, block_to_top_left_cell_index::BASE_5;
+    Base2, 2, u8, cell_index_to_block_index::BASE_2, block_index_to_top_left_cell_index::BASE_2;
+    Base3, 3, u16, cell_index_to_block_index::BASE_3, block_index_to_top_left_cell_index::BASE_3;
+    Base4, 4, u16, cell_index_to_block_index::BASE_4, block_index_to_top_left_cell_index::BASE_4;
+    Base5, 5, u32, cell_index_to_block_index::BASE_5, block_index_to_top_left_cell_index::BASE_5;
 );
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::position::DynamicPosition;
 
     #[test]
     fn test_base_to_side_length() {
@@ -381,7 +398,97 @@ mod tests {
     }
 
     #[test]
-    fn test_block_to_top_left_cell_index() {
-        todo!()
+    fn test_pos_to_block() {
+        let base2: Vec<_> = Position::<Base2>::all()
+            .map(SudokuBase::pos_to_block)
+            .map(Coordinate::get)
+            .collect();
+        assert_eq!(cell_index_to_block_index::BASE_2, base2.as_slice());
+
+        let base3: Vec<_> = Position::<Base3>::all()
+            .map(SudokuBase::pos_to_block)
+            .map(Coordinate::get)
+            .collect();
+        assert_eq!(cell_index_to_block_index::BASE_3, base3.as_slice());
+
+        let base4: Vec<_> = Position::<Base4>::all()
+            .map(SudokuBase::pos_to_block)
+            .map(Coordinate::get)
+            .collect();
+        assert_eq!(cell_index_to_block_index::BASE_4, base4.as_slice());
+
+        let base5: Vec<_> = Position::<Base5>::all()
+            .map(SudokuBase::pos_to_block)
+            .map(Coordinate::get)
+            .collect();
+        assert_eq!(cell_index_to_block_index::BASE_5, base5.as_slice());
+    }
+
+    #[test]
+    fn test_mod_block_to_top_left_pos() {
+        fn generate_block_to_top_left_cell_index(base: u8) -> Vec<u16> {
+            use num::Integer;
+
+            let side_length = base_to_side_length(base);
+            (0..side_length)
+                .map(|block_index| {
+                    let (block_row, block_column) = block_index.div_rem(&base);
+
+                    let DynamicPosition {
+                        row: base_row,
+                        column: base_column,
+                    } = DynamicPosition {
+                        row: block_row,
+                        column: block_column,
+                    } * base;
+
+                    u16::from(base_row) * u16::from(side_length) + u16::from(base_column)
+                })
+                .collect()
+        }
+
+        assert_eq!(
+            block_index_to_top_left_cell_index::BASE_2,
+            generate_block_to_top_left_cell_index(2).as_slice()
+        );
+        assert_eq!(
+            block_index_to_top_left_cell_index::BASE_3,
+            generate_block_to_top_left_cell_index(3).as_slice()
+        );
+        assert_eq!(
+            block_index_to_top_left_cell_index::BASE_4,
+            generate_block_to_top_left_cell_index(4).as_slice()
+        );
+        assert_eq!(
+            block_index_to_top_left_cell_index::BASE_5,
+            generate_block_to_top_left_cell_index(5).as_slice()
+        );
+    }
+
+    #[test]
+    fn test_fn_block_to_top_left_pos() {
+        let base2: Vec<_> = Coordinate::<Base2>::all()
+            .map(SudokuBase::block_to_top_left_pos)
+            .map(Position::cell_index)
+            .collect();
+        assert_eq!(block_index_to_top_left_cell_index::BASE_2, base2.as_slice());
+
+        let base3: Vec<_> = Coordinate::<Base3>::all()
+            .map(SudokuBase::block_to_top_left_pos)
+            .map(Position::cell_index)
+            .collect();
+        assert_eq!(block_index_to_top_left_cell_index::BASE_3, base3.as_slice());
+
+        let base4: Vec<_> = Coordinate::<Base4>::all()
+            .map(SudokuBase::block_to_top_left_pos)
+            .map(Position::cell_index)
+            .collect();
+        assert_eq!(block_index_to_top_left_cell_index::BASE_4, base4.as_slice());
+
+        let base5: Vec<_> = Coordinate::<Base5>::all()
+            .map(SudokuBase::block_to_top_left_pos)
+            .map(Position::cell_index)
+            .collect();
+        assert_eq!(block_index_to_top_left_cell_index::BASE_5, base5.as_slice());
     }
 }

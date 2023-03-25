@@ -199,7 +199,6 @@ fn render_candidates_grid<Base: SudokuBase>(grid: &Grid<Base>) -> String {
 
 #[cfg(test)]
 mod tests {
-    use crate::position::DynamicPosition;
     use crate::samples::{base_2, base_3};
 
     use super::*;
@@ -247,7 +246,7 @@ mod tests {
     fn test_render_candidates_grid() {
         let mut grid = base_2().pop().unwrap();
         grid.fix_all_values();
-        grid.get_mut(DynamicPosition { row: 0, column: 1 })
+        grid.get_mut((0, 1).try_into().unwrap())
             .set_value(2.try_into().unwrap());
         grid.set_all_direct_candidates();
 

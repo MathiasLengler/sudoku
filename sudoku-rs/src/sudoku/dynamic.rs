@@ -1,4 +1,4 @@
-use std::any::{Any, TypeId};
+use std::any::Any;
 use std::convert::{TryFrom, TryInto};
 
 use anyhow::{anyhow, bail, format_err};
@@ -32,7 +32,7 @@ mod game {
         fn toggle_candidate(&mut self, pos: DynamicPosition, candidate: u8) -> Result<()>;
         fn set_candidate(&mut self, pos: DynamicPosition, candidate: u8) -> Result<()>;
         fn delete_candidate(&mut self, pos: DynamicPosition, candidate: u8) -> Result<()>;
-        fn delete(&mut self, pos: DynamicPosition);
+        fn delete(&mut self, pos: DynamicPosition) -> Result<()>;
         fn set_all_direct_candidates(&mut self);
         fn try_strategy(&mut self, strategy: DynamicStrategy) -> Result<bool>;
         fn undo(&mut self);
@@ -64,14 +64,14 @@ impl DynamicSudoku {
             unexpected_base => bail!(Self::unexpected_base_err(unexpected_base)),
         })
     }
-    pub fn with_sudoku<Base: SudokuBase + 'static>(sudoku: Sudoku<Base>) -> Result<Self> {
+    pub fn with_sudoku<Base: SudokuBase>(sudoku: Sudoku<Base>) -> Result<Self> {
         let any_sudoku: Box<dyn Any> = Box::new(sudoku);
 
-        Ok(match TypeId::of::<Base>() {
-            id if id == TypeId::of::<Base2>() => Self::Base2(*(any_sudoku.downcast().unwrap())),
-            id if id == TypeId::of::<Base3>() => Self::Base3(*(any_sudoku.downcast().unwrap())),
-            id if id == TypeId::of::<Base4>() => Self::Base4(*(any_sudoku.downcast().unwrap())),
-            id if id == TypeId::of::<Base5>() => Self::Base5(*(any_sudoku.downcast().unwrap())),
+        Ok(match Base::BASE {
+            2 => Self::Base2(*(any_sudoku.downcast().unwrap())),
+            3 => Self::Base3(*(any_sudoku.downcast().unwrap())),
+            4 => Self::Base4(*(any_sudoku.downcast().unwrap())),
+            5 => Self::Base5(*(any_sudoku.downcast().unwrap())),
             _ => bail!(Self::unexpected_base_err(Base::BASE)),
         })
     }

@@ -123,8 +123,7 @@ impl WasmSudoku {
     }
 
     pub fn delete(&mut self, pos: IPosition) -> Result<()> {
-        self.sudoku.delete(import_pos(pos)?);
-        Ok(())
+        self.sudoku.delete(import_pos(pos)?).map_err(export_error)
     }
 
     #[wasm_bindgen(js_name = setAllDirectCandidates)]

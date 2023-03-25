@@ -9,7 +9,9 @@ export * from "./DynamicStrategy";
 export * from "./GeneratorSettings";
 export * from "./GeneratorTarget";
 export * from "./GridFormat";
+// TODO: unify naming
 export type { DynamicPosition as Position } from "./DynamicPosition";
+export type { Position as BasePosition } from "./Position";
 export * from "./Reason";
 export * from "./TransportAction";
 export * from "./TransportCell";

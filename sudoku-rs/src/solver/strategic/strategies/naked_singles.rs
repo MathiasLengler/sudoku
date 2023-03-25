@@ -61,7 +61,7 @@ mod tests {
         .into_iter()
         .map(|(pos, value)| {
             Deduction::with_action(
-                pos,
+                pos.try_into().unwrap(),
                 Action::SetValue {
                     value: Value::try_from(value).unwrap(),
                 },

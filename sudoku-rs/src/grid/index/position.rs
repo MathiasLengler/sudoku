@@ -1,6 +1,9 @@
+use std::fmt;
+use std::fmt::Display;
 use std::marker::PhantomData;
 
 use anyhow::ensure;
+use serde::{Serialize, Serializer};
 
 use crate::base::SudokuBase;
 use crate::error::{Error, Result};
@@ -15,6 +18,13 @@ pub struct Position<Base: SudokuBase> {
     /// - `cell_index < Base::CELL_COUNT`
     cell_index: u16,
     _base: PhantomData<Base>,
+}
+
+impl<Base: SudokuBase> Display for Position<Base> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let dynamic_pos: DynamicPosition = (*self).into();
+        write!(f, "{}", dynamic_pos)
+    }
 }
 
 /// Constructors
@@ -122,6 +132,10 @@ impl<Base: SudokuBase> Position<Base> {
         unsafe { Coordinate::new_unchecked_u16(column) }
     }
 
+    pub fn to_block(self) -> Coordinate<Base> {
+        Base::pos_to_block(self)
+    }
+
     pub fn to_row_and_column(self) -> (Coordinate<Base>, Coordinate<Base>) {
         (self.to_row(), self.to_column())
     }
@@ -161,13 +175,8 @@ impl<Base: SudokuBase> Position<Base> {
         Coordinate::all().map(Self::column)
     }
 
-    pub fn block_top_left(block: Coordinate<Base>) -> Self {
-        // Safety: the `cell_index` returned by `block_to_top_left_cell_index` remains in-bounds.
-        unsafe { Self::new_unchecked(Base::block_to_top_left_cell_index(block)) }
-    }
-
     pub fn block(block: Coordinate<Base>) -> impl Iterator<Item = Self> {
-        let block_top_left = Self::block_top_left(block);
+        let block_top_left = Base::block_to_top_left_pos(block);
 
         (block_top_left.cell_index()..)
             .step_by(usize::from(Base::SIDE_LENGTH))
@@ -183,6 +192,52 @@ impl<Base: SudokuBase> Position<Base> {
 
     pub fn all_blocks() -> impl Iterator<Item = impl Iterator<Item = Self>> {
         Coordinate::all().map(Self::block)
+    }
+}
+
+impl<Base: SudokuBase> Serialize for Position<Base> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_u16(self.cell_index())
+    }
+}
+
+#[cfg(feature = "wasm")]
+mod wasm {
+    use ts_rs::TS;
+
+    use super::*;
+
+    impl<Base: SudokuBase> TS for Position<Base> {
+        const EXPORT_TO: Option<&'static str> = Some("bindings/Position.ts");
+        fn decl() -> String {
+            "type Position = number;".to_owned()
+        }
+        fn name() -> String {
+            "Position".to_owned()
+        }
+        fn name_with_type_args(_args: Vec<String>) -> String {
+            Self::name()
+        }
+        fn inline() -> String {
+            "number".to_owned()
+        }
+        fn dependencies() -> Vec<ts_rs::Dependency> {
+            vec![]
+        }
+        fn transparent() -> bool {
+            false
+        }
+    }
+
+    #[cfg(test)]
+    #[test]
+    fn export_bindings_value() {
+        use crate::base::consts::Base3;
+
+        <Position<Base3> as ts_rs::TS>::export().expect("could not export type");
     }
 }
 
@@ -202,7 +257,7 @@ mod tests {
 
     mod iterators {
         use super::*;
-        use crate::base::consts::{Base3, Base4, Base5};
+        use crate::base::consts::Base5;
         use crate::grid::index::test_utils::{consume_iter, consume_nested_iter};
 
         #[test]
@@ -365,32 +420,6 @@ mod tests {
                         expected_row.into_iter().map(|pos| pos.try_into().unwrap()),
                     );
                 });
-        }
-
-        #[test]
-        fn test_block_top_left() {
-            let base2: Vec<_> = Coordinate::<Base2>::all()
-                .map(Position::block_top_left)
-                .map(Position::cell_index)
-                .collect();
-            dbg!(base2);
-            let base3: Vec<_> = Coordinate::<Base3>::all()
-                .map(Position::block_top_left)
-                .map(Position::cell_index)
-                .collect();
-            dbg!(base3);
-            let base4: Vec<_> = Coordinate::<Base4>::all()
-                .map(Position::block_top_left)
-                .map(Position::cell_index)
-                .collect();
-            dbg!(base4);
-            let base5: Vec<_> = Coordinate::<Base5>::all()
-                .map(Position::block_top_left)
-                .map(Position::cell_index)
-                .collect();
-            dbg!(base5);
-
-            todo!()
         }
 
         #[test]

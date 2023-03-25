@@ -3,11 +3,17 @@ use anyhow::ensure;
 use crate::base::SudokuBase;
 use crate::cell::compact::value::Value;
 use crate::error::Result;
+use crate::grid::index::position::Position;
 use crate::grid::Grid;
-use crate::position::DynamicPosition;
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions};
 
 use super::Strategy;
+
+#[derive(Debug, Copy, Clone, Default)]
+struct CandidateStats<Base: SudokuBase> {
+    count: u8,
+    last_pos: Option<Position<Base>>,
+}
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct HiddenSingles;
@@ -21,12 +27,6 @@ impl Strategy for HiddenSingles {
 
         Ok(Grid::<Base>::all_group_positions()
             .flat_map(|group_positions| {
-                #[derive(Debug, Copy, Clone, Default)]
-                struct CandidateStats {
-                    count: u8,
-                    last_pos: Option<DynamicPosition>,
-                }
-
                 // TODO: evaluate better data structure
                 //  - stack allocated
                 //  - Value<Base> API, less conversions
@@ -98,7 +98,7 @@ mod tests {
         .into_iter()
         .map(|(pos, value)| {
             Deduction::with_action(
-                pos,
+                pos.try_into().unwrap(),
                 Action::SetValue {
                     value: Value::try_from(value).unwrap(),
                 },

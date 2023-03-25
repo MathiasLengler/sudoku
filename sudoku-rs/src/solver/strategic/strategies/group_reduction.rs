@@ -389,7 +389,7 @@ mod tests {
             Deduction::try_from_actions(positioned_candidates.into_iter().map(
                 |(pos, candidates)| {
                     (
-                        pos.into(),
+                        pos.try_into().unwrap(),
                         Action::DeleteCandidates {
                             candidates: Candidates::try_from(candidates).unwrap(),
                         },
@@ -447,7 +447,7 @@ mod tests {
             Deduction::try_from_actions(positioned_candidates.into_iter().map(
                 |(pos, candidates)| {
                     (
-                        pos.into(),
+                        pos.try_into().unwrap(),
                         Action::DeleteCandidates {
                             candidates: Candidates::try_from(candidates).unwrap(),
                         },
