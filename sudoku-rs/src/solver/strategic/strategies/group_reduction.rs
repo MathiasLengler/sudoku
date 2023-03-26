@@ -38,9 +38,7 @@ impl Strategy for GroupReduction {
                     if candidates != reduced_candidates {
                         deduction.actions.insert(
                             position,
-                            Action::DeleteCandidates {
-                                candidates: candidates.without(reduced_candidates),
-                            },
+                            Action::DeleteCandidates(candidates.without(reduced_candidates)),
                         )?;
                     }
                 }
@@ -390,9 +388,7 @@ mod tests {
                 |(pos, candidates)| {
                     (
                         pos.try_into().unwrap(),
-                        Action::DeleteCandidates {
-                            candidates: Candidates::try_from(candidates).unwrap(),
-                        },
+                        Action::DeleteCandidates(Candidates::try_from(candidates).unwrap()),
                     )
                 },
             ))
@@ -448,9 +444,7 @@ mod tests {
                 |(pos, candidates)| {
                     (
                         pos.try_into().unwrap(),
-                        Action::DeleteCandidates {
-                            candidates: Candidates::try_from(candidates).unwrap(),
-                        },
+                        Action::DeleteCandidates(Candidates::try_from(candidates).unwrap()),
                     )
                 },
             ))

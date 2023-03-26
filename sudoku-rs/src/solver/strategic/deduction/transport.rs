@@ -82,35 +82,25 @@ mod tests {
             reasons: vec![
                 TransportReason {
                     position: (1, 1).try_into().unwrap(),
-                    reason: Reason::Candidates {
-                        candidates: Candidates::all(),
-                    },
+                    reason: Reason::Candidates(Candidates::all()),
                 },
                 TransportReason {
                     position: (1, 1).try_into().unwrap(),
-                    reason: Reason::Candidate {
-                        candidate: Value::try_from(1).unwrap(),
-                    },
+                    reason: Reason::candidate(Value::try_from(1).unwrap()),
                 },
             ],
             actions: vec![
                 TransportAction {
                     position: (1, 1).try_into().unwrap(),
-                    action: Action::SetValue {
-                        value: Value::try_from(1).unwrap(),
-                    },
+                    action: Action::set_value(Value::try_from(1).unwrap()),
                 },
                 TransportAction {
                     position: (1, 1).try_into().unwrap(),
-                    action: Action::DeleteCandidate {
-                        candidate: Value::try_from(2).unwrap(),
-                    },
+                    action: Action::delete_candidate(Value::try_from(2).unwrap()),
                 },
                 TransportAction {
                     position: (1, 1).try_into().unwrap(),
-                    action: Action::DeleteCandidates {
-                        candidates: Candidates::all(),
-                    },
+                    action: Action::delete_candidates(Candidates::all()),
                 },
             ],
         };

@@ -30,7 +30,7 @@ impl<Base: SudokuBase> CandidatesCell<Base> {
     /// Constructs a new cell with a value and if it should be fixed.
     pub(crate) fn with_value(value: Value<Base>) -> Self {
         Self {
-            candidates: Candidates::single(value),
+            candidates: Candidates::with_single(value),
         }
     }
 
@@ -81,7 +81,7 @@ impl<Base: SudokuBase> CandidatesCell<Base> {
     /// Returns true if a new value has been set.
     pub(crate) fn set_or_toggle_value(&mut self, value: Value<Base>) -> bool {
         // Remove other candidates
-        self.candidates = self.candidates.intersection(Candidates::single(value));
+        self.candidates = self.candidates.intersection(Candidates::with_single(value));
 
         // Toggle value
         self.candidates.toggle(value);

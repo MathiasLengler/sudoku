@@ -68,12 +68,7 @@ impl NakedPairs {
                             if deleted_candidates.is_empty() {
                                 None
                             } else {
-                                Some((
-                                    pos,
-                                    Action::DeleteCandidates {
-                                        candidates: deleted_candidates,
-                                    },
-                                ))
+                                Some((pos, Action::DeleteCandidates(deleted_candidates)))
                             }
                         })
                         .for_each(|(pos, action)| {
@@ -87,21 +82,11 @@ impl NakedPairs {
                         let [first_pos, second_pos] = positions;
                         deduction
                             .reasons
-                            .insert(
-                                first_pos,
-                                Reason::Candidates {
-                                    candidates: pair_candidates,
-                                },
-                            )
+                            .insert(first_pos, Reason::Candidates(pair_candidates))
                             .unwrap();
                         deduction
                             .reasons
-                            .insert(
-                                second_pos,
-                                Reason::Candidates {
-                                    candidates: pair_candidates,
-                                },
-                            )
+                            .insert(second_pos, Reason::Candidates(pair_candidates))
                             .unwrap();
 
                         Some(deduction)
@@ -235,17 +220,15 @@ mod tests {
                             reasons.into_iter().map(|(pos, candidates)| {
                                 (
                                     pos.try_into().unwrap(),
-                                    Reason::Candidates {
-                                        candidates: Candidates::try_from(candidates).unwrap(),
-                                    },
+                                    Reason::Candidates(Candidates::try_from(candidates).unwrap()),
                                 )
                             }),
                             actions.into_iter().map(|(pos, candidates)| {
                                 (
                                     pos.try_into().unwrap(),
-                                    Action::DeleteCandidates {
-                                        candidates: Candidates::try_from(candidates).unwrap(),
-                                    },
+                                    Action::DeleteCandidates(
+                                        Candidates::try_from(candidates).unwrap(),
+                                    ),
                                 )
                             }),
                         )

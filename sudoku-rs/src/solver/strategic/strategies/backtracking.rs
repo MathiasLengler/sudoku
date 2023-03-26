@@ -20,9 +20,7 @@ impl Strategy for Backtracking {
                 .map(|pos| {
                     Deduction::with_action(
                         pos,
-                        Action::SetValue {
-                            value: solved_grid.get(pos).value().unwrap(),
-                        },
+                        Action::SetValue(solved_grid.get(pos).value().unwrap()),
                     )
                 })
                 .collect())
@@ -62,9 +60,7 @@ mod tests {
         .map(|(pos, value)| {
             Deduction::with_action(
                 pos.try_into().unwrap(),
-                Action::SetValue {
-                    value: Value::try_from(value).unwrap(),
-                },
+                Action::SetValue(Value::try_from(value).unwrap()),
             )
         })
         .collect();

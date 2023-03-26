@@ -23,18 +23,22 @@ use crate::solver::strategic::deduction::Merge;
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize)]
 #[serde(bound = "", rename_all = "camelCase")]
 pub enum Action<Base: SudokuBase> {
-    SetValue { value: Value<Base> },
-    DeleteCandidates { candidates: Candidates<Base> },
+    SetValue(Value<Base>),
+    DeleteCandidates(Candidates<Base>),
 }
 
 impl<Base: SudokuBase> Display for Action<Base> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Action::SetValue { value } => {
+            Action::SetValue(value) => {
                 write!(f, "set value {value}")
             }
-            Action::DeleteCandidates { candidates } => {
-                write!(f, "delete candidates {candidates}")
+            Action::DeleteCandidates(candidates) => {
+                if let Some(candidate) = candidates.to_single() {
+                    write!(f, "delete candidate {candidate}")
+                } else {
+                    write!(f, "delete candidates {candidates}")
+                }
             }
         }
     }
@@ -42,17 +46,15 @@ impl<Base: SudokuBase> Display for Action<Base> {
 
 impl<Base: SudokuBase> Action<Base> {
     pub fn set_value(value: Value<Base>) -> Self {
-        Self::SetValue { value }
+        Self::SetValue(value)
     }
 
     pub fn delete_candidate(candidate: Value<Base>) -> Self {
-        Self::DeleteCandidates {
-            candidates: Candidates::single(candidate),
-        }
+        Self::DeleteCandidates(Candidates::with_single(candidate))
     }
 
     pub fn delete_candidates(candidates: Candidates<Base>) -> Self {
-        Self::DeleteCandidates { candidates }
+        Self::DeleteCandidates(candidates)
     }
 
     pub fn validate(&self, cell: &Cell<Base>) -> Result<Candidates<Base>> {
@@ -61,13 +63,13 @@ impl<Base: SudokuBase> Action<Base> {
             bail!("expected cell to contain candidates")
         };
             match *self {
-                Action::SetValue { value } => {
+                Action::SetValue(value) => {
                     ensure!(
                         existing_candidates.has(value),
                         "expected cell to contain the candidate {value}"
                     );
                 }
-                Action::DeleteCandidates { candidates } => {
+                Action::DeleteCandidates(candidates) => {
                     ensure!(
                         candidates.without(existing_candidates).is_empty(),
                         "expected cell to contain the candidates {candidates}"
@@ -87,12 +89,16 @@ impl<Base: SudokuBase> Action<Base> {
     pub fn apply(&self, cell: &mut Cell<Base>) -> Result<()> {
         let existing_candidates = self.validate(cell)?;
         match *self {
-            Action::SetValue { value } => {
+            Action::SetValue(value) => {
                 cell.set_value(value);
                 // Defer updating of direct candidates
             }
-            Action::DeleteCandidates { candidates } => {
-                cell.set_candidates(existing_candidates.without(candidates));
+            Action::DeleteCandidates(candidates) => {
+                if let Some(candidate) = candidates.to_single() {
+                    cell.delete_candidate(candidate);
+                } else {
+                    cell.set_candidates(existing_candidates.without(candidates));
+                }
             }
         }
 
@@ -100,7 +106,7 @@ impl<Base: SudokuBase> Action<Base> {
     }
 
     pub fn update_direct_candidates(&self, grid: &mut Grid<Base>, pos: Position<Base>) {
-        if let Action::SetValue { value } = self {
+        if let Action::SetValue(value) = self {
             grid.update_direct_candidates(pos, *value);
         }
     }
@@ -111,30 +117,23 @@ impl<Base: SudokuBase> Merge for Action<Base> {
         use Action::*;
         (|| {
             Ok(match (self, other) {
-                (SetValue { value: self_value }, SetValue { value: other_value }) => {
+                (SetValue(self_value), SetValue(other_value)) => {
                     ensure!(
                         self_value == other_value,
                         "conflicting values: {self_value} != {other_value}"
                     );
-                    SetValue { value: self_value }
+                    SetValue(self_value)
                 }
-                (
-                    DeleteCandidates {
-                        candidates: self_candidates,
-                    },
-                    DeleteCandidates {
-                        candidates: other_candidates,
-                    },
-                ) => DeleteCandidates {
-                    candidates: self_candidates.union(other_candidates),
-                },
-                (SetValue { value }, DeleteCandidates { candidates })
-                | (DeleteCandidates { candidates }, SetValue { value }) => {
+                (DeleteCandidates(self_candidates), DeleteCandidates(other_candidates)) => {
+                    DeleteCandidates(self_candidates.union(other_candidates))
+                }
+                (SetValue(value), DeleteCandidates(candidates))
+                | (DeleteCandidates(candidates), SetValue(value)) => {
                     ensure!(
                         !candidates.has(value),
                         "can't set deleted candidate {value} as a value"
                     );
-                    SetValue { value }
+                    SetValue(value)
                 }
             })
         })()
@@ -150,33 +149,47 @@ mod tests {
     #[test]
     fn test_merge() {
         type Base = Base2;
-        let value_1 = 1.try_into().unwrap();
-        let value_2 = 2.try_into().unwrap();
+        let value_1: Value<Base> = 1.try_into().unwrap();
+        let value_2: Value<Base> = 2.try_into().unwrap();
 
-        let set_1 = Action::<Base>::SetValue { value: value_1 };
-        let set_2 = Action::<Base>::SetValue { value: value_2 };
-        let delete_1 = Action::DeleteCandidates {
-            candidates: Candidates::single(value_1),
-        };
-        let delete_2 = Action::DeleteCandidates {
-            candidates: Candidates::single(value_2),
-        };
-        let delete_1_2 = Action::DeleteCandidates {
-            candidates: [value_1, value_2].into_iter().collect(),
-        };
-        let delete_none = Action::DeleteCandidates {
-            candidates: Candidates::<Base>::new(),
-        };
+        let set_1 = Action::SetValue(value_1);
+        let set_2 = Action::SetValue(value_2);
+        let delete_1 = Action::DeleteCandidates(Candidates::with_single(value_1));
+        let delete_2 = Action::DeleteCandidates(Candidates::with_single(value_2));
+        let delete_1_2 = Action::DeleteCandidates([value_1, value_2].into_iter().collect());
+        let delete_none = Action::DeleteCandidates(Candidates::<Base>::new());
 
-        // TODO: test all 15 (6 choose 2) combinations
-        let test_cases_ok = vec![(set_1, set_1, set_1)];
-        let test_cases_err = vec![(set_1, delete_1)];
+        let test_cases_ok = vec![
+            (set_1, set_1, set_1),
+            (set_2, set_2, set_2),
+            (delete_1, delete_1, delete_1),
+            (delete_2, delete_2, delete_2),
+            (delete_1_2, delete_1_2, delete_1_2),
+            (delete_none, delete_none, delete_none),
+            (set_1, delete_2, set_1),
+            (set_1, delete_none, set_1),
+            (set_2, delete_1, set_2),
+            (set_2, delete_none, set_2),
+            (delete_1, delete_2, delete_1_2),
+            (delete_1, delete_1_2, delete_1_2),
+            (delete_1, delete_none, delete_1),
+            (delete_2, delete_1_2, delete_1_2),
+            (delete_2, delete_none, delete_2),
+            (delete_1_2, delete_none, delete_1_2),
+        ];
+        let test_cases_err = vec![
+            (set_1, set_2),
+            (set_1, delete_1),
+            (set_1, delete_1_2),
+            (set_2, delete_2),
+            (set_2, delete_1_2),
+        ];
 
-        for (action_1, action_2, expected_merged_action) in test_cases_ok {
+        for (action_1, action_2, expected_action) in test_cases_ok {
             let merged_action_1_2 = action_1.merge(action_2).unwrap();
             let merged_action_2_1 = action_2.merge(action_1).unwrap();
-            assert_eq!(merged_action_1_2, expected_merged_action);
-            assert_eq!(merged_action_2_1, expected_merged_action);
+            assert_eq!(merged_action_1_2, expected_action);
+            assert_eq!(merged_action_2_1, expected_action);
         }
         for (action_1, action_2) in test_cases_err {
             action_1.merge(action_2).unwrap_err();

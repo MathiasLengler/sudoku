@@ -58,9 +58,7 @@ impl Strategy for HiddenSingles {
 
                             Some(Deduction::with_action(
                                 pos,
-                                Action::SetValue {
-                                    value: candidate_value,
-                                },
+                                Action::SetValue(candidate_value),
                             ))
                         } else {
                             None
@@ -99,9 +97,7 @@ mod tests {
         .map(|(pos, value)| {
             Deduction::with_action(
                 pos.try_into().unwrap(),
-                Action::SetValue {
-                    value: Value::try_from(value).unwrap(),
-                },
+                Action::SetValue(Value::try_from(value).unwrap()),
             )
         })
         .collect();

@@ -144,7 +144,7 @@ impl<Base: SudokuBase> CellState<Base> {
                 candidates.toggle(candidate);
             }
             CellState::Value(_) => {
-                *self = Self::with_candidates(Candidates::single(candidate));
+                *self = Self::with_candidates(Candidates::with_single(candidate));
             }
             CellState::FixedValue(_) => unreachable!(),
         }
@@ -219,8 +219,8 @@ mod tests {
     fn setup() -> Setup {
         let value = Value::try_from(1).unwrap();
         let different_value = Value::try_from(2).unwrap();
-        let candidates = Candidates::single(value);
-        let candidates_2 = Candidates::single(different_value);
+        let candidates = Candidates::with_single(value);
+        let candidates_2 = Candidates::with_single(different_value);
         let cell_state_unfixed_value = CellState::<Base2>::with_value(value, false);
         let cell_state_unfixed_value_2 = CellState::<Base2>::with_value(different_value, false);
         let cell_state_fixed_value = CellState::<Base2>::with_value(value, true);

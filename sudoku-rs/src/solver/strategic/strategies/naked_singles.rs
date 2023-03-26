@@ -20,9 +20,7 @@ impl Strategy for NakedSingles {
                     let single_candidate = candidates.iter().next().unwrap();
                     Some(Deduction::with_action(
                         candidate_pos,
-                        Action::SetValue {
-                            value: single_candidate,
-                        },
+                        Action::SetValue(single_candidate),
                     ))
                 } else {
                     None
@@ -62,9 +60,7 @@ mod tests {
         .map(|(pos, value)| {
             Deduction::with_action(
                 pos.try_into().unwrap(),
-                Action::SetValue {
-                    value: Value::try_from(value).unwrap(),
-                },
+                Action::SetValue(Value::try_from(value).unwrap()),
             )
         })
         .collect();

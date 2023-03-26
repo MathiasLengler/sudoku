@@ -974,7 +974,7 @@ mod tests {
             grid[DynamicPosition { row: 0, column: 0 }.try_into().unwrap()],
             expected_cell
         );
-        let expected_cell = Cell::with_candidates(Candidates::single(1.try_into().unwrap()));
+        let expected_cell = Cell::with_candidates(Candidates::with_single(1.try_into().unwrap()));
         assert_eq!(grid[Position::new(1).unwrap()], expected_cell);
         assert_eq!(grid[(0, 1).try_into().unwrap()], expected_cell);
         assert_eq!(
@@ -1001,7 +1001,7 @@ mod tests {
             *grid.index_mut(DynamicPosition { row: 0, column: 0 }.try_into().unwrap()),
             expected_cell
         );
-        let expected_cell = Cell::with_candidates(Candidates::single(1.try_into().unwrap()));
+        let expected_cell = Cell::with_candidates(Candidates::with_single(1.try_into().unwrap()));
         assert_eq!(*grid.index_mut(Position::new(1).unwrap()), expected_cell);
         assert_eq!(*grid.index_mut((0, 1).try_into().unwrap()), expected_cell);
         assert_eq!(

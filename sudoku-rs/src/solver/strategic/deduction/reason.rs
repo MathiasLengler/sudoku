@@ -23,85 +23,100 @@ use crate::solver::strategic::deduction::Merge;
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize)]
 #[serde(bound = "", rename_all = "camelCase")]
 pub enum Reason<Base: SudokuBase> {
-    Candidate { candidate: Value<Base> },
-    Candidates { candidates: Candidates<Base> },
+    Candidates(Candidates<Base>),
 }
 
 impl<Base: SudokuBase> Display for Reason<Base> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Reason::Candidate { candidate } => {
-                write!(f, "candidate {candidate}")
-            }
-            Reason::Candidates { candidates } => {
-                write!(f, "candidates {candidates}")
+            Reason::Candidates(candidates) => {
+                if let Some(candidate) = candidates.to_single() {
+                    write!(f, "candidate {candidate}")
+                } else {
+                    write!(f, "candidates {candidates}")
+                }
             }
         }
     }
 }
 
 impl<Base: SudokuBase> Reason<Base> {
+    pub fn candidate(candidate: Value<Base>) -> Self {
+        Self::Candidates(Candidates::with_single(candidate))
+    }
+
+    pub fn candidates(candidates: Candidates<Base>) -> Self {
+        Self::Candidates(candidates)
+    }
+
     pub fn validate(&self, cell: &Cell<Base>) -> Result<()> {
         (|| {
-        match cell.state() {
-            CellState::Value(value) | CellState::FixedValue(value) => {
-                bail!("unexpected cell with value {value}")
+            match cell.state() {
+                CellState::Value(value) | CellState::FixedValue(value) => {
+                    bail!("unexpected cell with value {value}")
+                }
+                CellState::Candidates(existing_candidates) => match *self {
+                    Reason::Candidates(candidates) => {
+                        ensure!(!candidates.is_empty(), "candidates must not be empty");
+                        let unexpected_candidates = candidates.without(*existing_candidates);
+                        ensure!(
+                            unexpected_candidates.is_empty(),
+                            "unexpected candidates {unexpected_candidates}"
+                        );
+                    }
+                },
             }
-            CellState::Candidates(existing_candidates) => match *self {
-                Reason::Candidate { candidate } => {
-                    ensure!(
-                        existing_candidates.has(candidate),
-                        "candidate {candidate} is missing from cell candidates {existing_candidates}"
-                    );
-                }
-                Reason::Candidates { candidates } => {
-                    ensure!(!candidates.is_empty(), "candidates must not be empty");
-                    let unexpected_candidates = candidates.without(*existing_candidates);
-                    ensure!(unexpected_candidates.is_empty(), "unexpected candidates {unexpected_candidates}");
-                }
-            },
-        }
-        Ok(())
-    })()
-    .with_context(|| format!("Invalid reason {self} for cell {cell}"))
+            Ok(())
+        })()
+        .with_context(|| format!("Invalid reason {self} for cell {cell}"))
     }
 }
 
 impl<Base: SudokuBase> Merge for Reason<Base> {
     fn merge(self, other: Self) -> Result<Self> {
         Ok(match (self, other) {
-            (
-                Reason::Candidate {
-                    candidate: self_candidate,
-                },
-                Reason::Candidate {
-                    candidate: other_candidate,
-                },
-            ) => {
-                if self_candidate == other_candidate {
-                    Reason::Candidate {
-                        candidate: self_candidate,
-                    }
-                } else {
-                    Reason::Candidates {
-                        candidates: Candidates::from(vec![self_candidate, other_candidate]),
-                    }
-                }
-            }
-            (
-                Reason::Candidates { candidates },
-                Reason::Candidates {
-                    candidates: other_candidates,
-                },
-            ) => Reason::Candidates {
-                candidates: candidates.union(other_candidates),
-            },
-            (Reason::Candidate { candidate }, Reason::Candidates { candidates })
-            | (Reason::Candidates { candidates }, Reason::Candidate { candidate }) => {
-                Reason::Candidates {
-                    candidates: candidates.union(Candidates::single(candidate)),
-                }
+            (Reason::Candidates(candidates), Reason::Candidates(other_candidates)) => {
+                Reason::Candidates(candidates.union(other_candidates))
             }
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::base::consts::Base2;
+
+    #[test]
+    fn test_merge() {
+        type Base = Base2;
+        let value_1: Value<Base> = 1.try_into().unwrap();
+        let value_2: Value<Base> = 2.try_into().unwrap();
+        let candidates_1 = Candidates::with_single(value_1);
+        let candidates_2 = Candidates::with_single(value_2);
+        let candidates_1_2: Candidates<_> = [value_1, value_2].into_iter().collect();
+
+        let test_cases = vec![
+            (candidates_1, candidates_1, candidates_1),
+            (candidates_2, candidates_2, candidates_2),
+            (candidates_1_2, candidates_1_2, candidates_1_2),
+        ];
+
+        for (reason_1, reason_2, expected_reason) in
+            test_cases
+                .into_iter()
+                .map(|(candidates_1, candidates_2, expected_candidates)| {
+                    (
+                        Reason::Candidates(candidates_1),
+                        Reason::Candidates(candidates_2),
+                        Reason::Candidates(expected_candidates),
+                    )
+                })
+        {
+            let merged_reason_1_2 = reason_1.merge(reason_2).unwrap();
+            let merged_reason_2_1 = reason_2.merge(reason_1).unwrap();
+            assert_eq!(merged_reason_1_2, expected_reason);
+            assert_eq!(merged_reason_2_1, expected_reason);
+        }
     }
 }

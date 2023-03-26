@@ -45,7 +45,7 @@ impl<Base: SudokuBase> Candidates<Base> {
         this
     }
 
-    pub fn single(candidate: Value<Base>) -> Self {
+    pub fn with_single(candidate: Value<Base>) -> Self {
         let mut this = Self::new();
         this.set(candidate, true);
         this
@@ -151,6 +151,12 @@ impl<Base: SudokuBase> Candidates<Base> {
 
     pub fn to_vec_value(&self) -> Vec<Value<Base>> {
         self.iter().collect()
+    }
+
+    pub fn to_single(self) -> Option<Value<Base>> {
+        let mut iter = self.iter();
+        let (Some(single), None) = (iter.next(), iter.next()) else { return None; };
+        Some(single)
     }
 }
 
@@ -338,7 +344,7 @@ mod tests {
         #[test]
         fn test_single() {
             assert_eq!(
-                Candidates::<Base2>::single(3.try_into().unwrap()).to_vec_u8(),
+                Candidates::<Base2>::with_single(3.try_into().unwrap()).to_vec_u8(),
                 vec![3]
             );
         }
@@ -526,7 +532,7 @@ mod tests {
         #[test]
         fn test_is_empty() {
             let empty: Candidates<Base2> = Candidates::new();
-            let one: Candidates<Base2> = Candidates::single(1.try_into().unwrap());
+            let one: Candidates<Base2> = Candidates::with_single(1.try_into().unwrap());
             let all: Candidates<Base2> = Candidates::all();
 
             assert!(empty.is_empty());
@@ -537,7 +543,7 @@ mod tests {
         #[test]
         fn test_is_full() {
             let empty: Candidates<Base2> = Candidates::new();
-            let one: Candidates<Base2> = Candidates::single(1.try_into().unwrap());
+            let one: Candidates<Base2> = Candidates::with_single(1.try_into().unwrap());
             let all: Candidates<Base2> = Candidates::all();
 
             assert!(!empty.is_full());
@@ -548,7 +554,7 @@ mod tests {
         #[test]
         fn test_count() {
             let empty: Candidates<Base2> = Candidates::new();
-            let one: Candidates<Base2> = Candidates::single(1.try_into().unwrap());
+            let one: Candidates<Base2> = Candidates::with_single(1.try_into().unwrap());
             let all: Candidates<Base2> = Candidates::all();
 
             assert_eq!(empty.count(), 0);
@@ -559,7 +565,7 @@ mod tests {
         #[test]
         fn test_iter() {
             let empty: Candidates<Base2> = Candidates::new();
-            let one: Candidates<Base2> = Candidates::single(1.try_into().unwrap());
+            let one: Candidates<Base2> = Candidates::with_single(1.try_into().unwrap());
             let all: Candidates<Base2> = Candidates::all();
 
             assert!(empty.iter().next().is_none());
@@ -575,7 +581,7 @@ mod tests {
         #[test]
         fn test_to_vec_u8() {
             let empty: Candidates<Base2> = Candidates::new();
-            let one: Candidates<Base2> = Candidates::single(1.try_into().unwrap());
+            let one: Candidates<Base2> = Candidates::with_single(1.try_into().unwrap());
             let all: Candidates<Base2> = Candidates::all();
 
             assert_eq!(empty.to_vec_u8(), Vec::<u8>::new());
@@ -585,7 +591,7 @@ mod tests {
         #[test]
         fn test_to_vec_value() {
             let empty: Candidates<Base2> = Candidates::new();
-            let one: Candidates<Base2> = Candidates::single(1.try_into().unwrap());
+            let one: Candidates<Base2> = Candidates::with_single(1.try_into().unwrap());
             let all: Candidates<Base2> = Candidates::all();
 
             assert_eq!(empty.to_vec_value(), vec![]);
