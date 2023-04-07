@@ -216,6 +216,7 @@ impl<Base: SudokuBase> Grid<Base> {
 
 /// Public Sudoku API
 impl<Base: SudokuBase> Grid<Base> {
+    // TODO: evaluate all_group_cells
     pub fn has_value_conflict(&self) -> bool {
         self.all_row_cells()
             .any(|row| Self::has_duplicate_value(row))
@@ -426,13 +427,30 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 }
 
-// TODO: rewrite with ndarray slice
-// TODO: zip position + cell
-//  indexed_iter
-//  https://docs.rs/ndarray/latest/ndarray/iter/struct.IndexedIter.html
-//  => impl Iterator<Item = &mut Cell>
-
 /// Cell iterators
+///
+/// TODO: unify/expand iterator API:
+///  Use-cases:
+///  Iterator Item:
+///  - Position
+///  - &Cell
+///  - &mut Cell
+///  - Positioned<&Cell>
+///  - Positioned<&mut Cell>
+///  What is iterated:
+///  - Position iterators
+///    - all
+///    - row i
+///    - all rows
+///    - column i
+///    - all columns
+///    - block i
+///    - all blocks
+///  - all groups (chained: all rows, all columns, all blocks)
+///  - filtered cell state
+///    - `all_value_positions`
+///    - `all_unfixed_value_positions`
+///    - `all_candidates_positions`
 impl<Base: SudokuBase> Grid<Base> {
     fn positions_to_cells(
         &self,
@@ -516,6 +534,7 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 
     // TODO: optimize
+    //  collect into `[Position: SIDE_LENGTH]`?
     pub fn all_group_positions() -> impl Iterator<Item = impl Iterator<Item = Position<Base>>> {
         Self::all_row_positions()
             .map(|rows| rows.collect::<Vec<_>>().into_iter())
@@ -526,6 +545,7 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 }
 
+// TODO: return Vec<Positioned<Value | Candidates>>
 /// Filtered position vec
 impl<Base: SudokuBase> Grid<Base> {
     pub fn all_value_positions(&self) -> Vec<Position<Base>> {
