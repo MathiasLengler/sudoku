@@ -30,6 +30,7 @@ impl<Base: SudokuBase> From<Position<Base>> for DynamicPosition {
         (row.get(), column.get()).into()
     }
 }
+
 impl DynamicPosition {
     pub fn index_tuple(&self) -> (usize, usize) {
         let &DynamicPosition { row, column } = self;
