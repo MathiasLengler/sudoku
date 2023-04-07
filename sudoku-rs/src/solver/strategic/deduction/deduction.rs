@@ -5,8 +5,8 @@ use itertools::Itertools;
 
 use crate::base::SudokuBase;
 use crate::error::Result;
-use crate::grid::index::position::Position;
 use crate::grid::Grid;
+use crate::position::Position;
 use crate::solver::strategic::deduction::{Action, PositionMap, Reason};
 
 // TODO: easier instantiation of Deduction for test

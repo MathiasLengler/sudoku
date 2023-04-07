@@ -5,7 +5,7 @@ use std::iter::Map;
 
 use crate::base::SudokuBase;
 use crate::error::Result;
-use crate::grid::index::position::Position;
+use crate::position::Position;
 
 pub trait Merge: Sized + Copy {
     fn merge(self, other: Self) -> Result<Self>;

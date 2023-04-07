@@ -3,7 +3,7 @@ use serde::Serialize;
 use ts_rs::TS;
 
 use crate::base::SudokuBase;
-use crate::grid::index::position::Position;
+use crate::position::Position;
 use crate::solver::strategic::deduction::{Action, Deduction, Reason};
 
 #[cfg_attr(

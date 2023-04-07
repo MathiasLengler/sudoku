@@ -14,17 +14,15 @@ use crate::cell::view::parser::parse_cells;
 use crate::cell::view::CellView;
 use crate::cell::Cell;
 use crate::error::{Error, Result};
-use crate::grid::index::coordinate::Coordinate;
-use crate::grid::index::position::Position;
 use crate::grid::serialization::GridFormat;
+use crate::position::Coordinate;
+use crate::position::Position;
 use crate::solver::strategic::strategies::DynamicStrategy;
 use crate::solver::{backtracking_bitset, strategic};
 use crate::unsafe_utils::{get_unchecked, get_unchecked_mut};
 
 pub mod deserialization;
 pub mod serialization;
-
-pub mod index;
 
 // TODO: run tests under miri in release mode
 

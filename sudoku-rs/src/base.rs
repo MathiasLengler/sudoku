@@ -11,8 +11,8 @@ use num::PrimInt;
 use consts::*;
 
 use crate::cell::candidates_cell::CandidatesCell;
-use crate::grid::index::coordinate::Coordinate;
-use crate::grid::index::position::Position;
+use crate::position::Coordinate;
+use crate::position::Position;
 use crate::unsafe_utils::get_unchecked;
 
 pub mod consts {

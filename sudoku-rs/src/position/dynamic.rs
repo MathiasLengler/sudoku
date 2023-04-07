@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::base::SudokuBase;
-use crate::grid::index::position::Position;
+use crate::position::Position;
 
 /// The position of a cell in a grid of unknown size.
 #[cfg_attr(feature = "wasm", derive(TS), ts(export))]

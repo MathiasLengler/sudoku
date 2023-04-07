@@ -7,7 +7,7 @@ use serde::{Serialize, Serializer};
 
 use crate::base::SudokuBase;
 use crate::error::{Error, Result};
-use crate::grid::index::coordinate::Coordinate;
+use crate::position::Coordinate;
 use crate::position::DynamicPosition;
 
 // TODO: use for all non-public APIs
@@ -260,7 +260,7 @@ mod tests {
     mod iterators {
         use super::*;
         use crate::base::consts::Base5;
-        use crate::grid::index::test_utils::{consume_iter, consume_nested_iter};
+        use crate::position::test_utils::{consume_iter, consume_nested_iter};
 
         #[test]
         fn test_all() {

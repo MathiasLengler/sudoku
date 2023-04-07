@@ -6,9 +6,9 @@ use crate::base::SudokuBase;
 use crate::cell::candidates_cell::CandidatesCell;
 use crate::cell::compact::candidates::{Candidates, CandidatesIter};
 use crate::cell::compact::value::Value;
-use crate::grid::index::coordinate::Coordinate;
-use crate::grid::index::position::Position;
 use crate::grid::Grid;
+use crate::position::Coordinate;
+use crate::position::Position;
 use crate::unsafe_utils::{get_unchecked, get_unchecked_mut};
 
 // TODO: implement shuffle_candidates

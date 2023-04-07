@@ -3,8 +3,8 @@ use anyhow::ensure;
 use crate::base::SudokuBase;
 use crate::cell::compact::value::Value;
 use crate::error::Result;
-use crate::grid::index::position::Position;
 use crate::grid::Grid;
+use crate::position::Position;
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions};
 
 use super::Strategy;

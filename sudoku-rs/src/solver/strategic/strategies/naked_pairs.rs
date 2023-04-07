@@ -3,8 +3,8 @@ use std::collections::BTreeMap;
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
 use crate::error::Result;
-use crate::grid::index::position::Position;
 use crate::grid::Grid;
+use crate::position::Position;
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions, Reason};
 
 use super::Strategy;

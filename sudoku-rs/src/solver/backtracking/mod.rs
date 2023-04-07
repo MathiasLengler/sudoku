@@ -1,8 +1,8 @@
 use std::num::NonZeroUsize;
 
 use crate::base::SudokuBase;
-use crate::grid::index::position::Position;
 use crate::grid::Grid;
+use crate::position::Position;
 use crate::solver::backtracking::choice::{CandidatesProcessor, Choice};
 
 mod choice;

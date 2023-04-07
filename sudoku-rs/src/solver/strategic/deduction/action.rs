@@ -10,8 +10,8 @@ use crate::cell::compact::candidates::Candidates;
 use crate::cell::compact::value::Value;
 use crate::cell::Cell;
 use crate::error::Result;
-use crate::grid::index::position::Position;
 use crate::grid::Grid;
+use crate::position::Position;
 use crate::solver::strategic::deduction::Merge;
 
 /// What action should be taken for a specific cell.
