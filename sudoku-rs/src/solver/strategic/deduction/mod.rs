@@ -1,7 +1,6 @@
 pub use action::Action;
 pub use deduction::Deduction;
 pub use deductions::Deductions;
-pub use position_map::{Merge, PositionMap};
 pub use reason::Reason;
 pub use transport::{TransportAction, TransportDeduction, TransportReason};
 
@@ -9,7 +8,6 @@ mod action;
 #[allow(clippy::module_inception)]
 mod deduction;
 mod deductions;
-mod position_map;
 mod reason;
 mod transport;
 

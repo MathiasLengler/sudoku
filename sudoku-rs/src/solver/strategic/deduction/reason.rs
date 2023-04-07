@@ -11,7 +11,7 @@ use crate::cell::compact::cell_state::CellState;
 use crate::cell::compact::value::Value;
 use crate::cell::Cell;
 use crate::error::Result;
-use crate::solver::strategic::deduction::Merge;
+use crate::position::Merge;
 
 /// On what basis a deduction was made.
 /// Used to highlight/explain a deduction in the UI.

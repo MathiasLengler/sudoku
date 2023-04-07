@@ -4,7 +4,8 @@ use std::fmt::{Display, Formatter};
 use crate::base::SudokuBase;
 use crate::error::Result;
 use crate::grid::Grid;
-use crate::solver::strategic::deduction::{Action, Deduction, PositionMap, Reason};
+use crate::position::PositionMap;
+use crate::solver::strategic::deduction::{Action, Deduction, Reason};
 
 /// A list of deductions made by a strategy.
 /// Some strategies can be applied multiple times on a single grid, e.g.:

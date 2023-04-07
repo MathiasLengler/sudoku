@@ -1,10 +1,16 @@
+// TODO: introduce Positioned<Base, T>(Position<Base>, T)
+//  replace current usages of (Position<Base>, ...)
+//  also useful for Grid iterators
+
 pub use bounded_coordinate::Coordinate;
 pub use bounded_position::Position;
 pub use dynamic::DynamicPosition;
+pub use position_map::{Merge, PositionMap};
 
-pub mod bounded_coordinate;
+mod bounded_coordinate;
 mod bounded_position;
 mod dynamic;
+mod position_map;
 
 // Used by benchmarking harness
 #[doc(hidden)]

@@ -11,8 +11,8 @@ use crate::cell::compact::value::Value;
 use crate::cell::Cell;
 use crate::error::Result;
 use crate::grid::Grid;
+use crate::position::Merge;
 use crate::position::Position;
-use crate::solver::strategic::deduction::Merge;
 
 /// What action should be taken for a specific cell.
 #[cfg_attr(

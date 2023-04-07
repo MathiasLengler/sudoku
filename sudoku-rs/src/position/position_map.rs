@@ -11,10 +11,6 @@ pub trait Merge: Sized + Copy {
     fn merge(self, other: Self) -> Result<Self>;
 }
 
-// TODO: introduce Positioned<Base, T>(Position<Base>, T)
-//  replace current usages of (Position<Base>, ...)
-//  also useful for Grid iterators
-
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct PositionMap<Base: SudokuBase, T: Merge> {
     map: BTreeMap<Position<Base>, T>,
