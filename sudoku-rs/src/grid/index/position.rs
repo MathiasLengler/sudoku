@@ -23,7 +23,7 @@ pub struct Position<Base: SudokuBase> {
 impl<Base: SudokuBase> Display for Position<Base> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let dynamic_pos: DynamicPosition = (*self).into();
-        write!(f, "{}", dynamic_pos)
+        write!(f, "{dynamic_pos}")
     }
 }
 

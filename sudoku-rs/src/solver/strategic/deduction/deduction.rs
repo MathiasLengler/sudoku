@@ -56,7 +56,7 @@ impl<Base: SudokuBase> Deduction<Base> {
 
     pub fn with_action(pos: Position<Base>, action: Action<Base>) -> Self {
         Self {
-            actions: PositionMap::with_single(pos.into(), action),
+            actions: PositionMap::with_single(pos, action),
             ..Default::default()
         }
     }
