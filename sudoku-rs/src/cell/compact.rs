@@ -2,17 +2,17 @@ use std::fmt::{self, Debug, Display, Formatter};
 
 use anyhow::bail;
 
-use cell_state::CellState;
+pub use candidates::{Candidates, CandidatesIter};
+pub(crate) use cell_state::CellState;
+pub use value::Value;
 
 use crate::base::SudokuBase;
-use crate::cell::compact::candidates::Candidates;
-use crate::cell::compact::value::Value;
-use crate::cell::view::CellView;
+use crate::cell::dynamic::DynamicCell;
 use crate::error::Error;
 
-pub mod candidates;
-pub(crate) mod cell_state;
-pub mod value;
+mod candidates;
+mod cell_state;
+mod value;
 
 /// Memory efficient representation of a single Sudoku cell.
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug, Default)]
@@ -154,13 +154,13 @@ impl<Base: SudokuBase> Display for Cell<Base> {
     }
 }
 
-impl<Base: SudokuBase> TryFrom<CellView> for Cell<Base> {
+impl<Base: SudokuBase> TryFrom<DynamicCell> for Cell<Base> {
     type Error = Error;
 
-    fn try_from(cell_view: CellView) -> Result<Self, Self::Error> {
+    fn try_from(cell_view: DynamicCell) -> Result<Self, Self::Error> {
         Ok(match cell_view {
-            CellView::Value { value, fixed } => {
-                if let Some(value) = Value::new(value)? {
+            DynamicCell::Value { value, fixed } => {
+                if let Some(value) = Value::new(value.0)? {
                     Cell::with_value(value, fixed)
                 } else if !fixed {
                     Cell::new()
@@ -168,7 +168,9 @@ impl<Base: SudokuBase> TryFrom<CellView> for Cell<Base> {
                     bail!("An empty cell can't be fixed")
                 }
             }
-            CellView::Candidates { candidates } => Cell::with_candidates(candidates.try_into()?),
+            DynamicCell::Candidates { candidates } => {
+                Cell::with_candidates(candidates.0.try_into()?)
+            }
         })
     }
 }

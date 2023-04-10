@@ -4,9 +4,10 @@ use anyhow::ensure;
 use itertools::Itertools;
 
 use crate::base::SudokuBase;
-use crate::error::Result;
+use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::position::{Position, PositionMap};
+use crate::solver::strategic::deduction::transport::TransportDeduction;
 use crate::solver::strategic::deduction::{Action, Reason};
 
 // TODO: easier instantiation of Deduction for test
@@ -21,6 +22,14 @@ use crate::solver::strategic::deduction::{Action, Reason};
 pub struct Deduction<Base: SudokuBase> {
     pub actions: PositionMap<Base, Action<Base>>,
     pub reasons: PositionMap<Base, Reason<Base>>,
+}
+
+impl<Base: SudokuBase> TryFrom<TransportDeduction> for Deduction<Base> {
+    type Error = Error;
+
+    fn try_from(transport_deduction: TransportDeduction) -> Result<Self> {
+        todo!()
+    }
 }
 
 impl<Base: SudokuBase> Display for Deduction<Base> {

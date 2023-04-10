@@ -2,7 +2,7 @@ use std::convert::TryInto;
 
 use crate::base::consts::*;
 use crate::base::SudokuBase;
-use crate::cell::compact::candidates::Candidates;
+use crate::cell::Candidates;
 use crate::cell::Cell;
 use crate::error::Result;
 use crate::generator::{Generator, GeneratorTarget};
@@ -97,7 +97,6 @@ pub fn minimal<Base: SudokuBase>() -> Grid<Base> {
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
 
     #[test]

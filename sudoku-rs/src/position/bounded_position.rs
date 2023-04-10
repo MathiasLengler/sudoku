@@ -245,8 +245,9 @@ mod wasm {
 
 #[cfg(test)]
 mod tests {
-    use crate::base::consts::Base2;
     use itertools::Itertools;
+
+    use crate::base::consts::Base2;
 
     use super::*;
 
@@ -258,9 +259,10 @@ mod tests {
     }
 
     mod iterators {
-        use super::*;
         use crate::base::consts::Base5;
         use crate::position::test_utils::{consume_iter, consume_nested_iter};
+
+        use super::*;
 
         #[test]
         fn test_all() {

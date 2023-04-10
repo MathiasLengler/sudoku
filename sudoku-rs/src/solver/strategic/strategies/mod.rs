@@ -23,8 +23,8 @@ use std::str::FromStr;
 
 use anyhow::anyhow;
 use enum_dispatch::enum_dispatch;
-use serde::de::Visitor;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::de::Visitor;
 #[cfg(feature = "wasm")]
 use ts_rs::TS;
 

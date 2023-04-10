@@ -1,12 +1,12 @@
 use owo_colors::Style as OwoStyle;
 use serde::{Deserialize, Serialize};
-use tabled::{builder::Builder, object::Segment, Alignment, Modify, Style};
+use tabled::{Alignment, builder::Builder, Modify, object::Segment, Style};
 #[cfg(feature = "wasm")]
 use ts_rs::TS;
 
 use crate::base::SudokuBase;
-use crate::cell::compact::cell_state::CellState;
-use crate::cell::compact::value::Value;
+use crate::cell::CellState;
+use crate::cell::Value;
 use crate::grid::Grid;
 
 #[cfg_attr(feature = "wasm", derive(TS), ts(export))]

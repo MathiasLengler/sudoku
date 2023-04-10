@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::base::SudokuBase;
-use crate::cell::view::CellView;
+use crate::cell::dynamic::DynamicCell;
 use crate::grid::Grid;
 use crate::position::DynamicPosition;
 use crate::sudoku::DynamicSudoku;
@@ -17,7 +17,7 @@ pub struct TransportSudoku {
     blocks_indices: Vec<Vec<u16>>,
     base: u8,
     side_length: u8,
-    cell_count: usize,
+    cell_count: u16,
     is_solved: bool,
     can_undo: bool,
     can_redo: bool,
@@ -40,7 +40,7 @@ impl<Base: SudokuBase> From<&Sudoku<Base>> for TransportSudoku {
                         false
                     };
                     TransportCell {
-                        cell_view: cell.into(),
+                        dynamic_cell: cell.into(),
                         position: pos.into(),
                         incorrect_value,
                     }
@@ -51,7 +51,7 @@ impl<Base: SudokuBase> From<&Sudoku<Base>> for TransportSudoku {
                 .collect(),
             base: Grid::<Base>::base(),
             side_length: Grid::<Base>::side_length(),
-            cell_count: Grid::<Base>::cell_count_usize(),
+            cell_count: Grid::<Base>::cell_count(),
             is_solved: grid.is_solved(),
             can_undo: sudoku.history.can_go_back(),
             can_redo: sudoku.history.can_go_forward(),
@@ -75,7 +75,7 @@ impl From<&DynamicSudoku> for TransportSudoku {
 #[serde(rename_all = "camelCase")]
 pub struct TransportCell {
     #[serde(flatten)]
-    cell_view: CellView,
+    dynamic_cell: DynamicCell,
     position: DynamicPosition,
     incorrect_value: bool,
 }

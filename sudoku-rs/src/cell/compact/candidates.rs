@@ -11,6 +11,7 @@ pub use iter::CandidatesIter;
 
 use crate::base::SudokuBase;
 use crate::cell::compact::value::Value;
+use crate::cell::dynamic::DynamicCandidates;
 use crate::error::{Error, Result};
 
 mod iter;
@@ -244,6 +245,14 @@ impl<Base: SudokuBase> TryFrom<Vec<u8>> for Candidates<Base> {
         this.debug_assert_is_valid();
 
         Ok(this)
+    }
+}
+
+impl<Base: SudokuBase> TryFrom<DynamicCandidates> for Candidates<Base> {
+    type Error = Error;
+
+    fn try_from(dynamic_candidates: DynamicCandidates) -> Result<Self> {
+        dynamic_candidates.0.try_into()
     }
 }
 

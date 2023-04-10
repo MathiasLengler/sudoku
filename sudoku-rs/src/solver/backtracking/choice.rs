@@ -1,11 +1,11 @@
 use std::fmt::{self, Display};
 
+use rand::{SeedableRng, thread_rng};
 use rand::seq::SliceRandom;
-use rand::{thread_rng, SeedableRng};
 use rand_xoshiro::Xoshiro256StarStar;
 
 use crate::base::SudokuBase;
-use crate::cell::compact::value::Value;
+use crate::cell::Value;
 use crate::solver::backtracking::CandidatesVisitOrder;
 
 #[derive(Debug)]

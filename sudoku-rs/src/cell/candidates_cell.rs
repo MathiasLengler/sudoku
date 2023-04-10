@@ -5,8 +5,8 @@
 //  - replicate all required functionality of Candidates on CandidatesCell
 
 use crate::base::SudokuBase;
-use crate::cell::compact::candidates::Candidates;
-use crate::cell::compact::value::Value;
+use crate::cell::Candidates;
+use crate::cell::Value;
 
 /// A sudoku cell represented as a candidates bitset.
 ///

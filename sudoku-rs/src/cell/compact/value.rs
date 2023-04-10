@@ -8,6 +8,7 @@ use anyhow::{ensure, format_err};
 use serde::{Serialize, Serializer};
 
 use crate::base::SudokuBase;
+use crate::cell::dynamic::DynamicValue;
 use crate::error::{Error, Result};
 
 /// A valid sudoku value for a given base.
@@ -50,6 +51,14 @@ impl<Base: SudokuBase> TryFrom<u8> for Value<Base> {
     }
 }
 
+impl<Base: SudokuBase> TryFrom<DynamicValue> for Value<Base> {
+    type Error = Error;
+
+    fn try_from(dynamic_value: DynamicValue) -> Result<Self> {
+        dynamic_value.0.try_into()
+    }
+}
+
 impl<Base: SudokuBase> Display for Value<Base> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.value)
@@ -62,43 +71,6 @@ impl<Base: SudokuBase> Serialize for Value<Base> {
         S: Serializer,
     {
         serializer.serialize_u8(self.value.get())
-    }
-}
-
-#[cfg(feature = "wasm")]
-mod wasm {
-    use ts_rs::TS;
-
-    use super::*;
-
-    impl<Base: SudokuBase> TS for Value<Base> {
-        const EXPORT_TO: Option<&'static str> = Some("bindings/Value.ts");
-        fn decl() -> String {
-            "type Value = number;".to_owned()
-        }
-        fn name() -> String {
-            "Value".to_owned()
-        }
-        fn name_with_type_args(_args: Vec<String>) -> String {
-            Self::name()
-        }
-        fn inline() -> String {
-            "number".to_owned()
-        }
-        fn dependencies() -> Vec<ts_rs::Dependency> {
-            vec![]
-        }
-        fn transparent() -> bool {
-            false
-        }
-    }
-
-    #[cfg(test)]
-    #[test]
-    fn export_bindings_value() {
-        use crate::base::consts::Base3;
-
-        <Value<Base3> as ts_rs::TS>::export().expect("could not export type");
     }
 }
 

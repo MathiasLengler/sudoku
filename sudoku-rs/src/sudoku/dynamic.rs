@@ -8,13 +8,14 @@ pub use game::Game;
 
 use crate::base::consts::*;
 use crate::base::SudokuBase;
-use crate::cell::view::parser::parse_cells;
-use crate::cell::view::CellView;
+use crate::cell::dynamic::parser::parse_cells;
+use crate::cell::dynamic::DynamicCell;
 use crate::error::{Error, Result};
 use crate::generator::DynamicGeneratorSettings;
 use crate::grid::serialization::GridFormat;
 use crate::grid::Grid;
 use crate::position::DynamicPosition;
+use crate::solver::strategic::deduction::transport::TransportDeductions;
 use crate::solver::strategic::strategies::DynamicStrategy;
 use crate::sudoku::settings::Settings as SudokuSettings;
 use crate::sudoku::Sudoku;
@@ -34,7 +35,6 @@ mod game {
         fn delete_candidate(&mut self, pos: DynamicPosition, candidate: u8) -> Result<()>;
         fn delete(&mut self, pos: DynamicPosition) -> Result<()>;
         fn set_all_direct_candidates(&mut self);
-        fn try_strategy(&mut self, strategy: DynamicStrategy) -> Result<bool>;
         fn undo(&mut self);
         fn redo(&mut self);
         fn settings(&self) -> SudokuSettings;
@@ -93,12 +93,42 @@ impl DynamicSudoku {
 
         Ok(())
     }
+
+    pub fn try_strategies(
+        &mut self,
+        strategies: Vec<DynamicStrategy>,
+    ) -> Result<Option<(DynamicStrategy, TransportDeductions)>> {
+        fn inner<Base: SudokuBase>(
+            sudoku: &mut Sudoku<Base>,
+            strategies: Vec<DynamicStrategy>,
+        ) -> Result<Option<(DynamicStrategy, TransportDeductions)>> {
+            Ok(sudoku
+                .try_strategies(strategies)?
+                .map(|(strategy, deductions)| (strategy, deductions.into())))
+        }
+
+        match self {
+            DynamicSudoku::Base2(sudoku) => inner(sudoku, strategies),
+            DynamicSudoku::Base3(sudoku) => inner(sudoku, strategies),
+            DynamicSudoku::Base4(sudoku) => inner(sudoku, strategies),
+            DynamicSudoku::Base5(sudoku) => inner(sudoku, strategies),
+        }
+    }
+
+    pub fn apply_deductions(&mut self, deductions: TransportDeductions) -> Result<()> {
+        match self {
+            DynamicSudoku::Base2(sudoku) => sudoku.apply_deductions(deductions.try_into()?),
+            DynamicSudoku::Base3(sudoku) => sudoku.apply_deductions(deductions.try_into()?),
+            DynamicSudoku::Base4(sudoku) => sudoku.apply_deductions(deductions.try_into()?),
+            DynamicSudoku::Base5(sudoku) => sudoku.apply_deductions(deductions.try_into()?),
+        }
+    }
 }
 
-impl TryFrom<Vec<CellView>> for DynamicSudoku {
+impl TryFrom<Vec<DynamicCell>> for DynamicSudoku {
     type Error = Error;
 
-    fn try_from(views: Vec<CellView>) -> Result<Self> {
+    fn try_from(views: Vec<DynamicCell>) -> Result<Self> {
         Ok(match Self::cell_count_to_base(views.len())? {
             2 => Self::Base2(Sudoku::<Base2>::with_grid(views.try_into()?)),
             3 => Self::Base3(Sudoku::<Base3>::with_grid(views.try_into()?)),
@@ -109,10 +139,10 @@ impl TryFrom<Vec<CellView>> for DynamicSudoku {
     }
 }
 
-impl TryFrom<Vec<Vec<CellView>>> for DynamicSudoku {
+impl TryFrom<Vec<Vec<DynamicCell>>> for DynamicSudoku {
     type Error = Error;
 
-    fn try_from(blocks: Vec<Vec<CellView>>) -> Result<Self> {
+    fn try_from(blocks: Vec<Vec<DynamicCell>>) -> Result<Self> {
         let sudoku = match Self::cell_count_to_base(blocks.iter().map(|block| block.len()).sum())? {
             2 => Self::Base2(Sudoku::with_grid(Grid::<Base2>::try_from_blocks(blocks)?)),
             3 => Self::Base3(Sudoku::with_grid(Grid::<Base3>::try_from_blocks(blocks)?)),
@@ -155,7 +185,7 @@ impl DynamicSudoku {
 
 #[cfg(test)]
 mod tests {
-    use crate::cell::view::parser::tests::{
+    use crate::cell::dynamic::parser::tests::{
         INPUT_CANDIDATES, INPUT_GIVENS_GRID, INPUT_GIVENS_LINE,
     };
 

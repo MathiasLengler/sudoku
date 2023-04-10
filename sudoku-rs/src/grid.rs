@@ -7,18 +7,18 @@ use anyhow::ensure;
 use ndarray::Array2;
 
 use crate::base::SudokuBase;
-use crate::cell::compact::candidates::Candidates;
-use crate::cell::compact::cell_state::CellState;
-use crate::cell::compact::value::Value;
-use crate::cell::view::parser::parse_cells;
-use crate::cell::view::CellView;
+use crate::cell::Candidates;
 use crate::cell::Cell;
+use crate::cell::CellState;
+use crate::cell::dynamic::DynamicCell;
+use crate::cell::dynamic::parser::parse_cells;
+use crate::cell::Value;
 use crate::error::{Error, Result};
 use crate::grid::serialization::GridFormat;
 use crate::position::Coordinate;
 use crate::position::Position;
-use crate::solver::strategic::strategies::DynamicStrategy;
 use crate::solver::{backtracking_bitset, strategic};
+use crate::solver::strategic::strategies::DynamicStrategy;
 use crate::unsafe_utils::{get_unchecked, get_unchecked_mut};
 
 pub mod deserialization;
@@ -313,7 +313,7 @@ impl<Base: SudokuBase> Grid<Base> {
         Ok(grid)
     }
 
-    pub fn try_from_blocks(blocks: Vec<Vec<CellView>>) -> Result<Self> {
+    pub fn try_from_blocks(blocks: Vec<Vec<DynamicCell>>) -> Result<Self> {
         let side_length = Self::side_length_usize();
 
         ensure!(
@@ -586,7 +586,7 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 }
 
-impl<Base: SudokuBase, CView: Into<CellView>> TryFrom<Vec<Vec<CView>>> for Grid<Base> {
+impl<Base: SudokuBase, CView: Into<DynamicCell>> TryFrom<Vec<Vec<CView>>> for Grid<Base> {
     type Error = Error;
 
     fn try_from(nested_views: Vec<Vec<CView>>) -> Result<Self> {
@@ -598,7 +598,7 @@ impl<Base: SudokuBase, CView: Into<CellView>> TryFrom<Vec<Vec<CView>>> for Grid<
     }
 }
 
-impl<Base: SudokuBase, CView: Into<CellView>> TryFrom<Vec<CView>> for Grid<Base> {
+impl<Base: SudokuBase, CView: Into<DynamicCell>> TryFrom<Vec<CView>> for Grid<Base> {
     type Error = Error;
 
     fn try_from(views: Vec<CView>) -> Result<Self> {
@@ -906,26 +906,26 @@ mod tests {
     #[test]
     fn test_has_duplicate_value() {
         let cells_with_no_duplicate_value = vec![
-            CellView::Value {
+            DynamicCell::Value(Value {
                 value: 1,
                 fixed: false,
-            }
+            })
             .try_into()
             .unwrap(),
-            CellView::Candidates {
+            DynamicCell::Candidates(Candidates {
                 candidates: vec![1, 2, 3],
-            }
+            })
             .try_into()
             .unwrap(),
-            CellView::Candidates {
+            DynamicCell::Candidates(Candidates {
                 candidates: vec![1, 2, 3],
-            }
+            })
             .try_into()
             .unwrap(),
-            CellView::Value {
+            DynamicCell::Value(Value {
                 value: 2,
                 fixed: false,
-            }
+            })
             .try_into()
             .unwrap(),
         ];
@@ -934,26 +934,26 @@ mod tests {
             cells_with_no_duplicate_value.iter()
         ));
         let cells_with_duplicate_value = vec![
-            CellView::Value {
+            DynamicCell::Value(Value {
                 value: 1,
                 fixed: false,
-            }
+            })
             .try_into()
             .unwrap(),
-            CellView::Candidates {
+            DynamicCell::Candidates(Candidates {
                 candidates: vec![1, 2, 3],
-            }
+            })
             .try_into()
             .unwrap(),
-            CellView::Candidates {
+            DynamicCell::Candidates(Candidates {
                 candidates: vec![1, 2, 3],
-            }
+            })
             .try_into()
             .unwrap(),
-            CellView::Value {
+            DynamicCell::Value(Value {
                 value: 1,
                 fixed: false,
-            }
+            })
             .try_into()
             .unwrap(),
         ];

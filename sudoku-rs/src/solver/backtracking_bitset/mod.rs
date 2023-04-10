@@ -3,9 +3,9 @@
 use log::trace;
 
 use crate::base::SudokuBase;
+use crate::cell::{Candidates, CandidatesIter};
 use crate::cell::candidates_cell::CandidatesCell;
-use crate::cell::compact::candidates::{Candidates, CandidatesIter};
-use crate::cell::compact::value::Value;
+use crate::cell::Value;
 use crate::grid::Grid;
 use crate::position::Coordinate;
 use crate::position::Position;

@@ -2,9 +2,10 @@ use std::collections::{btree_set, BTreeMap, BTreeSet};
 use std::fmt::{Display, Formatter};
 
 use crate::base::SudokuBase;
-use crate::error::Result;
+use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::position::PositionMap;
+use crate::solver::strategic::deduction::transport::TransportDeductions;
 use crate::solver::strategic::deduction::{Action, Deduction, Reason};
 
 /// A list of deductions made by a strategy.
@@ -21,6 +22,14 @@ use crate::solver::strategic::deduction::{Action, Deduction, Reason};
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Default)]
 pub struct Deductions<Base: SudokuBase> {
     deductions: BTreeSet<Deduction<Base>>,
+}
+
+impl<Base: SudokuBase> TryFrom<TransportDeductions> for Deductions<Base> {
+    type Error = Error;
+
+    fn try_from(transport_deductions: TransportDeductions) -> Result<Self> {
+        todo!()
+    }
 }
 
 impl<Base: SudokuBase> Display for Deductions<Base> {

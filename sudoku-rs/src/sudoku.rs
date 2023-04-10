@@ -5,12 +5,13 @@ pub use dynamic::{DynamicSudoku, Game};
 use history::History;
 
 use crate::base::SudokuBase;
-use crate::cell::compact::value::Value;
+use crate::cell::Value;
 use crate::error::Result;
 use crate::generator::{Generator, GeneratorSettings};
 use crate::grid::serialization::GridFormat;
 use crate::grid::Grid;
 use crate::position::DynamicPosition;
+use crate::solver::strategic::deduction::Deductions;
 use crate::solver::strategic::strategies::DynamicStrategy;
 use crate::solver::strategic::Solver as StrategicSolver;
 
@@ -35,8 +36,6 @@ impl<Base: SudokuBase> Default for Sudoku<Base> {
     }
 }
 
-// TODO: provide redo API
-// TODO: return result in all asserts
 impl<Base: SudokuBase> Sudoku<Base> {
     pub fn new() -> Self {
         Self::with_grid(Grid::new())
@@ -73,6 +72,23 @@ impl<Base: SudokuBase> Sudoku<Base> {
 
     pub fn solved_grid(&self) -> &Option<Grid<Base>> {
         &self.solved_grid
+    }
+
+    pub fn try_strategies(
+        &mut self,
+        strategies: Vec<DynamicStrategy>,
+    ) -> Result<Option<(DynamicStrategy, Deductions<Base>)>> {
+        self.push_history();
+
+        let solver = StrategicSolver::new_with_strategies(&mut self.grid, strategies);
+
+        Ok(solver.try_strategies()?)
+    }
+
+    pub fn apply_deductions(&mut self, deductions: Deductions<Base>) -> Result<()> {
+        self.push_history();
+
+        Ok(deductions.apply(&mut self.grid)?)
     }
 }
 
@@ -175,23 +191,6 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
         self.push_history();
 
         self.grid.set_all_direct_candidates();
-    }
-
-    // TODO: replace_with_direct_candidates(pos: Position)
-    //  For which UI interactions could this operation make sense?
-
-    fn try_strategy(&mut self, strategy: DynamicStrategy) -> Result<bool> {
-        self.push_history();
-
-        let mut solver = StrategicSolver::new_with_strategies(&mut self.grid, vec![strategy]);
-
-        Ok(if let Some(deductions) = solver.try_strategies()? {
-            deductions.apply(&mut self.grid)?;
-
-            true
-        } else {
-            false
-        })
     }
 
     fn undo(&mut self) {

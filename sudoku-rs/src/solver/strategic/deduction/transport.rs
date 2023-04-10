@@ -1,106 +1,134 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 #[cfg(feature = "wasm")]
 use ts_rs::TS;
 
 use crate::base::SudokuBase;
-use crate::position::Position;
-use crate::solver::strategic::deduction::{Action, Deduction, Reason};
+use crate::cell::dynamic::{DynamicCandidates, DynamicValue};
+use crate::position::DynamicPosition;
+use crate::solver::strategic::deduction::{Action, Deduction, Deductions, Reason};
 
-#[cfg_attr(
-    feature = "wasm",
-    derive(TS),
-    ts(export, export_generic_params = "crate::base::consts::Base3")
-)]
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize)]
-#[serde(bound = "", rename_all = "camelCase")]
-pub struct TransportDeduction<Base: SudokuBase> {
-    pub reasons: Vec<TransportReason<Base>>,
-    pub actions: Vec<TransportAction<Base>>,
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub struct TransportDeductions {
+    deductions: Vec<TransportDeduction>,
 }
 
-impl<Base: SudokuBase> From<Deduction<Base>> for TransportDeduction<Base> {
+impl<Base: SudokuBase> From<Deductions<Base>> for TransportDeductions {
+    fn from(deductions: Deductions<Base>) -> Self {
+        Self {
+            deductions: deductions.into_iter().map(Into::into).collect(),
+        }
+    }
+}
+
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub struct TransportDeduction {
+    pub reasons: Vec<PositionedTransportReason>,
+    pub actions: Vec<PositionedTransportAction>,
+}
+
+impl<Base: SudokuBase> From<Deduction<Base>> for TransportDeduction {
     fn from(deduction: Deduction<Base>) -> Self {
         Self {
             reasons: deduction
                 .reasons
-                .iter()
-                .map(|(position, reason)| TransportReason {
-                    position,
-                    reason: *reason,
+                .into_iter()
+                .map(|(position, reason)| PositionedTransportReason {
+                    position: position.into(),
+                    reason: reason.into(),
                 })
                 .collect(),
             actions: deduction
                 .actions
-                .iter()
-                .map(|(position, action)| TransportAction {
-                    position,
-                    action: *action,
+                .into_iter()
+                .map(|(position, action)| PositionedTransportAction {
+                    position: position.into(),
+                    action: action.into(),
                 })
                 .collect(),
         }
     }
 }
 
-#[cfg_attr(
-    feature = "wasm",
-    derive(TS),
-    ts(export, export_generic_params = "crate::base::consts::Base3")
-)]
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize)]
-#[serde(bound = "", rename_all = "camelCase")]
-pub struct TransportReason<Base: SudokuBase> {
-    pub position: Position<Base>,
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub struct PositionedTransportReason {
+    pub position: DynamicPosition,
     #[serde(flatten)]
-    pub reason: Reason<Base>,
+    pub reason: TransportReason,
 }
 
-#[cfg_attr(
-    feature = "wasm",
-    derive(TS),
-    ts(export, export_generic_params = "crate::base::consts::Base3")
-)]
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize)]
-#[serde(bound = "", rename_all = "camelCase")]
-pub struct TransportAction<Base: SudokuBase> {
-    pub position: Position<Base>,
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub enum TransportReason {
+    Candidates(DynamicCandidates),
+}
+
+impl<Base: SudokuBase> From<Reason<Base>> for TransportReason {
+    fn from(reason: Reason<Base>) -> Self {
+        let Reason::Candidates(candidates) = reason;
+        Self::Candidates(candidates.into())
+    }
+}
+
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub struct PositionedTransportAction {
+    pub position: DynamicPosition,
     #[serde(flatten)]
-    pub action: Action<Base>,
+    pub action: TransportAction,
+}
+
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub enum TransportAction {
+    SetValue(DynamicValue),
+    DeleteCandidates(DynamicCandidates),
+}
+
+impl<Base: SudokuBase> From<Action<Base>> for TransportAction {
+    fn from(action: Action<Base>) -> Self {
+        match action {
+            Action::SetValue(value) => Self::SetValue(value.into()),
+            Action::DeleteCandidates(candidates) => Self::DeleteCandidates(candidates.into()),
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::base::consts::Base3;
-    use crate::cell::compact::candidates::Candidates;
-    use crate::cell::compact::value::Value;
+
+    // TODO: test round-trip
 
     #[test]
     fn test_debug_serde() {
         use serde_json;
 
-        let deduction = TransportDeduction::<Base3> {
+        let deduction = TransportDeduction {
             reasons: vec![
-                TransportReason {
-                    position: (1, 1).try_into().unwrap(),
-                    reason: Reason::Candidates(Candidates::all()),
+                PositionedTransportReason {
+                    position: (1, 2).into(),
+                    reason: TransportReason::Candidates(vec![1, 2, 3].into()),
                 },
-                TransportReason {
-                    position: (1, 1).try_into().unwrap(),
-                    reason: Reason::candidate(Value::try_from(1).unwrap()),
+                PositionedTransportReason {
+                    position: (3, 4).into(),
+                    reason: TransportReason::Candidates(vec![4].into()),
                 },
             ],
             actions: vec![
-                TransportAction {
+                PositionedTransportAction {
                     position: (1, 1).try_into().unwrap(),
-                    action: Action::set_value(Value::try_from(1).unwrap()),
+                    action: TransportAction::SetValue(1.into()),
                 },
-                TransportAction {
-                    position: (1, 1).try_into().unwrap(),
-                    action: Action::delete_candidate(Value::try_from(2).unwrap()),
+                PositionedTransportAction {
+                    position: (2, 2).try_into().unwrap(),
+                    action: TransportAction::DeleteCandidates(vec![1].into()),
                 },
-                TransportAction {
-                    position: (1, 1).try_into().unwrap(),
-                    action: Action::delete_candidates(Candidates::all()),
+                PositionedTransportAction {
+                    position: (3, 3).try_into().unwrap(),
+                    action: TransportAction::DeleteCandidates(vec![1, 2, 3].into()),
                 },
             ],
         };

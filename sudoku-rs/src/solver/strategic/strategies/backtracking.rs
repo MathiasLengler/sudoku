@@ -32,7 +32,7 @@ impl Strategy for Backtracking {
 
 #[cfg(test)]
 mod tests {
-    use crate::cell::compact::value::Value;
+    use crate::cell::Value;
     use crate::samples;
     use crate::solver::strategic::strategies::test_util::assert_deductions_with_grid;
 

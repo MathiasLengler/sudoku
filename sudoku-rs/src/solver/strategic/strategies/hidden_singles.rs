@@ -1,7 +1,7 @@
 use anyhow::ensure;
 
 use crate::base::SudokuBase;
-use crate::cell::compact::value::Value;
+use crate::cell::Value;
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;

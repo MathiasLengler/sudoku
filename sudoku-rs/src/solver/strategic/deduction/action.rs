@@ -1,30 +1,35 @@
 use std::fmt::{Display, Formatter};
 
 use anyhow::{bail, ensure, Context};
-use serde::Serialize;
-#[cfg(feature = "wasm")]
-use ts_rs::TS;
 
 use crate::base::SudokuBase;
-use crate::cell::compact::candidates::Candidates;
-use crate::cell::compact::value::Value;
+use crate::cell::Candidates;
 use crate::cell::Cell;
-use crate::error::Result;
+use crate::cell::Value;
+use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::position::Merge;
 use crate::position::Position;
+use crate::solver::strategic::deduction::transport::TransportAction;
 
 /// What action should be taken for a specific cell.
-#[cfg_attr(
-    feature = "wasm",
-    derive(TS),
-    ts(export, export_generic_params = "crate::base::consts::Base3")
-)]
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize)]
-#[serde(bound = "", rename_all = "camelCase")]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub enum Action<Base: SudokuBase> {
     SetValue(Value<Base>),
     DeleteCandidates(Candidates<Base>),
+}
+
+impl<Base: SudokuBase> TryFrom<TransportAction> for Action<Base> {
+    type Error = Error;
+
+    fn try_from(transport_action: TransportAction) -> Result<Self> {
+        Ok(match transport_action {
+            TransportAction::SetValue(value) => Self::SetValue(value.try_into()?),
+            TransportAction::DeleteCandidates(candidates) => {
+                Self::DeleteCandidates(candidates.try_into()?)
+            }
+        })
+    }
 }
 
 impl<Base: SudokuBase> Display for Action<Base> {
@@ -143,8 +148,9 @@ impl<Base: SudokuBase> Merge for Action<Base> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::base::consts::Base2;
+
+    use super::*;
 
     #[test]
     fn test_merge() {

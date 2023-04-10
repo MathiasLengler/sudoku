@@ -1,13 +1,13 @@
 use log::debug;
+use rand::{Rng, SeedableRng, thread_rng};
 use rand::prelude::SliceRandom;
-use rand::{thread_rng, Rng, SeedableRng};
 use rand_xoshiro::Xoshiro256StarStar;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "wasm")]
 use ts_rs::TS;
 
 use crate::base::SudokuBase;
-use crate::cell::compact::value::Value;
+use crate::cell::Value;
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::solver::backtracking;

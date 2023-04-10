@@ -4,18 +4,19 @@ use wasm_bindgen::prelude::*;
 
 use error::Result;
 use sudoku::base::consts::*;
-use sudoku::cell::view::CellView;
+use sudoku::cell::dynamic::DynamicCell;
 use sudoku::error::Error as SudokuError;
 use sudoku::generator::DynamicGeneratorSettings;
 use sudoku::grid::serialization::GridFormat;
 use sudoku::grid::Grid;
 use sudoku::position::DynamicPosition;
+use sudoku::solver::strategic::deduction::transport::TransportDeductions;
 use sudoku::solver::strategic::strategies::DynamicStrategy;
 use sudoku::transport::TransportSudoku;
 use sudoku::{DynamicSudoku, Game, Sudoku};
 use typescript::{ICandidates, IGridFormat, ITransportSudoku};
 
-use crate::typescript::{ICellView, IDynamicGeneratorSettings, IDynamicStrategy, IPosition};
+use crate::typescript::*;
 
 mod typescript;
 
@@ -67,7 +68,7 @@ impl WasmSudoku {
             .into()
     }
 
-    pub fn restore(cells: Vec<ICellView>) -> Result<WasmSudoku> {
+    pub fn restore(cells: Vec<IDynamicCell>) -> Result<WasmSudoku> {
         let cells = import_cells(cells)?;
 
         Ok(DynamicSudoku::try_from(cells).map_err(export_error)?.into())
@@ -153,10 +154,21 @@ impl WasmSudoku {
         Ok(self.sudoku.export(&import_grid_format(format)?))
     }
 
-    #[wasm_bindgen(js_name = tryStrategy)]
-    pub fn try_strategy(&mut self, strategy: IDynamicStrategy) -> Result<bool> {
+    // FIXME: wasm bindgen return type
+    // #[wasm_bindgen(js_name = tryStrategies)]
+    // pub fn try_strategies(
+    //     &mut self,
+    //     strategies: IDynamicStrategies,
+    // ) -> Result<Option<(IDynamicStrategy, ITransportDeductions)>> {
+    //     self.sudoku
+    //         .try_strategies(import_strategies(strategies))
+    //         .map_err(export_error)
+    // }
+
+    #[wasm_bindgen(js_name = applyDeductions)]
+    pub fn apply_deductions(&mut self, deductions: ITransportDeductions) -> Result<()> {
         self.sudoku
-            .try_strategy(import_strategy(strategy)?)
+            .apply_deductions(import_deductions(deductions)?)
             .map_err(export_error)
     }
 }
@@ -182,13 +194,19 @@ fn import_grid_format(format: IGridFormat) -> Result<GridFormat> {
     Ok(serde_wasm_bindgen::from_value(format.into())?)
 }
 
-fn import_cells(cells: Vec<ICellView>) -> Result<Vec<CellView>> {
+fn import_cells(cells: Vec<IDynamicCell>) -> Result<Vec<DynamicCell>> {
     cells
         .into_iter()
         .map(|cell| serde_wasm_bindgen::from_value(cell.into()).map_err(Into::into))
         .collect()
 }
 fn import_strategy(strategy: IDynamicStrategy) -> Result<DynamicStrategy> {
+    Ok(serde_wasm_bindgen::from_value(strategy.into())?)
+}
+fn import_strategies(strategy: IDynamicStrategies) -> Result<Vec<DynamicStrategy>> {
+    Ok(serde_wasm_bindgen::from_value(strategy.into())?)
+}
+fn import_deductions(strategy: ITransportDeductions) -> Result<TransportDeductions> {
     Ok(serde_wasm_bindgen::from_value(strategy.into())?)
 }
 // --- Import helpers

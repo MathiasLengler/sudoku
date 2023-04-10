@@ -8,9 +8,7 @@ use ts_rs::TS;
 
 use crate::base::consts::BaseMax;
 use crate::base::SudokuBase;
-use crate::cell::compact::candidates::Candidates;
-use crate::cell::compact::cell_state::CellState;
-use crate::cell::Cell;
+use crate::cell::{Candidates, Cell, CellState, Value};
 use crate::error::{Error, Result};
 
 pub(crate) mod parser;
@@ -22,13 +20,45 @@ pub(crate) mod parser;
 
 #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
-#[serde(rename_all = "camelCase", tag = "kind")]
-pub enum CellView {
-    Value { value: u8, fixed: bool },
-    Candidates { candidates: Vec<u8> },
+pub struct DynamicValue(pub u8);
+
+impl From<u8> for DynamicValue {
+    fn from(value: u8) -> Self {
+        Self(value)
+    }
 }
 
-impl CellView {
+impl<Base: SudokuBase> From<Value<Base>> for DynamicValue {
+    fn from(value: Value<Base>) -> Self {
+        Self(value.into_u8())
+    }
+}
+
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+#[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
+pub struct DynamicCandidates(pub Vec<u8>);
+
+impl From<Vec<u8>> for DynamicCandidates {
+    fn from(candidates: Vec<u8>) -> Self {
+        Self(candidates)
+    }
+}
+
+impl<Base: SudokuBase> From<Candidates<Base>> for DynamicCandidates {
+    fn from(candidates: Candidates<Base>) -> Self {
+        Self(candidates.to_vec_u8())
+    }
+}
+
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+#[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
+#[serde(rename_all = "camelCase", tag = "kind")]
+pub enum DynamicCell {
+    Value { value: DynamicValue, fixed: bool },
+    Candidates { candidates: DynamicCandidates },
+}
+
+impl DynamicCell {
     pub fn value(value: u8, fixed: bool) -> Self {
         if value == 0 {
             if fixed {
@@ -37,25 +67,30 @@ impl CellView {
                 Self::candidates(vec![])
             }
         } else {
-            CellView::Value { value, fixed }
+            Self::Value {
+                value: value.into(),
+                fixed,
+            }
         }
     }
 
     pub fn candidates(candidates: Vec<u8>) -> Self {
-        CellView::Candidates { candidates }
+        Self::Candidates {
+            candidates: candidates.into(),
+        }
     }
 }
 
-pub fn v(value: u8) -> CellView {
-    CellView::value(value, false)
+pub fn v(value: u8) -> DynamicCell {
+    DynamicCell::value(value, false)
 }
 
-pub fn f(value: u8) -> CellView {
-    CellView::value(value, true)
+pub fn f(value: u8) -> DynamicCell {
+    DynamicCell::value(value, true)
 }
 
-pub fn c(candidates: Vec<u8>) -> CellView {
-    CellView::candidates(candidates)
+pub fn c(candidates: Vec<u8>) -> DynamicCell {
+    DynamicCell::candidates(candidates)
 }
 
 fn char_value_to_u8(c: char) -> Result<u8> {
@@ -68,7 +103,7 @@ fn char_value_to_u8(c: char) -> Result<u8> {
     }
 }
 
-impl TryFrom<&str> for CellView {
+impl TryFrom<&str> for DynamicCell {
     type Error = Error;
 
     fn try_from(candidates: &str) -> Result<Self> {
@@ -92,7 +127,7 @@ impl TryFrom<&str> for CellView {
     }
 }
 
-impl TryFrom<char> for CellView {
+impl TryFrom<char> for DynamicCell {
     type Error = Error;
 
     fn try_from(c: char) -> Result<Self> {
@@ -100,7 +135,7 @@ impl TryFrom<char> for CellView {
     }
 }
 
-impl TryFrom<u32> for CellView {
+impl TryFrom<u32> for DynamicCell {
     type Error = Error;
 
     fn try_from(bits: u32) -> Result<Self> {
@@ -115,25 +150,25 @@ impl TryFrom<u32> for CellView {
     }
 }
 
-impl From<u8> for CellView {
+impl From<u8> for DynamicCell {
     fn from(value: u8) -> Self {
-        CellView::value(value, false)
+        DynamicCell::value(value, false)
     }
 }
 
-impl<Base: SudokuBase> From<&Cell<Base>> for CellView {
+impl<Base: SudokuBase> From<&Cell<Base>> for DynamicCell {
     fn from(cell: &Cell<Base>) -> Self {
-        match cell.state() {
-            CellState::Value(value) => CellView::Value {
-                value: value.into_u8(),
+        match *cell.state() {
+            CellState::Value(value) => Self::Value {
+                value: value.into(),
                 fixed: false,
             },
-            CellState::FixedValue(value) => CellView::Value {
-                value: value.into_u8(),
+            CellState::FixedValue(value) => Self::Value {
+                value: value.into(),
                 fixed: true,
             },
-            CellState::Candidates(candidates) => CellView::Candidates {
-                candidates: candidates.to_vec_u8(),
+            CellState::Candidates(candidates) => Self::Candidates {
+                candidates: candidates.into(),
             },
         }
     }

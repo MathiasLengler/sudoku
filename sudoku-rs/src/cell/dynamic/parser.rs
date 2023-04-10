@@ -3,10 +3,10 @@ use std::convert::TryInto;
 use anyhow::ensure;
 
 use crate::base::consts::ALL_CELL_COUNTS;
-use crate::cell::view::CellView;
+use crate::cell::dynamic::DynamicCell;
 use crate::error::Result;
 
-pub(crate) fn parse_cells(input: &str) -> Result<Vec<CellView>> {
+pub(crate) fn parse_cells(input: &str) -> Result<Vec<DynamicCell>> {
     let input = input.trim();
 
     let mut cell_views = if input.contains('\n') {
@@ -24,8 +24,8 @@ pub(crate) fn parse_cells(input: &str) -> Result<Vec<CellView>> {
 
     // Fix all values
     for cell_view in &mut cell_views {
-        if let CellView::Value { fixed, value } = cell_view {
-            if *value != 0 {
+        if let DynamicCell::Value { fixed, value } = cell_view {
+            if value.0 != 0 {
                 *fixed = true;
             }
         }
@@ -34,22 +34,22 @@ pub(crate) fn parse_cells(input: &str) -> Result<Vec<CellView>> {
     Ok(cell_views)
 }
 
-fn from_givens_line(input: &str) -> Result<Vec<CellView>> {
+fn from_givens_line(input: &str) -> Result<Vec<DynamicCell>> {
     input
         .chars()
-        .map(TryInto::<CellView>::try_into)
-        .collect::<Result<Vec<CellView>>>()
+        .map(TryInto::<DynamicCell>::try_into)
+        .collect::<Result<Vec<DynamicCell>>>()
 }
 
-fn from_givens_grid(input: &str) -> Vec<CellView> {
+fn from_givens_grid(input: &str) -> Vec<DynamicCell> {
     input
         .chars()
-        .map(TryInto::<CellView>::try_into)
+        .map(TryInto::<DynamicCell>::try_into)
         .filter_map(Result::ok)
         .collect::<Vec<_>>()
 }
 
-fn from_binary_candidates_line(input: &str) -> Result<Vec<CellView>> {
+fn from_binary_candidates_line(input: &str) -> Result<Vec<DynamicCell>> {
     let mut cell_views = vec![];
 
     for cell_str in input.split(',') {
@@ -60,7 +60,7 @@ fn from_binary_candidates_line(input: &str) -> Result<Vec<CellView>> {
     Ok(cell_views)
 }
 
-fn from_ascii_candidates_grid(input: &str) -> Result<Vec<CellView>> {
+fn from_ascii_candidates_grid(input: &str) -> Result<Vec<DynamicCell>> {
     static SEPARATORS: &[char] = &['-', '|', ':', '+', '\'', '\n', '*'];
 
     input
@@ -72,12 +72,12 @@ fn from_ascii_candidates_grid(input: &str) -> Result<Vec<CellView>> {
         .filter(|s| !s.is_empty())
         // Split and trim groups of numbers
         .flat_map(|s| s.split_whitespace())
-        .map(TryInto::<CellView>::try_into)
+        .map(TryInto::<DynamicCell>::try_into)
         .collect::<Result<Vec<_>>>()
 }
 
 #[allow(dead_code)]
-fn from_terminal_candidates_grid(input: &str) -> Result<Vec<CellView>> {
+fn from_terminal_candidates_grid(input: &str) -> Result<Vec<DynamicCell>> {
     let stripped_input_bytes = strip_ansi_escapes::strip(input.as_bytes())?;
     let stripped_input = String::from_utf8(stripped_input_bytes)?;
 
@@ -96,8 +96,8 @@ pub(crate) mod tests {
     use anyhow::Context;
 
     use crate::base::SudokuBase;
-    use crate::grid::serialization::GridFormat;
     use crate::grid::Grid;
+    use crate::grid::serialization::GridFormat;
     use crate::samples;
 
     use super::*;
@@ -127,7 +127,7 @@ pub(crate) mod tests {
             0, 8, 1, 0, 0, 0, 0, 0, 0, 0, 3, 4, 7, 2, 0, 0, 7, 2, 0, 0, 0, 0, 8,
         ]
         .into_iter()
-        .map(crate::cell::view::v)
+        .map(crate::cell::dynamic::v)
         .collect::<Vec<_>>();
 
         assert_eq!(cells, expected_cells);
@@ -145,7 +145,7 @@ pub(crate) mod tests {
             0, 0, 0, 0, 0, 0, 3, 2, 0, 0, 0, 4, 5, 0, 0, 5, 0, 9, 0, 7, 0, 2, 0,
         ]
         .into_iter()
-        .map(crate::cell::view::v)
+        .map(crate::cell::dynamic::v)
         .collect::<Vec<_>>();
 
         assert_eq!(cells, expected_cells);
@@ -153,7 +153,7 @@ pub(crate) mod tests {
 
     #[test]
     fn test_from_candidates_grid() -> Result<()> {
-        use crate::cell::view::{c, v};
+        use crate::cell::dynamic::{c, v};
 
         let cells = from_ascii_candidates_grid(INPUT_CANDIDATES)?;
 

@@ -2,13 +2,13 @@ use std::collections::VecDeque;
 use std::fmt::Debug;
 
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
-pub(super) struct History<T: Clone + Debug> {
+pub(super) struct History<T> {
     limit: usize,
     past_records: VecDeque<T>,
     future_records: VecDeque<T>,
 }
 
-impl<T: Clone + Debug> History<T> {
+impl<T> History<T> {
     pub(super) fn with_limit(limit: usize) -> Self {
         Self {
             limit,
@@ -40,12 +40,30 @@ impl<T: Clone + Debug> History<T> {
         queue.push_front(value);
     }
 
+    pub(super) fn can_go_back(&self) -> bool {
+        !self.past_records.is_empty()
+    }
+
+    pub(super) fn can_go_forward(&self) -> bool {
+        !self.future_records.is_empty()
+    }
+}
+
+impl<T: Eq> History<T> {
     pub(super) fn push(&mut self, record: T) {
         self.future_records.clear();
 
+        if let Some(past_record) = self.past_records.front() {
+            if &record == past_record {
+                return;
+            }
+        }
+
         self.push_bounded(true, record);
     }
+}
 
+impl<T: Clone> History<T> {
     pub(super) fn go_back(&mut self, current_record: &T) -> Option<T> {
         if let Some(past_record) = self.past_records.pop_front() {
             self.push_bounded(false, current_record.clone());
@@ -53,10 +71,6 @@ impl<T: Clone + Debug> History<T> {
         } else {
             None
         }
-    }
-
-    pub(super) fn can_go_back(&self) -> bool {
-        !self.past_records.is_empty()
     }
 
     pub(super) fn go_forward(&mut self, current_record: &T) -> Option<T> {
@@ -67,15 +81,11 @@ impl<T: Clone + Debug> History<T> {
             None
         }
     }
-
-    pub(super) fn can_go_forward(&self) -> bool {
-        !self.future_records.is_empty()
-    }
 }
 
 pub(super) const DEFAULT_LIMIT: usize = 255;
 
-impl<T: Clone + Debug> Default for History<T> {
+impl<T> Default for History<T> {
     fn default() -> Self {
         Self::with_limit(DEFAULT_LIMIT)
     }
@@ -98,31 +108,41 @@ mod tests {
         assert!(!history.can_go_forward());
 
         history.push(0);
+        history.push(0);
 
         assert!(history.can_go_back());
         assert!(!history.can_go_forward());
 
         history.push(1);
+        history.push(1);
 
         assert!(history.can_go_back());
         assert!(!history.can_go_forward());
 
+        // [0,1] 2 []
         assert_eq!(history.go_back(&2), Some(1));
+        // [0] 1 [2]
 
         assert!(history.can_go_back());
         assert!(history.can_go_forward());
 
+        // [0] 1 [2]
         assert_eq!(history.go_back(&1), Some(0));
+        // [] 0 [1,2]
 
         assert!(!history.can_go_back());
         assert!(history.can_go_forward());
 
+        // [] 0 [1,2]
         assert_eq!(history.go_forward(&0), Some(1));
+        // [0] 1 [2]
 
         assert!(history.can_go_back());
         assert!(history.can_go_forward());
 
         history.push(3);
+        history.push(3);
+        // [0, 3] ? []
 
         assert!(history.can_go_back());
         assert!(!history.can_go_forward());

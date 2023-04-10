@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use crate::base::SudokuBase;
-use crate::cell::compact::candidates::Candidates;
+use crate::cell::Candidates;
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;

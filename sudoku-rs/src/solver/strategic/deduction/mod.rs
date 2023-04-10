@@ -2,14 +2,13 @@ pub use action::Action;
 pub use deduction::Deduction;
 pub use deductions::Deductions;
 pub use reason::Reason;
-pub use transport::{TransportAction, TransportDeduction, TransportReason};
 
 mod action;
 #[allow(clippy::module_inception)]
 mod deduction;
 mod deductions;
 mod reason;
-mod transport;
+pub mod transport;
 
 #[cfg(test)]
 mod tests {
