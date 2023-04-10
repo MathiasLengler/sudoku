@@ -133,34 +133,37 @@ fn render_candidates_grid<Base: SudokuBase>(grid: &Grid<Base>) -> String {
                 let mut block_builder: Builder = block
                     .chunks(usize::from(Base::BASE))
                     .map(|block_row| {
-                        block_row.iter().map(|cell| match cell.state() {
-                            CellState::Value(value) => bold_blue.style(value.to_string()),
-                            CellState::FixedValue(value) => bold.style(value.to_string()),
-                            CellState::Candidates(candidates) => {
-                                let mut candidates_builder = Builder::new();
+                        block_row
+                            .iter()
+                            .map(|cell| match cell.state() {
+                                CellState::Value(value) => bold_blue.style(value.to_string()),
+                                CellState::FixedValue(value) => bold.style(value.to_string()),
+                                CellState::Candidates(candidates) => {
+                                    let mut candidates_builder = Builder::new();
 
-                                all_values.chunks(usize::from(Base::BASE)).for_each(
-                                    |all_candidates_row| {
-                                        candidates_builder.add_record(
-                                            all_candidates_row.iter().map(|candidate| {
-                                                if candidates.has(*candidate) {
-                                                    candidate.to_string()
-                                                } else {
-                                                    " ".to_string()
-                                                }
-                                            }),
-                                        );
-                                    },
-                                );
-                                candidates_builder.remove_columns();
-                                default.style(
-                                    candidates_builder
-                                        .build()
-                                        .with(Style::empty().horizontal(' '))
-                                        .to_string(),
-                                )
-                            }
-                        })
+                                    all_values.chunks(usize::from(Base::BASE)).for_each(
+                                        |all_candidates_row| {
+                                            candidates_builder.add_record(
+                                                all_candidates_row.iter().map(|candidate| {
+                                                    if candidates.has(*candidate) {
+                                                        candidate.to_string()
+                                                    } else {
+                                                        " ".to_string()
+                                                    }
+                                                }),
+                                            );
+                                        },
+                                    );
+                                    candidates_builder.remove_columns();
+                                    default.style(
+                                        candidates_builder
+                                            .build()
+                                            .with(Style::empty().horizontal(' '))
+                                            .to_string(),
+                                    )
+                                }
+                            })
+                            .map(|styled_s| styled_s.to_string())
                     })
                     .collect();
                 block_builder.remove_columns();
@@ -185,7 +188,7 @@ fn render_candidates_grid<Base: SudokuBase>(grid: &Grid<Base>) -> String {
 
     grid_builder.remove_columns();
 
-    let table = grid_builder.build();
+    let mut table = grid_builder.build();
 
     table
         .with(
