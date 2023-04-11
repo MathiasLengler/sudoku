@@ -1,7 +1,7 @@
 import type { SelectorCallbackInterface } from "recoil";
 import { useRecoilCallback } from "recoil";
 import { sudokuSideLengthState, sudokuState, wasmSudokuProxyContainerState } from "./state/sudoku";
-import type { DynamicGeneratorSettings, DynamicStrategy, Position } from "../../../sudoku-rs/bindings";
+import type { DynamicGeneratorSettings, Position, TransportDeductions } from "../../../sudoku-rs/bindings";
 import type { CellAction, Input } from "./state/input";
 import { inputState } from "./state/input";
 import { cellAtGridPositionState } from "./state/cellIndexing";
@@ -364,6 +364,18 @@ export function useTryStrategies() {
                 const res = await wasmSudokuProxy.tryStrategies(strategies);
                 await updateSudoku({ set, wasmSudokuProxy });
                 return res;
+            },
+        []
+    );
+}
+
+export function useApplyDeductions() {
+    return useRecoilCallback(
+        ({ snapshot, set }) =>
+            async (deductions: TransportDeductions) => {
+                const wasmSudokuProxy = await getWasmSudokuProxy({ snapshot });
+                await wasmSudokuProxy.applyDeductions(deductions);
+                await updateSudoku({ set, wasmSudokuProxy });
             },
         []
     );
