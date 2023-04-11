@@ -49,4 +49,6 @@ extern "C" {
     pub type IGridFormat;
     #[wasm_bindgen(typescript_type = "bindings.TransportDeductions")]
     pub type ITransportDeductions;
+    #[wasm_bindgen(typescript_type = "bindings.DynamicTryStrategiesReturn")]
+    pub type IDynamicTryStrategiesReturn;
 }

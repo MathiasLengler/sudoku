@@ -1,7 +1,9 @@
+use anyhow::{anyhow, bail, format_err};
+use serde::Serialize;
 use std::any::Any;
 use std::convert::{TryFrom, TryInto};
-
-use anyhow::{anyhow, bail, format_err};
+#[cfg(feature = "wasm")]
+use ts_rs::TS;
 
 pub use game::DynamicSudoku;
 pub use game::Game;
@@ -97,14 +99,16 @@ impl DynamicSudoku {
     pub fn try_strategies(
         &mut self,
         strategies: Vec<DynamicStrategy>,
-    ) -> Result<Option<(DynamicStrategy, TransportDeductions)>> {
+    ) -> Result<DynamicTryStrategiesReturn> {
         fn inner<Base: SudokuBase>(
             sudoku: &mut Sudoku<Base>,
             strategies: Vec<DynamicStrategy>,
-        ) -> Result<Option<(DynamicStrategy, TransportDeductions)>> {
-            Ok(sudoku
-                .try_strategies(strategies)?
-                .map(|(strategy, deductions)| (strategy, deductions.into())))
+        ) -> Result<DynamicTryStrategiesReturn> {
+            Ok(DynamicTryStrategiesReturn(
+                sudoku
+                    .try_strategies(strategies)?
+                    .map(|(strategy, deductions)| (strategy, deductions.into())),
+            ))
         }
 
         match self {
@@ -124,6 +128,10 @@ impl DynamicSudoku {
         }
     }
 }
+
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+#[derive(Debug, Serialize)]
+pub struct DynamicTryStrategiesReturn(Option<(DynamicStrategy, TransportDeductions)>);
 
 impl TryFrom<Vec<DynamicCell>> for DynamicSudoku {
     type Error = Error;

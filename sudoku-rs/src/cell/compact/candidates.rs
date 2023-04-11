@@ -281,42 +281,6 @@ impl<Base: SudokuBase> Serialize for Candidates<Base> {
     }
 }
 
-#[cfg(feature = "wasm")]
-mod wasm {
-    use ts_rs::TS;
-
-    use super::*;
-
-    impl<Base: SudokuBase> TS for Candidates<Base> {
-        const EXPORT_TO: Option<&'static str> = Some("bindings/Candidates.ts");
-        fn decl() -> String {
-            "type Candidates = Array<number>;".to_owned()
-        }
-        fn name() -> String {
-            "Candidates".to_owned()
-        }
-        fn name_with_type_args(_args: Vec<String>) -> String {
-            Self::name()
-        }
-        fn inline() -> String {
-            "Array<number>".to_owned()
-        }
-        fn dependencies() -> Vec<ts_rs::Dependency> {
-            vec![]
-        }
-        fn transparent() -> bool {
-            false
-        }
-    }
-    #[cfg(test)]
-    #[test]
-    fn export_bindings_candidates() {
-        use crate::base::consts::Base3;
-
-        <Candidates<Base3> as ts_rs::TS>::export().expect("could not export type");
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use std::mem::size_of;

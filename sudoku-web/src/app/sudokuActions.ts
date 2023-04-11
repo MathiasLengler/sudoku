@@ -1,10 +1,12 @@
-import { SelectorCallbackInterface, useRecoilCallback } from "recoil";
+import type { SelectorCallbackInterface } from "recoil";
+import { useRecoilCallback } from "recoil";
 import { sudokuSideLengthState, sudokuState, wasmSudokuProxyContainerState } from "./state/sudoku";
 import type { DynamicGeneratorSettings, DynamicStrategy, Position } from "../../../sudoku-rs/bindings";
-import { CellAction, Input, inputState } from "./state/input";
+import type { CellAction, Input } from "./state/input";
+import { inputState } from "./state/input";
 import { cellAtGridPositionState } from "./state/cellIndexing";
 import _ from "lodash";
-import type { GridFormat } from "../types";
+import type { DynamicStrategies, GridFormat } from "../types";
 import type { WasmSudokuProxy } from "../spawnWorker";
 import assertNever from "assert-never/index";
 
@@ -354,12 +356,12 @@ export function useExportSudokuString() {
     );
 }
 
-export function useTryStrategy() {
+export function useTryStrategies() {
     return useRecoilCallback(
         ({ snapshot, set }) =>
-            async (strategyName: DynamicStrategy) => {
+            async (strategies: DynamicStrategies) => {
                 const wasmSudokuProxy = await getWasmSudokuProxy({ snapshot });
-                const res = await wasmSudokuProxy.tryStrategy(strategyName);
+                const res = await wasmSudokuProxy.tryStrategies(strategies);
                 await updateSudoku({ set, wasmSudokuProxy });
                 return res;
             },

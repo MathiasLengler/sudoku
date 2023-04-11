@@ -1,7 +1,7 @@
 use std::convert::TryInto;
 use std::fmt::{self, Display, Formatter};
 
-pub use dynamic::{DynamicSudoku, Game};
+pub use dynamic::{DynamicSudoku, DynamicTryStrategiesReturn, Game};
 use history::History;
 
 use crate::base::SudokuBase;

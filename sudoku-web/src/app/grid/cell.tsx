@@ -2,7 +2,7 @@ import type * as React from "react";
 import type * as CSS from "csstype";
 import classnames from "classnames";
 import { indexToPosition, valueToString } from "../utils";
-import type { CellViewCandidates, CellViewValue, TransportCell } from "../../types";
+import type { DynamicCellCandidates, DynamicCellValue, TransportCell } from "../../types";
 import { inputState } from "../state/input";
 import { sudokuBaseState } from "../state/sudoku";
 import { useRecoilValue } from "recoil";
@@ -29,7 +29,7 @@ function cellColorClass(fixed: boolean, incorrectValue: boolean) {
 }
 
 interface CellValueProps {
-    value: CellViewValue["value"];
+    value: DynamicCellValue["value"];
 }
 
 const CellValue: React.FunctionComponent<CellValueProps> = props => {
@@ -42,7 +42,7 @@ const CellValue: React.FunctionComponent<CellValueProps> = props => {
 };
 
 interface CandidatesProps {
-    candidates: CellViewCandidates["candidates"];
+    candidates: DynamicCellCandidates["candidates"];
 }
 
 const Candidates = ({ candidates }: CandidatesProps) => {

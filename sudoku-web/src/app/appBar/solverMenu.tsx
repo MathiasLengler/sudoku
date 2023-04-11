@@ -1,4 +1,4 @@
-import { useTryStrategy } from "../sudokuActions";
+import { useTryStrategies } from "../sudokuActions";
 import { useRecoilValue } from "recoil";
 import { sudokuIsSolvedState } from "../state/sudoku";
 import { CustomMenu } from "./customMenu";
@@ -15,19 +15,17 @@ const STRATEGIES_PYRAMID = _.initial(ALL_STRATEGIES).map((strategy, i) => ({
 }));
 
 export function SolverMenu() {
-    const tryStrategy = useTryStrategy();
+    const tryStrategies = useTryStrategies();
     const isSolved = useRecoilValue(sudokuIsSolvedState);
 
     const tryStrategiesInLoop = async (strategies: DynamicStrategy[]) => {
-        outer: while (true) {
-            for (const strategy of strategies) {
-                console.info("Trying strategy:", strategy);
-                if (await tryStrategy(strategy)) {
-                    console.info("Made progress with:", strategy);
-                    continue outer;
-                }
+        while (true) {
+            const tryStrategiesResult = await tryStrategies(strategies);
+            if (!tryStrategiesResult) {
+                break;
             }
-            break;
+            const [strategy, deductions] = tryStrategiesResult;
+            console.info(`Made progress with strategy ${strategy}:`, deductions);
         }
         // TODO: show in Snackbar
         console.info("All strategies failed to make progress");
@@ -39,7 +37,7 @@ export function SolverMenu() {
                 ...ALL_STRATEGIES.map(strategy => ({
                     label: strategy as string,
                     onClick: async () => {
-                        await tryStrategy(strategy);
+                        await tryStrategies([strategy]);
                     },
                 })),
                 ...STRATEGIES_PYRAMID.map(({ untilStrategy, strategies }) => ({

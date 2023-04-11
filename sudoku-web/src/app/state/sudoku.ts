@@ -1,6 +1,7 @@
 import { atom, selector } from "recoil";
 import type { TransportCell, TransportSudoku } from "../../../../sudoku-rs/bindings";
-import { spawnWorker, WasmSudokuProxyContainer } from "../../spawnWorker";
+import { spawnWorker } from "../../spawnWorker";
+import type { WasmSudokuProxyContainer } from "../../spawnWorker";
 
 export const wasmSudokuProxyContainerState = atom<WasmSudokuProxyContainer>({
     key: "WasmSudokuProxyContainer",

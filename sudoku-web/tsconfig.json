@@ -11,7 +11,7 @@
         "target": "ESNext",
         "noEmit": true,
         "isolatedModules": true,
-        "importsNotUsedAsValues": "error",
+        "verbatimModuleSyntax": true,
         "incremental": true,
     },
     "include": ["src/**/*"]

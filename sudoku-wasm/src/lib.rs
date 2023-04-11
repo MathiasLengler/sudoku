@@ -3,6 +3,8 @@ use serde_wasm_bindgen::Serializer;
 use wasm_bindgen::prelude::*;
 
 use error::Result;
+use export::*;
+use import::*;
 use sudoku::base::consts::*;
 use sudoku::cell::dynamic::DynamicCell;
 use sudoku::error::Error as SudokuError;
@@ -155,15 +157,18 @@ impl WasmSudoku {
     }
 
     // FIXME: wasm bindgen return type
-    // #[wasm_bindgen(js_name = tryStrategies)]
-    // pub fn try_strategies(
-    //     &mut self,
-    //     strategies: IDynamicStrategies,
-    // ) -> Result<Option<(IDynamicStrategy, ITransportDeductions)>> {
-    //     self.sudoku
-    //         .try_strategies(import_strategies(strategies))
-    //         .map_err(export_error)
-    // }
+    #[wasm_bindgen(js_name = tryStrategies)]
+    pub fn try_strategies(
+        &mut self,
+        strategies: IDynamicStrategies,
+    ) -> Result<IDynamicTryStrategiesReturn> {
+        let dynamic_try_strategies_return = self
+            .sudoku
+            .try_strategies(import_strategies(strategies)?)
+            .map_err(export_error)?;
+
+        export_dynamic_try_strategies_return(dynamic_try_strategies_return)
+    }
 
     #[wasm_bindgen(js_name = applyDeductions)]
     pub fn apply_deductions(&mut self, deductions: ITransportDeductions) -> Result<()> {
@@ -173,55 +178,63 @@ impl WasmSudoku {
     }
 }
 
-// Import helpers
-fn import_pos(pos: IPosition) -> Result<DynamicPosition> {
-    Ok(serde_wasm_bindgen::from_value(pos.into())?)
+/// Import helpers
+mod import {
+    use super::*;
+
+    pub(crate) fn import_pos(pos: IPosition) -> Result<DynamicPosition> {
+        Ok(serde_wasm_bindgen::from_value(pos.into())?)
+    }
+
+    pub(crate) fn import_candidates(candidates: ICandidates) -> Result<Vec<u8>> {
+        Ok(serde_wasm_bindgen::from_value(candidates.into())?)
+    }
+
+    pub(crate) fn import_dynamic_generator_settings(
+        dynamic_generator_settings: IDynamicGeneratorSettings,
+    ) -> Result<DynamicGeneratorSettings> {
+        Ok(serde_wasm_bindgen::from_value(
+            dynamic_generator_settings.into(),
+        )?)
+    }
+
+    pub(crate) fn import_grid_format(format: IGridFormat) -> Result<GridFormat> {
+        Ok(serde_wasm_bindgen::from_value(format.into())?)
+    }
+
+    pub(crate) fn import_cells(cells: Vec<IDynamicCell>) -> Result<Vec<DynamicCell>> {
+        cells
+            .into_iter()
+            .map(|cell| serde_wasm_bindgen::from_value(cell.into()).map_err(Into::into))
+            .collect()
+    }
+    pub(crate) fn import_strategies(strategy: IDynamicStrategies) -> Result<Vec<DynamicStrategy>> {
+        Ok(serde_wasm_bindgen::from_value(strategy.into())?)
+    }
+    pub(crate) fn import_deductions(strategy: ITransportDeductions) -> Result<TransportDeductions> {
+        Ok(serde_wasm_bindgen::from_value(strategy.into())?)
+    }
 }
 
-fn import_candidates(candidates: ICandidates) -> Result<Vec<u8>> {
-    Ok(serde_wasm_bindgen::from_value(candidates.into())?)
-}
+/// Export helpers
+mod export {
+    use sudoku::DynamicTryStrategiesReturn;
 
-fn import_dynamic_generator_settings(
-    dynamic_generator_settings: IDynamicGeneratorSettings,
-) -> Result<DynamicGeneratorSettings> {
-    Ok(serde_wasm_bindgen::from_value(
-        dynamic_generator_settings.into(),
-    )?)
-}
+    use super::*;
 
-fn import_grid_format(format: IGridFormat) -> Result<GridFormat> {
-    Ok(serde_wasm_bindgen::from_value(format.into())?)
+    pub(crate) fn export_error(error: SudokuError) -> JsError {
+        let message = format!("{error:?}");
+        JsError::new(&message)
+    }
+    pub(crate) fn export_value<T: serde::ser::Serialize + ?Sized>(value: &T) -> Result<JsValue> {
+        Ok(value.serialize(&Serializer::json_compatible())?)
+    }
+    pub(crate) fn export_sudoku(transport_sudoku: TransportSudoku) -> Result<ITransportSudoku> {
+        Ok(export_value(&transport_sudoku)?.into())
+    }
+    pub(crate) fn export_dynamic_try_strategies_return(
+        dynamic_try_strategies_return: DynamicTryStrategiesReturn,
+    ) -> Result<IDynamicTryStrategiesReturn> {
+        Ok(export_value(&dynamic_try_strategies_return)?.into())
+    }
 }
-
-fn import_cells(cells: Vec<IDynamicCell>) -> Result<Vec<DynamicCell>> {
-    cells
-        .into_iter()
-        .map(|cell| serde_wasm_bindgen::from_value(cell.into()).map_err(Into::into))
-        .collect()
-}
-fn import_strategy(strategy: IDynamicStrategy) -> Result<DynamicStrategy> {
-    Ok(serde_wasm_bindgen::from_value(strategy.into())?)
-}
-fn import_strategies(strategy: IDynamicStrategies) -> Result<Vec<DynamicStrategy>> {
-    Ok(serde_wasm_bindgen::from_value(strategy.into())?)
-}
-fn import_deductions(strategy: ITransportDeductions) -> Result<TransportDeductions> {
-    Ok(serde_wasm_bindgen::from_value(strategy.into())?)
-}
-// --- Import helpers
-
-// Export helpers
-fn export_error(error: SudokuError) -> JsError {
-    let message = format!("{error:?}");
-    JsError::new(&message)
-}
-
-fn export_value<T: serde::ser::Serialize + ?Sized>(value: &T) -> Result<JsValue> {
-    Ok(value.serialize(&Serializer::new().serialize_maps_as_objects(true))?)
-}
-
-fn export_sudoku(transport_sudoku: TransportSudoku) -> Result<ITransportSudoku> {
-    Ok(export_value(&transport_sudoku)?.into())
-}
-// --- Export helpers

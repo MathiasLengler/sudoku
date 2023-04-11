@@ -206,43 +206,6 @@ impl<Base: SudokuBase> Serialize for Position<Base> {
     }
 }
 
-#[cfg(feature = "wasm")]
-mod wasm {
-    use ts_rs::TS;
-
-    use super::*;
-
-    impl<Base: SudokuBase> TS for Position<Base> {
-        const EXPORT_TO: Option<&'static str> = Some("bindings/Position.ts");
-        fn decl() -> String {
-            "type Position = number;".to_owned()
-        }
-        fn name() -> String {
-            "Position".to_owned()
-        }
-        fn name_with_type_args(_args: Vec<String>) -> String {
-            Self::name()
-        }
-        fn inline() -> String {
-            "number".to_owned()
-        }
-        fn dependencies() -> Vec<ts_rs::Dependency> {
-            vec![]
-        }
-        fn transparent() -> bool {
-            false
-        }
-    }
-
-    #[cfg(test)]
-    #[test]
-    fn export_bindings_value() {
-        use crate::base::consts::Base3;
-
-        <Position<Base3> as ts_rs::TS>::export().expect("could not export type");
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use itertools::Itertools;
