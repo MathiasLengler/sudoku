@@ -7,18 +7,18 @@ use anyhow::ensure;
 use ndarray::Array2;
 
 use crate::base::SudokuBase;
+use crate::cell::dynamic::parser::parse_cells;
+use crate::cell::dynamic::DynamicCell;
 use crate::cell::Candidates;
 use crate::cell::Cell;
 use crate::cell::CellState;
-use crate::cell::dynamic::DynamicCell;
-use crate::cell::dynamic::parser::parse_cells;
 use crate::cell::Value;
 use crate::error::{Error, Result};
 use crate::grid::serialization::GridFormat;
 use crate::position::Coordinate;
 use crate::position::Position;
-use crate::solver::{backtracking_bitset, strategic};
 use crate::solver::strategic::strategies::DynamicStrategy;
+use crate::solver::{backtracking_bitset, strategic};
 use crate::unsafe_utils::{get_unchecked, get_unchecked_mut};
 
 pub mod deserialization;
@@ -906,26 +906,26 @@ mod tests {
     #[test]
     fn test_has_duplicate_value() {
         let cells_with_no_duplicate_value = vec![
-            DynamicCell::Value(Value {
-                value: 1,
+            DynamicCell::Value {
+                value: 1.into(),
                 fixed: false,
-            })
+            }
             .try_into()
             .unwrap(),
-            DynamicCell::Candidates(Candidates {
-                candidates: vec![1, 2, 3],
-            })
+            DynamicCell::Candidates {
+                candidates: vec![1, 2, 3].into(),
+            }
             .try_into()
             .unwrap(),
-            DynamicCell::Candidates(Candidates {
-                candidates: vec![1, 2, 3],
-            })
+            DynamicCell::Candidates {
+                candidates: vec![1, 2, 3].into(),
+            }
             .try_into()
             .unwrap(),
-            DynamicCell::Value(Value {
-                value: 2,
+            DynamicCell::Value {
+                value: 2.into(),
                 fixed: false,
-            })
+            }
             .try_into()
             .unwrap(),
         ];
@@ -934,26 +934,26 @@ mod tests {
             cells_with_no_duplicate_value.iter()
         ));
         let cells_with_duplicate_value = vec![
-            DynamicCell::Value(Value {
-                value: 1,
+            DynamicCell::Value {
+                value: 1.into(),
                 fixed: false,
-            })
+            }
             .try_into()
             .unwrap(),
-            DynamicCell::Candidates(Candidates {
-                candidates: vec![1, 2, 3],
-            })
+            DynamicCell::Candidates {
+                candidates: vec![1, 2, 3].into(),
+            }
             .try_into()
             .unwrap(),
-            DynamicCell::Candidates(Candidates {
-                candidates: vec![1, 2, 3],
-            })
+            DynamicCell::Candidates {
+                candidates: vec![1, 2, 3].into(),
+            }
             .try_into()
             .unwrap(),
-            DynamicCell::Value(Value {
-                value: 1,
+            DynamicCell::Value {
+                value: 1.into(),
                 fixed: false,
-            })
+            }
             .try_into()
             .unwrap(),
         ];
