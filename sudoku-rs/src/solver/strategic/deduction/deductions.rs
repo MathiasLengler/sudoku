@@ -28,7 +28,13 @@ impl<Base: SudokuBase> TryFrom<TransportDeductions> for Deductions<Base> {
     type Error = Error;
 
     fn try_from(transport_deductions: TransportDeductions) -> Result<Self> {
-        todo!()
+        let TransportDeductions { deductions } = transport_deductions;
+        Ok(Self {
+            deductions: deductions
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_>>()?,
+        })
     }
 }
 

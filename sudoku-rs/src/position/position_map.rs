@@ -1,10 +1,10 @@
-use std::collections::{btree_map, BTreeMap};
 use std::collections::btree_map::Iter;
+use std::collections::{btree_map, BTreeMap};
 use std::fmt::{Display, Formatter};
 use std::iter::Map;
 
 use crate::base::SudokuBase;
-use crate::error::Result;
+use crate::error::{Error, Result};
 use crate::position::Position;
 
 pub trait Merge: Sized + Copy {
@@ -71,11 +71,18 @@ impl<Base: SudokuBase, T: Merge> PositionMap<Base, T> {
         this
     }
 
-    pub fn try_from_iter(iter: impl Iterator<Item = (Position<Base>, T)>) -> Result<Self> {
+    pub fn try_from_iter<I, IntoPos, IntoT>(iter: I) -> Result<Self>
+    where
+        I: Iterator<Item = (IntoPos, IntoT)>,
+        IntoPos: TryInto<Position<Base>>,
+        IntoT: TryInto<T>,
+        Error: From<IntoPos::Error>,
+        Error: From<IntoT::Error>,
+    {
         let mut this = Self::new();
 
         for (pos, value) in iter {
-            this.insert(pos, value)?;
+            this.insert(pos.try_into()?, value.try_into()?)?;
         }
 
         Ok(this)

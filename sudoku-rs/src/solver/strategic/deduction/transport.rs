@@ -10,7 +10,7 @@ use crate::solver::strategic::deduction::{Action, Deduction, Deductions, Reason}
 #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct TransportDeductions {
-    deductions: Vec<TransportDeduction>,
+    pub deductions: Vec<TransportDeduction>,
 }
 
 impl<Base: SudokuBase> From<Deductions<Base>> for TransportDeductions {
@@ -61,6 +61,7 @@ pub struct PositionedTransportReason {
 
 #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub enum TransportReason {
     Candidates(DynamicCandidates),
 }
@@ -82,6 +83,7 @@ pub struct PositionedTransportAction {
 
 #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub enum TransportAction {
     SetValue(DynamicValue),
     DeleteCandidates(DynamicCandidates),
@@ -99,40 +101,75 @@ impl<Base: SudokuBase> From<Action<Base>> for TransportAction {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::base::consts::Base2;
 
-    // TODO: test round-trip
+    fn sample_transport_deductions() -> TransportDeductions {
+        TransportDeductions {
+            deductions: vec![
+                TransportDeduction {
+                    reasons: vec![],
+                    actions: vec![],
+                },
+                TransportDeduction {
+                    reasons: vec![PositionedTransportReason {
+                        position: (0, 0).into(),
+                        reason: TransportReason::Candidates(vec![].into()),
+                    }],
+                    actions: vec![PositionedTransportAction {
+                        position: (0, 1).into(),
+                        action: TransportAction::DeleteCandidates(vec![].into()),
+                    }],
+                },
+                TransportDeduction {
+                    reasons: vec![
+                        PositionedTransportReason {
+                            position: (1, 0).into(),
+                            reason: TransportReason::Candidates(vec![1, 2, 3].into()),
+                        },
+                        PositionedTransportReason {
+                            position: (1, 1).into(),
+                            reason: TransportReason::Candidates(vec![4].into()),
+                        },
+                    ],
+                    actions: vec![
+                        PositionedTransportAction {
+                            position: (1, 2).try_into().unwrap(),
+                            action: TransportAction::SetValue(1.into()),
+                        },
+                        PositionedTransportAction {
+                            position: (1, 3).try_into().unwrap(),
+                            action: TransportAction::DeleteCandidates(vec![1].into()),
+                        },
+                        PositionedTransportAction {
+                            position: (2, 0).try_into().unwrap(),
+                            action: TransportAction::DeleteCandidates(vec![1, 2, 3].into()),
+                        },
+                    ],
+                },
+            ],
+        }
+    }
 
+    #[ignore]
     #[test]
     fn test_debug_serde() {
         use serde_json;
 
-        let deduction = TransportDeduction {
-            reasons: vec![
-                PositionedTransportReason {
-                    position: (1, 2).into(),
-                    reason: TransportReason::Candidates(vec![1, 2, 3].into()),
-                },
-                PositionedTransportReason {
-                    position: (3, 4).into(),
-                    reason: TransportReason::Candidates(vec![4].into()),
-                },
-            ],
-            actions: vec![
-                PositionedTransportAction {
-                    position: (1, 1).try_into().unwrap(),
-                    action: TransportAction::SetValue(1.into()),
-                },
-                PositionedTransportAction {
-                    position: (2, 2).try_into().unwrap(),
-                    action: TransportAction::DeleteCandidates(vec![1].into()),
-                },
-                PositionedTransportAction {
-                    position: (3, 3).try_into().unwrap(),
-                    action: TransportAction::DeleteCandidates(vec![1, 2, 3].into()),
-                },
-            ],
-        };
+        let transport_deductions = sample_transport_deductions();
 
-        println!("{}", serde_json::to_string_pretty(&deduction).unwrap());
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&transport_deductions).unwrap()
+        );
+    }
+
+    #[test]
+    fn test_transport_round_trip() {
+        let sample_transport_deductions = sample_transport_deductions();
+
+        let deductions: Deductions<Base2> = sample_transport_deductions.clone().try_into().unwrap();
+        let transport_deductions: TransportDeductions = deductions.into();
+
+        assert_eq!(transport_deductions, sample_transport_deductions);
     }
 }
