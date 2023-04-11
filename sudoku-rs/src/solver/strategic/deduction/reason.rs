@@ -1,20 +1,30 @@
 use std::fmt::{Display, Formatter};
 
-use anyhow::{bail, Context, ensure};
+use anyhow::{bail, ensure, Context};
 
 use crate::base::SudokuBase;
 use crate::cell::Candidates;
 use crate::cell::Cell;
 use crate::cell::CellState;
 use crate::cell::Value;
-use crate::error::Result;
+use crate::error::{Error, Result};
 use crate::position::Merge;
+use crate::solver::strategic::deduction::transport::TransportReason;
 
 /// On what basis a deduction was made.
 /// Used to highlight/explain a deduction in the UI.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub enum Reason<Base: SudokuBase> {
     Candidates(Candidates<Base>),
+}
+
+impl<Base: SudokuBase> TryFrom<TransportReason> for Reason<Base> {
+    type Error = Error;
+
+    fn try_from(transport_reason: TransportReason) -> Result<Self> {
+        let TransportReason::Candidates(candidates) = transport_reason;
+        Ok(Self::Candidates(candidates.try_into()?))
+    }
 }
 
 impl<Base: SudokuBase> Display for Reason<Base> {

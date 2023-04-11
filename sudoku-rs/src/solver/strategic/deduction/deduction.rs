@@ -7,8 +7,8 @@ use crate::base::SudokuBase;
 use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::position::{Position, PositionMap};
-use crate::solver::strategic::deduction::transport::TransportDeduction;
 use crate::solver::strategic::deduction::{Action, Reason};
+use crate::solver::strategic::deduction::transport::TransportDeduction;
 
 // TODO: easier instantiation of Deduction for test
 
@@ -28,6 +28,11 @@ impl<Base: SudokuBase> TryFrom<TransportDeduction> for Deduction<Base> {
     type Error = Error;
 
     fn try_from(transport_deduction: TransportDeduction) -> Result<Self> {
+        let TransportDeduction { actions, reasons } = transport_deduction;
+        Ok(Self {
+            actions: actions.into_iter().map(|PositionedTransportAction {}| ),
+            reasons: (),
+        })
         todo!()
     }
 }
