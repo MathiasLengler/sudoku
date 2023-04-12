@@ -1,7 +1,8 @@
 import React from "react";
 import { IconButton } from "@mui/material";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
-import { NewGameDialog } from "./newGame/newGameDialog";
+import { MyDialog } from "../../components/MyDialog";
+import { NewGameTabs } from "./newGameTabs";
 
 export function NewGameButton() {
     const [isNewGameDialogOpen, setIsNewGameDialogOpen] = React.useState(false);
@@ -16,7 +17,9 @@ export function NewGameButton() {
             >
                 <AddCircleIcon fontSize="large" />
             </IconButton>
-            <NewGameDialog open={isNewGameDialogOpen} onClose={() => setIsNewGameDialogOpen(false)} />
+            <MyDialog open={isNewGameDialogOpen} onClose={() => setIsNewGameDialogOpen(false)}>
+                {onClose => <NewGameTabs onClose={onClose} />}
+            </MyDialog>
         </>
     );
 }

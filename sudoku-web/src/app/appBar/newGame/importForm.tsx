@@ -10,23 +10,7 @@ import AccordionDetails from "@mui/material/AccordionDetails";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import CircularProgress from "@mui/material/CircularProgress";
 import { useImportSudokuString } from "../../sudokuActions";
-
-interface CodeProps {
-    text: string;
-}
-
-const Code: React.FunctionComponent<CodeProps> = ({ text }) => {
-    return (
-        <div>
-            {text.split("\n").map((line, index) => (
-                <code key={index} style={{ whiteSpace: "pre" }}>
-                    {line}
-                    <br key={index} />
-                </code>
-            ))}
-        </div>
-    );
-};
+import { Code } from "../../components/Code";
 
 interface ImportFormProps {
     onClose: () => void;
@@ -48,10 +32,9 @@ export const ImportForm = ({ onClose }: ImportFormProps) => {
                 }}
             >
                 <Typography variant="h6">List of givens</Typography>
-                <Code text="6....23..1256.......47...2.73....84...........46....15.5...81.......3472..72....8" />
+                <Code>{"6....23..1256.......47...2.73....84...........46....15.5...81.......3472..72....8"}</Code>
                 <Typography variant="h6">Grid of givens</Typography>
-                <Code
-                    text={`*-----------*
+                <Code>{`*-----------*
 |.8.|5.3|.7.|
 |.27|...|38.|
 |...|...|...|
@@ -63,11 +46,10 @@ export const ImportForm = ({ onClose }: ImportFormProps) => {
 |...|...|...|
 |.32|...|45.|
 |.5.|9.7|.2.|
-*-----------*`}
-                />
+*-----------*`}</Code>
                 <Typography variant="h6">Grid of candidates</Typography>
-                <Code
-                    text={`.--------------.----------------.------------.
+                <Code>
+                    {`.--------------.----------------.------------.
 | 6   7    89  | 189  19   2    | 3   5   4  |
 | 1   2    5   | .    3    4    | 9   8   7  |
 | 3   89   4   | 7    58   59   | 6   2   1  |
@@ -80,9 +62,9 @@ export const ImportForm = ({ onClose }: ImportFormProps) => {
 | 89  689  1   | 5    69   3    | 4   0   2  |
 | 4   69   7   | 2    169  169  | 5   3   8  |
 '--------------'----------------'------------'`}
-                />
+                </Code>
                 <Typography variant="h6">Empty cells can be expressed as</Typography>
-                <Code text=". 0" />
+                <Code>{". 0"}</Code>
             </AccordionDetails>
         </Accordion>
     );

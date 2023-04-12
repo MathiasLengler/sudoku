@@ -1,6 +1,6 @@
 use owo_colors::Style as OwoStyle;
 use serde::{Deserialize, Serialize};
-use tabled::{Alignment, builder::Builder, Modify, object::Segment, Style};
+use tabled::{builder::Builder, object::Segment, Alignment, Modify, Style};
 #[cfg(feature = "wasm")]
 use ts_rs::TS;
 
@@ -52,16 +52,18 @@ pub enum GridFormat {
     /// Values are bold.
     /// Unfixed values are blue.
     CandidatesGrid,
+    /// The same as `CandidatesGrid`, but without terminal styling.
+    CandidatesGridPlain,
 }
 
 impl GridFormat {
     pub fn render<Base: SudokuBase>(&self, grid: &Grid<Base>) -> String {
-        use GridFormat::*;
         match self {
-            GivensLine => render_givens_line(grid),
-            GivensGrid => render_givens_grid(grid),
-            BinaryCandidatesLine => render_binary_candidates_line(grid),
-            CandidatesGrid => render_candidates_grid(grid),
+            GridFormat::GivensLine => render_givens_line(grid),
+            GridFormat::GivensGrid => render_givens_grid(grid),
+            GridFormat::BinaryCandidatesLine => render_binary_candidates_line(grid),
+            GridFormat::CandidatesGrid => render_candidates_grid(grid, true),
+            GridFormat::CandidatesGridPlain => render_candidates_grid(grid, false),
         }
     }
 }
@@ -112,10 +114,22 @@ fn render_binary_candidates_line<Base: SudokuBase>(grid: &Grid<Base>) -> String 
         .join(",")
 }
 
-fn render_candidates_grid<Base: SudokuBase>(grid: &Grid<Base>) -> String {
-    let default = OwoStyle::new();
-    let bold = OwoStyle::new().bold();
-    let bold_blue = OwoStyle::new().bold().blue();
+fn render_candidates_grid<Base: SudokuBase>(
+    grid: &Grid<Base>,
+    enable_terminal_styling: bool,
+) -> String {
+    let default;
+    let bold;
+    let bold_blue;
+    if enable_terminal_styling {
+        default = OwoStyle::new();
+        bold = OwoStyle::new().bold();
+        bold_blue = OwoStyle::new().bold().blue();
+    } else {
+        default = OwoStyle::new();
+        bold = OwoStyle::new();
+        bold_blue = OwoStyle::new();
+    }
 
     let all_values: Vec<_> = (1..=Base::MAX_VALUE)
         .map(|value| Value::<Base>::new(value).unwrap().unwrap())
@@ -270,6 +284,36 @@ mod tests {
 ║ ────────┼──────── ║ ────────┼──────── ║
 ║   1  2  │         ║         │  1      ║
 ║         │   \u{1b}[1m3\u{1b}[0m     ║         │         ║
+║         │         ║      4  │     4   ║
+╚═══════════════════╩═══════════════════╝"
+        );
+    }
+
+    #[test]
+    fn test_render_candidates_grid_plain() {
+        let mut grid = base_2().pop().unwrap();
+        grid.fix_all_values();
+        grid.get_mut((0, 1).try_into().unwrap())
+            .set_value(2.try_into().unwrap());
+        grid.set_all_direct_candidates();
+
+        assert_eq!(
+            GridFormat::CandidatesGridPlain.render(&grid),
+            "╔═══════════════════╦═══════════════════╗
+║         │         ║         │         ║
+║         │   2     ║    1    │         ║
+║   3     │         ║         │  3  4   ║
+║ ────────┼──────── ║ ────────┼──────── ║
+║         │  1      ║      2  │         ║
+║    4    │         ║         │         ║
+║         │         ║   3     │  3      ║
+╠═══════════════════╬═══════════════════╣
+║   1     │  1      ║         │         ║
+║         │         ║         │   2     ║
+║         │     4   ║   3  4  │         ║
+║ ────────┼──────── ║ ────────┼──────── ║
+║   1  2  │         ║         │  1      ║
+║         │   3     ║         │         ║
 ║         │         ║      4  │     4   ║
 ╚═══════════════════╩═══════════════════╝"
         );

@@ -1,7 +1,7 @@
 import { useApplyDeductions, useTryStrategies } from "../sudokuActions";
 import { useRecoilValue } from "recoil";
 import { sudokuIsSolvedState } from "../state/sudoku";
-import { CustomMenu } from "./customMenu";
+import { CustomMenu } from "../components/CustomMenu";
 import { ALL_STRATEGIES } from "../../constants";
 import type { DynamicStrategy } from "../../../../sudoku-rs/bindings";
 import { IconButton } from "@mui/material";

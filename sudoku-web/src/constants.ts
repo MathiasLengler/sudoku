@@ -1,4 +1,4 @@
-import type { DynamicStrategy } from "./types";
+import type { DynamicStrategy, GridFormat } from "./types";
 
 export const WORKER_BOOT_UP_MESSAGE = "Worker loaded";
 const arrayOfAll =
@@ -12,4 +12,12 @@ export const ALL_STRATEGIES = arrayOfAll<DynamicStrategy>()([
     "NakedPairs",
     "GroupReduction",
     "Backtracking",
+]);
+
+export const ALL_GRID_FORMATS = arrayOfAll<GridFormat>()([
+    "givensLine",
+    "givensGrid",
+    "binaryCandidatesLine",
+    "candidatesGrid",
+    "candidatesGridPlain",
 ]);

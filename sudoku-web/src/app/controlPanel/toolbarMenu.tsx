@@ -2,7 +2,7 @@ import * as React from "react";
 import IconButton from "@mui/material/IconButton";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import Tooltip from "@mui/material/Tooltip";
-import { CustomMenu } from "../appBar/customMenu";
+import { CustomMenu } from "../components/CustomMenu";
 import InfoIcon from "@mui/icons-material/Info";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useDeleteSelectedCell, useSetAllDirectCandidates } from "../sudokuActions";

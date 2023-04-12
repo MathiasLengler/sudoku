@@ -3,9 +3,9 @@ import React from "react";
 import AppBar from "@mui/material/AppBar";
 import Typography from "@mui/material/Typography";
 import Toolbar from "@mui/material/Toolbar";
-import { NewGameButton } from "./newGameButton";
+import { NewGameButton } from "./newGame/newGameButton";
 import { SolverMenu } from "./solverMenu";
-import { ShareMenu } from "./shareMenu";
+import { ShareMenu } from "./share/shareMenu";
 
 export default function SudokuAppBar() {
     return (

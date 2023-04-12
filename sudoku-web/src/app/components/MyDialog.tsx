@@ -1,15 +1,16 @@
 import type * as React from "react";
+import type { ReactNode } from "react";
 import Dialog from "@mui/material/Dialog";
-import { NewGameTabs } from "./newGameTabs";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
 
-interface NewGameDialogProps {
+interface MyDialogProps {
     open: boolean;
     onClose: () => void;
+    children: (onClose: () => void) => ReactNode;
 }
 
-export const NewGameDialog = ({ onClose, open }: NewGameDialogProps) => {
+export const MyDialog = ({ open, onClose, children }: MyDialogProps) => {
     const theme = useTheme();
     const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
 
@@ -20,8 +21,8 @@ export const NewGameDialog = ({ onClose, open }: NewGameDialogProps) => {
                 e.stopPropagation();
             }}
         >
-            <Dialog open={open} onClose={onClose} fullWidth fullScreen={fullScreen}>
-                <NewGameTabs onClose={onClose} />
+            <Dialog open={open} onClose={onClose} fullWidth fullScreen={fullScreen} scroll="paper">
+                {children(onClose)}
             </Dialog>
         </div>
     );
