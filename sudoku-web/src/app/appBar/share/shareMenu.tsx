@@ -20,11 +20,11 @@ export function ShareMenu() {
                         label: "SudokuWiki",
                         icon: <OpenInNewIcon />,
                         onClick: async () => {
-                            const binaryCandidatesLine = await exportSudokuString("binaryCandidatesLine");
+                            const binaryFixedCandidatesLine = await exportSudokuString("binaryFixedCandidatesLine");
                             window.open(
                                 // Template string, since URLSearchParams encodes the reserved character ",".
                                 // sudokuwiki.org expects these characters to be unencoded.
-                                `https://www.sudokuwiki.org/sudoku.htm?n=${binaryCandidatesLine}`,
+                                `https://www.sudokuwiki.org/sudoku.htm?bd=${binaryFixedCandidatesLine}`,
                                 "_blank",
                                 "noopener"
                             );

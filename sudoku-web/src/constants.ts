@@ -17,7 +17,8 @@ export const ALL_STRATEGIES = arrayOfAll<DynamicStrategy>()([
 export const ALL_GRID_FORMATS = arrayOfAll<GridFormat>()([
     "givensLine",
     "givensGrid",
-    "binaryCandidatesLine",
-    "candidatesGrid",
     "candidatesGridPlain",
+    "candidatesGrid",
+    "binaryCandidatesLine",
+    "binaryFixedCandidatesLine",
 ]);

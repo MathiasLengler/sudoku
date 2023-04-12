@@ -47,6 +47,16 @@ pub enum GridFormat {
     /// # Example
     /// `1,2,4,8,16,32,64,128,256,3,5,9,17,33,65,129,257,511,3,7,15,31,63,127,255,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511`
     BinaryCandidatesLine,
+    /// New compact candidates grid format defined by [sudokuwiki.org](https://www.sudokuwiki.org/Sudoku_String_Definitions)
+    ///
+    /// Used by the solver via the search parameter `bd`.
+    ///
+    /// Differences from `BinaryCandidatesLine`:
+    /// - additional bit in the candidates bitset indicating a clue (fixed value)
+    /// - candidates bitset is encoded in base32 and padded with leading zeros to a fixed length.
+    ///   In base 3, the length is 2 characters.
+    /// - no delimiters
+    BinaryFixedCandidatesLine,
     /// Render grid of cells.
     /// Candidates are visualized as a nested grid.
     /// Values are bold.
@@ -62,6 +72,7 @@ impl GridFormat {
             GridFormat::GivensLine => render_givens_line(grid),
             GridFormat::GivensGrid => render_givens_grid(grid),
             GridFormat::BinaryCandidatesLine => render_binary_candidates_line(grid),
+            GridFormat::BinaryFixedCandidatesLine => render_binary_fixed_candidates_line(grid),
             GridFormat::CandidatesGrid => render_candidates_grid(grid, true),
             GridFormat::CandidatesGridPlain => render_candidates_grid(grid, false),
         }
@@ -112,6 +123,30 @@ fn render_binary_candidates_line<Base: SudokuBase>(grid: &Grid<Base>) -> String 
             CellState::Candidates(candidates) => candidates.integral().to_string(),
         })
         .join(",")
+}
+
+fn render_binary_fixed_candidates_line<Base: SudokuBase>(grid: &Grid<Base>) -> String {
+    use radix_fmt::radix_32;
+
+    grid.cells
+        .iter()
+        .map(|cell| {
+            let mut bits: u32 = match cell.state() {
+                CellState::Value(value) | CellState::FixedValue(value) => {
+                    2u32.pow(u32::from(value.into_u8() - 1))
+                }
+                CellState::Candidates(candidates) => candidates.integral().into(),
+            };
+            // Make space for fixed value bit
+            bits <<= 1;
+            if cell.has_fixed_value() {
+                bits += 1;
+            }
+            let base32string = format!("{}", radix_32(bits));
+            let padded = format!("{base32string:0>2}");
+            dbg!(padded)
+        })
+        .collect()
 }
 
 fn render_candidates_grid<Base: SudokuBase>(
@@ -256,6 +291,20 @@ mod tests {
         assert_eq!(
             GridFormat::BinaryCandidatesLine.render(&grid),
             "128,43,314,78,87,15,309,344,381,283,11,4,32,211,139,401,472,345,57,64,56,140,256,141,2,152,61,303,16,298,390,166,64,417,394,299,295,167,290,390,8,16,64,386,291,362,170,362,1,162,418,432,4,314,94,14,1,334,70,270,276,32,128,110,46,128,16,102,302,260,1,326,118,256,114,198,231,167,8,82,86"
+        );
+    }
+
+    //noinspection SpellCheckingInspection
+    #[test]
+    fn test_render_binary_fixed_candidates_line() {
+        let mut grid = base_3().pop().unwrap();
+        grid.set_all_direct_candidates();
+        grid.get_mut((0, 1).try_into().unwrap())
+            .set_value(2.try_into().unwrap());
+
+        assert_eq!(
+            GridFormat::BinaryFixedCandidatesLine.render(&grid),
+            "8104jk4s5e0ujalgnqhm0m0921d68mp2tgli3i413g8og18q059g3qiu11ikocac41q2okimieaei4oc0h1141o4i6mkakmk03a4q4r009jk5s0s03ks4cgsh821816s2s81116cisg803kc7cg174cceeae0h545c"
         );
     }
 

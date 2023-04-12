@@ -2,11 +2,11 @@ use std::fmt::{Binary, Debug, Display};
 use std::hash::Hash;
 use std::ops::{BitAndAssign, BitOrAssign, BitXorAssign, Shl};
 
-use num::PrimInt;
 use num::traits::{
     CheckedShl, CheckedShr, Unsigned, WrappingAdd, WrappingMul, WrappingShl, WrappingShr,
     WrappingSub,
 };
+use num::PrimInt;
 
 use consts::*;
 
@@ -216,7 +216,8 @@ where
         + BitXorAssign
         + BitOrAssign
         + BitAndAssign
-        + Shl<u8, Output = Self::CandidatesIntegral>;
+        + Shl<u8, Output = Self::CandidatesIntegral>
+        + Into<u32>;
 
     /// Data structure for `backtracking_bitset::Solver`.
     ///

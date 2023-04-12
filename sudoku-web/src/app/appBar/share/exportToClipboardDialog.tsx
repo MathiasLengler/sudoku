@@ -78,7 +78,11 @@ export function ExportToClipboardDialog({ onClose }: ExportToClipboardDialogProp
                     />
                 </form>
                 <Box sx={{ pt: 2 }}>
-                    <Code wrap={["givensLine", "binaryCandidatesLine"].includes(gridFormat)}>{exportedGridString}</Code>
+                    <Code
+                        wrap={["givensLine", "binaryCandidatesLine", "binaryFixedCandidatesLine"].includes(gridFormat)}
+                    >
+                        {exportedGridString}
+                    </Code>
                 </Box>
             </DialogContent>
             <DialogActions>
