@@ -93,19 +93,7 @@ export default async (
             // PWA
             ((isProduction && !reactProfiling) || debugSW) &&
                 new WorkboxPlugin.GenerateSW({
-                    // clientsClaim: true,
-                    // skipWaiting: true,
                     maximumFileSizeToCacheInBytes: Math.pow(10, 8),
-                    // runtimeCaching: [
-                    //     {
-                    //         handler: "StaleWhileRevalidate",
-                    //         urlPattern: options => {
-                    //             console.log("StaleWhileRevalidate URL options", options);
-                    //             return true;
-                    //         },
-                    //         options: {},
-                    //     },
-                    // ],
                 }),
             new webpack.DefinePlugin({
                 "process.env.DEBUG_SW": debugSW,
