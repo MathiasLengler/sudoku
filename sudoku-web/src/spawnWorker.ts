@@ -76,7 +76,4 @@ export async function spawnWorker(): Promise<WasmSudokuProxyContainer> {
     return {
         wasmSudokuProxy: fixupWasmSudokuProxy(wasmSudokuProxy),
     };
-
-    // const sudoku = await wasmSudokuProxy.getSudoku();
-    // setSudoku(sudoku);
 }
