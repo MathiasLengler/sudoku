@@ -7,7 +7,7 @@ import FaviconsWebpackPlugin from "favicons-webpack-plugin";
 import CopyPlugin from "copy-webpack-plugin";
 import ReactRefreshPlugin from "@pmmmwh/react-refresh-webpack-plugin";
 import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin";
-import webpack, { WebpackPluginInstance } from "webpack";
+import webpack, { type WebpackPluginInstance } from "webpack";
 import "webpack-dev-server";
 
 import _ from "lodash";
@@ -107,10 +107,9 @@ export default async (
                     //     },
                     // ],
                 }),
-            debugSW &&
-                new webpack.DefinePlugin({
-                    "process.env.DEBUG_SW": "true",
-                }),
+            new webpack.DefinePlugin({
+                "process.env.DEBUG_SW": debugSW,
+            }),
             new WebpackPwaManifest({
                 name: "Sudoku",
                 short_name: "Sudoku",
