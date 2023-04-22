@@ -8,10 +8,11 @@
         "start": "webpack serve --mode development",
         "start:profiling": "webpack serve --mode production --env reactProfiling=true",
         "build": "webpack --mode production",
+        "build:debugSW": "webpack --mode development --env debugSW=true",
         "build:analyze": "webpack --mode production --env bundleAnalyzer=true",
         "lint": "npm run lint:tsc && npm run lint:eslint",
         "lint:tsc": "tsc",
-        "lint:eslint": "eslint src/**",
+        "lint:eslint": "eslint src/** webpack.config.ts",
         "serve": "npx serve -l 8080 dist"
     },
     "engines": {
@@ -22,10 +23,12 @@
         "@babel/preset-env": "^7.21.4",
         "@babel/preset-react": "^7.18.6",
         "@babel/preset-typescript": "^7.21.4",
+        "@babel/register": "^7.18.9",
         "@pmmmwh/react-refresh-webpack-plugin": "^0.5.10",
         "@types/lodash": "^4.14.192",
         "@types/react": "^18.0.34",
         "@types/react-dom": "^18.0.11",
+        "@types/webpack-bundle-analyzer": "^4.6.0",
         "@typescript-eslint/eslint-plugin": "^5.58.0",
         "@typescript-eslint/parser": "^5.58.0",
         "@wasm-tool/wasm-pack-plugin": "1.6.0",
@@ -69,6 +72,7 @@
         "react-hook-form": "^7.43.9",
         "react-hook-form-mui": "^6.0.1",
         "react-resize-detector": "^9.1.0",
-        "recoil": "^0.7.7"
+        "recoil": "^0.7.7",
+        "workbox-window": "^6.5.4"
     }
 }

@@ -14,5 +14,5 @@
         "verbatimModuleSyntax": true,
         "incremental": true,
     },
-    "include": ["src/**/*"]
+    "include": ["src/**/*", "webpack.config.ts"]
 }
