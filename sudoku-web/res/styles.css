@@ -20,6 +20,8 @@
     --cell-value-color-incorrect-value: hsl(0, 100%, 50%);
     --candiate-color: hsl(var(--hue), 3%, 39%);
     --candiate-color-guide: hsl(var(--hue), 25%, 83%);
+    --candiate-bg-color-deduction-reason: hsl(120, 100%, 50%);
+    --candiate-bg-color-deduction-delete: hsl(60, 100%, 50%);
     --bg-color: hsl(0, 0%, 100%);
 
     --sudoku-content-direction: column;
@@ -40,10 +42,13 @@
         --cell-value-color-user: hsl(var(--hue), 85%, 66%);
         --cell-value-color-incorrect-value: hsl(0, 100%, 50%);
         --candiate-color: hsl(0, 0%, 100%);
+        --candiate-bg-color-deduction-reason: hsl(120, 100%, 25%);
+        --candiate-bg-color-deduction-delete: hsl(60, 100%, 25%);
         --bg-color: hsl(0, 0%, 7%);
     }
 }
 
+/* FIXME: replace with: https://developer.mozilla.org/en-US/docs/Web/CSS/@container#descriptors:~:text=the%20container%20condition%3A-,aspect%2Dratio,-The%20aspect%2Dratio */
 @media (min-aspect-ratio: 91/100) {
     :root {
         --sudoku-content-direction: row;
@@ -230,7 +235,6 @@ button {
 
 .candidates {
     display: grid;
-    place-items: center;
     grid-template-columns: repeat(var(--base), 1fr);
     grid-template-rows: repeat(var(--base), 1fr);
 }
@@ -245,6 +249,7 @@ button {
     color: var(--candiate-color);
     font-size: calc(var(--cell-size) / (var(--base) + 0.1));
     line-height: 1;
+    text-align: center;
 
     min-width: 0;
     min-height: 0;
@@ -252,6 +257,16 @@ button {
 
 .candidate--guide {
     color: var(--cell-value-color-user);
+}
+
+.candidate--deduction-reason {
+    background-color: var(--candiate-bg-color-deduction-reason);
+    border-radius: 50%;
+}
+
+.candidate--deduction-delete {
+    background-color: var(--candiate-bg-color-deduction-delete);
+    border-radius: 50%;
 }
 
 .toolbar {

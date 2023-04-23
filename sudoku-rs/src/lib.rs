@@ -11,6 +11,7 @@
 #![allow(clippy::missing_errors_doc)]
 #![allow(clippy::enum_glob_use)]
 #![allow(clippy::redundant_closure_for_method_calls)]
+#![allow(clippy::too_many_lines)]
 // TODO: fix separately
 #![allow(clippy::trivially_copy_pass_by_ref)]
 // TODO: fix separately

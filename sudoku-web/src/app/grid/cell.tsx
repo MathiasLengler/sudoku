@@ -2,11 +2,14 @@ import type * as React from "react";
 import type * as CSS from "csstype";
 import classnames from "classnames";
 import { indexToPosition, valueToString } from "../utils";
-import type { DynamicCellCandidates, DynamicCellValue, TransportCell } from "../../types";
+import type { DynamicCellCandidates, DynamicCellValue, DynamicPosition, TransportCell } from "../../types";
 import { inputState } from "../state/input";
 import { sudokuBaseState } from "../state/sudoku";
 import { useRecoilValue } from "recoil";
 import { useHandlePosition } from "../sudokuActions";
+import { solverHintState } from "../state/deductions";
+
+import isEqual from "lodash/isEqual";
 
 function cellBackgroundClass(isSelected: boolean, isGuide: boolean) {
     if (isSelected) {
@@ -43,11 +46,13 @@ const CellValue: React.FunctionComponent<CellValueProps> = props => {
 
 interface CandidatesProps {
     candidates: DynamicCellCandidates["candidates"];
+    gridPosition: DynamicPosition;
 }
 
-const Candidates = ({ candidates }: CandidatesProps) => {
+const Candidates = ({ candidates, gridPosition }: CandidatesProps) => {
     const base = useRecoilValue(sudokuBaseState);
     const input = useRecoilValue(inputState);
+    const solverHint = useRecoilValue(solverHintState);
 
     return (
         <div className="candidates">
@@ -59,17 +64,48 @@ const Candidates = ({ candidates }: CandidatesProps) => {
                     "--candidate-column": column,
                     "--candidate-row": row,
                 };
+                const isGuide = input.stickyMode && input.selectedValue === candidate;
+
+                // TODO: optimize
+                const isDeductionReason =
+                    solverHint.enabled &&
+                    (solverHint.deductions.some(deduction =>
+                        deduction.reasons.some(
+                            reason => isEqual(reason.position, gridPosition) && reason.candidates.includes(candidate)
+                        )
+                    ) ||
+                        // TODO: rethink deductions/reasons/actions for setValue
+                        solverHint.deductions.some(deduction =>
+                            deduction.actions.some(
+                                action =>
+                                    isEqual(action.position, gridPosition) &&
+                                    "setValue" in action &&
+                                    action.setValue === candidate
+                            )
+                        ));
+                const isDeductionDelete =
+                    solverHint.enabled &&
+                    solverHint.deductions.some(deduction =>
+                        deduction.actions.some(
+                            action =>
+                                isEqual(action.position, gridPosition) &&
+                                "deleteCandidates" in action &&
+                                action.deleteCandidates.includes(candidate)
+                        )
+                    );
 
                 return (
-                    <span
-                        key={candidate}
+                    <div
                         className={classnames("candidate", {
-                            "candidate--guide": input.stickyMode && input.selectedValue === candidate,
+                            "candidate--guide": isGuide,
+                            "candidate--deduction-reason": isDeductionReason,
+                            "candidate--deduction-delete": isDeductionDelete,
                         })}
                         style={style}
+                        key={candidate}
                     >
                         {valueToString(candidate)}
-                    </span>
+                    </div>
                 );
             })}
         </div>
@@ -140,7 +176,11 @@ export const Cell = (props: CellProps) => {
                 handlePosition(gridPosition).catch(console.error);
             }}
         >
-            {cell.kind === "value" ? <CellValue value={cell.value} /> : <Candidates candidates={cell.candidates} />}
+            {cell.kind === "value" ? (
+                <CellValue value={cell.value} />
+            ) : (
+                <Candidates candidates={cell.candidates} gridPosition={gridPosition} />
+            )}
         </div>
     );
 };
