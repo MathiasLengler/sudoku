@@ -19,7 +19,7 @@ struct CandidateStats<Base: SudokuBase> {
 pub struct HiddenSingles;
 
 impl Strategy for HiddenSingles {
-    fn execute<Base: SudokuBase>(&self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
+    fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
         ensure!(
             grid.is_directly_consistent(),
             "HiddenSingles requires a directly consistent grid"

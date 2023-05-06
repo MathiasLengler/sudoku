@@ -9,7 +9,7 @@ use sudoku::base::consts::*;
 use sudoku::cell::dynamic::DynamicCell;
 use sudoku::error::Error as SudokuError;
 use sudoku::generator::DynamicGeneratorSettings;
-use sudoku::grid::serialization::GridFormat;
+use sudoku::grid::format::DynamicGridFormat;
 use sudoku::grid::Grid;
 use sudoku::position::DynamicPosition;
 use sudoku::solver::strategic::deduction::transport::TransportDeductions;
@@ -198,7 +198,7 @@ mod import {
         )?)
     }
 
-    pub(crate) fn import_grid_format(format: IGridFormat) -> Result<GridFormat> {
+    pub(crate) fn import_grid_format(format: IGridFormat) -> Result<DynamicGridFormat> {
         Ok(serde_wasm_bindgen::from_value(format.into())?)
     }
 

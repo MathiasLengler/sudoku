@@ -23,8 +23,8 @@ use std::str::FromStr;
 
 use anyhow::anyhow;
 use enum_dispatch::enum_dispatch;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde::de::Visitor;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 #[cfg(feature = "wasm")]
 use ts_rs::TS;
 
@@ -47,11 +47,11 @@ mod naked_pairs;
 mod naked_singles;
 
 #[enum_dispatch(DynamicStrategy)]
-pub trait Strategy: Debug + Copy + Clone + Eq {
+pub trait Strategy: Debug + Copy + Clone + Eq + Sized {
     /// Execute this strategy on the given grid. Returns a list of deductions.
-    fn execute<Base: SudokuBase>(&self, grid: &Grid<Base>) -> Result<Deductions<Base>>;
+    fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>>;
 
-    fn strategy_name(&self) -> String {
+    fn name(self) -> String {
         format!("{self:?}")
     }
 }
@@ -109,7 +109,7 @@ impl<'de> Deserialize<'de> for DynamicStrategy {
                 formatter.write_str("a valid strategy name")
             }
 
-            fn visit_str<E>(self, strategy_name: &str) -> std::result::Result<Self::Value, E>
+            fn visit_str<E>(self, strategy_name: &str) -> Result<Self::Value, E>
             where
                 E: serde::de::Error,
             {
@@ -126,7 +126,7 @@ impl FromStr for DynamicStrategy {
     fn from_str(strategy_name: &str) -> Result<Self> {
         DynamicStrategy::all()
             .into_iter()
-            .find(|strategy| strategy.strategy_name() == strategy_name)
+            .find(|strategy| strategy.name() == strategy_name)
             .ok_or_else(|| anyhow!("Unexpected strategy name: {strategy_name}"))
     }
 }

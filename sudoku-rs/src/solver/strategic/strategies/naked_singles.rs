@@ -9,7 +9,7 @@ use super::Strategy;
 pub struct NakedSingles;
 
 impl Strategy for NakedSingles {
-    fn execute<Base: SudokuBase>(&self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
+    fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
         Ok(grid
             .all_candidates_positions()
             .into_iter()

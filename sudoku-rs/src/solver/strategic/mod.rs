@@ -52,7 +52,7 @@ impl<'g, Base: SudokuBase> Solver<'g, Base> {
     /// Tries executing strategies until one strategy is able to make at least one deduction.
     pub fn try_strategies(&self) -> Result<Option<(DynamicStrategy, Deductions<Base>)>> {
         for strategy in &self.strategies {
-            let deductions = Strategy::execute(strategy, self.grid)?;
+            let deductions = Strategy::execute(*strategy, self.grid)?;
 
             if !(deductions.is_empty()) {
                 trace!("{strategy:?}:\n{}\n{}", deductions, self.grid);

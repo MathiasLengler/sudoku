@@ -7,14 +7,13 @@ use anyhow::ensure;
 use ndarray::Array2;
 
 use crate::base::SudokuBase;
-use crate::cell::dynamic::parser::parse_cells;
 use crate::cell::dynamic::DynamicCell;
 use crate::cell::Candidates;
 use crate::cell::Cell;
 use crate::cell::CellState;
 use crate::cell::Value;
 use crate::error::{Error, Result};
-use crate::grid::serialization::GridFormat;
+use crate::grid::format::{CandidatesGridColored, DynamicGridFormat, GridFormat};
 use crate::position::Coordinate;
 use crate::position::Position;
 use crate::solver::strategic::strategies::DynamicStrategy;
@@ -22,7 +21,7 @@ use crate::solver::{backtracking_bitset, strategic};
 use crate::unsafe_utils::{get_unchecked, get_unchecked_mut};
 
 pub mod deserialization;
-pub mod serialization;
+pub mod format;
 
 // TODO: run tests under miri in release mode
 
@@ -623,13 +622,13 @@ impl<Base: SudokuBase> TryFrom<&str> for Grid<Base> {
     type Error = Error;
 
     fn try_from(input: &str) -> Result<Self> {
-        parse_cells(input)?.try_into()
+        DynamicGridFormat::detect_and_parse(input)?.try_into()
     }
 }
 
 impl<Base: SudokuBase> Display for Grid<Base> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.write_str(&GridFormat::CandidatesGrid.render(self))
+        f.write_str(&CandidatesGridColored.render(self))
     }
 }
 

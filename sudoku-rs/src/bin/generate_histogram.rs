@@ -30,7 +30,7 @@ use rayon::prelude::*;
 use sudoku::base::consts::Base3;
 use sudoku::error::Result;
 use sudoku::generator::{Generator, GeneratorSettings, GeneratorTarget};
-use sudoku::grid::serialization::GridFormat;
+use sudoku::grid::format::DynamicGridFormat;
 use sudoku::solver::strategic::strategies::NakedSingles;
 
 type Base = Base3;
@@ -83,7 +83,7 @@ fn main() -> Result<()> {
     if let Some((num_values, grid)) = best_grid.into_inner().unwrap() {
         println!(
             "Best grid #{num_values}:\n{grid}\n{}",
-            GridFormat::GivensGrid.render(&grid)
+            DynamicGridFormat::GivensGrid.render(&grid)
         );
     }
 

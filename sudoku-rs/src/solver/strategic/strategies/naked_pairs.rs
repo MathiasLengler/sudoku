@@ -13,7 +13,7 @@ use super::Strategy;
 pub struct NakedPairs;
 
 impl Strategy for NakedPairs {
-    fn execute<Base: SudokuBase>(&self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
+    fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
         Grid::<Base>::all_group_positions()
             .flat_map(|group| {
                 let candidates_group: Vec<_> = group

@@ -17,7 +17,7 @@ use super::Strategy;
 pub struct GroupReduction;
 
 impl Strategy for GroupReduction {
-    fn execute<Base: SudokuBase>(&self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
+    fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
         Ok(Grid::<Base>::all_group_positions()
             .map(|group| {
                 let (positions, candidates_group): (Vec<_>, Vec<_>) = group

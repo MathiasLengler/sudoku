@@ -11,8 +11,6 @@ use crate::base::SudokuBase;
 use crate::cell::{Candidates, Cell, CellState, Value};
 use crate::error::{Error, Result};
 
-pub(crate) mod parser;
-
 // TODO: unify representation for empty cell
 //  Cell: Empty Candidates
 //  CellView: Unfixed value

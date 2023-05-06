@@ -8,7 +8,8 @@ use crate::base::SudokuBase;
 use crate::cell::Value;
 use crate::error::Result;
 use crate::generator::{Generator, GeneratorSettings};
-use crate::grid::serialization::GridFormat;
+use crate::grid::format::DynamicGridFormat;
+use crate::grid::format::GridFormat;
 use crate::grid::Grid;
 use crate::position::DynamicPosition;
 use crate::solver::strategic::deduction::Deductions;
@@ -215,7 +216,7 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
         self.history.set_limit(self.settings.history_limit);
     }
 
-    fn export(&self, format: &GridFormat) -> String {
+    fn export(&self, format: &DynamicGridFormat) -> String {
         format.render(&self.grid)
     }
 }
