@@ -98,6 +98,26 @@ impl<Base: SudokuBase> Grid<Base> {
             true
         });
     }
+
+    fn validate_vec_groups<T>(groups: &Vec<Vec<T>>) -> Result<()> {
+        let side_length = Self::side_length_usize();
+
+        ensure!(
+            groups.len() == side_length,
+            "Invalid number of groups, expected {side_length}, instead got: {}",
+            groups.len()
+        );
+
+        for (i, group) in groups.iter().enumerate() {
+            ensure!(
+                group.len() == side_length,
+                "Invalid group size for group {i}, expected {side_length}, instead got: {}",
+                group.len()
+            );
+        }
+
+        Ok(())
+    }
 }
 
 /// Direct Candidates
@@ -314,21 +334,7 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 
     pub fn try_from_blocks(blocks: Vec<Vec<DynamicCell>>) -> Result<Self> {
-        let side_length = Self::side_length_usize();
-
-        ensure!(
-            blocks.len() == side_length,
-            "Invalid number of blocks, expected {side_length}, instead got: {}",
-            blocks.len()
-        );
-
-        for (i, block) in blocks.iter().enumerate() {
-            ensure!(
-                block.len() == side_length,
-                "Invalid block size for block {i}, expected {side_length}, instead got: {}",
-                block.len()
-            );
-        }
+        Self::validate_vec_groups(&blocks)?;
 
         let mut grid = Self::new();
 
@@ -590,6 +596,8 @@ impl<Base: SudokuBase, CView: Into<DynamicCell>> TryFrom<Vec<Vec<CView>>> for Gr
     type Error = Error;
 
     fn try_from(nested_views: Vec<Vec<CView>>) -> Result<Self> {
+        Self::validate_vec_groups(&nested_views)?;
+
         nested_views
             .into_iter()
             .flatten()
