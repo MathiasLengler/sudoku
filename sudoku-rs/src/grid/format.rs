@@ -34,6 +34,21 @@ pub trait GridFormat: Debug + Copy + Clone + Eq + Sized {
 
     fn parse(self, input: &str) -> Result<Vec<DynamicCell>>;
 
+    fn parse_and_validate_cell_count(self, input: &str) -> Result<Vec<DynamicCell>> {
+        use crate::base::consts::ALL_CELL_COUNTS;
+
+        let dynamic_cells = GridFormat::parse(self, input)?;
+
+        let actual_cell_count = dynamic_cells.len().try_into()?;
+
+        ensure!(
+            ALL_CELL_COUNTS.contains(&actual_cell_count),
+            "Unexpected cell count {actual_cell_count}, expected one of: {ALL_CELL_COUNTS:?}"
+        );
+
+        Ok(dynamic_cells)
+    }
+
     fn name(self) -> String {
         format!("{self:?}")
     }
@@ -66,27 +81,18 @@ impl DynamicGridFormat {
     }
 
     pub fn detect_and_parse(input: &str) -> Result<Vec<DynamicCell>> {
-        use crate::base::consts::ALL_CELL_COUNTS;
-
         let input = input.trim();
 
         let mut cell_views = if input.contains('\n') {
             AsciiCandidatesGrid
-                .parse(input)
-                .or_else(|_| GivensGrid.parse(input))?
+                .parse_and_validate_cell_count(input)
+                .or_else(|_| GivensGrid.parse_and_validate_cell_count(input))?
         } else {
             GivensLine
-                .parse(input)
-                .or_else(|_| BinaryFixedCandidatesLine.parse(input))
-                .or_else(|_| BinaryCandidatesLine.parse(input))?
+                .parse_and_validate_cell_count(input)
+                .or_else(|_| BinaryFixedCandidatesLine.parse_and_validate_cell_count(input))
+                .or_else(|_| BinaryCandidatesLine.parse_and_validate_cell_count(input))?
         };
-
-        let actual_cell_count = cell_views.len().try_into()?;
-
-        ensure!(
-            ALL_CELL_COUNTS.contains(&actual_cell_count),
-            "Unexpected cell count {actual_cell_count}, expected one of: {ALL_CELL_COUNTS:?}"
-        );
 
         // Fix all values
         for cell_view in &mut cell_views {
