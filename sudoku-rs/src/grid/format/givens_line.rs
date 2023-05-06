@@ -1,6 +1,5 @@
 use anyhow::bail;
 
-use crate::base::consts::Base2;
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
 use crate::cell::Cell;
