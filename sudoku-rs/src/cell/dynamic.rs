@@ -156,6 +156,12 @@ impl From<u8> for DynamicCell {
 
 impl<Base: SudokuBase> From<&Cell<Base>> for DynamicCell {
     fn from(cell: &Cell<Base>) -> Self {
+        cell.clone().into()
+    }
+}
+
+impl<Base: SudokuBase> From<Cell<Base>> for DynamicCell {
+    fn from(cell: Cell<Base>) -> Self {
         match *cell.state() {
             CellState::Value(value) => Self::Value {
                 value: value.into(),

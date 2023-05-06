@@ -1,5 +1,9 @@
+use anyhow::bail;
+
+use crate::base::consts::Base2;
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
+use crate::cell::Cell;
 use crate::error::Result;
 use crate::grid::format::GridFormat;
 use crate::grid::Grid;
@@ -15,17 +19,39 @@ impl GridFormat for GivensLine {
     }
 
     fn parse(self, input: &str) -> Result<Vec<DynamicCell>> {
-        input
-            .chars()
-            .map(TryInto::<DynamicCell>::try_into)
-            .collect::<Result<Vec<DynamicCell>>>()
+        fn parse_base<Base: SudokuBase>(input: &str) -> Result<Vec<DynamicCell>> {
+            input
+                .chars()
+                .map(|c| {
+                    let dynamic_cell = DynamicCell::try_from(c)?;
+                    let cell = Cell::<Base>::try_from(dynamic_cell)?;
+                    Ok(DynamicCell::from(cell))
+                })
+                .collect::<Result<Vec<DynamicCell>>>()
+        }
+
+        use crate::base::consts::*;
+
+        const BASE_2_CHAR_COUNT: usize = Base2::CELL_COUNT as usize;
+        const BASE_3_CHAR_COUNT: usize = Base3::CELL_COUNT as usize;
+        const BASE_4_CHAR_COUNT: usize = Base4::CELL_COUNT as usize;
+        const BASE_5_CHAR_COUNT: usize = Base5::CELL_COUNT as usize;
+
+        match input.chars().count() {
+            BASE_2_CHAR_COUNT => parse_base::<Base2>(input),
+            BASE_3_CHAR_COUNT => parse_base::<Base3>(input),
+            BASE_4_CHAR_COUNT => parse_base::<Base4>(input),
+            BASE_5_CHAR_COUNT => parse_base::<Base5>(input),
+            unexpected_char_count => bail!("Unexpected char count: {unexpected_char_count}"),
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::samples;
+
+    use super::*;
 
     pub(crate) static INPUT_GIVENS_LINE: &str = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),

@@ -77,6 +77,7 @@ impl DynamicGridFormat {
         } else {
             GivensLine
                 .parse(input)
+                .or_else(|_| BinaryFixedCandidatesLine.parse(input))
                 .or_else(|_| BinaryCandidatesLine.parse(input))?
         };
 
@@ -156,6 +157,43 @@ impl FromStr for DynamicGridFormat {
 }
 
 #[cfg(test)]
+mod test_util {
+    use anyhow::Context;
+
+    use super::*;
+
+    pub(crate) fn assert_grid_equals_cell_views<Base: SudokuBase>(
+        grid: &Grid<Base>,
+        cell_views: &[DynamicCell],
+    ) -> Result<()> {
+        let parsed_grid: Grid<Base> = cell_views
+            .to_vec()
+            .try_into()
+            .with_context(|| format!("Failed to convert cell_views to grid:\n{cell_views:#?}"))?;
+
+        ensure!(grid == &parsed_grid, "Mismatched grid:\n{parsed_grid}");
+
+        Ok(())
+    }
+
+    pub(crate) fn assert_grid_format_roundtrip<Base: SudokuBase, F: GridFormat>(
+        grid: &Grid<Base>,
+        grid_format: F,
+    ) -> Result<()> {
+        (|| {
+            let grid_string = grid_format.render(&grid);
+
+            let cell_views = grid_format
+                .parse(&grid_string)
+                .with_context(|| format!("Failed to parse grid_string:\n{grid_string}"))?;
+
+            assert_grid_equals_cell_views(grid, &cell_views)
+        })()
+        .with_context(|| format!("Failed to roundtrip format {grid_format:?} with grid:\n{grid}"))
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use crate::samples;
 
@@ -163,67 +201,45 @@ mod tests {
 
     #[test]
     fn test_detect_and_parse_cells_roundtrip() {
-        fn assert_grid_roundtrip<Base: SudokuBase>(
-            grid_format: DynamicGridFormat,
-            grid_string: &str,
+        pub(crate) fn assert_grid_format_roundtrip_detect<Base: SudokuBase, F: GridFormat>(
             grid: &Grid<Base>,
-        ) {
+            grid_format: F,
+        ) -> Result<()> {
             use anyhow::Context;
 
-            let cell_views = DynamicGridFormat::detect_and_parse(grid_string)
-                .with_context(|| {
-                    format!(
-                        "parse_cells to parse:\n\
-                        {grid_string}"
-                    )
-                })
-                .unwrap();
+            (|| {
+                let grid_string = grid_format.render(&grid);
 
-            let parsed_grid: Grid<Base> = cell_views
-                .try_into()
-                .with_context(|| {
-                    format!(
-                        "Failed to convert cell_views to grid:\n\
-                        {grid_string}\n\
-                        {grid_string:?}"
-                    )
-                })
-                .unwrap();
+                let cell_views =
+                    DynamicGridFormat::detect_and_parse(&grid_string).with_context(|| {
+                        format!("Failed to detect and parse grid_string:\n{grid_string}")
+                    })?;
 
-            assert_eq!(
-                grid, &parsed_grid,
-                "Failed to roundtrip format {grid_format:?}:\n\
-                    Original:\n\
-                    {grid}\n\
-                    \n\
-                    Serialized:\n\
-                    {grid_string}\n\
-                    Parsed:\n\
-                    {parsed_grid}"
-            );
+                test_util::assert_grid_equals_cell_views(grid, &cell_views).with_context(|| {
+                    format!("Failed to compare cell views to grid for grid_string:\n{grid_string}")
+                })
+            })()
+            .with_context(|| {
+                format!("Failed to roundtrip format {grid_format:?} with grid:\n{grid}")
+            })
         }
 
         let grid_formats: Vec<DynamicGridFormat> = vec![
             GivensLine.into(),
             GivensGrid.into(),
             BinaryCandidatesLine.into(),
-            // FIXME: handle formats in parse_cells
-            // GridFormat::CandidatesGrid,
+            BinaryFixedCandidatesLine.into(),
+            // FIXME: handle remaining formats in detect_and_parse
+            // CandidatesGridPlain.into(),
         ];
 
         for grid_format in grid_formats {
-            for (grid_string, grid) in samples::base_2()
-                .into_iter()
-                .map(|grid| (grid_format.render(&grid), grid))
-            {
-                assert_grid_roundtrip(grid_format, &grid_string, &grid);
+            for grid in samples::base_2() {
+                assert_grid_format_roundtrip_detect(&grid, grid_format).unwrap();
             }
 
-            for (grid_string, grid) in samples::base_3()
-                .into_iter()
-                .map(|grid| (grid_format.render(&grid), grid))
-            {
-                assert_grid_roundtrip(grid_format, &grid_string, &grid);
+            for grid in samples::base_3() {
+                assert_grid_format_roundtrip_detect(&grid, grid_format).unwrap();
             }
         }
     }

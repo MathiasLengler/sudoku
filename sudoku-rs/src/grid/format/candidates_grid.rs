@@ -1,3 +1,4 @@
+use anyhow::bail;
 use owo_colors::Style as OwoStyle;
 use tabled::builder::Builder;
 use tabled::object::Segment;
@@ -45,7 +46,7 @@ impl GridFormat for CandidatesGridPlain {
         //  split rows into multi-line cells
         //  extract numbers from cells
 
-        todo!()
+        bail!("todo")
     }
 }
 

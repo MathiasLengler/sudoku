@@ -5,8 +5,8 @@
 //  - replicate all required functionality of Candidates on CandidatesCell
 
 use crate::base::SudokuBase;
-use crate::cell::Candidates;
-use crate::cell::Value;
+use crate::cell::{Candidates, CellState};
+use crate::cell::{Cell, Value};
 
 /// A sudoku cell represented as a candidates bitset.
 ///
@@ -108,5 +108,14 @@ impl<Base: SudokuBase> CandidatesCell<Base> {
     /// Set the given candidate to the given enabled state.
     pub(crate) fn set_candidate(&mut self, candidate: Value<Base>, enabled: bool) {
         self.candidates.set(candidate, enabled);
+    }
+}
+
+impl<Base: SudokuBase> From<Cell<Base>> for CandidatesCell<Base> {
+    fn from(cell: Cell<Base>) -> Self {
+        match *cell.state() {
+            CellState::Value(value) | CellState::FixedValue(value) => Self::with_value(value),
+            CellState::Candidates(candidates) => Self::with_candidates(candidates),
+        }
     }
 }

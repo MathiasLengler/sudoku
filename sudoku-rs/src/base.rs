@@ -11,6 +11,7 @@ use num::PrimInt;
 use consts::*;
 
 use crate::cell::candidates_cell::CandidatesCell;
+use crate::error::Error;
 use crate::position::Coordinate;
 use crate::position::Position;
 use crate::unsafe_utils::get_unchecked;
@@ -49,6 +50,16 @@ const fn base_to_max_value(base: u8) -> u8 {
 
 const fn base_to_cell_count(base: u8) -> u16 {
     (base as u16).pow(4)
+}
+
+const fn base_to_binary_fixed_candidates_line_cell_chars(base: u8) -> usize {
+    match base {
+        2 => 1,
+        3 => 2,
+        4 => 4,
+        5 => 6,
+        _ => panic!("Unexpected base"),
+    }
 }
 
 mod cell_index_to_block_index {
@@ -184,6 +195,9 @@ where
     /// - must equal `(base as u16).pow(4)`
     const CELL_COUNT: u16;
 
+    /// Used by `BinaryFixedCandidatesLine`
+    const BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS: usize;
+
     /// For a given cell position, returns the coordinate of the block it is contained in.
     fn pos_to_block(pos: Position<Self>) -> Coordinate<Self>;
 
@@ -217,7 +231,10 @@ where
         + BitOrAssign
         + BitAndAssign
         + Shl<u8, Output = Self::CandidatesIntegral>
-        + Into<u32>;
+        + Into<u32>
+        + TryFrom<u32, Error = Self::CandidatesIntegralTryFromU32Error>;
+
+    type CandidatesIntegralTryFromU32Error: Into<Error> + Debug;
 
     /// Data structure for `backtracking_bitset::Solver`.
     ///
@@ -240,6 +257,7 @@ unsafe impl SudokuBase for $type_num {
     const SIDE_LENGTH: u8 = base_to_side_length(Self::BASE);
     const MAX_VALUE: u8 = base_to_max_value(Self::BASE);
     const CELL_COUNT: u16 = base_to_cell_count(Self::BASE);
+    const BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS: usize = base_to_binary_fixed_candidates_line_cell_chars(Self::BASE);
 
     fn pos_to_block(pos: Position<Self>) -> Coordinate<Self> {
         let cell_index = usize::from(pos.cell_index());
@@ -265,6 +283,8 @@ unsafe impl SudokuBase for $type_num {
     }
 
     type CandidatesIntegral = $type_integral;
+
+    type CandidatesIntegralTryFromU32Error = <$type_integral as TryFrom<u32>>::Error;
 
     type CandidatesCells = [CandidatesCell<Self>; Self::SIDE_LENGTH as usize];
 }
@@ -359,6 +379,7 @@ mod tests {
         assert_eq!(Base::SIDE_LENGTH, 4);
         assert_eq!(Base::MAX_VALUE, 4);
         assert_eq!(Base::CELL_COUNT, 16);
+        assert_eq!(Base::BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS, 1);
 
         assert_type_equals::<<Base as SudokuBase>::CandidatesIntegral, u8>();
 
@@ -373,6 +394,7 @@ mod tests {
         assert_eq!(Base::SIDE_LENGTH, 9);
         assert_eq!(Base::MAX_VALUE, 9);
         assert_eq!(Base::CELL_COUNT, 81);
+        assert_eq!(Base::BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS, 2);
 
         assert_type_equals::<<Base as SudokuBase>::CandidatesIntegral, u16>();
 
@@ -387,6 +409,7 @@ mod tests {
         assert_eq!(Base::SIDE_LENGTH, 16);
         assert_eq!(Base::MAX_VALUE, 16);
         assert_eq!(Base::CELL_COUNT, 256);
+        assert_eq!(Base::BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS, 4);
 
         assert_type_equals::<<Base as SudokuBase>::CandidatesIntegral, u16>();
 
@@ -401,6 +424,7 @@ mod tests {
         assert_eq!(Base::SIDE_LENGTH, 25);
         assert_eq!(Base::MAX_VALUE, 25);
         assert_eq!(Base::CELL_COUNT, 625);
+        assert_eq!(Base::BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS, 6);
 
         assert_type_equals::<<Base as SudokuBase>::CandidatesIntegral, u32>();
 
