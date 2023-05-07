@@ -31,8 +31,7 @@ impl GridFormat for BinaryFixedCandidatesLine {
     fn render<Base: SudokuBase>(self, grid: &Grid<Base>) -> String {
         use radix_fmt::radix_32;
 
-        grid.cells
-            .iter()
+        grid.all_cells()
             .map(|cell| {
                 let candidates_cell: CandidatesCell<_> = cell.clone().into();
 

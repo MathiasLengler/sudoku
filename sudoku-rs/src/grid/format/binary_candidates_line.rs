@@ -27,8 +27,7 @@ impl GridFormat for BinaryCandidatesLine {
         use crate::cell::CellState;
         use itertools::Itertools;
 
-        grid.cells
-            .iter()
+        grid.all_cells()
             .map(|cell| match cell.state() {
                 CellState::Value(value) | CellState::FixedValue(value) => {
                     2usize.pow(u32::from(value.into_u8() - 1)).to_string()
