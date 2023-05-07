@@ -172,7 +172,6 @@ mod tests {
     use anyhow::Context;
 
     use crate::samples;
-    use crate::solver::strategic::strategies::Strategy;
 
     use super::*;
 
