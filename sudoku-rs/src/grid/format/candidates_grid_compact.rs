@@ -1,8 +1,12 @@
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
+use crate::cell::CellState;
 use crate::error::Result;
 use crate::grid::format::GridFormat;
 use crate::grid::Grid;
+use itertools::Itertools;
+use tabled::builder::Builder;
+use tabled::settings::{object::Segment, Alignment, Modify, Style};
 
 /// A grid of cells.
 /// Candidates are visualized as concatenated numbers in a single line.
@@ -30,8 +34,57 @@ use crate::grid::Grid;
 pub struct CandidatesGridCompact;
 
 impl GridFormat for CandidatesGridCompact {
-    fn render<Base: SudokuBase>(self, _grid: &Grid<Base>) -> String {
-        todo!()
+    fn render<Base: SudokuBase>(self, grid: &Grid<Base>) -> String {
+        let all_block_cells = grid
+            .all_block_cells()
+            .map(|block| block.collect::<Vec<_>>())
+            .collect::<Vec<_>>();
+
+        let grid_builder: Builder = all_block_cells
+            .chunks(usize::from(Base::BASE))
+            .map(|row_of_blocks| {
+                row_of_blocks.iter().map(|block| {
+                    let block_builder: Builder = block
+                        .chunks(usize::from(Base::BASE))
+                        .map(|block_row| {
+                            block_row.iter().map(|cell| match cell.state() {
+                                CellState::Value(value) | CellState::FixedValue(value) => {
+                                    value.to_string()
+                                }
+                                CellState::Candidates(candidates) => {
+                                    if candidates.is_empty() {
+                                        "0".to_string()
+                                    } else {
+                                        candidates
+                                            .iter()
+                                            .map(|candidate| candidate.to_string())
+                                            .join("")
+                                    }
+                                }
+                            })
+                        })
+                        .collect();
+                    block_builder
+                        .build()
+                        .with(Modify::new(Segment::all()).with(Alignment::center()))
+                        .with(Style::empty())
+                        .to_string()
+                })
+            })
+            .collect();
+
+        let mut table = grid_builder.build();
+
+        table
+            .with(Modify::new(Segment::all()).with(Alignment::center()))
+            .with(
+                Style::modern()
+                    .remove_top()
+                    .remove_left()
+                    .remove_right()
+                    .remove_bottom(),
+            )
+            .to_string()
     }
 
     fn parse(self, input: &str) -> Result<Vec<DynamicCell>> {
@@ -61,7 +114,12 @@ mod tests {
     ));
 
     #[test]
-    fn test_from_candidates_grid() -> Result<()> {
+    fn test_render() {
+        todo!()
+    }
+
+    #[test]
+    fn test_parse() -> Result<()> {
         use crate::cell::dynamic::{c, v};
 
         let cells = CandidatesGridCompact.parse(INPUT_CANDIDATES)?;

@@ -91,6 +91,10 @@ impl GridFormat for BinaryFixedCandidatesLine {
             unexpected_char_count => bail!("Unexpected char count: {unexpected_char_count}"),
         }
     }
+
+    fn do_fix_all_values(self) -> bool {
+        false
+    }
 }
 
 #[cfg(test)]

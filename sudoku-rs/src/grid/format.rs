@@ -34,10 +34,14 @@ pub trait GridFormat: Debug + Copy + Clone + Eq + Sized {
 
     fn parse(self, input: &str) -> Result<Vec<DynamicCell>>;
 
+    fn do_fix_all_values(self) -> bool {
+        true
+    }
+
     fn parse_and_validate_cell_count(self, input: &str) -> Result<Vec<DynamicCell>> {
         use crate::base::consts::ALL_CELL_COUNTS;
 
-        let dynamic_cells = GridFormat::parse(self, input)?;
+        let mut dynamic_cells = GridFormat::parse(self, input)?;
 
         let actual_cell_count = dynamic_cells.len().try_into()?;
 
@@ -45,6 +49,16 @@ pub trait GridFormat: Debug + Copy + Clone + Eq + Sized {
             ALL_CELL_COUNTS.contains(&actual_cell_count),
             "Unexpected cell count {actual_cell_count}, expected one of: {ALL_CELL_COUNTS:?}"
         );
+
+        if self.do_fix_all_values() {
+            for dynamic_cell in &mut dynamic_cells {
+                if let DynamicCell::Value { fixed, value } = dynamic_cell {
+                    if value.0 != 0 {
+                        *fixed = true;
+                    }
+                }
+            }
+        }
 
         Ok(dynamic_cells)
     }
@@ -83,7 +97,7 @@ impl DynamicGridFormat {
     pub fn detect_and_parse(input: &str) -> Result<Vec<DynamicCell>> {
         let input = input.trim();
 
-        let mut cell_views = if input.contains('\n') {
+        let cell_views = if input.contains('\n') {
             CandidatesGridCompact
                 .parse_and_validate_cell_count(input)
                 .or_else(|_| GivensGrid.parse_and_validate_cell_count(input))?
@@ -93,15 +107,6 @@ impl DynamicGridFormat {
                 .or_else(|_| BinaryFixedCandidatesLine.parse_and_validate_cell_count(input))
                 .or_else(|_| BinaryCandidatesLine.parse_and_validate_cell_count(input))?
         };
-
-        // Fix all values
-        for cell_view in &mut cell_views {
-            if let DynamicCell::Value { fixed, value } = cell_view {
-                if value.0 != 0 {
-                    *fixed = true;
-                }
-            }
-        }
 
         Ok(cell_views)
     }
@@ -164,7 +169,10 @@ impl FromStr for DynamicGridFormat {
 
 #[cfg(test)]
 mod tests {
+    use anyhow::Context;
+
     use crate::samples;
+    use crate::solver::strategic::strategies::Strategy;
 
     use super::*;
 
@@ -182,12 +190,10 @@ mod tests {
 
     #[test]
     fn test_detect_and_parse_cells_roundtrip() {
-        pub(crate) fn assert_grid_format_roundtrip_detect<Base: SudokuBase, F: GridFormat>(
+        pub(crate) fn assert_grid_format_roundtrip_detect<Base: SudokuBase>(
             grid: &Grid<Base>,
-            grid_format: F,
+            grid_format: DynamicGridFormat,
         ) -> Result<()> {
-            use anyhow::Context;
-
             (|| {
                 let grid_string = grid_format.render(&grid);
 
@@ -201,27 +207,97 @@ mod tests {
                 })
             })()
             .with_context(|| {
-                format!("Failed to roundtrip format {grid_format:?} with grid:\n{grid}")
+                format!(
+                    "Failed to roundtrip format {} with grid:\n{grid}",
+                    grid_format.name()
+                )
             })
         }
 
+        // FIXME: handle remaining formats
+
+        // Grid formats which preserve:
+        // - cell value
         let grid_formats: Vec<DynamicGridFormat> = vec![
-            GivensLine.into(),
-            GivensGrid.into(),
             BinaryCandidatesLine.into(),
             BinaryFixedCandidatesLine.into(),
-            // FIXME: handle remaining formats in detect_and_parse
+            // CandidatesGridANSIStyled.into(),
             // CandidatesGridPlain.into(),
+            CandidatesGridCompact.into(),
+            GivensLine.into(),
+            GivensGrid.into(),
+        ];
+
+        // TODO: refactor other duplicated base handling code
+        macro_rules! for_test_grids {
+            (|$grid:ident| $block:block) => {
+                #[allow(unused_mut)]
+                for mut $grid in samples::base_2() $block
+                #[allow(unused_mut)]
+                for mut $grid in samples::base_3() $block
+            };
+        }
+
+        for grid_format in grid_formats {
+            for_test_grids!(|grid| {
+                grid.fix_all_values();
+
+                assert_grid_format_roundtrip_detect(&grid, grid_format)
+                    .with_context(|| "Test cell value roundtrip".to_string())
+                    .unwrap();
+            });
+        }
+
+        // Grid formats which preserve:
+        // - cell value
+        // - cell value fixed state
+        let grid_formats: Vec<DynamicGridFormat> = vec![
+            // BinaryCandidatesLine.into(),
+            BinaryFixedCandidatesLine.into(),
+            // CandidatesGridANSIStyled.into(),
+            // CandidatesGridPlain.into(),
+            // CandidatesGridCompact.into(),
+            // GivensLine.into(),
+            // GivensGrid.into(),
         ];
 
         for grid_format in grid_formats {
-            for grid in samples::base_2() {
-                assert_grid_format_roundtrip_detect(&grid, grid_format).unwrap();
-            }
+            for_test_grids!(|grid| {
+                grid.fix_all_values();
+                assert_grid_format_roundtrip_detect(&grid, grid_format)
+                    .with_context(|| "Test cell fixed value roundtrip".to_string())
+                    .unwrap();
+                grid.unfix_all_values();
+                assert_grid_format_roundtrip_detect(&grid, grid_format)
+                    .with_context(|| "Test cell unfixed value roundtrip".to_string())
+                    .unwrap();
+            });
+        }
 
-            for grid in samples::base_3() {
-                assert_grid_format_roundtrip_detect(&grid, grid_format).unwrap();
-            }
+        // Grid formats which preserve:
+        // - cell value
+        // - cell value fixed state
+        // - cell multiple candidates
+        let grid_formats: Vec<DynamicGridFormat> = vec![
+            // BinaryCandidatesLine.into(),
+            BinaryFixedCandidatesLine.into(),
+            // CandidatesGridANSIStyled.into(),
+            // CandidatesGridPlain.into(),
+            // CandidatesGridCompact.into(),
+            // GivensLine.into(),
+            // GivensGrid.into(),
+        ];
+        for grid_format in grid_formats {
+            for_test_grids!(|grid| {
+                grid.all_candidates_positions().into_iter().for_each(|pos| {
+                    if grid.get(pos).candidates().unwrap().to_single().is_some() {
+                        grid.get_mut(pos).delete();
+                    }
+                });
+                assert_grid_format_roundtrip_detect(&grid, grid_format)
+                    .with_context(|| "Test cell multiple candidates roundtrip".to_string())
+                    .unwrap();
+            });
         }
     }
 }

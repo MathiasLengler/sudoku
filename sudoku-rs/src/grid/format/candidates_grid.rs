@@ -33,6 +33,10 @@ impl GridFormat for CandidatesGridANSIStyled {
 
         CandidatesGridPlain.parse(&stripped_input)
     }
+
+    fn do_fix_all_values(self) -> bool {
+        false
+    }
 }
 
 /// The same as `CandidatesGridColored`, but without terminal styling.
@@ -102,11 +106,11 @@ pub fn render_candidates_grid<Base: SudokuBase>(
         .map(|block| block.collect::<Vec<_>>())
         .collect::<Vec<_>>();
 
-    let mut grid_builder: Builder = all_block_cells
+    let grid_builder: Builder = all_block_cells
         .chunks(usize::from(Base::BASE))
         .map(|row_of_blocks| {
             row_of_blocks.iter().map(|block| {
-                let mut block_builder: Builder = block
+                let block_builder: Builder = block
                     .chunks(usize::from(Base::BASE))
                     .map(|block_row| {
                         block_row
@@ -177,17 +181,19 @@ mod tests {
     use super::*;
     use crate::samples;
 
-    #[test]
-    fn test_render_candidates_grid_colored() {
-        let mut grid = samples::base_2().pop().unwrap();
-        grid.fix_all_values();
-        grid.get_mut((0, 1).try_into().unwrap())
-            .set_value(2.try_into().unwrap());
-        grid.set_all_direct_candidates();
+    mod ansi_styled {
+        use super::*;
+        #[test]
+        fn test_render() {
+            let mut grid = samples::base_2().pop().unwrap();
+            grid.fix_all_values();
+            grid.get_mut((0, 1).try_into().unwrap())
+                .set_value(2.try_into().unwrap());
+            grid.set_all_direct_candidates();
 
-        assert_eq!(
-            CandidatesGridANSIStyled.render(&grid),
-            "╔═══════════════════╦═══════════════════╗
+            assert_eq!(
+                CandidatesGridANSIStyled.render(&grid),
+                "╔═══════════════════╦═══════════════════╗
 ║         │         ║         │         ║
 ║         │   \u{1b}[34;1m2\u{1b}[0m     ║    \u{1b}[1m1\u{1b}[0m    │         ║
 ║   3     │         ║         │  3  4   ║
@@ -204,20 +210,24 @@ mod tests {
 ║         │   \u{1b}[1m3\u{1b}[0m     ║         │         ║
 ║         │         ║      4  │     4   ║
 ╚═══════════════════╩═══════════════════╝"
-        );
+            );
+        }
     }
 
-    #[test]
-    fn test_render_candidates_grid_plain() {
-        let mut grid = samples::base_2().pop().unwrap();
-        grid.fix_all_values();
-        grid.get_mut((0, 1).try_into().unwrap())
-            .set_value(2.try_into().unwrap());
-        grid.set_all_direct_candidates();
+    mod plain {
+        use super::*;
 
-        assert_eq!(
-            CandidatesGridPlain.render(&grid),
-            "╔═══════════════════╦═══════════════════╗
+        #[test]
+        fn test_render() {
+            let mut grid = samples::base_2().pop().unwrap();
+            grid.fix_all_values();
+            grid.get_mut((0, 1).try_into().unwrap())
+                .set_value(2.try_into().unwrap());
+            grid.set_all_direct_candidates();
+
+            assert_eq!(
+                CandidatesGridPlain.render(&grid),
+                "╔═══════════════════╦═══════════════════╗
 ║         │         ║         │         ║
 ║         │   2     ║    1    │         ║
 ║   3     │         ║         │  3  4   ║
@@ -234,6 +244,7 @@ mod tests {
 ║         │   3     ║         │         ║
 ║         │         ║      4  │     4   ║
 ╚═══════════════════╩═══════════════════╝"
-        );
+            );
+        }
     }
 }
