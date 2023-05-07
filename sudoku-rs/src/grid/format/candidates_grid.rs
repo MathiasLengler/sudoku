@@ -1,8 +1,7 @@
 use anyhow::bail;
 use owo_colors::Style as OwoStyle;
 use tabled::builder::Builder;
-use tabled::object::Segment;
-use tabled::{Alignment, Modify, Style};
+use tabled::settings::{object::Segment, Alignment, Modify, Style};
 
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
@@ -120,7 +119,7 @@ pub fn render_candidates_grid<Base: SudokuBase>(
 
                                     all_values.chunks(usize::from(Base::BASE)).for_each(
                                         |all_candidates_row| {
-                                            candidates_builder.add_record(
+                                            candidates_builder.push_record(
                                                 all_candidates_row.iter().map(|candidate| {
                                                     if candidates.has(*candidate) {
                                                         candidate.to_string()
@@ -131,7 +130,6 @@ pub fn render_candidates_grid<Base: SudokuBase>(
                                             );
                                         },
                                     );
-                                    candidates_builder.remove_columns();
                                     default.style(
                                         candidates_builder
                                             .build()
@@ -143,7 +141,6 @@ pub fn render_candidates_grid<Base: SudokuBase>(
                             .map(|styled_s| styled_s.to_string())
                     })
                     .collect();
-                block_builder.remove_columns();
                 block_builder
                     .build()
                     .with(
@@ -153,17 +150,15 @@ pub fn render_candidates_grid<Base: SudokuBase>(
                     )
                     .with(
                         Style::modern()
-                            .off_top()
-                            .off_left()
-                            .off_right()
-                            .off_bottom(),
+                            .remove_top()
+                            .remove_left()
+                            .remove_right()
+                            .remove_bottom(),
                     )
                     .to_string()
             })
         })
         .collect();
-
-    grid_builder.remove_columns();
 
     let mut table = grid_builder.build();
 

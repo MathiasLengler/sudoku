@@ -5,22 +5,26 @@ use crate::grid::format::GridFormat;
 use crate::grid::Grid;
 
 /// A grid of cells.
-/// Candidates are visualized as concatenated numbers.
-/// The grid borders consist only of [ASCII printable characters](https://en.wikipedia.org/wiki/ASCII#Printable_characters).
+/// Candidates are visualized as concatenated numbers in a single line.
+/// The grid borders are represented by [UTF-8 box drawing characters](https://en.wikipedia.org/wiki/Box_Drawing).
 ///
 /// # Example
+///
+/// TODO: update
 /// ```text
-///   8  0  0|  0  0  0|  0  0  0
-///   0  0  3|  6  0  0|  0  0  0
-///   0  7  0|  0  9  0|  2  0  0
-/// ------------------------------
-///   0  5  0|  0  0  7|  0  0  0
-///   0  0  0|  0  4  5|  7  0  0
-///   0  0  0|  1  0  0|  0  3  0
-/// ------------------------------
-///   0  0  1|  0  0  0|  0  6  8
-///   0  0  8|  5  0  0|  0  1  0
-///   0  9  0|  0  0  0|  4  0  0
+/// .--------------.----------------.------------.
+/// | 6   7    89  | 189  19   2    | 3   5   4  |
+/// | 1   2    5   | .    3    4    | 9   8   7  |
+/// | 3   89   4   | 7    58   59   | 6   2   1  |
+/// :--------------+----------------+------------:
+/// | 7   3    29  | 19   25   1569 | 8   4   69 |
+/// | 5   1    289 | 89   0    679  | 27  69  3  |
+/// | 89  4    6   | 3    28   79   | 27  1   5  |
+/// :--------------+----------------+------------:
+/// | 2   5    3   | 4    7    8    | 0   69  69 |
+/// | 89  689  1   | 5    69   3    | 4   .   2  |
+/// | 4   69   7   | 2    169  169  | 5   3   8  |
+/// '--------------'----------------'------------'
 /// ```
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct CandidatesGridCompact;
