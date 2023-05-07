@@ -1,12 +1,13 @@
+use itertools::Itertools;
+use tabled::builder::Builder;
+use tabled::settings::Style;
+
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
 use crate::cell::CellState;
 use crate::error::Result;
 use crate::grid::format::GridFormat;
 use crate::grid::Grid;
-use itertools::Itertools;
-use tabled::builder::Builder;
-use tabled::settings::{object::Segment, Alignment, Modify, Style};
 
 /// A grid of cells.
 /// Candidates are visualized as concatenated numbers in a single line.
@@ -14,21 +15,18 @@ use tabled::settings::{object::Segment, Alignment, Modify, Style};
 ///
 /// # Example
 ///
-/// TODO: update
 /// ```text
-/// .--------------.----------------.------------.
-/// | 6   7    89  | 189  19   2    | 3   5   4  |
-/// | 1   2    5   | .    3    4    | 9   8   7  |
-/// | 3   89   4   | 7    58   59   | 6   2   1  |
-/// :--------------+----------------+------------:
-/// | 7   3    29  | 19   25   1569 | 8   4   69 |
-/// | 5   1    289 | 89   0    679  | 27  69  3  |
-/// | 89  4    6   | 3    28   79   | 27  1   5  |
-/// :--------------+----------------+------------:
-/// | 2   5    3   | 4    7    8    | 0   69  69 |
-/// | 89  689  1   | 5    69   3    | 4   .   2  |
-/// | 4   69   7   | 2    169  169  | 5   3   8  |
-/// '--------------'----------------'------------'
+///   8      1246  24569    │  2347  12357  1234     │  13569  4579   1345679  
+///   12459  124   3        │  6     12578  1248     │  1589   45789  14579
+///   1456   7     456      │  348   9      1348     │  2      458    13456
+/// ────────────────────────┼────────────────────────┼─────────────────────────
+///   123469  5      2469   │  2389  2368  7         │  1689  2489  12469
+///   12369   12368  269    │  2389  4     5         │  7     289   1269
+///   24679   2468   24679  │  1     268   2689      │  5689  3     24569
+/// ────────────────────────┼────────────────────────┼─────────────────────────
+///   23457  234   1        │  23479  237     2349   │  359  6    8
+///   23467  2346  8        │  5      2367    23469  │  39   1    2379
+///   23567  9     2567     │  2378   123678  12368  │  4    257  2357
 /// ```
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct CandidatesGridCompact;
@@ -64,11 +62,7 @@ impl GridFormat for CandidatesGridCompact {
                             })
                         })
                         .collect();
-                    block_builder
-                        .build()
-                        .with(Modify::new(Segment::all()).with(Alignment::center()))
-                        .with(Style::empty())
-                        .to_string()
+                    block_builder.build().with(Style::empty()).to_string()
                 })
             })
             .collect();
@@ -76,7 +70,6 @@ impl GridFormat for CandidatesGridCompact {
         let mut table = grid_builder.build();
 
         table
-            .with(Modify::new(Segment::all()).with(Alignment::center()))
             .with(
                 Style::modern()
                     .remove_top()
@@ -106,6 +99,8 @@ impl GridFormat for CandidatesGridCompact {
 
 #[cfg(test)]
 mod tests {
+    use crate::samples;
+
     use super::*;
 
     pub(crate) static INPUT_CANDIDATES: &str = include_str!(concat!(
@@ -115,7 +110,23 @@ mod tests {
 
     #[test]
     fn test_render() {
-        todo!()
+        let mut grid = samples::base_3().pop().unwrap();
+        grid.set_all_direct_candidates();
+
+        assert_eq!(
+            CandidatesGridCompact.render(&grid),
+            "  8      1246  24569    │  2347  12357  1234     │  13569  4579   1345679  
+  12459  124   3        │  6     12578  1248     │  1589   45789  14579    
+  1456   7     456      │  348   9      1348     │  2      458    13456    
+────────────────────────┼────────────────────────┼─────────────────────────
+  123469  5      2469   │  2389  2368  7         │  1689  2489  12469      
+  12369   12368  269    │  2389  4     5         │  7     289   1269       
+  24679   2468   24679  │  1     268   2689      │  5689  3     24569      
+────────────────────────┼────────────────────────┼─────────────────────────
+  23457  234   1        │  23479  237     2349   │  359  6    8            
+  23467  2346  8        │  5      2367    23469  │  39   1    2379         
+  23567  9     2567     │  2378   123678  12368  │  4    257  2357         "
+        );
     }
 
     #[test]
