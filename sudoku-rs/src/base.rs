@@ -38,6 +38,17 @@ pub mod consts {
     ];
 }
 
+mod private {
+    use super::consts::*;
+
+    pub trait Sealed {}
+
+    impl Sealed for Base2 {}
+    impl Sealed for Base3 {}
+    impl Sealed for Base4 {}
+    impl Sealed for Base5 {}
+}
+
 pub type ArrayElement = u8;
 
 const fn base_to_side_length(base: u8) -> u8 {
@@ -157,13 +168,14 @@ mod block_index_to_top_left_cell_index {
 /// A size of a square, standard sudoku.
 ///
 /// Implementations for bases `2..=5` are provided by this crate.
+/// This trait is sealed.
 ///
 /// # Safety
 /// This crate makes assumptions about the correct implementation of this trait.
 /// An incorrect implementation could result in undefined behaviour.
 pub unsafe trait SudokuBase
 where
-    Self: Ord + Hash + Clone + Copy + Debug + Default + 'static,
+    Self: Ord + Hash + Clone + Copy + Debug + Default + 'static + private::Sealed,
 {
     // TODO: evaluate `as` casting of constants
     /// The side length of a sudoku block. Must be non-zero.
