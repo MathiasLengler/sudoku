@@ -14,7 +14,7 @@ pub struct GivensLine;
 
 impl GridFormat for GivensLine {
     fn render<Base: SudokuBase>(self, grid: &Grid<Base>) -> String {
-        grid.cells.iter().map(ToString::to_string).collect()
+        grid.all_cells().map(ToString::to_string).collect()
     }
 
     fn parse(self, input: &str) -> Result<Vec<DynamicCell>> {
