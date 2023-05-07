@@ -51,6 +51,15 @@ pub trait Strategy: Debug + Copy + Clone + Eq + Sized {
     /// Execute this strategy on the given grid. Returns a list of deductions.
     fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>>;
 
+    fn execute_and_apply<Base: SudokuBase>(
+        self,
+        grid: &mut Grid<Base>,
+    ) -> Result<Deductions<Base>> {
+        let deductions = self.execute(grid)?;
+        deductions.apply(grid)?;
+        Ok(deductions)
+    }
+
     fn name(self) -> String {
         format!("{self:?}")
     }
