@@ -13,7 +13,7 @@ use crate::cell::Cell;
 use crate::cell::CellState;
 use crate::cell::Value;
 use crate::error::{Error, Result};
-use crate::grid::format::{CandidatesGridColored, DynamicGridFormat, GridFormat};
+use crate::grid::format::{CandidatesGridANSIStyled, DynamicGridFormat, GridFormat};
 use crate::position::Coordinate;
 use crate::position::Position;
 use crate::solver::strategic::strategies::DynamicStrategy;
@@ -628,7 +628,7 @@ impl<Base: SudokuBase> TryFrom<&str> for Grid<Base> {
 
 impl<Base: SudokuBase> Display for Grid<Base> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.write_str(&CandidatesGridColored.render(self))
+        f.write_str(&CandidatesGridANSIStyled.render(self))
     }
 }
 

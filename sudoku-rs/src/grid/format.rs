@@ -9,10 +9,10 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 #[cfg(feature = "wasm")]
 use ts_rs::TS;
 
-pub use ascii_candidates_grid::*;
 pub use binary_candidates_line::*;
 pub use binary_fixed_candidates_line::*;
 pub use candidates_grid::*;
+pub use candidates_grid_compact::*;
 pub use givens_grid::*;
 pub use givens_line::GivensLine;
 
@@ -21,10 +21,10 @@ use crate::cell::dynamic::DynamicCell;
 use crate::error::{Error, Result};
 use crate::grid::Grid;
 
-mod ascii_candidates_grid;
 mod binary_candidates_line;
 mod binary_fixed_candidates_line;
 mod candidates_grid;
+mod candidates_grid_compact;
 mod givens_grid;
 mod givens_line;
 
@@ -58,25 +58,25 @@ pub trait GridFormat: Debug + Copy + Clone + Eq + Sized {
 #[enum_dispatch]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum DynamicGridFormat {
-    GivensLine,
-    GivensGrid,
     BinaryCandidatesLine,
     BinaryFixedCandidatesLine,
-    CandidatesGridColored,
+    CandidatesGridANSIStyled,
     CandidatesGridPlain,
-    AsciiCandidatesGrid,
+    CandidatesGridCompact,
+    GivensLine,
+    GivensGrid,
 }
 
 impl DynamicGridFormat {
     pub fn all() -> Vec<Self> {
         vec![
-            GivensLine.into(),
-            GivensGrid.into(),
             BinaryCandidatesLine.into(),
             BinaryFixedCandidatesLine.into(),
-            CandidatesGridColored.into(),
+            CandidatesGridANSIStyled.into(),
             CandidatesGridPlain.into(),
-            AsciiCandidatesGrid.into(),
+            CandidatesGridCompact.into(),
+            GivensLine.into(),
+            GivensGrid.into(),
         ]
     }
 
@@ -84,7 +84,7 @@ impl DynamicGridFormat {
         let input = input.trim();
 
         let mut cell_views = if input.contains('\n') {
-            AsciiCandidatesGrid
+            CandidatesGridCompact
                 .parse_and_validate_cell_count(input)
                 .or_else(|_| GivensGrid.parse_and_validate_cell_count(input))?
         } else {
@@ -113,13 +113,13 @@ impl Serialize for DynamicGridFormat {
         S: Serializer,
     {
         let (variant_index, variant) = match *self {
-            Self::GivensLine(_) => (0, "GivensLine"),
-            Self::GivensGrid(_) => (1, "GivensGrid"),
-            Self::BinaryCandidatesLine(_) => (2, "BinaryCandidatesLine"),
-            Self::BinaryFixedCandidatesLine(_) => (3, "BinaryFixedCandidatesLine"),
-            Self::CandidatesGridColored(_) => (4, "CandidatesGridColored"),
-            Self::CandidatesGridPlain(_) => (5, "CandidatesGridPlain"),
-            Self::AsciiCandidatesGrid(_) => (6, "AsciiCandidatesGrid"),
+            Self::BinaryCandidatesLine(_) => (0, "BinaryCandidatesLine"),
+            Self::BinaryFixedCandidatesLine(_) => (1, "BinaryFixedCandidatesLine"),
+            Self::CandidatesGridANSIStyled(_) => (2, "CandidatesGridANSIStyled"),
+            Self::CandidatesGridPlain(_) => (3, "CandidatesGridPlain"),
+            Self::CandidatesGridCompact(_) => (4, "CandidatesGridCompact"),
+            Self::GivensLine(_) => (5, "GivensLine"),
+            Self::GivensGrid(_) => (6, "GivensGrid"),
         };
 
         serializer.serialize_unit_variant("Strategy", variant_index, variant)
@@ -163,47 +163,22 @@ impl FromStr for DynamicGridFormat {
 }
 
 #[cfg(test)]
-mod test_util {
-    use anyhow::Context;
-
-    use super::*;
-
-    pub(crate) fn assert_grid_equals_cell_views<Base: SudokuBase>(
-        grid: &Grid<Base>,
-        cell_views: &[DynamicCell],
-    ) -> Result<()> {
-        let parsed_grid: Grid<Base> = cell_views
-            .to_vec()
-            .try_into()
-            .with_context(|| format!("Failed to convert cell_views to grid:\n{cell_views:#?}"))?;
-
-        ensure!(grid == &parsed_grid, "Mismatched grid:\n{parsed_grid}");
-
-        Ok(())
-    }
-
-    pub(crate) fn assert_grid_format_roundtrip<Base: SudokuBase, F: GridFormat>(
-        grid: &Grid<Base>,
-        grid_format: F,
-    ) -> Result<()> {
-        (|| {
-            let grid_string = grid_format.render(&grid);
-
-            let cell_views = grid_format
-                .parse(&grid_string)
-                .with_context(|| format!("Failed to parse grid_string:\n{grid_string}"))?;
-
-            assert_grid_equals_cell_views(grid, &cell_views)
-        })()
-        .with_context(|| format!("Failed to roundtrip format {grid_format:?} with grid:\n{grid}"))
-    }
-}
-
-#[cfg(test)]
 mod tests {
     use crate::samples;
 
     use super::*;
+
+    #[test]
+    fn test_serde_round_trip() {
+        let all_strategies = DynamicGridFormat::all();
+
+        let json_string = serde_json::to_string(&all_strategies).unwrap();
+
+        let all_strategies_round_tripped: Vec<DynamicGridFormat> =
+            serde_json::from_str(&json_string).unwrap();
+
+        assert_eq!(all_strategies, all_strategies_round_tripped);
+    }
 
     #[test]
     fn test_detect_and_parse_cells_roundtrip() {
@@ -248,5 +223,42 @@ mod tests {
                 assert_grid_format_roundtrip_detect(&grid, grid_format).unwrap();
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod test_util {
+    use anyhow::Context;
+
+    use super::*;
+
+    pub(crate) fn assert_grid_equals_cell_views<Base: SudokuBase>(
+        grid: &Grid<Base>,
+        cell_views: &[DynamicCell],
+    ) -> Result<()> {
+        let parsed_grid: Grid<Base> = cell_views
+            .to_vec()
+            .try_into()
+            .with_context(|| format!("Failed to convert cell_views to grid:\n{cell_views:#?}"))?;
+
+        ensure!(grid == &parsed_grid, "Mismatched grid:\n{parsed_grid}");
+
+        Ok(())
+    }
+
+    pub(crate) fn assert_grid_format_roundtrip<Base: SudokuBase, F: GridFormat>(
+        grid: &Grid<Base>,
+        grid_format: F,
+    ) -> Result<()> {
+        (|| {
+            let grid_string = grid_format.render(&grid);
+
+            let cell_views = grid_format
+                .parse(&grid_string)
+                .with_context(|| format!("Failed to parse grid_string:\n{grid_string}"))?;
+
+            assert_grid_equals_cell_views(grid, &cell_views)
+        })()
+        .with_context(|| format!("Failed to roundtrip format {grid_format:?} with grid:\n{grid}"))
     }
 }

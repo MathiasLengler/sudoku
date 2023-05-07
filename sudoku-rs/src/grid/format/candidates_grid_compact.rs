@@ -4,23 +4,41 @@ use crate::error::Result;
 use crate::grid::format::GridFormat;
 use crate::grid::Grid;
 
+/// A grid of cells.
+/// Candidates are visualized as concatenated numbers.
+/// The grid borders consist only of [ASCII printable characters](https://en.wikipedia.org/wiki/ASCII#Printable_characters).
+///
+/// # Example
+/// ```text
+///   8  0  0|  0  0  0|  0  0  0
+///   0  0  3|  6  0  0|  0  0  0
+///   0  7  0|  0  9  0|  2  0  0
+/// ------------------------------
+///   0  5  0|  0  0  7|  0  0  0
+///   0  0  0|  0  4  5|  7  0  0
+///   0  0  0|  1  0  0|  0  3  0
+/// ------------------------------
+///   0  0  1|  0  0  0|  0  6  8
+///   0  0  8|  5  0  0|  0  1  0
+///   0  9  0|  0  0  0|  4  0  0
+/// ```
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub struct AsciiCandidatesGrid;
+pub struct CandidatesGridCompact;
 
-impl GridFormat for AsciiCandidatesGrid {
+impl GridFormat for CandidatesGridCompact {
     fn render<Base: SudokuBase>(self, _grid: &Grid<Base>) -> String {
         todo!()
     }
 
     fn parse(self, input: &str) -> Result<Vec<DynamicCell>> {
-        static SEPARATORS: &[char] = &['-', '|', ':', '+', '\'', '\n', '*'];
+        static GRID_BORDER_CHARS: &[char] = &['-', '|', ':', '+', '\'', '\n', '*'];
 
         input
             .lines()
             // Filter horizontal separator lines
             .filter(|line| line.contains(|c: char| c.is_digit(36)))
             // Filter vertical separators
-            .flat_map(|line| line.split(SEPARATORS))
+            .flat_map(|line| line.split(GRID_BORDER_CHARS))
             .filter(|s| !s.is_empty())
             // Split and trim groups of numbers
             .flat_map(|s| s.split_whitespace())
@@ -35,14 +53,14 @@ mod tests {
 
     pub(crate) static INPUT_CANDIDATES: &str = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/tests/res/grid_formats/ascii_candidates_grid.txt"
+        "/tests/res/grid_formats/candidates_grid_compact.txt"
     ));
 
     #[test]
     fn test_from_candidates_grid() -> Result<()> {
         use crate::cell::dynamic::{c, v};
 
-        let cells = AsciiCandidatesGrid.parse(INPUT_CANDIDATES)?;
+        let cells = CandidatesGridCompact.parse(INPUT_CANDIDATES)?;
 
         let expected_cells = vec![
             vec![

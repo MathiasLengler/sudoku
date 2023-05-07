@@ -11,14 +11,19 @@ use crate::error;
 use crate::grid::format::GridFormat;
 use crate::grid::Grid;
 
-/// Render grid of cells.
-/// Candidates are visualized as a nested grid.
-/// Values are bold.
-/// Unfixed values are blue.
+/// A grid of cells.
+/// Candidates are visualized as a nested grid, which spans multiple lines.
+/// The grid borders are represented by [UTF-8 box drawing characters](https://en.wikipedia.org/wiki/Box_Drawing).
+///
+/// Cell content is styled with [ANSI escape codes](https://en.wikipedia.org/wiki/ANSI_escape_code).
+///
+/// - unfixed value: bold blue
+/// - fixed value: bold
+/// - candidates: default
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub struct CandidatesGridColored;
+pub struct CandidatesGridANSIStyled;
 
-impl GridFormat for CandidatesGridColored {
+impl GridFormat for CandidatesGridANSIStyled {
     fn render<Base: SudokuBase>(self, grid: &Grid<Base>) -> String {
         render_candidates_grid(grid, true)
     }
@@ -32,6 +37,28 @@ impl GridFormat for CandidatesGridColored {
 }
 
 /// The same as `CandidatesGridColored`, but without terminal styling.
+///
+/// # Example
+///
+/// ```text
+/// ╔═══════════════════╦═══════════════════╗
+/// ║         │         ║         │         ║
+/// ║         │   2     ║    1    │         ║
+/// ║   3     │         ║         │  3  4   ║
+/// ║ ────────┼──────── ║ ────────┼──────── ║
+/// ║         │  1      ║      2  │         ║
+/// ║    4    │         ║         │         ║
+/// ║         │         ║   3     │  3      ║
+/// ╠═══════════════════╬═══════════════════╣
+/// ║   1     │  1      ║         │         ║
+/// ║         │         ║         │   2     ║
+/// ║         │     4   ║   3  4  │         ║
+/// ║ ────────┼──────── ║ ────────┼──────── ║
+/// ║   1  2  │         ║         │  1      ║
+/// ║         │   3     ║         │         ║
+/// ║         │         ║      4  │     4   ║
+/// ╚═══════════════════╩═══════════════════╝
+/// ```
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct CandidatesGridPlain;
 
@@ -164,7 +191,7 @@ mod tests {
         grid.set_all_direct_candidates();
 
         assert_eq!(
-            CandidatesGridColored.render(&grid),
+            CandidatesGridANSIStyled.render(&grid),
             "╔═══════════════════╦═══════════════════╗
 ║         │         ║         │         ║
 ║         │   \u{1b}[34;1m2\u{1b}[0m     ║    \u{1b}[1m1\u{1b}[0m    │         ║
