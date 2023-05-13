@@ -4,3 +4,4 @@ cargo-timing*.html
 
 sudoku-bubblewrap/*
 !sudoku-bubblewrap/twa-manifest.json
+!sudoku-bubblewrap/gradle.properties
