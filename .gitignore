@@ -2,4 +2,5 @@
 **/*.rs.bk
 cargo-timing*.html
 
-sudoku-bubblewrap/
+sudoku-bubblewrap/*
+!sudoku-bubblewrap/twa-manifest.json
