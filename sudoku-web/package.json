@@ -14,7 +14,7 @@
         "lint:tsc": "tsc",
         "lint:eslint": "eslint src/** webpack.config.ts",
         "serve": "npx serve -l 8080 dist",
-        "bubblewrap": "bubblewrap"
+        "bubblewrap:merge": "cd ../sudoku-bubblewrap && bubblewrap merge"
     },
     "engines": {
         "node": "18"
