@@ -1,4 +1,4 @@
-import type { DynamicStrategy, GridFormat } from "./types";
+import type { DynamicStrategy, DynamicGridFormat } from "./types";
 
 export const WORKER_BOOT_UP_MESSAGE = "Worker loaded";
 const arrayOfAll =
@@ -14,11 +14,12 @@ export const ALL_STRATEGIES = arrayOfAll<DynamicStrategy>()([
     "Backtracking",
 ]);
 
-export const ALL_GRID_FORMATS = arrayOfAll<GridFormat>()([
-    "givensLine",
-    "givensGrid",
-    "candidatesGridPlain",
-    "candidatesGrid",
-    "binaryCandidatesLine",
-    "binaryFixedCandidatesLine",
+export const ALL_GRID_FORMATS = arrayOfAll<DynamicGridFormat>()([
+    "CandidatesGridPlain",
+    "CandidatesGridCompact",
+    "CandidatesGridANSIStyled",
+    "GivensLine",
+    "GivensGrid",
+    "BinaryCandidatesLine",
+    "BinaryFixedCandidatesLine",
 ]);

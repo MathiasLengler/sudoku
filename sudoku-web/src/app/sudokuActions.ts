@@ -6,7 +6,7 @@ import type { CellAction, Input } from "./state/input";
 import { inputState } from "./state/input";
 import { cellAtGridPositionState } from "./state/cellIndexing";
 import _ from "lodash";
-import type { DynamicStrategies, GridFormat } from "../types";
+import type { DynamicStrategies, DynamicGridFormat } from "../types";
 import type { WasmSudokuProxy } from "../spawnWorker";
 import assertNever from "assert-never/index";
 
@@ -348,7 +348,7 @@ export function useImportSudokuString() {
 export function useExportSudokuString() {
     return useRecoilCallback(
         ({ snapshot }) =>
-            async (format: GridFormat) => {
+            async (format: DynamicGridFormat) => {
                 const wasmSudokuProxy = await getWasmSudokuProxy({ snapshot });
                 return await wasmSudokuProxy.export(format);
             },

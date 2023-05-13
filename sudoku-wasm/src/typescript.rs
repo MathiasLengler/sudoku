@@ -45,8 +45,8 @@ extern "C" {
     pub type IDynamicGeneratorSettings;
     #[wasm_bindgen(typescript_type = "bindings.DynamicCell")]
     pub type IDynamicCell;
-    #[wasm_bindgen(typescript_type = "bindings.GridFormat")]
-    pub type IGridFormat;
+    #[wasm_bindgen(typescript_type = "bindings.DynamicGridFormat")]
+    pub type IDynamicGridFormat;
     #[wasm_bindgen(typescript_type = "bindings.TransportDeductions")]
     pub type ITransportDeductions;
     #[wasm_bindgen(typescript_type = "bindings.DynamicTryStrategiesReturn")]

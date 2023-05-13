@@ -16,7 +16,7 @@ use sudoku::solver::strategic::deduction::transport::TransportDeductions;
 use sudoku::solver::strategic::strategies::DynamicStrategy;
 use sudoku::transport::TransportSudoku;
 use sudoku::{DynamicSudoku, Game, Sudoku};
-use typescript::{ICandidates, IGridFormat, ITransportSudoku};
+use typescript::{ICandidates, IDynamicGridFormat, ITransportSudoku};
 
 use crate::typescript::*;
 
@@ -152,7 +152,7 @@ impl WasmSudoku {
         self.sudoku.import(input).map_err(export_error)
     }
 
-    pub fn export(&self, format: IGridFormat) -> Result<String> {
+    pub fn export(&self, format: IDynamicGridFormat) -> Result<String> {
         Ok(self.sudoku.export(&import_grid_format(format)?))
     }
 
@@ -198,7 +198,7 @@ mod import {
         )?)
     }
 
-    pub(crate) fn import_grid_format(format: IGridFormat) -> Result<DynamicGridFormat> {
+    pub(crate) fn import_grid_format(format: IDynamicGridFormat) -> Result<DynamicGridFormat> {
         Ok(serde_wasm_bindgen::from_value(format.into())?)
     }
 

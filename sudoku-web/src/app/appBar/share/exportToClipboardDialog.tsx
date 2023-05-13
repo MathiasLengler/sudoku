@@ -1,14 +1,14 @@
 import { Box, Button, DialogActions, DialogContent, DialogContentText, DialogTitle, FormGroup } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import { useExportSudokuString } from "../../sudokuActions";
-import type { GridFormat } from "../../../../../sudoku-rs/bindings";
+import type { DynamicGridFormat } from "../../../../../sudoku-rs/bindings";
 import { SelectElement, useForm } from "react-hook-form-mui";
 import { ALL_GRID_FORMATS } from "../../../constants";
 import CircularProgress from "@mui/material/CircularProgress";
 import { Code } from "../../components/Code";
 
 type FormData = {
-    gridFormat: GridFormat;
+    gridFormat: DynamicGridFormat;
 };
 
 let previousFormData: FormData | undefined;
@@ -28,7 +28,7 @@ export function ExportToClipboardDialog({ onClose }: ExportToClipboardDialogProp
         setValue,
     } = useForm<FormData>({
         defaultValues: previousFormData ?? {
-            gridFormat: "givensGrid",
+            gridFormat: "CandidatesGridPlain",
         },
     });
 

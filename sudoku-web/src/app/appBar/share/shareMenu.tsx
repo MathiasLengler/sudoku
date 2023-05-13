@@ -20,7 +20,7 @@ export function ShareMenu() {
                         label: "SudokuWiki",
                         icon: <OpenInNewIcon />,
                         onClick: async () => {
-                            const binaryFixedCandidatesLine = await exportSudokuString("binaryFixedCandidatesLine");
+                            const binaryFixedCandidatesLine = await exportSudokuString("BinaryFixedCandidatesLine");
                             window.open(
                                 // Template string, since URLSearchParams encodes the reserved character ",".
                                 // sudokuwiki.org expects these characters to be unencoded.
@@ -35,8 +35,6 @@ export function ShareMenu() {
                         icon: <ContentCopyIcon />,
                         onClick: () => {
                             setIsExportToClipboardDialogOpen(true);
-                            // const givensGrid = await exportSudokuString("givensGrid");
-                            // await window.navigator.clipboard.writeText(givensGrid);
                         },
                     },
                 ]}
