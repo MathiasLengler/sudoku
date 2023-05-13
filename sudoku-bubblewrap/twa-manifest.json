@@ -16,11 +16,11 @@
   "maskableIconUrl": "https://sudoku.lengler.dev/assets/icon_512x512.b7c1763cb74df4c0aaf67f8c5e7b24eb.png",
   "splashScreenFadeOutDuration": 300,
   "signingKey": {
-    "path": "C:\\Users\\Mathias\\git\\sudoku\\sudoku-bubblewrap\\android.keystore",
+    "path": "android.keystore",
     "alias": "android"
   },
   "appVersionName": "1",
-  "appVersionCode": 5,
+  "appVersionCode": 4,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://sudoku.lengler.dev/manifest.bc83027945474fa5da5bfc91168ffd47.json",
