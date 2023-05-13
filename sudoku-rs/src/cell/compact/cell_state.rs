@@ -184,15 +184,11 @@ where
     Base: SudokuBase,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            if let Some(value) = self.value() {
-                value.to_string()
-            } else {
-                "0".to_string()
-            }
-        )
+        if let Some(value) = self.value() {
+            write!(f, "{value}")
+        } else {
+            write!(f, "0")
+        }
     }
 }
 

@@ -20,6 +20,12 @@ pub struct Value<Base: SudokuBase> {
     base: PhantomData<Base>,
 }
 
+impl<Base: SudokuBase> Default for Value<Base> {
+    fn default() -> Self {
+        1.try_into().unwrap()
+    }
+}
+
 impl<Base: SudokuBase> Value<Base> {
     /// Ok(Some(value)) => value in legal range
     /// Ok(None) => 0
@@ -43,6 +49,14 @@ impl<Base: SudokuBase> Value<Base> {
     }
 }
 
+impl<Base: SudokuBase> Display for Value<Base> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        use radix_fmt::radix_32;
+
+        write!(f, "{}", radix_32(self.value).to_string())
+    }
+}
+
 impl<Base: SudokuBase> TryFrom<u8> for Value<Base> {
     type Error = Error;
 
@@ -56,12 +70,6 @@ impl<Base: SudokuBase> TryFrom<DynamicValue> for Value<Base> {
 
     fn try_from(dynamic_value: DynamicValue) -> Result<Self> {
         dynamic_value.0.try_into()
-    }
-}
-
-impl<Base: SudokuBase> Display for Value<Base> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.value)
     }
 }
 
