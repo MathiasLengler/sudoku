@@ -1,12 +1,12 @@
-import type { DynamicStrategy, DynamicGridFormat } from "./types";
+import type { DynamicGridFormat, DynamicStrategy } from "./types";
+import { z } from "zod";
+import type { IsEqual } from "type-fest";
+import { assert } from "./typeUtils";
 
 export const WORKER_BOOT_UP_MESSAGE = "Worker loaded";
-const arrayOfAll =
-    <T>() =>
-    <U extends T[]>(array: U & ([T] extends [U[number]] ? unknown : "Invalid")) =>
-        array;
 // Copy of sudokuController.allStrategies
-export const ALL_STRATEGIES = arrayOfAll<DynamicStrategy>()([
+
+export const dynamicStrategySchema = z.enum([
     "NakedSingles",
     "HiddenSingles",
     "NakedPairs",
@@ -14,7 +14,10 @@ export const ALL_STRATEGIES = arrayOfAll<DynamicStrategy>()([
     "Backtracking",
 ]);
 
-export const ALL_GRID_FORMATS = arrayOfAll<DynamicGridFormat>()([
+assert<IsEqual<z.infer<typeof dynamicStrategySchema>, DynamicStrategy>>();
+export const ALL_STRATEGIES = dynamicStrategySchema.options;
+
+export const gridFormatSchema = z.enum([
     "CandidatesGridPlain",
     "CandidatesGridCompact",
     "CandidatesGridANSIStyled",
@@ -23,3 +26,6 @@ export const ALL_GRID_FORMATS = arrayOfAll<DynamicGridFormat>()([
     "BinaryCandidatesLine",
     "BinaryFixedCandidatesLine",
 ]);
+assert<IsEqual<z.infer<typeof gridFormatSchema>, DynamicGridFormat>>();
+
+export const ALL_GRID_FORMATS = gridFormatSchema.options;

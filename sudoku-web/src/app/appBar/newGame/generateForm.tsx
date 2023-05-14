@@ -1,45 +1,34 @@
 import React, { useEffect } from "react";
-import range from "lodash/range";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
-import CircularProgress from "@mui/material/CircularProgress";
 import { CheckboxButtonGroup, SliderElement, SwitchElement, TextFieldElement, useForm } from "react-hook-form-mui";
-import type { DynamicStrategy } from "../../../types";
-import { Box, DialogContent, FormGroup, FormLabel, IconButton } from "@mui/material";
-import { baseToCellCount, baseToSideLength } from "../../utils";
+import { DialogContent, FormGroup, FormLabel, IconButton } from "@mui/material";
+import { baseToCellCount } from "../../utils";
 import { ALL_STRATEGIES } from "../../../constants";
 import { useGenerate } from "../../sudokuActions";
 import CasinoIcon from "@mui/icons-material/Casino";
 import ReplayIcon from "@mui/icons-material/Replay";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import { LoadingButton } from "@mui/lab";
-
-const BASE_MIN = 2;
-const BASE_MAX = 5;
-const BASE_MARKS = range(BASE_MIN, BASE_MAX + 1).map(base => {
-    const sideLength = baseToSideLength(base);
-    return {
-        value: base,
-        label: `${sideLength}x${sideLength}`,
-    };
-});
-const SEED_MAX = Number.MAX_SAFE_INTEGER;
+import { useRecoilState } from "recoil";
+import { zodResolver } from "@hookform/resolvers/zod";
+import _ from "lodash";
+import {
+    BASE_MARKS,
+    BASE_MAX,
+    BASE_MIN,
+    GENERATE_FORM_DEFAULT_VALUES,
+    type GenerateFormValues,
+    generateFormValuesSchema,
+    generateFormValuesState,
+    SEED_MAX,
+} from "../../state/generateForm";
 
 interface GenerateFormProps {
     onClose: () => void;
 }
-type FormData = {
-    base: number;
-    minGivens: number;
-    strategies: DynamicStrategy[];
-    setAllDirectCandidates: boolean;
-    useSeed: false;
-    seed: string;
-};
-
-let previousFormData: FormData | undefined;
-
 export const GenerateForm = ({ onClose }: GenerateFormProps) => {
+    const [generateFormValues, setGenerateFormValues] = useRecoilState(generateFormValuesState);
     const {
         control,
         handleSubmit,
@@ -47,19 +36,12 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
         formState: { isSubmitting },
         setValue,
         reset,
-    } = useForm<FormData>({
-        defaultValues: previousFormData ?? {
-            base: 3,
-            minGivens: 0,
-            strategies: ["Backtracking"],
-            setAllDirectCandidates: true,
-            useSeed: false,
-            seed: "0",
-        },
+    } = useForm<GenerateFormValues>({
+        values: generateFormValues,
+        resolver: zodResolver(generateFormValuesSchema),
     });
 
     const { base, minGivens, useSeed, seed } = watch();
-
     const cellCount = baseToCellCount(base);
 
     useEffect(() => {
@@ -72,9 +54,8 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
 
     return (
         <form
-            noValidate
-            onSubmit={handleSubmit(async formData => {
-                const { base, minGivens, setAllDirectCandidates, strategies, seed, useSeed } = formData;
+            onSubmit={handleSubmit(async formValues => {
+                const { base, minGivens, setAllDirectCandidates, strategies, seed, useSeed } = formValues;
 
                 const cellCount = baseToCellCount(base);
 
@@ -86,11 +67,11 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                             set_all_direct_candidates: setAllDirectCandidates,
                         },
                     },
-                    seed: useSeed ? BigInt(seed) : undefined,
+                    seed: useSeed && !_.isUndefined(seed) ? BigInt(seed) : undefined,
                     strategies,
                 });
 
-                previousFormData = formData;
+                setGenerateFormValues(formValues);
 
                 onClose();
             })}
@@ -141,10 +122,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                         name="seed"
                         label="Seed"
                         disabled={!useSeed}
-                        validation={{
-                            min: { value: 0, message: "Seed must not be negative" },
-                            max: { value: SEED_MAX, message: "Seed too big" },
-                        }}
+                        inputProps={{ inputMode: "numeric" }}
                         InputProps={{
                             startAdornment: (
                                 <IconButton
@@ -157,7 +135,6 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                                 </IconButton>
                             ),
                         }}
-                        type="number"
                     />
                 </FormGroup>
             </DialogContent>
@@ -166,7 +143,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                     type="button"
                     disabled={isSubmitting}
                     onClick={() => {
-                        reset();
+                        reset(GENERATE_FORM_DEFAULT_VALUES);
                     }}
                 >
                     <ReplayIcon />
