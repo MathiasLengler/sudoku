@@ -60,8 +60,6 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
 
     const { base, minGivens, useSeed, seed } = watch();
 
-    console.log({ seed });
-
     const cellCount = baseToCellCount(base);
 
     useEffect(() => {
