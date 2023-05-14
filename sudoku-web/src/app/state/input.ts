@@ -1,37 +1,50 @@
 import type { Position } from "../../types";
 import { atom, selector } from "recoil";
+import { localStorageEffect } from "./localStorageEffect";
+import { z } from "zod";
 
-export interface BaseInput {
-    stickyMode: boolean;
-    candidateMode: boolean;
-}
+const baseInputSchema = z.object({
+    stickyMode: z.boolean(),
+    candidateMode: z.boolean(),
+});
+export type BaseInput = z.infer<typeof baseInputSchema>;
 
-export interface NormalModeInput extends BaseInput {
-    stickyMode: false;
-    selectedPos: Position;
+const positionSchema = z.object({ row: z.number().int().nonnegative(), column: z.number().int().nonnegative() });
+const valueSchema = z.number().int().positive();
+
+const normalModeInputSchema = z.object({
+    stickyMode: z.literal(false),
+    selectedPos: positionSchema,
     // Used for restoring state on sticky mode toggle
-    previouslySelectedValue: number;
-}
+    previouslySelectedValue: valueSchema,
+});
+export type NormalModeInput = z.infer<typeof normalModeInputSchema>;
 
-export type CellAction = "set" | "delete";
+const cellActionSchema = z.enum(["set", "delete"]);
+export type CellAction = z.infer<typeof cellActionSchema>;
 
-export interface StickyChain {
-    cellAction: CellAction;
-    handledGridPositions: Position[];
-}
-
-export interface StickyModeInput extends BaseInput {
-    stickyMode: true;
-    selectedValue: number;
+export type StickyChain = z.infer<typeof stickyChainSchema>;
+const stickyChainSchema = z.object({
+    cellAction: cellActionSchema,
+    handledGridPositions: positionSchema.array(),
+});
+export type StickyModeInput = z.infer<typeof stickyModeInputSchema>;
+const stickyModeInputSchema = z.object({
+    stickyMode: z.literal(true),
+    selectedValue: valueSchema,
     // Is defined if the primary pointer is in the active buttons state and has interacted with at least one cell.
     // The first actively interacted cell defines the action type for all subsequent cells.
-    stickyChain: StickyChain | undefined;
+    stickyChain: stickyChainSchema.optional(),
     // Used for restoring state on sticky mode toggle
-    previouslySelectedPos: Position;
-}
+    previouslySelectedPos: positionSchema,
+});
 
-export type Input = NormalModeInput | StickyModeInput;
+export type Input = z.infer<typeof inputSchema>;
+const inputSchema = z
+    .discriminatedUnion("stickyMode", [normalModeInputSchema, stickyModeInputSchema])
+    .and(baseInputSchema);
 
+// TODO: fix stale input on sudoku base shrink
 export const inputState = atom<Input>({
     key: "Input",
     default: {
@@ -40,6 +53,7 @@ export const inputState = atom<Input>({
         candidateMode: false,
         previouslySelectedValue: 1,
     },
+    effects: [localStorageEffect(inputSchema)],
 });
 
 // Defined in normal mode
