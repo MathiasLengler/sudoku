@@ -46,7 +46,7 @@ export function cellPositionToBlockPosition(cellPosition: Position, base: Transp
 }
 
 export function valueToString(value: DynamicCellValue["value"]): string {
-    return value.toString(36);
+    return value.toString(36).toUpperCase();
 }
 
 export function baseToSideLength(base: number): number {
