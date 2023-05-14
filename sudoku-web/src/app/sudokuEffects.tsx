@@ -1,7 +1,6 @@
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useCallback, useEffect } from "react";
 import { useEndStickyChain } from "./sudokuActions";
-import debounce from "lodash/debounce";
-import type { CellViews, Position, TransportSudoku } from "../types";
+import type { DynamicCell, Position } from "../types";
 import { saveCellViews } from "./persistence";
 import { useRecoilValue, useSetRecoilState } from "recoil";
 import { sudokuBaseState, sudokuCellsState } from "./state/sudoku";
@@ -12,23 +11,9 @@ import _ from "lodash";
 function SaveCellsEffect() {
     const cells = useRecoilValue(sudokuCellsState);
 
-    // TODO: refactor using recoil
-    //  use Recoil Sync?
-    //  replace with atom effect?
-    //  move inside side effect component?
-    const debouncedSaveCells = useMemo(
-        () =>
-            debounce((cells: TransportSudoku["cells"]) => {
-                console.debug("Saving sudoku cells to localStorage");
-                const cellViews: CellViews = cells.map(({ position, incorrectValue, ...cell }) => cell);
-                saveCellViews(cellViews);
-            }, 500),
-        []
-    );
-
     useEffect(() => {
-        debouncedSaveCells(cells);
-    }, [debouncedSaveCells, cells]);
+        saveCellViews(cells.map(({ position, incorrectValue, ...cell }): DynamicCell => cell));
+    }, [cells]);
 
     return null;
 }

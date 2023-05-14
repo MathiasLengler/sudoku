@@ -1,7 +1,7 @@
 import * as Comlink from "comlink";
 import wasm from "./wasmSudoku";
 import { WORKER_BOOT_UP_MESSAGE } from "./constants";
-import type { CellViews, WasmSudoku } from "./types";
+import type { DynamicCells, WasmSudoku } from "./types";
 
 const { WasmSudoku: WasmSudokuValue, init: wasmInit } = wasm;
 
@@ -31,16 +31,16 @@ postMessage(WORKER_BOOT_UP_MESSAGE);
 
 Comlink.expose(workerApi);
 
-async function init(cellViews?: CellViews) {
+async function init(cells?: DynamicCells) {
     console.debug("Worker init");
 
     console.debug("Initializing WASM module");
     wasmInit();
 
-    if (cellViews) {
+    if (cells) {
         console.debug("Restoring sudoku from cells");
         try {
-            workerApi.typedWasmSudoku = WasmSudokuValue.restore(cellViews);
+            workerApi.typedWasmSudoku = WasmSudokuValue.restore(cells);
         } catch (err) {
             console.error("Failed to restore persisted grid:", err);
         }
