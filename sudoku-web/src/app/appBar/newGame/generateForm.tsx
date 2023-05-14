@@ -10,6 +10,10 @@ import { baseToCellCount, baseToSideLength } from "../../utils";
 import { ALL_STRATEGIES } from "../../../constants";
 import { useGenerate } from "../../sudokuActions";
 import CasinoIcon from "@mui/icons-material/Casino";
+import ReplayIcon from "@mui/icons-material/Replay";
+import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import { LoadingButton } from "@mui/lab";
+
 const BASE_MIN = 2;
 const BASE_MAX = 5;
 const BASE_MARKS = range(BASE_MIN, BASE_MAX + 1).map(base => {
@@ -42,6 +46,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
         watch,
         formState: { isSubmitting },
         setValue,
+        reset,
     } = useForm<FormData>({
         defaultValues: previousFormData ?? {
             base: 3,
@@ -158,18 +163,29 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                     />
                 </FormGroup>
             </DialogContent>
-            <DialogActions>
-                {isSubmitting && (
-                    <Box>
-                        <CircularProgress />
-                    </Box>
-                )}
-                <Button onClick={onClose} disabled={isSubmitting}>
+            <DialogActions sx={{ justifyContent: "space-between" }}>
+                <IconButton
+                    type="button"
+                    disabled={isSubmitting}
+                    onClick={() => {
+                        reset();
+                    }}
+                >
+                    <ReplayIcon />
+                </IconButton>
+                <Button type="button" onClick={onClose} disabled={isSubmitting}>
                     Cancel
                 </Button>
-                <Button type="submit" color="primary" variant="contained" disabled={isSubmitting}>
-                    Generate
-                </Button>
+                <LoadingButton
+                    type="submit"
+                    color="primary"
+                    variant="contained"
+                    endIcon={<PlayArrowIcon />}
+                    loading={isSubmitting}
+                    loadingPosition="end"
+                >
+                    <span>Generate</span>
+                </LoadingButton>
             </DialogActions>
         </form>
     );
