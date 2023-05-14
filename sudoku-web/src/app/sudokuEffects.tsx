@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useMemo } from "react";
 import { useEndStickyChain } from "./sudokuActions";
 import debounce from "lodash/debounce";
-import type { TransportSudoku } from "../../../sudoku-rs/bindings";
-import type { CellViews } from "../types";
+import type { CellViews, Position, TransportSudoku } from "../types";
 import { saveCellViews } from "./persistence";
-import { useRecoilValue } from "recoil";
-import { sudokuCellsState } from "./state/sudoku";
+import { useRecoilValue, useSetRecoilState } from "recoil";
+import { sudokuBaseState, sudokuCellsState } from "./state/sudoku";
+import { inputState } from "./state/input";
+import { baseToSideLength } from "./utils";
+import _ from "lodash";
 
 function SaveCellsEffect() {
     const cells = useRecoilValue(sudokuCellsState);
@@ -31,7 +33,7 @@ function SaveCellsEffect() {
     return null;
 }
 
-export const PointerUpHandler = () => {
+const PointerUpHandler = () => {
     const endStickyChain = useEndStickyChain();
 
     const onPointerUp = useCallback(
@@ -59,10 +61,44 @@ export const PointerUpHandler = () => {
     return null;
 };
 
+const SudokuBaseEffect = () => {
+    const base = useRecoilValue(sudokuBaseState);
+    const setInput = useSetRecoilState(inputState);
+
+    useEffect(() => {
+        setInput(input => {
+            const sideLength = baseToSideLength(base);
+            const clampValue = (value: number) => _.clamp(value, sideLength);
+            const clampCoordinate = (coordinate: number) => _.clamp(coordinate, sideLength - 1);
+            const clampPosition = (pos: Position): Position => ({
+                row: clampCoordinate(pos.row),
+                column: clampCoordinate(pos.column),
+            });
+
+            if (input.stickyMode) {
+                return {
+                    ...input,
+                    selectedValue: clampValue(input.selectedValue),
+                    previouslySelectedPos: clampPosition(input.previouslySelectedPos),
+                };
+            } else {
+                return {
+                    ...input,
+                    selectedPos: clampPosition(input.selectedPos),
+                    previouslySelectedValue: clampValue(input.previouslySelectedValue),
+                };
+            }
+        });
+    }, [base, setInput]);
+
+    return null;
+};
+
 export function SudokuEffects() {
     return (
         <>
             <SaveCellsEffect />
+            <SudokuBaseEffect />
             <PointerUpHandler />
         </>
     );

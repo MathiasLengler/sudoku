@@ -44,7 +44,6 @@ const inputSchema = z
     .discriminatedUnion("stickyMode", [normalModeInputSchema, stickyModeInputSchema])
     .and(baseInputSchema);
 
-// TODO: fix stale input on sudoku base shrink
 export const inputState = atom<Input>({
     key: "Input",
     default: {
