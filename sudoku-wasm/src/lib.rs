@@ -189,7 +189,6 @@ impl WasmSudoku {
 /// Import helpers
 mod import {
     use super::*;
-    use serde::Serialize;
 
     pub(crate) fn import_err(err: JsValue) -> SudokuError {
         match err.dyn_into::<js_sys::Error>() {
@@ -200,7 +199,7 @@ mod import {
                     anyhow!("JsValue err message not convertible to message")
                 }
             }
-            Err(value) => {
+            Err(_value) => {
                 anyhow!("JsValue err not convertible to Error")
             }
         }
@@ -225,11 +224,14 @@ mod import {
     pub(crate) fn import_generate_on_progress(
         on_progress: IGenerateOnProgress,
     ) -> Result<impl FnMut(GeneratorProgress) -> Result<(), SudokuError>> {
+        // FIXME: error handing
+        //  JsValue::from crashes at runtime, replace with JsCast
         let js_value = JsValue::from(on_progress);
         let function = js_sys::Function::from(js_value);
 
         Ok(
             move |progress: GeneratorProgress| -> Result<(), SudokuError> {
+                // FIXME: remove unwrap
                 function
                     .call1(&JsValue::null(), &export_value(&progress).unwrap())
                     .unwrap();
