@@ -7,7 +7,7 @@ use history::History;
 use crate::base::SudokuBase;
 use crate::cell::Value;
 use crate::error::Result;
-use crate::generator::{Generator, GeneratorSettings};
+use crate::generator::{Generator, GeneratorProgress, GeneratorSettings};
 use crate::grid::format::DynamicGridFormat;
 use crate::grid::format::GridFormat;
 use crate::grid::Grid;
@@ -59,8 +59,13 @@ impl<Base: SudokuBase> Sudoku<Base> {
         }
     }
 
-    pub fn generate(generator_settings: GeneratorSettings, settings: Settings) -> Result<Self> {
-        let grid = Generator::with_settings(generator_settings).generate();
+    pub fn generate(
+        generator_settings: GeneratorSettings,
+        settings: Settings,
+        on_progress: impl FnMut(GeneratorProgress) -> Result<()>,
+    ) -> Result<Self> {
+        let grid =
+            Generator::with_settings(generator_settings).generate_with_progress(on_progress)?;
 
         Ok(Self::with_grid_and_settings(grid, settings))
     }

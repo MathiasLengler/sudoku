@@ -14,7 +14,7 @@ rust-version.workspace = true
 version.workspace = true
 
 [dependencies]
-anyhow = { version = "1.0.70", features = ["backtrace"] }
+anyhow = { workspace = true }
 crossterm = { version = "0.26.1", optional = true }
 enum_dispatch = "0.3.11"
 getrandom = "0.2.9"

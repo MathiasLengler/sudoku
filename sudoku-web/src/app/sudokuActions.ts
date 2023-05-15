@@ -1,7 +1,13 @@
+import * as Comlink from "comlink";
 import type { SelectorCallbackInterface } from "recoil";
 import { useRecoilCallback } from "recoil";
 import { sudokuSideLengthState, sudokuState, wasmSudokuProxyContainerState } from "./state/sudoku";
-import type { DynamicGeneratorSettings, Position, TransportDeductions } from "../../../sudoku-rs/bindings";
+import type {
+    DynamicGeneratorSettings,
+    GeneratorProgress,
+    Position,
+    TransportDeductions,
+} from "../../../sudoku-rs/bindings";
 import type { CellAction, Input } from "./state/input";
 import { inputState } from "./state/input";
 import { cellAtGridPositionState } from "./state/cellIndexing";
@@ -323,15 +329,15 @@ export function useRedo() {
     );
 }
 
-export function useGenerate() {
+export function useGenerate(onProgress: (progress: GeneratorProgress) => void) {
     return useRecoilCallback(
         ({ snapshot, set }) =>
             async (settings: DynamicGeneratorSettings) => {
                 const wasmSudokuProxy = await getWasmSudokuProxy({ snapshot });
-                await wasmSudokuProxy.generate(settings);
+                await wasmSudokuProxy.generate(settings, Comlink.proxy(onProgress));
                 await updateSudoku({ set, wasmSudokuProxy });
             },
-        []
+        [onProgress]
     );
 }
 export function useImportSudokuString() {

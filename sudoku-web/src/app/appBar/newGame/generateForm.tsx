@@ -1,8 +1,8 @@
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import { CheckboxButtonGroup, SliderElement, SwitchElement, TextFieldElement, useForm } from "react-hook-form-mui";
-import { DialogContent, FormGroup, FormLabel, IconButton } from "@mui/material";
+import { Box, DialogContent, FormGroup, FormLabel, IconButton, LinearProgress, Typography } from "@mui/material";
 import { baseToCellCount } from "../../utils";
 import { ALL_STRATEGIES } from "../../../constants";
 import { useGenerate } from "../../sudokuActions";
@@ -23,6 +23,30 @@ import {
     generateFormValuesState,
     SEED_MAX,
 } from "../../state/generateForm";
+import type { GeneratorProgress } from "../../../types";
+
+interface GenerateProgressProps {
+    progress?: GeneratorProgress;
+}
+function GenerateProgress({ progress }: GenerateProgressProps) {
+    if (!progress) return null;
+
+    const value = (progress.positionIndex / progress.positionsCount) * 100;
+
+    return (
+        <Box sx={{ display: "flex", alignItems: "center", pt: 2 }}>
+            <Box sx={{ width: "100%", mr: 1 }}>
+                <LinearProgress variant="determinate" value={value} />
+            </Box>
+            <Box sx={{ minWidth: 35 }}>
+                <Typography
+                    variant="body2"
+                    color="text.secondary"
+                >{`${progress.positionIndex}/${progress.positionsCount}`}</Typography>
+            </Box>
+        </Box>
+    );
+}
 
 interface GenerateFormProps {
     onClose: () => void;
@@ -50,7 +74,14 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
         }
     }, [cellCount, minGivens, setValue]);
 
-    const generate = useGenerate();
+    const [progress, setProgress] = useState<GeneratorProgress>();
+
+    const onProgress = useCallback((progress: GeneratorProgress) => {
+        console.debug("Generator progress", progress);
+        setProgress(progress);
+    }, []);
+
+    const generate = useGenerate(onProgress);
 
     return (
         <form
@@ -63,8 +94,8 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                     base,
                     target: {
                         fromFilled: {
-                            distance: cellCount - minGivens,
-                            set_all_direct_candidates: setAllDirectCandidates,
+                            distanceFromFilled: cellCount - minGivens,
+                            setAllDirectCandidates,
                         },
                     },
                     seed: useSeed && !_.isUndefined(seed) ? BigInt(seed) : undefined,
@@ -137,6 +168,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                         }}
                     />
                 </FormGroup>
+                <GenerateProgress progress={progress} />
             </DialogContent>
             <DialogActions sx={{ justifyContent: "space-between" }}>
                 <IconButton

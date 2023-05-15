@@ -7,6 +7,8 @@ import type * as bindings from "../../sudoku-rs/bindings";
 export type Candidates = number[];
 
 export type DynamicStrategies = bindings.DynamicStrategy[];
+
+export type GenerateOnProgress = (progress: bindings.GeneratorProgress) => void;
 "#;
 
 // Source: wasm_bindgen typescript_custom_section
@@ -16,6 +18,8 @@ extern "C" {
     pub type ICandidates;
     #[wasm_bindgen(typescript_type = "DynamicStrategies")]
     pub type IDynamicStrategies;
+    #[wasm_bindgen(typescript_type = "GenerateOnProgress")]
+    pub type IGenerateOnProgress;
 }
 
 // FIXME: improve type safety (ts-rs <=> wasm_bindgen)
@@ -51,4 +55,5 @@ extern "C" {
     pub type ITransportDeductions;
     #[wasm_bindgen(typescript_type = "bindings.DynamicTryStrategiesReturn")]
     pub type IDynamicTryStrategiesReturn;
+
 }

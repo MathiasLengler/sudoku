@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use log::trace;
 use serde_wasm_bindgen::Serializer;
 use wasm_bindgen::prelude::*;
@@ -8,7 +9,7 @@ use import::*;
 use sudoku::base::consts::*;
 use sudoku::cell::dynamic::DynamicCell;
 use sudoku::error::Error as SudokuError;
-use sudoku::generator::DynamicGeneratorSettings;
+use sudoku::generator::{DynamicGeneratorSettings, GeneratorProgress};
 use sudoku::grid::format::DynamicGridFormat;
 use sudoku::grid::Grid;
 use sudoku::position::DynamicPosition;
@@ -142,9 +143,16 @@ impl WasmSudoku {
         self.sudoku.redo();
     }
 
-    pub fn generate(&mut self, generator_settings: IDynamicGeneratorSettings) -> Result<()> {
+    pub fn generate(
+        &mut self,
+        generator_settings: IDynamicGeneratorSettings,
+        on_progress: IGenerateOnProgress,
+    ) -> Result<()> {
         self.sudoku
-            .generate(import_dynamic_generator_settings(generator_settings)?)
+            .generate(
+                import_dynamic_generator_settings(generator_settings)?,
+                import_generate_on_progress(on_progress)?,
+            )
             .map_err(export_error)
     }
 
@@ -181,6 +189,22 @@ impl WasmSudoku {
 /// Import helpers
 mod import {
     use super::*;
+    use serde::Serialize;
+
+    pub(crate) fn import_err(err: JsValue) -> SudokuError {
+        match err.dyn_into::<js_sys::Error>() {
+            Ok(error) => {
+                if let Some(message) = error.message().as_string() {
+                    anyhow!(message)
+                } else {
+                    anyhow!("JsValue err message not convertible to message")
+                }
+            }
+            Err(value) => {
+                anyhow!("JsValue err not convertible to Error")
+            }
+        }
+    }
 
     pub(crate) fn import_pos(pos: IPosition) -> Result<DynamicPosition> {
         Ok(serde_wasm_bindgen::from_value(pos.into())?)
@@ -196,6 +220,25 @@ mod import {
         Ok(serde_wasm_bindgen::from_value(
             dynamic_generator_settings.into(),
         )?)
+    }
+
+    pub(crate) fn import_generate_on_progress(
+        on_progress: IGenerateOnProgress,
+    ) -> Result<impl FnMut(GeneratorProgress) -> Result<(), SudokuError>> {
+        let js_value = JsValue::from(on_progress);
+        let function = js_sys::Function::from(js_value);
+
+        Ok(
+            move |progress: GeneratorProgress| -> Result<(), SudokuError> {
+                function
+                    .call1(
+                        &JsValue::null(),
+                        &progress.serialize(&Serializer::json_compatible()).unwrap(),
+                    )
+                    .unwrap();
+                Ok(())
+            },
+        )
     }
 
     pub(crate) fn import_grid_format(format: IDynamicGridFormat) -> Result<DynamicGridFormat> {

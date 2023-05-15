@@ -13,7 +13,7 @@ use crate::base::consts::*;
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
 use crate::error::{Error, Result};
-use crate::generator::DynamicGeneratorSettings;
+use crate::generator::{DynamicGeneratorSettings, GeneratorProgress};
 use crate::grid::format::DynamicGridFormat;
 use crate::grid::Grid;
 use crate::position::DynamicPosition;
@@ -77,14 +77,34 @@ impl DynamicSudoku {
             _ => bail!(Self::unexpected_base_err(Base::BASE)),
         })
     }
-    pub fn generate(&mut self, dynamic_generator_settings: DynamicGeneratorSettings) -> Result<()> {
+    pub fn generate(
+        &mut self,
+        dynamic_generator_settings: DynamicGeneratorSettings,
+        on_progress: impl FnMut(GeneratorProgress) -> Result<()>,
+    ) -> Result<()> {
         let DynamicGeneratorSettings { base, settings } = dynamic_generator_settings;
 
         *self = match base {
-            2 => Self::Base2(Sudoku::<Base2>::generate(settings, self.settings())?),
-            3 => Self::Base3(Sudoku::<Base3>::generate(settings, self.settings())?),
-            4 => Self::Base4(Sudoku::<Base4>::generate(settings, self.settings())?),
-            5 => Self::Base5(Sudoku::<Base5>::generate(settings, self.settings())?),
+            2 => Self::Base2(Sudoku::<Base2>::generate(
+                settings,
+                self.settings(),
+                on_progress,
+            )?),
+            3 => Self::Base3(Sudoku::<Base3>::generate(
+                settings,
+                self.settings(),
+                on_progress,
+            )?),
+            4 => Self::Base4(Sudoku::<Base4>::generate(
+                settings,
+                self.settings(),
+                on_progress,
+            )?),
+            5 => Self::Base5(Sudoku::<Base5>::generate(
+                settings,
+                self.settings(),
+                on_progress,
+            )?),
             unexpected_base => bail!(Self::unexpected_base_err(unexpected_base)),
         };
 

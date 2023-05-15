@@ -1045,6 +1045,7 @@ dependencies = [
 name = "sudoku-wasm"
 version = "0.2.0"
 dependencies = [
+ "anyhow",
  "console_error_panic_hook",
  "console_log",
  "js-sys",

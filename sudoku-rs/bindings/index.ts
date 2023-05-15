@@ -12,6 +12,7 @@ export type * from "./DynamicPosition";
 export type * from "./DynamicStrategy";
 export type * from "./DynamicTryStrategiesReturn";
 export type * from "./DynamicValue";
+export type * from "./GeneratorProgress";
 export type * from "./GeneratorSettings";
 export type * from "./GeneratorTarget";
 export type * from "./PositionedTransportAction";
