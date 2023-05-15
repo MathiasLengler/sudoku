@@ -231,10 +231,7 @@ mod import {
         Ok(
             move |progress: GeneratorProgress| -> Result<(), SudokuError> {
                 function
-                    .call1(
-                        &JsValue::null(),
-                        &progress.serialize(&Serializer::json_compatible()).unwrap(),
-                    )
+                    .call1(&JsValue::null(), &export_value(&progress).unwrap())
                     .unwrap();
                 Ok(())
             },
@@ -269,8 +266,10 @@ mod export {
         let message = format!("{error:?}");
         JsError::new(&message)
     }
-    pub(crate) fn export_value<T: serde::ser::Serialize + ?Sized>(value: &T) -> Result<JsValue> {
-        Ok(value.serialize(&Serializer::json_compatible())?)
+    pub(crate) fn export_value<T: serde::ser::Serialize + ?Sized>(
+        value: &T,
+    ) -> Result<JsValue, serde_wasm_bindgen::Error> {
+        value.serialize(&Serializer::json_compatible())
     }
     pub(crate) fn export_sudoku(transport_sudoku: TransportSudoku) -> Result<ITransportSudoku> {
         Ok(export_value(&transport_sudoku)?.into())
