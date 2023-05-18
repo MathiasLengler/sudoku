@@ -74,7 +74,7 @@ impl WasmSudoku {
     pub fn restore(cells: Vec<IDynamicCell>) -> Result<WasmSudoku> {
         let cells = import_cells(cells)?;
 
-        Ok(DynamicSudoku::try_from(cells).map_err(export_error)?.into())
+        Ok(DynamicSudoku::try_from(cells)?.into())
     }
 
     #[wasm_bindgen(js_name = getSudoku)]
@@ -86,48 +86,44 @@ impl WasmSudoku {
 
     #[wasm_bindgen(js_name = setValue)]
     pub fn set_value(&mut self, pos: IPosition, value: u8) -> Result<()> {
-        self.sudoku
-            .set_value(import_pos(pos)?, value)
-            .map_err(export_error)
+        self.sudoku.set_value(import_pos(pos)?, value)?;
+        Ok(())
     }
 
     #[wasm_bindgen(js_name = setOrToggleValue)]
     pub fn set_or_toggle_value(&mut self, pos: IPosition, value: u8) -> Result<()> {
-        self.sudoku
-            .set_or_toggle_value(import_pos(pos)?, value)
-            .map_err(export_error)
+        self.sudoku.set_or_toggle_value(import_pos(pos)?, value)?;
+        Ok(())
     }
 
     #[wasm_bindgen(js_name = setCandidates)]
     pub fn set_candidates(&mut self, pos: IPosition, candidates: ICandidates) -> Result<()> {
         self.sudoku
-            .set_candidates(import_pos(pos)?, import_candidates(candidates)?)
-            .map_err(export_error)
+            .set_candidates(import_pos(pos)?, import_candidates(candidates)?)?;
+        Ok(())
     }
 
     #[wasm_bindgen(js_name = toggleCandidate)]
     pub fn toggle_candidate(&mut self, pos: IPosition, candidate: u8) -> Result<()> {
-        self.sudoku
-            .toggle_candidate(import_pos(pos)?, candidate)
-            .map_err(export_error)
+        self.sudoku.toggle_candidate(import_pos(pos)?, candidate)?;
+        Ok(())
     }
 
     #[wasm_bindgen(js_name = setCandidate)]
     pub fn set_candidate(&mut self, pos: IPosition, candidate: u8) -> Result<()> {
-        self.sudoku
-            .set_candidate(import_pos(pos)?, candidate)
-            .map_err(export_error)
+        self.sudoku.set_candidate(import_pos(pos)?, candidate)?;
+        Ok(())
     }
 
     #[wasm_bindgen(js_name = deleteCandidate)]
     pub fn delete_candidate(&mut self, pos: IPosition, candidate: u8) -> Result<()> {
-        self.sudoku
-            .delete_candidate(import_pos(pos)?, candidate)
-            .map_err(export_error)
+        self.sudoku.delete_candidate(import_pos(pos)?, candidate)?;
+        Ok(())
     }
 
     pub fn delete(&mut self, pos: IPosition) -> Result<()> {
-        self.sudoku.delete(import_pos(pos)?).map_err(export_error)
+        self.sudoku.delete(import_pos(pos)?)?;
+        Ok(())
     }
 
     #[wasm_bindgen(js_name = setAllDirectCandidates)]
@@ -148,16 +144,16 @@ impl WasmSudoku {
         generator_settings: IDynamicGeneratorSettings,
         on_progress: IGenerateOnProgress,
     ) -> Result<()> {
-        self.sudoku
-            .generate(
-                import_dynamic_generator_settings(generator_settings)?,
-                import_generate_on_progress(on_progress)?,
-            )
-            .map_err(export_error)
+        self.sudoku.generate(
+            import_dynamic_generator_settings(generator_settings)?,
+            import_generate_on_progress(on_progress)?,
+        )?;
+        Ok(())
     }
 
     pub fn import(&mut self, input: &str) -> Result<()> {
-        self.sudoku.import(input).map_err(export_error)
+        self.sudoku.import(input)?;
+        Ok(())
     }
 
     pub fn export(&self, format: IDynamicGridFormat) -> Result<String> {
@@ -170,10 +166,8 @@ impl WasmSudoku {
         &mut self,
         strategies: IDynamicStrategies,
     ) -> Result<IDynamicTryStrategiesReturn> {
-        let dynamic_try_strategies_return = self
-            .sudoku
-            .try_strategies(import_strategies(strategies)?)
-            .map_err(export_error)?;
+        let dynamic_try_strategies_return =
+            self.sudoku.try_strategies(import_strategies(strategies)?)?;
 
         export_dynamic_try_strategies_return(dynamic_try_strategies_return)
     }
@@ -181,8 +175,8 @@ impl WasmSudoku {
     #[wasm_bindgen(js_name = applyDeductions)]
     pub fn apply_deductions(&mut self, deductions: ITransportDeductions) -> Result<()> {
         self.sudoku
-            .apply_deductions(import_deductions(deductions)?)
-            .map_err(export_error)
+            .apply_deductions(import_deductions(deductions)?)?;
+        Ok(())
     }
 }
 
@@ -190,18 +184,15 @@ impl WasmSudoku {
 mod import {
     use super::*;
 
-    pub(crate) fn import_err(err: JsValue) -> SudokuError {
-        match err.dyn_into::<js_sys::Error>() {
-            Ok(error) => {
-                if let Some(message) = error.message().as_string() {
-                    anyhow!(message)
-                } else {
-                    anyhow!("JsValue err message not convertible to message")
-                }
+    pub(crate) fn import_err(err: &JsValue) -> SudokuError {
+        if let Some(err) = err.dyn_ref::<js_sys::Error>() {
+            if let Some(message) = err.message().as_string() {
+                anyhow!(message)
+            } else {
+                anyhow!("JsValue err message not convertible to string")
             }
-            Err(_value) => {
-                anyhow!("JsValue err not convertible to Error")
-            }
+        } else {
+            anyhow!("JsValue err not convertible to Error")
         }
     }
 
@@ -224,17 +215,20 @@ mod import {
     pub(crate) fn import_generate_on_progress(
         on_progress: IGenerateOnProgress,
     ) -> Result<impl FnMut(GeneratorProgress) -> Result<(), SudokuError>> {
-        // FIXME: error handing
-        //  JsValue::from crashes at runtime, replace with JsCast
-        let js_value = JsValue::from(on_progress);
-        let function = js_sys::Function::from(js_value);
+        let function = on_progress
+            .dyn_into::<js_sys::Function>()
+            .map_err(|value| {
+                anyhow!("Expected function, instead got: {:?}", JsValue::from(value))
+            })?;
 
         Ok(
             move |progress: GeneratorProgress| -> Result<(), SudokuError> {
-                // FIXME: remove unwrap
                 function
-                    .call1(&JsValue::null(), &export_value(&progress).unwrap())
-                    .unwrap();
+                    .call1(
+                        &JsValue::undefined(),
+                        &export_value(&progress).map_err(|err| import_err(&err.into()))?,
+                    )
+                    .map_err(|err| import_err(&err))?;
                 Ok(())
             },
         )
@@ -264,14 +258,8 @@ mod export {
 
     use super::*;
 
-    pub(crate) fn export_error(error: SudokuError) -> JsError {
-        let message = format!("{error:?}");
-        JsError::new(&message)
-    }
-    pub(crate) fn export_value<T: serde::ser::Serialize + ?Sized>(
-        value: &T,
-    ) -> Result<JsValue, serde_wasm_bindgen::Error> {
-        value.serialize(&Serializer::json_compatible())
+    pub(crate) fn export_value<T: serde::ser::Serialize + ?Sized>(value: &T) -> Result<JsValue> {
+        Ok(value.serialize(&Serializer::json_compatible())?)
     }
     pub(crate) fn export_sudoku(transport_sudoku: TransportSudoku) -> Result<ITransportSudoku> {
         Ok(export_value(&transport_sudoku)?.into())
