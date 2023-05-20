@@ -13,8 +13,8 @@ function fixupWasmSudokuProxy(wasmSudokuProxy: WasmSudokuProxy): WasmSudokuProxy
         // Reference: https://stackoverflow.com/a/42493645
         {},
         {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any,@typescript-eslint/ban-types
-            get: (_target: {}, property: string): any => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            get: (_target, property: string): any => {
                 // Not a thenable
                 // Reference: https://stackoverflow.com/a/53890904
                 if (property === "then") {
