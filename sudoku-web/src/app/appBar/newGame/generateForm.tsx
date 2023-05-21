@@ -76,10 +76,19 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
 
     const [progress, setProgress] = useState<GeneratorProgress>();
 
-    const onProgress = useCallback((progress: GeneratorProgress) => {
-        console.debug("Generator progress", progress);
-        setProgress(progress);
-    }, []);
+    const [progressAbortController, setProgressAbortController] = useState(() => new AbortController());
+
+    const onProgress = useCallback(
+        (progress: GeneratorProgress) => {
+            if (progressAbortController.signal.aborted) {
+                setProgressAbortController(new AbortController());
+                throw progressAbortController.signal.reason;
+            }
+
+            setProgress(progress);
+        },
+        [progressAbortController.signal]
+    );
 
     const generate = useGenerate(onProgress);
 
@@ -180,7 +189,16 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                 >
                     <ReplayIcon />
                 </IconButton>
-                <Button type="button" onClick={onClose} disabled={isSubmitting}>
+                <Button
+                    type="button"
+                    onClick={() => {
+                        if (isSubmitting) {
+                            progressAbortController.abort();
+                        } else {
+                            onClose();
+                        }
+                    }}
+                >
                     Cancel
                 </Button>
                 <LoadingButton

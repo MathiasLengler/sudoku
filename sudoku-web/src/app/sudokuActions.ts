@@ -1,7 +1,7 @@
 import * as Comlink from "comlink";
 import type { SelectorCallbackInterface } from "recoil";
 import { useRecoilCallback } from "recoil";
-import { sudokuSideLengthState, sudokuState, wasmSudokuProxyContainerState } from "./state/sudoku";
+import { sudokuSideLengthState, sudokuState, remoteWorkerApiState } from "./state/sudoku";
 import type {
     DynamicGeneratorSettings,
     GeneratorProgress,
@@ -15,10 +15,11 @@ import _ from "lodash";
 import type { DynamicStrategies, DynamicGridFormat } from "../types";
 import type { WasmSudokuProxy } from "../spawnWorker";
 import assertNever from "assert-never/index";
+import { WORKER_GENERATION_ABORTED_MESSAGE } from "../constants";
 
 // Snapshot accessors
 async function getWasmSudokuProxy({ snapshot }: Pick<SelectorCallbackInterface, "snapshot">): Promise<WasmSudokuProxy> {
-    const { wasmSudokuProxy } = await snapshot.getPromise(wasmSudokuProxyContainerState);
+    const { wasmSudokuProxy } = await snapshot.getPromise(remoteWorkerApiState);
     return wasmSudokuProxy;
 }
 
@@ -333,8 +334,34 @@ export function useGenerate(onProgress: (progress: GeneratorProgress) => void) {
     return useRecoilCallback(
         ({ snapshot, set }) =>
             async (settings: DynamicGeneratorSettings) => {
+                const channel = new MessageChannel();
+                channel.port1.onmessage = (ev: MessageEvent<GeneratorProgress>) => {
+                    try {
+                        onProgress(ev.data);
+                    } catch (err) {
+                        if (!(err instanceof DOMException && err.name === "AbortError")) {
+                            throw err;
+                        }
+                        console.log("channel.port1.postMessage");
+                        channel.port1.postMessage(WORKER_GENERATION_ABORTED_MESSAGE);
+                    }
+                };
+
+                const remoteWorkerApi = await snapshot.getPromise(remoteWorkerApiState);
+                try {
+                    await remoteWorkerApi.generateWithChannel(
+                        settings,
+                        Comlink.transfer(channel.port2, [channel.port2])
+                    );
+                } catch (err) {
+                    if (!(err instanceof DOMException && err.name === "AbortError")) {
+                        throw err;
+                    }
+                    return console.info("Successfully aborted generation");
+                }
+
                 const wasmSudokuProxy = await getWasmSudokuProxy({ snapshot });
-                await wasmSudokuProxy.generate(settings, Comlink.proxy(onProgress));
+                // await wasmSudokuProxy.generate(settings, Comlink.proxy(onProgress));
                 await updateSudoku({ set, wasmSudokuProxy });
             },
         [onProgress]

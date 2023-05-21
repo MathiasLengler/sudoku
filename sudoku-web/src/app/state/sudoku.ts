@@ -1,10 +1,10 @@
 import { atom, selector } from "recoil";
 import type { TransportCell, TransportSudoku } from "../../../../sudoku-rs/bindings";
-import type { WasmSudokuProxyContainer } from "../../spawnWorker";
+import type { RemoteWorkerApi } from "../../spawnWorker";
 import { spawnWorker } from "../../spawnWorker";
 
-export const wasmSudokuProxyContainerState = atom<WasmSudokuProxyContainer>({
-    key: "WasmSudokuProxyContainer",
+export const remoteWorkerApiState = atom<RemoteWorkerApi>({
+    key: "RemoteWorkerApi",
     default: spawnWorker(),
 });
 export const sudokuState = atom<TransportSudoku>({
@@ -12,7 +12,7 @@ export const sudokuState = atom<TransportSudoku>({
     default: selector({
         key: "DefaultSudoku",
         get: async ({ get }) => {
-            const wasmSudokuProxy = get(wasmSudokuProxyContainerState).wasmSudokuProxy;
+            const wasmSudokuProxy = get(remoteWorkerApiState).wasmSudokuProxy;
             return await wasmSudokuProxy.getSudoku();
         },
     }),

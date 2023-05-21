@@ -4,7 +4,10 @@ import type { WorkerApi } from "./worker";
 import { loadCellViews } from "./app/persistence";
 import type { WasmSudoku } from "./types";
 
-export type WasmSudokuProxyContainer = { wasmSudokuProxy: WasmSudokuProxy };
+export type RemoteWorkerApi = {
+    wasmSudokuProxy: WasmSudokuProxy;
+    generateWithChannel: Comlink.Remote<WorkerApi["generateWithChannel"]>;
+};
 export type WasmSudokuProxy = Comlink.Remote<WasmSudoku>;
 
 function fixupWasmSudokuProxy(wasmSudokuProxy: WasmSudokuProxy): WasmSudokuProxy {
@@ -26,7 +29,7 @@ function fixupWasmSudokuProxy(wasmSudokuProxy: WasmSudokuProxy): WasmSudokuProxy
     ) as unknown as WasmSudokuProxy;
 }
 
-export async function spawnWorker(): Promise<WasmSudokuProxyContainer> {
+export async function spawnWorker(): Promise<RemoteWorkerApi> {
     console.debug("Spawning worker");
     const worker = new Worker(new URL("./worker.tsx", import.meta.url));
     if (process.env.NODE_ENV !== "production") {
@@ -71,9 +74,15 @@ export async function spawnWorker(): Promise<WasmSudokuProxyContainer> {
     // Incorrect type: `workerApi.typedWasmSudoku` is not wrapped in a Promise.
     const wasmSudokuProxy = workerApi.typedWasmSudoku as unknown as WasmSudokuProxy;
 
+    setTimeout(() => {
+        console.error("Terminating worker");
+        worker.terminate();
+    }, 4000);
+
     // Important: wasmSudokuProxy is a Proxy.
     // We must be careful when setting it's state, since the Proxy gets misinterpreted as a Function or Promise.
     return {
         wasmSudokuProxy: fixupWasmSudokuProxy(wasmSudokuProxy),
+        generateWithChannel: workerApi.generateWithChannel,
     };
 }
