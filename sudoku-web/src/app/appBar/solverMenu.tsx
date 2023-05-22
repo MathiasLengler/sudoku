@@ -20,7 +20,7 @@ export function SolverMenu() {
     const applyDeductions = useApplyDeductions();
     const isSolved = useRecoilValue(sudokuIsSolvedState);
 
-    // TODO: implement reset logic
+    // TODO: implement hint reset logic
     const setSolverHint = useSetRecoilState(solverHintState);
 
     const tryStrategiesInLoop = async (strategies: DynamicStrategy[]) => {
