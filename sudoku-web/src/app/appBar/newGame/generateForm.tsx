@@ -25,6 +25,13 @@ import {
 } from "../../state/generateForm";
 import type { GeneratorProgress } from "../../../types";
 
+// TODO: Spawn multiple workers for multi-threaded generation
+//  - Racing: fastest wins
+//  - Wait for all:
+//    - User selection
+//    - Auto select "best"
+//  - Keep generating until some criterion is met
+
 interface GenerateProgressProps {
     progress?: GeneratorProgress;
     cellCount: number;
