@@ -1,11 +1,19 @@
 import { atom, selector } from "recoil";
 import type { TransportCell, TransportSudoku } from "../../../../sudoku-rs/bindings";
 import type { RemoteWorkerApi } from "../../spawnWorker";
-import { spawnWorker } from "../../spawnWorker";
+import { getRemoteWorkerApi, spawnWorker } from "../../spawnWorker";
 
-export const remoteWorkerApiState = atom<RemoteWorkerApi>({
-    key: "RemoteWorkerApi",
+export const workerState = atom<Worker>({
+    key: "Worker",
     default: spawnWorker(),
+});
+
+export const remoteWorkerApiState = selector<RemoteWorkerApi>({
+    key: "RemoteWorkerApi",
+    get: async ({ get }) => {
+        const worker = get(workerState);
+        return await getRemoteWorkerApi(worker);
+    },
 });
 export const sudokuState = atom<TransportSudoku>({
     key: "Sudoku",

@@ -27,22 +27,28 @@ import type { GeneratorProgress } from "../../../types";
 
 interface GenerateProgressProps {
     progress?: GeneratorProgress;
+    cellCount: number;
 }
-function GenerateProgress({ progress }: GenerateProgressProps) {
-    if (!progress) return null;
+function GenerateProgress({ progress, cellCount }: GenerateProgressProps) {
+    if (!progress) {
+        return null;
+    }
 
-    const value = (progress.positionIndex / progress.positionsCount) * 100;
+    const { positionsCount, positionIndex, deletedCount } = progress;
+    const value = (positionIndex / positionsCount) * 100;
 
     return (
-        <Box sx={{ display: "flex", alignItems: "center", pt: 2 }}>
-            <Box sx={{ width: "100%", mr: 1 }}>
+        <Box sx={{ display: "flex", alignItems: "center", pt: 2, flexDirection: "column" }}>
+            <Box sx={{ width: 1, pb: 1 }}>
                 <LinearProgress variant="determinate" value={value} />
             </Box>
             <Box sx={{ minWidth: 35 }}>
                 <Typography
                     variant="body2"
                     color="text.secondary"
-                >{`${progress.positionIndex}/${progress.positionsCount}`}</Typography>
+                >{`Cell ${positionIndex}/${positionsCount} - deleted ${deletedCount}, remaining ${
+                    cellCount - deletedCount
+                }`}</Typography>
             </Box>
         </Box>
     );
@@ -76,21 +82,24 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
 
     const [progress, setProgress] = useState<GeneratorProgress>();
 
-    const [progressAbortController, setProgressAbortController] = useState(() => new AbortController());
+    const [generateAbortController, setGenerateAbortController] = useState(() => new AbortController());
 
     const onProgress = useCallback(
         (progress: GeneratorProgress) => {
-            if (progressAbortController.signal.aborted) {
-                setProgressAbortController(new AbortController());
-                throw progressAbortController.signal.reason;
-            }
-
+            if (generateAbortController.signal.aborted) return;
+            console.debug("onProgress", progress);
             setProgress(progress);
         },
-        [progressAbortController.signal]
+        [generateAbortController.signal]
     );
 
-    const generate = useGenerate(onProgress);
+    const abortGenerate = useCallback(() => {
+        generateAbortController.abort();
+        setGenerateAbortController(new AbortController());
+        setProgress(undefined);
+    }, [generateAbortController]);
+
+    const generate = useGenerate(onProgress, generateAbortController.signal);
 
     return (
         <form
@@ -99,17 +108,25 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
 
                 const cellCount = baseToCellCount(base);
 
-                await generate({
-                    base,
-                    target: {
-                        fromFilled: {
-                            distanceFromFilled: cellCount - minGivens,
-                            setAllDirectCandidates,
+                try {
+                    await generate({
+                        base,
+                        target: {
+                            fromFilled: {
+                                distanceFromFilled: cellCount - minGivens,
+                                setAllDirectCandidates,
+                            },
                         },
-                    },
-                    seed: useSeed && !_.isUndefined(seed) ? BigInt(seed) : undefined,
-                    strategies,
-                });
+                        seed: useSeed && !_.isUndefined(seed) ? BigInt(seed) : undefined,
+                        strategies,
+                    });
+                } catch (err) {
+                    if (!(err instanceof DOMException && err.name === "AbortError")) {
+                        throw err;
+                    }
+                    console.info("Generate form submission aborted");
+                    return;
+                }
 
                 setGenerateFormValues(formValues);
 
@@ -177,7 +194,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                         }}
                     />
                 </FormGroup>
-                <GenerateProgress progress={progress} />
+                <GenerateProgress progress={progress} cellCount={cellCount} />
             </DialogContent>
             <DialogActions sx={{ justifyContent: "space-between" }}>
                 <IconButton
@@ -193,7 +210,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                     type="button"
                     onClick={() => {
                         if (isSubmitting) {
-                            progressAbortController.abort();
+                            abortGenerate();
                         } else {
                             onClose();
                         }

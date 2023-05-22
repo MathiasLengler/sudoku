@@ -70,11 +70,9 @@ pub struct GeneratorProgress {
     position_index: usize,
     positions_count: usize,
     deleted_count: usize,
-    distance: usize,
     is_position_required: bool,
 }
 
-// TODO: expose random seed for deterministic benchmarking
 impl Generator {
     pub fn with_target(target: GeneratorTarget) -> Self {
         Self::with_settings(GeneratorSettings {
@@ -230,7 +228,6 @@ impl Generator {
                 position_index,
                 positions_count,
                 deleted_count,
-                distance: distance_from_filled,
                 is_position_required,
             })?;
         }
@@ -279,7 +276,6 @@ impl Generator {
                 position_index,
                 positions_count,
                 deleted_count,
-                distance: distance_from_minimal,
                 is_position_required,
             })?;
         }
