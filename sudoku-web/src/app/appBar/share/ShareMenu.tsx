@@ -5,7 +5,7 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import ShareIcon from "@mui/icons-material/Share";
 import React from "react";
 import { MyDialog } from "../../components/MyDialog";
-import { ExportToClipboardDialog } from "./exportToClipboardDialog";
+import { ExportToClipboardDialog } from "./ExportToClipboardDialog";
 import MyIconButton from "../../components/MyIconButton";
 
 export function ShareMenu() {

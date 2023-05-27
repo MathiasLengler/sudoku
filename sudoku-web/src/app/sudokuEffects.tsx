@@ -26,7 +26,7 @@ const PointerUpHandler = () => {
             if (!isPrimary) {
                 return;
             }
-            console.debug("window.onPointerUp", { isPrimary, buttons, pointerId });
+            // console.debug("window.onPointerUp", { isPrimary, buttons, pointerId });
 
             endStickyChain().catch(console.error);
         },

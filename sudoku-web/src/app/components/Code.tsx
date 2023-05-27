@@ -8,7 +8,14 @@ interface CodeProps {
 
 export const Code: React.FunctionComponent<CodeProps> = ({ children, wrap = false }) => {
     return (
-        <Typography sx={{ whiteSpace: wrap ? "pre-wrap" : "pre", fontFamily: "Monospace", overflowWrap: "break-word" }}>
+        <Typography
+            sx={{
+                whiteSpace: wrap ? "pre-wrap" : "pre",
+                fontFamily: "Monospace",
+                overflowWrap: "break-word",
+                overflowX: "scroll",
+            }}
+        >
             {children}
         </Typography>
     );

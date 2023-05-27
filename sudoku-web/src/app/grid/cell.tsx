@@ -7,7 +7,7 @@ import { inputState } from "../state/input";
 import { sudokuBaseState } from "../state/sudoku";
 import { useRecoilValue } from "recoil";
 import { useHandlePosition } from "../sudokuActions";
-import { solverHintState } from "../state/deductions";
+import { solverHintState } from "../state/solver";
 
 import isEqual from "lodash/isEqual";
 

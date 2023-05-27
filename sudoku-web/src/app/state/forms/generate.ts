@@ -1,10 +1,10 @@
 import { z } from "zod";
 import range from "lodash/range";
-import { baseToSideLength } from "../utils";
+import { baseToSideLength } from "../../utils";
 import { atom } from "recoil";
-import { localStorageEffect } from "./localStorageEffect";
+import { localStorageEffect } from "../localStorageEffect";
 import { ZodBigInt } from "zod/lib/types";
-import { dynamicStrategySchema } from "../../constants";
+import { dynamicStrategySchema } from "../../../constants";
 
 export const BASE_MIN = 2;
 export const BASE_MAX = 5;

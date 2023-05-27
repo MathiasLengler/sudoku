@@ -1,65 +1,68 @@
-import { Box, Button, DialogActions, DialogContent, DialogContentText, DialogTitle, FormGroup } from "@mui/material";
-import React, { useEffect, useState } from "react";
-import { useExportSudokuString } from "../../sudokuActions";
-import type { DynamicGridFormat } from "../../../../../sudoku-rs/bindings";
+import { Box, Button, DialogActions, DialogContent, DialogTitle, LinearProgress } from "@mui/material";
+import React, { Suspense, useEffect } from "react";
 import { SelectElement, useForm } from "react-hook-form-mui";
 import { ALL_GRID_FORMATS } from "../../../constants";
 import CircularProgress from "@mui/material/CircularProgress";
 import { Code } from "../../components/Code";
+import { type Loadable, useRecoilState, useRecoilValueLoadable } from "recoil";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+    exportedGridStringState,
+    type ExportToClipboardFormValues,
+    exportToClipboardFormValuesSchema,
+    exportToClipboardFormValuesState,
+} from "../../state/forms/exportToClipboard";
 
-type FormData = {
-    gridFormat: DynamicGridFormat;
-};
+interface DisplayExportedGridStringProps {
+    gridFormat: ExportToClipboardFormValues["gridFormat"];
+    exportedGridStringLoadable: Loadable<string>;
+}
 
-let previousFormData: FormData | undefined;
+function DisplayExportedGridString({ gridFormat, exportedGridStringLoadable }: DisplayExportedGridStringProps) {
+    return (
+        <Code wrap={["givensLine", "binaryCandidatesLine", "binaryFixedCandidatesLine"].includes(gridFormat)}>
+            {exportedGridStringLoadable.getValue()}
+        </Code>
+    );
+}
 
 interface ExportToClipboardDialogProps {
     onClose: () => void;
 }
 
 export function ExportToClipboardDialog({ onClose }: ExportToClipboardDialogProps) {
-    const exportSudokuString = useExportSudokuString();
-
+    const [exportToClipboardFormValues, setExportToClipboardFormValues] = useRecoilState(
+        exportToClipboardFormValuesState
+    );
     const {
         control,
         handleSubmit,
         watch,
         formState: { isSubmitting },
-        setValue,
-    } = useForm<FormData>({
-        defaultValues: previousFormData ?? {
-            gridFormat: "CandidatesGridPlain",
-        },
+    } = useForm<ExportToClipboardFormValues>({
+        values: exportToClipboardFormValues,
+        resolver: zodResolver(exportToClipboardFormValuesSchema),
     });
-
     const gridFormat = watch("gridFormat");
 
-    const [exportedGridString, setExportedGridString] = useState("");
+    const exportedGridStringLoadable = useRecoilValueLoadable(exportedGridStringState);
 
+    // Always update selected gridFormat
     useEffect(() => {
-        exportSudokuString(gridFormat)
-            .then(exportedGridString => {
-                setExportedGridString(exportedGridString);
-            })
-            .catch(console.error);
-    }, [exportSudokuString, gridFormat]);
-
-    // Always store current values a previous form data
-    useEffect(() => {
-        previousFormData = { gridFormat };
-    }, [gridFormat]);
+        setExportToClipboardFormValues({ gridFormat });
+    }, [gridFormat, setExportToClipboardFormValues]);
 
     return (
         <>
             <DialogTitle>Export Sudoku to Clipboard</DialogTitle>
-
             <DialogContent dividers>
                 <form
                     id="export-to-clipboard-form"
                     noValidate
-                    onSubmit={handleSubmit(async formData => {
-                        const { gridFormat } = formData;
-                        const exportedGridString = await exportSudokuString(gridFormat);
+                    onSubmit={handleSubmit(async () => {
+                        const exportedGridString = await exportedGridStringLoadable.toPromise();
+                        // const { gridFormat } = formData;
+                        // const exportedGridString = await exportSudokuString(gridFormat);
                         await window.navigator.clipboard.writeText(exportedGridString);
 
                         onClose();
@@ -78,11 +81,12 @@ export function ExportToClipboardDialog({ onClose }: ExportToClipboardDialogProp
                     />
                 </form>
                 <Box sx={{ pt: 2 }}>
-                    <Code
-                        wrap={["givensLine", "binaryCandidatesLine", "binaryFixedCandidatesLine"].includes(gridFormat)}
-                    >
-                        {exportedGridString}
-                    </Code>
+                    <Suspense fallback={<LinearProgress variant="indeterminate" />}>
+                        <DisplayExportedGridString
+                            gridFormat={gridFormat}
+                            exportedGridStringLoadable={exportedGridStringLoadable}
+                        />
+                    </Suspense>
                 </Box>
             </DialogContent>
             <DialogActions>

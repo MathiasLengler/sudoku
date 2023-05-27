@@ -2,8 +2,8 @@ import React from "react";
 import AppBar from "@mui/material/AppBar";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
-import { GenerateForm } from "./generateForm";
-import { ImportForm } from "./importForm";
+import { GenerateForm } from "./GenerateForm";
+import { ImportForm } from "./ImportForm";
 
 interface TabPanelProps {
     children: React.ReactNode;
@@ -25,7 +25,7 @@ interface NewGameTabsProps {
     onClose: () => void;
 }
 
-export const NewGameTabs = ({ onClose }: NewGameTabsProps) => {
+export const NewGameDialog = ({ onClose }: NewGameTabsProps) => {
     const [tabIndex, setTabIndex] = React.useState(0);
 
     const handleChange = (event: React.ChangeEvent<unknown>, newValue: number) => {

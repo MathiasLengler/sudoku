@@ -22,9 +22,10 @@ import {
     generateFormValuesSchema,
     generateFormValuesState,
     SEED_MAX,
-} from "../../state/generateForm";
+} from "../../state/forms/generate";
 import type { GeneratorProgress } from "../../../types";
 import MyIconButton from "../../components/MyIconButton";
+import SelectStrategies from "../../components/formFragments/SelectStrategies";
 
 // TODO: Spawn multiple workers for multi-threaded generation
 //  - Racing: fastest wins
@@ -143,7 +144,6 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
         >
             <DialogContent>
                 <SliderElement
-                    //
                     control={control}
                     name="base"
                     label="Size"
@@ -153,7 +153,6 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                     valueLabelDisplay="auto"
                 />
                 <SliderElement
-                    //
                     control={control}
                     name="minGivens"
                     label="Minimum number of givens"
@@ -166,6 +165,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                     ]}
                     valueLabelDisplay="auto"
                 />
+                <SelectStrategies control={control} name="strategies" />
                 <CheckboxButtonGroup
                     control={control}
                     name="strategies"

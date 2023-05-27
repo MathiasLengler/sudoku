@@ -7,7 +7,7 @@ import type { DynamicStrategy } from "../../../../sudoku-rs/bindings";
 import LightbulbIcon from "@mui/icons-material/Lightbulb";
 import React from "react";
 import _ from "lodash";
-import { solverHintState } from "../state/deductions";
+import { solverHintState } from "../state/solver";
 import MyIconButton from "../components/MyIconButton";
 
 const STRATEGIES_PYRAMID = _.initial(ALL_STRATEGIES).map((strategy, i) => ({
