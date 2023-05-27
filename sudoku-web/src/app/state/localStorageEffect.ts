@@ -11,6 +11,7 @@ export function localStorageEffect<Schema extends z.ZodTypeAny>(schema: Schema) 
                 setSelf(schema.parse(JSON.parse(savedValue)));
             } catch (err) {
                 console.error(`Failed to restore recoil atom ${nodeKey} from local storage key ${key}:`, err);
+                localStorage.removeItem(key);
             }
         }
 
