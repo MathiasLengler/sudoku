@@ -26,6 +26,7 @@ function MyIconButton({ tooltip, onClick, disabled = false, size, icon: Icon, co
                     size={size}
                     disabled={disabled}
                     color={color}
+                    aria-label={tooltip}
                 >
                     <Icon fontSize={size} />
                 </IconButton>
