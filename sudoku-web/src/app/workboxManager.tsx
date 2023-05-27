@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Alert, Snackbar, Button } from "@mui/material";
+import { Alert, Snackbar } from "@mui/material";
 
 const SW_ENABLED = "serviceWorker" in navigator && (process.env.NODE_ENV === "production" || !!process.env.DEBUG_SW);
 

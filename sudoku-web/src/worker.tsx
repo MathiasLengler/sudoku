@@ -1,7 +1,7 @@
 import * as Comlink from "comlink";
 import wasm from "./wasmSudoku";
-import { WORKER_BOOT_UP_MESSAGE, WORKER_GENERATION_ABORTED_MESSAGE } from "./constants";
-import type { DynamicCells, WasmSudoku, DynamicGeneratorSettings, GeneratorProgress } from "./types";
+import { WORKER_BOOT_UP_MESSAGE } from "./constants";
+import type { DynamicCells, WasmSudoku } from "./types";
 
 const { WasmSudoku: WasmSudokuValue, init: wasmInit } = wasm;
 

@@ -1,7 +1,7 @@
 import React from "react";
 import { ALL_STRATEGIES } from "../../../constants";
 import { CheckboxButtonGroup } from "react-hook-form-mui";
-import type { FieldValues, Control, Path } from "react-hook-form";
+import type { Control, FieldValues, Path } from "react-hook-form";
 
 interface SelectStrategiesProps<T extends FieldValues> {
     control: Control<T>;

@@ -5,4 +5,5 @@ export type * from "../../sudoku-rs/bindings";
 export type { WasmSudoku, DynamicStrategies } from "../../sudoku-wasm/pkg";
 
 import type { DynamicCell } from "../../sudoku-rs/bindings";
+
 export type DynamicCells = DynamicCell[];
