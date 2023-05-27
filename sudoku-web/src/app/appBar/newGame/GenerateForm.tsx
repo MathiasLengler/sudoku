@@ -17,6 +17,7 @@ import {
     BASE_MARKS,
     BASE_MAX,
     BASE_MIN,
+    baseToLabel,
     GENERATE_FORM_DEFAULT_VALUES,
     type GenerateFormValues,
     generateFormValuesSchema,
@@ -151,6 +152,8 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                     max={BASE_MAX}
                     marks={BASE_MARKS}
                     valueLabelDisplay="auto"
+                    getAriaLabel={() => "Size"}
+                    getAriaValueText={(base, index) => baseToLabel(base)}
                 />
                 <SliderElement
                     control={control}

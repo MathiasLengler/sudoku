@@ -9,12 +9,17 @@ import { dynamicStrategySchema } from "../../../constants";
 export const BASE_MIN = 2;
 export const BASE_MAX = 5;
 export const BASE_MARKS = range(BASE_MIN, BASE_MAX + 1).map(base => {
-    const sideLength = baseToSideLength(base);
     return {
         value: base,
-        label: `${sideLength}x${sideLength}`,
+        label: baseToLabel(base),
     };
 });
+
+export function baseToLabel(base: number): string {
+    const sideLength = baseToSideLength(base);
+
+    return `${sideLength}x${sideLength}`;
+}
 export const SEED_MAX = Number.MAX_SAFE_INTEGER;
 const parseBigintSchema = <T extends ZodBigInt>(bigIntSchema: T) =>
     z.preprocess(value => {
