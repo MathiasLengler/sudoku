@@ -13,7 +13,7 @@ export const Code: React.FunctionComponent<CodeProps> = ({ children, wrap = fals
                 whiteSpace: wrap ? "pre-wrap" : "pre",
                 fontFamily: "Monospace",
                 overflowWrap: "break-word",
-                overflowX: "scroll",
+                overflowX: "auto",
             }}
         >
             {children}

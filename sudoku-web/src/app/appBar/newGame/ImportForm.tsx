@@ -26,11 +26,7 @@ export const ImportForm = ({ onClose }: ImportFormProps) => {
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                 <Typography>Supported formats</Typography>
             </AccordionSummary>
-            <AccordionDetails
-                sx={{
-                    overflowX: "scroll",
-                }}
-            >
+            <AccordionDetails>
                 <Typography variant="h6">List of givens</Typography>
                 <Code>{"6....23..1256.......47...2.73....84...........46....15.5...81.......3472..72....8"}</Code>
                 <Typography variant="h6">Grid of givens</Typography>
