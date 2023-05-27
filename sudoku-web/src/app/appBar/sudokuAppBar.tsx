@@ -6,7 +6,7 @@ import Toolbar from "@mui/material/Toolbar";
 import { NewGameButton } from "./newGame/NewGameButton";
 import { SolverMenu } from "./solverMenu";
 import { ShareMenu } from "./share/ShareMenu";
-import { SolverConfigButton } from "./solver/SolverConfigButton";
+import { HintSettingsButton } from "./hintSettings/HintSettingsButton";
 
 export default function SudokuAppBar() {
     return (
@@ -18,7 +18,7 @@ export default function SudokuAppBar() {
                     </Typography>
                     <ShareMenu />
                     <SolverMenu />
-                    <SolverConfigButton />
+                    <HintSettingsButton />
                     <NewGameButton />
                 </Toolbar>
             </AppBar>

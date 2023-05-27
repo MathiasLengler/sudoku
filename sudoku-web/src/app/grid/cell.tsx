@@ -7,7 +7,7 @@ import { inputState } from "../state/input";
 import { sudokuBaseState } from "../state/sudoku";
 import { useRecoilValue } from "recoil";
 import { useHandlePosition } from "../sudokuActions";
-import { solverHintState } from "../state/solver";
+import { hintState } from "../state/hint";
 
 import isEqual from "lodash/isEqual";
 
@@ -52,7 +52,7 @@ interface CandidatesProps {
 const Candidates = ({ candidates, gridPosition }: CandidatesProps) => {
     const base = useRecoilValue(sudokuBaseState);
     const input = useRecoilValue(inputState);
-    const solverHint = useRecoilValue(solverHintState);
+    const solverHint = useRecoilValue(hintState);
 
     return (
         <div className="candidates">

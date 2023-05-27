@@ -2,8 +2,9 @@ import React from "react";
 import MyIconButton from "../../components/MyIconButton";
 import { MyDialog } from "../../components/MyDialog";
 import LightbulbIcon from "@mui/icons-material/Lightbulb";
+import { HintSettingsDialog } from "./HintSettingsDialog";
 
-export function SolverConfigButton() {
+export function HintSettingsButton() {
     const [isSolverConfigDialogOpen, setIsSolverConfigDialogOpen] = React.useState(false);
 
     return (
@@ -16,7 +17,7 @@ export function SolverConfigButton() {
                 onClick={() => setIsSolverConfigDialogOpen(true)}
             />
             <MyDialog open={isSolverConfigDialogOpen} onClose={() => setIsSolverConfigDialogOpen(false)}>
-                {onClose => <div>TODO: SolverConfigForm.tsx</div>}
+                {onClose => <HintSettingsDialog onClose={onClose} />}
             </MyDialog>
         </>
     );

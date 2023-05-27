@@ -7,7 +7,7 @@ import type { DynamicStrategy } from "../../../../sudoku-rs/bindings";
 import LightbulbIcon from "@mui/icons-material/Lightbulb";
 import React from "react";
 import _ from "lodash";
-import { solverHintState } from "../state/solver";
+import { hintState } from "../state/hint";
 import MyIconButton from "../components/MyIconButton";
 
 const STRATEGIES_PYRAMID = _.initial(ALL_STRATEGIES).map((strategy, i) => ({
@@ -21,7 +21,7 @@ export function SolverMenu() {
     const isSolved = useRecoilValue(sudokuIsSolvedState);
 
     // TODO: implement hint reset logic
-    const setSolverHint = useSetRecoilState(solverHintState);
+    const setSolverHint = useSetRecoilState(hintState);
 
     const tryStrategiesInLoop = async (strategies: DynamicStrategy[]) => {
         while (true) {

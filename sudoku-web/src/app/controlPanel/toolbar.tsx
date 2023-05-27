@@ -1,4 +1,3 @@
-import LightbulbIcon from "@mui/icons-material/Lightbulb";
 import type * as React from "react";
 import CreateIcon from "@mui/icons-material/Create";
 import GestureIcon from "@mui/icons-material/Gesture";
@@ -11,6 +10,7 @@ import { useRecoilValue } from "recoil";
 import { useToggleCandidateMode, useToggleStickyMode, useUndo } from "../sudokuActions";
 import { sudokuCanUndoState } from "../state/sudoku";
 import MyIconButton from "../components/MyIconButton";
+import { RequestHintButton } from "./RequestHintButton";
 
 export const Toolbar = () => {
     const inputCandidateMode = useRecoilValue(inputCandidateModeState);
@@ -55,14 +55,7 @@ export const Toolbar = () => {
                     await undo();
                 }}
             />
-            <MyIconButton
-                tooltip="Hint [TODO]"
-                icon={LightbulbIcon}
-                size="large"
-                onClick={async () => {
-                    console.info("Todo: show hint for active hint config");
-                }}
-            />
+            <RequestHintButton />
             <ToolbarMenu />
         </div>
     );
