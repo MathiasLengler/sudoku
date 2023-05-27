@@ -167,6 +167,8 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                         { value: cellCount, label: cellCount },
                     ]}
                     valueLabelDisplay="auto"
+                    getAriaLabel={() => "Minimum number of givens"}
+                    getAriaValueText={minGivens => `${minGivens}`}
                 />
                 <SelectStrategies control={control} name="strategies" />
 
