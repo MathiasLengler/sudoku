@@ -166,14 +166,6 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                     valueLabelDisplay="auto"
                 />
                 <SelectStrategies control={control} name="strategies" />
-                <CheckboxButtonGroup
-                    control={control}
-                    name="strategies"
-                    label="Strategies"
-                    options={ALL_STRATEGIES.map(strategy => ({ id: strategy, label: strategy }))}
-                    row
-                    required
-                />
 
                 <FormLabel component="legend">Post generation</FormLabel>
                 <SwitchElement control={control} name="setAllDirectCandidates" label="Fill candidates" />
