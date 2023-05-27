@@ -1,12 +1,12 @@
 import { useExportSudokuString } from "../../sudokuActions";
-import { CustomMenu } from "../../components/CustomMenu";
+import { MyMenu } from "../../components/MyMenu";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import { IconButton } from "@mui/material";
 import ShareIcon from "@mui/icons-material/Share";
 import React from "react";
 import { MyDialog } from "../../components/MyDialog";
 import { ExportToClipboardDialog } from "./exportToClipboardDialog";
+import MyIconButton from "../../components/MyIconButton";
 
 export function ShareMenu() {
     const exportSudokuString = useExportSudokuString();
@@ -14,7 +14,7 @@ export function ShareMenu() {
 
     return (
         <>
-            <CustomMenu
+            <MyMenu
                 menuItems={[
                     {
                         label: "SudokuWiki",
@@ -40,11 +40,9 @@ export function ShareMenu() {
                 ]}
             >
                 {({ onMenuOpen }) => (
-                    <IconButton color="inherit" size="large" aria-label="Share" onClick={onMenuOpen}>
-                        <ShareIcon fontSize="large" />
-                    </IconButton>
+                    <MyIconButton tooltip="Share" icon={ShareIcon} color="inherit" size="large" onClick={onMenuOpen} />
                 )}
-            </CustomMenu>
+            </MyMenu>
             <MyDialog open={isExportToClipboardDialogOpen} onClose={() => setIsExportToClipboardDialogOpen(false)}>
                 {onClose => <ExportToClipboardDialog onClose={onClose} />}
             </MyDialog>

@@ -1,28 +1,26 @@
+import LightbulbIcon from "@mui/icons-material/Lightbulb";
 import type * as React from "react";
-import IconButton from "@mui/material/IconButton";
 import CreateIcon from "@mui/icons-material/Create";
 import GestureIcon from "@mui/icons-material/Gesture";
 import UndoIcon from "@mui/icons-material/Undo";
 import Tooltip from "@mui/material/Tooltip";
 import { ToolbarMenu } from "./toolbarMenu";
-import RedoIcon from "@mui/icons-material/Redo";
 import { ToggleButton } from "@mui/material";
 import { inputCandidateModeState, inputStickyModeState } from "../state/input";
 import { useRecoilValue } from "recoil";
-import { useRedo, useToggleCandidateMode, useToggleStickyMode, useUndo } from "../sudokuActions";
-import { sudokuCanRedoState, sudokuCanUndoState } from "../state/sudoku";
+import { useToggleCandidateMode, useToggleStickyMode, useUndo } from "../sudokuActions";
+import { sudokuCanUndoState } from "../state/sudoku";
+import MyIconButton from "../components/MyIconButton";
 
 export const Toolbar = () => {
     const inputCandidateMode = useRecoilValue(inputCandidateModeState);
     const inputStickyMode = useRecoilValue(inputStickyModeState);
     const canUndo = useRecoilValue(sudokuCanUndoState);
-    const canRedo = useRecoilValue(sudokuCanRedoState);
 
     const toggleCandidateMode = useToggleCandidateMode();
     const toggleStickyMode = useToggleStickyMode();
 
     const undo = useUndo();
-    const redo = useRedo();
 
     return (
         <div className="toolbar">
@@ -48,32 +46,23 @@ export const Toolbar = () => {
                     <GestureIcon fontSize="large" />
                 </ToggleButton>
             </Tooltip>
-            <Tooltip title="Undo [backspace]">
-                <span>
-                    <IconButton
-                        onClick={async () => {
-                            await undo();
-                        }}
-                        size="large"
-                        disabled={!canUndo}
-                    >
-                        <UndoIcon fontSize="large" />
-                    </IconButton>
-                </span>
-            </Tooltip>
-            <Tooltip title="Redo [shift+backspace]">
-                <span>
-                    <IconButton
-                        onClick={async () => {
-                            await redo();
-                        }}
-                        disabled={!canRedo}
-                        size="large"
-                    >
-                        <RedoIcon fontSize="large" />
-                    </IconButton>
-                </span>
-            </Tooltip>
+            <MyIconButton
+                tooltip="Undo [backspace]"
+                icon={UndoIcon}
+                size="large"
+                disabled={!canUndo}
+                onClick={async () => {
+                    await undo();
+                }}
+            />
+            <MyIconButton
+                tooltip="Hint [TODO]"
+                icon={LightbulbIcon}
+                size="large"
+                onClick={async () => {
+                    console.info("Todo: show hint for active hint config");
+                }}
+            />
             <ToolbarMenu />
         </div>
     );

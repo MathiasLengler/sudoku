@@ -1,9 +1,9 @@
-import React from "react";
 import type { MouseEventHandler } from "react";
+import React from "react";
 import { ListItemIcon, ListItemText, Menu } from "@mui/material";
 import MenuItem from "@mui/material/MenuItem";
 
-interface CustomMenuProps {
+interface MyMenuProps {
     children: (params: { onMenuOpen: MouseEventHandler<HTMLButtonElement> }) => React.ReactNode;
     menuItems: {
         onClick: () => Promise<void> | void;
@@ -13,7 +13,7 @@ interface CustomMenuProps {
     }[];
 }
 
-export function CustomMenu({ children, menuItems }: CustomMenuProps) {
+export function MyMenu({ children, menuItems }: MyMenuProps) {
     const [menuAnchorEl, setMenuAnchorEl] = React.useState<null | HTMLElement>(null);
 
     const makeHandleMenuClose = (action?: () => Promise<void> | void) => async () => {

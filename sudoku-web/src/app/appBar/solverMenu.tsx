@@ -1,14 +1,14 @@
 import { useApplyDeductions, useTryStrategies } from "../sudokuActions";
 import { useRecoilValue, useSetRecoilState } from "recoil";
 import { sudokuIsSolvedState } from "../state/sudoku";
-import { CustomMenu } from "../components/CustomMenu";
+import { MyMenu } from "../components/MyMenu";
 import { ALL_STRATEGIES } from "../../constants";
 import type { DynamicStrategy } from "../../../../sudoku-rs/bindings";
-import { IconButton } from "@mui/material";
 import LightbulbIcon from "@mui/icons-material/Lightbulb";
 import React from "react";
 import _ from "lodash";
 import { solverHintState } from "../state/deductions";
+import MyIconButton from "../components/MyIconButton";
 
 const STRATEGIES_PYRAMID = _.initial(ALL_STRATEGIES).map((strategy, i) => ({
     untilStrategy: strategy,
@@ -51,7 +51,7 @@ export function SolverMenu() {
     };
 
     return (
-        <CustomMenu
+        <MyMenu
             menuItems={[
                 ...ALL_STRATEGIES.map(strategy => ({
                     label: strategy as string,
@@ -81,15 +81,14 @@ export function SolverMenu() {
             ]}
         >
             {({ onMenuOpen }) => (
-                <IconButton
+                <MyIconButton
+                    tooltip="Solver"
+                    icon={LightbulbIcon}
                     color={isSolved ? "success" : "inherit"}
                     size="large"
-                    aria-label="Solver"
                     onClick={onMenuOpen}
-                >
-                    <LightbulbIcon fontSize="large" />
-                </IconButton>
+                />
             )}
-        </CustomMenu>
+        </MyMenu>
     );
 }

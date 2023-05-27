@@ -265,6 +265,12 @@ button {
     flex-direction: var(--sudoku-toolbar-direction);
 }
 
+.icon-button-container {
+    display: grid;
+    aspect-ratio: 1;
+    place-items: center;
+}
+
 .selector-container {
     flex: 1;
     display: flex;

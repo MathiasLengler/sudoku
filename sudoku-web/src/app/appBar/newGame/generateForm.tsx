@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import { CheckboxButtonGroup, SliderElement, SwitchElement, TextFieldElement, useForm } from "react-hook-form-mui";
-import { Box, DialogContent, FormGroup, FormLabel, IconButton, LinearProgress, Typography } from "@mui/material";
+import { Box, DialogContent, FormGroup, FormLabel, LinearProgress, Typography } from "@mui/material";
 import { baseToCellCount } from "../../utils";
 import { ALL_STRATEGIES } from "../../../constants";
 import { useGenerate } from "../../sudokuActions";
@@ -24,6 +24,7 @@ import {
     SEED_MAX,
 } from "../../state/generateForm";
 import type { GeneratorProgress } from "../../../types";
+import MyIconButton from "../../components/MyIconButton";
 
 // TODO: Spawn multiple workers for multi-threaded generation
 //  - Racing: fastest wins
@@ -189,14 +190,14 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                         inputProps={{ inputMode: "numeric" }}
                         InputProps={{
                             startAdornment: (
-                                <IconButton
+                                <MyIconButton
+                                    tooltip="Generate random seed"
+                                    icon={CasinoIcon}
+                                    disabled={!useSeed}
                                     onClick={() => {
                                         setValue("seed", Math.trunc(Math.random() * SEED_MAX).toFixed(0));
                                     }}
-                                    disabled={!useSeed}
-                                >
-                                    <CasinoIcon />
-                                </IconButton>
+                                />
                             ),
                         }}
                     />
@@ -204,15 +205,14 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                 <GenerateProgress progress={progress} cellCount={cellCount} />
             </DialogContent>
             <DialogActions sx={{ justifyContent: "space-between" }}>
-                <IconButton
-                    type="button"
+                <MyIconButton
+                    icon={ReplayIcon}
+                    tooltip="Reset to default"
                     disabled={isSubmitting}
                     onClick={() => {
                         reset(GENERATE_FORM_DEFAULT_VALUES);
                     }}
-                >
-                    <ReplayIcon />
-                </IconButton>
+                />
                 <Button
                     type="button"
                     onClick={() => {

@@ -1,22 +1,21 @@
 import React from "react";
-import { IconButton } from "@mui/material";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import { MyDialog } from "../../components/MyDialog";
 import { NewGameTabs } from "./newGameTabs";
+import MyIconButton from "../../components/MyIconButton";
 
 export function NewGameButton() {
     const [isNewGameDialogOpen, setIsNewGameDialogOpen] = React.useState(false);
 
     return (
         <>
-            <IconButton
-                color="inherit"
+            <MyIconButton
+                icon={AddCircleIcon}
                 size="large"
-                aria-label="Create new game"
+                tooltip="Create new game"
+                color="inherit"
                 onClick={() => setIsNewGameDialogOpen(true)}
-            >
-                <AddCircleIcon fontSize="large" />
-            </IconButton>
+            />
             <MyDialog open={isNewGameDialogOpen} onClose={() => setIsNewGameDialogOpen(false)}>
                 {onClose => <NewGameTabs onClose={onClose} />}
             </MyDialog>
