@@ -2,11 +2,14 @@ import type * as React from "react";
 import type * as CSS from "csstype";
 import classnames from "classnames";
 import { indexToPosition, valueToString } from "../utils";
-import type { CellViewCandidates, CellViewValue, TransportCell } from "../../types";
+import type { DynamicCellCandidates, DynamicCellValue, DynamicPosition, TransportCell } from "../../types";
 import { inputState } from "../state/input";
 import { sudokuBaseState } from "../state/sudoku";
 import { useRecoilValue } from "recoil";
-import { useHandlePosition } from "../sudokuActions";
+import { useHandlePosition } from "../actions/sudokuActions";
+import { hintState } from "../state/hint";
+
+import isEqual from "lodash/isEqual";
 
 function cellBackgroundClass(isSelected: boolean, isGuide: boolean) {
     if (isSelected) {
@@ -29,7 +32,7 @@ function cellColorClass(fixed: boolean, incorrectValue: boolean) {
 }
 
 interface CellValueProps {
-    value: CellViewValue["value"];
+    value: DynamicCellValue["value"];
 }
 
 const CellValue: React.FunctionComponent<CellValueProps> = props => {
@@ -42,12 +45,14 @@ const CellValue: React.FunctionComponent<CellValueProps> = props => {
 };
 
 interface CandidatesProps {
-    candidates: CellViewCandidates["candidates"];
+    candidates: DynamicCellCandidates["candidates"];
+    gridPosition: DynamicPosition;
 }
 
-const Candidates = ({ candidates }: CandidatesProps) => {
+const Candidates = ({ candidates, gridPosition }: CandidatesProps) => {
     const base = useRecoilValue(sudokuBaseState);
     const input = useRecoilValue(inputState);
+    const hint = useRecoilValue(hintState);
 
     return (
         <div className="candidates">
@@ -59,17 +64,46 @@ const Candidates = ({ candidates }: CandidatesProps) => {
                     "--candidate-column": column,
                     "--candidate-row": row,
                 };
+                const isGuide = input.stickyMode && input.selectedValue === candidate;
+
+                // TODO: optimize
+                //  prototype different deductions data structures via selector
+                const isDeductionReason =
+                    hint?.deductions.some(deduction =>
+                        deduction.reasons.some(
+                            reason => isEqual(reason.position, gridPosition) && reason.candidates.includes(candidate)
+                        )
+                    ) ||
+                    // TODO: rethink deductions/reasons/actions for setValue
+                    hint?.deductions.some(deduction =>
+                        deduction.actions.some(
+                            action =>
+                                isEqual(action.position, gridPosition) &&
+                                "setValue" in action &&
+                                action.setValue === candidate
+                        )
+                    );
+                const isDeductionDelete = hint?.deductions.some(deduction =>
+                    deduction.actions.some(
+                        action =>
+                            isEqual(action.position, gridPosition) &&
+                            "deleteCandidates" in action &&
+                            action.deleteCandidates.includes(candidate)
+                    )
+                );
 
                 return (
-                    <span
-                        key={candidate}
+                    <div
                         className={classnames("candidate", {
-                            "candidate--guide": input.stickyMode && input.selectedValue === candidate,
+                            "candidate--guide": isGuide,
+                            "candidate--deduction-reason": isDeductionReason,
+                            "candidate--deduction-delete": isDeductionDelete,
                         })}
                         style={style}
+                        key={candidate}
                     >
                         {valueToString(candidate)}
-                    </span>
+                    </div>
                 );
             })}
         </div>
@@ -140,7 +174,11 @@ export const Cell = (props: CellProps) => {
                 handlePosition(gridPosition).catch(console.error);
             }}
         >
-            {cell.kind === "value" ? <CellValue value={cell.value} /> : <Candidates candidates={cell.candidates} />}
+            {cell.kind === "value" ? (
+                <CellValue value={cell.value} />
+            ) : (
+                <Candidates candidates={cell.candidates} gridPosition={gridPosition} />
+            )}
         </div>
     );
 };

@@ -1,15 +1,15 @@
-use rand::{thread_rng, SeedableRng};
 use std::fmt::{self, Display};
 
+use rand::{SeedableRng, thread_rng};
 use rand::seq::SliceRandom;
 use rand_xoshiro::Xoshiro256StarStar;
 
 use crate::base::SudokuBase;
-use crate::cell::compact::value::Value;
+use crate::cell::Value;
 use crate::solver::backtracking::CandidatesVisitOrder;
 
 #[derive(Debug)]
-pub enum CandidatesProcessor {
+pub(super) enum CandidatesProcessor {
     Asc,
     Desc,
     Random(Xoshiro256StarStar),
@@ -42,12 +42,12 @@ impl CandidatesProcessor {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Choice<Base: SudokuBase> {
+pub(crate) struct Choice<Base: SudokuBase> {
     candidates: Vec<Value<Base>>,
 }
 
 impl<Base: SudokuBase> Choice<Base> {
-    pub fn new(
+    pub(super) fn new(
         mut candidates: Vec<Value<Base>>,
         candidates_processor: &mut CandidatesProcessor,
     ) -> Choice<Base> {
@@ -55,17 +55,17 @@ impl<Base: SudokuBase> Choice<Base> {
         Self { candidates }
     }
 
-    pub fn set_next(&mut self) {
+    pub(super) fn set_next(&mut self) {
         let prev_selection = self.candidates.pop();
 
         debug_assert!(prev_selection.is_some());
     }
 
-    pub fn is_exhausted(&self) -> bool {
+    pub(super) fn is_exhausted(&self) -> bool {
         self.candidates.is_empty()
     }
 
-    pub fn selection(&self) -> Option<Value<Base>> {
+    pub(super) fn selection(&self) -> Option<Value<Base>> {
         self.candidates.last().copied()
     }
 }
@@ -86,7 +86,7 @@ mod tests {
 
     #[test]
     fn test_choice() {
-        let mut choice = Choice::<U2>::new(
+        let mut choice = Choice::<Base2>::new(
             vec![1, 2, 4]
                 .into_iter()
                 .map(|v| v.try_into().unwrap())

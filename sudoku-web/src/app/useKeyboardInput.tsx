@@ -9,11 +9,10 @@ import {
     useHandlePosition,
     useHandleValue,
     useSetAllDirectCandidates,
-    useToggleCandidateMode,
-    useToggleStickyMode,
     useUndo,
-} from "./sudokuActions";
+} from "./actions/sudokuActions";
 import { sudokuSideLengthState } from "./state/sudoku";
+import { useToggleCandidateMode, useToggleStickyMode } from "./actions/inputActions";
 
 function keyToValue(key: string, sideLength: number): number | undefined {
     if (key.length === 1) {

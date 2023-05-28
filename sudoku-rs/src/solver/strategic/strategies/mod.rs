@@ -1,4 +1,4 @@
-//! Source: https://www.sudokuoftheday.com/about/difficulty/
+//! [Source](https://www.sudokuoftheday.com/difficulty)
 //!
 //! Technique | Code | Cost for first use | Cost for subsequent uses
 //! --- | --- | --- | ---
@@ -31,7 +31,8 @@ use ts_rs::TS;
 pub use backtracking::Backtracking;
 pub use group_reduction::GroupReduction;
 pub use hidden_singles::HiddenSingles;
-pub use single_candidate::SingleCandidate;
+pub use naked_pairs::NakedPairs;
+pub use naked_singles::NakedSingles;
 
 use crate::base::SudokuBase;
 use crate::error::{Error, Result};
@@ -42,26 +43,48 @@ use crate::solver::strategic::deduction::Deductions;
 mod backtracking;
 pub mod group_reduction;
 mod hidden_singles;
-mod single_candidate;
+mod naked_pairs;
+mod naked_singles;
 
 #[enum_dispatch(DynamicStrategy)]
-pub trait Strategy: Debug + Copy + Clone {
+pub trait Strategy: Debug + Copy + Clone + Eq + Sized {
     /// Execute this strategy on the given grid. Returns a list of deductions.
-    fn execute<Base: SudokuBase>(&self, grid: &Grid<Base>) -> Result<Deductions<Base>>;
+    fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>>;
 
-    fn strategy_name(&self) -> String {
-        format!("{:?}", self)
+    fn execute_and_apply<Base: SudokuBase>(
+        self,
+        grid: &mut Grid<Base>,
+    ) -> Result<Deductions<Base>> {
+        let deductions = self.execute(grid)?;
+        deductions.apply(grid)?;
+        Ok(deductions)
+    }
+
+    fn name(self) -> String {
+        format!("{self:?}")
     }
 }
-#[cfg_attr(feature = "wasm", derive(TS))]
-#[cfg_attr(feature = "wasm", ts(export))]
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[enum_dispatch]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum DynamicStrategy {
-    SingleCandidate,
+    NakedSingles,
     HiddenSingles,
+    NakedPairs,
     GroupReduction,
     Backtracking,
+}
+
+impl DynamicStrategy {
+    pub fn all() -> Vec<Self> {
+        vec![
+            NakedSingles.into(),
+            HiddenSingles.into(),
+            NakedPairs.into(),
+            GroupReduction.into(),
+            Backtracking.into(),
+        ]
+    }
 }
 
 impl Serialize for DynamicStrategy {
@@ -70,10 +93,11 @@ impl Serialize for DynamicStrategy {
         S: Serializer,
     {
         let (variant_index, variant) = match *self {
-            Self::SingleCandidate(_) => (0, "SingleCandidate"),
+            Self::NakedSingles(_) => (0, "NakedSingles"),
             Self::HiddenSingles(_) => (1, "HiddenSingles"),
-            Self::GroupReduction(_) => (2, "GroupReduction"),
-            Self::Backtracking(_) => (3, "Backtracking"),
+            Self::NakedPairs(_) => (2, "NakedPairs"),
+            Self::GroupReduction(_) => (3, "GroupReduction"),
+            Self::Backtracking(_) => (4, "Backtracking"),
         };
 
         serializer.serialize_unit_variant("Strategy", variant_index, variant)
@@ -94,7 +118,7 @@ impl<'de> Deserialize<'de> for DynamicStrategy {
                 formatter.write_str("a valid strategy name")
             }
 
-            fn visit_str<E>(self, strategy_name: &str) -> std::result::Result<Self::Value, E>
+            fn visit_str<E>(self, strategy_name: &str) -> Result<Self::Value, E>
             where
                 E: serde::de::Error,
             {
@@ -105,24 +129,59 @@ impl<'de> Deserialize<'de> for DynamicStrategy {
     }
 }
 
-impl DynamicStrategy {
-    pub fn all() -> Vec<Self> {
-        vec![
-            SingleCandidate.into(),
-            HiddenSingles.into(),
-            GroupReduction.into(),
-            Backtracking.into(),
-        ]
-    }
-}
-
 impl FromStr for DynamicStrategy {
     type Err = Error;
 
     fn from_str(strategy_name: &str) -> Result<Self> {
         DynamicStrategy::all()
             .into_iter()
-            .find(|strategy| strategy.strategy_name() == strategy_name)
+            .find(|strategy| strategy.name() == strategy_name)
             .ok_or_else(|| anyhow!("Unexpected strategy name: {strategy_name}"))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_serde_round_trip() {
+        let all_strategies = DynamicStrategy::all();
+
+        let json_string = serde_json::to_string(&all_strategies).unwrap();
+
+        let all_strategies_round_tripped: Vec<DynamicStrategy> =
+            serde_json::from_str(&json_string).unwrap();
+
+        assert_eq!(all_strategies, all_strategies_round_tripped);
+    }
+}
+
+#[cfg(test)]
+mod test_util {
+    use crate::base::SudokuBase;
+    use crate::grid::Grid;
+    use crate::solver::strategic::deduction::Deductions;
+
+    pub(crate) fn assert_deductions<Base: SudokuBase>(
+        deductions: Deductions<Base>,
+        expected_deductions: Deductions<Base>,
+    ) -> Deductions<Base> {
+        assert_eq!(
+            deductions, expected_deductions,
+            "{deductions}\n!=\n{expected_deductions}"
+        );
+
+        deductions
+    }
+
+    pub(crate) fn assert_deductions_with_grid<Base: SudokuBase>(
+        deductions: Deductions<Base>,
+        expected_deductions: Deductions<Base>,
+        grid: &mut Grid<Base>,
+    ) {
+        let deductions = assert_deductions(deductions, expected_deductions);
+
+        deductions.apply(grid).unwrap();
     }
 }

@@ -1,9 +1,9 @@
 // Re-exports only the types of the wasm module.
 // This ensures only the worker loads the WASM module at runtime.
-import type { CellView } from "../../sudoku-rs/bindings";
 
-export type { GridFormat, WasmSudoku } from "../../sudoku-wasm/pkg";
+export type * from "../../sudoku-rs/bindings";
+export type { WasmSudoku, DynamicStrategies } from "../../sudoku-wasm/pkg";
 
-export * from "../../sudoku-rs/bindings";
+import type { DynamicCell } from "../../sudoku-rs/bindings";
 
-export type CellViews = CellView[];
+export type DynamicCells = DynamicCell[];

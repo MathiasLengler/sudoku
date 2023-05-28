@@ -3,11 +3,13 @@ use rand::prelude::SliceRandom;
 use rand::{thread_rng, Rng, SeedableRng};
 use rand_xoshiro::Xoshiro256StarStar;
 use serde::{Deserialize, Serialize};
+use std::convert::Infallible;
 #[cfg(feature = "wasm")]
 use ts_rs::TS;
 
 use crate::base::SudokuBase;
-use crate::cell::compact::value::Value;
+use crate::cell::Value;
+use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::solver::backtracking;
@@ -17,33 +19,27 @@ use crate::solver::strategic::strategies::{Backtracking, DynamicStrategy};
 // TODO: strategic
 //  target difficulty: sum of weighted strategy applications
 
-#[cfg_attr(feature = "wasm", derive(TS))]
-#[cfg_attr(feature = "wasm", ts(export))]
-#[derive(Debug, Serialize, Deserialize, Copy, Clone)]
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+#[derive(Debug, Serialize, Deserialize, Copy, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub enum GeneratorTarget {
+    #[default]
     Filled,
+    #[serde(rename_all = "camelCase")]
     FromFilled {
-        distance: usize,
+        distance_from_filled: usize,
         set_all_direct_candidates: bool,
     },
-    Minimal {
-        set_all_direct_candidates: bool,
-    },
+    #[serde(rename_all = "camelCase")]
+    Minimal { set_all_direct_candidates: bool },
+    #[serde(rename_all = "camelCase")]
     FromMinimal {
         distance: usize,
         set_all_direct_candidates: bool,
     },
 }
 
-impl Default for GeneratorTarget {
-    fn default() -> Self {
-        GeneratorTarget::Filled
-    }
-}
-
-#[cfg_attr(feature = "wasm", derive(TS))]
-#[cfg_attr(feature = "wasm", ts(export))]
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GeneratorSettings {
@@ -53,8 +49,7 @@ pub struct GeneratorSettings {
     pub seed: Option<u64>,
 }
 
-#[cfg_attr(feature = "wasm", derive(TS))]
-#[cfg_attr(feature = "wasm", ts(export))]
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DynamicGeneratorSettings {
@@ -68,7 +63,16 @@ pub struct Generator {
     settings: GeneratorSettings,
 }
 
-// TODO: expose random seed for deterministic benchmarking
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GeneratorProgress {
+    position_index: usize,
+    positions_count: usize,
+    deleted_count: usize,
+    is_position_required: bool,
+}
+
 impl Generator {
     pub fn with_target(target: GeneratorTarget) -> Self {
         Self::with_settings(GeneratorSettings {
@@ -91,6 +95,16 @@ impl Generator {
     }
 
     pub fn generate<Base: SudokuBase>(&self) -> Grid<Base> {
+        match self.generate_with_progress(|_| Ok::<(), Infallible>(())) {
+            Ok(grid) => grid,
+            Err(infallible) => match infallible {},
+        }
+    }
+
+    pub fn generate_with_progress<Base: SudokuBase, E: Into<Error>>(
+        &self,
+        on_progress: impl FnMut(GeneratorProgress) -> Result<(), E>,
+    ) -> Result<Grid<Base>, E> {
         debug!("generate: {self:?}");
 
         let filled_grid = self.filled_grid();
@@ -98,20 +112,23 @@ impl Generator {
         let (mut grid, set_all_direct_candidates) = match self.settings.target {
             GeneratorTarget::Filled => (filled_grid, false),
             GeneratorTarget::FromFilled {
-                distance,
+                distance_from_filled,
                 set_all_direct_candidates,
             } => (
-                self.filled(filled_grid, distance),
+                self.filled(filled_grid, distance_from_filled, on_progress)?,
                 set_all_direct_candidates,
             ),
             GeneratorTarget::Minimal {
                 set_all_direct_candidates,
-            } => (self.minimal(filled_grid, 0), set_all_direct_candidates),
+            } => (
+                self.minimal(filled_grid, 0, on_progress)?,
+                set_all_direct_candidates,
+            ),
             GeneratorTarget::FromMinimal {
                 distance,
                 set_all_direct_candidates,
             } => (
-                self.minimal(filled_grid, distance),
+                self.minimal(filled_grid, distance, on_progress)?,
                 set_all_direct_candidates,
             ),
         };
@@ -122,7 +139,7 @@ impl Generator {
             grid.set_all_direct_candidates();
         }
 
-        grid
+        Ok(grid)
     }
 
     fn filled_grid<Base: SudokuBase>(&self) -> Grid<Base> {
@@ -149,7 +166,7 @@ impl Generator {
     fn try_delete_cell_at_pos<Base: SudokuBase>(
         &self,
         grid: &mut Grid<Base>,
-        pos: Position,
+        pos: Position<Base>,
     ) -> Option<Value<Base>> {
         let cell = grid.get(pos);
 
@@ -157,7 +174,7 @@ impl Generator {
             grid.get_mut(pos).delete();
 
             match grid.is_solvable_with_strategies(self.settings.strategies.clone()) {
-                Some(Ok(_)) if grid.has_unique_solution() => {
+                Ok(Some(_)) if grid.has_unique_solution() => {
                     // current position can be removed without losing uniqueness of the grid solution.
                     Some(value)
                 }
@@ -168,74 +185,107 @@ impl Generator {
                 }
             }
         } else {
-            panic!("Expected value at {}, instead got: {:?}", pos, cell)
+            panic!("Expected value at {pos}, instead got: {cell:?}")
         }
     }
 
-    fn filled<Base: SudokuBase>(&self, mut grid: Grid<Base>, distance: usize) -> Grid<Base> {
-        if distance == 0 {
-            return grid;
+    fn filled<Base: SudokuBase, E: Into<Error>>(
+        &self,
+        mut grid: Grid<Base>,
+        distance_from_filled: usize,
+        mut on_progress: impl FnMut(GeneratorProgress) -> Result<(), E>,
+    ) -> Result<Grid<Base>, E> {
+        if distance_from_filled == 0 {
+            return Ok(grid);
         }
 
         assert!(grid.is_solved());
 
         let mut all_positions: Vec<_> = Grid::<Base>::all_positions().collect();
         all_positions.shuffle(&mut self.rng());
-        let all_positions_count = Grid::<Base>::cell_count_usize();
+        let positions_count = Grid::<Base>::cell_count_usize();
 
         let mut deleted_count = 0;
         for (i, pos) in all_positions.into_iter().enumerate() {
-            let i = i + 1;
+            let position_index = i + 1;
 
-            if deleted_count >= distance {
+            if deleted_count >= distance_from_filled {
                 break;
             }
 
-            if self.try_delete_cell_at_pos(&mut grid, pos).is_some() {
+            let is_position_required = if self.try_delete_cell_at_pos(&mut grid, pos).is_some() {
                 deleted_count += 1;
-                debug!("Position {i}/{all_positions_count} deleted, totaling {deleted_count}/{distance} deleted positions");
+                debug!("Position {position_index}/{positions_count} deleted, totaling {deleted_count}/{distance_from_filled} deleted positions");
+                false
             } else {
-                debug!("Position {i}/{all_positions_count} is required for unique solution");
-            }
+                debug!(
+                    "Position {position_index}/{positions_count} is required for unique solution"
+                );
+                true
+            };
+
+            on_progress(GeneratorProgress {
+                position_index,
+                positions_count,
+                deleted_count,
+                is_position_required,
+            })?;
         }
 
-        grid
+        Ok(grid)
     }
 
-    fn minimal<Base: SudokuBase>(&self, mut grid: Grid<Base>, distance: usize) -> Grid<Base> {
+    fn minimal<Base: SudokuBase, E: Into<Error>>(
+        &self,
+        mut grid: Grid<Base>,
+        distance_from_minimal: usize,
+        mut on_progress: impl FnMut(GeneratorProgress) -> Result<(), E>,
+    ) -> Result<Grid<Base>, E> {
         // If the distance results in a filled sudoku, return it directly.
-        if distance >= Grid::<Base>::cell_count_usize() {
-            return grid;
+        if distance_from_minimal >= Grid::<Base>::cell_count_usize() {
+            return Ok(grid);
         }
 
         assert!(grid.is_solved());
 
         let mut all_positions: Vec<_> = Grid::<Base>::all_positions().collect();
         all_positions.shuffle(&mut self.rng());
-        let all_positions_count = Grid::<Base>::cell_count_usize();
+        let positions_count = Grid::<Base>::cell_count_usize();
 
-        let mut deleted: Vec<(Position, Value<Base>)> = vec![];
+        let mut deleted: Vec<(Position<Base>, Value<Base>)> = vec![];
 
         // Reduce grid to a minimal solution.
         for (i, pos) in all_positions.into_iter().enumerate() {
-            let i = i + 1;
+            let position_index = i + 1;
 
-            if let Some(deleted_value) = self.try_delete_cell_at_pos(&mut grid, pos) {
-                let deleted_count = deleted.len();
-                debug!("Position {i}/{all_positions_count} deleted, totaling {deleted_count}/{distance} deleted positions");
+            let deleted_count = deleted.len();
 
-                deleted.push((pos, deleted_value))
+            let is_position_required = if let Some(deleted_value) =
+                self.try_delete_cell_at_pos(&mut grid, pos)
+            {
+                debug!("Position {i}/{positions_count} deleted, totaling {deleted_count} deleted positions");
+
+                deleted.push((pos, deleted_value));
+                false
             } else {
-                debug!("Position {i}/{all_positions_count} is required for unique solution");
-            }
+                debug!("Position {i}/{positions_count} is required for unique solution");
+                true
+            };
+
+            on_progress(GeneratorProgress {
+                position_index,
+                positions_count,
+                deleted_count,
+                is_position_required,
+            })?;
         }
 
         // Restore the required amount of values, specified by distance.
-        for (deleted_pos, deleted_value) in deleted.into_iter().take(distance) {
+        for (deleted_pos, deleted_value) in deleted.into_iter().take(distance_from_minimal) {
             grid.get_mut(deleted_pos).set_value(deleted_value);
         }
 
-        grid
+        Ok(grid)
     }
 }
 
@@ -266,14 +316,16 @@ mod tests {
         let grid = Generator::with_target(GeneratorTarget::Minimal {
             set_all_direct_candidates: false,
         })
-        .generate::<U2>();
+        .generate::<Base2>();
+
+        println!("{grid}");
 
         assert!(is_minimal(&grid));
     }
 
     #[test]
     fn test_filled() {
-        let grid = Generator::with_target(GeneratorTarget::Filled).generate::<U2>();
+        let grid = Generator::with_target(GeneratorTarget::Filled).generate::<Base2>();
 
         assert!(grid.is_solved());
     }
@@ -281,10 +333,10 @@ mod tests {
     #[test]
     fn test_from_filled() {
         let grid = Generator::with_target(GeneratorTarget::FromFilled {
-            distance: 2,
+            distance_from_filled: 2,
             set_all_direct_candidates: false,
         })
-        .generate::<U2>();
+        .generate::<Base2>();
 
         assert_eq!(grid.all_candidates_positions().len(), 2);
 
