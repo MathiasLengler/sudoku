@@ -3,20 +3,6 @@ import { ALL_STRATEGIES, dynamicStrategySchema } from "../../../constants";
 import { atom } from "recoil";
 import { localStorageEffect } from "../localStorageEffect";
 
-/* TODO: Hint settings:
-- Selected Strategies (try in order)
-
-- Hint Mode
-    - Toggle hint
-    - Hint, then apply
-    - Apply
-
-- Run in Loop / Repeat (disabled for toggle hint)
-    - Delay
-
-- Single / Multiple deductions
-*/
-
 export const MAX_LOOP_DELAY_MS = 4000;
 
 //TODO: color hint light bulb in toolbar based on hint state

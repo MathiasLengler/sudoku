@@ -4,7 +4,6 @@ import AppBar from "@mui/material/AppBar";
 import Typography from "@mui/material/Typography";
 import Toolbar from "@mui/material/Toolbar";
 import { NewGameButton } from "./newGame/NewGameButton";
-import { SolverMenu } from "./solverMenu";
 import { ShareMenu } from "./share/ShareMenu";
 import { HintSettingsButton } from "./hintSettings/HintSettingsButton";
 
@@ -17,7 +16,6 @@ export default function SudokuAppBar() {
                         Sudoku
                     </Typography>
                     <ShareMenu />
-                    <SolverMenu />
                     <HintSettingsButton />
                     <NewGameButton />
                 </Toolbar>

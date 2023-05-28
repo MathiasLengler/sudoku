@@ -52,7 +52,7 @@ interface CandidatesProps {
 const Candidates = ({ candidates, gridPosition }: CandidatesProps) => {
     const base = useRecoilValue(sudokuBaseState);
     const input = useRecoilValue(inputState);
-    const solverHint = useRecoilValue(hintState);
+    const hint = useRecoilValue(hintState);
 
     return (
         <div className="candidates">
@@ -67,32 +67,30 @@ const Candidates = ({ candidates, gridPosition }: CandidatesProps) => {
                 const isGuide = input.stickyMode && input.selectedValue === candidate;
 
                 // TODO: optimize
+                //  prototype different deductions data structures via selector
                 const isDeductionReason =
-                    solverHint.enabled &&
-                    (solverHint.deductions.some(deduction =>
+                    hint?.deductions.some(deduction =>
                         deduction.reasons.some(
                             reason => isEqual(reason.position, gridPosition) && reason.candidates.includes(candidate)
                         )
                     ) ||
-                        // TODO: rethink deductions/reasons/actions for setValue
-                        solverHint.deductions.some(deduction =>
-                            deduction.actions.some(
-                                action =>
-                                    isEqual(action.position, gridPosition) &&
-                                    "setValue" in action &&
-                                    action.setValue === candidate
-                            )
-                        ));
-                const isDeductionDelete =
-                    solverHint.enabled &&
-                    solverHint.deductions.some(deduction =>
+                    // TODO: rethink deductions/reasons/actions for setValue
+                    hint?.deductions.some(deduction =>
                         deduction.actions.some(
                             action =>
                                 isEqual(action.position, gridPosition) &&
-                                "deleteCandidates" in action &&
-                                action.deleteCandidates.includes(candidate)
+                                "setValue" in action &&
+                                action.setValue === candidate
                         )
                     );
+                const isDeductionDelete = hint?.deductions.some(deduction =>
+                    deduction.actions.some(
+                        action =>
+                            isEqual(action.position, gridPosition) &&
+                            "deleteCandidates" in action &&
+                            action.deleteCandidates.includes(candidate)
+                    )
+                );
 
                 return (
                     <div

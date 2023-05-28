@@ -1,18 +1,15 @@
 import { atom } from "recoil";
 import type { DynamicStrategy, TransportDeductions } from "../../types";
 
-type Hint =
-    | ({
-          enabled: true;
-          strategy: DynamicStrategy;
-      } & TransportDeductions)
-    | {
-          enabled: false;
-      };
+export type Hint = {
+    strategy: DynamicStrategy;
+} & TransportDeductions;
 
-export const hintState = atom<Hint>({
+export type OptionalHint = Hint | undefined;
+
+// FIXME: invalidate
+export const hintState = atom<OptionalHint>({
     key: "Hint",
-    default: {
-        enabled: false,
-    },
+    default: undefined,
+    effects: [],
 });
