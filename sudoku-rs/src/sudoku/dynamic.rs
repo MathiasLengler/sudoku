@@ -141,10 +141,10 @@ impl DynamicSudoku {
 
     pub fn apply_deductions(&mut self, deductions: TransportDeductions) -> Result<()> {
         match self {
-            DynamicSudoku::Base2(sudoku) => sudoku.apply_deductions(deductions.try_into()?),
-            DynamicSudoku::Base3(sudoku) => sudoku.apply_deductions(deductions.try_into()?),
-            DynamicSudoku::Base4(sudoku) => sudoku.apply_deductions(deductions.try_into()?),
-            DynamicSudoku::Base5(sudoku) => sudoku.apply_deductions(deductions.try_into()?),
+            DynamicSudoku::Base2(sudoku) => sudoku.apply_deductions(&deductions.try_into()?),
+            DynamicSudoku::Base3(sudoku) => sudoku.apply_deductions(&deductions.try_into()?),
+            DynamicSudoku::Base4(sudoku) => sudoku.apply_deductions(&deductions.try_into()?),
+            DynamicSudoku::Base5(sudoku) => sudoku.apply_deductions(&deductions.try_into()?),
         }
     }
 }
