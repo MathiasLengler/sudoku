@@ -1213,6 +1213,7 @@ dependencies = [
 [[package]]
 name = "ts-rs"
 version = "6.2.1"
+source = "git+https://github.com/MathiasLengler/ts-rs#21826e1495ea930d2f979ad4250c50e1f7daf3fe"
 dependencies = [
  "thiserror",
  "ts-rs-macros",
@@ -1221,6 +1222,7 @@ dependencies = [
 [[package]]
 name = "ts-rs-macros"
 version = "6.2.0"
+source = "git+https://github.com/MathiasLengler/ts-rs#21826e1495ea930d2f979ad4250c50e1f7daf3fe"
 dependencies = [
  "Inflector",
  "proc-macro2",
