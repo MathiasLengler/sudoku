@@ -19,8 +19,8 @@ version = "0.2.0"
 
 [workspace.dependencies]
 log = { version = "0.4.17", features = ["max_level_debug"] }
-serde = { version = "1.0.159" }
-anyhow = { version = "1.0.70", features = ["backtrace"] }
+serde = { version = "1.0.163" }
+anyhow = { version = "1.0.71", features = ["backtrace"] }
 
 [profile.release-with-debug]
 inherits = "release"
@@ -29,5 +29,5 @@ debug = true
 [patch.crates-io]
 
 [patch.crates-io.ts-rs]
-git = "https://github.com/MathiasLengler/ts-rs"
-#path = "../ts-rs/ts-rs"
+#git = "https://github.com/MathiasLengler/ts-rs"
+path = "../ts-rs/ts-rs"
