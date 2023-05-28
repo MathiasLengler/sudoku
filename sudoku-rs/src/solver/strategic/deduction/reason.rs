@@ -15,6 +15,8 @@ use crate::solver::strategic::deduction::transport::TransportReason;
 /// Used to highlight/explain a deduction in the UI.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub enum Reason<Base: SudokuBase> {
+    /// This set of candidates was a reason for an action.
+    /// Highlighted with a green background in the UI.
     Candidates(Candidates<Base>),
 }
 
