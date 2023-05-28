@@ -102,6 +102,6 @@ mod tests {
         })
         .collect();
 
-        assert_deductions_with_grid(deductions, expected_deductions, &mut grid);
+        assert_deductions_with_grid(&deductions, &expected_deductions, &mut grid);
     }
 }

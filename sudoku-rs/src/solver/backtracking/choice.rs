@@ -95,18 +95,18 @@ mod tests {
         );
 
         assert_eq!(choice.selection(), Some(1.try_into().unwrap()));
-        assert_eq!(choice.is_exhausted(), false);
+        assert!(!choice.is_exhausted());
 
         choice.set_next();
         assert_eq!(choice.selection(), Some(2.try_into().unwrap()));
-        assert_eq!(choice.is_exhausted(), false);
+        assert!(!choice.is_exhausted());
 
         choice.set_next();
         assert_eq!(choice.selection(), Some(4.try_into().unwrap()));
-        assert_eq!(choice.is_exhausted(), false);
+        assert!(!choice.is_exhausted());
 
         choice.set_next();
         assert_eq!(choice.selection(), None);
-        assert_eq!(choice.is_exhausted(), true);
+        assert!(choice.is_exhausted());
     }
 }

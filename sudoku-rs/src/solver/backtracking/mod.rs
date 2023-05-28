@@ -226,7 +226,7 @@ mod tests {
             &mut grid,
             Settings {
                 candidates_visit_order: CandidatesVisitOrder::Random,
-                step_limit: Default::default(),
+                step_limit: None,
             },
         );
 
