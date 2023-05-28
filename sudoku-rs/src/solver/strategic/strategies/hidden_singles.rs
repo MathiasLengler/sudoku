@@ -1,31 +1,32 @@
+use anyhow::ensure;
+
 use crate::base::SudokuBase;
-use crate::cell::compact::value::Value;
+use crate::cell::Value;
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
-use crate::solver::strategic::deduction::{Deduction, Deductions, TryIntoDeductions};
-use anyhow::ensure;
+use crate::solver::strategic::deduction::{Action, Deduction, Deductions};
 
 use super::Strategy;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Default)]
+struct CandidateStats<Base: SudokuBase> {
+    count: u8,
+    last_pos: Option<Position<Base>>,
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct HiddenSingles;
 
 impl Strategy for HiddenSingles {
-    fn execute<Base: SudokuBase>(&self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
+    fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
         ensure!(
             grid.is_directly_consistent(),
             "HiddenSingles requires a directly consistent grid"
         );
 
-        TryIntoDeductions(
-            Grid::<Base>::all_group_positions().flat_map(|group_positions| {
-                #[derive(Debug, Copy, Clone, Default)]
-                struct CandidateStats {
-                    count: u8,
-                    last_pos: Option<Position>,
-                }
-
+        Ok(Grid::<Base>::all_group_positions()
+            .flat_map(|group_positions| {
                 // TODO: evaluate better data structure
                 //  - stack allocated
                 //  - Value<Base> API, less conversions
@@ -55,59 +56,52 @@ impl Strategy for HiddenSingles {
                                 Value::<Base>::try_from(u8::try_from(candidate_value + 1).unwrap())
                                     .unwrap();
 
-                            Some(Deduction::with_value(
+                            Some(Deduction::with_action(
                                 pos,
-                                grid.get(pos).candidates().unwrap(),
-                                candidate_value,
+                                Action::SetValue(candidate_value),
                             ))
                         } else {
                             None
                         }
                     },
                 )
-            }),
-        )
-        .try_into()
+            })
+            .collect())
     }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::samples;
-    use crate::solver::strategic::deduction::IntoDeductions;
+    use crate::solver::strategic::strategies::test_util::assert_deductions_with_grid;
 
     use super::*;
 
     #[test]
     fn test_hidden_singles() {
-        let mut grid = samples::base_2().into_iter().nth(1).unwrap().clone();
+        let mut grid = samples::base_2().into_iter().nth(1).unwrap();
 
         grid.set_all_direct_candidates();
         grid.fix_all_values();
 
         let deductions = HiddenSingles.execute(&mut grid).unwrap();
 
-        assert_eq!(
-            deductions,
-            IntoDeductions(
-                vec![
-                    ((0, 1), vec![2, 3], 2),
-                    ((1, 2), vec![1, 2, 3], 2),
-                    ((2, 3), vec![1, 3, 4], 4),
-                    ((3, 0), vec![3, 4], 4),
-                ]
-                .into_iter()
-                .map(|((row, column), previous_candidates, value)| {
-                    Deduction::with_value(
-                        Position { row, column },
-                        previous_candidates.try_into().unwrap(),
-                        value.try_into().unwrap(),
-                    )
-                    .unwrap()
-                })
+        let expected_deductions: Deductions<_> = vec![
+            //
+            ((0, 1), 2),
+            ((1, 2), 2),
+            ((2, 3), 4),
+            ((3, 0), 4),
+        ]
+        .into_iter()
+        .map(|(pos, value)| {
+            Deduction::with_action(
+                pos.try_into().unwrap(),
+                Action::SetValue(Value::try_from(value).unwrap()),
             )
-            .try_into()
-            .unwrap()
-        );
+        })
+        .collect();
+
+        assert_deductions_with_grid(deductions, expected_deductions, &mut grid);
     }
 }

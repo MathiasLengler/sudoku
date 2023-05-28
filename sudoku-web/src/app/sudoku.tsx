@@ -8,9 +8,10 @@ import SudokuAppBar from "./appBar/sudokuAppBar";
 import { useRecoilValue } from "recoil";
 import { sudokuBaseState, sudokuSideLengthState } from "./state/sudoku";
 import { SudokuEffects } from "./sudokuEffects";
+import type { OnRefChangeType } from "react-resize-detector/build/types/types";
 
 interface SudokuContentProps {
-    gridRef: React.MutableRefObject<HTMLDivElement>;
+    gridRef: OnRefChangeType<HTMLDivElement>;
 }
 
 const SudokuContent = ({ gridRef }: SudokuContentProps) => {
@@ -29,7 +30,7 @@ export const Sudoku = () => {
     const sideLength = useRecoilValue(sudokuSideLengthState);
 
     // Responsive Grid
-    const { width: gridWidth, height: gridHeight, ref: gridRef } = useResizeDetector({});
+    const { width: gridWidth, height: gridHeight, ref: gridRef } = useResizeDetector<HTMLDivElement>({});
 
     const cssVariables: CSS.Properties = {
         "--side-length": sideLength,

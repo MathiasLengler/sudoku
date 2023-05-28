@@ -18,11 +18,10 @@ jobs:
       - uses: actions/checkout@v3
 
       # Rust
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          profile: minimal
-          override: true
+          targets: wasm32-unknown-unknown
+          components: clippy
 
       # https://github.com/actions/cache/blob/main/examples.md#rust---cargo
       - uses: actions/cache@v3
@@ -35,10 +34,11 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: cargo test
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
+      # https://doc.rust-lang.org/stable/clippy/usage.html#command-line
+      - name: clippy
+        run: cargo clippy -- -Dwarnings
+
+      - run: cargo test
 
       - name: Install wasm-pack
         uses: jetli/wasm-pack-action@v0.4.0

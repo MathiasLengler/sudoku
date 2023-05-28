@@ -4,7 +4,9 @@ import type { WorkerApi } from "./worker";
 import { loadCellViews } from "./app/persistence";
 import type { WasmSudoku } from "./types";
 
-export type WasmSudokuProxyContainer = { wasmSudokuProxy: WasmSudokuProxy };
+export type RemoteWorkerApi = {
+    wasmSudokuProxy: WasmSudokuProxy;
+};
 export type WasmSudokuProxy = Comlink.Remote<WasmSudoku>;
 
 function fixupWasmSudokuProxy(wasmSudokuProxy: WasmSudokuProxy): WasmSudokuProxy {
@@ -13,8 +15,8 @@ function fixupWasmSudokuProxy(wasmSudokuProxy: WasmSudokuProxy): WasmSudokuProxy
         // Reference: https://stackoverflow.com/a/42493645
         {},
         {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any,@typescript-eslint/ban-types
-            get: (_target: {}, property: string): any => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            get: (_target, property: string): any => {
                 // Not a thenable
                 // Reference: https://stackoverflow.com/a/53890904
                 if (property === "then") {
@@ -26,7 +28,7 @@ function fixupWasmSudokuProxy(wasmSudokuProxy: WasmSudokuProxy): WasmSudokuProxy
     ) as unknown as WasmSudokuProxy;
 }
 
-export async function spawnWorker(): Promise<WasmSudokuProxyContainer> {
+export async function spawnWorker() {
     console.debug("Spawning worker");
     const worker = new Worker(new URL("./worker.tsx", import.meta.url));
     if (process.env.NODE_ENV !== "production") {
@@ -43,24 +45,24 @@ export async function spawnWorker(): Promise<WasmSudokuProxyContainer> {
     }
     console.debug("Waiting for worker boot up message");
     const bootUpMessage = await new Promise((resolve, reject) => {
-        const receivedMessageController = new AbortController();
         worker.addEventListener(
             "message",
             (ev: MessageEvent) => {
-                // Only capture the first event/message.
-                receivedMessageController.abort();
-
                 if (ev.data === WORKER_BOOT_UP_MESSAGE) {
                     resolve(ev.data);
                 } else {
                     reject(new Error(`Unexpected message: ${ev.data}`));
                 }
             },
-            { signal: receivedMessageController.signal }
+            { once: true }
         );
     });
     console.debug("Received worker boot up message:", bootUpMessage);
 
+    return worker;
+}
+
+export async function getRemoteWorkerApi(worker: Worker): Promise<RemoteWorkerApi> {
     const workerApi = Comlink.wrap<WorkerApi>(worker, {});
 
     const cellViews = loadCellViews();
@@ -76,7 +78,4 @@ export async function spawnWorker(): Promise<WasmSudokuProxyContainer> {
     return {
         wasmSudokuProxy: fixupWasmSudokuProxy(wasmSudokuProxy),
     };
-
-    // const sudoku = await wasmSudokuProxy.getSudoku();
-    // setSudoku(sudoku);
 }

@@ -1,4 +1,4 @@
-import type { CellViewValue, Position, TransportSudoku } from "../types";
+import type { DynamicCellValue, Position, TransportSudoku } from "../types";
 
 export function indexToPosition({ blockIndex, base }: { blockIndex: number; base: TransportSudoku["base"] }): Position {
     return {
@@ -45,8 +45,8 @@ export function cellPositionToBlockPosition(cellPosition: Position, base: Transp
     };
 }
 
-export function valueToString(value: CellViewValue["value"]): string {
-    return value.toString(36);
+export function valueToString(value: DynamicCellValue["value"]): string {
+    return value.toString(36).toUpperCase();
 }
 
 export function baseToSideLength(base: number): number {

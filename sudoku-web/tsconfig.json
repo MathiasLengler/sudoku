@@ -11,8 +11,9 @@
         "target": "ESNext",
         "noEmit": true,
         "isolatedModules": true,
-        "importsNotUsedAsValues": "error",
+        "verbatimModuleSyntax": true,
         "incremental": true,
+        "skipLibCheck": true
     },
-    "include": ["src/**/*"]
+    "include": ["src/**/*", "webpack.config.ts"],
 }

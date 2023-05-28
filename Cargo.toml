@@ -17,9 +17,17 @@ repository = "https://github.com/MathiasLengler/sudoku"
 rust-version = "1.66"
 version = "0.2.0"
 
+[workspace.dependencies]
+log = { version = "0.4.17", features = ["max_level_debug"] }
+serde = { version = "1.0.163" }
+anyhow = { version = "1.0.71", features = ["backtrace"] }
+
 [profile.release-with-debug]
 inherits = "release"
 debug = true
 
 [patch.crates-io]
-ts-rs = { git = "https://github.com/MathiasLengler/ts-rs" }
+
+[patch.crates-io.ts-rs]
+#git = "https://github.com/MathiasLengler/ts-rs"
+path = "../ts-rs/ts-rs"

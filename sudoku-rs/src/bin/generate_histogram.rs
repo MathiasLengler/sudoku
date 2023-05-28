@@ -27,19 +27,19 @@ use indexmap::IndexMap;
 use indicatif::{ParallelProgressIterator, ProgressBar, ProgressStyle};
 use rayon::prelude::*;
 
-use sudoku::base::consts::U3;
+use sudoku::base::consts::Base3;
 use sudoku::error::Result;
 use sudoku::generator::{Generator, GeneratorSettings, GeneratorTarget};
-use sudoku::grid::serialization::GridFormat;
-use sudoku::solver::strategic::strategies::SingleCandidate;
+use sudoku::grid::format::DynamicGridFormat;
+use sudoku::solver::strategic::strategies::NakedSingles;
 
-type Base = U3;
+type Base = Base3;
 
 fn main() -> Result<()> {
     let num_values_histogram = Mutex::new(IndexMap::new());
     let best_grid = Mutex::new(None);
 
-    const MAX: u64 = 10000;
+    const MAX: u64 = 100000;
     let pb = ProgressBar::new(MAX).with_style(ProgressStyle::default_bar().template(
         "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] ({pos}/{len}, ETA {eta})",
     )?);
@@ -48,7 +48,8 @@ fn main() -> Result<()> {
             target: GeneratorTarget::Minimal {
                 set_all_direct_candidates: true,
             },
-            strategies: vec![SingleCandidate.into()],
+            strategies: vec![NakedSingles.into()],
+            seed: None,
         })
         .generate::<Base>();
 
@@ -82,7 +83,7 @@ fn main() -> Result<()> {
     if let Some((num_values, grid)) = best_grid.into_inner().unwrap() {
         println!(
             "Best grid #{num_values}:\n{grid}\n{}",
-            GridFormat::GivensGrid.render(&grid)
+            DynamicGridFormat::GivensGrid.render(&grid)
         );
     }
 

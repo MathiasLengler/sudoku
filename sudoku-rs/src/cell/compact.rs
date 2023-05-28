@@ -2,17 +2,17 @@ use std::fmt::{self, Debug, Display, Formatter};
 
 use anyhow::bail;
 
-use cell_state::CellState;
+pub use candidates::{Candidates, CandidatesIter};
+pub(crate) use cell_state::CellState;
+pub use value::Value;
 
 use crate::base::SudokuBase;
-use crate::cell::compact::candidates::Candidates;
-use crate::cell::compact::value::Value;
-use crate::cell::view::CellView;
+use crate::cell::dynamic::DynamicCell;
 use crate::error::Error;
 
-pub mod candidates;
-pub(crate) mod cell_state;
-pub mod value;
+mod candidates;
+mod cell_state;
+mod value;
 
 /// Memory efficient representation of a single Sudoku cell.
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug, Default)]
@@ -59,12 +59,12 @@ impl<Base: SudokuBase> Cell<Base> {
     ///
     /// Panics it the cell does not contain a value
     pub fn fix(&mut self) {
-        self.0.fix()
+        self.0.fix();
     }
 
     /// Unfix a value if it was fixed.
     pub fn unfix(&mut self) {
-        self.0.unfix()
+        self.0.unfix();
     }
 
     /// Value if any, either fixed or unfixed.
@@ -83,7 +83,7 @@ impl<Base: SudokuBase> Cell<Base> {
     ///
     /// Panics it the cell is fixed.
     pub fn delete(&mut self) {
-        self.0.delete()
+        self.0.delete();
     }
 
     /// Set the cell to a unfixed value.
@@ -93,7 +93,7 @@ impl<Base: SudokuBase> Cell<Base> {
     ///
     /// Panics it the cell is fixed.
     pub fn set_value(&mut self, value: Value<Base>) {
-        self.0.set_value(value)
+        self.0.set_value(value);
     }
 
     /// Set the cell to a unfixed value.
@@ -116,7 +116,7 @@ impl<Base: SudokuBase> Cell<Base> {
     ///
     /// Panics it the cell is fixed.
     pub fn set_candidates(&mut self, candidates: Candidates<Base>) {
-        self.0.set_candidates(candidates)
+        self.0.set_candidates(candidates);
     }
 
     /// Toggle the given candidate.
@@ -126,7 +126,7 @@ impl<Base: SudokuBase> Cell<Base> {
     ///
     /// Panics it the cell is fixed.
     pub fn toggle_candidate(&mut self, candidate: Value<Base>) {
-        self.0.toggle_candidate(candidate)
+        self.0.toggle_candidate(candidate);
     }
 
     /// Set the given candidate if the cell contains candidates.
@@ -135,7 +135,7 @@ impl<Base: SudokuBase> Cell<Base> {
     ///
     /// Panics it the cell is fixed.
     pub fn set_candidate(&mut self, candidate: Value<Base>) {
-        self.0.set_candidate(candidate)
+        self.0.set_candidate(candidate);
     }
 
     /// Deletes the given candidate if the cell contains candidates.
@@ -144,7 +144,7 @@ impl<Base: SudokuBase> Cell<Base> {
     ///
     /// Panics it the cell is fixed.
     pub fn delete_candidate(&mut self, candidate: Value<Base>) {
-        self.0.delete_candidate(candidate)
+        self.0.delete_candidate(candidate);
     }
 }
 
@@ -154,13 +154,13 @@ impl<Base: SudokuBase> Display for Cell<Base> {
     }
 }
 
-impl<Base: SudokuBase> TryFrom<CellView> for Cell<Base> {
+impl<Base: SudokuBase> TryFrom<DynamicCell> for Cell<Base> {
     type Error = Error;
 
-    fn try_from(cell_view: CellView) -> Result<Self, Self::Error> {
+    fn try_from(cell_view: DynamicCell) -> Result<Self, Self::Error> {
         Ok(match cell_view {
-            CellView::Value { value, fixed } => {
-                if let Some(value) = Value::new(value)? {
+            DynamicCell::Value { value, fixed } => {
+                if let Some(value) = Value::new(value.0)? {
                     Cell::with_value(value, fixed)
                 } else if !fixed {
                     Cell::new()
@@ -168,7 +168,9 @@ impl<Base: SudokuBase> TryFrom<CellView> for Cell<Base> {
                     bail!("An empty cell can't be fixed")
                 }
             }
-            CellView::Candidates { candidates } => Cell::with_candidates(candidates.try_into()?),
+            DynamicCell::Candidates { candidates } => {
+                Cell::with_candidates(candidates.0.try_into()?)
+            }
         })
     }
 }

@@ -2,9 +2,10 @@ import type * as React from "react";
 import { useRecoilValue } from "recoil";
 import { sudokuBlocksIndicesState, sudokuCellsState } from "../state/sudoku";
 import { Block } from "./block";
+import type { OnRefChangeType } from "react-resize-detector/build/types/types";
 
 interface GridProps {
-    gridRef: React.MutableRefObject<HTMLDivElement>;
+    gridRef: OnRefChangeType<HTMLDivElement>;
 }
 
 export const Grid = ({ gridRef }: GridProps) => {

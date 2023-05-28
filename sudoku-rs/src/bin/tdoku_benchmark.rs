@@ -6,13 +6,13 @@ use std::path::Path;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
-use sudoku::base::consts::U3;
+use sudoku::base::consts::Base3;
 use sudoku::base::SudokuBase;
 use sudoku::error::Result;
 use sudoku::grid::deserialization::read_grids_from_file;
 use sudoku::grid::Grid;
-use sudoku::solver::strategic;
 use sudoku::solver::{backtracking, backtracking_bitset};
+use sudoku::solver::strategic;
 
 enum SolverSelection {
     Backtracking,
@@ -23,8 +23,7 @@ enum SolverSelection {
 fn main() -> Result<()> {
     let solver_selection = SolverSelection::BacktrackingBitset;
 
-    let grids =
-        read_grids_from_file::<U3>("./sudoku-rs/tests/res/tdoku/puzzles3_magictour_top1465")?;
+    let grids = read_grids_from_file::<Base3>("./sudoku-rs/tests/res/tdoku/puzzles1_unbiased")?;
 
     let before = Instant::now();
 
@@ -41,7 +40,7 @@ fn main() -> Result<()> {
                 assert!(strategic::Solver::new(&mut grid)
                     .try_solve()
                     .unwrap()
-                    .is_ok());
+                    .is_some());
             }
             SolverSelection::BacktrackingBitset => {
                 let mut solver = backtracking_bitset::Solver::new(&grid);
@@ -50,9 +49,9 @@ fn main() -> Result<()> {
             }
         }
 
-        // if i % 1000 == 0 {
-        println!("{i}");
-        // }
+        if i % 10000 == 0 {
+            println!("{i}");
+        }
     }
 
     let after = Instant::now();

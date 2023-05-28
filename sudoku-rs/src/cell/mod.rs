@@ -1,5 +1,5 @@
-pub use compact::Cell;
+pub use compact::*;
 
 pub(crate) mod candidates_cell;
-pub mod compact;
-pub mod view;
+mod compact;
+pub mod dynamic;

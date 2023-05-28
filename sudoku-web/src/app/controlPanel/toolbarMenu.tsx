@@ -1,22 +1,33 @@
 import * as React from "react";
-import IconButton from "@mui/material/IconButton";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import Tooltip from "@mui/material/Tooltip";
-import { CustomMenu } from "../appBar/customMenu";
+import { MyMenu } from "../components/MyMenu";
 import InfoIcon from "@mui/icons-material/Info";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { useDeleteSelectedCell, useSetAllDirectCandidates } from "../sudokuActions";
+import { useDeleteSelectedCell, useRedo, useSetAllDirectCandidates } from "../actions/sudokuActions";
 import { inputStickyModeState } from "../state/input";
+import RedoIcon from "@mui/icons-material/Redo";
 import { useRecoilValue } from "recoil";
+import { sudokuCanRedoState } from "../state/sudoku";
+import MyIconButton from "../components/MyIconButton";
 
 export const ToolbarMenu = () => {
     const deleteSelectedCell = useDeleteSelectedCell();
     const setAllDirectCandidates = useSetAllDirectCandidates();
     const inputStickyMode = useRecoilValue(inputStickyModeState);
+    const canRedo = useRecoilValue(sudokuCanRedoState);
+    const redo = useRedo();
 
     return (
-        <CustomMenu
+        <MyMenu
             menuItems={[
+                {
+                    label: "Redo",
+                    icon: <RedoIcon />,
+                    disabled: !canRedo,
+                    onClick: async () => {
+                        await redo();
+                    },
+                },
                 {
                     // TODO: show KB shortcut [Delete]
                     label: "Delete selected cell",
@@ -35,12 +46,8 @@ export const ToolbarMenu = () => {
             ]}
         >
             {({ onMenuOpen }) => (
-                <Tooltip title="Other actions">
-                    <IconButton onClick={onMenuOpen} size="large">
-                        <MoreVertIcon fontSize="large" />
-                    </IconButton>
-                </Tooltip>
+                <MyIconButton label="Other actions" icon={MoreVertIcon} size="large" onClick={onMenuOpen} />
             )}
-        </CustomMenu>
+        </MyMenu>
     );
 };

@@ -1,4 +1,5 @@
-import React, { ReactNode } from "react";
+import type { ReactNode } from "react";
+import React from "react";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { createTheme, StyledEngineProvider, ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -31,6 +32,18 @@ export const MyTheme = ({ children }: MyThemeProps) => {
                         defaultProps: {
                             enterDelay: 700,
                             leaveDelay: 200,
+                        },
+                    },
+                    MuiDialogContent: {
+                        defaultProps: {
+                            dividers: true,
+                        },
+                    },
+                    MuiDialogActions: {
+                        defaultProps: {
+                            sx: {
+                                justifyContent: "space-between",
+                            },
                         },
                     },
                 },

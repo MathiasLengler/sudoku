@@ -1,7 +1,10 @@
+#![allow(clippy::inline_always)]
+
+use num::{One, PrimInt, Zero};
+
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
 use crate::cell::compact::value::Value;
-use num::{One, PrimInt, Zero};
 
 #[derive(Debug, Clone)]
 struct IterOnes<Base: SudokuBase> {
@@ -10,11 +13,12 @@ struct IterOnes<Base: SudokuBase> {
 
 impl<Base: SudokuBase> IterOnes<Base> {
     #[inline(always)]
-    pub fn peek(&self) -> Option<u8> {
+    fn peek(&self) -> Option<u8> {
         if self.bits.is_zero() {
             None
         } else {
             let trailing_zeros = self.bits.trailing_zeros();
+            // TODO: optimize/debug_validate
             Some(u8::try_from(trailing_zeros).unwrap())
         }
     }
@@ -98,8 +102,9 @@ impl<Base: SudokuBase> From<&Candidates<Base>> for CandidatesIter<Base> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::base::consts::Base2;
+
+    use super::*;
 
     #[test]
     fn test_iter_ones() {

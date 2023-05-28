@@ -1,16 +1,15 @@
 use std::convert::TryInto;
 
 use crate::base::consts::*;
-
 use crate::base::SudokuBase;
-use crate::cell::compact::candidates::Candidates;
+use crate::cell::Candidates;
 use crate::cell::Cell;
 use crate::error::Result;
 use crate::generator::{Generator, GeneratorTarget};
 use crate::grid::Grid;
 
 // TODO: rethink API (unwrap, clone for consumer of specific sudoku)
-pub fn base_2() -> Vec<Grid<U2>> {
+pub fn base_2() -> Vec<Grid<Base2>> {
     let mut grids = vec![
         vec![
             vec![0, 3, 4, 0],
@@ -32,18 +31,18 @@ pub fn base_2() -> Vec<Grid<U2>> {
         ],
     ]
     .into_iter()
-    .map(TryInto::<Grid<U2>>::try_into)
+    .map(TryInto::<Grid<Base2>>::try_into)
     .collect::<Result<Vec<_>>>()
     .unwrap();
 
-    grids.iter_mut().for_each(|grid| {
+    for grid in &mut grids {
         grid.fix_all_values();
-    });
+    }
 
     grids
 }
 
-pub fn base_2_solved() -> Grid<U2> {
+pub fn base_2_solved() -> Grid<Base2> {
     Grid::<Base2>::try_from(vec![
         vec![2, 3, 4, 1],
         vec![4, 1, 3, 2],
@@ -53,16 +52,16 @@ pub fn base_2_solved() -> Grid<U2> {
     .unwrap()
 }
 
-pub fn base_2_candidates_coordinates() -> Grid<U2> {
-    Grid::<U2>::with_cells(
-        (0..u8::try_from(<U2 as SudokuBase>::CELL_COUNT).unwrap())
+pub fn base_2_candidates_coordinates() -> Grid<Base2> {
+    Grid::<Base2>::with_cells(
+        (0..u8::try_from(<Base2 as SudokuBase>::CELL_COUNT).unwrap())
             .map(|i| Cell::with_candidates(Candidates::with_integral(i)))
             .collect(),
     )
     .unwrap()
 }
 
-pub fn base_3() -> Vec<Grid<U3>> {
+pub fn base_3() -> Vec<Grid<Base3>> {
     let mut grids = vec![
         // 11 Star difficulty
         vec![
@@ -78,13 +77,13 @@ pub fn base_3() -> Vec<Grid<U3>> {
         ],
     ]
     .into_iter()
-    .map(TryInto::<Grid<U3>>::try_into)
+    .map(TryInto::<Grid<Base3>>::try_into)
     .collect::<Result<Vec<_>>>()
     .unwrap();
 
-    grids.iter_mut().for_each(|grid| {
+    for grid in &mut grids {
         grid.fix_all_values();
-    });
+    }
 
     grids
 }
@@ -99,7 +98,6 @@ pub fn minimal<Base: SudokuBase>() -> Grid<Base> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::position::Position;
 
     #[test]
     fn test_base_2() {
@@ -115,10 +113,10 @@ mod tests {
     fn test_base_2_candidates_coordinates() {
         let grid = base_2_candidates_coordinates();
 
-        let top_left_cell = grid.get(Position { row: 0, column: 0 });
+        let top_left_cell = grid.get((0, 0).try_into().unwrap());
         assert_eq!(*top_left_cell, Cell::with_candidates(Candidates::new()));
 
-        let bottom_right = grid.get(Position { row: 3, column: 3 });
+        let bottom_right = grid.get((3, 3).try_into().unwrap());
         assert_eq!(*bottom_right, Cell::with_candidates(Candidates::all()));
     }
 

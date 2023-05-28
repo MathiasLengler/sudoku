@@ -31,6 +31,10 @@
   - use cases:
     - input for solver
     - interactive import
+- Generation Progress
+  - Progress callback, analog to current progress logs
+    - https://github.com/GoogleChromeLabs/comlink#callbacks
+    - https://rustwasm.github.io/wasm-bindgen/reference/receiving-js-closures-in-rust.html
 
 ### Gameplay Options
 - fill direct candidates on new sudoku

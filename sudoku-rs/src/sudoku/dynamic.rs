@@ -1,20 +1,23 @@
-use std::any::{Any, TypeId};
+use std::any::Any;
 use std::convert::{TryFrom, TryInto};
 
-use anyhow::{bail, ensure, format_err};
+use anyhow::{anyhow, bail, format_err};
+use serde::Serialize;
+#[cfg(feature = "wasm")]
+use ts_rs::TS;
 
 pub use game::DynamicSudoku;
 pub use game::Game;
 
 use crate::base::consts::*;
 use crate::base::SudokuBase;
-use crate::cell::view::parser::parse_cells;
-use crate::cell::view::CellView;
+use crate::cell::dynamic::DynamicCell;
 use crate::error::{Error, Result};
-use crate::generator::DynamicGeneratorSettings;
-use crate::grid::serialization::GridFormat;
+use crate::generator::{DynamicGeneratorSettings, GeneratorProgress};
+use crate::grid::format::DynamicGridFormat;
 use crate::grid::Grid;
-use crate::position::Position;
+use crate::position::DynamicPosition;
+use crate::solver::strategic::deduction::transport::TransportDeductions;
 use crate::solver::strategic::strategies::DynamicStrategy;
 use crate::sudoku::settings::Settings as SudokuSettings;
 use crate::sudoku::Sudoku;
@@ -26,30 +29,29 @@ mod game {
 
     #[enum_dispatch]
     pub trait Game {
-        fn set_value(&mut self, pos: Position, value: u8) -> Result<()>;
-        fn set_or_toggle_value(&mut self, pos: Position, value: u8) -> Result<()>;
-        fn set_candidates(&mut self, pos: Position, candidates: Vec<u8>) -> Result<()>;
-        fn toggle_candidate(&mut self, pos: Position, candidate: u8) -> Result<()>;
-        fn set_candidate(&mut self, pos: Position, candidate: u8) -> Result<()>;
-        fn delete_candidate(&mut self, pos: Position, candidate: u8) -> Result<()>;
-        fn delete(&mut self, pos: Position);
+        fn set_value(&mut self, pos: DynamicPosition, value: u8) -> Result<()>;
+        fn set_or_toggle_value(&mut self, pos: DynamicPosition, value: u8) -> Result<()>;
+        fn set_candidates(&mut self, pos: DynamicPosition, candidates: Vec<u8>) -> Result<()>;
+        fn toggle_candidate(&mut self, pos: DynamicPosition, candidate: u8) -> Result<()>;
+        fn set_candidate(&mut self, pos: DynamicPosition, candidate: u8) -> Result<()>;
+        fn delete_candidate(&mut self, pos: DynamicPosition, candidate: u8) -> Result<()>;
+        fn delete(&mut self, pos: DynamicPosition) -> Result<()>;
         fn set_all_direct_candidates(&mut self);
-        fn try_strategy(&mut self, strategy: DynamicStrategy) -> Result<bool>;
         fn undo(&mut self);
         fn redo(&mut self);
         fn settings(&self) -> SudokuSettings;
         fn update_settings(&mut self, settings: SudokuSettings);
-        fn export(&self, format: &GridFormat) -> String;
+        fn export(&self, format: &DynamicGridFormat) -> String;
     }
 
     /// A game of Sudoku which is able to change the size of the board at runtime.
     #[enum_dispatch(Game)]
     #[derive(Eq, PartialEq, Hash, Clone, Debug)]
     pub enum DynamicSudoku {
-        Base2(Sudoku<U2>),
-        Base3(Sudoku<U3>),
-        Base4(Sudoku<U4>),
-        Base5(Sudoku<U5>),
+        Base2(Sudoku<Base2>),
+        Base3(Sudoku<Base3>),
+        Base4(Sudoku<Base4>),
+        Base5(Sudoku<Base5>),
     }
 }
 
@@ -57,32 +59,52 @@ mod game {
 impl DynamicSudoku {
     pub fn new(base: u8) -> Result<Self> {
         Ok(match base {
-            2 => Self::Base2(Sudoku::<U2>::new()),
-            3 => Self::Base3(Sudoku::<U3>::new()),
-            4 => Self::Base4(Sudoku::<U4>::new()),
-            5 => Self::Base5(Sudoku::<U5>::new()),
+            2 => Self::Base2(Sudoku::<Base2>::new()),
+            3 => Self::Base3(Sudoku::<Base3>::new()),
+            4 => Self::Base4(Sudoku::<Base4>::new()),
+            5 => Self::Base5(Sudoku::<Base5>::new()),
             unexpected_base => bail!(Self::unexpected_base_err(unexpected_base)),
         })
     }
-    pub fn with_sudoku<Base: SudokuBase + 'static>(sudoku: Sudoku<Base>) -> Result<Self> {
+    pub fn with_sudoku<Base: SudokuBase>(sudoku: Sudoku<Base>) -> Result<Self> {
         let any_sudoku: Box<dyn Any> = Box::new(sudoku);
 
-        Ok(match TypeId::of::<Base>() {
-            id if id == TypeId::of::<U2>() => Self::Base2(*(any_sudoku.downcast().unwrap())),
-            id if id == TypeId::of::<U3>() => Self::Base3(*(any_sudoku.downcast().unwrap())),
-            id if id == TypeId::of::<U4>() => Self::Base4(*(any_sudoku.downcast().unwrap())),
-            id if id == TypeId::of::<U5>() => Self::Base5(*(any_sudoku.downcast().unwrap())),
+        Ok(match Base::BASE {
+            2 => Self::Base2(*(any_sudoku.downcast().unwrap())),
+            3 => Self::Base3(*(any_sudoku.downcast().unwrap())),
+            4 => Self::Base4(*(any_sudoku.downcast().unwrap())),
+            5 => Self::Base5(*(any_sudoku.downcast().unwrap())),
             _ => bail!(Self::unexpected_base_err(Base::BASE)),
         })
     }
-    pub fn generate(&mut self, dynamic_generator_settings: DynamicGeneratorSettings) -> Result<()> {
+    pub fn generate(
+        &mut self,
+        dynamic_generator_settings: DynamicGeneratorSettings,
+        on_progress: impl FnMut(GeneratorProgress) -> Result<()>,
+    ) -> Result<()> {
         let DynamicGeneratorSettings { base, settings } = dynamic_generator_settings;
 
         *self = match base {
-            2 => Self::Base2(Sudoku::<U2>::generate(settings, self.settings())?),
-            3 => Self::Base3(Sudoku::<U3>::generate(settings, self.settings())?),
-            4 => Self::Base4(Sudoku::<U4>::generate(settings, self.settings())?),
-            5 => Self::Base5(Sudoku::<U5>::generate(settings, self.settings())?),
+            2 => Self::Base2(Sudoku::<Base2>::generate(
+                settings,
+                self.settings(),
+                on_progress,
+            )?),
+            3 => Self::Base3(Sudoku::<Base3>::generate(
+                settings,
+                self.settings(),
+                on_progress,
+            )?),
+            4 => Self::Base4(Sudoku::<Base4>::generate(
+                settings,
+                self.settings(),
+                on_progress,
+            )?),
+            5 => Self::Base5(Sudoku::<Base5>::generate(
+                settings,
+                self.settings(),
+                on_progress,
+            )?),
             unexpected_base => bail!(Self::unexpected_base_err(unexpected_base)),
         };
 
@@ -93,31 +115,67 @@ impl DynamicSudoku {
 
         Ok(())
     }
+
+    pub fn try_strategies(
+        &mut self,
+        strategies: Vec<DynamicStrategy>,
+    ) -> Result<DynamicTryStrategiesReturn> {
+        fn inner<Base: SudokuBase>(
+            sudoku: &mut Sudoku<Base>,
+            strategies: Vec<DynamicStrategy>,
+        ) -> Result<DynamicTryStrategiesReturn> {
+            Ok(DynamicTryStrategiesReturn(
+                sudoku
+                    .try_strategies(strategies)?
+                    .map(|(strategy, deductions)| (strategy, deductions.into())),
+            ))
+        }
+
+        match self {
+            DynamicSudoku::Base2(sudoku) => inner(sudoku, strategies),
+            DynamicSudoku::Base3(sudoku) => inner(sudoku, strategies),
+            DynamicSudoku::Base4(sudoku) => inner(sudoku, strategies),
+            DynamicSudoku::Base5(sudoku) => inner(sudoku, strategies),
+        }
+    }
+
+    pub fn apply_deductions(&mut self, deductions: TransportDeductions) -> Result<()> {
+        match self {
+            DynamicSudoku::Base2(sudoku) => sudoku.apply_deductions(deductions.try_into()?),
+            DynamicSudoku::Base3(sudoku) => sudoku.apply_deductions(deductions.try_into()?),
+            DynamicSudoku::Base4(sudoku) => sudoku.apply_deductions(deductions.try_into()?),
+            DynamicSudoku::Base5(sudoku) => sudoku.apply_deductions(deductions.try_into()?),
+        }
+    }
 }
 
-impl TryFrom<Vec<CellView>> for DynamicSudoku {
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+#[derive(Debug, Serialize)]
+pub struct DynamicTryStrategiesReturn(Option<(DynamicStrategy, TransportDeductions)>);
+
+impl TryFrom<Vec<DynamicCell>> for DynamicSudoku {
     type Error = Error;
 
-    fn try_from(views: Vec<CellView>) -> Result<Self> {
+    fn try_from(views: Vec<DynamicCell>) -> Result<Self> {
         Ok(match Self::cell_count_to_base(views.len())? {
-            2 => Self::Base2(Sudoku::<U2>::with_grid(views.try_into()?)),
-            3 => Self::Base3(Sudoku::<U3>::with_grid(views.try_into()?)),
-            4 => Self::Base4(Sudoku::<U4>::with_grid(views.try_into()?)),
-            5 => Self::Base5(Sudoku::<U5>::with_grid(views.try_into()?)),
+            2 => Self::Base2(Sudoku::<Base2>::with_grid(views.try_into()?)),
+            3 => Self::Base3(Sudoku::<Base3>::with_grid(views.try_into()?)),
+            4 => Self::Base4(Sudoku::<Base4>::with_grid(views.try_into()?)),
+            5 => Self::Base5(Sudoku::<Base5>::with_grid(views.try_into()?)),
             unexpected_base => bail!(Self::unexpected_base_err(unexpected_base)),
         })
     }
 }
 
-impl TryFrom<Vec<Vec<CellView>>> for DynamicSudoku {
+impl TryFrom<Vec<Vec<DynamicCell>>> for DynamicSudoku {
     type Error = Error;
 
-    fn try_from(blocks: Vec<Vec<CellView>>) -> Result<Self> {
+    fn try_from(blocks: Vec<Vec<DynamicCell>>) -> Result<Self> {
         let sudoku = match Self::cell_count_to_base(blocks.iter().map(|block| block.len()).sum())? {
-            2 => Self::Base2(Sudoku::with_grid(Grid::<U2>::try_from_blocks(blocks)?)),
-            3 => Self::Base3(Sudoku::with_grid(Grid::<U3>::try_from_blocks(blocks)?)),
-            4 => Self::Base4(Sudoku::with_grid(Grid::<U4>::try_from_blocks(blocks)?)),
-            5 => Self::Base5(Sudoku::with_grid(Grid::<U5>::try_from_blocks(blocks)?)),
+            2 => Self::Base2(Sudoku::with_grid(Grid::<Base2>::try_from_blocks(blocks)?)),
+            3 => Self::Base3(Sudoku::with_grid(Grid::<Base3>::try_from_blocks(blocks)?)),
+            4 => Self::Base4(Sudoku::with_grid(Grid::<Base4>::try_from_blocks(blocks)?)),
+            5 => Self::Base5(Sudoku::with_grid(Grid::<Base5>::try_from_blocks(blocks)?)),
             unexpected_base => bail!(Self::unexpected_base_err(unexpected_base)),
         };
 
@@ -129,7 +187,7 @@ impl TryFrom<&str> for DynamicSudoku {
     type Error = Error;
 
     fn try_from(input: &str) -> Result<Self> {
-        parse_cells(input)?.try_into()
+        DynamicGridFormat::detect_and_parse(input)?.try_into()
     }
 }
 
@@ -139,28 +197,22 @@ impl DynamicSudoku {
     }
 
     fn cell_count_to_base(cell_count: usize) -> Result<u8> {
-        let approx_base = (cell_count as f64).sqrt().sqrt().round() as u8;
-
-        ensure!(
-            Self::base_to_cell_count(approx_base) == cell_count && approx_base >= 2,
-            "Cell count {} has no valid sudoku base",
-            cell_count
-        );
-
-        Ok(approx_base)
-    }
-
-    fn base_to_cell_count(base: u8) -> usize {
-        (base as usize).pow(4)
+        Ok(
+            match u16::try_from(cell_count)
+                .map_err(|_| anyhow!("Cell count {cell_count} too large"))?
+            {
+                Base2::CELL_COUNT => 2,
+                Base3::CELL_COUNT => 3,
+                Base4::CELL_COUNT => 4,
+                Base5::CELL_COUNT => 5,
+                _ => bail!("Cell count {cell_count} has no valid sudoku base"),
+            },
+        )
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::cell::view::parser::tests::{
-        INPUT_CANDIDATES, INPUT_GIVENS_GRID, INPUT_GIVENS_LINE,
-    };
-
     use super::*;
 
     #[test]
@@ -182,20 +234,18 @@ mod tests {
             let res_base = DynamicSudoku::cell_count_to_base(cell_count);
             assert!(
                 res_base.is_err(),
-                "Expected err, got {:?} for cell_count: {}",
-                res_base,
-                cell_count
+                "Expected err, got {res_base:?} for cell_count: {cell_count}"
             );
         }
         Ok(())
     }
 
-    #[test]
-    fn test_try_from_str() {
-        let inputs = [INPUT_CANDIDATES, INPUT_GIVENS_LINE, INPUT_GIVENS_GRID];
-
-        for input in inputs {
-            DynamicSudoku::try_from(input).unwrap();
-        }
-    }
+    // #[test]
+    // fn test_try_from_str() {
+    //     let inputs = [INPUT_CANDIDATES, INPUT_GIVENS_LINE, INPUT_GIVENS_GRID];
+    //
+    //     for input in inputs {
+    //         DynamicSudoku::try_from(input).unwrap();
+    //     }
+    // }
 }
