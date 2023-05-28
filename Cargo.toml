@@ -29,5 +29,5 @@ debug = true
 [patch.crates-io]
 
 [patch.crates-io.ts-rs]
-#git = "https://github.com/MathiasLengler/ts-rs"
-path = "../ts-rs/ts-rs"
+git = "https://github.com/MathiasLengler/ts-rs"
+#path = "../ts-rs/ts-rs"
