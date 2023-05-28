@@ -41,7 +41,7 @@ export type GenerateFormValues = z.infer<typeof generateFormValuesSchema>;
 export const generateFormValuesSchema = z.object({
     base: z.number().int().min(BASE_MIN).max(BASE_MAX),
     minGivens: z.number().int().min(0),
-    strategies: dynamicStrategySchema.array(),
+    strategies: dynamicStrategySchema.array().min(1),
     setAllDirectCandidates: z.boolean(),
     useSeed: z.boolean(),
     seed: z

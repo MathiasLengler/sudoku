@@ -28,7 +28,7 @@ export const MAX_LOOP_DELAY_MS = 4000;
 //   handle stale deductions (user input since strategy execution)
 export type HintSettings = z.infer<typeof hintSettingsSchema>;
 export const hintSettingsSchema = z.object({
-    strategies: z.array(dynamicStrategySchema),
+    strategies: z.array(dynamicStrategySchema).min(1),
     mode: z.enum(["toggleHint", "hintApply", "apply"]),
     doLoop: z.boolean(),
     loopDelayMs: z.number().nonnegative().max(MAX_LOOP_DELAY_MS),
