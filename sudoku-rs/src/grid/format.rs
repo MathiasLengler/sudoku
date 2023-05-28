@@ -194,7 +194,7 @@ mod tests {
             grid_format: DynamicGridFormat,
         ) -> Result<()> {
             (|| {
-                let grid_string = grid_format.render(&grid);
+                let grid_string = grid_format.render(grid);
 
                 let cell_views =
                     DynamicGridFormat::detect_and_parse(&grid_string).with_context(|| {
@@ -326,7 +326,7 @@ mod test_util {
         grid_format: F,
     ) -> Result<()> {
         (|| {
-            let grid_string = grid_format.render(&grid);
+            let grid_string = grid_format.render(grid);
 
             let cell_views = grid_format
                 .parse(&grid_string)

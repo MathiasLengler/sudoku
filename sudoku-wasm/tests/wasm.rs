@@ -6,7 +6,8 @@ wasm_bindgen_test_configure!(run_in_browser);
 
 #[wasm_bindgen_test]
 fn pass() {
-    console_log!("{}", Sudoku::<Base3>::new());
+    let sudoku = Sudoku::<Base3>::new();
+    console_log!("{}", sudoku);
 
-    assert_eq!(1, 1);
+    assert_eq!(sudoku.grid().all_cells().count(), 81);
 }
