@@ -11,6 +11,7 @@ import { sudokuIsSolvedState } from "../state/sudoku";
 import { useSnackbar } from "notistack";
 import { useState } from "react";
 import type { IconButtonProps } from "@mui/material/IconButton/IconButton";
+import CircularProgress from "@mui/material/CircularProgress";
 
 export function RequestHintButton() {
     const [isRequestingHint, setIsRequestingHint] = useState(false);
@@ -192,6 +193,7 @@ export function RequestHintButton() {
             icon={LightbulbIcon}
             color={iconColor}
             size="large"
+            badge={isRequestingHint ? <CircularProgress size="1rem" color="warning" /> : null}
             onClick={async () => {
                 if (isRequestingHint) {
                     requestHintAbortController.abort();

@@ -1,8 +1,10 @@
-import React, { type MouseEvent } from "react";
-import { Box, SvgIcon } from "@mui/material";
+import React from "react";
+import type { MouseEvent, ReactNode } from "react";
+import { Badge, Box, SvgIcon } from "@mui/material";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import type { IconButtonProps } from "@mui/material/IconButton/IconButton";
+import type { BadgeProps } from "@mui/material/Badge/Badge";
 
 interface MyIconButtonProps {
     label: string;
@@ -11,9 +13,21 @@ interface MyIconButtonProps {
     size?: "small" | "medium" | "large";
     icon: typeof SvgIcon;
     color?: IconButtonProps["color"];
+    badge?: ReactNode;
+    badgeColor?: BadgeProps["color"];
 }
 
-function MyIconButton({ label, onClick, disabled = false, size, icon: Icon, color }: MyIconButtonProps) {
+function MyIconButton({
+    label,
+    onClick,
+    disabled = false,
+    size,
+    icon: Icon,
+    color,
+    badge,
+    badgeColor,
+}: MyIconButtonProps) {
+    const icon = <Icon fontSize={size} />;
     return (
         <Tooltip title={label}>
             <Box className="icon-button-container">
@@ -28,7 +42,13 @@ function MyIconButton({ label, onClick, disabled = false, size, icon: Icon, colo
                     color={color}
                     aria-label={label}
                 >
-                    <Icon fontSize={size} />
+                    {badge ? (
+                        <Badge badgeContent={badge} color={badgeColor}>
+                            {icon}
+                        </Badge>
+                    ) : (
+                        icon
+                    )}
                 </IconButton>
             </Box>
         </Tooltip>
