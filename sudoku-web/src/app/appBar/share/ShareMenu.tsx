@@ -40,7 +40,7 @@ export function ShareMenu() {
                 ]}
             >
                 {({ onMenuOpen }) => (
-                    <MyIconButton tooltip="Share" icon={ShareIcon} color="inherit" size="large" onClick={onMenuOpen} />
+                    <MyIconButton label="Share" icon={ShareIcon} color="inherit" size="large" onClick={onMenuOpen} />
                 )}
             </MyMenu>
             <MyDialog open={isExportToClipboardDialogOpen} onClose={() => setIsExportToClipboardDialogOpen(false)}>

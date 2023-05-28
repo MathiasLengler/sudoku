@@ -5,16 +5,19 @@ import { RecoilRoot } from "recoil";
 import { SudokuLoader } from "./sudokuLoader";
 import { RecoilDebug } from "./RecoilDebug";
 import { WorkboxManager } from "./workboxManager";
+import { MySnackbarProvider } from "./MySnackbarProvider";
 
 export const App = () => {
     return (
         <RecoilRoot>
             {process.env.NODE_ENV !== "production" && <RecoilDebug />}
             <MyTheme>
-                <Suspense fallback={"App fallback"}>
-                    <SudokuLoader />
-                </Suspense>
-                <WorkboxManager />
+                <MySnackbarProvider>
+                    <Suspense fallback={"App fallback"}>
+                        <SudokuLoader />
+                    </Suspense>
+                    <WorkboxManager />
+                </MySnackbarProvider>
             </MyTheme>
         </RecoilRoot>
     );

@@ -46,7 +46,7 @@ export const ToolbarMenu = () => {
             ]}
         >
             {({ onMenuOpen }) => (
-                <MyIconButton tooltip="Other actions" icon={MoreVertIcon} size="large" onClick={onMenuOpen} />
+                <MyIconButton label="Other actions" icon={MoreVertIcon} size="large" onClick={onMenuOpen} />
             )}
         </MyMenu>
     );

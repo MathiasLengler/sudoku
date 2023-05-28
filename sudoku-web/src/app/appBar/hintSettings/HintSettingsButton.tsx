@@ -10,7 +10,7 @@ export function HintSettingsButton() {
     return (
         <>
             <MyIconButton
-                tooltip="Hint settings"
+                label="Hint settings"
                 icon={LightbulbIcon}
                 size="large"
                 color="inherit"

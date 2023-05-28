@@ -200,7 +200,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                                         InputProps={{
                                             startAdornment: (
                                                 <MyIconButton
-                                                    tooltip="Generate random seed"
+                                                    label="Generate random seed"
                                                     icon={CasinoIcon}
                                                     disabled={!useSeed}
                                                     onClick={() => {

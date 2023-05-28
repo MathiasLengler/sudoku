@@ -3,28 +3,49 @@ import MyIconButton from "../components/MyIconButton";
 import * as React from "react";
 import { useApplyDeductions, useTryStrategies } from "../actions/sudokuActions";
 import { useRecoilCallback, useRecoilValue } from "recoil";
-import { hintSettingsState } from "../state/forms/hintSettings";
+import { hintSettingsState, scaleLoopDelayIndex } from "../state/forms/hintSettings";
 import { type Hint, hintState, type OptionalHint } from "../state/hint";
 import assertNever from "assert-never/index";
 import _ from "lodash";
 import { sudokuIsSolvedState } from "../state/sudoku";
+import { useSnackbar } from "notistack";
+import { useState } from "react";
+import type { IconButtonProps } from "@mui/material/IconButton/IconButton";
 
 export function RequestHintButton() {
+    const [isRequestingHint, setIsRequestingHint] = useState(false);
+    const [requestHintAbortController, setRequestHintAbortController] = useState(() => new AbortController());
+
     const tryStrategies = useTryStrategies();
     const applyDeductions = useApplyDeductions();
-    const isSolved = useRecoilValue(sudokuIsSolvedState);
+    const sudokuIsSolved = useRecoilValue(sudokuIsSolvedState);
 
-    const hideHint = useRecoilCallback(({ set, reset }) => () => {
+    const { enqueueSnackbar } = useSnackbar();
+
+    const hideHint = useRecoilCallback(({ reset }) => () => {
         reset(hintState);
     });
 
     const getHint = useRecoilCallback(
         ({ snapshot }) =>
             async (): Promise<OptionalHint> => {
+                const sudokuIsSolved = await snapshot.getPromise(sudokuIsSolvedState);
+                if (sudokuIsSolved) {
+                    enqueueSnackbar({ variant: "success", message: "Sudoku solved" });
+                    return;
+                }
+
                 const hintSettings = await snapshot.getPromise(hintSettingsState);
-                const tryStrategiesResult = await tryStrategies(hintSettings.strategies);
+                let tryStrategiesResult;
+                try {
+                    tryStrategiesResult = await tryStrategies(hintSettings.strategies);
+                } catch (err) {
+                    if (!(err instanceof Error)) throw err;
+                    console.error("Failed to execute strategies", hintSettings.strategies, ":", err);
+                    enqueueSnackbar({ variant: "error", message: err.message });
+                }
                 if (!tryStrategiesResult) {
-                    console.info("No strategy made progress.");
+                    enqueueSnackbar({ variant: "warning", message: "No strategy made progress" });
                     return;
                 }
                 const [strategy, { deductions }] = tryStrategiesResult;
@@ -43,7 +64,7 @@ export function RequestHintButton() {
                     return { strategy, deductions: [deduction] };
                 }
             },
-        [tryStrategies]
+        [enqueueSnackbar, tryStrategies]
     );
 
     const showHint = useRecoilCallback(
@@ -61,71 +82,122 @@ export function RequestHintButton() {
     );
 
     const applyHint = useRecoilCallback(
-        ({ snapshot }) =>
-            async (hint: Hint) => {
+        () =>
+            async (hint: Hint): Promise<boolean> => {
                 const { strategy, deductions } = hint;
 
                 console.info(`Applying deductions from strategy ${strategy}:`, deductions);
 
-                await applyDeductions({ deductions });
+                let madeProgress = true;
+                try {
+                    await applyDeductions({ deductions });
+                } catch (err) {
+                    if (!(err instanceof Error)) throw err;
+                    console.error("Failed to apply deductions", deductions, ":", err);
+                    enqueueSnackbar({ variant: "error", message: `Failed to apply hint: ${err.message}` });
+                    madeProgress = false;
+                }
 
                 hideHint();
+                return madeProgress;
             },
-        [applyDeductions, hideHint]
+        [applyDeductions, enqueueSnackbar, hideHint]
     );
 
-    const requestHint = useRecoilCallback(
+    const requestSingleHint = useRecoilCallback(
         ({ snapshot }) =>
-            async () => {
-                // TODO: implement loop
-
-                const {
-                    //
-                    strategies,
-                    mode,
-                    doLoop,
-                    loopDelayMs,
-                    multipleDeductions,
-                } = await snapshot.getPromise(hintSettingsState);
+            async (): Promise<boolean> => {
+                const { mode } = await snapshot.getPromise(hintSettingsState);
                 const hint = await snapshot.getPromise(hintState);
 
                 if (mode === "toggleHint") {
-                    // Ignore doLoop
-
                     if (hint) {
                         hideHint();
                     } else {
                         await showHint();
                     }
-                } else if (mode === "hintApply") {
+                    return false;
+                }
+                if (mode === "hintApply") {
                     if (hint) {
-                        await applyHint(hint);
+                        return await applyHint(hint);
                     } else {
-                        await showHint();
+                        return await showHint();
                     }
-                } else if (mode === "apply") {
+                }
+                if (mode === "apply") {
                     if (hint) {
                         hideHint();
                     }
                     const newHint = await getHint();
                     if (newHint) {
-                        await applyHint(newHint);
+                        return await applyHint(newHint);
+                    } else {
+                        return false;
                     }
-                } else {
-                    assertNever(mode);
                 }
+                assertNever(mode);
             },
         [applyHint, getHint, hideHint, showHint]
     );
 
+    const requestHint = useRecoilCallback(
+        ({ snapshot }) =>
+            async () => {
+                if (isRequestingHint) {
+                    console.warn("Unexpected concurrent call to requestHint");
+                    return;
+                }
+
+                setIsRequestingHint(true);
+
+                try {
+                    const { mode, doLoop, loopDelayIndex } = await snapshot.getPromise(hintSettingsState);
+
+                    if (doLoop && mode !== "toggleHint") {
+                        while (await requestSingleHint()) {
+                            if (loopDelayIndex) {
+                                const loopDelayMs = scaleLoopDelayIndex(loopDelayIndex);
+                                console.info("Sleeping for", loopDelayMs);
+                                await new Promise(resolve => setTimeout(resolve, loopDelayMs));
+
+                                if (requestHintAbortController.signal.aborted) {
+                                    console.info("requestHint aborted");
+                                    setRequestHintAbortController(new AbortController());
+                                    return;
+                                }
+                            }
+                        }
+                    } else {
+                        await requestSingleHint();
+                    }
+                } finally {
+                    setIsRequestingHint(false);
+                }
+            },
+        [isRequestingHint, requestHintAbortController.signal, requestSingleHint]
+    );
+
+    let iconColor: IconButtonProps["color"];
+    if (isRequestingHint) {
+        iconColor = "warning";
+    } else if (sudokuIsSolved) {
+        iconColor = "success";
+    } else {
+        iconColor = "default";
+    }
     return (
         <MyIconButton
-            tooltip="Request Hint [TODO]"
+            label="Request Hint [_]"
             icon={LightbulbIcon}
-            color={isSolved ? "success" : "default"}
+            color={iconColor}
             size="large"
             onClick={async () => {
-                await requestHint();
+                if (isRequestingHint) {
+                    requestHintAbortController.abort();
+                } else {
+                    await requestHint();
+                }
             }}
         />
     );

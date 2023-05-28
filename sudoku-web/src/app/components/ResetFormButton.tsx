@@ -8,5 +8,5 @@ interface ResetFormButtonProps {
 }
 
 export function ResetFormButton({ disabled, onClick }: ResetFormButtonProps) {
-    return <MyIconButton icon={ReplayIcon} tooltip="Reset to default" disabled={disabled} onClick={() => onClick()} />;
+    return <MyIconButton icon={ReplayIcon} label="Reset to default" disabled={disabled} onClick={() => onClick()} />;
 }

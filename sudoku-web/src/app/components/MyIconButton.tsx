@@ -5,7 +5,7 @@ import Tooltip from "@mui/material/Tooltip";
 import type { IconButtonProps } from "@mui/material/IconButton/IconButton";
 
 interface MyIconButtonProps {
-    tooltip: string;
+    label: string;
     onClick: (event: MouseEvent<HTMLButtonElement>) => Promise<void> | void;
     disabled?: boolean;
     size?: "small" | "medium" | "large";
@@ -13,9 +13,9 @@ interface MyIconButtonProps {
     color?: IconButtonProps["color"];
 }
 
-function MyIconButton({ tooltip, onClick, disabled = false, size, icon: Icon, color }: MyIconButtonProps) {
+function MyIconButton({ label, onClick, disabled = false, size, icon: Icon, color }: MyIconButtonProps) {
     return (
-        <Tooltip title={tooltip}>
+        <Tooltip title={label}>
             <Box className="icon-button-container">
                 <IconButton
                     onClick={ev => {
@@ -26,7 +26,7 @@ function MyIconButton({ tooltip, onClick, disabled = false, size, icon: Icon, co
                     size={size}
                     disabled={disabled}
                     color={color}
-                    aria-label={tooltip}
+                    aria-label={label}
                 >
                     <Icon fontSize={size} />
                 </IconButton>

@@ -8,11 +8,11 @@ import {
     type HintSettings,
     hintSettingsSchema,
     hintSettingsState,
-    MAX_LOOP_DELAY_MS,
+    MAX_LOOP_DELAY_INDEX,
+    scaleLoopDelayIndex,
 } from "../../state/forms/hintSettings";
 import SelectStrategies from "../../components/formFragments/SelectStrategies";
 import { formatDurationMs } from "../../i18n";
-import _ from "lodash";
 import { LoadingButton } from "@mui/lab";
 import SaveIcon from "@mui/icons-material/Save";
 import { Fieldset } from "../../components/Fieldset";
@@ -20,34 +20,6 @@ import { ResetFormButton } from "../../components/ResetFormButton";
 
 interface HintSettingsDialogProps {
     onClose: () => void;
-}
-
-function scaleDurationMs(n: number) {
-    if (n === 0) {
-        return 0;
-    }
-    if (n <= 10) {
-        return 2 ** (n - 1);
-    }
-    return 1000 * 2 ** (n - 11);
-}
-
-console.log(
-    _.range(0, 20).map(n => ({
-        n,
-        scaleDurationMs: scaleDurationMs(n),
-        nRoundtrip: unscaleDurationMs(scaleDurationMs(n)),
-    }))
-);
-
-function unscaleDurationMs(n: number) {
-    if (n === 0) {
-        return 0;
-    }
-    if (n < 1000) {
-        return Math.log2(n) + 1;
-    }
-    return Math.log2(n / 1000) + 11;
 }
 
 export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
@@ -112,17 +84,17 @@ export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
                             <Box sx={{ mx: 2 }}>
                                 <SliderElement
                                     control={control}
-                                    name="loopDelayMs"
+                                    name="loopDelayIndex"
                                     label="Loop delay"
                                     disabled={mode === "toggleHint" || !doLoop}
                                     step={1}
                                     min={0}
-                                    max={unscaleDurationMs(MAX_LOOP_DELAY_MS)}
-                                    marks={[0, unscaleDurationMs(MAX_LOOP_DELAY_MS)].map(loopDelayMs => ({
+                                    max={MAX_LOOP_DELAY_INDEX}
+                                    marks={[0, MAX_LOOP_DELAY_INDEX].map(loopDelayMs => ({
                                         value: loopDelayMs,
-                                        label: formatDurationMs(scaleDurationMs(loopDelayMs)),
+                                        label: formatDurationMs(scaleLoopDelayIndex(loopDelayMs)),
                                     }))}
-                                    scale={scaleDurationMs}
+                                    scale={scaleLoopDelayIndex}
                                     valueLabelDisplay="auto"
                                     valueLabelFormat={loopDelayMs => formatDurationMs(loopDelayMs)}
                                     getAriaLabel={() => "Delay"}

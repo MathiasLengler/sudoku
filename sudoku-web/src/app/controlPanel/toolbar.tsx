@@ -48,7 +48,7 @@ export const Toolbar = () => {
                 </ToggleButton>
             </Tooltip>
             <MyIconButton
-                tooltip="Undo [backspace]"
+                label="Undo [backspace]"
                 icon={UndoIcon}
                 size="large"
                 disabled={!canUndo}
