@@ -6,7 +6,7 @@ import type { DynamicCellCandidates, DynamicCellValue, DynamicPosition, Transpor
 import { inputState } from "../state/input";
 import { sudokuBaseState } from "../state/sudoku";
 import { useRecoilValue } from "recoil";
-import { useHandlePosition } from "../sudokuActions";
+import { useHandlePosition } from "../actions/sudokuActions";
 import { hintState } from "../state/hint";
 
 import isEqual from "lodash/isEqual";

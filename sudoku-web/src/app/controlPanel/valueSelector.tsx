@@ -2,7 +2,7 @@ import type * as React from "react";
 import { valueToString } from "../utils";
 import ButtonBase from "@mui/material/ButtonBase";
 import classnames from "classnames";
-import { useHandleValue } from "../sudokuActions";
+import { useHandleValue } from "../actions/sudokuActions";
 import { selector, selectorFamily, useRecoilValue } from "recoil";
 import { inputState } from "../state/input";
 import { sudokuSideLengthState } from "../state/sudoku";

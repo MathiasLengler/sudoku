@@ -1,7 +1,7 @@
 import LightbulbIcon from "@mui/icons-material/Lightbulb";
 import MyIconButton from "../components/MyIconButton";
 import * as React from "react";
-import { useApplyDeductions, useTryStrategies } from "../sudokuActions";
+import { useApplyDeductions, useTryStrategies } from "../actions/sudokuActions";
 import { useRecoilCallback, useRecoilValue } from "recoil";
 import { hintSettingsState } from "../state/forms/hintSettings";
 import { type Hint, hintState, type OptionalHint } from "../state/hint";

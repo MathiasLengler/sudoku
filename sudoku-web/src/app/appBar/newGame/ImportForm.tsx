@@ -6,7 +6,7 @@ import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { useImportSudokuString } from "../../sudokuActions";
+import { useImportSudokuString } from "../../actions/sudokuActions";
 import { Code } from "../../components/Code";
 import { ResetFormButton } from "../../components/ResetFormButton";
 import { LoadingButton } from "@mui/lab";

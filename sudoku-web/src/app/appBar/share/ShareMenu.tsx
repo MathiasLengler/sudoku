@@ -1,4 +1,4 @@
-import { useExportSudokuString } from "../../sudokuActions";
+import { useExportSudokuString } from "../../actions/sudokuActions";
 import { MyMenu } from "../../components/MyMenu";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";

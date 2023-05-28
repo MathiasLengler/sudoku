@@ -7,10 +7,11 @@ import { ToolbarMenu } from "./toolbarMenu";
 import { ToggleButton } from "@mui/material";
 import { inputCandidateModeState, inputStickyModeState } from "../state/input";
 import { useRecoilValue } from "recoil";
-import { useToggleCandidateMode, useToggleStickyMode, useUndo } from "../sudokuActions";
+import { useUndo } from "../actions/sudokuActions";
 import { sudokuCanUndoState } from "../state/sudoku";
 import MyIconButton from "../components/MyIconButton";
 import { RequestHintButton } from "./RequestHintButton";
+import { useToggleCandidateMode, useToggleStickyMode } from "../actions/inputActions";
 
 export const Toolbar = () => {
     const inputCandidateMode = useRecoilValue(inputCandidateModeState);

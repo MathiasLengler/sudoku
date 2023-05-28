@@ -3,7 +3,7 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { MyMenu } from "../components/MyMenu";
 import InfoIcon from "@mui/icons-material/Info";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { useDeleteSelectedCell, useRedo, useSetAllDirectCandidates } from "../sudokuActions";
+import { useDeleteSelectedCell, useRedo, useSetAllDirectCandidates } from "../actions/sudokuActions";
 import { inputStickyModeState } from "../state/input";
 import RedoIcon from "@mui/icons-material/Redo";
 import { useRecoilValue } from "recoil";

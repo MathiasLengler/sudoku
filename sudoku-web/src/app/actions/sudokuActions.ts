@@ -1,30 +1,27 @@
 import * as Comlink from "comlink";
-import type { SelectorCallbackInterface } from "recoil";
+import type { SelectorCallbackInterface, Snapshot } from "recoil";
 import { useRecoilCallback } from "recoil";
-import { remoteWorkerApiState, sudokuSideLengthState, sudokuState, workerState } from "./state/sudoku";
+import { remoteWorkerApiState, sudokuSideLengthState, sudokuState, workerState } from "../state/sudoku";
 import type {
     DynamicGeneratorSettings,
     GeneratorProgress,
     Position,
     TransportDeductions,
-} from "../../../sudoku-rs/bindings";
-import type { CellAction, Input } from "./state/input";
-import { inputState } from "./state/input";
-import { cellAtGridPositionState } from "./state/cellIndexing";
+} from "../../../../sudoku-rs/bindings";
+import type { CellAction } from "../state/input";
+import { inputState } from "../state/input";
+import { cellAtGridPositionState } from "../state/cellIndexing";
 import _ from "lodash";
-import type { DynamicGridFormat, DynamicStrategies } from "../types";
-import type { WasmSudokuProxy } from "../spawnWorker";
-import { spawnWorker } from "../spawnWorker";
+import type { DynamicGridFormat, DynamicStrategies } from "../../types";
+import type { WasmSudokuProxy } from "../../spawnWorker";
+import { spawnWorker } from "../../spawnWorker";
 import assertNever from "assert-never/index";
+import { getInput } from "./inputActions";
 
 // Snapshot accessors
-async function getWasmSudokuProxy({ snapshot }: Pick<SelectorCallbackInterface, "snapshot">): Promise<WasmSudokuProxy> {
+async function getWasmSudokuProxy(snapshot: Snapshot): Promise<WasmSudokuProxy> {
     const { wasmSudokuProxy } = await snapshot.getPromise(remoteWorkerApiState);
     return wasmSudokuProxy;
-}
-
-async function getInput({ snapshot }: Pick<SelectorCallbackInterface, "snapshot">) {
-    return await snapshot.getPromise(inputState);
 }
 
 // Validation
@@ -93,8 +90,8 @@ async function applyValueAtGridPosition({
     if (await isFixedValueCell({ snapshot, gridPosition })) {
         return;
     }
-    const wasmSudokuProxy = await getWasmSudokuProxy({ snapshot });
-    const input = await getInput({ snapshot });
+    const wasmSudokuProxy = await getWasmSudokuProxy(snapshot);
+    const input = await getInput(snapshot);
 
     if (input.stickyMode) {
         // Behaviour of stickyMode ("value first, cell second"):
@@ -234,24 +231,11 @@ export function useHandlePosition() {
                 if (await isInvalidGridPosition({ snapshot, gridPosition })) {
                     return;
                 }
-                const input = await getInput({ snapshot });
+                const input = await getInput(snapshot);
                 if (input.stickyMode) {
                     await applyValueAtGridPosition({ set, snapshot, gridPosition, value: input.selectedValue });
                 } else {
                     set(inputState, input => ({ ...input, selectedPos: gridPosition }));
-                }
-            },
-        []
-    );
-}
-
-export function useEndStickyChain() {
-    return useRecoilCallback(
-        ({ snapshot, set }) =>
-            async () => {
-                const input = await getInput({ snapshot });
-                if (input.stickyMode && input.stickyChain) {
-                    set(inputState, { ...input, stickyChain: undefined });
                 }
             },
         []
@@ -266,7 +250,7 @@ export function useHandleValue() {
                     return;
                 }
 
-                const input = await getInput({ snapshot });
+                const input = await getInput(snapshot);
                 if (input.stickyMode) {
                     set(inputState, input => ({ ...input, selectedValue: value }));
                 } else {
@@ -280,7 +264,7 @@ export function useDeleteSelectedCell() {
     return useRecoilCallback(
         ({ snapshot, set }) =>
             async () => {
-                const input = await getInput({ snapshot });
+                const input = await getInput(snapshot);
                 if (input.stickyMode) {
                     console.warn("Deletion of cells is unavailable in sticky mode");
                 } else {
@@ -300,7 +284,7 @@ export function useSetAllDirectCandidates() {
     return useRecoilCallback(
         ({ snapshot, set }) =>
             async () => {
-                const wasmSudokuProxy = await getWasmSudokuProxy({ snapshot });
+                const wasmSudokuProxy = await getWasmSudokuProxy(snapshot);
                 await wasmSudokuProxy.setAllDirectCandidates();
                 await updateSudoku({ set, wasmSudokuProxy });
             },
@@ -311,7 +295,7 @@ export function useUndo() {
     return useRecoilCallback(
         ({ snapshot, set }) =>
             async () => {
-                const wasmSudokuProxy = await getWasmSudokuProxy({ snapshot });
+                const wasmSudokuProxy = await getWasmSudokuProxy(snapshot);
                 await wasmSudokuProxy.undo();
                 await updateSudoku({ set, wasmSudokuProxy });
             },
@@ -322,7 +306,7 @@ export function useRedo() {
     return useRecoilCallback(
         ({ snapshot, set }) =>
             async () => {
-                const wasmSudokuProxy = await getWasmSudokuProxy({ snapshot });
+                const wasmSudokuProxy = await getWasmSudokuProxy(snapshot);
                 await wasmSudokuProxy.redo();
                 await updateSudoku({ set, wasmSudokuProxy });
             },
@@ -334,7 +318,7 @@ export function useGenerate(onProgress: (progress: GeneratorProgress) => void, s
     return useRecoilCallback(
         ({ snapshot, set }) =>
             async (settings: DynamicGeneratorSettings) => {
-                const wasmSudokuProxy = await getWasmSudokuProxy({ snapshot });
+                const wasmSudokuProxy = await getWasmSudokuProxy(snapshot);
 
                 const abortPromise = new Promise<never>((resolve, reject) => {
                     signal.addEventListener(
@@ -374,7 +358,7 @@ export function useImportSudokuString() {
     return useRecoilCallback(
         ({ snapshot, set }) =>
             async (input: string, setAllDirectCandidates: boolean) => {
-                const wasmSudokuProxy = await getWasmSudokuProxy({ snapshot });
+                const wasmSudokuProxy = await getWasmSudokuProxy(snapshot);
                 await wasmSudokuProxy.import(input);
                 if (setAllDirectCandidates) {
                     await wasmSudokuProxy.setAllDirectCandidates();
@@ -388,7 +372,7 @@ export function useExportSudokuString() {
     return useRecoilCallback(
         ({ snapshot }) =>
             async (format: DynamicGridFormat) => {
-                const wasmSudokuProxy = await getWasmSudokuProxy({ snapshot });
+                const wasmSudokuProxy = await getWasmSudokuProxy(snapshot);
                 return await wasmSudokuProxy.export(format);
             },
         []
@@ -399,7 +383,7 @@ export function useTryStrategies() {
     return useRecoilCallback(
         ({ snapshot, set }) =>
             async (strategies: DynamicStrategies) => {
-                const wasmSudokuProxy = await getWasmSudokuProxy({ snapshot });
+                const wasmSudokuProxy = await getWasmSudokuProxy(snapshot);
                 const res = await wasmSudokuProxy.tryStrategies(strategies);
                 await updateSudoku({ set, wasmSudokuProxy });
                 return res;
@@ -412,44 +396,9 @@ export function useApplyDeductions() {
     return useRecoilCallback(
         ({ snapshot, set }) =>
             async (deductions: TransportDeductions) => {
-                const wasmSudokuProxy = await getWasmSudokuProxy({ snapshot });
+                const wasmSudokuProxy = await getWasmSudokuProxy(snapshot);
                 await wasmSudokuProxy.applyDeductions(deductions);
                 await updateSudoku({ set, wasmSudokuProxy });
-            },
-        []
-    );
-}
-export function useToggleCandidateMode() {
-    return useRecoilCallback(
-        ({ set }) =>
-            () => {
-                set(inputState, input => ({ ...input, candidateMode: !input.candidateMode }));
-            },
-        []
-    );
-}
-export function useToggleStickyMode() {
-    return useRecoilCallback(
-        ({ set }) =>
-            () => {
-                set(inputState, (input): Input => {
-                    if (input.stickyMode) {
-                        return {
-                            stickyMode: false,
-                            candidateMode: input.candidateMode,
-                            selectedPos: input.previouslySelectedPos,
-                            previouslySelectedValue: input.selectedValue,
-                        };
-                    } else {
-                        return {
-                            stickyMode: true,
-                            candidateMode: input.candidateMode,
-                            selectedValue: input.previouslySelectedValue,
-                            previouslySelectedPos: input.selectedPos,
-                            stickyChain: undefined,
-                        };
-                    }
-                });
             },
         []
     );

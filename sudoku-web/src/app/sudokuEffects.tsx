@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect } from "react";
-import { useEndStickyChain } from "./sudokuActions";
 import type { DynamicCell, Position } from "../types";
 import { saveCellViews } from "./persistence";
 import { useRecoilValue, useSetRecoilState } from "recoil";
@@ -7,6 +6,7 @@ import { sudokuBaseState, sudokuCellsState } from "./state/sudoku";
 import { inputState } from "./state/input";
 import { baseToSideLength } from "./utils";
 import _ from "lodash";
+import { useEndStickyChain } from "./actions/inputActions";
 
 function SaveCellsEffect() {
     const cells = useRecoilValue(sudokuCellsState);

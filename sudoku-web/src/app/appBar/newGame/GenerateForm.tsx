@@ -4,7 +4,7 @@ import DialogActions from "@mui/material/DialogActions";
 import { SliderElement, SwitchElement, TextFieldElement, useForm } from "react-hook-form-mui";
 import { Box, DialogContent, FormGroup, LinearProgress, Stack, Typography } from "@mui/material";
 import { baseToCellCount } from "../../utils";
-import { useGenerate } from "../../sudokuActions";
+import { useGenerate } from "../../actions/sudokuActions";
 import CasinoIcon from "@mui/icons-material/Casino";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import { LoadingButton } from "@mui/lab";
