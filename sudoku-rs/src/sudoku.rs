@@ -13,8 +13,8 @@ use crate::grid::format::GridFormat;
 use crate::grid::Grid;
 use crate::position::DynamicPosition;
 use crate::solver::strategic::deduction::Deductions;
-use crate::solver::strategic::strategies::DynamicStrategy;
 use crate::solver::strategic::Solver as StrategicSolver;
+use crate::solver::strategic::strategies::DynamicStrategy;
 
 use self::settings::Settings;
 
@@ -88,13 +88,13 @@ impl<Base: SudokuBase> Sudoku<Base> {
 
         let solver = StrategicSolver::new_with_strategies(&mut self.grid, strategies);
 
-        Ok(solver.try_strategies()?)
+        solver.try_strategies()
     }
 
-    pub fn apply_deductions(&mut self, deductions: Deductions<Base>) -> Result<()> {
+    pub fn apply_deductions(&mut self, deductions: &Deductions<Base>) -> Result<()> {
         self.push_history();
 
-        Ok(deductions.apply(&mut self.grid)?)
+        deductions.apply(&mut self.grid)
     }
 }
 

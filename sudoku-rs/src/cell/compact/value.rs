@@ -53,7 +53,7 @@ impl<Base: SudokuBase> Display for Value<Base> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         use radix_fmt::radix_32;
 
-        write!(f, "{}", radix_32(self.value).to_string())
+        write!(f, "{}", radix_32(self.value))
     }
 }
 
