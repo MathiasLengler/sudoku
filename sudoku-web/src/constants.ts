@@ -11,6 +11,7 @@ export const dynamicStrategySchema = z.enum([
     "HiddenSingles",
     "NakedPairs",
     "GroupReduction",
+    "GroupIntersection",
     "Backtracking",
 ]);
 
