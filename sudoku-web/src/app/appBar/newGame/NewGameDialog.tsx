@@ -1,58 +1,33 @@
 import React from "react";
-import AppBar from "@mui/material/AppBar";
-import Tabs from "@mui/material/Tabs";
-import Tab from "@mui/material/Tab";
 import { GenerateForm } from "./GenerateForm";
+import { DialogTitle } from "@mui/material";
+import Tab from "@mui/material/Tab";
+import TabContext from "@mui/lab/TabContext";
+import TabList from "@mui/lab/TabList";
 import { ImportForm } from "./ImportForm";
-
-interface TabPanelProps {
-    children: React.ReactNode;
-    index: number;
-    tabIndex: number;
-}
-
-function TabPanel(props: TabPanelProps) {
-    const { tabIndex, index, children } = props;
-
-    return (
-        <div role="tabpanel" hidden={tabIndex !== index}>
-            {tabIndex === index && children}
-        </div>
-    );
-}
 
 interface NewGameTabsProps {
     onClose: () => void;
 }
 
+export type NewGameTabValue = "generate-form" | "import-form";
 export const NewGameDialog = ({ onClose }: NewGameTabsProps) => {
-    const [tabIndex, setTabIndex] = React.useState(0);
-
-    const handleChange = (event: React.ChangeEvent<unknown>, newValue: number) => {
-        setTabIndex(newValue);
-    };
+    const [tabValue, setTabValue] = React.useState<NewGameTabValue>("generate-form");
 
     return (
-        <div>
-            <AppBar position="static" color="default">
-                <Tabs
-                    value={tabIndex}
-                    onChange={handleChange}
-                    indicatorColor="primary"
-                    textColor="primary"
-                    variant="fullWidth"
-                    centered
-                >
-                    <Tab label="Generate" />
-                    <Tab label="Import" />
-                </Tabs>
-            </AppBar>
-            <TabPanel index={0} tabIndex={tabIndex}>
-                <GenerateForm onClose={onClose} />
-            </TabPanel>
-            <TabPanel index={1} tabIndex={tabIndex}>
-                <ImportForm onClose={onClose} />
-            </TabPanel>
-        </div>
+        <TabContext value={tabValue}>
+            <DialogTitle>New game</DialogTitle>
+            <TabList
+                onChange={(_ev, newTabIndex: NewGameTabValue) => {
+                    setTabValue(newTabIndex);
+                }}
+                aria-label="New game forms"
+                variant="fullWidth"
+            >
+                <Tab label="Generate" value="generate-form" />
+                <Tab label="Import" value="import-form" />
+            </TabList>
+            {tabValue === "generate-form" ? <GenerateForm onClose={onClose} /> : <ImportForm onClose={onClose} />}
+        </TabContext>
     );
 };

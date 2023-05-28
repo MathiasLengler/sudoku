@@ -1,17 +1,20 @@
-import { Box, Button, DialogActions, DialogContent, DialogTitle, LinearProgress } from "@mui/material";
+import { Button, DialogActions, DialogContent, DialogTitle, LinearProgress, Stack } from "@mui/material";
 import React, { Suspense, useEffect } from "react";
 import { SelectElement, useForm } from "react-hook-form-mui";
 import { ALL_GRID_FORMATS } from "../../../constants";
-import CircularProgress from "@mui/material/CircularProgress";
 import { Code } from "../../components/Code";
 import { type Loadable, useRecoilState, useRecoilValueLoadable } from "recoil";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
+    EXPORT_TO_CLIPBOARD_FORM_DEFAULT_VALUES,
     exportedGridStringState,
     type ExportToClipboardFormValues,
     exportToClipboardFormValuesSchema,
     exportToClipboardFormValuesState,
 } from "../../state/forms/exportToClipboard";
+import { LoadingButton } from "@mui/lab";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import { ResetFormButton } from "../../components/ResetFormButton";
 
 interface DisplayExportedGridStringProps {
     gridFormat: ExportToClipboardFormValues["gridFormat"];
@@ -39,8 +42,10 @@ export function ExportToClipboardDialog({ onClose }: ExportToClipboardDialogProp
         handleSubmit,
         watch,
         formState: { isSubmitting },
+        reset,
     } = useForm<ExportToClipboardFormValues>({
         values: exportToClipboardFormValues,
+        defaultValues: EXPORT_TO_CLIPBOARD_FORM_DEFAULT_VALUES,
         resolver: zodResolver(exportToClipboardFormValuesSchema),
     });
     const gridFormat = watch("gridFormat");
@@ -55,58 +60,53 @@ export function ExportToClipboardDialog({ onClose }: ExportToClipboardDialogProp
     return (
         <>
             <DialogTitle>Export Sudoku to Clipboard</DialogTitle>
-            <DialogContent dividers>
+            <DialogContent>
                 <form
                     id="export-to-clipboard-form"
                     noValidate
                     onSubmit={handleSubmit(async () => {
                         const exportedGridString = await exportedGridStringLoadable.toPromise();
-                        // const { gridFormat } = formData;
-                        // const exportedGridString = await exportSudokuString(gridFormat);
                         await window.navigator.clipboard.writeText(exportedGridString);
-
                         onClose();
                     })}
                     style={{ display: "sticky" }}
                 >
-                    <SelectElement
-                        control={control}
-                        name="gridFormat"
-                        label="Format"
-                        fullWidth
-                        options={ALL_GRID_FORMATS.map(gridFormat => ({
-                            id: gridFormat,
-                            label: gridFormat,
-                        }))}
-                    />
-                </form>
-                <Box sx={{ pt: 2 }}>
-                    <Suspense fallback={<LinearProgress variant="indeterminate" />}>
-                        <DisplayExportedGridString
-                            gridFormat={gridFormat}
-                            exportedGridStringLoadable={exportedGridStringLoadable}
+                    <Stack spacing={2}>
+                        <SelectElement
+                            control={control}
+                            name="gridFormat"
+                            label="Format"
+                            fullWidth
+                            options={ALL_GRID_FORMATS.map(gridFormat => ({
+                                id: gridFormat,
+                                label: gridFormat,
+                            }))}
                         />
-                    </Suspense>
-                </Box>
+                        <Suspense fallback={<LinearProgress variant="indeterminate" />}>
+                            <DisplayExportedGridString
+                                gridFormat={gridFormat}
+                                exportedGridStringLoadable={exportedGridStringLoadable}
+                            />
+                        </Suspense>
+                    </Stack>
+                </form>
             </DialogContent>
-            <DialogActions>
-                {isSubmitting && (
-                    <Box>
-                        <CircularProgress />
-                    </Box>
-                )}
+            <DialogActions sx={{ justifyContent: "space-between" }}>
+                <ResetFormButton disabled={isSubmitting} onClick={() => reset()} />
                 <Button onClick={onClose} disabled={isSubmitting}>
                     Cancel
                 </Button>
-                <Button
+                <LoadingButton
                     type="submit"
                     form="export-to-clipboard-form"
                     color="primary"
                     variant="contained"
-                    disabled={isSubmitting}
+                    endIcon={<ContentCopyIcon />}
+                    loading={isSubmitting}
+                    loadingPosition="end"
                 >
                     Copy to Clipboard
-                </Button>
+                </LoadingButton>
             </DialogActions>
         </>
         // </form>

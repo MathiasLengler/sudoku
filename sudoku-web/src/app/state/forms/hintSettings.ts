@@ -17,6 +17,8 @@ import { localStorageEffect } from "../localStorageEffect";
 - Single / Multiple deductions
 */
 
+export const MAX_LOOP_DELAY_MS = 4000;
+
 //TODO: color hint light bulb in toolbar based on hint state
 //  - no hint available
 //  - hint available
@@ -27,10 +29,18 @@ import { localStorageEffect } from "../localStorageEffect";
 export type HintSettings = z.infer<typeof hintSettingsSchema>;
 export const hintSettingsSchema = z.object({
     strategies: z.array(dynamicStrategySchema),
+    mode: z.enum(["toggleHint", "hintApply", "apply"]),
+    doLoop: z.boolean(),
+    loopDelayMs: z.number().nonnegative().max(MAX_LOOP_DELAY_MS),
+    multipleDeductions: z.boolean(),
 });
 
 export const DEFAULT_HINT_SETTINGS = {
     strategies: ALL_STRATEGIES.filter(strategy => strategy !== "Backtracking"),
+    mode: "hintApply",
+    doLoop: false,
+    loopDelayMs: 0,
+    multipleDeductions: true,
 } satisfies HintSettings;
 export const hintSettingsState = atom<HintSettings>({
     key: "HintSettingsFormValues",

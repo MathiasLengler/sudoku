@@ -12,7 +12,7 @@ export function NewGameButton() {
             <MyIconButton
                 icon={AddCircleIcon}
                 size="large"
-                tooltip="Create new game"
+                tooltip="New game"
                 color="inherit"
                 onClick={() => setIsNewGameDialogOpen(true)}
             />

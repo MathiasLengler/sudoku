@@ -1,27 +1,25 @@
-import React, { useState } from "react";
-import Box from "@mui/material/Box";
+import React from "react";
 import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
-import TextField from "@mui/material/TextField";
-import { Typography } from "@mui/material";
+import { DialogContent, Stack, Typography } from "@mui/material";
 import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import CircularProgress from "@mui/material/CircularProgress";
 import { useImportSudokuString } from "../../sudokuActions";
 import { Code } from "../../components/Code";
+import { ResetFormButton } from "../../components/ResetFormButton";
+import { LoadingButton } from "@mui/lab";
+import SaveAltIcon from "@mui/icons-material/SaveAlt";
+import { SwitchElement, TextFieldElement, useForm } from "react-hook-form-mui";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Fieldset } from "../../components/Fieldset";
+import type { NewGameTabValue } from "./NewGameDialog";
+import TabPanel from "@mui/lab/TabPanel";
 
-interface ImportFormProps {
-    onClose: () => void;
-}
-
-export const ImportForm = ({ onClose }: ImportFormProps) => {
-    const [loading, setLoading] = useState(false);
-    const [input, setInput] = useState("");
-    const [inputError, setInputError] = useState(false);
-
-    const supportedFormatsPanel = (
+function SupportedFormats() {
+    return (
         <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                 <Typography>Supported formats</Typography>
@@ -64,48 +62,93 @@ export const ImportForm = ({ onClose }: ImportFormProps) => {
             </AccordionDetails>
         </Accordion>
     );
+}
+
+export type ImportFormValues = z.infer<typeof importFormValuesSchema>;
+export const importFormValuesSchema = z.object({
+    input: z.string().min(1),
+    setAllDirectCandidates: z.boolean(),
+});
+
+interface ImportFormProps {
+    onClose: () => void;
+}
+
+export const ImportForm = ({ onClose }: ImportFormProps) => {
     const importSudokuString = useImportSudokuString();
+
+    const {
+        control,
+        handleSubmit,
+        watch,
+        formState: { isSubmitting },
+        setValue,
+        reset,
+        setError,
+    } = useForm<ImportFormValues>({
+        defaultValues: {
+            input: "",
+            setAllDirectCandidates: false,
+        },
+        resolver: zodResolver(importFormValuesSchema),
+    });
 
     return (
         <>
-            <Box p={3}>
-                <TextField
-                    label="Formatted Sudoku"
-                    multiline
-                    fullWidth
-                    error={inputError}
-                    margin="dense"
-                    value={input}
-                    onChange={e => setInput(e.target.value)}
-                    sx={{ fontFamily: "Monospace" }}
-                    disabled={loading}
-                />
-                {supportedFormatsPanel}
-            </Box>
+            <DialogContent>
+                <TabPanel value={"import-form" satisfies NewGameTabValue} sx={{ p: 0 }}>
+                    <form
+                        id="import-form"
+                        onSubmit={handleSubmit(async ({ input, setAllDirectCandidates }) => {
+                            try {
+                                await importSudokuString(input, setAllDirectCandidates);
+                                onClose();
+                            } catch (err) {
+                                console.error("Unable to parse input sudoku string:", input, err);
+                                if (err instanceof Error) {
+                                    setError("input", { type: "custom", message: err.message });
+                                }
+                            }
+                        })}
+                    >
+                        <Stack spacing={2}>
+                            <TextFieldElement
+                                control={control}
+                                name="input"
+                                label="Formatted Sudoku"
+                                multiline
+                                fullWidth
+                                inputProps={{ style: { fontFamily: "Monospace" } }}
+                                disabled={isSubmitting}
+                            />
+                            <SupportedFormats />
+                            <Fieldset label="Post import">
+                                <SwitchElement
+                                    control={control}
+                                    name="setAllDirectCandidates"
+                                    label="Fill candidates"
+                                />
+                            </Fieldset>
+                        </Stack>
+                    </form>
+                </TabPanel>
+            </DialogContent>
             <DialogActions>
-                {loading && <CircularProgress />}
-                <Button onClick={onClose} disabled={loading}>
+                <ResetFormButton disabled={isSubmitting} onClick={reset} />
+                <Button onClick={onClose} disabled={isSubmitting}>
                     Cancel
                 </Button>
-                <Button
+                <LoadingButton
+                    type="submit"
+                    form="import-form"
                     color="primary"
-                    disabled={loading}
-                    onClick={async () => {
-                        setLoading(true);
-
-                        try {
-                            await importSudokuString(input);
-                            onClose();
-                        } catch (e) {
-                            console.error("Unable to parse input sudoku string:", input, e);
-                            setInputError(true);
-                        } finally {
-                            setLoading(false);
-                        }
-                    }}
+                    variant="contained"
+                    endIcon={<SaveAltIcon />}
+                    loading={isSubmitting}
+                    loadingPosition="end"
                 >
-                    Import
-                </Button>
+                    <span>Import</span>
+                </LoadingButton>
             </DialogActions>
         </>
     );

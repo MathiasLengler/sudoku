@@ -373,9 +373,12 @@ export function useGenerate(onProgress: (progress: GeneratorProgress) => void, s
 export function useImportSudokuString() {
     return useRecoilCallback(
         ({ snapshot, set }) =>
-            async (input: string) => {
+            async (input: string, setAllDirectCandidates: boolean) => {
                 const wasmSudokuProxy = await getWasmSudokuProxy({ snapshot });
                 await wasmSudokuProxy.import(input);
+                if (setAllDirectCandidates) {
+                    await wasmSudokuProxy.setAllDirectCandidates();
+                }
                 await updateSudoku({ set, wasmSudokuProxy });
             },
         []

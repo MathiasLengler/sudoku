@@ -34,6 +34,18 @@ export const MyTheme = ({ children }: MyThemeProps) => {
                             leaveDelay: 200,
                         },
                     },
+                    MuiDialogContent: {
+                        defaultProps: {
+                            dividers: true,
+                        },
+                    },
+                    MuiDialogActions: {
+                        defaultProps: {
+                            sx: {
+                                justifyContent: "space-between",
+                            },
+                        },
+                    },
                 },
             }),
         [prefersDarkMode]
