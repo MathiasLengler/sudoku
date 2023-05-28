@@ -14,36 +14,37 @@ rust-version.workspace = true
 version.workspace = true
 
 [dependencies]
+# Workspace dependencies
 anyhow = { workspace = true }
-crossterm = { version = "0.26.1", optional = true }
+log = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+# Required dependencies
 enum_dispatch = "0.3.11"
 getrandom = "0.2.9"
 indexmap = "1.9.3"
-indicatif = { version = "0.17.3", optional = true }
 itertools = "0.10.5"
-log = { workspace = true }
 ndarray = "0.15.6"
 num = "0.4.0"
 owo-colors = "3.5.0"
+papergrid = "0.9.0"
 radix_fmt = "1.0.0"
 rand = "0.8.5"
 rand_xoshiro = "0.6.0"
-rayon = { version = "1.7.0", optional = true }
-serde = { workspace = true, features = ["derive"] }
 strip-ansi-escapes = "0.1.1"
 tabled = { version = "0.12.0", features = ["color"] }
-papergrid = "0.9.0"
+# Optional dependencies enabled via features
+crossterm = { version = "0.26.1", optional = true }
+indicatif = { version = "0.17.3", optional = true }
+rayon = { version = "1.7.0", optional = true }
 ts-rs = { version = "6.2.1", optional = true }
-
-[target.'cfg(not(target_family="wasm"))'.dev-dependencies]
-criterion = { version = "0.5.1", features = ["html_reports"] }
+hdrhistogram = { version = "7.5.2", optional = true }
 
 [dev-dependencies]
 serde_json = "1.0.96"
 
-[[bench]]
-name = "sudoku_benchmark"
-harness = false
+[target.'cfg(not(target_family="wasm"))'.dev-dependencies]
+# version 0.5.1 seems broken, stay on 0.4.0 until fix is released.
+criterion = { version = "0.4.0", features = ["html_reports"] }
 
 [features]
 default = []
@@ -51,10 +52,19 @@ terminal = ["crossterm"]
 parallel = ["rayon", "indicatif", "indicatif/rayon"]
 wasm = ["getrandom/js", "ts-rs"]
 solver_debug_print = ["terminal"]
+histogram = ["hdrhistogram"]
+
+[[bench]]
+name = "sudoku_benchmark"
+harness = false
 
 [[bin]]
 name = "generate_histogram"
 required-features = ["parallel", "terminal"]
+
+[[bin]]
+name = "generate_tiled"
+required-features = ["histogram"]
 
 [[bin]]
 name = "solver_animation"

@@ -3,9 +3,9 @@
 use log::trace;
 
 use crate::base::SudokuBase;
-use crate::cell::{Candidates, CandidatesIter};
 use crate::cell::candidates_cell::CandidatesCell;
 use crate::cell::Value;
+use crate::cell::{Candidates, CandidatesIter};
 use crate::grid::Grid;
 use crate::position::Coordinate;
 use crate::position::Position;
@@ -329,8 +329,8 @@ mod tests {
     fn test_base_3() {
         let grids = crate::samples::base_3();
 
-        for mut grid in grids {
-            let mut solver = Solver::new(&mut grid);
+        for grid in grids {
+            let mut solver = Solver::new(&grid);
 
             let solve_result = solver.try_solve();
 

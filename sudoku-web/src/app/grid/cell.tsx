@@ -68,21 +68,11 @@ const Candidates = ({ candidates, gridPosition }: CandidatesProps) => {
 
                 // TODO: optimize
                 //  prototype different deductions data structures via selector
-                const isDeductionReason =
-                    hint?.deductions.some(deduction =>
-                        deduction.reasons.some(
-                            reason => isEqual(reason.position, gridPosition) && reason.candidates.includes(candidate)
-                        )
-                    ) ||
-                    // TODO: rethink deductions/reasons/actions for setValue
-                    hint?.deductions.some(deduction =>
-                        deduction.actions.some(
-                            action =>
-                                isEqual(action.position, gridPosition) &&
-                                "setValue" in action &&
-                                action.setValue === candidate
-                        )
-                    );
+                const isDeductionReason = hint?.deductions.some(deduction =>
+                    deduction.reasons.some(
+                        reason => isEqual(reason.position, gridPosition) && reason.candidates.includes(candidate)
+                    )
+                );
                 const isDeductionDelete = hint?.deductions.some(deduction =>
                     deduction.actions.some(
                         action =>

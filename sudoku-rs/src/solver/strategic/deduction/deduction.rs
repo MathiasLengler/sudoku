@@ -76,9 +76,16 @@ impl<Base: SudokuBase> Deduction<Base> {
     }
 
     pub fn with_action(pos: Position<Base>, action: Action<Base>) -> Self {
+        let reasons = if let Action::SetValue(value) = action {
+            // If we are setting a value, the source candidate was at least one of the reasons.
+            PositionMap::with_single(pos, Reason::candidate(value))
+        } else {
+            PositionMap::default()
+        };
+
         Self {
             actions: PositionMap::with_single(pos, action),
-            ..Default::default()
+            reasons,
         }
     }
 

@@ -243,7 +243,7 @@ mod tests {
             let deductions: Deductions<Base> =
                 NakedPairs::find_naked_pairs(candidates_group).collect();
 
-            assert_deductions(deductions, expected_deductions);
+            assert_deductions(&deductions, &expected_deductions);
         }
     }
 }

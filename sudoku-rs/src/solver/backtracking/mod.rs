@@ -153,7 +153,7 @@ impl<'s, Base: SudokuBase> Solver<'s, Base> {
 
     #[cfg(feature = "solver_debug_print")]
     fn debug_print(&self, step_result: &StepResult) {
-        use crossterm::{cursor, QueueableCommand, style::Print, terminal};
+        use crossterm::{cursor, style::Print, terminal, QueueableCommand};
         use std::io::{prelude::*, stdout};
         use std::time::Duration;
 
@@ -198,7 +198,7 @@ mod tests {
 
     use super::*;
 
-// Input space (
+    // Input space (
     //      [empty, partial, full] sudoku,
     //      [conflict/ no conflict],
     //      [0, 1, n] solutions
@@ -226,7 +226,7 @@ mod tests {
             &mut grid,
             Settings {
                 candidates_visit_order: CandidatesVisitOrder::Random,
-                step_limit: Default::default(),
+                step_limit: None,
             },
         );
 

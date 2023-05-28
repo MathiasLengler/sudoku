@@ -101,7 +101,9 @@ mod tests {
 
     #[test]
     fn test_reduce_candidates_group() {
-        let test_cases: Vec<(Vec<Vec<u8>>, Vec<Vec<u8>>)> = vec![
+        type TestCase = (Vec<Vec<u8>>, Vec<Vec<u8>>);
+
+        let test_cases: Vec<TestCase> = vec![
             (
                 vec![
                     vec![1, 6],
@@ -396,7 +398,7 @@ mod tests {
         })
         .collect();
 
-        assert_deductions_with_grid(deductions, expected_deductions, &mut grid);
+        assert_deductions_with_grid(&deductions, &expected_deductions, &mut grid);
     }
 
     /// Reference:
@@ -452,6 +454,6 @@ mod tests {
         })
         .collect();
 
-        assert_deductions_with_grid(deductions, expected_deductions, &mut grid);
+        assert_deductions_with_grid(&deductions, &expected_deductions, &mut grid);
     }
 }
