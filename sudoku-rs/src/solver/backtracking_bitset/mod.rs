@@ -2,15 +2,14 @@
 
 use log::trace;
 
-use crate::base::SudokuBase;
-use crate::cell::Value;
-use crate::cell::{Candidates, CandidatesIter};
-use crate::grid::Grid;
-use crate::position::Coordinate;
-use crate::position::Position;
-use crate::unsafe_utils::{get_unchecked, get_unchecked_mut};
+use group_availability::{GroupAvailability, GroupAvailabilityIndex};
 
-// TODO: implement shuffle_candidates
+use crate::base::SudokuBase;
+use crate::cell::CandidatesIter;
+use crate::grid::Grid;
+use crate::position::Position;
+
+mod group_availability;
 
 #[derive(Debug, Clone)]
 pub struct Solver<'a, Base: SudokuBase> {
@@ -47,13 +46,7 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
 
     fn initialize(&mut self, grid: &Grid<Base>) {
         for pos in Position::<Base>::all() {
-            let (row, column) = pos.to_row_and_column();
-
-            let index = GroupAvailabilityIndex {
-                row,
-                column,
-                block: pos.to_block(),
-            };
+            let index: GroupAvailabilityIndex<Base> = pos.into();
 
             if let Some(value) = grid.get(pos).value() {
                 // clue, clear group availability
@@ -183,116 +176,6 @@ impl<'s, Base: SudokuBase> Iterator for Solver<'s, Base> {
     }
 }
 
-#[derive(Debug, Clone, Default)]
-struct GroupAvailability<Base: SudokuBase> {
-    rows: Base::CandidatesGroup,
-    columns: Base::CandidatesGroup,
-    blocks: Base::CandidatesGroup,
-}
-
-impl<Base: SudokuBase> GroupAvailability<Base> {
-    fn new() -> Self {
-        Self::default()
-    }
-
-    fn all() -> Self {
-        let mut this = Self::new();
-
-        this.iter_mut()
-            .for_each(|candidates| *candidates = Candidates::all());
-
-        this
-    }
-
-    fn iter_mut(&mut self) -> impl Iterator<Item = &mut Candidates<Base>> {
-        self.rows
-            .as_mut()
-            .iter_mut()
-            .chain(self.columns.as_mut().iter_mut())
-            .chain(self.blocks.as_mut().iter_mut())
-    }
-
-    fn reserve(&mut self, index: GroupAvailabilityIndex<Base>, candidate: Value<Base>) {
-        // Clear candidate availability
-        self.mutate(index, |candidates| {
-            candidates.set(candidate, false);
-        });
-    }
-    fn restore(&mut self, index: GroupAvailabilityIndex<Base>, candidate: Value<Base>) {
-        // Restore candidate availability
-        self.mutate(index, |candidates| {
-            candidates.set(candidate, true);
-        });
-    }
-
-    fn mutate(
-        &mut self,
-        index: GroupAvailabilityIndex<Base>,
-        mut f: impl FnMut(&mut Candidates<Base>),
-    ) {
-        let (row, column, block) = index.into_usize_tuple();
-
-        // Safety: relies on invariants:
-        // - Coordinate::<Base>::get: `coordinate < Base::SIDE_LENGTH`
-        // - Base::CandidatesCells: array length equals `Base::SIDE_LENGTH`
-        // Therefore the indexes remain in-bounds.
-        let (row_candidates_cell, column_candidates_cell, block_candidates_cell) = unsafe {
-            (
-                get_unchecked_mut(self.rows.as_mut(), row),
-                get_unchecked_mut(self.columns.as_mut(), column),
-                get_unchecked_mut(self.blocks.as_mut(), block),
-            )
-        };
-
-        f(row_candidates_cell);
-        f(column_candidates_cell);
-        f(block_candidates_cell);
-    }
-
-    fn intersection(&self, index: GroupAvailabilityIndex<Base>) -> Candidates<Base> {
-        let (row, column, block) = index.into_usize_tuple();
-
-        // Safety: relies on invariants:
-        // - Coordinate::<Base>::get: `coordinate < Base::SIDE_LENGTH`
-        // - Base::CandidatesCells: array length equals `Base::SIDE_LENGTH`
-        // Therefore the indexes remain in-bounds.
-        let (row_candidates, column_candidates, block_candidates) = unsafe {
-            (
-                get_unchecked(self.rows.as_ref(), row),
-                get_unchecked(self.columns.as_ref(), column),
-                get_unchecked(self.blocks.as_ref(), block),
-            )
-        };
-
-        row_candidates
-            .intersection(*column_candidates)
-            .intersection(*block_candidates)
-    }
-}
-
-#[derive(Debug, Copy, Clone, Default, Eq, PartialEq)]
-struct GroupAvailabilityIndex<Base: SudokuBase> {
-    row: Coordinate<Base>,
-    column: Coordinate<Base>,
-    block: Coordinate<Base>,
-}
-
-impl<Base: SudokuBase> GroupAvailabilityIndex<Base> {
-    fn into_usize_tuple(self) -> (usize, usize, usize) {
-        let GroupAvailabilityIndex { row, column, block } = self;
-        let row = usize::from(row.get());
-        let column = usize::from(column.get());
-        let block = usize::from(block.get());
-        (row, column, block)
-    }
-}
-
-impl<Base: SudokuBase> From<GroupAvailabilityIndex<Base>> for Position<Base> {
-    fn from(index: GroupAvailabilityIndex<Base>) -> Self {
-        (index.row, index.column).into()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use crate::base::consts::*;
@@ -340,24 +223,22 @@ mod tests {
         grid.set_all_direct_candidates();
         let mut solver = Solver::new(&grid);
         let mut expected_choice_indices = vec![
-            (0, 3, 1),
-            (0, 1, 0),
-            (1, 0, 0),
-            (1, 1, 0),
-            (1, 2, 1),
-            (1, 3, 1),
-            (2, 0, 2),
-            (2, 1, 2),
-            (2, 2, 3),
-            (2, 3, 3),
-            (3, 0, 2),
-            (3, 2, 3),
+            (0, 3),
+            (0, 1),
+            (1, 0),
+            (1, 1),
+            (1, 2),
+            (1, 3),
+            (2, 0),
+            (2, 1),
+            (2, 2),
+            (2, 3),
+            (3, 0),
+            (3, 2),
         ]
         .into_iter()
-        .map(|(row, column, block)| GroupAvailabilityIndex::<Base2> {
-            row: Coordinate::try_from(row).unwrap(),
-            column: Coordinate::try_from(column).unwrap(),
-            block: Coordinate::try_from(block).unwrap(),
+        .map(|(row, column)| {
+            GroupAvailabilityIndex::<Base2>::from(Position::try_from((row, column)).unwrap())
         })
         .collect::<Vec<_>>();
         assert_eq!(solver.availability_indices, expected_choice_indices);
