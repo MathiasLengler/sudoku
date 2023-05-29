@@ -44,6 +44,22 @@ impl<Base: SudokuBase> Value<Base> {
         }))
     }
 
+    /// # Safety
+    ///
+    /// `value` must be in the range `1..=(Base::MAX_VALUE)`.
+    pub unsafe fn new_unchecked(value: u8) -> Self {
+        debug_assert!({
+            Self::try_from(value).unwrap();
+            true
+        });
+
+        Self {
+            // Safety: value is-none zero, upheld by the caller safety contract.
+            value: unsafe { NonZeroU8::new_unchecked(value) },
+            base: PhantomData,
+        }
+    }
+
     pub fn into_u8(self) -> u8 {
         self.value.get()
     }

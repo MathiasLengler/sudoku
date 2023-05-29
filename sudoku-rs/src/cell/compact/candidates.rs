@@ -19,6 +19,10 @@ mod iter;
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Copy, Clone, Debug)]
 pub struct Candidates<Base: SudokuBase> {
+    /// # Safety invariants
+    ///
+    /// The bits at position `Base::MAX_VALUE` and greater must be zero.
+    /// Validated by `Self::is_valid`.
     bits: Base::CandidatesIntegral,
 }
 
@@ -148,7 +152,7 @@ impl<Base: SudokuBase> Candidates<Base> {
     }
 
     pub fn iter(&self) -> CandidatesIter<Base> {
-        self.into()
+        (*self).into()
     }
 
     pub fn to_vec_u8(&self) -> Vec<u8> {
@@ -180,8 +184,13 @@ impl<Base: SudokuBase> Candidates<Base> {
         candidate.into_u8() - 1
     }
 
-    fn export(candidate: u8) -> Value<Base> {
-        (candidate + 1).try_into().unwrap()
+    /// # Safety:
+    ///
+    /// `candidate` must be in the range `0..Base::MAX_VALUE`.
+    unsafe fn export(candidate: u8) -> Value<Base> {
+        // Safety: candidate is guaranteed by the caller to be in the range `0..Base::MAX_VALUE`,
+        // therefore `candidate + 1` is inside the range `1..=(Base::MAX_VALUE)`.
+        unsafe { Value::new_unchecked(candidate + 1) }
     }
 
     fn debug_assert_is_valid(&self) {
@@ -220,6 +229,15 @@ impl<Base: SudokuBase> FromIterator<Value<Base>> for Candidates<Base> {
         this.debug_assert_is_valid();
 
         this
+    }
+}
+
+impl<Base: SudokuBase> IntoIterator for Candidates<Base> {
+    type Item = Value<Base>;
+    type IntoIter = CandidatesIter<Base>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.into()
     }
 }
 

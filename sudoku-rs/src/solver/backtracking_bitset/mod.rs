@@ -9,7 +9,7 @@ use crate::cell::CandidatesIter;
 use crate::grid::Grid;
 use crate::position::Position;
 
-mod group_availability;
+pub(crate) mod group_availability;
 
 #[derive(Debug, Clone)]
 pub struct Solver<'a, Base: SudokuBase> {

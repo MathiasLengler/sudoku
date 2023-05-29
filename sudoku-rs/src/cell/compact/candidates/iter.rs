@@ -1,5 +1,3 @@
-#![allow(clippy::inline_always)]
-
 use num::{One, PrimInt, Zero};
 
 use crate::base::SudokuBase;
@@ -8,26 +6,33 @@ use crate::cell::compact::value::Value;
 
 #[derive(Debug, Clone)]
 struct IterOnes<Base: SudokuBase> {
+    /// # Safety invariants
+    ///
+    /// The bits at position `Base::MAX_VALUE` and greater must be zero.
     bits: Base::CandidatesIntegral,
 }
 
+impl<Base: SudokuBase> From<Candidates<Base>> for IterOnes<Base> {
+    fn from(candidates: Candidates<Base>) -> Self {
+        Self {
+            bits: candidates.bits,
+        }
+    }
+}
+
 impl<Base: SudokuBase> IterOnes<Base> {
-    #[inline(always)]
+    /// # Safety invariant
+    ///
+    /// Returned `u8` is in the range `0..Base::MAX_VALUE`.
     fn peek(&self) -> Option<u8> {
         if self.bits.is_zero() {
             None
         } else {
             let trailing_zeros = self.bits.trailing_zeros();
-            // TODO: optimize/debug_validate
-            Some(u8::try_from(trailing_zeros).unwrap())
-        }
-    }
-}
-
-impl<Base: SudokuBase> From<&Candidates<Base>> for IterOnes<Base> {
-    fn from(candidates: &Candidates<Base>) -> Self {
-        Self {
-            bits: candidates.bits,
+            // unwrap optimizes away
+            let candidate = u8::try_from(trailing_zeros).unwrap();
+            debug_assert!(candidate < Base::MAX_VALUE);
+            Some(candidate)
         }
     }
 }
@@ -36,7 +41,9 @@ impl<Base: SudokuBase> From<&Candidates<Base>> for IterOnes<Base> {
 impl<Base: SudokuBase> Iterator for IterOnes<Base> {
     type Item = u8;
 
-    #[inline(always)]
+    /// # Safety invariant
+    ///
+    /// Returned `u8` is in the range `0..Base::MAX_VALUE`.
     fn next(&mut self) -> Option<Self::Item> {
         let trailing_zeros = self.peek();
         if let Some(trailing_zeros) = trailing_zeros {
@@ -45,7 +52,6 @@ impl<Base: SudokuBase> Iterator for IterOnes<Base> {
         trailing_zeros
     }
 
-    #[inline(always)]
     fn size_hint(&self) -> (usize, Option<usize>) {
         let len = self.len();
         (len, Some(len))
@@ -53,7 +59,6 @@ impl<Base: SudokuBase> Iterator for IterOnes<Base> {
 }
 
 impl<Base: SudokuBase> ExactSizeIterator for IterOnes<Base> {
-    #[inline(always)]
     fn len(&self) -> usize {
         usize::try_from(self.bits.count_ones()).unwrap()
     }
@@ -65,35 +70,37 @@ pub struct CandidatesIter<Base: SudokuBase> {
 }
 
 impl<Base: SudokuBase> CandidatesIter<Base> {
-    #[inline(always)]
     pub fn peek(&self) -> Option<Value<Base>> {
-        self.iter.peek().map(|i| Candidates::export(i))
+        self.iter
+            .peek()
+            // Safety: range of `candidate` guaranteed by `IterOnes::peek`
+            .map(|candidate| unsafe { Candidates::export(candidate) })
     }
 }
 
 impl<Base: SudokuBase> Iterator for CandidatesIter<Base> {
     type Item = Value<Base>;
 
-    #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next().map(|i| Candidates::export(i))
+        self.iter
+            .next()
+            // Safety: range of `candidate` guaranteed by `IterOnes::next`
+            .map(|candidate| unsafe { Candidates::export(candidate) })
     }
 
-    #[inline(always)]
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.iter.size_hint()
     }
 }
 
 impl<Base: SudokuBase> ExactSizeIterator for CandidatesIter<Base> {
-    #[inline(always)]
     fn len(&self) -> usize {
         self.iter.len()
     }
 }
 
-impl<Base: SudokuBase> From<&Candidates<Base>> for CandidatesIter<Base> {
-    fn from(candidates: &Candidates<Base>) -> Self {
+impl<Base: SudokuBase> From<Candidates<Base>> for CandidatesIter<Base> {
+    fn from(candidates: Candidates<Base>) -> Self {
         Self {
             iter: candidates.into(),
         }
