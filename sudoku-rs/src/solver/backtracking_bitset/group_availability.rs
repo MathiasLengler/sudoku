@@ -3,6 +3,41 @@ use crate::cell::{Candidates, Value};
 use crate::position::{Coordinate, Position};
 use crate::unsafe_utils::{get_unchecked, get_unchecked_mut};
 
+/// A thin indexing wrapper around a `[Candidates<Base>; Base::SIDE_LENGTH]`.
+#[derive(Debug, Clone, Default)]
+pub(crate) struct CandidatesGroup<Base: SudokuBase> {
+    candidates_group: Base::CandidatesGroup,
+}
+
+impl<Base: SudokuBase> CandidatesGroup<Base> {
+    pub(crate) fn new() -> Self {
+        Self::default()
+    }
+
+    pub(crate) fn get(&self, coordinate: Coordinate<Base>) -> Candidates<Base> {
+        // Safety:
+        // - Coordinate::<Base>::get_usize: `coordinate < Base::SIDE_LENGTH`
+        // - Base::CandidatesCells: array length equals `Base::SIDE_LENGTH`
+        // Therefore the index remains in-bounds.
+        *unsafe { get_unchecked(self.candidates_group.as_ref(), coordinate.get_usize()) }
+    }
+
+    pub(crate) fn get_mut(&mut self, coordinate: Coordinate<Base>) -> &mut Candidates<Base> {
+        // Safety:
+        // - Coordinate::<Base>::get_usize: `coordinate < Base::SIDE_LENGTH`
+        // - Base::CandidatesCells: array length equals `Base::SIDE_LENGTH`
+        // Therefore the index remains in-bounds.
+        unsafe { get_unchecked_mut(self.candidates_group.as_mut(), coordinate.get_usize()) }
+    }
+
+    pub(crate) fn iter(&self) -> impl Iterator<Item = Candidates<Base>> + '_ {
+        self.candidates_group.as_ref().iter().copied()
+    }
+    pub(crate) fn iter_mut(&mut self) -> impl Iterator<Item = &mut Candidates<Base>> {
+        self.candidates_group.as_mut().iter_mut()
+    }
+}
+
 /// A compact data structure representing group information of a sudoku grid.
 ///
 /// Saves `Base::SIDE_LENGTH` bits of information for each group.
@@ -12,9 +47,9 @@ use crate::unsafe_utils::{get_unchecked, get_unchecked_mut};
 /// - Where in each group is a specific candidate set?
 #[derive(Debug, Clone, Default)]
 pub(crate) struct GroupAvailability<Base: SudokuBase> {
-    rows: Base::CandidatesGroup,
-    columns: Base::CandidatesGroup,
-    blocks: Base::CandidatesGroup,
+    rows: CandidatesGroup<Base>,
+    columns: CandidatesGroup<Base>,
+    blocks: CandidatesGroup<Base>,
 }
 
 impl<Base: SudokuBase> GroupAvailability<Base> {
@@ -33,10 +68,9 @@ impl<Base: SudokuBase> GroupAvailability<Base> {
 
     fn iter_mut(&mut self) -> impl Iterator<Item = &mut Candidates<Base>> {
         self.rows
-            .as_mut()
             .iter_mut()
-            .chain(self.columns.as_mut().iter_mut())
-            .chain(self.blocks.as_mut().iter_mut())
+            .chain(self.columns.iter_mut())
+            .chain(self.blocks.iter_mut())
     }
 
     pub(crate) fn delete(&mut self, index: GroupAvailabilityIndex<Base>, candidate: Value<Base>) {
@@ -50,23 +84,14 @@ impl<Base: SudokuBase> GroupAvailability<Base> {
         &self,
         index: GroupAvailabilityIndex<Base>,
     ) -> (Candidates<Base>, Candidates<Base>, Candidates<Base>) {
-        let (row, column, block) = index.into_usize_tuple();
-
-        // Safety: relies on invariants:
-        // - Coordinate::<Base>::get: `coordinate < Base::SIDE_LENGTH`
-        // - Base::CandidatesCells: array length equals `Base::SIDE_LENGTH`
-        // Therefore the indexes remain in-bounds.
-        let (row_candidates, column_candidates, block_candidates) = unsafe {
-            (
-                get_unchecked(self.rows.as_ref(), row),
-                get_unchecked(self.columns.as_ref(), column),
-                get_unchecked(self.blocks.as_ref(), block),
-            )
-        };
-        (*row_candidates, *column_candidates, *block_candidates)
+        (
+            self.rows.get(index.row),
+            self.columns.get(index.column),
+            self.blocks.get(index.block),
+        )
     }
 
-    fn get_mut(
+    pub(crate) fn get_mut(
         &mut self,
         index: GroupAvailabilityIndex<Base>,
     ) -> (
@@ -74,20 +99,11 @@ impl<Base: SudokuBase> GroupAvailability<Base> {
         &mut Candidates<Base>,
         &mut Candidates<Base>,
     ) {
-        let (row, column, block) = index.into_usize_tuple();
-
-        // Safety: relies on invariants:
-        // - Coordinate::<Base>::get: `coordinate < Base::SIDE_LENGTH`
-        // - Base::CandidatesCells: array length equals `Base::SIDE_LENGTH`
-        // Therefore the indexes remain in-bounds.
-        let (row_candidates, column_candidates, block_candidates) = unsafe {
-            (
-                get_unchecked_mut(self.rows.as_mut(), row),
-                get_unchecked_mut(self.columns.as_mut(), column),
-                get_unchecked_mut(self.blocks.as_mut(), block),
-            )
-        };
-        (row_candidates, column_candidates, block_candidates)
+        (
+            self.rows.get_mut(index.row),
+            self.columns.get_mut(index.column),
+            self.blocks.get_mut(index.block),
+        )
     }
 
     fn mutate(
@@ -120,16 +136,6 @@ pub(crate) struct GroupAvailabilityIndex<Base: SudokuBase> {
     row: Coordinate<Base>,
     column: Coordinate<Base>,
     block: Coordinate<Base>,
-}
-
-impl<Base: SudokuBase> GroupAvailabilityIndex<Base> {
-    fn into_usize_tuple(self) -> (usize, usize, usize) {
-        let GroupAvailabilityIndex { row, column, block } = self;
-        let row = usize::from(row.get());
-        let column = usize::from(column.get());
-        let block = usize::from(block.get());
-        (row, column, block)
-    }
 }
 
 impl<Base: SudokuBase> From<Position<Base>> for GroupAvailabilityIndex<Base> {
