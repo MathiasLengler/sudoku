@@ -1,9 +1,10 @@
+use std::convert::Infallible;
+
 use log::debug;
 use rand::prelude::SliceRandom;
 use rand::{thread_rng, Rng, SeedableRng};
 use rand_xoshiro::Xoshiro256StarStar;
 use serde::{Deserialize, Serialize};
-use std::convert::Infallible;
 #[cfg(feature = "wasm")]
 use ts_rs::TS;
 

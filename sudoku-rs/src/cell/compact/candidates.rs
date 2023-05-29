@@ -12,6 +12,7 @@ pub use iter::CandidatesIter;
 use crate::base::SudokuBase;
 use crate::cell::compact::value::Value;
 use crate::cell::dynamic::DynamicCandidates;
+use crate::cell::{Cell, CellState};
 use crate::error::{Error, Result};
 
 mod iter;
@@ -229,6 +230,15 @@ impl<Base: SudokuBase> From<Vec<Value<Base>>> for Candidates<Base> {
         this.debug_assert_is_valid();
 
         this
+    }
+}
+
+impl<Base: SudokuBase> From<Cell<Base>> for Candidates<Base> {
+    fn from(cell: Cell<Base>) -> Self {
+        match *cell.state() {
+            CellState::Value(value) | CellState::FixedValue(value) => Self::with_single(value),
+            CellState::Candidates(candidates) => candidates,
+        }
     }
 }
 

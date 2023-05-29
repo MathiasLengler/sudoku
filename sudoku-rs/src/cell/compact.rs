@@ -174,3 +174,13 @@ impl<Base: SudokuBase> TryFrom<DynamicCell> for Cell<Base> {
         })
     }
 }
+
+impl<Base: SudokuBase> From<(Candidates<Base>, bool)> for Cell<Base> {
+    fn from((candidates, is_fixed_value): (Candidates<Base>, bool)) -> Self {
+        if let Some(value) = candidates.to_single() {
+            Self::with_value(value, is_fixed_value)
+        } else {
+            Self::with_candidates(candidates)
+        }
+    }
+}

@@ -100,8 +100,9 @@ impl<Base: SudokuBase> From<Action<Base>> for TransportAction {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::base::consts::Base2;
+
+    use super::*;
 
     fn sample_transport_deductions() -> TransportDeductions {
         TransportDeductions {

@@ -1,10 +1,10 @@
+use hdrhistogram::Histogram;
+
 use sudoku::base::consts::Base3;
 use sudoku::error::Result;
 use sudoku::generator::{Generator, GeneratorTarget};
 use sudoku::grid::Grid;
 use sudoku::solver::backtracking_bitset::Solver;
-
-use hdrhistogram::Histogram;
 
 type Base = Base3;
 

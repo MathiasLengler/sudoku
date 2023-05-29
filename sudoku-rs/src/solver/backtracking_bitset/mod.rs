@@ -3,7 +3,6 @@
 use log::trace;
 
 use crate::base::SudokuBase;
-use crate::cell::candidates_cell::CandidatesCell;
 use crate::cell::Value;
 use crate::cell::{Candidates, CandidatesIter};
 use crate::grid::Grid;
@@ -188,9 +187,9 @@ impl<'s, Base: SudokuBase> Iterator for Solver<'s, Base> {
 
 #[derive(Debug, Clone, Default)]
 struct GroupAvailability<Base: SudokuBase> {
-    rows: Base::CandidatesCells,
-    columns: Base::CandidatesCells,
-    blocks: Base::CandidatesCells,
+    rows: Base::CandidatesGroup,
+    columns: Base::CandidatesGroup,
+    blocks: Base::CandidatesGroup,
 }
 
 impl<Base: SudokuBase> GroupAvailability<Base> {
@@ -202,12 +201,12 @@ impl<Base: SudokuBase> GroupAvailability<Base> {
         let mut this = Self::new();
 
         this.iter_mut()
-            .for_each(|cell| *cell = CandidatesCell::with_candidates(Candidates::all()));
+            .for_each(|candidates| *candidates = Candidates::all());
 
         this
     }
 
-    fn iter_mut(&mut self) -> impl Iterator<Item = &mut CandidatesCell<Base>> {
+    fn iter_mut(&mut self) -> impl Iterator<Item = &mut Candidates<Base>> {
         self.rows
             .as_mut()
             .iter_mut()
@@ -217,21 +216,21 @@ impl<Base: SudokuBase> GroupAvailability<Base> {
 
     fn reserve(&mut self, index: GroupAvailabilityIndex<Base>, candidate: Value<Base>) {
         // Clear candidate availability
-        self.mutate(index, |cell| {
-            cell.set_candidate(candidate, false);
+        self.mutate(index, |candidates| {
+            candidates.set(candidate, false);
         });
     }
     fn restore(&mut self, index: GroupAvailabilityIndex<Base>, candidate: Value<Base>) {
         // Restore candidate availability
-        self.mutate(index, |cell| {
-            cell.set_candidate(candidate, true);
+        self.mutate(index, |candidates| {
+            candidates.set(candidate, true);
         });
     }
 
     fn mutate(
         &mut self,
         index: GroupAvailabilityIndex<Base>,
-        mut f: impl FnMut(&mut CandidatesCell<Base>),
+        mut f: impl FnMut(&mut Candidates<Base>),
     ) {
         let (row, column, block) = index.into_usize_tuple();
 
@@ -259,7 +258,7 @@ impl<Base: SudokuBase> GroupAvailability<Base> {
         // - Coordinate::<Base>::get: `coordinate < Base::SIDE_LENGTH`
         // - Base::CandidatesCells: array length equals `Base::SIDE_LENGTH`
         // Therefore the indexes remain in-bounds.
-        let (row_candidates_cell, column_candidates_cell, block_candidates_cell) = unsafe {
+        let (row_candidates, column_candidates, block_candidates) = unsafe {
             (
                 get_unchecked(self.rows.as_ref(), row),
                 get_unchecked(self.columns.as_ref(), column),
@@ -267,10 +266,9 @@ impl<Base: SudokuBase> GroupAvailability<Base> {
             )
         };
 
-        row_candidates_cell
-            .candidates
-            .intersection(column_candidates_cell.candidates)
-            .intersection(block_candidates_cell.candidates)
+        row_candidates
+            .intersection(*column_candidates)
+            .intersection(*block_candidates)
     }
 }
 

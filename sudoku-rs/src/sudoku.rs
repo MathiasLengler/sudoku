@@ -13,8 +13,8 @@ use crate::grid::format::GridFormat;
 use crate::grid::Grid;
 use crate::position::DynamicPosition;
 use crate::solver::strategic::deduction::Deductions;
-use crate::solver::strategic::Solver as StrategicSolver;
 use crate::solver::strategic::strategies::DynamicStrategy;
+use crate::solver::strategic::Solver as StrategicSolver;
 
 use self::settings::Settings;
 

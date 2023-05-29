@@ -51,8 +51,9 @@ impl GridFormat for BinaryCandidatesLine {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::samples;
+
+    use super::*;
 
     #[test]
     fn test_render_binary_candidates_line() {
