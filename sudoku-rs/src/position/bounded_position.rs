@@ -141,11 +141,39 @@ impl<Base: SudokuBase> Position<Base> {
     pub fn to_row_and_column(self) -> (Coordinate<Base>, Coordinate<Base>) {
         (self.to_row(), self.to_column())
     }
+
+    /// Get the block coordinate of block containing this position,
+    /// as well as the index of the cell inside the block as a row- and column-major block coordinate.
+    ///
+    /// Example for the top left block in base 2:
+    /// ```text
+    /// (0,0,0) | (0,1,2)
+    /// (0,2,1) | (0,3,3)
+    /// ```
+    pub fn to_block_and_indexes(self) -> (Coordinate<Base>, Coordinate<Base>, Coordinate<Base>) {
+        let block = self.to_block();
+        let (row, column) = self.to_row_and_column();
+        let block_top_left_pos = Base::block_to_top_left_pos(block);
+        let (block_top_left_row, block_top_left_column) = block_top_left_pos.to_row_and_column();
+
+        let row_offset = row.get() - block_top_left_row.get();
+        let column_offset = column.get() - block_top_left_column.get();
+
+        let row_major_block_index =
+            // Safety: a block contains a maximum of `Base::SIDE_LENGTH` cells. 
+            unsafe { Coordinate::new_unchecked(row_offset * Base::BASE + column_offset) };
+        let column_major_block_index =
+            // Safety: a block contains a maximum of `Base::SIDE_LENGTH` cells. 
+            unsafe { Coordinate::new_unchecked(column_offset * Base::BASE + row_offset) };
+
+        (block, row_major_block_index, column_major_block_index)
+    }
 }
 
 // TODO: optimize
 /// Iterators
 impl<Base: SudokuBase> Position<Base> {
+    /// All grid positions in row-major order.
     pub fn all() -> impl Iterator<Item = Self> {
         (0..Base::CELL_COUNT).map(|cell_index|
             // Safety: `cell_index` remains in-bounds
@@ -214,11 +242,44 @@ mod tests {
 
     use super::*;
 
-    #[test]
-    fn test_new() {
-        assert_eq!(Position::<Base2>::new(0).unwrap().cell_index, 0);
-        assert_eq!(Position::<Base2>::new(15).unwrap().cell_index, 15);
-        assert!(Position::<Base2>::new(16).is_err());
+    mod constructors {
+        use super::*;
+
+        #[test]
+        fn test_new() {
+            assert_eq!(Position::<Base2>::new(0).unwrap().cell_index, 0);
+            assert_eq!(Position::<Base2>::new(15).unwrap().cell_index, 15);
+            assert!(Position::<Base2>::new(16).is_err());
+        }
+    }
+
+    mod getters {
+        use super::*;
+
+        #[test]
+        fn test_to_block_and_indexes() {
+            Position::<Base2>::all_blocks()
+                .zip_eq(vec![
+                    vec![(0, 0, 0), (0, 1, 2), (0, 2, 1), (0, 3, 3)],
+                    vec![(1, 0, 0), (1, 1, 2), (1, 2, 1), (1, 3, 3)],
+                    vec![(2, 0, 0), (2, 1, 2), (2, 2, 1), (2, 3, 3)],
+                    vec![(3, 0, 0), (3, 1, 2), (3, 2, 1), (3, 3, 3)],
+                ])
+                .for_each(|(block_positions, expected_block_and_indexes)| {
+                    itertools::assert_equal(
+                        block_positions.map(|block_pos| block_pos.to_block_and_indexes()),
+                        expected_block_and_indexes.into_iter().map(
+                            |(block, row_major_block_index, column_major_block_index)| {
+                                (
+                                    Coordinate::new(block).unwrap(),
+                                    Coordinate::new(row_major_block_index).unwrap(),
+                                    Coordinate::new(column_major_block_index).unwrap(),
+                                )
+                            },
+                        ),
+                    );
+                });
+        }
     }
 
     mod iterators {
