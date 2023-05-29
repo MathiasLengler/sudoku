@@ -50,7 +50,7 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
 
             if let Some(value) = grid.get(pos).value() {
                 // clue, clear group availability
-                self.availability.reserve(index, value);
+                self.availability.delete(index, value);
             } else {
                 // Non-value cell, add to choices
                 self.availability_indices.push(index);
@@ -119,7 +119,7 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
                 self.guess_count += 1;
 
                 let choice_index = self.availability_indices[self.candidates_iters.len() - 1];
-                self.availability.reserve(choice_index, candidate);
+                self.availability.delete(choice_index, candidate);
 
                 if self.candidates_iters.len() == self.availability_indices.len() {
                     // Found solution
@@ -127,7 +127,7 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
 
                     // Continue at next candidate
                     self.candidates_iters.last_mut().unwrap().next();
-                    self.availability.restore(choice_index, candidate);
+                    self.availability.insert(choice_index, candidate);
 
                     return Some(solution_grid);
                 } else {
@@ -146,7 +146,7 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
                 if let Some(prev_candidates) = self.candidates_iters.last_mut() {
                     if let Some(prev_candidate) = prev_candidates.peek() {
                         let prev_choice_index = self.availability_indices[candidates_iters_len - 1];
-                        self.availability.restore(prev_choice_index, prev_candidate);
+                        self.availability.insert(prev_choice_index, prev_candidate);
                     }
 
                     prev_candidates.next();

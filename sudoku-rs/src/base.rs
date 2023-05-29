@@ -248,7 +248,7 @@ where
 
     type CandidatesIntegralTryFromU32Error: Into<Error> + Debug;
 
-    /// Data structure for `backtracking_bitset::Solver`.
+    /// Data structure for `GroupAvailability`.
     ///
     /// # Safety
     ///

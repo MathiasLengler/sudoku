@@ -113,6 +113,10 @@ impl<Base: SudokuBase> Candidates<Base> {
         self.debug_assert_is_valid();
     }
 
+    pub fn insert(&mut self, candidate: Value<Base>) {
+        self.set(candidate, true);
+    }
+
     pub fn delete(&mut self, candidate: Value<Base>) {
         self.set(candidate, false);
     }

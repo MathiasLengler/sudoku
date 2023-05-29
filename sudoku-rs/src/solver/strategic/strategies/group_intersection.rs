@@ -15,6 +15,9 @@ pub struct GroupIntersection;
 impl Strategy for GroupIntersection {
     fn execute<Base: SudokuBase>(self, _grid: &Grid<Base>) -> Result<Deductions<Base>> {
         // TODO: implement https://www.sudokuwiki.org/Intersection_Removal
+
+        // TODO: use data structure Vec<GroupAvailability>
+
         todo!("GroupIntersection")
     }
 }
