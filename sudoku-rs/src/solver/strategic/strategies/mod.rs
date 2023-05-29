@@ -66,7 +66,8 @@ impl DynamicStrategy {
             HiddenSingles.into(),
             NakedPairs.into(),
             GroupReduction.into(),
-            GroupIntersection.into(),
+            // FIXME: uncomment after implementation
+            // GroupIntersection.into(),
             Backtracking.into(),
         ]
     }
