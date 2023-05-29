@@ -46,23 +46,21 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
     }
 
     fn initialize(&mut self, grid: &Grid<Base>) {
-        for row in Coordinate::<Base>::all() {
-            for column in Coordinate::<Base>::all() {
-                let pos: Position<_> = (row, column).into();
+        for pos in Position::<Base>::all() {
+            let (row, column) = pos.to_row_and_column();
 
-                let index = GroupAvailabilityIndex {
-                    row,
-                    column,
-                    block: pos.to_block(),
-                };
+            let index = GroupAvailabilityIndex {
+                row,
+                column,
+                block: pos.to_block(),
+            };
 
-                if let Some(value) = grid.get(pos).value() {
-                    // clue, clear group availability
-                    self.availability.reserve(index, value);
-                } else {
-                    // Non-value cell, add to choices
-                    self.availability_indices.push(index);
-                }
+            if let Some(value) = grid.get(pos).value() {
+                // clue, clear group availability
+                self.availability.reserve(index, value);
+            } else {
+                // Non-value cell, add to choices
+                self.availability_indices.push(index);
             }
         }
 
