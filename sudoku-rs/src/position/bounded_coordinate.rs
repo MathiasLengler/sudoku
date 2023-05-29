@@ -45,6 +45,8 @@ use crate::error::{Error, Result};
 /// ║  2 │ 2  ║  3 │ 3  ║
 /// ╚═════════╩═════════╝
 /// ```
+///
+/// Can also be used to represent a zero-based `Value<Base>`.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Default)]
 pub struct Coordinate<Base: SudokuBase> {
     /// # Safety invariants

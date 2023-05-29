@@ -10,6 +10,7 @@ use serde::{Serialize, Serializer};
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicValue;
 use crate::error::{Error, Result};
+use crate::position::Coordinate;
 
 /// A valid sudoku value for a given base.
 ///
@@ -70,6 +71,17 @@ impl<Base: SudokuBase> Display for Value<Base> {
         use radix_fmt::radix_32;
 
         write!(f, "{}", radix_32(self.value))
+    }
+}
+
+impl<Base: SudokuBase> From<Coordinate<Base>> for Value<Base> {
+    fn from(coordinate: Coordinate<Base>) -> Self {
+        let coordinate = coordinate.get();
+        // Safety:
+        // `Coordinate::<Base::get` guarantees `coordinate < Base::SIDE_LENGTH`.
+        // `SudokuBase` guarantees `Base::SIDE_LENGTH == Base::MAX_VALUE`.
+        // Therefore `coordinate + 1` is inside the range `1..=(Base::MAX_VALUE)`.
+        unsafe { Self::new_unchecked(coordinate + 1) }
     }
 }
 

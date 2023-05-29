@@ -14,6 +14,7 @@ use crate::cell::compact::value::Value;
 use crate::cell::dynamic::DynamicCandidates;
 use crate::cell::{Cell, CellState};
 use crate::error::{Error, Result};
+use crate::position::Coordinate;
 
 mod iter;
 
@@ -184,13 +185,8 @@ impl<Base: SudokuBase> Candidates<Base> {
         candidate.into_u8() - 1
     }
 
-    /// # Safety:
-    ///
-    /// `candidate` must be in the range `0..Base::MAX_VALUE`.
-    unsafe fn export(candidate: u8) -> Value<Base> {
-        // Safety: candidate is guaranteed by the caller to be in the range `0..Base::MAX_VALUE`,
-        // therefore `candidate + 1` is inside the range `1..=(Base::MAX_VALUE)`.
-        unsafe { Value::new_unchecked(candidate + 1) }
+    fn export(candidate: Coordinate<Base>) -> Value<Base> {
+        candidate.into()
     }
 
     fn debug_assert_is_valid(&self) {
