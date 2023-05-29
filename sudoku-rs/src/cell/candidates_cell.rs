@@ -27,7 +27,7 @@ impl<Base: SudokuBase> CandidatesCell<Base> {
         Self::default()
     }
 
-    /// Constructs a new cell with a value and if it should be fixed.
+    /// Constructs a new cell with a value
     pub(crate) fn with_value(value: Value<Base>) -> Self {
         Self {
             candidates: Candidates::with_single(value),
@@ -49,14 +49,7 @@ impl<Base: SudokuBase> CandidatesCell<Base> {
 
     /// Value if any
     pub(crate) fn value(&self) -> Option<Value<Base>> {
-        let mut values = self.candidates.iter();
-
-        if let Some(value) = values.next() {
-            if values.next().is_none() {
-                return Some(value);
-            }
-        }
-        None
+        self.candidates.to_single()
     }
 
     pub(crate) fn candidates(&self) -> Candidates<Base> {
