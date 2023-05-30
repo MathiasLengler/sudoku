@@ -2,7 +2,7 @@ use std::fmt;
 use std::fmt::Debug;
 use std::str::FromStr;
 
-use anyhow::{anyhow, ensure};
+use anyhow::{anyhow, bail, ensure};
 use enum_dispatch::enum_dispatch;
 use serde::de::Visitor;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -96,8 +96,13 @@ impl DynamicGridFormat {
 
     pub fn detect_and_parse(input: &str) -> Result<Vec<DynamicCell>> {
         let input = input.trim();
+        if input.is_empty() {
+            bail!("Unexpected empty input")
+        }
 
         let cell_views = if input.contains('\n') {
+            // TODO: add CandidatesGridANSIStyled
+
             CandidatesGridCompact
                 .parse_and_validate_cell_count(input)
                 .or_else(|_| GivensGrid.parse_and_validate_cell_count(input))?

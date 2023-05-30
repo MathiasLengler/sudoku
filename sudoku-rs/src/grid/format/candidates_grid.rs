@@ -1,6 +1,7 @@
 use std::iter;
 
 use anyhow::bail;
+use itertools::Itertools;
 use num::Integer;
 use owo_colors::Style as OwoStyle;
 use tabled::builder::Builder;
@@ -9,7 +10,7 @@ use tabled::settings::{Padding, Style};
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
 use crate::cell::{CellState, Value};
-use crate::error;
+use crate::error::Result;
 use crate::grid::format::GridFormat;
 use crate::grid::Grid;
 
@@ -32,7 +33,7 @@ impl GridFormat for CandidatesGridANSIStyled {
         render_candidates_grid(grid, true)
     }
 
-    fn parse(self, input: &str) -> error::Result<Vec<DynamicCell>> {
+    fn parse(self, input: &str) -> Result<Vec<DynamicCell>> {
         let stripped_input_bytes = strip_ansi_escapes::strip(input.as_bytes())?;
         let stripped_input = String::from_utf8(stripped_input_bytes)?;
 
@@ -152,13 +153,88 @@ impl GridFormat for CandidatesGridPlain {
         render_candidates_grid(grid, false)
     }
 
-    fn parse(self, _input: &str) -> error::Result<Vec<DynamicCell>> {
+    fn parse(self, input: &str) -> Result<Vec<DynamicCell>> {
         // TODO: implement
         //  split into multi-line rows
         //  split rows into multi-line cells
         //  extract numbers from cells
 
-        bail!("todo")
+        fn ensure_same_line_char_count(input: &str) -> Result<usize> {
+            let mut line_char_count = None;
+            for line in input.lines() {
+                let current_line_char_count = line.chars().count();
+                if current_line_char_count == 0 {
+                    bail!("Unexpected empty line")
+                }
+                if let Some(previous_line_char_count) = line_char_count {
+                    if current_line_char_count != previous_line_char_count {
+                        bail!("Expected line char count {previous_line_char_count}, instead got: {current_line_char_count}")
+                    }
+                } else {
+                    line_char_count = Some(current_line_char_count)
+                }
+            }
+            if let Some(line_char_count) = line_char_count {
+                Ok(line_char_count)
+            } else {
+                bail!("Unexpected empty input")
+            }
+        }
+
+        println!("input {input}");
+
+        const FIRST_CHAR: char = '╔';
+        const OUTER_BORDER_CHARS: &[char] = &[
+            '║', '═', // Straight
+            '╔', '╦', '╗', // Top
+            '╠', '╬', '╣', // Middle
+            '╚', '╩', '╝', // Bottom
+        ];
+
+        const INNER_BORDER_CHARS: &[char] = &['─', '│', '┼'];
+        const VERTICAL_BORDER_CHARS: &[char] = &['│', '║'];
+
+        match input.chars().next() {
+            Some(char) if char == FIRST_CHAR => {}
+            Some(unexpected_char) => {
+                bail!("Expected first character to be {FIRST_CHAR}, instead got: {unexpected_char}")
+            }
+            None => bail!("Unexpected empty input"),
+        }
+
+        let line_char_count = ensure_same_line_char_count(input)?;
+
+        // cell_str_fragments: Vec<Data for a cell row>, len() == sudoku side length
+        // Data for a cell row: Vec<Single line data for cell row>, len() == cell height
+        // Single line data for cell row: Vec<Single cell line fragment>, len() == cell width
+        let mut cell_str_fragments: Vec<Vec<Vec<&str>>> = vec![];
+
+        for (is_horizontal_separator, lines_with_cell_data) in &input
+            .lines()
+            .map(|line| line.trim_matches(OUTER_BORDER_CHARS))
+            .group_by(|line| {
+                line.is_empty()
+                    || line.chars().all(|char| {
+                        OUTER_BORDER_CHARS.contains(&char) || INNER_BORDER_CHARS.contains(&char)
+                    })
+            })
+        {
+            if !is_horizontal_separator {
+                cell_str_fragments.push(
+                    lines_with_cell_data
+                        .map(|line_with_cell_data| {
+                            line_with_cell_data
+                                .split(VERTICAL_BORDER_CHARS)
+                                .collect::<Vec<_>>()
+                        })
+                        .collect::<Vec<_>>(),
+                );
+            }
+        }
+
+        dbg!(cell_str_fragments);
+
+        bail!("todo: process cell_str_fragments")
     }
 }
 
@@ -329,6 +405,22 @@ mod tests {
         use super::*;
 
         #[test]
+        fn test_parse_base_2_compact() {
+            CandidatesGridPlain
+                .parse(
+                    "╔═══════╦═══════╗
+║   │   ║ 1 │   ║
+║───┼───║───┼───║
+║ 4 │   ║   │   ║
+╠═══════╬═══════╣
+║   │   ║   │ 2 ║
+║───┼───║───┼───║
+║   │ 3 ║   │   ║
+╚═══════╩═══════╝",
+                )
+                .unwrap();
+        }
+        #[test]
         fn test_render_base_2_compact() {
             let grid = samples::base_2().pop().unwrap();
             assert_eq!(
@@ -343,6 +435,31 @@ mod tests {
 ║   │ 3 ║   │   ║
 ╚═══════╩═══════╝"
             );
+        }
+
+        #[test]
+        fn test_parse_base_2_sparse() {
+            CandidatesGridPlain
+                .parse(
+                    "╔═══════════╦═══════════╗
+║     │     ║     │     ║
+║     │  2  ║  1  │     ║
+║ 3   │     ║     │ 3 4 ║
+║─────┼─────║─────┼─────║
+║     │ 1   ║   2 │     ║
+║  4  │     ║     │     ║
+║     │     ║ 3   │ 3   ║
+╠═══════════╬═══════════╣
+║ 1   │ 1   ║     │     ║
+║     │     ║     │  2  ║
+║     │   4 ║ 3 4 │     ║
+║─────┼─────║─────┼─────║
+║ 1 2 │     ║     │ 1   ║
+║     │  3  ║     │     ║
+║     │     ║   4 │   4 ║
+╚═══════════╩═══════════╝",
+                )
+                .unwrap();
         }
 
         #[test]
