@@ -1,23 +1,110 @@
+use itertools::Itertools;
+
 use crate::base::SudokuBase;
 use crate::error::Result;
 use crate::grid::Grid;
+use crate::position::{Coordinate, Position};
+use crate::solver::backtracking_bitset::group_availability::CandidatesGroup;
 use crate::solver::strategic::deduction::Deductions;
 use crate::solver::strategic::strategies::Strategy;
+
+/// For a single candidate, where in each group is this candidate set?
+#[derive(Debug, Clone, Default)]
+struct GroupCandidateIndexes<Base: SudokuBase> {
+    rows: CandidatesGroup<Base>,
+    columns: CandidatesGroup<Base>,
+    row_major_blocks: CandidatesGroup<Base>,
+    column_major_blocks: CandidatesGroup<Base>,
+}
 
 // TODO: split into separate strategies?
 //  "Pointing Pairs, Pointing Triples"
 //  "Box/Line Reduction"
-//  decide after implementation, if how much the algorithm differs.
+//  decide after implementation, how much the algorithm differs.
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct GroupIntersection;
 
 impl Strategy for GroupIntersection {
-    fn execute<Base: SudokuBase>(self, _grid: &Grid<Base>) -> Result<Deductions<Base>> {
+    fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
         // TODO: implement https://www.sudokuwiki.org/Intersection_Removal
 
         // TODO: use data structure Vec<GroupAvailability>
 
-        todo!("GroupIntersection")
+        let mut candidate_to_group_candidate_indexes =
+            vec![GroupCandidateIndexes::<Base>::default(); usize::from(Base::SIDE_LENGTH)];
+
+        for pos in Position::<Base>::all() {
+            if let Some(candidates) = grid[pos].candidates() {
+                for candidate in candidates {
+                    let group_candidate_indexes = &mut candidate_to_group_candidate_indexes
+                        [usize::from(candidate.into_u8() - 1)];
+
+                    let row_index = pos.to_column().into();
+                    group_candidate_indexes
+                        .rows
+                        .get_mut(pos.to_row())
+                        .insert(row_index);
+                    let column_index = pos.to_row().into();
+                    group_candidate_indexes
+                        .columns
+                        .get_mut(pos.to_column())
+                        .insert(column_index);
+
+                    let (block, row_major_block_index, column_major_block_index) =
+                        pos.to_block_and_indexes();
+
+                    group_candidate_indexes
+                        .row_major_blocks
+                        .get_mut(block)
+                        .insert(row_major_block_index.into());
+                    group_candidate_indexes
+                        .column_major_blocks
+                        .get_mut(block)
+                        .insert(column_major_block_index.into());
+                }
+            }
+        }
+
+        Coordinate::<Base>::all()
+            .zip(candidate_to_group_candidate_indexes)
+            .filter_map(|(group_candidate_indexes, coordinate)| {
+                dbg!((coordinate, group_candidate_indexes));
+
+                // TODO: find Base length strips in candidates bitset
+                //  where all existing bits are contained in this section.
+                //  Pass (middle group slice):
+                //  - 000111000
+                //  - 000101000
+                //  - 000110000
+                //  - 000011000
+                //  Fail:
+                //  - 010111000
+                //  - 010101000
+                //  - 000101010
+                //  Fail: Second condition: at least two bits must be set.
+                //  - 000100000
+
+                None
+            })
+            .collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::samples;
+
+    use super::*;
+
+    #[test]
+    fn test() {
+        let mut grid = samples::base_2().pop().unwrap();
+        grid.set_all_direct_candidates();
+        println!("{grid}");
+
+        let deductions = GroupIntersection.execute(&grid).unwrap();
+
+        println!("Deductions: {deductions}");
     }
 }

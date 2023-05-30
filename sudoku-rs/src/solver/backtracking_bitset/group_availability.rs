@@ -10,10 +10,6 @@ pub(crate) struct CandidatesGroup<Base: SudokuBase> {
 }
 
 impl<Base: SudokuBase> CandidatesGroup<Base> {
-    pub(crate) fn new() -> Self {
-        Self::default()
-    }
-
     pub(crate) fn get(&self, coordinate: Coordinate<Base>) -> Candidates<Base> {
         // Safety:
         // - Coordinate::<Base>::get_usize: `coordinate < Base::SIDE_LENGTH`
