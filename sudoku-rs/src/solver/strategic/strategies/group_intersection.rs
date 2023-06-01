@@ -1,5 +1,3 @@
-use itertools::Itertools;
-
 use crate::base::SudokuBase;
 use crate::error::Result;
 use crate::grid::Grid;
@@ -93,18 +91,40 @@ impl Strategy for GroupIntersection {
 
 #[cfg(test)]
 mod tests {
-    use crate::samples;
+    use crate::base::consts::*;
 
     use super::*;
 
     #[test]
-    fn test() {
-        let mut grid = samples::base_2().pop().unwrap();
-        grid.set_all_direct_candidates();
+    fn test_execute() {
+        // Intersection of value 1 in row 3/box 3, reduction in row 3/box 2
+        let grid = Grid::<Base2>::try_from(
+            "╔═══════════╦═══════════╗
+║ 1   │     ║     │ 1   ║
+║     │  2  ║  3  │     ║
+║   4 │     ║     │   4 ║
+║─────┼─────║─────┼─────║
+║     │ 1   ║ 1 2 │ 1   ║
+║  3  │     ║     │     ║
+║     │   4 ║     │   4 ║
+╠═══════════╬═══════════╣
+║ 1   │ 1   ║     │     ║
+║     │     ║  4  │  2  ║
+║     │ 3   ║     │     ║
+║─────┼─────║─────┼─────║
+║ 1 2 │ 1   ║ 1   │ 1   ║
+║     │     ║     │     ║
+║   4 │ 3 4 ║     │ 3   ║
+╚═══════════╩═══════════╝",
+        )
+        .unwrap();
+
         println!("{grid}");
 
         let deductions = GroupIntersection.execute(&grid).unwrap();
 
         println!("Deductions: {deductions}");
+
+        // TODO: assert deductions
     }
 }
