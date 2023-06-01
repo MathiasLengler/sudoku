@@ -103,8 +103,9 @@ impl DynamicGridFormat {
         let cell_views = if input.contains('\n') {
             // TODO: add CandidatesGridANSIStyled
 
-            CandidatesGridCompact
+            CandidatesGridANSIStyled
                 .parse_and_validate_cell_count(input)
+                .or_else(|_| CandidatesGridCompact.parse_and_validate_cell_count(input))
                 .or_else(|_| GivensGrid.parse_and_validate_cell_count(input))?
         } else {
             GivensLine
@@ -218,15 +219,13 @@ mod tests {
             })
         }
 
-        // FIXME: handle remaining formats
-
         // Grid formats which preserve:
         // - cell value
         let grid_formats: Vec<DynamicGridFormat> = vec![
             BinaryCandidatesLine.into(),
             BinaryFixedCandidatesLine.into(),
-            // CandidatesGridANSIStyled.into(),
-            // CandidatesGridPlain.into(),
+            CandidatesGridANSIStyled.into(),
+            CandidatesGridPlain.into(),
             CandidatesGridCompact.into(),
             GivensLine.into(),
             GivensGrid.into(),
@@ -280,6 +279,26 @@ mod tests {
 
         // Grid formats which preserve:
         // - cell value
+        // - cell candidates
+        let grid_formats: Vec<DynamicGridFormat> = vec![
+            // BinaryCandidatesLine.into(),
+            // BinaryFixedCandidatesLine.into(),
+            CandidatesGridANSIStyled.into(),
+            CandidatesGridPlain.into(),
+            CandidatesGridCompact.into(),
+            // GivensLine.into(),
+            // GivensGrid.into(),
+        ];
+        for grid_format in grid_formats {
+            for_test_grids!(|grid| {
+                assert_grid_format_roundtrip_detect(&grid, grid_format)
+                    .with_context(|| "Test cell candidates roundtrip".to_string())
+                    .unwrap();
+            });
+        }
+
+        // Grid formats which preserve:
+        // - cell value
         // - cell value fixed state
         // - cell multiple candidates
         let grid_formats: Vec<DynamicGridFormat> = vec![
@@ -293,11 +312,18 @@ mod tests {
         ];
         for grid_format in grid_formats {
             for_test_grids!(|grid| {
+                // Delete single candidates which would get converted to a value.
                 grid.all_candidates_positions().into_iter().for_each(|pos| {
                     if grid.get(pos).candidates().unwrap().to_single().is_some() {
                         grid.get_mut(pos).delete();
                     }
                 });
+                // Unfix each second value.
+                grid.all_value_positions()
+                    .into_iter()
+                    .enumerate()
+                    .filter(|&(i, _)| i % 2 == 0)
+                    .for_each(|(_, pos)| grid.get_mut(pos).unfix());
                 assert_grid_format_roundtrip_detect(&grid, grid_format)
                     .with_context(|| "Test cell multiple candidates roundtrip".to_string())
                     .unwrap();

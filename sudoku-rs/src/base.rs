@@ -36,6 +36,13 @@ pub mod consts {
         Base4::CELL_COUNT,
         Base5::CELL_COUNT,
     ];
+
+    pub const ALL_SIDE_LENGTHS: [u8; 4] = [
+        Base2::SIDE_LENGTH,
+        Base3::SIDE_LENGTH,
+        Base4::SIDE_LENGTH,
+        Base5::SIDE_LENGTH,
+    ];
 }
 
 mod private {
