@@ -157,27 +157,25 @@ impl<Base: SudokuBase> Candidates<Base> {
     ///
     /// If the candidates are base segmented, the base segment index is returned, otherwise `None`.
     pub fn base_segmentation(self) -> Option<u8> {
+        // TODO: benchmark/optimize/simplify
         let base = Base::BASE;
         let zero = Base::CandidatesIntegral::zero();
         let one = Base::CandidatesIntegral::one();
 
+        if self.count() < 2 {
+            return None;
+        }
+
         let first_segment_mask = (one << base) - one;
-        let max_value = usize::from(Base::MAX_VALUE);
-        println!("first_segment_mask: {first_segment_mask:0max_value$b}");
         for segment_index in 0..base {
             let segment_mask = first_segment_mask << (segment_index * base);
             let outside_segment_mask = !segment_mask;
 
-            println!("segment_mask: {segment_mask:0max_value$b}");
-            println!("outside_segment_mask: {outside_segment_mask:0max_value$b}");
-
-            if self.bits & outside_segment_mask != zero {
+            if self.bits & outside_segment_mask == zero {
+                return Some(segment_index);
+            } else {
                 // Candidates are set outside current segment, continue.
                 continue;
-            }
-
-            if self.count() >= 2 {
-                return Some(segment_index);
             }
         }
 
