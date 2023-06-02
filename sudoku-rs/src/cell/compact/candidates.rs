@@ -14,7 +14,7 @@ use crate::cell::compact::value::Value;
 use crate::cell::dynamic::DynamicCandidates;
 use crate::cell::{Cell, CellState};
 use crate::error::{Error, Result};
-use crate::position::Coordinate;
+use crate::position::{BlockCoordinate, Coordinate};
 
 mod iter;
 
@@ -156,19 +156,22 @@ impl<Base: SudokuBase> Candidates<Base> {
     ///   e.g. have a bit position in the range of `(n..n+Base::BASE)`, where n is some non-negative integer.
     ///
     /// If the candidates are base segmented, the base segment index is returned, otherwise `None`.
-    pub fn base_segmentation(self) -> Option<u8> {
+    pub fn base_segmentation(self) -> Option<BlockCoordinate<Base>> {
         // TODO: benchmark/optimize/simplify
+        //  count leading/trailing zeros, if gap equal or smaller than base, then hit.
+        //  segment_index = leading zeros / base
         let base = Base::BASE;
         let zero = Base::CandidatesIntegral::zero();
         let one = Base::CandidatesIntegral::one();
 
-        if self.count() < 2 {
+        let count = self.count();
+        if !(2..base).contains(&count) {
             return None;
         }
 
         let first_segment_mask = (one << base) - one;
-        for segment_index in 0..base {
-            let segment_mask = first_segment_mask << (segment_index * base);
+        for segment_index in BlockCoordinate::all() {
+            let segment_mask = first_segment_mask << (segment_index.get() * base);
             let outside_segment_mask = !segment_mask;
 
             if self.bits & outside_segment_mask == zero {
@@ -597,7 +600,7 @@ mod tests {
                 assert_eq!(
                     Candidates::<Base>::with_integral(segmented_candidates_integral)
                         .base_segmentation(),
-                    Some(segment_index)
+                    Some(BlockCoordinate::new(segment_index).unwrap())
                 );
             }
 

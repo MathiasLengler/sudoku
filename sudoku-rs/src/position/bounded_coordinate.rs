@@ -4,6 +4,7 @@ use anyhow::ensure;
 
 use crate::base::SudokuBase;
 use crate::error::{Error, Result};
+use crate::position::BlockCoordinate;
 
 /// A coordinate/index in a sudoku grid.
 ///
@@ -142,6 +143,24 @@ impl<Base: SudokuBase> Coordinate<Base> {
     pub fn get_usize(self) -> usize {
         usize::from(self.coordinate)
     }
+
+    pub fn to_block_row(self) -> BlockCoordinate<Base> {
+        let block_row = self.coordinate / Base::BASE;
+
+        // Safety: the calculation for `block_row` always remains in-bounds.
+        unsafe { BlockCoordinate::new_unchecked(block_row) }
+    }
+
+    pub fn to_block_column(self) -> BlockCoordinate<Base> {
+        let block_column = self.coordinate % Base::BASE;
+
+        // Safety: the calculation for `block_column` always remains in-bounds.
+        unsafe { BlockCoordinate::new_unchecked(block_column) }
+    }
+
+    pub fn to_block_row_and_column(self) -> (BlockCoordinate<Base>, BlockCoordinate<Base>) {
+        (self.to_block_row(), self.to_block_column())
+    }
 }
 
 /// Iterators
@@ -158,6 +177,19 @@ impl<Base: SudokuBase> TryFrom<u8> for Coordinate<Base> {
 
     fn try_from(coordinate: u8) -> Result<Self> {
         Self::new(coordinate)
+    }
+}
+
+impl<Base: SudokuBase> From<(BlockCoordinate<Base>, BlockCoordinate<Base>)> for Coordinate<Base> {
+    fn from((block_row, block_column): (BlockCoordinate<Base>, BlockCoordinate<Base>)) -> Self {
+        block_row.debug_assert();
+        block_column.debug_assert();
+
+        let coordinate = block_row.get() * Base::BASE + block_column.get();
+
+        // Safety: the calculation for `coordinate` always remains in-bounds,
+        // since `row` and `column` are each bounds checked at creation-time.
+        unsafe { Self::new_unchecked(coordinate) }
     }
 }
 
