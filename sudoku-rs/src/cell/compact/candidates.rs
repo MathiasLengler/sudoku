@@ -148,6 +148,42 @@ impl<Base: SudokuBase> Candidates<Base> {
         self.bits == Self::all_candidates_mask()
     }
 
+    /// Determine the base segmentation..
+    ///
+    /// Candidates are base segmented, if:
+    /// - The candidates contain `2..=Base::BASE` candidates
+    /// - All candidates are contained in a single base segment,
+    ///   e.g. have a bit position in the range of `(n..n+Base::BASE)`, where n is some non-negative integer.
+    ///
+    /// If the candidates are base segmented, the base segment index is returned, otherwise `None`.
+    pub fn base_segmentation(self) -> Option<u8> {
+        let base = Base::BASE;
+        let zero = Base::CandidatesIntegral::zero();
+        let one = Base::CandidatesIntegral::one();
+
+        let first_segment_mask = (one << base) - one;
+        let max_value = usize::from(Base::MAX_VALUE);
+        println!("first_segment_mask: {first_segment_mask:0max_value$b}");
+        for segment_index in 0..base {
+            let segment_mask = first_segment_mask << (segment_index * base);
+            let outside_segment_mask = !segment_mask;
+
+            println!("segment_mask: {segment_mask:0max_value$b}");
+            println!("outside_segment_mask: {outside_segment_mask:0max_value$b}");
+
+            if self.bits & outside_segment_mask != zero {
+                // Candidates are set outside current segment, continue.
+                continue;
+            }
+
+            if self.count() >= 2 {
+                return Some(segment_index);
+            }
+        }
+
+        None
+    }
+
     pub fn count(&self) -> u8 {
         self.bits.count_ones().try_into().unwrap()
     }
@@ -493,6 +529,8 @@ mod tests {
     }
 
     mod getters {
+        use std::collections::BTreeSet;
+
         use super::*;
 
         #[test]
@@ -550,6 +588,65 @@ mod tests {
             assert!(!empty.is_full());
             assert!(!one.is_full());
             assert!(all.is_full());
+        }
+
+        fn assert_base_segmentation<Base: SudokuBase>(
+            segmented_candidates: Vec<(Base::CandidatesIntegral, u8)>,
+        ) {
+            for (segmented_candidates_integral, segment_index) in
+                segmented_candidates.iter().copied()
+            {
+                assert_eq!(
+                    Candidates::<Base>::with_integral(segmented_candidates_integral)
+                        .base_segmentation(),
+                    Some(segment_index)
+                );
+            }
+
+            let segmented_integrals: BTreeSet<_> = segmented_candidates
+                .into_iter()
+                .map(|(integral, _)| integral)
+                .collect();
+
+            for non_segmented_integral in num::range(
+                Base::CandidatesIntegral::zero(),
+                Candidates::<Base>::all_candidates_mask(),
+            )
+            .filter(|integral| !segmented_integrals.contains(integral))
+            {
+                assert_eq!(
+                    Candidates::<Base>::with_integral(non_segmented_integral).base_segmentation(),
+                    None,
+                    "Non segmented integral: {non_segmented_integral:b}"
+                );
+            }
+        }
+
+        #[test]
+        fn test_base_segmentation_base_2() {
+            let segmented_candidates = vec![(0b0011, 0), (0b1100, 1)];
+
+            assert_base_segmentation::<Base2>(segmented_candidates)
+        }
+
+        #[test]
+        fn test_base_segmentation_base_3() {
+            let segmented_candidates = vec![
+                (0b000_000_011, 0),
+                (0b000_000_101, 0),
+                (0b000_000_110, 0),
+                (0b000_000_111, 0),
+                (0b000_011_000, 1),
+                (0b000_101_000, 1),
+                (0b000_110_000, 1),
+                (0b000_111_000, 1),
+                (0b011_000_000, 2),
+                (0b101_000_000, 2),
+                (0b110_000_000, 2),
+                (0b111_000_000, 2),
+            ];
+
+            assert_base_segmentation::<Base3>(segmented_candidates);
         }
 
         #[test]

@@ -250,6 +250,7 @@ where
         + BitOrAssign
         + BitAndAssign
         + Shl<u8, Output = Self::CandidatesIntegral>
+        // Conversions
         + Into<u32>
         + TryFrom<u32, Error = Self::CandidatesIntegralTryFromU32Error>;
 
