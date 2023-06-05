@@ -3,6 +3,7 @@ members = [
     "sudoku-rs",
     "sudoku-wasm",
 ]
+resolver = "2"
 
 [workspace.package]
 authors = ["Mathias Lengler <mathias@lengler.dev>"]
