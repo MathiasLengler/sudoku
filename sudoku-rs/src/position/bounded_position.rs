@@ -258,6 +258,10 @@ impl<Base: SudokuBase> Position<Base> {
     pub fn all_blocks() -> impl Iterator<Item = impl Iterator<Item = Self>> {
         Coordinate::all().map(Self::block)
     }
+
+    pub fn all_blocks_top_left() -> impl Iterator<Item = Self> {
+        Coordinate::all().map(Base::block_to_top_left_pos)
+    }
 }
 
 impl<Base: SudokuBase> Serialize for Position<Base> {
@@ -510,6 +514,16 @@ mod tests {
                         expected_row.into_iter().map(|pos| pos.try_into().unwrap()),
                     );
                 });
+        }
+
+        #[test]
+        fn test_all_blocks_top_left() {
+            itertools::assert_equal(
+                Position::<Base2>::all_blocks_top_left(),
+                vec![(0, 0), (0, 2), (2, 0), (2, 2)]
+                    .into_iter()
+                    .map(|pos| pos.try_into().unwrap()),
+            );
         }
 
         #[test]
