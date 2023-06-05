@@ -28,7 +28,7 @@ impl From<u8> for DynamicValue {
 
 impl<Base: SudokuBase> From<Value<Base>> for DynamicValue {
     fn from(value: Value<Base>) -> Self {
-        Self(value.into_u8())
+        Self(value.get())
     }
 }
 

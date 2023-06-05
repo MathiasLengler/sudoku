@@ -337,7 +337,7 @@ fn bench_candidates_group(candidates_group: &mut BenchmarkGroup<WallTime>) {
             |candidates_to_set| {
                 let mut candidates: u16 = 0;
                 for candidate_to_set in candidates_to_set {
-                    candidates |= 1 << (candidate_to_set.into_u8() - 1)
+                    candidates |= 1 << (candidate_to_set.get() - 1)
                 }
                 candidates
             },

@@ -196,7 +196,7 @@ impl<Base: SudokuBase> From<(BlockCoordinate<Base>, BlockCoordinate<Base>)> for 
 
 impl<Base: SudokuBase> From<Value<Base>> for Coordinate<Base> {
     fn from(value: Value<Base>) -> Self {
-        unsafe { Self::new_unchecked(value.into_u8() - 1) }
+        unsafe { Self::new_unchecked(value.get() - 1) }
     }
 }
 

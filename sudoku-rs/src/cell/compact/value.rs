@@ -27,17 +27,13 @@ impl<Base: SudokuBase> Default for Value<Base> {
     }
 }
 
+/// Constructors
 impl<Base: SudokuBase> Value<Base> {
     /// Ok(Some(value)) => value in legal range
     /// Ok(None) => 0
     /// Err(err) => value too big
     pub fn new(value: u8) -> Result<Option<Self>> {
-        let limit = Base::MAX_VALUE;
-
-        ensure!(
-            value <= limit,
-            "Value can't be greater than {limit}, instead got: {value}"
-        );
+        Self::validate_value(value, false)?;
 
         Ok(NonZeroU8::new(value).map(|value| Self {
             value,
@@ -49,10 +45,7 @@ impl<Base: SudokuBase> Value<Base> {
     ///
     /// `value` must be in the range `1..=(Base::MAX_VALUE)`.
     pub unsafe fn new_unchecked(value: u8) -> Self {
-        debug_assert!({
-            Self::try_from(value).unwrap();
-            true
-        });
+        Self::debug_assert_value(value, true);
 
         Self {
             // Safety: value is-none zero, upheld by the caller safety contract.
@@ -61,8 +54,53 @@ impl<Base: SudokuBase> Value<Base> {
         }
     }
 
-    pub fn into_u8(self) -> u8 {
+    pub fn max() -> Self {
+        // Safety: `Base::MAX_VALUE` is in the range `1..=(Base::MAX_VALUE)`
+        unsafe { Self::new_unchecked(Base::MAX_VALUE) }
+    }
+}
+
+/// Validation
+impl<Base: SudokuBase> Value<Base> {
+    fn validate_value(value: u8, ensure_non_zero: bool) -> Result<()> {
+        let max_value = Base::MAX_VALUE;
+        ensure!(
+            value <= max_value,
+            "Value can't be greater than {max_value}, instead got: {value}"
+        );
+        if ensure_non_zero {
+            ensure!(value != 0, "Value can't be 0");
+        }
+        Ok(())
+    }
+
+    fn assert_value(value: u8, ensure_non_zero: bool) {
+        Self::validate_value(value, ensure_non_zero).unwrap()
+    }
+
+    fn debug_assert_value(value: u8, ensure_non_zero: bool) {
+        debug_assert!({
+            Self::assert_value(value, ensure_non_zero);
+            true
+        });
+    }
+}
+
+/// Getters
+impl<Base: SudokuBase> Value<Base> {
+    /// Get the `value` as a `u8`.
+    /// Guaranteed to be in the range `1..=(Base::MAX_VALUE)`.
+    pub fn get(self) -> u8 {
         self.value.get()
+    }
+}
+
+/// Iterators
+impl<Base: SudokuBase> Value<Base> {
+    pub fn all() -> impl Iterator<Item = Self> {
+        (1..=Base::MAX_VALUE).map(|value|
+            // Safety: `value` remains in-bounds
+            unsafe { Self::new_unchecked(value) })
     }
 }
 
@@ -122,7 +160,7 @@ mod tests {
         assert!(value.is_none());
 
         let value = Value::<Base3>::new(9)?;
-        assert_eq!(value.map(|value| value.into_u8()), Some(9));
+        assert_eq!(value.map(|value| value.get()), Some(9));
 
         let value = Value::<Base3>::new(10);
         assert!(value.is_err());
@@ -136,7 +174,7 @@ mod tests {
         assert!(value.is_err());
 
         let value = Value::<Base3>::try_from(9)?;
-        assert_eq!(value.into_u8(), 9);
+        assert_eq!(value.get(), 9);
 
         let value = Value::<Base3>::try_from(10);
         assert!(value.is_err());

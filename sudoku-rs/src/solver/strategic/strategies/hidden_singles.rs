@@ -36,7 +36,7 @@ impl Strategy for HiddenSingles {
                 for group_position in group_positions {
                     if let Some(candidates) = grid.get(group_position).candidates() {
                         for candidate in candidates.iter() {
-                            let candidate = candidate.into_u8() - 1;
+                            let candidate = candidate.get() - 1;
 
                             let candidate_index = usize::from(candidate);
 

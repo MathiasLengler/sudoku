@@ -170,8 +170,6 @@ impl<Base: SudokuBase> Candidates<Base> {
         //  count leading/trailing zeros, if gap equal or smaller than base, then hit.
         //  segment_index = leading zeros / base
         let base = Base::BASE;
-        let zero = Base::CandidatesIntegral::zero();
-        let one = Base::CandidatesIntegral::one();
 
         let count = self.count();
         if !(2..=base).contains(&count) {
@@ -202,7 +200,7 @@ impl<Base: SudokuBase> Candidates<Base> {
     }
 
     pub fn to_vec_u8(&self) -> Vec<u8> {
-        self.iter().map(|value| value.into_u8()).collect()
+        self.iter().map(|value| value.get()).collect()
     }
 
     pub fn to_vec_value(&self) -> Vec<Value<Base>> {
@@ -227,7 +225,7 @@ impl<Base: SudokuBase> Candidates<Base> {
     }
 
     fn import(candidate: Value<Base>) -> u8 {
-        candidate.into_u8() - 1
+        candidate.get() - 1
     }
 
     fn export(candidate: Coordinate<Base>) -> Value<Base> {
