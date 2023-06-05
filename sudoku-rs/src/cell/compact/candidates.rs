@@ -165,7 +165,7 @@ impl<Base: SudokuBase> Candidates<Base> {
         let one = Base::CandidatesIntegral::one();
 
         let count = self.count();
-        if !(2..base).contains(&count) {
+        if !(2..=base).contains(&count) {
             return None;
         }
 
