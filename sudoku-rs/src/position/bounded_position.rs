@@ -210,6 +210,11 @@ impl<Base: SudokuBase> Position<Base> {
             unsafe { Self::new_unchecked(cell_index) })
     }
 
+    /// All grid positions in column-major order.
+    pub fn all_column_major() -> impl Iterator<Item = Self> {
+        Self::all_columns().flatten()
+    }
+
     pub fn row(row: Coordinate<Base>) -> impl Iterator<Item = Self> {
         let first_cell_index = row.get_u16() * u16::from(Base::SIDE_LENGTH);
         (first_cell_index..first_cell_index + u16::from(Base::SIDE_LENGTH)).map(|cell_index|
@@ -338,6 +343,33 @@ mod tests {
                     (3, 0),
                     (3, 1),
                     (3, 2),
+                    (3, 3),
+                ]
+                .into_iter()
+                .map(|pos| pos.try_into().unwrap()),
+            );
+        }
+
+        #[test]
+        fn test_all_column_major() {
+            itertools::assert_equal(
+                Position::<Base2>::all_column_major(),
+                vec![
+                    (0, 0),
+                    (1, 0),
+                    (2, 0),
+                    (3, 0),
+                    (0, 1),
+                    (1, 1),
+                    (2, 1),
+                    (3, 1),
+                    (0, 2),
+                    (1, 2),
+                    (2, 2),
+                    (3, 2),
+                    (0, 3),
+                    (1, 3),
+                    (2, 3),
                     (3, 3),
                 ]
                 .into_iter()
