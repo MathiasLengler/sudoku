@@ -56,8 +56,6 @@ mod private {
     impl Sealed for Base5 {}
 }
 
-pub type ArrayElement = u8;
-
 const fn base_to_side_length(base: u8) -> u8 {
     base.pow(2)
 }
