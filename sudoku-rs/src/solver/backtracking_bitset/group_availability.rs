@@ -34,6 +34,15 @@ impl<Base: SudokuBase> CandidatesGroup<Base> {
     }
 }
 
+impl<Base: SudokuBase> IntoIterator for CandidatesGroup<Base> {
+    type Item = Candidates<Base>;
+    type IntoIter = Base::CandidatesGroupIntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.candidates_group.into_iter()
+    }
+}
+
 /// A compact data structure representing group information of a sudoku grid.
 ///
 /// Saves `Base::SIDE_LENGTH` bits of information for each group.
@@ -154,8 +163,9 @@ impl<Base: SudokuBase> From<GroupAvailabilityIndex<Base>> for Position<Base> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::base::consts::*;
+
+    use super::*;
 
     type Base = Base3;
 
@@ -174,8 +184,9 @@ mod tests {
     }
 
     mod group_availability {
-        use super::*;
         use std::mem::size_of;
+
+        use super::*;
 
         #[test]
         fn test_new() {

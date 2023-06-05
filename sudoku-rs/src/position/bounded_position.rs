@@ -47,6 +47,36 @@ impl<Base: SudokuBase> Position<Base> {
         this.debug_assert();
         this
     }
+
+    pub fn with_block_and_row_major_index(
+        (block, row_major_index): (Coordinate<Base>, Coordinate<Base>),
+    ) -> Self {
+        let block_top_left = Base::block_to_top_left_pos(block);
+        let (block_top_left_row, block_top_left_column) = block_top_left.to_row_and_column();
+        let (block_row, block_column) = row_major_index.to_block_row_and_column();
+        unsafe {
+            (
+                Coordinate::new_unchecked(block_top_left_row.get() + block_row.get()),
+                Coordinate::new_unchecked(block_top_left_column.get() + block_column.get()),
+            )
+        }
+        .into()
+    }
+
+    pub fn with_block_and_column_major_index(
+        (block, column_major_index): (Coordinate<Base>, Coordinate<Base>),
+    ) -> Self {
+        let block_top_left = Base::block_to_top_left_pos(block);
+        let (block_top_left_row, block_top_left_column) = block_top_left.to_row_and_column();
+        let (block_column, block_row) = column_major_index.to_block_row_and_column();
+        unsafe {
+            (
+                Coordinate::new_unchecked(block_top_left_row.get() + block_row.get()),
+                Coordinate::new_unchecked(block_top_left_column.get() + block_column.get()),
+            )
+        }
+        .into()
+    }
 }
 
 impl<Base: SudokuBase> From<(Coordinate<Base>, Coordinate<Base>)> for Position<Base> {

@@ -1,12 +1,12 @@
 use num::{One, PrimInt, Zero};
 
 use crate::base::SudokuBase;
-use crate::cell::Value;
+use crate::cell::{Candidates, Value};
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::{Coordinate, Position};
 use crate::solver::backtracking_bitset::group_availability::CandidatesGroup;
-use crate::solver::strategic::deduction::Deductions;
+use crate::solver::strategic::deduction::{Action, Deduction, Deductions, Reason};
 use crate::solver::strategic::strategies::Strategy;
 
 /// For a single candidate, where in each group is this candidate set?
@@ -66,36 +66,78 @@ impl Strategy for GroupIntersection {
             }
         }
 
-        Coordinate::<Base>::all()
+        Ok(Coordinate::<Base>::all()
             .zip(candidate_to_group_candidate_indexes)
-            .filter_map(|(coordinate, group_candidate_indexes)| {
-                dbg!(coordinate);
-
+            .flat_map(move |(coordinate, group_candidate_indexes)| {
                 let candidate: Value<Base> = coordinate.into();
 
-                // for (rows_i, row) in
-                //     Coordinate::<Base>::all().zip(group_candidate_indexes.rows.iter())
-                // {
-                //     if let Some(segment_index) = row.base_segmentation() {
-                //         group_candidate_indexes.row_major_blocks.get(
-                //             Coordinate::new(segment_index + ((rows_i.get() / base) * base))
-                //                 .unwrap(),
-                //         );
-                //     }
-                // }
+                let GroupCandidateIndexes {
+                    row_major_blocks,
+                    rows,
+                    ..
+                } = group_candidate_indexes;
 
-                for (block_i, block) in
-                    Coordinate::<Base>::all().zip(group_candidate_indexes.row_major_blocks.iter())
-                {
-                    if let Some(segment_index) = block.base_segmentation() {
-                        let row_i = (block_i.to_block_row(), segment_index).into();
-                        group_candidate_indexes.rows.get(row_i);
-                    }
-                }
+                Coordinate::<Base>::all()
+                    .zip(row_major_blocks.into_iter())
+                    .filter_map(move |(block_i, block)| {
+                        if let Some(segment_index) = block.base_segmentation() {
+                            let (block_row, block_column) = block_i.to_block_row_and_column();
+                            let rows_i = (block_row, segment_index).into();
+                            let row = rows.get(rows_i);
+                            let row_base_segmentation = row.base_segmentation();
+                            if row_base_segmentation.is_none() {
+                                // Found group intersection with an effect.
+                                dbg!((
+                                    candidate,
+                                    block_i,
+                                    block,
+                                    segment_index,
+                                    rows_i,
+                                    row,
+                                    row_base_segmentation
+                                ));
 
-                None
+                                let mut deduction = Deduction::new();
+                                let reason = Reason::candidate(candidate);
+                                for row_major_index in block
+                                    .intersection(Candidates::base_segmentation_mask(segment_index))
+                                    .into_iter()
+                                    .map(|candidate| Coordinate::from(candidate))
+                                {
+                                    deduction
+                                        .reasons
+                                        .insert(
+                                            Position::with_block_and_row_major_index((
+                                                block_i,
+                                                row_major_index,
+                                            )),
+                                            reason,
+                                        )
+                                        .unwrap();
+                                }
+
+                                let action = Action::delete_candidate(candidate);
+                                for row_i in row
+                                    .without(Candidates::base_segmentation_mask(block_column))
+                                    .into_iter()
+                                    .map(|candidate| Coordinate::from(candidate))
+                                {
+                                    deduction
+                                        .actions
+                                        .insert((rows_i, row_i).into(), action)
+                                        .unwrap();
+                                }
+
+                                Some(deduction)
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        }
+                    })
             })
-            .collect()
+            .collect())
     }
 }
 
@@ -134,6 +176,7 @@ mod tests {
         let deductions = GroupIntersection.execute(&grid).unwrap();
 
         println!("Deductions: {deductions}");
+        println!("Deductions: {deductions:#?}");
 
         // TODO: assert deductions
     }

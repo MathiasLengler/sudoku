@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 use anyhow::ensure;
 
 use crate::base::SudokuBase;
+use crate::cell::Value;
 use crate::error::{Error, Result};
 use crate::position::BlockCoordinate;
 
@@ -190,6 +191,12 @@ impl<Base: SudokuBase> From<(BlockCoordinate<Base>, BlockCoordinate<Base>)> for 
         // Safety: the calculation for `coordinate` always remains in-bounds,
         // since `row` and `column` are each bounds checked at creation-time.
         unsafe { Self::new_unchecked(coordinate) }
+    }
+}
+
+impl<Base: SudokuBase> From<Value<Base>> for Coordinate<Base> {
+    fn from(value: Value<Base>) -> Self {
+        unsafe { Self::new_unchecked(value.into_u8() - 1) }
     }
 }
 

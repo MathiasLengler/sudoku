@@ -67,6 +67,15 @@ impl<Base: SudokuBase> Candidates<Base> {
 
         this
     }
+
+    pub fn base_segmentation_mask(segment_index: BlockCoordinate<Base>) -> Self {
+        let base = Base::BASE;
+        let one = Base::CandidatesIntegral::one();
+
+        let first_segment_mask = (one << base) - one;
+
+        Self::with_integral_unchecked(first_segment_mask << (segment_index.get() * base))
+    }
 }
 
 /// Set constructors
@@ -169,12 +178,11 @@ impl<Base: SudokuBase> Candidates<Base> {
             return None;
         }
 
-        let first_segment_mask = (one << base) - one;
         for segment_index in BlockCoordinate::all() {
-            let segment_mask = first_segment_mask << (segment_index.get() * base);
-            let outside_segment_mask = !segment_mask;
+            let segment_mask = Self::base_segmentation_mask(segment_index);
+            let outside_segment_mask = Self::all().without(segment_mask);
 
-            if self.bits & outside_segment_mask == zero {
+            if self.intersection(outside_segment_mask).is_empty() {
                 return Some(segment_index);
             } else {
                 // Candidates are set outside current segment, continue.
