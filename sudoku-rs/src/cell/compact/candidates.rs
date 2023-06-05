@@ -182,9 +182,6 @@ impl<Base: SudokuBase> Candidates<Base> {
 
             if self.intersection(outside_segment_mask).is_empty() {
                 return Some(segment_index);
-            } else {
-                // Candidates are set outside current segment, continue.
-                continue;
             }
         }
 
