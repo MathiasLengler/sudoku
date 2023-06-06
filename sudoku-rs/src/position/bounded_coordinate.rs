@@ -12,7 +12,7 @@ use crate::position::BlockCoordinate;
 /// Can represent three different dimensions:
 ///
 /// # Row
-/// ```plaintext
+/// ```text
 /// ╔═════════╦═════════╗
 /// ║  0 │ 0  ║  0 │ 0  ║
 /// ║ ───┼─── ║ ───┼─── ║
@@ -24,7 +24,7 @@ use crate::position::BlockCoordinate;
 /// ╚═════════╩═════════╝
 /// ```
 /// # Column
-/// ```plaintext
+/// ```text
 /// ╔═════════╦═════════╗
 /// ║  0 │ 1  ║  2 │ 3  ║
 /// ║ ───┼─── ║ ───┼─── ║
@@ -36,7 +36,7 @@ use crate::position::BlockCoordinate;
 /// ╚═════════╩═════════╝
 /// ```
 /// # Block
-/// ```plaintext
+/// ```text
 /// ╔═════════╦═════════╗
 /// ║  0 │ 0  ║  1 │ 1  ║
 /// ║ ───┼─── ║ ───┼─── ║

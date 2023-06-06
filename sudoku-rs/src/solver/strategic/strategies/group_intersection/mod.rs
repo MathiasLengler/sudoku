@@ -10,6 +10,8 @@ use crate::solver::backtracking_bitset::group_availability::CandidatesGroup;
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions, Reason};
 use crate::solver::strategic::strategies::Strategy;
 
+mod block_segment;
+
 /// For a single candidate, where in each group is this candidate set?
 #[derive(Debug, Clone, Default)]
 struct GroupCandidateIndexes<Base: SudokuBase> {
@@ -81,6 +83,8 @@ impl Strategy for GroupIntersection {
         //  row major base segments
         //  column major base segments
 
+        // TODO: use BlockSegment::all
+
         Ok(
             izip!(Value::<Base>::all(), candidate_to_group_candidate_indexes,)
                 .flat_map(move |(candidate, group_candidate_indexes)| {
@@ -88,50 +92,52 @@ impl Strategy for GroupIntersection {
                         Coordinate::<Base>::all(),
                         group_candidate_indexes.row_major_blocks,
                     )
-                    .filter_map(move |(block_i, block)| {
-                        let Some(segment_index) = block.base_segmentation() else {
+                    .filter_map(
+                        move |(block_i, block): (Coordinate<Base>, Candidates<Base>)| {
+                            let Some(segment_index) = block.base_segmentation() else {
                                 return None;
                             };
-                        let (block_row, block_column) = block_i.to_block_row_and_column();
-                        let rows_i = (block_row, segment_index).into();
-                        let row = group_candidate_indexes.rows.get(rows_i);
-                        let None = row.base_segmentation() else { return None; };
+                            let (block_row, block_column) = block_i.to_block_row_and_column();
+                            let rows_i = (block_row, segment_index).into();
+                            let row = group_candidate_indexes.rows.get(rows_i);
+                            let None = row.base_segmentation() else { return None; };
 
-                        // Found group intersection with an effect.
+                            // Found group intersection with an effect.
 
-                        let mut deduction = Deduction::new();
-                        let reason = Reason::candidate(candidate);
-                        for row_major_index in block
-                            .intersection(Candidates::base_segmentation_mask(segment_index))
-                            .into_iter()
-                            .map(|candidate| Coordinate::from(candidate))
-                        {
-                            deduction
-                                .reasons
-                                .insert(
-                                    Position::with_block_and_row_major_index((
-                                        block_i,
-                                        row_major_index,
-                                    )),
-                                    reason,
-                                )
-                                .unwrap();
-                        }
+                            let mut deduction = Deduction::new();
+                            let reason = Reason::candidate(candidate);
+                            for row_major_index in block
+                                .intersection(Candidates::base_segmentation_mask(segment_index))
+                                .into_iter()
+                                .map(Coordinate::from)
+                            {
+                                deduction
+                                    .reasons
+                                    .insert(
+                                        Position::with_block_and_row_major_index((
+                                            block_i,
+                                            row_major_index,
+                                        )),
+                                        reason,
+                                    )
+                                    .unwrap();
+                            }
 
-                        let action = Action::delete_candidate(candidate);
-                        for row_i in row
-                            .without(Candidates::base_segmentation_mask(block_column))
-                            .into_iter()
-                            .map(|candidate| Coordinate::from(candidate))
-                        {
-                            deduction
-                                .actions
-                                .insert((rows_i, row_i).into(), action)
-                                .unwrap();
-                        }
+                            let action = Action::delete_candidate(candidate);
+                            for row_i in row
+                                .without(Candidates::base_segmentation_mask(block_column))
+                                .into_iter()
+                                .map(Coordinate::from)
+                            {
+                                deduction
+                                    .actions
+                                    .insert((rows_i, row_i).into(), action)
+                                    .unwrap();
+                            }
 
-                        Some(deduction)
-                    })
+                            Some(deduction)
+                        },
+                    )
                 })
                 .collect(),
         )

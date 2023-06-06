@@ -157,7 +157,9 @@ impl<Base: SudokuBase> Candidates<Base> {
         self.bits == Self::all_candidates_mask()
     }
 
-    /// Determine the base segmentation..
+    // TODO: unify naming with `BlockSegment`
+
+    /// Determine the base segmentation.
     ///
     /// Candidates are base segmented, if:
     /// - The candidates contain `2..=Base::BASE` candidates

@@ -240,6 +240,9 @@ impl<Base: SudokuBase> Position<Base> {
         Coordinate::all().map(Self::column)
     }
 
+    /// Iterator over all `Position`s of a block.
+    ///
+    /// The block positions are yielded in row-major order.
     pub fn block(block: Coordinate<Base>) -> impl Iterator<Item = Self> {
         let block_top_left = Base::block_to_top_left_pos(block);
 
@@ -255,6 +258,9 @@ impl<Base: SudokuBase> Position<Base> {
             })
     }
 
+    /// Nested iterator over all block positions.
+    ///
+    /// The blocks *and* positions are visited in row-major order.
     pub fn all_blocks() -> impl Iterator<Item = impl Iterator<Item = Self>> {
         Coordinate::all().map(Self::block)
     }
