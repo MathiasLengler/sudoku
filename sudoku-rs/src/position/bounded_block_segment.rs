@@ -3,9 +3,10 @@ use crate::cell::Candidates;
 use crate::position::{BlockCoordinate, Coordinate, Position};
 use itertools::Either;
 use std::fmt::{self, Display, Formatter};
-/// The position of a base segment inside a sudoku grid.
+
+/// The position of a block segment inside a sudoku grid.
 ///
-/// A base segment is a "strip" of cells inside a block and row/column.
+/// A block segment is a "strip" of cells inside a block and row/column (axis).
 /// It always contains `Base::BASE` cells.
 ///
 /// # Examples
@@ -74,11 +75,11 @@ use std::fmt::{self, Display, Formatter};
 /// ╚═══════╩═══════╝
 /// ```
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Default)]
-pub(crate) struct BlockSegment<Base: SudokuBase> {
+pub struct BlockSegment<Base: SudokuBase> {
     // TODO: remove pub(crate)
-    pub(crate) block: Coordinate<Base>,
-    pub(crate) segment: BlockCoordinate<Base>,
-    pub(crate) orientation: CellOrder,
+    block: Coordinate<Base>,
+    segment: BlockCoordinate<Base>,
+    orientation: CellOrder,
 }
 
 impl<Base: SudokuBase> Display for BlockSegment<Base> {
@@ -97,7 +98,7 @@ impl<Base: SudokuBase> Display for BlockSegment<Base> {
 impl<Base: SudokuBase> BlockSegment<Base> {
     // FIXME: change/add iteration order
     //  it could be more natural to iterate the segments in axis order.
-    pub(crate) fn all() -> impl Iterator<Item = Self> {
+    pub fn all() -> impl Iterator<Item = Self> {
         Self::all_with_orientation(CellOrder::RowMajor)
             .chain(Self::all_with_orientation(CellOrder::ColumnMajor))
     }
@@ -106,7 +107,7 @@ impl<Base: SudokuBase> BlockSegment<Base> {
     ///
     /// The segments are visited in block-first order,
     /// e.g. all segments of block 0, then all segments of block 1, etc.
-    pub(crate) fn all_with_orientation(orientation: CellOrder) -> impl Iterator<Item = Self> {
+    pub fn all_with_orientation(orientation: CellOrder) -> impl Iterator<Item = Self> {
         Coordinate::<Base>::all().flat_map(move |block| {
             BlockCoordinate::<Base>::all().map(move |segment| Self {
                 block,
@@ -116,22 +117,26 @@ impl<Base: SudokuBase> BlockSegment<Base> {
         })
     }
 
+    pub fn orientation(self) -> CellOrder {
+        self.orientation
+    }
+
     // TODO: test
     /// The index of this block segment in its containing block.
-    pub(crate) fn block_segment_index(self) -> BlockCoordinate<Base> {
+    pub fn block_segment_index(self) -> BlockCoordinate<Base> {
         self.segment
     }
 
     // TODO: test
     /// The index of this block segment in its containing axis.
-    pub(crate) fn axis_segment_index(self) -> BlockCoordinate<Base> {
+    pub fn axis_segment_index(self) -> BlockCoordinate<Base> {
         match self.orientation {
             CellOrder::RowMajor => self.block.to_block_column(),
             CellOrder::ColumnMajor => self.block.to_block_row(),
         }
     }
 
-    pub(crate) fn axis(self) -> Coordinate<Base> {
+    pub fn axis(self) -> Coordinate<Base> {
         let Self {
             block,
             segment,
@@ -144,7 +149,11 @@ impl<Base: SudokuBase> BlockSegment<Base> {
         .into()
     }
 
-    pub(crate) fn axis_positions(self) -> impl Iterator<Item = Position<Base>> {
+    pub fn block(self) -> Coordinate<Base> {
+        self.block
+    }
+
+    pub fn axis_positions(self) -> impl Iterator<Item = Position<Base>> {
         let axis = self.axis();
         match self.orientation {
             CellOrder::RowMajor => Either::Left(Position::row(axis)),
@@ -152,7 +161,7 @@ impl<Base: SudokuBase> BlockSegment<Base> {
         }
     }
 
-    pub(crate) fn axis_position(self, axis_index: Coordinate<Base>) -> Position<Base> {
+    pub fn axis_position(self, axis_index: Coordinate<Base>) -> Position<Base> {
         match self.orientation {
             CellOrder::RowMajor => (self.axis(), axis_index),
             CellOrder::ColumnMajor => (axis_index, self.axis()),
@@ -160,14 +169,14 @@ impl<Base: SudokuBase> BlockSegment<Base> {
         .into()
     }
 
-    pub(crate) fn block_positions(self) -> impl Iterator<Item = Position<Base>> {
+    pub fn block_positions(self) -> impl Iterator<Item = Position<Base>> {
         match self.orientation {
             CellOrder::RowMajor => Either::Left(Position::block(self.block)),
             CellOrder::ColumnMajor => Either::Right(Position::block_column_major(self.block)),
         }
     }
 
-    pub(crate) fn block_position(self, block_index: Coordinate<Base>) -> Position<Base> {
+    pub fn block_position(self, block_index: Coordinate<Base>) -> Position<Base> {
         match self.orientation {
             CellOrder::RowMajor => Position::block(self.block)
                 .nth(block_index.get_usize())
@@ -178,7 +187,7 @@ impl<Base: SudokuBase> BlockSegment<Base> {
         }
     }
 
-    pub(crate) fn segment_positions(self) -> impl Iterator<Item = Position<Base>> {
+    pub fn segment_positions(self) -> impl Iterator<Item = Position<Base>> {
         // TODO: simplify/optimize
         let (block_row, block_column) = self.block.to_block_row_and_column();
         let base_usize = usize::from(Base::BASE);
@@ -190,17 +199,17 @@ impl<Base: SudokuBase> BlockSegment<Base> {
             .take(base_usize)
     }
 
-    pub(crate) fn axis_mask(self) -> Candidates<Base> {
+    pub fn axis_mask(self) -> Candidates<Base> {
         Candidates::block_segmentation_mask(self.axis_segment_index())
     }
 
-    pub(crate) fn block_mask(self) -> Candidates<Base> {
+    pub fn block_mask(self) -> Candidates<Base> {
         Candidates::block_segmentation_mask(self.block_segment_index())
     }
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Default)]
-pub(crate) enum CellOrder {
+pub enum CellOrder {
     #[default]
     RowMajor,
     ColumnMajor,
@@ -240,7 +249,7 @@ mod tests {
                 segment: segment.try_into().unwrap(),
                 orientation,
             }),
-        )
+        );
     }
 
     #[test]

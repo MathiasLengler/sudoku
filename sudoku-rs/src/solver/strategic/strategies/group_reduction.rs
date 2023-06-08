@@ -353,7 +353,7 @@ mod tests {
     fn test_naked_pairs() {
         let mut grid: Grid<Base3> =
             "400000938032094100095300240370609004529001673604703090957008300003900400240030709"
-                .try_into()
+                .parse()
                 .unwrap();
 
         grid.set_all_direct_candidates();
@@ -412,7 +412,7 @@ mod tests {
     fn test_hidden_pairs() {
         let mut grid: Grid<Base3> =
             "720408030080000047401076802810739000000851000000264080209680413340000008168943275"
-                .try_into()
+                .parse()
                 .unwrap();
 
         grid.set_all_direct_candidates();

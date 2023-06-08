@@ -4,12 +4,14 @@
 //  could simply be an alias for a tuple `(Position<Base>, T)`
 
 pub use bounded_block_coordinate::BlockCoordinate;
+pub use bounded_block_segment::{BlockSegment, CellOrder};
 pub use bounded_coordinate::Coordinate;
 pub use bounded_position::Position;
 pub use dynamic::DynamicPosition;
 pub use position_map::{Merge, PositionMap};
 
 mod bounded_block_coordinate;
+mod bounded_block_segment;
 mod bounded_coordinate;
 mod bounded_position;
 mod dynamic;

@@ -26,9 +26,6 @@ impl<Base: SudokuBase> CandidatesGroup<Base> {
         unsafe { get_unchecked_mut(self.candidates_group.as_mut(), coordinate.get_usize()) }
     }
 
-    pub(crate) fn iter(&self) -> impl Iterator<Item = Candidates<Base>> + '_ {
-        self.candidates_group.as_ref().iter().copied()
-    }
     pub(crate) fn iter_mut(&mut self) -> impl Iterator<Item = &mut Candidates<Base>> {
         self.candidates_group.as_mut().iter_mut()
     }

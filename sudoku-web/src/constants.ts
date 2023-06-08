@@ -4,14 +4,15 @@ import type { IsEqual } from "type-fest";
 import { assert } from "./typeUtils";
 
 export const WORKER_BOOT_UP_MESSAGE = "Worker loaded";
-export const WORKER_GENERATION_ABORTED_MESSAGE = "Aborted";
 
 export const dynamicStrategySchema = z.enum([
     "NakedSingles",
     "HiddenSingles",
     "NakedPairs",
     "GroupReduction",
-    "GroupIntersection",
+    "GroupIntersectionBlockToAxis",
+    "GroupIntersectionAxisToBlock",
+    "GroupIntersectionBoth",
     "Backtracking",
 ]);
 
