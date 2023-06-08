@@ -1,4 +1,5 @@
 use crate::base::SudokuBase;
+use crate::cell::Candidates;
 use crate::position::{BlockCoordinate, Coordinate, Position};
 use itertools::Either;
 
@@ -135,7 +136,18 @@ impl<Base: SudokuBase> BlockSegment<Base> {
             .take(base_usize)
     }
 
-    // TODO: candidates mask getters
+    pub(crate) fn axis_mask(self) -> Candidates<Base> {
+        let (block_row, block_column) = self.block.to_block_row_and_column();
+
+        Candidates::block_segmentation_mask(match self.orientation {
+            CellOrder::RowMajor => block_column,
+            CellOrder::ColumnMajor => block_row,
+        })
+    }
+
+    pub(crate) fn block_mask(self) -> Candidates<Base> {
+        Candidates::block_segmentation_mask(self.segment)
+    }
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Default)]
@@ -325,5 +337,79 @@ mod tests {
                     .map(|(row, column)| Position::try_from((row, column)).unwrap()),
             );
         });
+    }
+
+    #[test]
+    fn test_axis_mask_row_major() {
+        zip_eq(
+            BlockSegment::<Base2>::all(CellOrder::RowMajor)
+                .map(|block_segment| block_segment.axis_mask()),
+            vec![
+                0b0011, //
+                0b0011, //
+                0b1100, //
+                0b1100, //
+                0b0011, //
+                0b0011, //
+                0b1100, //
+                0b1100, //
+            ],
+        )
+        .for_each(|(candidates, expected_candidates_integral)| {
+            assert_equal(
+                candidates,
+                Candidates::with_integral(expected_candidates_integral),
+            );
+        });
+    }
+
+    #[test]
+    fn test_axis_mask_column_major() {
+        zip_eq(
+            BlockSegment::<Base2>::all(CellOrder::ColumnMajor)
+                .map(|block_segment| block_segment.axis_mask()),
+            vec![
+                0b0011, //
+                0b0011, //
+                0b0011, //
+                0b0011, //
+                0b1100, //
+                0b1100, //
+                0b1100, //
+                0b1100, //
+            ],
+        )
+        .for_each(|(candidates, expected_candidates_integral)| {
+            assert_equal(
+                candidates,
+                Candidates::with_integral(expected_candidates_integral),
+            );
+        });
+    }
+
+    #[test]
+    fn test_block_mask() {
+        for orientation in [CellOrder::RowMajor, CellOrder::ColumnMajor] {
+            zip_eq(
+                BlockSegment::<Base2>::all(orientation)
+                    .map(|block_segment| block_segment.block_mask()),
+                vec![
+                    0b0011, //
+                    0b1100, //
+                    0b0011, //
+                    0b1100, //
+                    0b0011, //
+                    0b1100, //
+                    0b0011, //
+                    0b1100, //
+                ],
+            )
+            .for_each(|(candidates, expected_candidates_integral)| {
+                assert_equal(
+                    candidates,
+                    Candidates::with_integral(expected_candidates_integral),
+                );
+            });
+        }
     }
 }
