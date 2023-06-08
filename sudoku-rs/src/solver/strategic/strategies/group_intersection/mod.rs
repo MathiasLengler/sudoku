@@ -180,6 +180,35 @@ mod tests {
 
         println!("Deductions: {deductions}");
 
-        // TODO: assert deductions
+        assert_eq!(
+            deductions,
+            vec![Deduction::try_from_iters(
+                vec![
+                    (
+                        (3, 2).try_into().unwrap(),
+                        Reason::candidate(1.try_into().unwrap())
+                    ),
+                    (
+                        (3, 3).try_into().unwrap(),
+                        Reason::candidate(1.try_into().unwrap())
+                    )
+                ]
+                .into_iter(),
+                vec![
+                    (
+                        (3, 0).try_into().unwrap(),
+                        Action::delete_candidate(1.try_into().unwrap())
+                    ),
+                    (
+                        (3, 1).try_into().unwrap(),
+                        Action::delete_candidate(1.try_into().unwrap())
+                    ),
+                ]
+                .into_iter()
+            )
+            .unwrap()]
+            .into_iter()
+            .collect()
+        );
     }
 }
