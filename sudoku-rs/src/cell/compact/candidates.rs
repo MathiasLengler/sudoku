@@ -62,13 +62,13 @@ impl<Base: SudokuBase> Candidates<Base> {
         Self::with_integral_unchecked(Self::all_candidates_mask())
     }
 
-    pub fn block_segmentation_mask(segment: BlockCoordinate<Base>) -> Self {
+    pub fn block_segmentation_mask(segment_index: BlockCoordinate<Base>) -> Self {
         let base = Base::BASE;
         let one = Base::CandidatesIntegral::one();
 
         let first_segment_mask = (one << base) - one;
 
-        Self::with_integral_unchecked(first_segment_mask << (segment.get() * base))
+        Self::with_integral_unchecked(first_segment_mask << (segment_index.get() * base))
     }
 }
 
@@ -170,12 +170,12 @@ impl<Base: SudokuBase> Candidates<Base> {
             return None;
         }
 
-        for segment in BlockCoordinate::all() {
-            let segment_mask = Self::block_segmentation_mask(segment);
+        for segment_index in BlockCoordinate::all() {
+            let segment_mask = Self::block_segmentation_mask(segment_index);
             let outside_segment_mask = Self::all().without(segment_mask);
 
             if self.intersection(outside_segment_mask).is_empty() {
-                return Some(segment);
+                return Some(segment_index);
             }
         }
 
