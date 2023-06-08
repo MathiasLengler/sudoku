@@ -10,7 +10,9 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use ts_rs::TS;
 
 pub use backtracking::Backtracking;
-pub use group_intersection::GroupIntersection;
+pub use group_intersection::{
+    GroupIntersectionAxisToBlock, GroupIntersectionBlockToAxis, GroupIntersectionBoth,
+};
 pub use group_reduction::GroupReduction;
 pub use hidden_singles::HiddenSingles;
 pub use naked_pairs::NakedPairs;
@@ -31,9 +33,14 @@ mod naked_singles;
 
 #[enum_dispatch(DynamicStrategy)]
 pub trait Strategy: Debug + Copy + Clone + Eq + Sized {
+    /// The name of the strategy.
+    fn name(self) -> &'static str;
+
     /// Execute this strategy on the given grid. Returns a list of deductions.
     fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>>;
 
+    /// Execute this strategy on the given grid and applies the deductions to it.
+    /// Returns a list of applied deductions.
     fn execute_and_apply<Base: SudokuBase>(
         self,
         grid: &mut Grid<Base>,
@@ -42,20 +49,19 @@ pub trait Strategy: Debug + Copy + Clone + Eq + Sized {
         deductions.apply(grid)?;
         Ok(deductions)
     }
-
-    fn name(self) -> String {
-        format!("{self:?}")
-    }
 }
 #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[enum_dispatch]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[repr(u8)]
 pub enum DynamicStrategy {
     NakedSingles,
     HiddenSingles,
     NakedPairs,
     GroupReduction,
-    GroupIntersection,
+    GroupIntersectionBlockToAxis,
+    GroupIntersectionAxisToBlock,
+    GroupIntersectionBoth,
     Backtracking,
 }
 
@@ -66,9 +72,31 @@ impl DynamicStrategy {
             HiddenSingles.into(),
             NakedPairs.into(),
             GroupReduction.into(),
-            GroupIntersection.into(),
+            GroupIntersectionBlockToAxis.into(),
+            GroupIntersectionAxisToBlock.into(),
+            GroupIntersectionBoth.into(),
             Backtracking.into(),
         ]
+    }
+
+    pub fn default_solver_strategies() -> Vec<Self> {
+        vec![
+            NakedSingles.into(),
+            HiddenSingles.into(),
+            NakedPairs.into(),
+            GroupReduction.into(),
+            GroupIntersectionBoth.into(),
+            Backtracking.into(),
+        ]
+    }
+
+    fn variant_index(&self) -> u32 {
+        // Reference: https://doc.rust-lang.org/std/mem/fn.discriminant.html
+
+        // SAFETY: Because `Self` is marked `repr(u8)`, its layout is a `repr(C)` `union`
+        // between `repr(C)` structs, each of which has the `u8` discriminant as its first
+        // field, so we can read the discriminant without offsetting the pointer.
+        unsafe { *<*const _>::from(self).cast::<u8>() }.into()
     }
 }
 
@@ -77,16 +105,7 @@ impl Serialize for DynamicStrategy {
     where
         S: Serializer,
     {
-        let (variant_index, variant) = match *self {
-            Self::NakedSingles(_) => (0, "NakedSingles"),
-            Self::HiddenSingles(_) => (1, "HiddenSingles"),
-            Self::NakedPairs(_) => (2, "NakedPairs"),
-            Self::GroupReduction(_) => (3, "GroupReduction"),
-            Self::GroupIntersection(_) => (4, "GroupIntersection"),
-            Self::Backtracking(_) => (5, "Backtracking"),
-        };
-
-        serializer.serialize_unit_variant("Strategy", variant_index, variant)
+        serializer.serialize_unit_variant("Strategy", self.variant_index(), self.name())
     }
 }
 

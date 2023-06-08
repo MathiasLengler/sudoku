@@ -1,5 +1,7 @@
 use itertools::{chain, izip};
-use log::info;
+use serde::{Deserialize, Serialize};
+#[cfg(feature = "wasm")]
+use ts_rs::TS;
 
 use crate::base::SudokuBase;
 use crate::cell::Value;
@@ -14,6 +16,93 @@ use crate::solver::strategic::strategies::group_intersection::block_segment::{
 use crate::solver::strategic::strategies::Strategy;
 
 mod block_segment;
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub struct GroupIntersectionBlockToAxis;
+impl Strategy for GroupIntersectionBlockToAxis {
+    fn name(self) -> &'static str {
+        "GroupIntersectionBlockToAxis"
+    }
+
+    fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
+        GroupIntersection(GroupIntersectionTypeFilter::BlockToAxis).execute(grid)
+    }
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub struct GroupIntersectionAxisToBlock;
+impl Strategy for GroupIntersectionAxisToBlock {
+    fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
+        GroupIntersection(GroupIntersectionTypeFilter::AxisToBlock).execute(grid)
+    }
+
+    fn name(self) -> &'static str {
+        "GroupIntersectionAxisToBlock"
+    }
+}
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub struct GroupIntersectionBoth;
+impl Strategy for GroupIntersectionBoth {
+    fn name(self) -> &'static str {
+        "GroupIntersectionBoth"
+    }
+    fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
+        GroupIntersection(GroupIntersectionTypeFilter::Both).execute(grid)
+    }
+}
+
+/// An implementation of the group intersection / ["intersection removal"](https://www.sudokuwiki.org/Intersection_Removal) strategy.
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+struct GroupIntersection(GroupIntersectionTypeFilter);
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+enum GroupIntersectionTypeFilter {
+    /// "Pointing Pairs, Pointing Triples"
+    /// Find segmented block which reduces the axis.
+    BlockToAxis,
+    /// "Box/Line Reduction" (segmented axis, reducing block)
+    /// Find segmented axis which reduces the block
+    AxisToBlock,
+    /// Find reducing intersections irrespective of the inference direction.
+    Both,
+}
+
+enum GroupIntersectionType {
+    /// "Pointing Pairs, Pointing Triples"
+    /// Find segmented block which reduces the axis.
+    BlockToAxis,
+    /// "Box/Line Reduction" (segmented axis, reducing block)
+    /// Find segmented axis which reduces the block
+    AxisToBlock,
+}
+
+impl Strategy for GroupIntersection {
+    fn name(self) -> &'static str {
+        "GroupIntersection"
+    }
+
+    fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
+        let candidate_to_group_candidate_indexes = GroupCandidateIndexes::with_grid(grid);
+
+        Ok(
+            izip!(Value::<Base>::all(), &candidate_to_group_candidate_indexes)
+                .flat_map(|(candidate, group_candidate_indexes)| {
+                    chain!(
+                        BlockSegment::<Base>::all_with_orientation(CellOrder::RowMajor).filter_map(
+                            move |block_segment| {
+                                group_candidate_indexes.evaluate(candidate, block_segment)
+                            }
+                        ),
+                        BlockSegment::<Base>::all_with_orientation(CellOrder::ColumnMajor)
+                            .filter_map(move |block_segment| {
+                                group_candidate_indexes.evaluate(candidate, block_segment)
+                            }),
+                    )
+                })
+                .collect(),
+        )
+    }
+}
 
 /// For a single candidate, where in each group is this candidate set?
 #[derive(Debug, Clone, Default)]
@@ -126,9 +215,7 @@ impl<Base: SudokuBase> GroupCandidateIndexes<Base> {
             (None, Some(block_segment_index))
                 if block_segment_index == block_segment.block_segment_index() =>
             {
-                info!("{block_segment}: block_segment_index {block_segment_index}");
                 // Found: "Pointing Pairs, Pointing Triples" (segmented block, reducing axis)
-
                 let mut deduction = Deduction::new();
                 let reason = Reason::candidate(candidate);
                 for block_index in block_candidate_positions
@@ -159,42 +246,6 @@ impl<Base: SudokuBase> GroupCandidateIndexes<Base> {
             }
             _ => None,
         }
-    }
-}
-
-// TODO: split into separate strategies?
-//  "Pointing Pairs, Pointing Triples" (segmented block)
-//  "Box/Line Reduction" (segmented axis)
-//  decide after implementation, how much the algorithm differs.
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub struct GroupIntersection;
-
-impl Strategy for GroupIntersection {
-    fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
-        // TODO: implement https://www.sudokuwiki.org/Intersection_Removal
-
-        let candidate_to_group_candidate_indexes = GroupCandidateIndexes::with_grid(grid);
-
-        Ok(
-            izip!(Value::<Base>::all(), &candidate_to_group_candidate_indexes)
-                .flat_map(|(candidate, group_candidate_indexes)| {
-                    info!("candidate: {candidate}");
-                    chain!(
-                        BlockSegment::<Base>::all(CellOrder::RowMajor).filter_map(
-                            move |block_segment| {
-                                group_candidate_indexes.evaluate(candidate, block_segment)
-                            }
-                        ),
-                        BlockSegment::<Base>::all(CellOrder::ColumnMajor).filter_map(
-                            move |block_segment| {
-                                group_candidate_indexes.evaluate(candidate, block_segment)
-                            }
-                        ),
-                    )
-                })
-                .collect(),
-        )
     }
 }
 
@@ -230,7 +281,9 @@ mod tests {
 
         println!("{grid}");
 
-        let deductions = GroupIntersection.execute(&grid).unwrap();
+        let deductions = GroupIntersection(GroupIntersectionTypeFilter::Both)
+            .execute(&grid)
+            .unwrap();
 
         println!("Deductions:\n{deductions}");
 
@@ -267,4 +320,7 @@ mod tests {
         let merged_deductions = deductions.merge_deductions_by_actions().unwrap();
         println!("Merged deductions:\n{merged_deductions}");
     }
+
+    #[test]
+    fn test_execute_base_3() {}
 }

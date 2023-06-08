@@ -21,7 +21,7 @@ pub struct Solver<'g, Base: SudokuBase> {
 
 impl<'g, Base: SudokuBase> Solver<'g, Base> {
     pub fn new(grid: &'g mut Grid<Base>) -> Solver<'g, Base> {
-        Self::new_with_strategies(grid, DynamicStrategy::all())
+        Self::new_with_strategies(grid, DynamicStrategy::default_solver_strategies())
     }
 
     pub fn new_with_strategies(

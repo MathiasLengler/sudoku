@@ -19,6 +19,10 @@ struct CandidateStats<Base: SudokuBase> {
 pub struct HiddenSingles;
 
 impl Strategy for HiddenSingles {
+    fn name(self) -> &'static str {
+        "HiddenSingles"
+    }
+
     fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
         ensure!(
             grid.is_directly_consistent(),

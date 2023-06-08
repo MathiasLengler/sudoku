@@ -3,7 +3,6 @@ use crate::cell::Candidates;
 use crate::position::{BlockCoordinate, Coordinate, Position};
 use itertools::Either;
 use std::fmt::{self, Display, Formatter};
-
 /// The position of a base segment inside a sudoku grid.
 ///
 /// A base segment is a "strip" of cells inside a block and row/column.
@@ -98,12 +97,16 @@ impl<Base: SudokuBase> Display for BlockSegment<Base> {
 impl<Base: SudokuBase> BlockSegment<Base> {
     // FIXME: change/add iteration order
     //  it could be more natural to iterate the segments in axis order.
-    //
+    pub(crate) fn all() -> impl Iterator<Item = Self> {
+        Self::all_with_orientation(CellOrder::RowMajor)
+            .chain(Self::all_with_orientation(CellOrder::ColumnMajor))
+    }
+
     /// Iterator over all block segments of a given orientation.
     ///
     /// The segments are visited in block-first order,
     /// e.g. all segments of block 0, then all segments of block 1, etc.
-    pub(crate) fn all(orientation: CellOrder) -> impl Iterator<Item = Self> {
+    pub(crate) fn all_with_orientation(orientation: CellOrder) -> impl Iterator<Item = Self> {
         Coordinate::<Base>::all().flat_map(move |block| {
             BlockCoordinate::<Base>::all().map(move |segment| Self {
                 block,
@@ -210,9 +213,40 @@ mod tests {
     use itertools::{assert_equal, zip_eq};
 
     #[test]
-    fn test_all_row_major() {
+    fn test_all() {
         assert_equal(
-            BlockSegment::<Base2>::all(CellOrder::RowMajor),
+            BlockSegment::<Base2>::all(),
+            vec![
+                (0, 0, CellOrder::RowMajor),
+                (0, 1, CellOrder::RowMajor),
+                (1, 0, CellOrder::RowMajor),
+                (1, 1, CellOrder::RowMajor),
+                (2, 0, CellOrder::RowMajor),
+                (2, 1, CellOrder::RowMajor),
+                (3, 0, CellOrder::RowMajor),
+                (3, 1, CellOrder::RowMajor),
+                (0, 0, CellOrder::ColumnMajor),
+                (0, 1, CellOrder::ColumnMajor),
+                (1, 0, CellOrder::ColumnMajor),
+                (1, 1, CellOrder::ColumnMajor),
+                (2, 0, CellOrder::ColumnMajor),
+                (2, 1, CellOrder::ColumnMajor),
+                (3, 0, CellOrder::ColumnMajor),
+                (3, 1, CellOrder::ColumnMajor),
+            ]
+            .into_iter()
+            .map(|(block, segment, orientation)| BlockSegment {
+                block: block.try_into().unwrap(),
+                segment: segment.try_into().unwrap(),
+                orientation,
+            }),
+        )
+    }
+
+    #[test]
+    fn test_all_with_orientation_row_major() {
+        assert_equal(
+            BlockSegment::<Base2>::all_with_orientation(CellOrder::RowMajor),
             vec![
                 (0, 0),
                 (0, 1),
@@ -233,9 +267,9 @@ mod tests {
     }
 
     #[test]
-    fn test_all_column_major() {
+    fn test_all_with_orientation_column_major() {
         assert_equal(
-            BlockSegment::<Base2>::all(CellOrder::ColumnMajor),
+            BlockSegment::<Base2>::all_with_orientation(CellOrder::ColumnMajor),
             vec![
                 (0, 0),
                 (0, 1),
@@ -258,7 +292,7 @@ mod tests {
     #[test]
     fn test_axis_row_major() {
         assert_equal(
-            BlockSegment::<Base2>::all(CellOrder::RowMajor)
+            BlockSegment::<Base2>::all_with_orientation(CellOrder::RowMajor)
                 .map(|block_segment| block_segment.axis()),
             vec![0, 1, 0, 1, 2, 3, 2, 3]
                 .into_iter()
@@ -269,7 +303,7 @@ mod tests {
     #[test]
     fn test_axis_column_major() {
         assert_equal(
-            BlockSegment::<Base2>::all(CellOrder::ColumnMajor)
+            BlockSegment::<Base2>::all_with_orientation(CellOrder::ColumnMajor)
                 .map(|block_segment| block_segment.axis()),
             vec![0, 1, 2, 3, 0, 1, 2, 3]
                 .into_iter()
@@ -280,7 +314,7 @@ mod tests {
     #[test]
     fn test_axis_positions_row_major() {
         zip_eq(
-            BlockSegment::<Base2>::all(CellOrder::RowMajor)
+            BlockSegment::<Base2>::all_with_orientation(CellOrder::RowMajor)
                 .map(|block_segment| block_segment.axis_positions()),
             vec![0, 1, 0, 1, 2, 3, 2, 3],
         )
@@ -292,7 +326,7 @@ mod tests {
     #[test]
     fn test_axis_positions_column_major() {
         zip_eq(
-            BlockSegment::<Base2>::all(CellOrder::ColumnMajor)
+            BlockSegment::<Base2>::all_with_orientation(CellOrder::ColumnMajor)
                 .map(|block_segment| block_segment.axis_positions()),
             vec![0, 1, 2, 3, 0, 1, 2, 3],
         )
@@ -307,7 +341,7 @@ mod tests {
     #[test]
     fn test_block_positions_row_major() {
         zip_eq(
-            BlockSegment::<Base2>::all(CellOrder::RowMajor)
+            BlockSegment::<Base2>::all_with_orientation(CellOrder::RowMajor)
                 .map(|block_segment| block_segment.block_positions()),
             vec![0, 0, 1, 1, 2, 2, 3, 3],
         )
@@ -321,7 +355,7 @@ mod tests {
     #[test]
     fn test_block_positions_column_major() {
         zip_eq(
-            BlockSegment::<Base2>::all(CellOrder::ColumnMajor)
+            BlockSegment::<Base2>::all_with_orientation(CellOrder::ColumnMajor)
                 .map(|block_segment| block_segment.block_positions()),
             vec![0, 0, 1, 1, 2, 2, 3, 3],
         )
@@ -336,7 +370,7 @@ mod tests {
     #[test]
     fn test_segment_positions_row_major() {
         zip_eq(
-            BlockSegment::<Base2>::all(CellOrder::RowMajor)
+            BlockSegment::<Base2>::all_with_orientation(CellOrder::RowMajor)
                 .map(|block_segment| block_segment.segment_positions()),
             vec![
                 vec![(0, 0), (0, 1)],
@@ -362,7 +396,7 @@ mod tests {
     #[test]
     fn test_segment_positions_column_major() {
         zip_eq(
-            BlockSegment::<Base2>::all(CellOrder::ColumnMajor)
+            BlockSegment::<Base2>::all_with_orientation(CellOrder::ColumnMajor)
                 .map(|block_segment| block_segment.segment_positions()),
             vec![
                 vec![(0, 0), (1, 0)],
@@ -388,7 +422,7 @@ mod tests {
     #[test]
     fn test_axis_mask_row_major() {
         zip_eq(
-            BlockSegment::<Base2>::all(CellOrder::RowMajor)
+            BlockSegment::<Base2>::all_with_orientation(CellOrder::RowMajor)
                 .map(|block_segment| block_segment.axis_mask()),
             vec![
                 0b0011, //
@@ -412,7 +446,7 @@ mod tests {
     #[test]
     fn test_axis_mask_column_major() {
         zip_eq(
-            BlockSegment::<Base2>::all(CellOrder::ColumnMajor)
+            BlockSegment::<Base2>::all_with_orientation(CellOrder::ColumnMajor)
                 .map(|block_segment| block_segment.axis_mask()),
             vec![
                 0b0011, //
@@ -437,7 +471,7 @@ mod tests {
     fn test_block_mask() {
         for orientation in [CellOrder::RowMajor, CellOrder::ColumnMajor] {
             zip_eq(
-                BlockSegment::<Base2>::all(orientation)
+                BlockSegment::<Base2>::all_with_orientation(orientation)
                     .map(|block_segment| block_segment.block_mask()),
                 vec![
                     0b0011, //

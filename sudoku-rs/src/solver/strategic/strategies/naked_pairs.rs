@@ -13,6 +13,10 @@ use super::Strategy;
 pub struct NakedPairs;
 
 impl Strategy for NakedPairs {
+    fn name(self) -> &'static str {
+        "NakedPairs"
+    }
+
     fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
         Grid::<Base>::all_group_positions()
             .flat_map(|group| {
