@@ -59,13 +59,7 @@ impl<Base: SudokuBase> Candidates<Base> {
     }
 
     pub fn all() -> Self {
-        let mut this = Self::default();
-
-        this.bits ^= Self::all_candidates_mask();
-
-        this.debug_assert_is_valid();
-
-        this
+        Self::with_integral_unchecked(Self::all_candidates_mask())
     }
 
     pub fn block_segmentation_mask(segment: BlockCoordinate<Base>) -> Self {
