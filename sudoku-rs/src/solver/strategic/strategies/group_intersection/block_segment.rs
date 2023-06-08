@@ -117,8 +117,10 @@ impl<Base: SudokuBase> BlockSegment<Base> {
     }
 
     pub(crate) fn block_positions(self) -> impl Iterator<Item = Position<Base>> {
-        // TODO: Position::block_column_major and match orientation
-        Position::block(self.block)
+        match self.orientation {
+            CellOrder::RowMajor => Either::Left(Position::block(self.block)),
+            CellOrder::ColumnMajor => Either::Right(Position::block_column_major(self.block)),
+        }
     }
 
     pub(crate) fn segment_positions(self) -> impl Iterator<Item = Position<Base>> {
@@ -246,11 +248,31 @@ mod tests {
 
     #[test]
     fn test_block_positions_row_major() {
-        todo!()
+        zip_eq(
+            BlockSegment::<Base2>::all(CellOrder::RowMajor)
+                .map(|block_segment| block_segment.block_positions()),
+            vec![0, 0, 1, 1, 2, 2, 3, 3],
+        )
+        .for_each(|(positions, expected_block)| {
+            assert_equal(
+                positions,
+                Position::block(expected_block.try_into().unwrap()),
+            );
+        });
     }
     #[test]
     fn test_block_positions_column_major() {
-        todo!()
+        zip_eq(
+            BlockSegment::<Base2>::all(CellOrder::ColumnMajor)
+                .map(|block_segment| block_segment.block_positions()),
+            vec![0, 0, 1, 1, 2, 2, 3, 3],
+        )
+        .for_each(|(positions, expected_block)| {
+            assert_equal(
+                positions,
+                Position::block_column_major(expected_block.try_into().unwrap()),
+            );
+        });
     }
 
     #[test]

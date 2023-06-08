@@ -258,6 +258,23 @@ impl<Base: SudokuBase> Position<Base> {
             })
     }
 
+    pub fn block_column_major(block: Coordinate<Base>) -> impl Iterator<Item = Self> {
+        let base_usize = usize::from(Base::BASE);
+
+        let block_top_left = Base::block_to_top_left_pos(block);
+
+        (block_top_left.cell_index()..)
+            .take(base_usize)
+            .flat_map(move |block_cell_index_top| {
+                (block_cell_index_top..)
+                    .step_by(usize::from(Base::SIDE_LENGTH))
+                    .take(base_usize)
+                    .map(|cell_index|
+                        // Safety: `cell_index` remains in-bounds
+                        unsafe { Position::new_unchecked(cell_index) })
+            })
+    }
+
     /// Nested iterator over all block positions.
     ///
     /// The blocks *and* positions are visited in row-major order.
@@ -520,6 +537,34 @@ mod tests {
                         expected_row.into_iter().map(|pos| pos.try_into().unwrap()),
                     );
                 });
+        }
+
+        #[test]
+        fn test_block_column_major() {
+            itertools::assert_equal(
+                Position::<Base2>::block_column_major(0.try_into().unwrap()),
+                vec![(0, 0), (1, 0), (0, 1), (1, 1)]
+                    .into_iter()
+                    .map(|pos| pos.try_into().unwrap()),
+            );
+            itertools::assert_equal(
+                Position::<Base2>::block_column_major(1.try_into().unwrap()),
+                vec![(0, 2), (1, 2), (0, 3), (1, 3)]
+                    .into_iter()
+                    .map(|pos| pos.try_into().unwrap()),
+            );
+            itertools::assert_equal(
+                Position::<Base2>::block_column_major(2.try_into().unwrap()),
+                vec![(2, 0), (3, 0), (2, 1), (3, 1)]
+                    .into_iter()
+                    .map(|pos| pos.try_into().unwrap()),
+            );
+            itertools::assert_equal(
+                Position::<Base2>::block_column_major(3.try_into().unwrap()),
+                vec![(2, 2), (3, 2), (2, 3), (3, 3)]
+                    .into_iter()
+                    .map(|pos| pos.try_into().unwrap()),
+            );
         }
 
         #[test]
