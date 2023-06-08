@@ -712,6 +712,17 @@ mod tests {
                     .collect::<Vec<_>>()
             );
         }
+
+        #[test]
+        fn test_to_single() {
+            let empty: Candidates<Base2> = Candidates::new();
+            let one: Candidates<Base2> = Candidates::with_single(1.try_into().unwrap());
+            let all: Candidates<Base2> = Candidates::all();
+
+            assert_eq!(empty.to_single(), None);
+            assert_eq!(one.to_single(), Some(1.try_into().unwrap()));
+            assert_eq!(all.to_single(), None);
+        }
     }
 
     mod internal_helpers {
