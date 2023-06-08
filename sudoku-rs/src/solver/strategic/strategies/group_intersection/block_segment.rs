@@ -2,6 +2,7 @@ use crate::base::SudokuBase;
 use crate::cell::Candidates;
 use crate::position::{BlockCoordinate, Coordinate, Position};
 use itertools::Either;
+use std::fmt::{self, Display, Formatter};
 
 /// The position of a base segment inside a sudoku grid.
 ///
@@ -75,12 +76,29 @@ use itertools::Either;
 /// ```
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Default)]
 pub(crate) struct BlockSegment<Base: SudokuBase> {
-    block: Coordinate<Base>,
-    segment: BlockCoordinate<Base>,
-    orientation: CellOrder,
+    // TODO: remove pub(crate)
+    pub(crate) block: Coordinate<Base>,
+    pub(crate) segment: BlockCoordinate<Base>,
+    pub(crate) orientation: CellOrder,
+}
+
+impl<Base: SudokuBase> Display for BlockSegment<Base> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let mut segment_positions = self.segment_positions();
+        let (first_pos, last_pos) = match (segment_positions.next(), segment_positions.last()) {
+            (Some(first), Some(last)) => (first, last),
+            (Some(first), None) => (first, first),
+            (_, _) => panic!("Expected at least one segment position"),
+        };
+
+        write!(f, "{}-{}", first_pos, last_pos)
+    }
 }
 
 impl<Base: SudokuBase> BlockSegment<Base> {
+    // FIXME: change/add iteration order
+    //  it could be more natural to iterate the segments in axis order.
+    //
     /// Iterator over all block segments of a given orientation.
     ///
     /// The segments are visited in block-first order,
@@ -95,22 +113,36 @@ impl<Base: SudokuBase> BlockSegment<Base> {
         })
     }
 
-    pub(crate) fn to_axis(self) -> Coordinate<Base> {
+    // TODO: test
+    /// The index of this block segment in its containing block.
+    pub(crate) fn block_segment_index(self) -> BlockCoordinate<Base> {
+        self.segment
+    }
+
+    // TODO: test
+    /// The index of this block segment in its containing axis.
+    pub(crate) fn axis_segment_index(self) -> BlockCoordinate<Base> {
+        match self.orientation {
+            CellOrder::RowMajor => self.block.to_block_column(),
+            CellOrder::ColumnMajor => self.block.to_block_row(),
+        }
+    }
+
+    pub(crate) fn axis(self) -> Coordinate<Base> {
         let Self {
             block,
             segment,
             orientation,
         } = self;
-        let (block_row, block_column) = block.to_block_row_and_column();
         match orientation {
-            CellOrder::RowMajor => (block_row, segment),
-            CellOrder::ColumnMajor => (block_column, segment),
+            CellOrder::RowMajor => (block.to_block_row(), segment),
+            CellOrder::ColumnMajor => (block.to_block_column(), segment),
         }
         .into()
     }
 
     pub(crate) fn axis_positions(self) -> impl Iterator<Item = Position<Base>> {
-        let axis = self.to_axis();
+        let axis = self.axis();
         match self.orientation {
             CellOrder::RowMajor => Either::Left(Position::row(axis)),
             CellOrder::ColumnMajor => Either::Right(Position::column(axis)),
@@ -210,10 +242,10 @@ mod tests {
     }
 
     #[test]
-    fn test_to_axis_row_major() {
+    fn test_axis_row_major() {
         assert_equal(
             BlockSegment::<Base2>::all(CellOrder::RowMajor)
-                .map(|block_segment| block_segment.to_axis()),
+                .map(|block_segment| block_segment.axis()),
             vec![0, 1, 0, 1, 2, 3, 2, 3]
                 .into_iter()
                 .map(|row| Coordinate::new(row).unwrap()),
@@ -221,10 +253,10 @@ mod tests {
     }
 
     #[test]
-    fn test_to_axis_column_major() {
+    fn test_axis_column_major() {
         assert_equal(
             BlockSegment::<Base2>::all(CellOrder::ColumnMajor)
-                .map(|block_segment| block_segment.to_axis()),
+                .map(|block_segment| block_segment.axis()),
             vec![0, 1, 2, 3, 0, 1, 2, 3]
                 .into_iter()
                 .map(|row| Coordinate::new(row).unwrap()),

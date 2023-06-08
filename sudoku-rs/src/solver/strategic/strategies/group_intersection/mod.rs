@@ -8,6 +8,9 @@ use crate::grid::Grid;
 use crate::position::{Coordinate, Position};
 use crate::solver::backtracking_bitset::group_availability::CandidatesGroup;
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions, Reason};
+use crate::solver::strategic::strategies::group_intersection::block_segment::{
+    BlockSegment, CellOrder,
+};
 use crate::solver::strategic::strategies::Strategy;
 
 mod block_segment;
@@ -63,11 +66,49 @@ impl<Base: SudokuBase> GroupCandidateIndexes<Base> {
         }
         candidate_to_group_candidate_indexes
     }
+
+    fn get(&self, block_segment: BlockSegment<Base>) {
+        // TODO: split into separate methods
+        let (axis_candidate_positions, block_candidate_positions) = match block_segment.orientation
+        {
+            CellOrder::RowMajor => {
+                let row_candidate_positions = self.rows.get(block_segment.axis());
+                let block_candidate_positions = self.row_major_blocks.get(block_segment.block);
+
+                (row_candidate_positions, block_candidate_positions)
+            }
+            CellOrder::ColumnMajor => {
+                let column_candidate_positions = self.columns.get(block_segment.axis());
+                let block_candidate_positions = self.column_major_blocks.get(block_segment.block);
+                (column_candidate_positions, block_candidate_positions)
+            }
+        };
+
+        match (
+            axis_candidate_positions.block_segmentation(),
+            block_candidate_positions.block_segmentation(),
+        ) {
+            (Some(axis_segment_index), None)
+                if axis_segment_index == block_segment.axis_segment_index() =>
+            {
+                println!(
+                    "{block_segment}: {:?} axis_segment_index {axis_segment_index}",
+                    block_segment.orientation
+                );
+            }
+            (None, Some(block_segment_index))
+                if block_segment_index == block_segment.block_segment_index() =>
+            {
+                println!("{block_segment}: block_segment_index {block_segment_index}");
+            }
+            _ => {}
+        }
+    }
 }
 
 // TODO: split into separate strategies?
-//  "Pointing Pairs, Pointing Triples"
-//  "Box/Line Reduction"
+//  "Pointing Pairs, Pointing Triples" (segmented block)
+//  "Box/Line Reduction" (segmented axis)
 //  decide after implementation, how much the algorithm differs.
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -79,11 +120,18 @@ impl Strategy for GroupIntersection {
 
         let candidate_to_group_candidate_indexes = GroupCandidateIndexes::with_grid(grid);
 
-        // TODO: two pass iteration
-        //  row major base segments
-        //  column major base segments
-
-        // TODO: use BlockSegment::all
+        // TODO: replace return with this iterator
+        izip!(Value::<Base>::all(), &candidate_to_group_candidate_indexes).for_each(
+            |(candidate, group_candidate_indexes)| {
+                dbg!(candidate);
+                BlockSegment::<Base>::all(CellOrder::RowMajor).for_each(|block_segment| {
+                    group_candidate_indexes.get(block_segment);
+                });
+                BlockSegment::<Base>::all(CellOrder::ColumnMajor).for_each(|block_segment| {
+                    group_candidate_indexes.get(block_segment);
+                });
+            },
+        );
 
         Ok(
             izip!(Value::<Base>::all(), candidate_to_group_candidate_indexes,)
