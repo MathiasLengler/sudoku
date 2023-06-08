@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 use std::marker::PhantomData;
 
 use anyhow::ensure;
@@ -12,6 +13,12 @@ pub struct BlockCoordinate<Base: SudokuBase> {
     /// - `block_coordinate < Base::BASE`
     block_coordinate: u8,
     _base: PhantomData<Base>,
+}
+
+impl<Base: SudokuBase> Display for BlockCoordinate<Base> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.block_coordinate)
+    }
 }
 
 /// Constructors
