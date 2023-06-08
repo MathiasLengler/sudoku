@@ -513,6 +513,19 @@ mod tests {
         }
 
         #[test]
+        fn test_insert() {
+            let mut candidates = Candidates::<Base2>::new();
+            let value1 = 1.try_into().unwrap();
+            let value2 = 2.try_into().unwrap();
+            candidates.insert(value1);
+            assert_eq!(candidates.to_vec_u8(), vec![1]);
+            candidates.insert(value2);
+            assert_eq!(candidates.to_vec_u8(), vec![1, 2]);
+            candidates.insert(value1);
+            assert_eq!(candidates.to_vec_u8(), vec![1, 2]);
+        }
+
+        #[test]
         fn test_delete() {
             let mut candidates = Candidates::<Base2>::all();
             let value1 = 1.try_into().unwrap();
