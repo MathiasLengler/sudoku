@@ -203,6 +203,11 @@ impl<Base: SudokuBase> Candidates<Base> {
         let (Some(single), None) = (iter.next(), iter.next()) else { return None; };
         Some(single)
     }
+
+    #[must_use]
+    pub fn invert(self) -> Self {
+        Self::with_integral_unchecked(self.bits ^ Self::all_candidates_mask())
+    }
 }
 
 /// Internal helpers
@@ -722,6 +727,19 @@ mod tests {
             assert_eq!(empty.to_single(), None);
             assert_eq!(one.to_single(), Some(1.try_into().unwrap()));
             assert_eq!(all.to_single(), None);
+        }
+
+        #[test]
+        fn test_invert() {
+            let empty: Candidates<Base2> = Candidates::new();
+            let all: Candidates<Base2> = Candidates::all();
+            assert_eq!(empty.invert(), all);
+            assert_eq!(all.invert(), empty);
+
+            let candidates_12 = Candidates::<Base2>::with_integral(0b0011);
+            let candidates_34 = Candidates::<Base2>::with_integral(0b1100);
+            assert_eq!(candidates_12.invert(), candidates_34);
+            assert_eq!(candidates_34.invert(), candidates_12);
         }
     }
 
