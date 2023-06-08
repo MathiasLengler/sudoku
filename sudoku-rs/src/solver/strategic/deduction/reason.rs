@@ -18,6 +18,7 @@ pub enum Reason<Base: SudokuBase> {
     /// This set of candidates was a reason for an action.
     /// Highlighted with a green background in the UI.
     Candidates(Candidates<Base>),
+    // TODO: add Reason::Cell for group highlighting
 }
 
 impl<Base: SudokuBase> TryFrom<TransportReason> for Reason<Base> {

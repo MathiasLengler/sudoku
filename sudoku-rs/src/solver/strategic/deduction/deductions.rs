@@ -97,6 +97,27 @@ impl<Base: SudokuBase> Deductions<Base> {
             .collect())
     }
 
+    /// If two deductions contain the same actions, merge them into a single deduction by merging their reasons.
+    pub fn merge_deductions_by_actions(self) -> Result<Self> {
+        let mut actions_to_reasons: BTreeMap<
+            PositionMap<Base, Action<Base>>,
+            PositionMap<Base, Reason<Base>>,
+        > = BTreeMap::new();
+
+        for Deduction { reasons, actions } in self {
+            if let Some(existing_reasons) = actions_to_reasons.get_mut(&actions) {
+                existing_reasons.merge(reasons)?;
+            } else {
+                actions_to_reasons.insert(actions, reasons);
+            }
+        }
+
+        Ok(actions_to_reasons
+            .into_iter()
+            .map(|(actions, reasons)| Deduction { actions, reasons })
+            .collect())
+    }
+
     fn validate(&self, grid: &Grid<Base>) -> Result<()> {
         for deduction in &self.deductions {
             deduction.validate(grid)?;

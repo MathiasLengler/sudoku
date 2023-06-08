@@ -91,7 +91,7 @@ impl<Base: SudokuBase> Display for BlockSegment<Base> {
             (_, _) => panic!("Expected at least one segment position"),
         };
 
-        write!(f, "{}-{}", first_pos, last_pos)
+        write!(f, "{first_pos}-{last_pos}")
     }
 }
 
@@ -149,10 +149,29 @@ impl<Base: SudokuBase> BlockSegment<Base> {
         }
     }
 
+    pub(crate) fn axis_position(self, axis_index: Coordinate<Base>) -> Position<Base> {
+        match self.orientation {
+            CellOrder::RowMajor => (self.axis(), axis_index),
+            CellOrder::ColumnMajor => (axis_index, self.axis()),
+        }
+        .into()
+    }
+
     pub(crate) fn block_positions(self) -> impl Iterator<Item = Position<Base>> {
         match self.orientation {
             CellOrder::RowMajor => Either::Left(Position::block(self.block)),
             CellOrder::ColumnMajor => Either::Right(Position::block_column_major(self.block)),
+        }
+    }
+
+    pub(crate) fn block_position(self, block_index: Coordinate<Base>) -> Position<Base> {
+        match self.orientation {
+            CellOrder::RowMajor => Position::block(self.block)
+                .nth(block_index.get_usize())
+                .unwrap(),
+            CellOrder::ColumnMajor => Position::block_column_major(self.block)
+                .nth(block_index.get_usize())
+                .unwrap(),
         }
     }
 
@@ -169,16 +188,11 @@ impl<Base: SudokuBase> BlockSegment<Base> {
     }
 
     pub(crate) fn axis_mask(self) -> Candidates<Base> {
-        let (block_row, block_column) = self.block.to_block_row_and_column();
-
-        Candidates::block_segmentation_mask(match self.orientation {
-            CellOrder::RowMajor => block_column,
-            CellOrder::ColumnMajor => block_row,
-        })
+        Candidates::block_segmentation_mask(self.axis_segment_index())
     }
 
     pub(crate) fn block_mask(self) -> Candidates<Base> {
-        Candidates::block_segmentation_mask(self.segment)
+        Candidates::block_segmentation_mask(self.block_segment_index())
     }
 }
 

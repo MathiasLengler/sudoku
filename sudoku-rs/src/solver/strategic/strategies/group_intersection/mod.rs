@@ -1,8 +1,8 @@
-use itertools::izip;
-use num::{One, PrimInt, Zero};
+use itertools::{chain, izip};
+use log::info;
 
 use crate::base::SudokuBase;
-use crate::cell::{Candidates, Value};
+use crate::cell::Value;
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::{Coordinate, Position};
@@ -67,8 +67,11 @@ impl<Base: SudokuBase> GroupCandidateIndexes<Base> {
         candidate_to_group_candidate_indexes
     }
 
-    fn get(&self, block_segment: BlockSegment<Base>) {
-        // TODO: split into separate methods
+    fn evaluate(
+        &self,
+        candidate: Value<Base>,
+        block_segment: BlockSegment<Base>,
+    ) -> Option<Deduction<Base>> {
         let (axis_candidate_positions, block_candidate_positions) = match block_segment.orientation
         {
             CellOrder::RowMajor => {
@@ -91,17 +94,70 @@ impl<Base: SudokuBase> GroupCandidateIndexes<Base> {
             (Some(axis_segment_index), None)
                 if axis_segment_index == block_segment.axis_segment_index() =>
             {
-                println!(
-                    "{block_segment}: {:?} axis_segment_index {axis_segment_index}",
-                    block_segment.orientation
-                );
+                // Found: "Box/Line Reduction" (segmented axis, reducing block)
+
+                let mut deduction = Deduction::new();
+                let reason = Reason::candidate(candidate);
+                for axis_index in axis_candidate_positions
+                    .intersection(block_segment.axis_mask())
+                    .into_iter()
+                    .map(Coordinate::from)
+                {
+                    deduction
+                        .reasons
+                        .insert(block_segment.axis_position(axis_index), reason)
+                        .unwrap();
+                }
+
+                let action = Action::delete_candidate(candidate);
+                for block_index in block_candidate_positions
+                    .without(block_segment.block_mask())
+                    .into_iter()
+                    .map(Coordinate::from)
+                {
+                    deduction
+                        .actions
+                        .insert(block_segment.block_position(block_index), action)
+                        .unwrap();
+                }
+
+                Some(deduction)
             }
             (None, Some(block_segment_index))
                 if block_segment_index == block_segment.block_segment_index() =>
             {
-                println!("{block_segment}: block_segment_index {block_segment_index}");
+                info!("{block_segment}: block_segment_index {block_segment_index}");
+                // Found: "Pointing Pairs, Pointing Triples" (segmented block, reducing axis)
+
+                let mut deduction = Deduction::new();
+                let reason = Reason::candidate(candidate);
+                for block_index in block_candidate_positions
+                    .intersection(block_segment.block_mask())
+                    .into_iter()
+                    .map(Coordinate::from)
+                {
+                    deduction
+                        .reasons
+                        .insert(block_segment.block_position(block_index), reason)
+                        .unwrap();
+                }
+
+                let action = Action::delete_candidate(candidate);
+
+                for axis_index in axis_candidate_positions
+                    .without(block_segment.axis_mask())
+                    .into_iter()
+                    .map(Coordinate::from)
+                {
+                    deduction
+                        .actions
+                        .insert(block_segment.axis_position(axis_index), action)
+                        .unwrap();
+                }
+
+                Some(deduction)
             }
-            _ => {}
+            _ => None,
         }
     }
 }
@@ -120,71 +176,21 @@ impl Strategy for GroupIntersection {
 
         let candidate_to_group_candidate_indexes = GroupCandidateIndexes::with_grid(grid);
 
-        // TODO: replace return with this iterator
-        izip!(Value::<Base>::all(), &candidate_to_group_candidate_indexes).for_each(
-            |(candidate, group_candidate_indexes)| {
-                dbg!(candidate);
-                BlockSegment::<Base>::all(CellOrder::RowMajor).for_each(|block_segment| {
-                    group_candidate_indexes.get(block_segment);
-                });
-                BlockSegment::<Base>::all(CellOrder::ColumnMajor).for_each(|block_segment| {
-                    group_candidate_indexes.get(block_segment);
-                });
-            },
-        );
-
         Ok(
-            izip!(Value::<Base>::all(), candidate_to_group_candidate_indexes,)
-                .flat_map(move |(candidate, group_candidate_indexes)| {
-                    izip!(
-                        Coordinate::<Base>::all(),
-                        group_candidate_indexes.row_major_blocks,
-                    )
-                    .filter_map(
-                        move |(block_i, block): (Coordinate<Base>, Candidates<Base>)| {
-                            let Some(segment_index) = block.block_segmentation() else {
-                                return None;
-                            };
-                            let (block_row, block_column) = block_i.to_block_row_and_column();
-                            let rows_i = (block_row, segment_index).into();
-                            let row = group_candidate_indexes.rows.get(rows_i);
-                            let None = row.block_segmentation() else { return None; };
-
-                            // Found group intersection with an effect.
-
-                            let mut deduction = Deduction::new();
-                            let reason = Reason::candidate(candidate);
-                            for row_major_index in block
-                                .intersection(Candidates::block_segmentation_mask(segment_index))
-                                .into_iter()
-                                .map(Coordinate::from)
-                            {
-                                deduction
-                                    .reasons
-                                    .insert(
-                                        Position::with_block_and_row_major_index((
-                                            block_i,
-                                            row_major_index,
-                                        )),
-                                        reason,
-                                    )
-                                    .unwrap();
+            izip!(Value::<Base>::all(), &candidate_to_group_candidate_indexes)
+                .flat_map(|(candidate, group_candidate_indexes)| {
+                    info!("candidate: {candidate}");
+                    chain!(
+                        BlockSegment::<Base>::all(CellOrder::RowMajor).filter_map(
+                            move |block_segment| {
+                                group_candidate_indexes.evaluate(candidate, block_segment)
                             }
-
-                            let action = Action::delete_candidate(candidate);
-                            for row_i in row
-                                .without(Candidates::block_segmentation_mask(block_column))
-                                .into_iter()
-                                .map(Coordinate::from)
-                            {
-                                deduction
-                                    .actions
-                                    .insert((rows_i, row_i).into(), action)
-                                    .unwrap();
+                        ),
+                        BlockSegment::<Base>::all(CellOrder::ColumnMajor).filter_map(
+                            move |block_segment| {
+                                group_candidate_indexes.evaluate(candidate, block_segment)
                             }
-
-                            Some(deduction)
-                        },
+                        ),
                     )
                 })
                 .collect(),
@@ -199,7 +205,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_execute() {
+    fn test_execute_base_2() {
         // Intersection of value 1 in row 3/box 3, reduction in row 3/box 2
         let grid = Grid::<Base2>::try_from(
             "╔═══════════╦═══════════╗
@@ -226,37 +232,39 @@ mod tests {
 
         let deductions = GroupIntersection.execute(&grid).unwrap();
 
-        println!("Deductions: {deductions}");
+        println!("Deductions:\n{deductions}");
 
         assert_eq!(
             deductions,
-            vec![Deduction::try_from_iters(
-                vec![
-                    (
-                        (3, 2).try_into().unwrap(),
-                        Reason::candidate(1.try_into().unwrap())
-                    ),
-                    (
-                        (3, 3).try_into().unwrap(),
-                        Reason::candidate(1.try_into().unwrap())
-                    )
-                ]
-                .into_iter(),
-                vec![
-                    (
-                        (3, 0).try_into().unwrap(),
-                        Action::delete_candidate(1.try_into().unwrap())
-                    ),
-                    (
-                        (3, 1).try_into().unwrap(),
-                        Action::delete_candidate(1.try_into().unwrap())
-                    ),
-                ]
-                .into_iter()
-            )
-            .unwrap()]
+            vec![
+                Deduction::try_from_iters(
+                    vec![
+                        ((3, 0), Action::delete_candidate(1.try_into().unwrap())),
+                        ((3, 1), Action::delete_candidate(1.try_into().unwrap())),
+                    ],
+                    vec![
+                        ((3, 2), Reason::candidate(1.try_into().unwrap())),
+                        ((3, 3), Reason::candidate(1.try_into().unwrap()))
+                    ],
+                )
+                .unwrap(),
+                Deduction::try_from_iters(
+                    vec![
+                        ((3, 0), Action::delete_candidate(1.try_into().unwrap())),
+                        ((3, 1), Action::delete_candidate(1.try_into().unwrap())),
+                    ],
+                    vec![
+                        ((2, 0), Reason::candidate(1.try_into().unwrap())),
+                        ((2, 1), Reason::candidate(1.try_into().unwrap()))
+                    ],
+                )
+                .unwrap(),
+            ]
             .into_iter()
             .collect()
         );
+
+        let merged_deductions = deductions.merge_deductions_by_actions().unwrap();
+        println!("Merged deductions:\n{merged_deductions}");
     }
 }

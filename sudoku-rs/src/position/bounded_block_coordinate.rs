@@ -48,22 +48,6 @@ impl<Base: SudokuBase> BlockCoordinate<Base> {
         this.debug_assert();
         this
     }
-
-    /// # Safety
-    ///
-    /// `coordinate < Base::BASE` must be true.
-    pub(crate) unsafe fn new_unchecked_u16(coordinate: u16) -> Self {
-        // Test for truncation.
-        debug_assert!({
-            u8::try_from(coordinate).unwrap();
-            true
-        });
-
-        #[allow(clippy::cast_possible_truncation)]
-        let coordinate = coordinate as u8;
-
-        Self::new_unchecked(coordinate)
-    }
 }
 
 /// Validation

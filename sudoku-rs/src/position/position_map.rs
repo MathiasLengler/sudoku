@@ -73,7 +73,7 @@ impl<Base: SudokuBase, T: Merge> PositionMap<Base, T> {
 
     pub fn try_from_iter<I, IntoPos, IntoT>(iter: I) -> Result<Self>
     where
-        I: Iterator<Item = (IntoPos, IntoT)>,
+        I: IntoIterator<Item = (IntoPos, IntoT)>,
         IntoPos: TryInto<Position<Base>>,
         IntoT: TryInto<T>,
         Error: From<IntoPos::Error>,
