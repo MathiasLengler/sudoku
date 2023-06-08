@@ -94,20 +94,20 @@ impl Strategy for GroupIntersection {
                     )
                     .filter_map(
                         move |(block_i, block): (Coordinate<Base>, Candidates<Base>)| {
-                            let Some(segment_index) = block.base_segmentation() else {
+                            let Some(segment_index) = block.block_segmentation() else {
                                 return None;
                             };
                             let (block_row, block_column) = block_i.to_block_row_and_column();
                             let rows_i = (block_row, segment_index).into();
                             let row = group_candidate_indexes.rows.get(rows_i);
-                            let None = row.base_segmentation() else { return None; };
+                            let None = row.block_segmentation() else { return None; };
 
                             // Found group intersection with an effect.
 
                             let mut deduction = Deduction::new();
                             let reason = Reason::candidate(candidate);
                             for row_major_index in block
-                                .intersection(Candidates::base_segmentation_mask(segment_index))
+                                .intersection(Candidates::block_segmentation_mask(segment_index))
                                 .into_iter()
                                 .map(Coordinate::from)
                             {
@@ -125,7 +125,7 @@ impl Strategy for GroupIntersection {
 
                             let action = Action::delete_candidate(candidate);
                             for row_i in row
-                                .without(Candidates::base_segmentation_mask(block_column))
+                                .without(Candidates::block_segmentation_mask(block_column))
                                 .into_iter()
                                 .map(Coordinate::from)
                             {

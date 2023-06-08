@@ -68,13 +68,13 @@ impl<Base: SudokuBase> Candidates<Base> {
         this
     }
 
-    pub fn base_segmentation_mask(segment_index: BlockCoordinate<Base>) -> Self {
+    pub fn block_segmentation_mask(segment: BlockCoordinate<Base>) -> Self {
         let base = Base::BASE;
         let one = Base::CandidatesIntegral::one();
 
         let first_segment_mask = (one << base) - one;
 
-        Self::with_integral_unchecked(first_segment_mask << (segment_index.get() * base))
+        Self::with_integral_unchecked(first_segment_mask << (segment.get() * base))
     }
 }
 
@@ -157,17 +157,15 @@ impl<Base: SudokuBase> Candidates<Base> {
         self.bits == Self::all_candidates_mask()
     }
 
-    // TODO: unify naming with `BlockSegment`
-
-    /// Determine the base segmentation.
+    /// Determine if the candidates are block segmented or not.
     ///
-    /// Candidates are base segmented, if:
+    /// Candidates are block segmented, if:
     /// - The candidates contain `2..=Base::BASE` candidates
-    /// - All candidates are contained in a single base segment,
+    /// - All candidates are contained in a single block segment,
     ///   e.g. have a bit position in the range of `(n..n+Base::BASE)`, where n is some non-negative integer.
     ///
-    /// If the candidates are base segmented, the base segment index is returned, otherwise `None`.
-    pub fn base_segmentation(self) -> Option<BlockCoordinate<Base>> {
+    /// If the candidates are block segmented, the block segment index is returned, otherwise `None`.
+    pub fn block_segmentation(self) -> Option<BlockCoordinate<Base>> {
         // TODO: benchmark/optimize/simplify
         //  count leading/trailing zeros, if gap equal or smaller than base, then hit.
         //  segment_index = leading zeros / base
@@ -178,12 +176,12 @@ impl<Base: SudokuBase> Candidates<Base> {
             return None;
         }
 
-        for segment_index in BlockCoordinate::all() {
-            let segment_mask = Self::base_segmentation_mask(segment_index);
+        for segment in BlockCoordinate::all() {
+            let segment_mask = Self::block_segmentation_mask(segment);
             let outside_segment_mask = Self::all().without(segment_mask);
 
             if self.intersection(outside_segment_mask).is_empty() {
-                return Some(segment_index);
+                return Some(segment);
             }
         }
 
@@ -596,7 +594,7 @@ mod tests {
             assert!(all.is_full());
         }
 
-        fn assert_base_segmentation<Base: SudokuBase>(
+        fn assert_block_segmentation<Base: SudokuBase>(
             segmented_candidates: Vec<(Base::CandidatesIntegral, u8)>,
         ) {
             for (segmented_candidates_integral, segment_index) in
@@ -604,7 +602,7 @@ mod tests {
             {
                 assert_eq!(
                     Candidates::<Base>::with_integral(segmented_candidates_integral)
-                        .base_segmentation(),
+                        .block_segmentation(),
                     Some(BlockCoordinate::new(segment_index).unwrap())
                 );
             }
@@ -621,7 +619,7 @@ mod tests {
             .filter(|integral| !segmented_integrals.contains(integral))
             {
                 assert_eq!(
-                    Candidates::<Base>::with_integral(non_segmented_integral).base_segmentation(),
+                    Candidates::<Base>::with_integral(non_segmented_integral).block_segmentation(),
                     None,
                     "Non segmented integral: {non_segmented_integral:b}"
                 );
@@ -629,14 +627,14 @@ mod tests {
         }
 
         #[test]
-        fn test_base_segmentation_base_2() {
+        fn test_block_segmentation_base_2() {
             let segmented_candidates = vec![(0b0011, 0), (0b1100, 1)];
 
-            assert_base_segmentation::<Base2>(segmented_candidates)
+            assert_block_segmentation::<Base2>(segmented_candidates);
         }
 
         #[test]
-        fn test_base_segmentation_base_3() {
+        fn test_block_segmentation_base_3() {
             let segmented_candidates = vec![
                 (0b000_000_011, 0),
                 (0b000_000_101, 0),
@@ -652,7 +650,7 @@ mod tests {
                 (0b111_000_000, 2),
             ];
 
-            assert_base_segmentation::<Base3>(segmented_candidates);
+            assert_block_segmentation::<Base3>(segmented_candidates);
         }
 
         #[test]
