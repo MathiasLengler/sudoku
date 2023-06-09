@@ -21,7 +21,7 @@ enum SolverSelection {
 }
 
 fn main() -> Result<()> {
-    let solver_selection = SolverSelection::BacktrackingBitset;
+    let solver_selection = SolverSelection::Strategic;
 
     let grids = read_grids_from_file::<Base3>("./sudoku-rs/tests/res/tdoku/puzzles1_unbiased")?;
 
@@ -35,8 +35,6 @@ fn main() -> Result<()> {
                 assert!(backtracking::Solver::new(&mut grid).next().is_some());
             }
             SolverSelection::Strategic => {
-                grid.set_all_direct_candidates();
-
                 assert!(strategic::Solver::new(&mut grid)
                     .try_solve()
                     .unwrap()
