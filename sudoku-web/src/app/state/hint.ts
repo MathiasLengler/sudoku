@@ -7,7 +7,6 @@ export type Hint = {
 
 export type OptionalHint = Hint | undefined;
 
-// FIXME: invalidate
 export const hintState = atom<OptionalHint>({
     key: "Hint",
     default: undefined,

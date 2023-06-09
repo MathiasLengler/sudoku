@@ -1,7 +1,7 @@
 import { WORKER_BOOT_UP_MESSAGE } from "./constants";
 import * as Comlink from "comlink";
 import type { WorkerApi } from "./worker";
-import { loadCellViews } from "./app/persistence";
+import { loadCells } from "./app/celllsPersistence";
 import type { WasmSudoku } from "./types";
 
 export type RemoteWorkerApi = {
@@ -65,7 +65,7 @@ export async function spawnWorker() {
 export async function getRemoteWorkerApi(worker: Worker): Promise<RemoteWorkerApi> {
     const workerApi = Comlink.wrap<WorkerApi>(worker, {});
 
-    const cellViews = loadCellViews();
+    const cellViews = loadCells();
     console.debug("Initializing worker with cells", cellViews);
     await workerApi.init(cellViews);
     console.debug("Worker initialized");

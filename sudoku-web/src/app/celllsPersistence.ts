@@ -2,13 +2,13 @@ import type { DynamicCells } from "../types";
 
 const KEY_CELLS = "cells_v1";
 
-export function saveCellViews(cells: DynamicCells) {
+export function saveCells(cells: DynamicCells) {
     console.debug("Saving sudoku cells to localStorage");
 
     localStorage.setItem(KEY_CELLS, JSON.stringify(cells));
 }
 
-export function loadCellViews(): DynamicCells | undefined {
+export function loadCells(): DynamicCells | undefined {
     const cellsString = localStorage.getItem(KEY_CELLS);
 
     if (!cellsString) return undefined;

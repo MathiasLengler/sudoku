@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect } from "react";
 import type { DynamicCell, Position } from "../types";
-import { saveCellViews } from "./persistence";
+import { saveCells } from "./celllsPersistence";
 import { useRecoilValue, useSetRecoilState } from "recoil";
 import { sudokuBaseState, sudokuCellsState } from "./state/sudoku";
 import { inputState } from "./state/input";
@@ -12,7 +12,7 @@ function SaveCellsEffect() {
     const cells = useRecoilValue(sudokuCellsState);
 
     useEffect(() => {
-        saveCellViews(cells.map(({ position, incorrectValue, ...cell }): DynamicCell => cell));
+        saveCells(cells.map(({ position, incorrectValue, ...cell }): DynamicCell => cell));
     }, [cells]);
 
     return null;
