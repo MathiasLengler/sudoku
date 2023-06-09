@@ -34,6 +34,7 @@ const ValueButton: React.FunctionComponent<SelectorValueProps> = ({ value }: Sel
     return (
         <ButtonBase
             className={buttonClassNames}
+            sx={{ typography: "button" }}
             onClick={async () => {
                 await handleValue(value);
             }}
