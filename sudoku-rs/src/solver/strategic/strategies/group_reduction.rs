@@ -66,7 +66,14 @@ impl GroupReduction {
         let mut values = Vec::with_capacity(candidates_group.len());
         let mut reduced_candidates_group = vec![Candidates::new(); candidates_group.len()];
 
-        Self::walk_value_assignments(candidates_group, &mut values, &mut reduced_candidates_group);
+        let mut assigned_values = Candidates::new();
+
+        Self::walk_value_assignments(
+            candidates_group,
+            &mut values,
+            &mut assigned_values,
+            &mut reduced_candidates_group,
+        );
 
         reduced_candidates_group
     }
@@ -74,16 +81,19 @@ impl GroupReduction {
     fn walk_value_assignments<Base: SudokuBase>(
         group: &[Candidates<Base>],
         values: &mut Vec<Value<Base>>,
+        assigned_values: &mut Candidates<Base>,
         reduced_group: &mut [Candidates<Base>],
     ) {
         if let Some((candidate, rest)) = group.split_first() {
-            for value in candidate.iter() {
-                if values.contains(&value) {
+            for value in candidate.into_iter() {
+                if assigned_values.has(value) {
                     continue;
                 }
+                assigned_values.insert(value);
                 values.push(value);
-                Self::walk_value_assignments(rest, values, reduced_group);
+                Self::walk_value_assignments(rest, values, assigned_values, reduced_group);
                 values.pop();
+                assigned_values.delete(value);
             }
         } else {
             for (reduced_candidates, value) in reduced_group.iter_mut().zip(values) {
