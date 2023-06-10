@@ -210,43 +210,35 @@ impl<Base: SudokuBase> GroupCandidateIndexes<Base> {
             return None;
         }
 
+        let action = Action::delete_candidate(candidate);
+        let reason = Reason::candidate(candidate);
         Some(match group_intersection_type {
-            GroupIntersectionType::BlockToAxis => {
-                let action = Action::delete_candidate(candidate);
-                let reason = Reason::candidate(candidate);
-
-                Deduction::try_from_iters(
-                    axis_candidate_positions
-                        .without(block_segment.axis_mask())
-                        .into_iter()
-                        .map(Coordinate::from)
-                        .map(|axis_index| (block_segment.axis_position(axis_index), action)),
-                    block_candidate_positions
-                        .intersection(block_segment.block_mask())
-                        .into_iter()
-                        .map(Coordinate::from)
-                        .map(|block_index| (block_segment.block_position(block_index), reason)),
-                )
-                .unwrap()
-            }
-            GroupIntersectionType::AxisToBlock => {
-                let action = Action::delete_candidate(candidate);
-                let reason = Reason::candidate(candidate);
-
-                Deduction::try_from_iters(
-                    block_candidate_positions
-                        .without(block_segment.block_mask())
-                        .into_iter()
-                        .map(Coordinate::from)
-                        .map(|block_index| (block_segment.block_position(block_index), action)),
-                    axis_candidate_positions
-                        .intersection(block_segment.axis_mask())
-                        .into_iter()
-                        .map(Coordinate::from)
-                        .map(|axis_index| (block_segment.axis_position(axis_index), reason)),
-                )
-                .unwrap()
-            }
+            GroupIntersectionType::BlockToAxis => Deduction::try_from_iters(
+                axis_candidate_positions
+                    .without(block_segment.axis_mask())
+                    .into_iter()
+                    .map(Coordinate::from)
+                    .map(|axis_index| (block_segment.axis_position(axis_index), action)),
+                block_candidate_positions
+                    .intersection(block_segment.block_mask())
+                    .into_iter()
+                    .map(Coordinate::from)
+                    .map(|block_index| (block_segment.block_position(block_index), reason)),
+            )
+            .unwrap(),
+            GroupIntersectionType::AxisToBlock => Deduction::try_from_iters(
+                block_candidate_positions
+                    .without(block_segment.block_mask())
+                    .into_iter()
+                    .map(Coordinate::from)
+                    .map(|block_index| (block_segment.block_position(block_index), action)),
+                axis_candidate_positions
+                    .intersection(block_segment.axis_mask())
+                    .into_iter()
+                    .map(Coordinate::from)
+                    .map(|axis_index| (block_segment.axis_position(axis_index), reason)),
+            )
+            .unwrap(),
         })
     }
 }
