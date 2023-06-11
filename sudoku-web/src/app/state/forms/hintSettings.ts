@@ -25,13 +25,6 @@ export function unscaleLoopDelayMs(loopDelayMs: number) {
 
 export const MAX_LOOP_DELAY_INDEX = unscaleLoopDelayMs(4000);
 
-//TODO: color hint light bulb in toolbar based on hint state
-//  - no hint available
-//  - hint available
-//  - hint shown
-// TODO: reset hint state when it is applied manually
-// TODO: hint mode "Hint, then apply":
-//   handle stale deductions (user input since strategy execution)
 export type HintSettings = z.infer<typeof hintSettingsSchema>;
 export const hintSettingsSchema = z.object({
     strategies: z.array(dynamicStrategySchema).min(1),

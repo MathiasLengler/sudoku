@@ -17,6 +17,9 @@ use super::Strategy;
 pub struct GroupReduction;
 
 impl Strategy for GroupReduction {
+    fn name(self) -> &'static str {
+        "GroupReduction"
+    }
     fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
         Ok(Grid::<Base>::all_group_positions()
             .map(|group| {
@@ -63,7 +66,14 @@ impl GroupReduction {
         let mut values = Vec::with_capacity(candidates_group.len());
         let mut reduced_candidates_group = vec![Candidates::new(); candidates_group.len()];
 
-        Self::walk_value_assignments(candidates_group, &mut values, &mut reduced_candidates_group);
+        let mut assigned_values = Candidates::new();
+
+        Self::walk_value_assignments(
+            candidates_group,
+            &mut values,
+            &mut assigned_values,
+            &mut reduced_candidates_group,
+        );
 
         reduced_candidates_group
     }
@@ -71,16 +81,19 @@ impl GroupReduction {
     fn walk_value_assignments<Base: SudokuBase>(
         group: &[Candidates<Base>],
         values: &mut Vec<Value<Base>>,
+        assigned_values: &mut Candidates<Base>,
         reduced_group: &mut [Candidates<Base>],
     ) {
         if let Some((candidate, rest)) = group.split_first() {
-            for value in candidate.iter() {
-                if values.contains(&value) {
+            for value in candidate.into_iter() {
+                if assigned_values.has(value) {
                     continue;
                 }
+                assigned_values.insert(value);
                 values.push(value);
-                Self::walk_value_assignments(rest, values, reduced_group);
+                Self::walk_value_assignments(rest, values, assigned_values, reduced_group);
                 values.pop();
+                assigned_values.delete(value);
             }
         } else {
             for (reduced_candidates, value) in reduced_group.iter_mut().zip(values) {
@@ -350,7 +363,7 @@ mod tests {
     fn test_naked_pairs() {
         let mut grid: Grid<Base3> =
             "400000938032094100095300240370609004529001673604703090957008300003900400240030709"
-                .try_into()
+                .parse()
                 .unwrap();
 
         grid.set_all_direct_candidates();
@@ -409,7 +422,7 @@ mod tests {
     fn test_hidden_pairs() {
         let mut grid: Grid<Base3> =
             "720408030080000047401076802810739000000851000000264080209680413340000008168943275"
-                .try_into()
+                .parse()
                 .unwrap();
 
         grid.set_all_direct_candidates();

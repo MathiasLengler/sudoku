@@ -19,6 +19,10 @@ struct CandidateStats<Base: SudokuBase> {
 pub struct HiddenSingles;
 
 impl Strategy for HiddenSingles {
+    fn name(self) -> &'static str {
+        "HiddenSingles"
+    }
+
     fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
         ensure!(
             grid.is_directly_consistent(),
@@ -36,7 +40,7 @@ impl Strategy for HiddenSingles {
                 for group_position in group_positions {
                     if let Some(candidates) = grid.get(group_position).candidates() {
                         for candidate in candidates.iter() {
-                            let candidate = candidate.into_u8() - 1;
+                            let candidate = candidate.get() - 1;
 
                             let candidate_index = usize::from(candidate);
 

@@ -2,7 +2,6 @@ use anyhow::bail;
 
 use crate::base::consts::*;
 use crate::base::SudokuBase;
-use crate::cell::candidates_cell::CandidatesCell;
 use crate::cell::dynamic::DynamicCell;
 use crate::cell::{Candidates, Cell};
 use crate::error::Result;
@@ -33,9 +32,9 @@ impl GridFormat for BinaryFixedCandidatesLine {
 
         grid.all_cells()
             .map(|cell| {
-                let candidates_cell: CandidatesCell<_> = cell.clone().into();
+                let candidates: Candidates<_> = cell.clone().into();
 
-                let mut bits: u32 = candidates_cell.candidates.integral().into();
+                let mut bits: u32 = candidates.integral().into();
                 // Make space for fixed value bit
                 bits <<= 1;
                 if cell.has_fixed_value() {
@@ -60,16 +59,11 @@ impl GridFormat for BinaryFixedCandidatesLine {
 
                     bits >>= 1; // Shift the bits to remove the flag
 
-                    let candidates_cell =
-                        CandidatesCell::<Base>::with_candidates(Candidates::with_integral(
-                            Base::CandidatesIntegral::try_from(bits).unwrap(),
-                        ));
+                    let candidates: Candidates<Base> = Candidates::with_integral(
+                        Base::CandidatesIntegral::try_from(bits).unwrap(),
+                    );
 
-                    Ok(if let Some(value) = candidates_cell.value() {
-                        Cell::with_value(value, is_fixed_value).into()
-                    } else {
-                        Cell::with_candidates(candidates_cell.candidates).into()
-                    })
+                    Ok(DynamicCell::from(Cell::from((candidates, is_fixed_value))))
                 })
                 .collect()
         }

@@ -10,6 +10,10 @@ use super::Strategy;
 pub struct Backtracking;
 
 impl Strategy for Backtracking {
+    fn name(self) -> &'static str {
+        "Backtracking"
+    }
+
     fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
         let mut solver = Solver::new(grid);
 

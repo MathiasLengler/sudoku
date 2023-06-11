@@ -1,15 +1,17 @@
 use std::iter;
 
-use anyhow::bail;
+use crate::base::consts::ALL_SIDE_LENGTHS;
+use anyhow::{bail, ensure, Context};
+use itertools::Itertools;
 use num::Integer;
 use owo_colors::Style as OwoStyle;
 use tabled::builder::Builder;
 use tabled::settings::{Padding, Style};
 
 use crate::base::SudokuBase;
-use crate::cell::dynamic::DynamicCell;
+use crate::cell::dynamic::{char_value_to_u8, DynamicCandidates, DynamicCell};
 use crate::cell::{CellState, Value};
-use crate::error;
+use crate::error::Result;
 use crate::grid::format::GridFormat;
 use crate::grid::Grid;
 
@@ -32,16 +34,17 @@ impl GridFormat for CandidatesGridANSIStyled {
         render_candidates_grid(grid, true)
     }
 
-    fn parse(self, input: &str) -> error::Result<Vec<DynamicCell>> {
+    fn parse(self, input: &str) -> Result<Vec<DynamicCell>> {
         let stripped_input_bytes = strip_ansi_escapes::strip(input.as_bytes())?;
         let stripped_input = String::from_utf8(stripped_input_bytes)?;
 
         CandidatesGridPlain.parse(&stripped_input)
     }
 
-    fn do_fix_all_values(self) -> bool {
-        false
-    }
+    // TODO: uncomment after parsing of ANSI escapes for fixed values
+    // fn do_fix_all_values(self) -> bool {
+    //     false
+    // }
 }
 
 /// The same as `CandidatesGridColored`, but without terminal styling.
@@ -152,13 +155,205 @@ impl GridFormat for CandidatesGridPlain {
         render_candidates_grid(grid, false)
     }
 
-    fn parse(self, _input: &str) -> error::Result<Vec<DynamicCell>> {
+    fn parse(self, input: &str) -> Result<Vec<DynamicCell>> {
         // TODO: implement
         //  split into multi-line rows
         //  split rows into multi-line cells
         //  extract numbers from cells
 
-        bail!("todo")
+        fn ensure_same_line_char_count(input: &str) -> Result<usize> {
+            let mut line_char_count = None;
+            for line in input.lines() {
+                let current_line_char_count = line.chars().count();
+                if current_line_char_count == 0 {
+                    bail!("Unexpected empty line")
+                }
+                if let Some(previous_line_char_count) = line_char_count {
+                    if current_line_char_count != previous_line_char_count {
+                        bail!("Expected line char count {previous_line_char_count}, instead got: {current_line_char_count}")
+                    }
+                } else {
+                    line_char_count = Some(current_line_char_count);
+                }
+            }
+            if let Some(line_char_count) = line_char_count {
+                Ok(line_char_count)
+            } else {
+                bail!("Unexpected empty input")
+            }
+        }
+
+        // Reference: https://stackoverflow.com/a/64499219
+        fn transpose2<T>(v: Vec<Vec<T>>) -> Vec<Vec<T>> {
+            assert!(!v.is_empty());
+            let len = v[0].len();
+            let mut iters: Vec<_> = v.into_iter().map(|n| n.into_iter()).collect();
+            (0..len)
+                .map(|_| {
+                    iters
+                        .iter_mut()
+                        .map(|n| n.next().unwrap())
+                        .collect::<Vec<T>>()
+                })
+                .collect()
+        }
+
+        const FIRST_CHAR: char = '╔';
+        const OUTER_BORDER_CHARS: &[char] = &[
+            '║', '═', // Straight
+            '╔', '╦', '╗', // Top
+            '╠', '╬', '╣', // Middle
+            '╚', '╩', '╝', // Bottom
+        ];
+
+        const INNER_BORDER_CHARS: &[char] = &['─', '│', '┼'];
+        const VERTICAL_BORDER_CHARS: &[char] = &['│', '║'];
+
+        match input.chars().next() {
+            Some(char) if char == FIRST_CHAR => {}
+            Some(unexpected_char) => {
+                bail!("Expected first character to be {FIRST_CHAR}, instead got: {unexpected_char}")
+            }
+            None => bail!("Unexpected empty input"),
+        }
+
+        let _line_char_count = ensure_same_line_char_count(input)?;
+
+        // cell_str_fragments: Vec<Data for a cell row>, len() == sudoku side length
+        // Data for a cell row: Vec<Single line data for cell row>, len() == cell height
+        // Single line data for cell row: Vec<Single cell line fragment>, len() == cell width
+        let mut cell_str_fragments: Vec<Vec<Vec<&str>>> = vec![];
+
+        for (is_horizontal_separator, lines_with_cell_data) in &input
+            .lines()
+            .map(|line| line.trim_matches(OUTER_BORDER_CHARS))
+            .group_by(|line| {
+                line.is_empty()
+                    || line.chars().all(|char| {
+                        OUTER_BORDER_CHARS.contains(&char) || INNER_BORDER_CHARS.contains(&char)
+                    })
+            })
+        {
+            if !is_horizontal_separator {
+                cell_str_fragments.push(
+                    lines_with_cell_data
+                        .map(|line_with_cell_data| {
+                            line_with_cell_data
+                                .split(VERTICAL_BORDER_CHARS)
+                                .collect::<Vec<_>>()
+                        })
+                        .collect::<Vec<_>>(),
+                );
+            }
+        }
+
+        let (cell_row_count_usize, cell_height, cell_column_count, cell_width) =
+            if let Some(first_cell_row_data) = cell_str_fragments.first() {
+                if let Some(first_line_fragments) = first_cell_row_data.first() {
+                    if let Some(first_line_fragment) = first_line_fragments.first() {
+                        (
+                            cell_str_fragments.len(),
+                            first_cell_row_data.len(),
+                            first_line_fragments.len(),
+                            first_line_fragment.len(),
+                        )
+                    } else {
+                        bail!("Expected at least one cell line fragment")
+                    }
+                } else {
+                    bail!("Expected at least one line of cell data")
+                }
+            } else {
+                bail!("Expected at least one cell row")
+            };
+
+        ensure!(
+            cell_row_count_usize == cell_column_count,
+            "Expected a square sudoku grid"
+        );
+
+        let side_length_usize = cell_row_count_usize;
+        let side_length = u8::try_from(side_length_usize).with_context(|| {
+            format!(
+                "Side length too large, expected maximum {}, instead got {side_length_usize}",
+                ALL_SIDE_LENGTHS.last().unwrap()
+            )
+        })?;
+        if !ALL_SIDE_LENGTHS.contains(&side_length) {
+            bail!("Unexpected side length {side_length}, expected one of: {ALL_SIDE_LENGTHS:?}")
+        }
+
+        ensure!(cell_height % 2 == 1, "Expected cell height to be uneven");
+        ensure!(cell_width % 2 == 1, "Expected cell width to be uneven");
+
+        for cell_row_data in &cell_str_fragments {
+            ensure!(
+                cell_row_data.len() == cell_height,
+                "Expected cell height to be consistent"
+            );
+
+            for line_fragments in cell_row_data {
+                ensure!(
+                    line_fragments.len() == side_length_usize,
+                    "Expected cell column count to be consistent"
+                );
+
+                for line_fragment in line_fragments {
+                    ensure!(
+                        line_fragment.len() == cell_width,
+                        "Expected cell width to be consistent"
+                    );
+                }
+            }
+        }
+
+        let cell_str_fragments_transposed: Vec<_> =
+            cell_str_fragments.into_iter().map(transpose2).collect();
+
+        cell_str_fragments_transposed
+            .into_iter()
+            .flatten()
+            .map(|cell_fragments| {
+                debug_assert!(cell_fragments.len() == cell_height);
+
+                let single_centered_char = {
+                    let (first_fragments, middle_and_last_fragments) =
+                        cell_fragments.split_at(cell_height / 2);
+                    let (middle_fragment, last_fragments) =
+                        middle_and_last_fragments.split_first().unwrap();
+
+                    if first_fragments.iter().all(|s| s.trim().is_empty())
+                        && last_fragments.iter().all(|s| s.trim().is_empty())
+                    {
+                        let middle_fragment_trimmed = middle_fragment.trim();
+                        if middle_fragment_trimmed.len() == 1
+                            && middle_fragment.find(middle_fragment_trimmed).unwrap()
+                                == cell_width / 2
+                        {
+                            Some(middle_fragment_trimmed.chars().next().unwrap())
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    }
+                };
+
+                if let Some(single_centered_char) = single_centered_char {
+                    DynamicCell::try_from(single_centered_char)
+                } else {
+                    Ok(DynamicCandidates::from(
+                        cell_fragments
+                            .into_iter()
+                            .flat_map(|cell_fragment| cell_fragment.trim().chars())
+                            .filter(|c| !c.is_whitespace())
+                            .map(char_value_to_u8)
+                            .collect::<Result<Vec<_>>>()?,
+                    )
+                    .into())
+                }
+            })
+            .collect::<Result<Vec<_>>>()
     }
 }
 
@@ -329,6 +524,22 @@ mod tests {
         use super::*;
 
         #[test]
+        fn test_parse_base_2_compact() {
+            CandidatesGridPlain
+                .parse(
+                    "╔═══════╦═══════╗
+║   │   ║ 1 │   ║
+║───┼───║───┼───║
+║ 4 │   ║   │   ║
+╠═══════╬═══════╣
+║   │   ║   │ 2 ║
+║───┼───║───┼───║
+║   │ 3 ║   │   ║
+╚═══════╩═══════╝",
+                )
+                .unwrap();
+        }
+        #[test]
         fn test_render_base_2_compact() {
             let grid = samples::base_2().pop().unwrap();
             assert_eq!(
@@ -343,6 +554,33 @@ mod tests {
 ║   │ 3 ║   │   ║
 ╚═══════╩═══════╝"
             );
+        }
+
+        #[test]
+        fn test_parse_base_2_sparse() {
+            let dynamic_cells = CandidatesGridPlain
+                .parse(
+                    "╔═══════════╦═══════════╗
+║     │     ║     │     ║
+║     │  2  ║  1  │     ║
+║ 3   │     ║     │ 3 4 ║
+║─────┼─────║─────┼─────║
+║     │ 1   ║   2 │     ║
+║  4  │     ║     │     ║
+║     │     ║ 3   │ 3   ║
+╠═══════════╬═══════════╣
+║ 1   │ 1   ║     │     ║
+║     │     ║     │  2  ║
+║     │   4 ║ 3 4 │     ║
+║─────┼─────║─────┼─────║
+║ 1 2 │     ║     │ 1   ║
+║     │  3  ║     │     ║
+║     │     ║   4 │   4 ║
+╚═══════════╩═══════════╝",
+                )
+                .unwrap();
+
+            dbg!(dynamic_cells);
         }
 
         #[test]

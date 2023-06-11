@@ -1,6 +1,7 @@
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::fmt::{Binary, Display, Formatter};
+use std::mem::size_of;
 
 use num::traits::{CheckedShl, WrappingSub};
 use num::{One, PrimInt, Zero};
@@ -12,12 +13,18 @@ pub use iter::CandidatesIter;
 use crate::base::SudokuBase;
 use crate::cell::compact::value::Value;
 use crate::cell::dynamic::DynamicCandidates;
+use crate::cell::{Cell, CellState};
 use crate::error::{Error, Result};
+use crate::position::{BlockCoordinate, Coordinate};
 
 mod iter;
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Copy, Clone, Debug)]
 pub struct Candidates<Base: SudokuBase> {
+    /// # Safety invariants
+    ///
+    /// The bits at position `Base::MAX_VALUE` and greater must be zero.
+    /// Validated by `Self::is_valid`.
     bits: Base::CandidatesIntegral,
 }
 
@@ -53,13 +60,16 @@ impl<Base: SudokuBase> Candidates<Base> {
     }
 
     pub fn all() -> Self {
-        let mut this = Self::default();
+        Self::with_integral_unchecked(Self::all_candidates_mask())
+    }
 
-        this.bits ^= Self::all_candidates_mask();
+    pub fn block_segmentation_mask(segment_index: BlockCoordinate<Base>) -> Self {
+        let base = Base::BASE;
+        let one = Base::CandidatesIntegral::one();
 
-        this.debug_assert_is_valid();
+        let first_segment_mask = (one << base) - one;
 
-        this
+        Self::with_integral_unchecked(first_segment_mask << (segment_index.get() * base))
     }
 }
 
@@ -112,6 +122,10 @@ impl<Base: SudokuBase> Candidates<Base> {
         self.debug_assert_is_valid();
     }
 
+    pub fn insert(&mut self, candidate: Value<Base>) {
+        self.set(candidate, true);
+    }
+
     pub fn delete(&mut self, candidate: Value<Base>) {
         self.set(candidate, false);
     }
@@ -138,16 +152,65 @@ impl<Base: SudokuBase> Candidates<Base> {
         self.bits == Self::all_candidates_mask()
     }
 
+    /// Determine if the candidates are block segmented or not.
+    ///
+    /// Candidates are block segmented, if:
+    /// - The candidates contain `2..=Base::BASE` candidates
+    /// - All candidates are contained in a single block segment,
+    ///   e.g. have a bit position in the range of `(n..n+Base::BASE)`, where n is some non-negative integer.
+    ///
+    /// If the candidates are block segmented, the block segment index is returned, otherwise `None`.
+    pub fn block_segmentation(self) -> Option<BlockCoordinate<Base>> {
+        let base = Base::BASE;
+
+        let size_bits: u8 = (size_of::<Base::CandidatesIntegral>() * 8)
+            .try_into()
+            .unwrap();
+        let storage_leading_zeros: u8 = self.bits.leading_zeros().try_into().unwrap();
+        // Check if empty
+        if storage_leading_zeros == size_bits {
+            return None;
+        }
+        let all_leading_zeros: u8 = Self::all_candidates_mask()
+            .leading_zeros()
+            .try_into()
+            .unwrap();
+        let logic_leading_zeros = storage_leading_zeros - all_leading_zeros;
+        let trailing_zeros: u8 = self.bits.trailing_zeros().try_into().unwrap();
+        let outer_zeros_count = logic_leading_zeros + trailing_zeros;
+
+        let segment_width = Base::SIDE_LENGTH - outer_zeros_count;
+        if !(2..base).contains(&segment_width) {
+            return None;
+        }
+        // Check for misaligned segment
+        let start = trailing_zeros;
+        // Safety: a non-empty Candidates always has less than Base::SIDE_LENGTH leading zeros.
+        let start_coordinate = unsafe { Coordinate::<Base>::new_unchecked(start) };
+        let start_block_coordinate = BlockCoordinate::round_down(start_coordinate);
+
+        let end = Base::SIDE_LENGTH - (logic_leading_zeros + 1);
+        // Safety: `end` is always less than `Base::SIDE_LENGTH`,
+        // because `logic_leading_zeros` is less than `Base::SIDE_LENGTH` for non-empty Candidates.
+        let end_coordinate = unsafe { Coordinate::<Base>::new_unchecked(end) };
+        let end_coordinate = BlockCoordinate::round_down(end_coordinate);
+        if start_block_coordinate == end_coordinate {
+            Some(start_block_coordinate)
+        } else {
+            None
+        }
+    }
+
     pub fn count(&self) -> u8 {
         self.bits.count_ones().try_into().unwrap()
     }
 
     pub fn iter(&self) -> CandidatesIter<Base> {
-        self.into()
+        (*self).into()
     }
 
     pub fn to_vec_u8(&self) -> Vec<u8> {
-        self.iter().map(|value| value.into_u8()).collect()
+        self.iter().map(|value| value.get()).collect()
     }
 
     pub fn to_vec_value(&self) -> Vec<Value<Base>> {
@@ -158,6 +221,11 @@ impl<Base: SudokuBase> Candidates<Base> {
         let mut iter = self.iter();
         let (Some(single), None) = (iter.next(), iter.next()) else { return None; };
         Some(single)
+    }
+
+    #[must_use]
+    pub fn invert(self) -> Self {
+        Self::with_integral_unchecked(self.bits ^ Self::all_candidates_mask())
     }
 }
 
@@ -172,11 +240,11 @@ impl<Base: SudokuBase> Candidates<Base> {
     }
 
     fn import(candidate: Value<Base>) -> u8 {
-        candidate.into_u8() - 1
+        candidate.get() - 1
     }
 
-    fn export(candidate: u8) -> Value<Base> {
-        (candidate + 1).try_into().unwrap()
+    fn export(candidate: Coordinate<Base>) -> Value<Base> {
+        candidate.into()
     }
 
     fn debug_assert_is_valid(&self) {
@@ -218,6 +286,15 @@ impl<Base: SudokuBase> FromIterator<Value<Base>> for Candidates<Base> {
     }
 }
 
+impl<Base: SudokuBase> IntoIterator for Candidates<Base> {
+    type Item = Value<Base>;
+    type IntoIter = CandidatesIter<Base>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.into()
+    }
+}
+
 impl<Base: SudokuBase> From<Vec<Value<Base>>> for Candidates<Base> {
     fn from(candidates: Vec<Value<Base>>) -> Self {
         let mut this = Self::default();
@@ -229,6 +306,15 @@ impl<Base: SudokuBase> From<Vec<Value<Base>>> for Candidates<Base> {
         this.debug_assert_is_valid();
 
         this
+    }
+}
+
+impl<Base: SudokuBase> From<Cell<Base>> for Candidates<Base> {
+    fn from(cell: Cell<Base>) -> Self {
+        match *cell.state() {
+            CellState::Value(value) | CellState::FixedValue(value) => Self::with_single(value),
+            CellState::Candidates(candidates) => candidates,
+        }
     }
 }
 
@@ -451,6 +537,19 @@ mod tests {
         }
 
         #[test]
+        fn test_insert() {
+            let mut candidates = Candidates::<Base2>::new();
+            let value1 = 1.try_into().unwrap();
+            let value2 = 2.try_into().unwrap();
+            candidates.insert(value1);
+            assert_eq!(candidates.to_vec_u8(), vec![1]);
+            candidates.insert(value2);
+            assert_eq!(candidates.to_vec_u8(), vec![1, 2]);
+            candidates.insert(value1);
+            assert_eq!(candidates.to_vec_u8(), vec![1, 2]);
+        }
+
+        #[test]
         fn test_delete() {
             let mut candidates = Candidates::<Base2>::all();
             let value1 = 1.try_into().unwrap();
@@ -465,6 +564,8 @@ mod tests {
     }
 
     mod getters {
+        use std::collections::BTreeSet;
+
         use super::*;
 
         #[test]
@@ -524,6 +625,65 @@ mod tests {
             assert!(all.is_full());
         }
 
+        fn assert_block_segmentation<Base: SudokuBase>(
+            segmented_candidates: Vec<(Base::CandidatesIntegral, u8)>,
+        ) {
+            for (segmented_candidates_integral, segment_index) in
+                segmented_candidates.iter().copied()
+            {
+                assert_eq!(
+                    Candidates::<Base>::with_integral(segmented_candidates_integral)
+                        .block_segmentation(),
+                    Some(BlockCoordinate::new(segment_index).unwrap())
+                );
+            }
+
+            let segmented_integrals: BTreeSet<_> = segmented_candidates
+                .into_iter()
+                .map(|(integral, _)| integral)
+                .collect();
+
+            for non_segmented_integral in num::range(
+                Base::CandidatesIntegral::zero(),
+                Candidates::<Base>::all_candidates_mask(),
+            )
+            .filter(|integral| !segmented_integrals.contains(integral))
+            {
+                assert_eq!(
+                    Candidates::<Base>::with_integral(non_segmented_integral).block_segmentation(),
+                    None,
+                    "Non segmented integral: {non_segmented_integral:b}"
+                );
+            }
+        }
+
+        #[test]
+        fn test_block_segmentation_base_2() {
+            let segmented_candidates = vec![(0b0011, 0), (0b1100, 1)];
+
+            assert_block_segmentation::<Base2>(segmented_candidates);
+        }
+
+        #[test]
+        fn test_block_segmentation_base_3() {
+            let segmented_candidates = vec![
+                (0b000_000_011, 0),
+                (0b000_000_101, 0),
+                (0b000_000_110, 0),
+                (0b000_000_111, 0),
+                (0b000_011_000, 1),
+                (0b000_101_000, 1),
+                (0b000_110_000, 1),
+                (0b000_111_000, 1),
+                (0b011_000_000, 2),
+                (0b101_000_000, 2),
+                (0b110_000_000, 2),
+                (0b111_000_000, 2),
+            ];
+
+            assert_block_segmentation::<Base3>(segmented_candidates);
+        }
+
         #[test]
         fn test_count() {
             let empty: Candidates<Base2> = Candidates::new();
@@ -575,6 +735,30 @@ mod tests {
                     .map(|i| Value::<Base2>::try_from(i).unwrap())
                     .collect::<Vec<_>>()
             );
+        }
+
+        #[test]
+        fn test_to_single() {
+            let empty: Candidates<Base2> = Candidates::new();
+            let one: Candidates<Base2> = Candidates::with_single(1.try_into().unwrap());
+            let all: Candidates<Base2> = Candidates::all();
+
+            assert_eq!(empty.to_single(), None);
+            assert_eq!(one.to_single(), Some(1.try_into().unwrap()));
+            assert_eq!(all.to_single(), None);
+        }
+
+        #[test]
+        fn test_invert() {
+            let empty: Candidates<Base2> = Candidates::new();
+            let all: Candidates<Base2> = Candidates::all();
+            assert_eq!(empty.invert(), all);
+            assert_eq!(all.invert(), empty);
+
+            let candidates_12 = Candidates::<Base2>::with_integral(0b0011);
+            let candidates_34 = Candidates::<Base2>::with_integral(0b1100);
+            assert_eq!(candidates_12.invert(), candidates_34);
+            assert_eq!(candidates_34.invert(), candidates_12);
         }
     }
 

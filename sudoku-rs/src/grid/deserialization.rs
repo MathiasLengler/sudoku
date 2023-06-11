@@ -16,7 +16,7 @@ pub fn read_grids_from_file<Base: SudokuBase>(path: impl AsRef<Path>) -> Result<
             if line.is_empty() || line.starts_with('#') {
                 return None;
             }
-            let grid: Grid<_> = line.as_str().try_into().unwrap();
+            let grid: Grid<_> = line.as_str().parse().unwrap();
             Some(grid)
         })
         .collect())

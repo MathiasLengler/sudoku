@@ -2,6 +2,7 @@ use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::ops::{Index, IndexMut};
+use std::str::FromStr;
 
 use anyhow::ensure;
 use ndarray::Array2;
@@ -618,10 +619,10 @@ impl<Base: SudokuBase, CView: Into<DynamicCell>> TryFrom<Vec<CView>> for Grid<Ba
     }
 }
 
-impl<Base: SudokuBase> TryFrom<&str> for Grid<Base> {
-    type Error = Error;
+impl<Base: SudokuBase> FromStr for Grid<Base> {
+    type Err = Error;
 
-    fn try_from(input: &str) -> Result<Self> {
+    fn from_str(input: &str) -> Result<Self> {
         DynamicGridFormat::detect_and_parse(input)?.try_into()
     }
 }

@@ -30,7 +30,7 @@ impl GridFormat for BinaryCandidatesLine {
         grid.all_cells()
             .map(|cell| match cell.state() {
                 CellState::Value(value) | CellState::FixedValue(value) => {
-                    2usize.pow(u32::from(value.into_u8() - 1)).to_string()
+                    2usize.pow(u32::from(value.get() - 1)).to_string()
                 }
                 CellState::Candidates(candidates) => candidates.integral().to_string(),
             })
@@ -51,8 +51,9 @@ impl GridFormat for BinaryCandidatesLine {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::samples;
+
+    use super::*;
 
     #[test]
     fn test_render_binary_candidates_line() {

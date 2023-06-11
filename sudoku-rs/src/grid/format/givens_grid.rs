@@ -67,8 +67,9 @@ impl GridFormat for GivensGrid {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::samples;
+
+    use super::*;
 
     pub(crate) static INPUT_GIVENS_GRID: &str = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),

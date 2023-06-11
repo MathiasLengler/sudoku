@@ -28,7 +28,7 @@ impl From<u8> for DynamicValue {
 
 impl<Base: SudokuBase> From<Value<Base>> for DynamicValue {
     fn from(value: Value<Base>) -> Self {
-        Self(value.into_u8())
+        Self(value.get())
     }
 }
 
@@ -38,6 +38,7 @@ pub struct DynamicCandidates(pub Vec<u8>);
 
 impl From<Vec<u8>> for DynamicCandidates {
     fn from(candidates: Vec<u8>) -> Self {
+        // TODO: change to try_from and check for 0
         Self(candidates)
     }
 }
@@ -91,7 +92,7 @@ pub fn c(candidates: Vec<u8>) -> DynamicCell {
     DynamicCell::candidates(candidates)
 }
 
-fn char_value_to_u8(c: char) -> Result<u8> {
+pub(crate) fn char_value_to_u8(c: char) -> Result<u8> {
     match c {
         '.' | '0' => Ok(0),
         _ => match c.to_digit(36) {
@@ -151,6 +152,12 @@ impl TryFrom<u32> for DynamicCell {
 impl From<u8> for DynamicCell {
     fn from(value: u8) -> Self {
         DynamicCell::value(value, false)
+    }
+}
+
+impl From<DynamicCandidates> for DynamicCell {
+    fn from(candidates: DynamicCandidates) -> Self {
+        Self::Candidates { candidates }
     }
 }
 

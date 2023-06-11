@@ -1,16 +1,19 @@
+use std::fmt::{Display, Formatter};
 use std::marker::PhantomData;
 
 use anyhow::ensure;
 
 use crate::base::SudokuBase;
+use crate::cell::Value;
 use crate::error::{Error, Result};
+use crate::position::BlockCoordinate;
 
 /// A coordinate/index in a sudoku grid.
 ///
 /// Can represent three different dimensions:
 ///
 /// # Row
-/// ```plaintext
+/// ```text
 /// ╔═════════╦═════════╗
 /// ║  0 │ 0  ║  0 │ 0  ║
 /// ║ ───┼─── ║ ───┼─── ║
@@ -22,7 +25,7 @@ use crate::error::{Error, Result};
 /// ╚═════════╩═════════╝
 /// ```
 /// # Column
-/// ```plaintext
+/// ```text
 /// ╔═════════╦═════════╗
 /// ║  0 │ 1  ║  2 │ 3  ║
 /// ║ ───┼─── ║ ───┼─── ║
@@ -34,7 +37,7 @@ use crate::error::{Error, Result};
 /// ╚═════════╩═════════╝
 /// ```
 /// # Block
-/// ```plaintext
+/// ```text
 /// ╔═════════╦═════════╗
 /// ║  0 │ 0  ║  1 │ 1  ║
 /// ║ ───┼─── ║ ───┼─── ║
@@ -45,12 +48,20 @@ use crate::error::{Error, Result};
 /// ║  2 │ 2  ║  3 │ 3  ║
 /// ╚═════════╩═════════╝
 /// ```
+///
+/// Can also be used to represent a zero-based `Value<Base>`.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Default)]
 pub struct Coordinate<Base: SudokuBase> {
     /// # Safety invariants
     /// - `coordinate < Base::SIDE_LENGTH`
     coordinate: u8,
     _base: PhantomData<Base>,
+}
+
+impl<Base: SudokuBase> Display for Coordinate<Base> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.coordinate)
+    }
 }
 
 /// Constructors
@@ -134,6 +145,30 @@ impl<Base: SudokuBase> Coordinate<Base> {
     pub fn get_u16(self) -> u16 {
         u16::from(self.coordinate)
     }
+
+    /// Get the `coordinate` as a `usize`.
+    /// Guaranteed to satisfy `coordinate < Base::SIDE_LENGTH`
+    pub fn get_usize(self) -> usize {
+        usize::from(self.coordinate)
+    }
+
+    pub fn to_block_row(self) -> BlockCoordinate<Base> {
+        let block_row = self.coordinate / Base::BASE;
+
+        // Safety: the calculation for `block_row` always remains in-bounds.
+        unsafe { BlockCoordinate::new_unchecked(block_row) }
+    }
+
+    pub fn to_block_column(self) -> BlockCoordinate<Base> {
+        let block_column = self.coordinate % Base::BASE;
+
+        // Safety: the calculation for `block_column` always remains in-bounds.
+        unsafe { BlockCoordinate::new_unchecked(block_column) }
+    }
+
+    pub fn to_block_row_and_column(self) -> (BlockCoordinate<Base>, BlockCoordinate<Base>) {
+        (self.to_block_row(), self.to_block_column())
+    }
 }
 
 /// Iterators
@@ -150,6 +185,25 @@ impl<Base: SudokuBase> TryFrom<u8> for Coordinate<Base> {
 
     fn try_from(coordinate: u8) -> Result<Self> {
         Self::new(coordinate)
+    }
+}
+
+impl<Base: SudokuBase> From<(BlockCoordinate<Base>, BlockCoordinate<Base>)> for Coordinate<Base> {
+    fn from((block_row, block_column): (BlockCoordinate<Base>, BlockCoordinate<Base>)) -> Self {
+        block_row.debug_assert();
+        block_column.debug_assert();
+
+        let coordinate = block_row.get() * Base::BASE + block_column.get();
+
+        // Safety: the calculation for `coordinate` always remains in-bounds,
+        // since `row` and `column` are each bounds checked at creation-time.
+        unsafe { Self::new_unchecked(coordinate) }
+    }
+}
+
+impl<Base: SudokuBase> From<Value<Base>> for Coordinate<Base> {
+    fn from(value: Value<Base>) -> Self {
+        unsafe { Self::new_unchecked(value.get() - 1) }
     }
 }
 

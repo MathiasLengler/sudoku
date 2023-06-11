@@ -10,7 +10,7 @@ use num::PrimInt;
 
 use consts::*;
 
-use crate::cell::candidates_cell::CandidatesCell;
+use crate::cell::Candidates;
 use crate::error::Error;
 use crate::position::Coordinate;
 use crate::position::Position;
@@ -36,6 +36,13 @@ pub mod consts {
         Base4::CELL_COUNT,
         Base5::CELL_COUNT,
     ];
+
+    pub const ALL_SIDE_LENGTHS: [u8; 4] = [
+        Base2::SIDE_LENGTH,
+        Base3::SIDE_LENGTH,
+        Base4::SIDE_LENGTH,
+        Base5::SIDE_LENGTH,
+    ];
 }
 
 mod private {
@@ -48,8 +55,6 @@ mod private {
     impl Sealed for Base4 {}
     impl Sealed for Base5 {}
 }
-
-pub type ArrayElement = u8;
 
 const fn base_to_side_length(base: u8) -> u8 {
     base.pow(2)
@@ -243,21 +248,27 @@ where
         + BitOrAssign
         + BitAndAssign
         + Shl<u8, Output = Self::CandidatesIntegral>
+        // Conversions
         + Into<u32>
         + TryFrom<u32, Error = Self::CandidatesIntegralTryFromU32Error>;
 
     type CandidatesIntegralTryFromU32Error: Into<Error> + Debug;
 
-    /// Data structure for `backtracking_bitset::Solver`.
+    /// Data structure for `GroupAvailability`.
+    ///
+    /// Conceptually, a `[Candidates<Self>; Self::SIDE_LENGTH]`.
     ///
     /// # Safety
     ///
     /// The length of the array must equal `Base::SIDE_LENGTH`.
-    type CandidatesCells: AsRef<[CandidatesCell<Self>]>
-        + AsMut<[CandidatesCell<Self>]>
+    type CandidatesGroup: AsRef<[Candidates<Self>]>
+        + AsMut<[Candidates<Self>]>
         + Clone
         + Debug
-        + Default;
+        + Default
+        + IntoIterator<Item = Candidates<Self>, IntoIter = Self::CandidatesGroupIntoIter>;
+
+    type CandidatesGroupIntoIter: Iterator<Item = Candidates<Self>>;
 }
 
 macro_rules! impl_sudoku_base {
@@ -298,7 +309,8 @@ unsafe impl SudokuBase for $type_num {
 
     type CandidatesIntegralTryFromU32Error = <$type_integral as TryFrom<u32>>::Error;
 
-    type CandidatesCells = [CandidatesCell<Self>; Self::SIDE_LENGTH as usize];
+    type CandidatesGroup = [Candidates<Self>; Self::SIDE_LENGTH as usize];
+    type CandidatesGroupIntoIter = std::array::IntoIter<Candidates<Self>, {Self::SIDE_LENGTH as usize}>;
 }
         )+
     };
@@ -372,7 +384,7 @@ mod tests {
         // MAX_VALUE must be representable at the highest bit position.
         assert!(size_of::<Base::CandidatesIntegral>() * 8 >= usize::from(Base::MAX_VALUE));
         // Safety invariant of Base::CandidatesCells
-        let mut candidates_cells = <Base as SudokuBase>::CandidatesCells::default();
+        let mut candidates_cells = <Base as SudokuBase>::CandidatesGroup::default();
         assert_eq!(
             candidates_cells.as_ref().len(),
             usize::from(Base::SIDE_LENGTH)

@@ -62,6 +62,10 @@ impl<Base: SudokuBase> Deductions<Base> {
         self.deductions.is_empty()
     }
 
+    pub fn count(&self) -> usize {
+        self.deductions.len()
+    }
+
     fn as_merged_deduction(&self) -> Result<Deduction<Base>> {
         let mut merged_deduction = Deduction::default();
 
@@ -94,6 +98,27 @@ impl<Base: SudokuBase> Deductions<Base> {
         Ok(reasons_to_actions
             .into_iter()
             .map(|(reasons, actions)| Deduction { actions, reasons })
+            .collect())
+    }
+
+    /// If two deductions contain the same actions, merge them into a single deduction by merging their reasons.
+    pub fn merge_deductions_by_actions(self) -> Result<Self> {
+        let mut actions_to_reasons: BTreeMap<
+            PositionMap<Base, Action<Base>>,
+            PositionMap<Base, Reason<Base>>,
+        > = BTreeMap::new();
+
+        for Deduction { reasons, actions } in self {
+            if let Some(existing_reasons) = actions_to_reasons.get_mut(&actions) {
+                existing_reasons.merge(reasons)?;
+            } else {
+                actions_to_reasons.insert(actions, reasons);
+            }
+        }
+
+        Ok(actions_to_reasons
+            .into_iter()
+            .map(|(actions, reasons)| Deduction { actions, reasons })
             .collect())
     }
 

@@ -13,6 +13,10 @@ use super::Strategy;
 pub struct NakedPairs;
 
 impl Strategy for NakedPairs {
+    fn name(self) -> &'static str {
+        "NakedPairs"
+    }
+
     fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
         Grid::<Base>::all_group_positions()
             .flat_map(|group| {
@@ -217,18 +221,18 @@ mod tests {
                     .into_iter()
                     .map(|(reasons, actions)| {
                         Deduction::try_from_iters(
-                            reasons.into_iter().map(|(pos, candidates)| {
-                                (
-                                    pos.try_into().unwrap(),
-                                    Reason::Candidates(Candidates::try_from(candidates).unwrap()),
-                                )
-                            }),
                             actions.into_iter().map(|(pos, candidates)| {
                                 (
-                                    pos.try_into().unwrap(),
+                                    pos,
                                     Action::DeleteCandidates(
                                         Candidates::try_from(candidates).unwrap(),
                                     ),
+                                )
+                            }),
+                            reasons.into_iter().map(|(pos, candidates)| {
+                                (
+                                    pos,
+                                    Reason::Candidates(Candidates::try_from(candidates).unwrap()),
                                 )
                             }),
                         )
