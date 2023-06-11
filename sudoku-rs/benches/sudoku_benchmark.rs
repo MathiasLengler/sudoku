@@ -361,14 +361,14 @@ fn bench_candidates_group(candidates_group: &mut BenchmarkGroup<WallTime>) {
     });
     candidates_group.bench_function(BenchmarkId::new("block_segmentation", "all"), |b| {
         b.iter_batched(
-            || Candidates::<Base3>::all(),
+            Candidates::<Base3>::all,
             |candidates| candidates.block_segmentation(),
             BatchSize::SmallInput,
         );
     });
     candidates_group.bench_function(BenchmarkId::new("block_segmentation", "new"), |b| {
         b.iter_batched(
-            || Candidates::<Base3>::new(),
+            Candidates::<Base3>::new,
             |candidates| candidates.block_segmentation(),
             BatchSize::SmallInput,
         );

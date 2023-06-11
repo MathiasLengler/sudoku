@@ -88,7 +88,7 @@ mod tests {
         grid.set_all_direct_candidates();
         grid.fix_all_values();
 
-        let deductions = HiddenSingles.execute(&mut grid).unwrap();
+        let deductions = HiddenSingles.execute(&grid).unwrap();
 
         let expected_deductions: Deductions<_> = vec![
             //

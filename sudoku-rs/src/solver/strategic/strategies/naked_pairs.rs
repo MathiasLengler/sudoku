@@ -110,8 +110,9 @@ mod tests {
     #[test]
     fn test_find_naked_pairs() {
         type Base = Base3;
+        type TestCase = (Vec<(Position<Base>, Candidates<Base>)>, Deductions<Base>);
 
-        let test_cases: Vec<(Vec<(Position<Base>, Candidates<Base>)>, Deductions<Base>)> = vec![
+        let test_cases: Vec<TestCase> = vec![
             // Single naked pair
             (
                 // candidates group

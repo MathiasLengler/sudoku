@@ -116,15 +116,15 @@ impl<Base: SudokuBase> Coordinate<Base> {
         Ok(())
     }
 
-    fn validate(&self) -> Result<()> {
+    fn validate(self) -> Result<()> {
         Self::validate_coordinate(self.coordinate)
     }
 
-    fn assert(&self) {
+    fn assert(self) {
         self.validate().unwrap();
     }
 
-    pub(crate) fn debug_assert(&self) {
+    pub(crate) fn debug_assert(self) {
         debug_assert!({
             self.assert();
             true
@@ -203,6 +203,10 @@ impl<Base: SudokuBase> From<(BlockCoordinate<Base>, BlockCoordinate<Base>)> for 
 
 impl<Base: SudokuBase> From<Value<Base>> for Coordinate<Base> {
     fn from(value: Value<Base>) -> Self {
+        // Safety:
+        // `Value::<Base::get` guarantees `1..=(Base::MAX_VALUE)`.
+        // `SudokuBase` guarantees `Base::SIDE_LENGTH == Base::MAX_VALUE`.
+        // Therefore `coordinate - 1 < Base::SIDE_LENGTH` holds.
         unsafe { Self::new_unchecked(value.get() - 1) }
     }
 }

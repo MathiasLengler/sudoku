@@ -183,7 +183,7 @@ mod test_util {
         expected_deductions: &Deductions<Base>,
         grid: &mut Grid<Base>,
     ) {
-        assert_deductions(&deductions, expected_deductions);
+        assert_deductions(deductions, expected_deductions);
 
         deductions.apply(grid).unwrap();
     }
