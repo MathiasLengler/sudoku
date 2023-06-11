@@ -85,43 +85,43 @@ impl WasmSudoku {
     }
 
     #[wasm_bindgen(js_name = setValue)]
-    pub fn set_value(&mut self, pos: IPosition, value: u8) -> Result<()> {
+    pub fn set_value(&mut self, pos: IDynamicPosition, value: u8) -> Result<()> {
         self.sudoku.set_value(import_pos(pos)?, value)?;
         Ok(())
     }
 
     #[wasm_bindgen(js_name = setOrToggleValue)]
-    pub fn set_or_toggle_value(&mut self, pos: IPosition, value: u8) -> Result<()> {
+    pub fn set_or_toggle_value(&mut self, pos: IDynamicPosition, value: u8) -> Result<()> {
         self.sudoku.set_or_toggle_value(import_pos(pos)?, value)?;
         Ok(())
     }
 
     #[wasm_bindgen(js_name = setCandidates)]
-    pub fn set_candidates(&mut self, pos: IPosition, candidates: ICandidates) -> Result<()> {
+    pub fn set_candidates(&mut self, pos: IDynamicPosition, candidates: ICandidates) -> Result<()> {
         self.sudoku
             .set_candidates(import_pos(pos)?, import_candidates(candidates)?)?;
         Ok(())
     }
 
     #[wasm_bindgen(js_name = toggleCandidate)]
-    pub fn toggle_candidate(&mut self, pos: IPosition, candidate: u8) -> Result<()> {
+    pub fn toggle_candidate(&mut self, pos: IDynamicPosition, candidate: u8) -> Result<()> {
         self.sudoku.toggle_candidate(import_pos(pos)?, candidate)?;
         Ok(())
     }
 
     #[wasm_bindgen(js_name = setCandidate)]
-    pub fn set_candidate(&mut self, pos: IPosition, candidate: u8) -> Result<()> {
+    pub fn set_candidate(&mut self, pos: IDynamicPosition, candidate: u8) -> Result<()> {
         self.sudoku.set_candidate(import_pos(pos)?, candidate)?;
         Ok(())
     }
 
     #[wasm_bindgen(js_name = deleteCandidate)]
-    pub fn delete_candidate(&mut self, pos: IPosition, candidate: u8) -> Result<()> {
+    pub fn delete_candidate(&mut self, pos: IDynamicPosition, candidate: u8) -> Result<()> {
         self.sudoku.delete_candidate(import_pos(pos)?, candidate)?;
         Ok(())
     }
 
-    pub fn delete(&mut self, pos: IPosition) -> Result<()> {
+    pub fn delete(&mut self, pos: IDynamicPosition) -> Result<()> {
         self.sudoku.delete(import_pos(pos)?)?;
         Ok(())
     }
@@ -196,7 +196,7 @@ mod import {
         }
     }
 
-    pub(crate) fn import_pos(pos: IPosition) -> Result<DynamicPosition> {
+    pub(crate) fn import_pos(pos: IDynamicPosition) -> Result<DynamicPosition> {
         Ok(serde_wasm_bindgen::from_value(pos.into())?)
     }
 

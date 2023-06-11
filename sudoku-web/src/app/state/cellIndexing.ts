@@ -1,4 +1,4 @@
-import type { Position, TransportCell } from "../../../../sudoku-rs/bindings";
+import type { DynamicPosition, TransportCell } from "../../types";
 import { selector, selectorFamily } from "recoil";
 import { cellPositionToBlockPosition, positionToIndex } from "../utils";
 import { sudokuBaseState, sudokuCellsState, sudokuSideLengthState } from "./sudoku";
@@ -18,7 +18,7 @@ export const cellAtIndexState = selectorFamily<TransportCell, number>({
             return selectedCells;
         },
 });
-export const cellAtGridPositionState = selectorFamily<TransportCell, CreateSerializableParam<Position>>({
+export const cellAtGridPositionState = selectorFamily<TransportCell, CreateSerializableParam<DynamicPosition>>({
     key: "CellAtGridPosition",
     get:
         gridPosition =>
@@ -28,7 +28,7 @@ export const cellAtGridPositionState = selectorFamily<TransportCell, CreateSeria
         },
 });
 
-export const selectedBlockPositionState = selector<Position | undefined>({
+export const selectedBlockPositionState = selector<DynamicPosition | undefined>({
     key: "CellSelection.selectedBlockPosition",
     get: ({ get }) => {
         const selectedPos = get(selectedPosState);

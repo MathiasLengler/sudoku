@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect } from "react";
-import type { DynamicCell, Position } from "../types";
+import type { DynamicCell, DynamicPosition } from "../types";
 import { saveCells } from "./celllsPersistence";
 import { useRecoilValue, useSetRecoilState } from "recoil";
 import { sudokuBaseState, sudokuCellsState } from "./state/sudoku";
@@ -55,7 +55,7 @@ const SudokuBaseEffect = () => {
             const sideLength = baseToSideLength(base);
             const clampValue = (value: number) => _.clamp(value, sideLength);
             const clampCoordinate = (coordinate: number) => _.clamp(coordinate, sideLength - 1);
-            const clampPosition = (pos: Position): Position => ({
+            const clampPosition = (pos: DynamicPosition): DynamicPosition => ({
                 row: clampCoordinate(pos.row),
                 column: clampCoordinate(pos.column),
             });

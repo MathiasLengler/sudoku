@@ -1,4 +1,4 @@
-import type { Position } from "../../types";
+import type { DynamicPosition } from "../../types";
 import { atom, selector } from "recoil";
 import { localStorageEffect } from "./localStorageEffect";
 import { z } from "zod";
@@ -56,7 +56,7 @@ export const inputState = atom<Input>({
 });
 
 // Defined in normal mode
-export const selectedPosState = selector<Position | undefined>({
+export const selectedPosState = selector<DynamicPosition | undefined>({
     key: "Input.selectedPos",
     get: ({ get }) => {
         const input = get(inputState);

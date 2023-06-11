@@ -1,6 +1,12 @@
-import type { DynamicCellValue, Position, TransportSudoku } from "../types";
+import type { DynamicCellValue, DynamicPosition, TransportSudoku } from "../types";
 
-export function indexToPosition({ blockIndex, base }: { blockIndex: number; base: TransportSudoku["base"] }): Position {
+export function indexToPosition({
+    blockIndex,
+    base,
+}: {
+    blockIndex: number;
+    base: TransportSudoku["base"];
+}): DynamicPosition {
     return {
         row: Math.floor(blockIndex / base),
         column: blockIndex % base,
@@ -9,15 +15,15 @@ export function indexToPosition({ blockIndex, base }: { blockIndex: number; base
 
 type PositionToIndexParam =
     | {
-          gridPosition: Position;
+          gridPosition: DynamicPosition;
           sideLength: TransportSudoku["sideLength"];
       }
     | {
-          gridPosition: Position;
+          gridPosition: DynamicPosition;
           base: TransportSudoku["sideLength"];
       }
     | {
-          blockPosition: Position;
+          blockPosition: DynamicPosition;
           base: TransportSudoku["sideLength"];
       };
 
@@ -38,7 +44,10 @@ export function positionToIndex(params: PositionToIndexParam): number {
     }
 }
 
-export function cellPositionToBlockPosition(cellPosition: Position, base: TransportSudoku["base"]): Position {
+export function cellPositionToBlockPosition(
+    cellPosition: DynamicPosition,
+    base: TransportSudoku["base"]
+): DynamicPosition {
     return {
         row: Math.floor(cellPosition.row / base),
         column: Math.floor(cellPosition.column / base),

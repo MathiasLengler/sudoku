@@ -1,13 +1,11 @@
 // `cargo test` generates a binding file for each exported type
 // This file manually re-exports all bindings.
 
-// TODO: unify naming
-export type { DynamicPosition as Position } from "./DynamicPosition";
-
 export type * from "./DynamicCandidates";
 export type * from "./DynamicCell";
 export type * from "./DynamicGeneratorSettings";
 export type * from "./DynamicGridFormat";
+export type * from "./DynamicPosition";
 export type * from "./DynamicPosition";
 export type * from "./DynamicStrategy";
 export type * from "./DynamicTryStrategiesReturn";

@@ -4,15 +4,16 @@ import { useRecoilCallback } from "recoil";
 import { remoteWorkerApiState, sudokuSideLengthState, sudokuState, workerState } from "../state/sudoku";
 import type {
     DynamicGeneratorSettings,
+    DynamicGridFormat,
+    DynamicPosition,
+    DynamicStrategies,
     GeneratorProgress,
-    Position,
     TransportDeductions,
-} from "../../../../sudoku-rs/bindings";
+} from "../../types";
 import type { CellAction } from "../state/input";
 import { inputState } from "../state/input";
 import { cellAtGridPositionState } from "../state/cellIndexing";
 import _ from "lodash";
-import type { DynamicGridFormat, DynamicStrategies } from "../../types";
 import type { WasmSudokuProxy } from "../../spawnWorker";
 import { spawnWorker } from "../../spawnWorker";
 import assertNever from "assert-never/index";
@@ -28,7 +29,7 @@ async function getWasmSudokuProxy(snapshot: Snapshot): Promise<WasmSudokuProxy> 
 async function isFixedValueCell({
     snapshot,
     gridPosition,
-}: Pick<SelectorCallbackInterface, "snapshot"> & { gridPosition: Position }) {
+}: Pick<SelectorCallbackInterface, "snapshot"> & { gridPosition: DynamicPosition }) {
     const cell = await snapshot.getPromise(cellAtGridPositionState(gridPosition));
 
     if (cell.kind === "value" && cell.fixed) {
@@ -54,7 +55,7 @@ async function isInvalidValue({ snapshot, value }: Pick<SelectorCallbackInterfac
 async function isInvalidGridPosition({
     snapshot,
     gridPosition,
-}: Pick<SelectorCallbackInterface, "snapshot"> & { gridPosition: Position }) {
+}: Pick<SelectorCallbackInterface, "snapshot"> & { gridPosition: DynamicPosition }) {
     const sideLength = await snapshot.getPromise(sudokuSideLengthState);
 
     if (!_.inRange(gridPosition.row, 0, sideLength) || !_.inRange(gridPosition.column, 0, sideLength)) {
@@ -85,7 +86,7 @@ async function applyValueAtGridPosition({
     gridPosition,
 }: Pick<SelectorCallbackInterface, "snapshot" | "set"> & {
     value: number;
-    gridPosition: Position;
+    gridPosition: DynamicPosition;
 }) {
     if (await isFixedValueCell({ snapshot, gridPosition })) {
         return;
@@ -227,7 +228,7 @@ async function applyValueAtGridPosition({
 export function useHandlePosition() {
     return useRecoilCallback(
         ({ snapshot, set }) =>
-            async (gridPosition: Position) => {
+            async (gridPosition: DynamicPosition) => {
                 if (await isInvalidGridPosition({ snapshot, gridPosition })) {
                     return;
                 }

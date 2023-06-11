@@ -39,8 +39,8 @@ extern "C" {
 extern "C" {
     #[wasm_bindgen(typescript_type = "bindings.TransportSudoku")]
     pub type ITransportSudoku;
-    #[wasm_bindgen(typescript_type = "bindings.Position")]
-    pub type IPosition;
+    #[wasm_bindgen(typescript_type = "bindings.DynamicPosition")]
+    pub type IDynamicPosition;
     #[wasm_bindgen(typescript_type = "bindings.GeneratorSettings")]
     pub type IGeneratorSettings;
     #[wasm_bindgen(typescript_type = "bindings.DynamicStrategy")]

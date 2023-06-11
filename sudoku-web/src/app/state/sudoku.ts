@@ -1,5 +1,5 @@
 import { atom, selector } from "recoil";
-import type { TransportCell, TransportSudoku } from "../../../../sudoku-rs/bindings";
+import type { TransportCell, TransportSudoku } from "../../types";
 import type { RemoteWorkerApi } from "../../spawnWorker";
 import { getRemoteWorkerApi, spawnWorker } from "../../spawnWorker";
 
