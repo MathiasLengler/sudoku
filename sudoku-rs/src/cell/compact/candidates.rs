@@ -1,6 +1,7 @@
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::fmt::{Binary, Display, Formatter};
+use std::mem::size_of;
 
 use num::traits::{CheckedShl, WrappingSub};
 use num::{One, PrimInt, Zero};
@@ -160,26 +161,44 @@ impl<Base: SudokuBase> Candidates<Base> {
     ///
     /// If the candidates are block segmented, the block segment index is returned, otherwise `None`.
     pub fn block_segmentation(self) -> Option<BlockCoordinate<Base>> {
-        // TODO: benchmark/optimize/simplify
-        //  count leading/trailing zeros, if gap equal or smaller than base, then hit.
-        //  segment_index = leading zeros / base
         let base = Base::BASE;
 
-        let count = self.count();
-        if !(2..=base).contains(&count) {
+        let size_bits: u8 = (size_of::<Base::CandidatesIntegral>() * 8)
+            .try_into()
+            .unwrap();
+        let storage_leading_zeros: u8 = self.bits.leading_zeros().try_into().unwrap();
+        // Check if empty
+        if storage_leading_zeros == size_bits {
             return None;
         }
+        let all_leading_zeros: u8 = Self::all_candidates_mask()
+            .leading_zeros()
+            .try_into()
+            .unwrap();
+        let logic_leading_zeros = storage_leading_zeros - all_leading_zeros;
+        let trailing_zeros: u8 = self.bits.trailing_zeros().try_into().unwrap();
+        let outer_zeros_count = logic_leading_zeros + trailing_zeros;
 
-        for segment_index in BlockCoordinate::all() {
-            let segment_mask = Self::block_segmentation_mask(segment_index);
-            let outside_segment_mask = Self::all().without(segment_mask);
-
-            if self.intersection(outside_segment_mask).is_empty() {
-                return Some(segment_index);
-            }
+        let segment_width = Base::SIDE_LENGTH - outer_zeros_count;
+        if !(2..base).contains(&segment_width) {
+            return None;
         }
+        // Check for misaligned segment
+        let start = trailing_zeros;
+        // Safety: a non-empty Candidates always has less than Base::SIDE_LENGTH leading zeros.
+        let start_coordinate = unsafe { Coordinate::<Base>::new_unchecked(start) };
+        let start_block_coordinate = BlockCoordinate::round_down(start_coordinate);
 
-        None
+        let end = Base::SIDE_LENGTH - (logic_leading_zeros + 1);
+        // Safety: `end` is always less than `Base::SIDE_LENGTH`,
+        // because `logic_leading_zeros` is less than `Base::SIDE_LENGTH` for non-empty Candidates.
+        let end_coordinate = unsafe { Coordinate::<Base>::new_unchecked(end) };
+        let end_coordinate = BlockCoordinate::round_down(end_coordinate);
+        if start_block_coordinate == end_coordinate {
+            Some(start_block_coordinate)
+        } else {
+            None
+        }
     }
 
     pub fn count(&self) -> u8 {

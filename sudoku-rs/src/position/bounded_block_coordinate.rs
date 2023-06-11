@@ -5,6 +5,7 @@ use anyhow::ensure;
 
 use crate::base::SudokuBase;
 use crate::error::{Error, Result};
+use crate::position::Coordinate;
 
 /// A coordinate in a sudoku block.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Default)]
@@ -35,6 +36,14 @@ impl<Base: SudokuBase> BlockCoordinate<Base> {
 
         // Safety: `Base::BASE` is always non-zero, so `max_block_coordinate` remains in-bounds.
         unsafe { Self::new_unchecked(max_block_coordinate) }
+    }
+
+    pub fn round_down(coordinate: Coordinate<Base>) -> Self {
+        // Safety: relies on invariants:
+        // - Coordinate<Base>::get: `coordinate < Base::SIDE_LENGTH`
+        // - `SudokuBase`: `Base::SIDE_LENGTH` equals `BASE.pow(2)`
+        // Therefore `(coordinate.get() / Base::BASE) < Base::BASE` holds.
+        unsafe { Self::new_unchecked(coordinate.get() / Base::BASE) }
     }
 
     /// # Safety
