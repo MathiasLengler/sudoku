@@ -20,7 +20,7 @@ use sudoku::position::test_utils::{consume_iter, consume_nested_iter};
 use sudoku::position::Coordinate;
 use sudoku::position::Position;
 use sudoku::samples::{base_2, base_3};
-use sudoku::solver::strategic::strategies::GroupReduction;
+use sudoku::solver::strategic::strategies::{GroupIntersectionBoth, GroupReduction, Strategy};
 use sudoku::solver::{backtracking, backtracking_bitset, strategic};
 
 fn cast_grid<Base: SudokuBase>(any_grid: Box<dyn Any>) -> Grid<Base> {
@@ -299,9 +299,16 @@ fn bench_strategy_group(strategy_group: &mut BenchmarkGroup<WallTime>) {
     .collect();
 
     strategy_group.bench_with_input(
-        BenchmarkId::new("reduce_candidates_group", "basic"),
+        BenchmarkId::new("GroupReduction/reduce_candidates_group", "basic"),
         &candidates_group,
         |b, candidates_group| b.iter(|| GroupReduction::reduce_candidates_group(candidates_group)),
+    );
+
+    let grid: Grid<Base3> = "s00905cgdg2103pgc00h03r0ccd85cmcpcece0c0b0g1do036s9sec11c48222g1482c8c0ho421og8o9o1ogc410209sgoi22054gi0o011i6gkiq116q814s0s4ca48kao4s6o4s1003g10610410s0qg081210c".parse().unwrap();
+    strategy_group.bench_with_input(
+        BenchmarkId::new("GroupIntersection/execute", "basic"),
+        &grid,
+        |b, grid| b.iter(|| GroupIntersectionBoth.execute(grid).unwrap()),
     );
 }
 
@@ -341,6 +348,28 @@ fn bench_candidates_group(candidates_group: &mut BenchmarkGroup<WallTime>) {
                 }
                 candidates
             },
+            BatchSize::SmallInput,
+        );
+    });
+
+    candidates_group.bench_function(BenchmarkId::new("block_segmentation", "segment"), |b| {
+        b.iter_batched(
+            || Candidates::<Base3>::with_integral(0b000_101_000),
+            |candidates| candidates.block_segmentation(),
+            BatchSize::SmallInput,
+        );
+    });
+    candidates_group.bench_function(BenchmarkId::new("block_segmentation", "all"), |b| {
+        b.iter_batched(
+            || Candidates::<Base3>::all(),
+            |candidates| candidates.block_segmentation(),
+            BatchSize::SmallInput,
+        );
+    });
+    candidates_group.bench_function(BenchmarkId::new("block_segmentation", "new"), |b| {
+        b.iter_batched(
+            || Candidates::<Base3>::new(),
+            |candidates| candidates.block_segmentation(),
             BatchSize::SmallInput,
         );
     });
