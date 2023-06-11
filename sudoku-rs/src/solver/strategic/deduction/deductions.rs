@@ -62,6 +62,10 @@ impl<Base: SudokuBase> Deductions<Base> {
         self.deductions.is_empty()
     }
 
+    pub fn count(&self) -> usize {
+        self.deductions.len()
+    }
+
     fn as_merged_deduction(&self) -> Result<Deduction<Base>> {
         let mut merged_deduction = Deduction::default();
 
