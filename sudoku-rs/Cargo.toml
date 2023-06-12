@@ -38,6 +38,7 @@ indicatif = { version = "0.17.3", optional = true }
 rayon = { version = "1.7.0", optional = true }
 ts-rs = { version = "6.2.1", optional = true }
 hdrhistogram = { version = "7.5.2", optional = true }
+sudoku_emerentius = { package = "sudoku", git = "https://github.com/Emerentius/sudoku.git", optional = true}
 
 [dev-dependencies]
 serde_json = "1.0.96"
@@ -69,3 +70,7 @@ required-features = ["histogram"]
 [[bin]]
 name = "solver_animation"
 required-features = ["solver_debug_print"]
+
+[[bin]]
+name = "tdoku_benchmark"
+required-features = ["sudoku_emerentius"]

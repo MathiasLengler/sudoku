@@ -1,5 +1,7 @@
 pub mod backtracking;
 pub mod backtracking_bitset;
+#[cfg(feature = "sudoku_emerentius")]
+pub mod emerentius;
 pub mod strategic;
 
 // TODO: Solver trait
