@@ -180,7 +180,7 @@ impl<Base: SudokuBase> Candidates<Base> {
         let outer_zeros_count = logic_leading_zeros + trailing_zeros;
 
         let segment_width = Base::SIDE_LENGTH - outer_zeros_count;
-        if !(2..base).contains(&segment_width) {
+        if !(2..=base).contains(&segment_width) {
             return None;
         }
         // Check for misaligned segment

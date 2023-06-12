@@ -75,7 +75,7 @@ impl<Base: SudokuBase> Value<Base> {
     }
 
     fn assert_value(value: u8, ensure_non_zero: bool) {
-        Self::validate_value(value, ensure_non_zero).unwrap()
+        Self::validate_value(value, ensure_non_zero).unwrap();
     }
 
     fn debug_assert_value(value: u8, ensure_non_zero: bool) {

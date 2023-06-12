@@ -356,9 +356,9 @@ mod tests {
     }
 
     /// Reference:
-    ///  https://www.sudokuwiki.org/Naked_Candidates
-    ///  "Naked Pairs examples : Load Example"
-    ///  https://www.sudokuwiki.org/sudoku.htm?bd=400000938032094100095300240370609004529001673604703090957008300003900400240030709
+    /// `https://www.sudokuwiki.org/Naked_Candidates`
+    /// "Naked Pairs examples : Load Example"
+    /// `https://www.sudokuwiki.org/sudoku.htm?bd=400000938032094100095300240370609004529001673604703090957008300003900400240030709`
     #[test]
     fn test_naked_pairs() {
         let mut grid: Grid<Base3> =
@@ -415,9 +415,9 @@ mod tests {
     }
 
     /// Reference:
-    ///  https://www.sudokuwiki.org/Hidden_Candidates
-    ///  "Three Hidden Pairs : Load Example"
-    ///  https://www.sudokuwiki.org/sudoku.htm?bd=720408030080000047401076802810739000000851000000264080209680413340000008168943275
+    /// ` https://www.sudokuwiki.org/Hidden_Candidates`
+    /// "Three Hidden Pairs : Load Example"
+    /// `https://www.sudokuwiki.org/sudoku.htm?bd=720408030080000047401076802810739000000851000000264080209680413340000008168943275`
     #[test]
     fn test_hidden_pairs() {
         let mut grid: Grid<Base3> =

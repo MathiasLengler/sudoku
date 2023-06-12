@@ -1,4 +1,4 @@
-import type { Position, TransportCell } from "../../../../sudoku-rs/bindings";
+import type { DynamicPosition, TransportCell } from "../../types";
 import { selectorFamily, useRecoilValue } from "recoil";
 import { sudokuBaseState } from "../state/sudoku";
 import { inputState } from "../state/input";
@@ -15,7 +15,7 @@ interface BlockProps {
     blockIndex: number;
 }
 
-const containsSelectedPosState = selectorFamily<boolean | undefined, CreateSerializableParam<Position>>({
+const containsSelectedPosState = selectorFamily<boolean | undefined, CreateSerializableParam<DynamicPosition>>({
     key: "Block.containsSelectedPos",
     get:
         blockPosition =>

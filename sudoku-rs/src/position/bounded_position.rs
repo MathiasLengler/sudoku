@@ -54,6 +54,8 @@ impl<Base: SudokuBase> Position<Base> {
         let block_top_left = Base::block_to_top_left_pos(block);
         let (block_top_left_row, block_top_left_column) = block_top_left.to_row_and_column();
         let (block_row, block_column) = row_major_index.to_block_row_and_column();
+        // Safety: the top-left cell in a block has a `Base::BASE -1` cells to the left and bottom of it.
+        // Therefore, the indexes remain in-bounds.
         unsafe {
             (
                 Coordinate::new_unchecked(block_top_left_row.get() + block_row.get()),
@@ -69,6 +71,8 @@ impl<Base: SudokuBase> Position<Base> {
         let block_top_left = Base::block_to_top_left_pos(block);
         let (block_top_left_row, block_top_left_column) = block_top_left.to_row_and_column();
         let (block_column, block_row) = column_major_index.to_block_row_and_column();
+        // Safety: the top-left cell in a block has a `Base::BASE -1` cells to the left and bottom of it.
+        // Therefore, the indexes remain in-bounds.
         unsafe {
             (
                 Coordinate::new_unchecked(block_top_left_row.get() + block_row.get()),
@@ -126,15 +130,15 @@ impl<Base: SudokuBase> Position<Base> {
         Ok(())
     }
 
-    fn validate(&self) -> Result<()> {
+    fn validate(self) -> Result<()> {
         Self::validate_cell_index(self.cell_index)
     }
 
-    fn assert(&self) {
+    fn assert(self) {
         self.validate().unwrap();
     }
 
-    pub(crate) fn debug_assert(&self) {
+    pub(crate) fn debug_assert(self) {
         debug_assert!({
             self.assert();
             true

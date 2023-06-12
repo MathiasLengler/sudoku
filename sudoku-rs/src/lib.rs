@@ -13,8 +13,6 @@
 #![allow(clippy::redundant_closure_for_method_calls)]
 #![allow(clippy::too_many_lines)]
 // TODO: fix separately
-#![allow(clippy::trivially_copy_pass_by_ref)]
-// TODO: fix separately
 #![allow(clippy::must_use_candidate)]
 // warn a subset of lints in clippy::restriction
 #![warn(clippy::undocumented_unsafe_blocks)]

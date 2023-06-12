@@ -1,7 +1,7 @@
 import type * as React from "react";
 import type { KeyboardEvent } from "react";
 import clamp from "lodash/clamp";
-import type { Position, TransportSudoku } from "../types";
+import type { DynamicPosition, TransportSudoku } from "../types";
 import { inputState } from "./state/input";
 import { useRecoilCallback } from "recoil";
 import {
@@ -26,9 +26,9 @@ function keyToValue(key: string, sideLength: number): number | undefined {
 
 function keyToNewPos(
     key: string,
-    selectedPos: Position,
+    selectedPos: DynamicPosition,
     sideLength: TransportSudoku["sideLength"]
-): Position | undefined {
+): DynamicPosition | undefined {
     let { column, row } = selectedPos;
     switch (key) {
         case "ArrowUp":

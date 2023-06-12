@@ -66,15 +66,15 @@ impl<Base: SudokuBase> BlockCoordinate<Base> {
         Ok(())
     }
 
-    fn validate(&self) -> Result<()> {
+    fn validate(self) -> Result<()> {
         Self::validate_block_coordinate(self.block_coordinate)
     }
 
-    fn assert(&self) {
+    fn assert(self) {
         self.validate().unwrap();
     }
 
-    pub(crate) fn debug_assert(&self) {
+    pub(crate) fn debug_assert(self) {
         debug_assert!({
             self.assert();
             true
