@@ -249,6 +249,23 @@ mod tests {
 
     use super::*;
 
+    fn expected_deduction<Base: SudokuBase>(
+        candidate: u8,
+        action_positions: Vec<(u8, u8)>,
+        reason_positions: Vec<(u8, u8)>,
+    ) -> Deduction<Base> {
+        let candidate: Value<Base> = candidate.try_into().unwrap();
+        Deduction::try_from_iters(
+            action_positions
+                .into_iter()
+                .map(|pos| (pos, Action::delete_candidate(candidate))),
+            reason_positions
+                .into_iter()
+                .map(|pos| (pos, Reason::candidate(candidate))),
+        )
+        .unwrap()
+    }
+
     mod execute {
         use super::*;
         mod base_2 {
@@ -339,15 +356,26 @@ mod tests {
                     // Reference: https://www.sudokuwiki.org/Intersection_Removal#:~:text=Pointing%20Pairs%20%3A%20Load%20Example
                     let grid: Grid<Base3> = "9k0341g11k09218g8k3s1s28568150gagigug18sa8062k2g118i419041059003i00h09i09ap8o80hj005o241q282210h0941o00511o241os0384gkogo82111akokq0500950o2oioi8ooo1121gg034105oo".parse().unwrap();
 
-                    println!("{grid}");
-
                     let deductions = GroupIntersection(GroupIntersectionTypeFilter::BlockToAxis)
                         .execute(&grid)
                         .unwrap();
 
-                    println!("{deductions}");
+                    let expected_deductions = vec![
+                        expected_deduction(3, vec![(1, 0), (1, 1), (1, 2)], vec![(1, 6), (1, 8)]),
+                        expected_deduction(6, vec![(2, 2)], vec![(2, 4), (2, 5)]),
+                        expected_deduction(9, vec![(4, 4), (4, 6), (4, 8)], vec![(4, 1), (4, 2)]),
+                        expected_deduction(2, vec![(6, 1)], vec![(6, 3), (6, 4)]),
+                        expected_deduction(8, vec![(6, 1), (6, 6)], vec![(6, 3), (6, 5)]),
+                    ]
+                    .into_iter()
+                    .collect();
 
-                    todo!("assert deductions")
+                    deductions.validate(&grid).unwrap();
+
+                    assert_eq!(
+                        deductions, expected_deductions,
+                        "{deductions}\n!==\n{expected_deductions}"
+                    );
                 }
 
                 #[test]
@@ -355,30 +383,56 @@ mod tests {
                     // Reference: https://www.sudokuwiki.org/Intersection_Removal#:~:text=Pointing%20Pairs%20Example%202
                     let grid: Grid<Base3> = "s00905cgdg2103pgc00h03r0ccd85cmcpcece0c0b0g1do036s9sec11c48222g1482c8c0ho421og8o9o1ogc410209sgoi22054gi0o011i6gkiq116q814s0s4ca48kao4s6o4s1003g10610410s0qg081210c".parse().unwrap();
 
-                    println!("{grid}");
-
                     let deductions = GroupIntersection(GroupIntersectionTypeFilter::BlockToAxis)
                         .execute(&grid)
                         .unwrap();
 
-                    println!("{deductions}");
+                    let expected_deductions = vec![
+                        expected_deduction(8, vec![(0, 7), (1, 7), (2, 7)], vec![(3, 7), (5, 7)]),
+                        expected_deduction(7, vec![(1, 5), (7, 5)], vec![(3, 5), (5, 5)]),
+                        expected_deduction(2, vec![(1, 6), (1, 7), (1, 8)], vec![(1, 3), (1, 5)]),
+                        expected_deduction(6, vec![(1, 6), (2, 6)], vec![(3, 6), (5, 6)]),
+                        expected_deduction(7, vec![(2, 1)], vec![(3, 1), (5, 1)]),
+                        expected_deduction(8, vec![(4, 0), (4, 2)], vec![(4, 3), (4, 4)]),
+                        expected_deduction(4, vec![(6, 1), (6, 2), (6, 4)], vec![(6, 6), (6, 7)]),
+                        expected_deduction(1, vec![(6, 2)], vec![(3, 2), (5, 2)]),
+                        expected_deduction(7, vec![(6, 4)], vec![(6, 6), (6, 8)]),
+                    ]
+                    .into_iter()
+                    .collect();
 
-                    todo!("assert deductions")
+                    deductions.validate(&grid).unwrap();
+
+                    assert_eq!(
+                        deductions, expected_deductions,
+                        "{deductions}\n!==\n{expected_deductions}"
+                    );
                 }
                 #[test]
                 fn test_pointing_tripple_example() {
                     // Reference: https://www.sudokuwiki.org/Intersection_Removal#:~:text=Pointing%20Triple%20%3A%20Load%20Example
                     let grid: Grid<Base3> = "g1094i4g1182ek2m66054i4i210982cgg111811121kgkg054o0q4a2gg4090381ig1141246i6i114o056og1812a6i81g4kokg112s2u2e6o6k4k814g4o0311g111m0810503k868280h4qkiki1121ko4c0c81".parse().unwrap();
 
-                    println!("{grid}");
-
                     let deductions = GroupIntersection(GroupIntersectionTypeFilter::BlockToAxis)
                         .execute(&grid)
                         .unwrap();
 
-                    println!("{deductions}");
+                    let expected_deductions = vec![
+                        expected_deduction(7, vec![(0, 6), (1, 6), (2, 6)], vec![(7, 6), (8, 6)]),
+                        expected_deduction(9, vec![(3, 5)], vec![(7, 5), (8, 5)]),
+                        expected_deduction(3, vec![(4, 5)], vec![(6, 5), (7, 5), (8, 5)]),
+                        expected_deduction(4, vec![(5, 0), (5, 3), (5, 4)], vec![(5, 6), (5, 7)]),
+                        expected_deduction(6, vec![(7, 1)], vec![(7, 6), (7, 7)]),
+                    ]
+                    .into_iter()
+                    .collect();
 
-                    todo!("assert deductions")
+                    deductions.validate(&grid).unwrap();
+
+                    assert_eq!(
+                        deductions, expected_deductions,
+                        "{deductions}\n!==\n{expected_deductions}"
+                    );
                 }
             }
 
@@ -390,15 +444,27 @@ mod tests {
                     // Reference: https://www.sudokuwiki.org/Intersection_Removal#:~:text=Box%20Line%20Reduction-,Box/Line%20Reduction%20%3A%20Load%20Example,-or%20%3A%20From
                     let grid: Grid<Base3> = "1g03211khk4181gg091og11c813s3o4m4g5i81411c1shs030k21hg460h8156763009k0k22111424q4qg14i81054609g14mcm8g21114i5a215ag1d2904g05cg5281525i5i05g10921g1050h21c8881103c0".parse().unwrap();
 
-                    println!("{grid}");
-
                     let deductions = GroupIntersection(GroupIntersectionTypeFilter::AxisToBlock)
                         .execute(&grid)
                         .unwrap();
 
-                    println!("{deductions}");
+                    let expected_deductions = vec![
+                        expected_deduction(2, vec![(1, 4), (2, 3), (2, 4)], vec![(0, 3), (0, 4)]),
+                        expected_deduction(
+                            4,
+                            vec![(1, 6), (1, 8), (2, 6), (2, 8)],
+                            vec![(0, 7), (1, 7)],
+                        ),
+                    ]
+                    .into_iter()
+                    .collect();
 
-                    todo!("assert deductions")
+                    deductions.validate(&grid).unwrap();
+
+                    assert_eq!(
+                        deductions, expected_deductions,
+                        "{deductions}\n!==\n{expected_deductions}"
+                    );
                 }
                 #[test]
                 fn test_example_2() {
@@ -411,9 +477,34 @@ mod tests {
                         .execute(&grid)
                         .unwrap();
 
-                    println!("{deductions}");
+                    let expected_deductions = vec![
+                        expected_deduction(
+                            6,
+                            vec![(3, 2), (4, 2), (5, 2)],
+                            vec![(3, 1), (4, 1), (5, 1)],
+                        ),
+                        expected_deduction(
+                            9,
+                            vec![(3, 6), (3, 8), (5, 6), (5, 8)],
+                            vec![(3, 7), (5, 7)],
+                        ),
+                        expected_deduction(1, vec![(7, 1), (8, 2)], vec![(7, 0), (8, 0)]),
+                        expected_deduction(3, vec![(7, 1), (8, 2)], vec![(6, 0), (7, 0), (8, 0)]),
+                        expected_deduction(
+                            7,
+                            vec![(7, 3), (7, 4), (8, 4)],
+                            vec![(6, 3), (6, 4), (6, 5)],
+                        ),
+                    ]
+                    .into_iter()
+                    .collect();
 
-                    todo!("assert deductions")
+                    deductions.validate(&grid).unwrap();
+
+                    assert_eq!(
+                        deductions, expected_deductions,
+                        "{deductions}\n!==\n{expected_deductions}"
+                    );
                 }
             }
         }
