@@ -122,7 +122,7 @@ impl<Base: SudokuBase> Deductions<Base> {
             .collect())
     }
 
-    fn validate(&self, grid: &Grid<Base>) -> Result<()> {
+    pub fn validate(&self, grid: &Grid<Base>) -> Result<()> {
         for deduction in &self.deductions {
             deduction.validate(grid)?;
         }
