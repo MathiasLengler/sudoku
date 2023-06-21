@@ -60,7 +60,7 @@ harness = false
 
 [[bin]]
 name = "generate_histogram"
-required-features = ["parallel", "terminal"]
+required-features = ["parallel", "terminal", "histogram"]
 
 [[bin]]
 name = "generate_tiled"
