@@ -12,8 +12,8 @@ export function MySnackbarProvider({ children }: MySnackbarProviderProps) {
         <SnackbarProvider
             preventDuplicate
             anchorOrigin={{
-                vertical: "bottom",
-                horizontal: "center",
+                vertical: "top",
+                horizontal: "left",
             }}
             action={key => (
                 <IconButton
