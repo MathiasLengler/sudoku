@@ -1,90 +1,125 @@
-//! #20:3
-//! #21:20
-//! #22:344
-//! #23:1690
-//! #24:3382
-//! #25:3074
-//! #26:1212
-//! #27:253
-//! #28:21
-//! #30:1
-//! #20
-//!   .  .  .|  .  3  .|  .  4  .
-//!   .  5  .|  .  .  .|  7  .  .
-//!   .  .  7|  .  4  .|  8  .  6
-//! ------------------------------
-//!   .  .  .|  .  .  .|  .  7  .
-//!   .  .  .|  .  .  .|  .  3  5
-//!   1  .  .|  .  2  8|  .  .  .
-//! ------------------------------
-//!   4  .  .|  .  .  1|  .  .  .
-//!   9  .  3|  .  .  .|  .  .  .
-//!   .  .  .|  8  .  6|  .  .  .
+//! 21: 33                                                 
+//! 22: 1215
+//! 23: 18947
+//! 24: 110189
+//! 25: 273566
+//! 26: 322286
+//! 27: 195990
+//! 28: 64256
+//! 29: 12116
+//! 30: 1301
+//! 31: 97
+//! 33: 4
+//! Best grid #21:
+//! ╔═════════════════╦═════════════════╦═════════════════╗
+//! ║  2  │   3 │     ║     │     │     ║     │  2  │   3 ║
+//! ║ 4   │ 45  │  1  ║ 456 │     │  56 ║  7  │ 4 6 │   6 ║
+//! ║  89 │  89 │     ║   9 │   9 │   9 ║     │  89 │  8  ║
+//! ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+//! ║  2  │   3 │  23 ║ 1   │ 1   │ 1   ║ 123 │ 12  │ 1 3 ║
+//! ║ 4   │ 45  │ 45  ║ 456 │     │  56 ║ 4 6 │ 4 6 │   6 ║
+//! ║ 789 │ 789 │     ║ 7 9 │ 7 9 │ 7 9 ║  89 │  89 │  8  ║
+//! ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+//! ║     │     │     ║     │     │     ║ 1   │     │ 1   ║
+//! ║  6  │ 4   │ 4   ║  3  │  8  │  2  ║ 4   │  5  │     ║
+//! ║     │ 7 9 │     ║     │     │     ║   9 │     │     ║
+//! ╠═════════════════╬═════════════════╬═════════════════╣
+//! ║     │ 1   │     ║ 12  │     │ 1   ║ 12  │ 12  │     ║
+//! ║  3  │  56 │  7  ║  5  │  4  │  5  ║  56 │   6 │  9  ║
+//! ║     │  8  │     ║  8  │     │  8  ║  8  │  8  │     ║
+//! ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+//! ║ 1   │     │     ║ 1   │     │ 1 3 ║ 1   │ 1   │     ║
+//! ║     │  2  │  5  ║  5  │  6  │  5  ║  5  │     │  4  ║
+//! ║  89 │     │     ║ 789 │     │ 789 ║  8  │ 78  │     ║
+//! ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+//! ║ 1   │ 1   │     ║ 12  │ 12  │ 1   ║ 12  │     │ 1   ║
+//! ║ 4   │ 456 │ 456 ║  5  │     │  5  ║  56 │  3  │  56 ║
+//! ║  89 │  89 │     ║ 789 │ 7 9 │ 789 ║  8  │     │ 78  ║
+//! ╠═════════════════╬═════════════════╬═════════════════╣
+//! ║     │ 1 3 │     ║ 12  │ 123 │     ║ 1 3 │ 1   │ 1 3 ║
+//! ║  5  │   6 │  9  ║   6 │     │  4  ║   6 │   6 │   6 ║
+//! ║     │ 7   │     ║ 78  │ 7   │     ║  8  │ 78  │ 78  ║
+//! ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+//! ║ 1   │ 1 3 │   3 ║ 1   │ 1 3 │ 1 3 ║ 1 3 │ 1   │     ║
+//! ║ 4   │ 4 6 │ 4 6 ║   6 │     │   6 ║ 456 │ 4 6 │  2  ║
+//! ║ 7   │ 7   │     ║ 789 │ 7 9 │ 789 ║  89 │ 789 │     ║
+//! ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+//! ║ 12  │ 1 3 │     ║ 12  │     │ 1 3 ║ 1 3 │ 1   │ 1 3 ║
+//! ║ 4   │ 4 6 │  8  ║   6 │  5  │   6 ║ 4 6 │ 4 6 │   6 ║
+//! ║ 7   │ 7   │     ║ 7 9 │     │ 7 9 ║   9 │ 7 9 │ 7   ║
+//! ╚═════════════════╩═════════════════╩═════════════════╝
+
+#![allow(unused_imports)]
 
 use std::sync::Mutex;
 
-use indexmap::IndexMap;
+use hdrhistogram::Histogram;
 use indicatif::{ParallelProgressIterator, ProgressBar, ProgressStyle};
 use rayon::prelude::*;
 
 use sudoku::base::consts::Base3;
 use sudoku::error::Result;
 use sudoku::generator::{Generator, GeneratorSettings, GeneratorTarget};
-use sudoku::grid::format::DynamicGridFormat;
-use sudoku::solver::strategic::strategies::NakedSingles;
+use sudoku::solver::strategic::strategies::{
+    Backtracking, DynamicStrategy, HiddenSingles, NakedSingles,
+};
 
 type Base = Base3;
 
 fn main() -> Result<()> {
-    let num_values_histogram = Mutex::new(IndexMap::new());
+    let mut hist = Histogram::<u64>::new_with_bounds(1, 100, 1)
+        .unwrap()
+        .into_sync();
+
     let best_grid = Mutex::new(None);
 
-    const MAX: u64 = 100000;
+    const MAX: u64 = 100_000;
     let pb = ProgressBar::new(MAX).with_style(ProgressStyle::default_bar().template(
-        "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] ({pos}/{len}, ETA {eta})",
+        "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] ({pos}/{len}, ETA {eta}, {per_sec})",
     )?);
-    (0..MAX).into_par_iter().progress_with(pb).for_each(|_i| {
-        let grid = Generator::with_settings(GeneratorSettings {
-            target: GeneratorTarget::Minimal {
-                set_all_direct_candidates: true,
-            },
-            strategies: vec![NakedSingles.into()],
-            seed: None,
-        })
-        .generate::<Base>();
 
-        let num_values = grid.all_value_positions().len();
-
-        *num_values_histogram
-            .lock()
-            .unwrap()
-            .entry(num_values)
-            .or_insert(0) += 1;
-
-        let mut res = best_grid.lock().unwrap();
-
-        match *res {
-            Some((prev_num_values, _)) if prev_num_values > num_values => {
-                *res = Some((num_values, grid))
-            }
-            None => *res = Some((num_values, grid)),
-            _ => {}
-        }
+    let generator = Generator::with_settings(GeneratorSettings {
+        target: GeneratorTarget::Minimal {
+            set_all_direct_candidates: false,
+        },
+        // strategies: DynamicStrategy::default_solver_strategies(),
+        strategies: vec![
+            //
+            NakedSingles.into(),
+            HiddenSingles.into(),
+            // Backtracking.into(),
+        ],
+        seed: None,
     });
+    (0..MAX)
+        .into_par_iter()
+        .progress_with(pb)
+        .for_each_with(hist.recorder(), |recorder, _i| {
+            let grid = generator.generate::<Base>();
 
-    let mut num_values_histogram = num_values_histogram.into_inner().unwrap();
-    num_values_histogram.sort_keys();
+            let num_values = grid.all_value_positions().len();
 
-    println!("Histogram: (number of values: number of grids)");
-    for (num_values, count) in num_values_histogram.into_iter() {
-        println!("{}: {}", num_values, count);
+            recorder.record(num_values.try_into().unwrap()).unwrap();
+
+            let mut res = best_grid.lock().unwrap();
+
+            match *res {
+                Some((prev_num_values, _)) if prev_num_values > num_values => {
+                    *res = Some((num_values, grid))
+                }
+                None => *res = Some((num_values, grid)),
+                _ => {}
+            }
+        });
+
+    hist.refresh();
+
+    for v in hist.iter_recorded() {
+        println!("{}: {}", v.value_iterated_to(), v.count_at_value());
     }
 
     if let Some((num_values, grid)) = best_grid.into_inner().unwrap() {
-        println!(
-            "Best grid #{num_values}:\n{grid}\n{}",
-            DynamicGridFormat::GivensGrid.render(&grid)
-        );
+        println!("Best grid #{num_values}:\n{grid}");
     }
 
     Ok(())
