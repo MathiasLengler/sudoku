@@ -2,4 +2,4 @@
 import type { DynamicCandidates } from "./DynamicCandidates";
 
 export type TransportReason = TransportReasonCandidates;
-export type TransportReasonCandidates = { candidates: DynamicCandidates };
+export type TransportReasonCandidates = { "candidates": DynamicCandidates };

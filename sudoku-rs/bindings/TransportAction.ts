@@ -3,5 +3,5 @@ import type { DynamicCandidates } from "./DynamicCandidates";
 import type { DynamicValue } from "./DynamicValue";
 
 export type TransportAction = TransportActionSetValue | TransportActionDeleteCandidates;
-export type TransportActionSetValue = { setValue: DynamicValue };
-export type TransportActionDeleteCandidates = { deleteCandidates: DynamicCandidates };
+export type TransportActionSetValue = { "setValue": DynamicValue };
+export type TransportActionDeleteCandidates = { "deleteCandidates": DynamicCandidates };

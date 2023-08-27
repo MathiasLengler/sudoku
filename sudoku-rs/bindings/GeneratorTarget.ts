@@ -2,6 +2,6 @@
 
 export type GeneratorTarget = GeneratorTargetFilled | GeneratorTargetFromFilled | GeneratorTargetMinimal | GeneratorTargetFromMinimal;
 export type GeneratorTargetFilled = "filled";
-export type GeneratorTargetFromFilled = { fromFilled: { distanceFromFilled: number, setAllDirectCandidates: boolean, } };
-export type GeneratorTargetMinimal = { minimal: { setAllDirectCandidates: boolean, } };
-export type GeneratorTargetFromMinimal = { fromMinimal: { distance: number, setAllDirectCandidates: boolean, } };
+export type GeneratorTargetFromFilled = { "fromFilled": { distanceFromFilled: number, setAllDirectCandidates: boolean, } };
+export type GeneratorTargetMinimal = { "minimal": { setAllDirectCandidates: boolean, } };
+export type GeneratorTargetFromMinimal = { "fromMinimal": { distance: number, setAllDirectCandidates: boolean, } };

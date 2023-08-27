@@ -1253,8 +1253,8 @@ dependencies = [
 
 [[package]]
 name = "ts-rs"
-version = "6.2.1"
-source = "git+https://github.com/MathiasLengler/ts-rs#21826e1495ea930d2f979ad4250c50e1f7daf3fe"
+version = "7.0.0"
+source = "git+https://github.com/MathiasLengler/ts-rs#c36cab945d4e044c23dfc10b7af22502706f4d5f"
 dependencies = [
  "thiserror",
  "ts-rs-macros",
@@ -1262,13 +1262,13 @@ dependencies = [
 
 [[package]]
 name = "ts-rs-macros"
-version = "6.2.0"
-source = "git+https://github.com/MathiasLengler/ts-rs#21826e1495ea930d2f979ad4250c50e1f7daf3fe"
+version = "7.0.0"
+source = "git+https://github.com/MathiasLengler/ts-rs#c36cab945d4e044c23dfc10b7af22502706f4d5f"
 dependencies = [
  "Inflector",
  "proc-macro2",
  "quote",
- "syn 1.0.109",
+ "syn 2.0.29",
  "termcolor",
 ]
 

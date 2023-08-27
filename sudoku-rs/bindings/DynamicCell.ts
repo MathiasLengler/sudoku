@@ -3,5 +3,5 @@ import type { DynamicCandidates } from "./DynamicCandidates";
 import type { DynamicValue } from "./DynamicValue";
 
 export type DynamicCell = DynamicCellValue | DynamicCellCandidates;
-export type DynamicCellValue = { kind: "value", value: DynamicValue, fixed: boolean, };
-export type DynamicCellCandidates = { kind: "candidates", candidates: DynamicCandidates, };
+export type DynamicCellValue = { "kind": "value", value: DynamicValue, fixed: boolean, };
+export type DynamicCellCandidates = { "kind": "candidates", candidates: DynamicCandidates, };
