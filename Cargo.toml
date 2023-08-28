@@ -2,6 +2,7 @@
 members = [
     "sudoku-rs",
     "sudoku-wasm",
+    "sudoku-api"
 ]
 resolver = "2"
 
