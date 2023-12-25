@@ -40,13 +40,12 @@ pub enum GeneratorTarget {
     },
 }
 
-#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct GeneratorSettings {
+#[derive(Debug)]
+pub struct GeneratorSettings<Base: SudokuBase> {
     pub target: GeneratorTarget,
+    // TODO: use
+    pub givens_grid: Option<Grid<Base>>,
     pub strategies: Vec<DynamicStrategy>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub seed: Option<u64>,
 }
 
@@ -55,13 +54,15 @@ pub struct GeneratorSettings {
 #[serde(rename_all = "camelCase")]
 pub struct DynamicGeneratorSettings {
     pub base: u8,
-    #[serde(flatten)]
-    pub settings: GeneratorSettings,
+    pub target: GeneratorTarget,
+    pub strategies: Vec<DynamicStrategy>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub seed: Option<u64>,
 }
 
 #[derive(Debug)]
-pub struct Generator {
-    settings: GeneratorSettings,
+pub struct Generator<Base: SudokuBase> {
+    settings: GeneratorSettings<Base>,
 }
 
 #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
@@ -74,16 +75,17 @@ pub struct GeneratorProgress {
     is_position_required: bool,
 }
 
-impl Generator {
+impl<Base: SudokuBase> Generator<Base> {
     pub fn with_target(target: GeneratorTarget) -> Self {
         Self::with_settings(GeneratorSettings {
             target,
             strategies: vec![Backtracking.into()],
             seed: None,
+            givens_grid: None,
         })
     }
 
-    pub fn with_settings(settings: GeneratorSettings) -> Self {
+    pub fn with_settings(settings: GeneratorSettings<Base>) -> Self {
         Self { settings }
     }
 
@@ -95,14 +97,14 @@ impl Generator {
         }
     }
 
-    pub fn generate<Base: SudokuBase>(&self) -> Grid<Base> {
+    pub fn generate(&self) -> Grid<Base> {
         match self.generate_with_progress(|_| Ok::<(), Infallible>(())) {
             Ok(grid) => grid,
             Err(infallible) => match infallible {},
         }
     }
 
-    pub fn generate_with_progress<Base: SudokuBase, E: Into<Error>>(
+    pub fn generate_with_progress<E: Into<Error>>(
         &self,
         on_progress: impl FnMut(GeneratorProgress) -> Result<(), E>,
     ) -> Result<Grid<Base>, E> {
@@ -143,7 +145,7 @@ impl Generator {
         Ok(grid)
     }
 
-    fn filled_grid<Base: SudokuBase>(&self) -> Grid<Base> {
+    fn filled_grid(&self) -> Grid<Base> {
         let mut grid = Grid::<Base>::new();
 
         let mut solver = backtracking::Solver::new_with_settings(
@@ -164,7 +166,7 @@ impl Generator {
     /// Try to delete a cell at specific position in a grid while preserving uniqueness of the grid solution.
     ///
     /// Returns the value of the deleted cell, if any.
-    fn try_delete_cell_at_pos<Base: SudokuBase>(
+    fn try_delete_cell_at_pos(
         &self,
         grid: &mut Grid<Base>,
         pos: Position<Base>,
@@ -190,7 +192,7 @@ impl Generator {
         }
     }
 
-    fn filled<Base: SudokuBase, E: Into<Error>>(
+    fn filled<E: Into<Error>>(
         &self,
         mut grid: Grid<Base>,
         distance_from_filled: usize,
@@ -236,7 +238,7 @@ impl Generator {
         Ok(grid)
     }
 
-    fn minimal<Base: SudokuBase, E: Into<Error>>(
+    fn minimal<E: Into<Error>>(
         &self,
         mut grid: Grid<Base>,
         distance_from_minimal: usize,
@@ -314,10 +316,10 @@ mod tests {
 
     #[test]
     fn test_minimal() {
-        let grid = Generator::with_target(GeneratorTarget::Minimal {
+        let grid = Generator::<Base2>::with_target(GeneratorTarget::Minimal {
             set_all_direct_candidates: false,
         })
-        .generate::<Base2>();
+        .generate();
 
         println!("{grid}");
 
@@ -326,18 +328,18 @@ mod tests {
 
     #[test]
     fn test_filled() {
-        let grid = Generator::with_target(GeneratorTarget::Filled).generate::<Base2>();
+        let grid = Generator::<Base2>::with_target(GeneratorTarget::Filled).generate();
 
         assert!(grid.is_solved());
     }
 
     #[test]
     fn test_from_filled() {
-        let grid = Generator::with_target(GeneratorTarget::FromFilled {
+        let grid = Generator::<Base2>::with_target(GeneratorTarget::FromFilled {
             distance_from_filled: 2,
             set_all_direct_candidates: false,
         })
-        .generate::<Base2>();
+        .generate();
 
         assert_eq!(grid.all_candidates_positions().len(), 2);
 
@@ -347,27 +349,20 @@ mod tests {
     #[test]
     fn test_seed() {
         let strategies = vec![Backtracking.into()];
-        let generator_1 = Generator::with_settings(GeneratorSettings {
+        let generator_1 = Generator::<Base3>::with_settings(GeneratorSettings {
             seed: Some(1),
             target: GeneratorTarget::Filled,
             strategies: strategies.clone(),
+            givens_grid: None,
         });
-        assert_eq!(
-            generator_1.generate::<Base3>(),
-            generator_1.generate::<Base3>()
-        );
-        let generator_2 = Generator::with_settings(GeneratorSettings {
+        assert_eq!(generator_1.generate(), generator_1.generate());
+        let generator_2 = Generator::<Base3>::with_settings(GeneratorSettings {
             seed: Some(2),
             target: GeneratorTarget::Filled,
             strategies,
+            givens_grid: None,
         });
-        assert_eq!(
-            generator_2.generate::<Base3>(),
-            generator_2.generate::<Base3>()
-        );
-        assert_ne!(
-            generator_1.generate::<Base3>(),
-            generator_2.generate::<Base3>()
-        );
+        assert_eq!(generator_2.generate(), generator_2.generate());
+        assert_ne!(generator_1.generate(), generator_2.generate());
     }
 }

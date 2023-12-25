@@ -60,7 +60,7 @@ impl<Base: SudokuBase> Sudoku<Base> {
     }
 
     pub fn generate(
-        generator_settings: GeneratorSettings,
+        generator_settings: GeneratorSettings<Base>,
         settings: Settings,
         on_progress: impl FnMut(GeneratorProgress) -> Result<()>,
     ) -> Result<Self> {
