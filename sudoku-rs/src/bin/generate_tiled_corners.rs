@@ -12,9 +12,13 @@ fn main() -> Result<()> {
     let mut hist = Histogram::<u64>::new_with_bounds(1, 10u64.pow(6), 4).unwrap();
 
     let corners_2x2 = vec![
+        // top right
         vec![0, 1, 3, 4],
+        // top left
         vec![1, 2, 4, 5],
+        // bottom left
         vec![3, 4, 6, 7],
+        // bottom right
         vec![4, 5, 7, 8],
     ];
 
