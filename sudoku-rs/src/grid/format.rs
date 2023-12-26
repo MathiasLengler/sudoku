@@ -101,8 +101,6 @@ impl DynamicGridFormat {
         }
 
         let cell_views = if input.contains('\n') {
-            // TODO: add CandidatesGridANSIStyled
-
             CandidatesGridANSIStyled
                 .parse_and_validate_cell_count(input)
                 .or_else(|_| CandidatesGridCompact.parse_and_validate_cell_count(input))
