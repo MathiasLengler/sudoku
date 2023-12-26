@@ -60,9 +60,7 @@ use rayon::prelude::*;
 use sudoku::base::consts::*;
 use sudoku::error::Result;
 use sudoku::generator::{Generator, GeneratorSettings, GeneratorTarget};
-use sudoku::solver::strategic::strategies::{
-    HiddenSingles, NakedSingles,
-};
+use sudoku::solver::strategic::strategies::{HiddenSingles, NakedSingles};
 
 type Base = Base2;
 

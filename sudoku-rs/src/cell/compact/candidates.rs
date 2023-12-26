@@ -219,7 +219,9 @@ impl<Base: SudokuBase> Candidates<Base> {
 
     pub fn to_single(self) -> Option<Value<Base>> {
         let mut iter = self.iter();
-        let (Some(single), None) = (iter.next(), iter.next()) else { return None; };
+        let (Some(single), None) = (iter.next(), iter.next()) else {
+            return None;
+        };
         Some(single)
     }
 

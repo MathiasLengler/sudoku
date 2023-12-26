@@ -65,8 +65,8 @@ impl<Base: SudokuBase> Action<Base> {
     pub fn validate(&self, cell: &Cell<Base>) -> Result<Candidates<Base>> {
         (|| {
             let Some(existing_candidates) = cell.candidates() else {
-            bail!("expected cell to contain candidates")
-        };
+                bail!("expected cell to contain candidates")
+            };
             match *self {
                 Action::SetValue(value) => {
                     ensure!(
