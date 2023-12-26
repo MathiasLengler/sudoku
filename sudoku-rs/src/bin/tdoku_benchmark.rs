@@ -56,6 +56,7 @@ fn main() -> Result<()> {
     let total_time = after - before;
 
     dbg!(total_time);
+    dbg!(grids.len() as f64 / total_time.as_secs_f64());
     dbg!(total_guess_count);
 
     Ok(())
