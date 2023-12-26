@@ -1,7 +1,7 @@
 use anyhow::format_err;
 use log::debug;
-use rand::{Rng, SeedableRng, thread_rng};
 use rand::prelude::SliceRandom;
+use rand::{thread_rng, Rng, SeedableRng};
 use rand_xoshiro::Xoshiro256StarStar;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "wasm")]
@@ -318,26 +318,12 @@ impl<Base: SudokuBase> Generator<Base> {
 
 #[cfg(test)]
 mod tests {
+    use itertools::Itertools;
+
     use crate::base::consts::*;
     use crate::position::Coordinate;
 
     use super::*;
-
-    fn is_minimal<Base: SudokuBase>(grid: &Grid<Base>) -> bool {
-        let mut grid = grid.clone();
-
-        grid.unfix_all_values();
-
-        grid.has_unique_solution()
-            && grid.all_value_positions().into_iter().all(|pos| {
-                let cell = grid.get_mut(pos);
-                let prev_value = cell.value().unwrap();
-                cell.delete();
-                let has_multiple_solutions = !grid.has_unique_solution();
-                grid.get_mut(pos).set_value(prev_value);
-                has_multiple_solutions
-            })
-    }
 
     #[test]
     fn test_minimal() {
@@ -349,7 +335,7 @@ mod tests {
 
         println!("{grid}");
 
-        assert!(is_minimal(&grid));
+        assert!(grid.is_minimal());
     }
 
     #[test]
@@ -401,7 +387,42 @@ mod tests {
 
     #[test]
     fn test_strategies() {
-        todo!()
+        use crate::solver::strategic::strategies::*;
+
+        fn generate(target: GeneratorTarget, strategies: Vec<DynamicStrategy>) -> Grid<Base3> {
+            Generator::<Base3>::with_settings(GeneratorSettings {
+                strategies,
+                target,
+                ..Default::default()
+            })
+            .generate()
+            .unwrap()
+        }
+
+        let targets = vec![
+            GeneratorTarget::Minimal {
+                set_all_direct_candidates: false,
+            },
+            GeneratorTarget::FromFilled {
+                distance_from_filled: 20,
+                set_all_direct_candidates: false,
+            },
+        ];
+
+        for target in targets {
+            let grid = generate(target, vec![]);
+            assert!(grid.is_solved());
+
+            let default_strategies = DynamicStrategy::default_solver_strategies();
+            for i in 1..default_strategies.len() {
+                let strategies = default_strategies.clone().into_iter().take(i).collect_vec();
+                let grid = generate(target, strategies.clone());
+                assert!(grid
+                    .is_solvable_with_strategies(strategies)
+                    .unwrap()
+                    .is_some());
+            }
+        }
     }
 
     #[test]
@@ -434,8 +455,8 @@ mod tests {
     #[test]
     fn test_givens_grid_minimal() {
         let givens_grid: Grid<Base2> = "
-  1  2  │  3  4  
-  0  0  │  0  0  
+  4  3  │  0  0  
+  2  1  │  0  0  
 ────────┼────────
   0  0  │  0  0  
   0  0  │  0  0  "
@@ -454,6 +475,25 @@ mod tests {
 
         println!("{grid}");
 
-        todo!("assert")
+        // Top left block is unchanged
+        itertools::assert_equal(
+            givens_grid.block_cells(Coordinate::default()),
+            grid.block_cells(Coordinate::default()),
+        );
+
+        // Grid has unique solution
+        assert!(grid.has_unique_solution());
+
+        // Grid does not have a unique solution, if any value outside the top left is deleted.
+        for non_top_left_block_pos in grid
+            .all_value_positions()
+            .into_iter()
+            .filter(|pos| pos.to_block() != Coordinate::default())
+        {
+            let mut grid = grid.clone();
+            grid.unfix_all_values();
+            grid.get_mut(non_top_left_block_pos).delete();
+            assert!(!grid.has_unique_solution());
+        }
     }
 }

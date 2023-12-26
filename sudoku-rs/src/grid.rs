@@ -8,17 +8,17 @@ use anyhow::ensure;
 use ndarray::Array2;
 
 use crate::base::SudokuBase;
+use crate::cell::dynamic::DynamicCell;
 use crate::cell::Candidates;
 use crate::cell::Cell;
 use crate::cell::CellState;
-use crate::cell::dynamic::DynamicCell;
 use crate::cell::Value;
 use crate::error::{Error, Result};
 use crate::grid::format::{CandidatesGridANSIStyled, DynamicGridFormat, GridFormat};
 use crate::position::Coordinate;
 use crate::position::Position;
-use crate::solver::{backtracking_bitset, strategic};
 use crate::solver::strategic::strategies::DynamicStrategy;
+use crate::solver::{backtracking_bitset, strategic};
 use crate::unsafe_utils::{get_unchecked, get_unchecked_mut};
 
 pub mod deserialization;
@@ -266,6 +266,22 @@ impl<Base: SudokuBase> Grid<Base> {
 
     pub fn is_solved(&self) -> bool {
         self.all_candidates_positions().is_empty() && !self.has_value_conflict()
+    }
+
+    pub fn is_minimal(&self) -> bool {
+        let mut grid = self.clone();
+
+        grid.unfix_all_values();
+
+        grid.has_unique_solution()
+            && grid.all_value_positions().into_iter().all(|pos| {
+                let cell = grid.get_mut(pos);
+                let prev_value = cell.value().unwrap();
+                cell.delete();
+                let has_multiple_solutions = !grid.has_unique_solution();
+                grid.get_mut(pos).set_value(prev_value);
+                has_multiple_solutions
+            })
     }
 
     pub fn has_unique_solution(&self) -> bool {
