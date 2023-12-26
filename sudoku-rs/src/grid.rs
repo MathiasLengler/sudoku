@@ -5,7 +5,7 @@ use std::ops::{Index, IndexMut};
 use std::str::FromStr;
 
 use anyhow::ensure;
-use ndarray::Array2;
+use ndarray::{Array2, ArrayView2, ArrayViewMut2};
 
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
@@ -117,6 +117,17 @@ impl<Base: SudokuBase> Grid<Base> {
         }
 
         Ok(())
+    }
+}
+
+/// internal ndarray views for cells
+impl<Base: SudokuBase> Grid<Base> {
+    pub fn cells(&self) -> ArrayView2<Cell<Base>> {
+        self.cells.view()
+    }
+
+    pub fn cells_mut(&mut self) -> ArrayViewMut2<Cell<Base>> {
+        self.cells.view_mut()
     }
 }
 

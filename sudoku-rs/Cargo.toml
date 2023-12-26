@@ -67,5 +67,8 @@ name = "generate_tiled_corners"
 required-features = ["histogram"]
 
 [[bin]]
+name = "generate_tiled_map"
+
+[[bin]]
 name = "solver_animation"
 required-features = ["solver_debug_print"]
