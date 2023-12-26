@@ -2,10 +2,10 @@ use std::fmt;
 use std::fmt::Debug;
 use std::str::FromStr;
 
-use anyhow::{anyhow, bail, ensure};
+use anyhow::{bail, ensure, format_err};
 use enum_dispatch::enum_dispatch;
-use serde::de::Visitor;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::de::Visitor;
 #[cfg(feature = "wasm")]
 use ts_rs::TS;
 
@@ -169,7 +169,7 @@ impl FromStr for DynamicGridFormat {
         DynamicGridFormat::all()
             .into_iter()
             .find(|grid_format| grid_format.name() == grid_format_name)
-            .ok_or_else(|| anyhow!("Unexpected grid format name: {grid_format_name}"))
+            .ok_or_else(|| format_err!("Unexpected grid format name: {grid_format_name}"))
     }
 }
 

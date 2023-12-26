@@ -1,8 +1,7 @@
-use std::convert::Infallible;
-
+use anyhow::format_err;
 use log::debug;
+use rand::{Rng, SeedableRng, thread_rng};
 use rand::prelude::SliceRandom;
-use rand::{thread_rng, Rng, SeedableRng};
 use rand_xoshiro::Xoshiro256StarStar;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "wasm")]
@@ -43,10 +42,20 @@ pub enum GeneratorTarget {
 #[derive(Debug)]
 pub struct GeneratorSettings<Base: SudokuBase> {
     pub target: GeneratorTarget,
-    // TODO: use
-    pub givens_grid: Option<Grid<Base>>,
     pub strategies: Vec<DynamicStrategy>,
+    pub givens_grid: Option<Grid<Base>>,
     pub seed: Option<u64>,
+}
+
+impl<Base: SudokuBase> Default for GeneratorSettings<Base> {
+    fn default() -> Self {
+        Self {
+            target: GeneratorTarget::default(),
+            strategies: vec![Backtracking.into()],
+            seed: None,
+            givens_grid: None,
+        }
+    }
 }
 
 #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
@@ -79,9 +88,7 @@ impl<Base: SudokuBase> Generator<Base> {
     pub fn with_target(target: GeneratorTarget) -> Self {
         Self::with_settings(GeneratorSettings {
             target,
-            strategies: vec![Backtracking.into()],
-            seed: None,
-            givens_grid: None,
+            ..Default::default()
         })
     }
 
@@ -97,20 +104,17 @@ impl<Base: SudokuBase> Generator<Base> {
         }
     }
 
-    pub fn generate(&self) -> Grid<Base> {
-        match self.generate_with_progress(|_| Ok::<(), Infallible>(())) {
-            Ok(grid) => grid,
-            Err(infallible) => match infallible {},
-        }
+    pub fn generate(&self) -> Result<Grid<Base>> {
+        self.generate_with_progress(|_| Ok(()))
     }
 
-    pub fn generate_with_progress<E: Into<Error>>(
+    pub fn generate_with_progress(
         &self,
-        on_progress: impl FnMut(GeneratorProgress) -> Result<(), E>,
-    ) -> Result<Grid<Base>, E> {
+        on_progress: impl FnMut(GeneratorProgress) -> Result<()>,
+    ) -> Result<Grid<Base>> {
         debug!("generate: {self:?}");
 
-        let filled_grid = self.filled_grid();
+        let filled_grid = self.filled_grid()?;
 
         let (mut grid, set_all_direct_candidates) = match self.settings.target {
             GeneratorTarget::Filled => (filled_grid, false),
@@ -145,8 +149,12 @@ impl<Base: SudokuBase> Generator<Base> {
         Ok(grid)
     }
 
-    fn filled_grid(&self) -> Grid<Base> {
-        let mut grid = Grid::<Base>::new();
+    fn filled_grid(&self) -> Result<Grid<Base>> {
+        let mut grid = if let Some(ref givens_grid) = self.settings.givens_grid {
+            givens_grid.clone()
+        } else {
+            Grid::<Base>::new()
+        };
 
         let mut solver = backtracking::Solver::new_with_settings(
             &mut grid,
@@ -160,7 +168,13 @@ impl<Base: SudokuBase> Generator<Base> {
             },
         );
 
-        solver.next().unwrap()
+        solver.next().ok_or_else(|| {
+            if self.settings.givens_grid.is_some() {
+                format_err!("Provided givens grid has no solution")
+            } else {
+                panic!("Expected empty grid to have at least one solution")
+            }
+        })
     }
 
     /// Try to delete a cell at specific position in a grid while preserving uniqueness of the grid solution.
@@ -192,24 +206,33 @@ impl<Base: SudokuBase> Generator<Base> {
         }
     }
 
+    fn deletable_positions(&self) -> Vec<Position<Base>> {
+        let mut deletable_positions = if let Some(givens_grid) = &self.settings.givens_grid {
+            givens_grid.all_candidates_positions()
+        } else {
+            Grid::<Base>::all_positions().collect()
+        };
+        deletable_positions.shuffle(&mut self.rng());
+        deletable_positions
+    }
+
     fn filled<E: Into<Error>>(
         &self,
         mut grid: Grid<Base>,
         distance_from_filled: usize,
         mut on_progress: impl FnMut(GeneratorProgress) -> Result<(), E>,
     ) -> Result<Grid<Base>, E> {
+        debug_assert!(grid.is_solved());
+
         if distance_from_filled == 0 {
             return Ok(grid);
         }
 
-        assert!(grid.is_solved());
-
-        let mut all_positions: Vec<_> = Grid::<Base>::all_positions().collect();
-        all_positions.shuffle(&mut self.rng());
-        let positions_count = Grid::<Base>::cell_count_usize();
+        let deletable_positions: Vec<_> = self.deletable_positions();
+        let positions_count = deletable_positions.len();
 
         let mut deleted_count = 0;
-        for (i, pos) in all_positions.into_iter().enumerate() {
+        for (i, pos) in deletable_positions.into_iter().enumerate() {
             let position_index = i + 1;
 
             if deleted_count >= distance_from_filled {
@@ -244,21 +267,20 @@ impl<Base: SudokuBase> Generator<Base> {
         distance_from_minimal: usize,
         mut on_progress: impl FnMut(GeneratorProgress) -> Result<(), E>,
     ) -> Result<Grid<Base>, E> {
+        debug_assert!(grid.is_solved());
+
         // If the distance results in a filled sudoku, return it directly.
         if distance_from_minimal >= Grid::<Base>::cell_count_usize() {
             return Ok(grid);
         }
 
-        assert!(grid.is_solved());
-
-        let mut all_positions: Vec<_> = Grid::<Base>::all_positions().collect();
-        all_positions.shuffle(&mut self.rng());
-        let positions_count = Grid::<Base>::cell_count_usize();
+        let deletable_positions: Vec<_> = self.deletable_positions();
+        let positions_count = deletable_positions.len();
 
         let mut deleted: Vec<(Position<Base>, Value<Base>)> = vec![];
 
         // Reduce grid to a minimal solution.
-        for (i, pos) in all_positions.into_iter().enumerate() {
+        for (i, pos) in deletable_positions.into_iter().enumerate() {
             let position_index = i + 1;
 
             let deleted_count = deleted.len();
@@ -266,12 +288,14 @@ impl<Base: SudokuBase> Generator<Base> {
             let is_position_required = if let Some(deleted_value) =
                 self.try_delete_cell_at_pos(&mut grid, pos)
             {
-                debug!("Position {i}/{positions_count} deleted, totaling {deleted_count} deleted positions");
+                debug!("Position {position_index}/{positions_count} deleted, totaling {deleted_count} deleted positions");
 
                 deleted.push((pos, deleted_value));
                 false
             } else {
-                debug!("Position {i}/{positions_count} is required for unique solution");
+                debug!(
+                    "Position {position_index}/{positions_count} is required for unique solution"
+                );
                 true
             };
 
@@ -295,6 +319,7 @@ impl<Base: SudokuBase> Generator<Base> {
 #[cfg(test)]
 mod tests {
     use crate::base::consts::*;
+    use crate::position::Coordinate;
 
     use super::*;
 
@@ -319,7 +344,8 @@ mod tests {
         let grid = Generator::<Base2>::with_target(GeneratorTarget::Minimal {
             set_all_direct_candidates: false,
         })
-        .generate();
+        .generate()
+        .unwrap();
 
         println!("{grid}");
 
@@ -328,7 +354,9 @@ mod tests {
 
     #[test]
     fn test_filled() {
-        let grid = Generator::<Base2>::with_target(GeneratorTarget::Filled).generate();
+        let grid = Generator::<Base2>::with_target(GeneratorTarget::Filled)
+            .generate()
+            .unwrap();
 
         assert!(grid.is_solved());
     }
@@ -339,7 +367,8 @@ mod tests {
             distance_from_filled: 2,
             set_all_direct_candidates: false,
         })
-        .generate();
+        .generate()
+        .unwrap();
 
         assert_eq!(grid.all_candidates_positions().len(), 2);
 
@@ -347,22 +376,84 @@ mod tests {
     }
 
     #[test]
-    fn test_seed() {
-        let strategies = vec![Backtracking.into()];
+    fn test_seed_filled() {
         let generator_1 = Generator::<Base3>::with_settings(GeneratorSettings {
             seed: Some(1),
-            target: GeneratorTarget::Filled,
-            strategies: strategies.clone(),
-            givens_grid: None,
+            ..Default::default()
         });
-        assert_eq!(generator_1.generate(), generator_1.generate());
+        assert_eq!(
+            generator_1.generate().unwrap(),
+            generator_1.generate().unwrap()
+        );
         let generator_2 = Generator::<Base3>::with_settings(GeneratorSettings {
             seed: Some(2),
-            target: GeneratorTarget::Filled,
-            strategies,
-            givens_grid: None,
+            ..Default::default()
         });
-        assert_eq!(generator_2.generate(), generator_2.generate());
-        assert_ne!(generator_1.generate(), generator_2.generate());
+        assert_eq!(
+            generator_2.generate().unwrap(),
+            generator_2.generate().unwrap()
+        );
+        assert_ne!(
+            generator_1.generate().unwrap(),
+            generator_2.generate().unwrap()
+        );
+    }
+
+    #[test]
+    fn test_strategies() {
+        todo!()
+    }
+
+    #[test]
+    fn test_givens_grid_filled() {
+        let givens_grid: Grid<Base2> = "
+  4  3  │  0  0  
+  2  1  │  0  0  
+────────┼────────
+  0  0  │  0  0  
+  0  0  │  0  0  "
+            .parse()
+            .unwrap();
+
+        let grid = Generator::<Base2>::with_settings(GeneratorSettings {
+            givens_grid: Some(givens_grid.clone()),
+            ..Default::default()
+        })
+        .generate()
+        .unwrap();
+
+        // Top left block is unchanged
+        itertools::assert_equal(
+            givens_grid.block_cells(Coordinate::default()),
+            grid.block_cells(Coordinate::default()),
+        );
+
+        assert!(grid.is_solved());
+    }
+
+    #[test]
+    fn test_givens_grid_minimal() {
+        let givens_grid: Grid<Base2> = "
+  1  2  │  3  4  
+  0  0  │  0  0  
+────────┼────────
+  0  0  │  0  0  
+  0  0  │  0  0  "
+            .parse()
+            .unwrap();
+
+        let grid = Generator::<Base2>::with_settings(GeneratorSettings {
+            givens_grid: Some(givens_grid.clone()),
+            target: GeneratorTarget::Minimal {
+                set_all_direct_candidates: false,
+            },
+            ..Default::default()
+        })
+        .generate()
+        .unwrap();
+
+        println!("{grid}");
+
+        todo!("assert")
     }
 }

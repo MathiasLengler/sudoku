@@ -7,7 +7,8 @@ fn main() -> Result<()> {
         distance_from_filled: 85,
         set_all_direct_candidates: true,
     })
-    .generate();
+    .generate()
+    .unwrap();
 
     println!("{grid}");
 

@@ -1,7 +1,7 @@
 use std::any::Any;
 use std::convert::{TryFrom, TryInto};
 
-use anyhow::{anyhow, bail, format_err};
+use anyhow::{bail, format_err};
 use serde::Serialize;
 #[cfg(feature = "wasm")]
 use ts_rs::TS;
@@ -224,7 +224,7 @@ impl DynamicSudoku {
     fn cell_count_to_base(cell_count: usize) -> Result<u8> {
         Ok(
             match u16::try_from(cell_count)
-                .map_err(|_| anyhow!("Cell count {cell_count} too large"))?
+                .map_err(|_| format_err!("Cell count {cell_count} too large"))?
             {
                 Base2::CELL_COUNT => 2,
                 Base3::CELL_COUNT => 3,

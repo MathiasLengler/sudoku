@@ -57,14 +57,14 @@ use hdrhistogram::Histogram;
 use indicatif::{ParallelProgressIterator, ProgressBar, ProgressStyle};
 use rayon::prelude::*;
 
-use sudoku::base::consts::Base3;
+use sudoku::base::consts::*;
 use sudoku::error::Result;
 use sudoku::generator::{Generator, GeneratorSettings, GeneratorTarget};
 use sudoku::solver::strategic::strategies::{
-    Backtracking, DynamicStrategy, HiddenSingles, NakedSingles,
+    HiddenSingles, NakedSingles,
 };
 
-type Base = Base3;
+type Base = Base2;
 
 fn main() -> Result<()> {
     let mut hist = Histogram::<u64>::new_with_bounds(1, 100, 1)
@@ -78,7 +78,7 @@ fn main() -> Result<()> {
         "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] ({pos}/{len}, ETA {eta}, {per_sec})",
     )?);
 
-    let generator = Generator::with_settings(GeneratorSettings {
+    let generator = Generator::<Base>::with_settings(GeneratorSettings {
         target: GeneratorTarget::Minimal {
             set_all_direct_candidates: false,
         },
@@ -89,13 +89,13 @@ fn main() -> Result<()> {
             HiddenSingles.into(),
             // Backtracking.into(),
         ],
-        seed: None,
+        ..Default::default()
     });
     (0..MAX)
         .into_par_iter()
         .progress_with(pb)
         .for_each_with(hist.recorder(), |recorder, _i| {
-            let grid = generator.generate::<Base>();
+            let grid = generator.generate().unwrap();
 
             let num_values = grid.all_value_positions().len();
 

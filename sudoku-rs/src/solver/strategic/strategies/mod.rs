@@ -2,10 +2,10 @@ use std::fmt;
 use std::fmt::Debug;
 use std::str::FromStr;
 
-use anyhow::anyhow;
+use anyhow::format_err;
 use enum_dispatch::enum_dispatch;
-use serde::de::Visitor;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::de::Visitor;
 #[cfg(feature = "wasm")]
 use ts_rs::TS;
 
@@ -141,7 +141,7 @@ impl FromStr for DynamicStrategy {
         DynamicStrategy::all()
             .into_iter()
             .find(|strategy| strategy.name() == strategy_name)
-            .ok_or_else(|| anyhow!("Unexpected strategy name: {strategy_name}"))
+            .ok_or_else(|| format_err!("Unexpected strategy name: {strategy_name}"))
     }
 }
 

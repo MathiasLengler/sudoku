@@ -93,6 +93,7 @@ pub fn minimal<Base: SudokuBase>() -> Grid<Base> {
         set_all_direct_candidates: true,
     })
     .generate()
+    .unwrap()
 }
 
 #[cfg(test)]

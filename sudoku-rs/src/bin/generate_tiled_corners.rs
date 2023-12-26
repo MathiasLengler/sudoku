@@ -23,7 +23,9 @@ fn main() -> Result<()> {
     ];
 
     for _ in 0..1000 {
-        let filled_grid = Generator::with_target(GeneratorTarget::Filled).generate::<Base>();
+        let filled_grid = Generator::<Base>::with_target(GeneratorTarget::Filled)
+            .generate()
+            .unwrap();
         let mut grid = filled_grid.clone();
 
         grid.unfix_all_values();

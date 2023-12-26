@@ -45,14 +45,14 @@ fn bench_generator_group<Base: SudokuBase>(generator_group: &mut BenchmarkGroup<
         GeneratorTarget::Filled,
     ] {
         let parameter_string = format!("Base={} Target={:?}", base, target);
-        let generator = Generator::with_target(*target);
+        let generator = Generator::<Base>::with_target(*target);
 
         generator_group.bench_with_input(
             BenchmarkId::new("generate", parameter_string),
             &generator,
             |b, generator| {
                 b.iter(|| {
-                    generator.generate::<Base>();
+                    generator.generate().unwrap();
                 })
             },
         );
