@@ -4,8 +4,8 @@ use std::str::FromStr;
 
 use anyhow::{bail, ensure, format_err};
 use enum_dispatch::enum_dispatch;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde::de::Visitor;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 #[cfg(feature = "wasm")]
 use ts_rs::TS;
 
