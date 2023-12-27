@@ -3,9 +3,4 @@ import type { DynamicPruningOrder } from "./DynamicPruningOrder";
 import type { DynamicStrategy } from "./DynamicStrategy";
 import type { PruningTarget } from "./PruningTarget";
 
-export interface DynamicPruningSettings {
-  setAllDirectCandidates: boolean;
-  strategies: Array<DynamicStrategy>;
-  target: PruningTarget;
-  order: DynamicPruningOrder;
-}
+export interface DynamicPruningSettings { setAllDirectCandidates: boolean, strategies: Array<DynamicStrategy>, target: PruningTarget, order: DynamicPruningOrder, }
