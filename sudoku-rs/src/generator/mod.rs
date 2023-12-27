@@ -107,7 +107,7 @@ impl<Base: SudokuBase> Default for PruningSettings<Base> {
 #[derive(Debug, Clone)]
 pub struct SolutionSettings<Base: SudokuBase> {
     /// Every value cell in this grid will be included in the solution of the generated grid.
-    values_grid: Grid<Base>,
+    pub values_grid: Grid<Base>,
 }
 
 #[derive(Debug, Default, Clone)]
@@ -390,7 +390,7 @@ impl<Base: SudokuBase> Generator<Base> {
 
         solver.next().ok_or_else(|| {
             if self.settings.solution.is_some() {
-                format_err!("Provided givens grid has no solution")
+                format_err!("'solution.values_grid' has no solution")
             } else {
                 panic!("Expected empty grid to have at least one solution")
             }

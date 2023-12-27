@@ -2,16 +2,20 @@
 
 use std::fmt::{Display, Formatter};
 
-use ndarray::{s, Array2};
+use ndarray::{s, Array2, Dim, SliceInfo, SliceInfoElem};
 use tabled::builder::Builder;
 
-use sudoku::base::consts::Base2;
-use sudoku::cell::Cell;
+use sudoku::base::consts::*;
+use sudoku::base::SudokuBase;
+use sudoku::cell::{Candidates, Cell};
 use sudoku::error::Result;
+use sudoku::generator::{Generator, GeneratorSettings, SolutionSettings};
 use sudoku::grid::Grid;
 use sudoku::samples::base_2_candidates_coordinates;
+use sudoku::solver;
+use sudoku::solver::backtracking_bitset;
 
-type Base = Base2;
+type Base = Base3;
 
 // Idea for different data structure:
 // "world of cells" => grid index => generate Grid instance on demand
@@ -28,14 +32,74 @@ type Base = Base2;
 //     If the solved sudoku was tileable, all minimized sudokus derived from it will remain tileable.
 // Tileable sudokus are easier to solve, since two/four sudoku grids constrain the edges/corners.
 
+type TileIndex = (usize, usize);
+
 struct CellWorld {
     cells: Array2<Cell<Base>>,
     overlap: u8,
 }
 
-// impl CellWorld {
-//     fn new()
-// }
+impl Display for CellWorld {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let builder: Builder = self
+            .cells
+            .rows()
+            .into_iter()
+            .map(|cell_row| cell_row.into_iter().map(|cell| cell.to_string()))
+            .collect();
+        write!(f, "{}", builder.build().to_string())
+    }
+}
+
+impl CellWorld {
+    pub fn new((tile_row_count, tile_col_count): TileIndex, overlap: u8) -> Self {
+        assert!(overlap < Base::SIDE_LENGTH);
+
+        Self {
+            cells: Array2::default((
+                Self::tile_axis_count_to_cell_axis_count(tile_row_count, overlap),
+                Self::tile_axis_count_to_cell_axis_count(tile_col_count, overlap),
+            )),
+            overlap,
+        }
+    }
+
+    fn tile_axis_count_to_cell_axis_count(tile_axis_count: usize, overlap: u8) -> usize {
+        tile_axis_count * usize::from(Base::SIDE_LENGTH)
+            - (tile_axis_count - 1) * usize::from(overlap)
+    }
+
+    fn grid_cells_slice_info(
+        (tile_row_i, tile_col_i): TileIndex,
+        overlap: u8,
+    ) -> SliceInfo<[SliceInfoElem; 2], Dim<[usize; 2]>, Dim<[usize; 2]>> {
+        let tile_stride = usize::from(Base::SIDE_LENGTH - overlap);
+        let top_left_cell_row_i = tile_row_i * tile_stride;
+        let top_left_cell_col_i = tile_col_i * tile_stride;
+
+        let side_length_usize = usize::from(Base::SIDE_LENGTH);
+
+        s![
+            top_left_cell_row_i..(top_left_cell_row_i + side_length_usize),
+            top_left_cell_col_i..(top_left_cell_col_i + side_length_usize),
+        ]
+    }
+
+    pub fn to_grid_at(&self, tile_index: TileIndex) -> Grid<Base> {
+        let grid_cells_array_view = self
+            .cells
+            .slice(Self::grid_cells_slice_info(tile_index, self.overlap));
+
+        grid_cells_array_view.try_into().unwrap()
+    }
+
+    pub fn set_grid_at(&mut self, grid: &Grid<Base>, tile_index: TileIndex) {
+        let world_grid_cells = self
+            .cells
+            .slice_mut(Self::grid_cells_slice_info(tile_index, self.overlap));
+        grid.cells().assign_to(world_grid_cells);
+    }
+}
 
 #[derive(Debug)]
 struct Tiles {
@@ -97,31 +161,39 @@ impl Display for Tiles {
 }
 
 fn main() -> Result<()> {
-    let mut tiles = Tiles {
-        grids: Array2::default((3, 3)),
-        overlap: 1,
-    };
+    let (tile_row_count, tile_col_count) = (3, 3);
 
-    tiles.grids.iter_mut().enumerate().for_each(|(i, grid)| {
-        *grid = base_2_candidates_coordinates()
-        // grid.cells_mut().fill(Cell::with_value(
-        //     u8::try_from((i % usize::from(Base::SIDE_LENGTH)) + 1)
-        //         .unwrap()
-        //         .try_into()
-        //         .unwrap(),
-        //     false,
-        // ));
-    });
+    // FIXME: breaks for overlap % Base::BASE != 0
+    let overlap = 3;
+    let mut world = CellWorld::new((tile_row_count, tile_col_count), overlap);
+    println!("{world}");
 
-    println!("{tiles}");
+    for tile_row_i in 0..tile_row_count {
+        for tile_col_i in 0..tile_col_count {
+            let tile_index = (tile_row_i, tile_col_i);
+            let grid = world.to_grid_at(tile_index);
 
-    let boundary_grid = tiles.boundary_grid((1, 1));
+            println!("{grid}");
+            let generated_grid = Generator::with_settings(GeneratorSettings {
+                prune: None,
+                solution: Some(SolutionSettings { values_grid: grid }),
+                seed: Some(2),
+            })
+            .generate()
+            .unwrap();
 
-    println!("{boundary_grid}");
+            println!("{generated_grid}");
 
-    tiles.grids[(1, 1)] = boundary_grid;
+            world.set_grid_at(&generated_grid, tile_index);
 
-    println!("{tiles}");
+            println!("{world}");
+        }
+    }
+
+    println!("{world}");
+
+    let grid = world.to_grid_at((0, 0));
+    println!("{grid}");
 
     Ok(())
 }

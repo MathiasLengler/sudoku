@@ -359,7 +359,7 @@ impl<Base: SudokuBase> Grid<Base> {
         let side_length = Self::side_length_usize();
 
         // This is the only direct instantiation of Grid.
-        let grid = Grid {
+        let grid = Self {
             cells: Array2::from_shape_vec((side_length, side_length), cells)?,
         };
         // Check for safety invariants in debug builds.
@@ -652,6 +652,16 @@ impl<Base: SudokuBase, IntoCell: Into<DynamicCell>> TryFrom<Vec<IntoCell>> for G
             .collect::<Result<_>>()?;
 
         Self::with_cells(cells)
+    }
+}
+
+impl<Base: SudokuBase> TryFrom<ArrayView2<'_, Cell<Base>>> for Grid<Base> {
+    type Error = Error;
+
+    fn try_from(cells_array_view: ArrayView2<Cell<Base>>) -> Result<Self> {
+        let cells_vec: Vec<_> = cells_array_view.iter().cloned().collect();
+
+        Self::with_cells(cells_vec)
     }
 }
 
