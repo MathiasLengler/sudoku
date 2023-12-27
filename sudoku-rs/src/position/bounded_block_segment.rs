@@ -76,7 +76,6 @@ use std::fmt::{self, Display, Formatter};
 /// ```
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Default)]
 pub struct BlockSegment<Base: SudokuBase> {
-    // TODO: remove pub(crate)
     block: Coordinate<Base>,
     segment: BlockCoordinate<Base>,
     orientation: CellOrder,

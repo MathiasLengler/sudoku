@@ -213,6 +213,8 @@ where
     const CELL_COUNT: u16;
 
     /// Used by `BinaryFixedCandidatesLine`
+    ///
+    /// Defines how many chars are representing a single cell in this grid format.
     const BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS: usize;
 
     /// For a given cell position, returns the coordinate of the block it is contained in.

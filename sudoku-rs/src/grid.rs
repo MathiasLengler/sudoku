@@ -24,6 +24,8 @@ use crate::unsafe_utils::{get_unchecked, get_unchecked_mut};
 pub mod deserialization;
 pub mod format;
 
+pub mod dynamic;
+
 // TODO: run tests under miri in release mode
 
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
@@ -624,10 +626,11 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 }
 
-impl<Base: SudokuBase, CView: Into<DynamicCell>> TryFrom<Vec<Vec<CView>>> for Grid<Base> {
+/// Convert nested rows into Grid<Base>
+impl<Base: SudokuBase, IntoCell: Into<DynamicCell>> TryFrom<Vec<Vec<IntoCell>>> for Grid<Base> {
     type Error = Error;
 
-    fn try_from(nested_views: Vec<Vec<CView>>) -> Result<Self> {
+    fn try_from(nested_views: Vec<Vec<IntoCell>>) -> Result<Self> {
         Self::validate_vec_groups(&nested_views)?;
 
         nested_views
@@ -638,10 +641,11 @@ impl<Base: SudokuBase, CView: Into<DynamicCell>> TryFrom<Vec<Vec<CView>>> for Gr
     }
 }
 
-impl<Base: SudokuBase, CView: Into<DynamicCell>> TryFrom<Vec<CView>> for Grid<Base> {
+/// Convert cells in row-major order into Grid<Base>
+impl<Base: SudokuBase, IntoCell: Into<DynamicCell>> TryFrom<Vec<IntoCell>> for Grid<Base> {
     type Error = Error;
 
-    fn try_from(views: Vec<CView>) -> Result<Self> {
+    fn try_from(views: Vec<IntoCell>) -> Result<Self> {
         let cells = views
             .into_iter()
             .map(|view| view.into().try_into())

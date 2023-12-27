@@ -82,51 +82,24 @@ impl DynamicSudoku {
         dynamic_generator_settings: DynamicGeneratorSettings,
         on_progress: impl FnMut(GeneratorProgress) -> Result<()>,
     ) -> Result<()> {
-        let DynamicGeneratorSettings {
-            base,
-            target,
-            strategies,
-            seed,
-        } = dynamic_generator_settings;
-
-        *self = match base {
+        *self = match dynamic_generator_settings.base {
             2 => Self::Base2(Sudoku::<Base2>::generate(
-                GeneratorSettings {
-                    target,
-                    givens_grid: None,
-                    strategies,
-                    seed,
-                },
+                dynamic_generator_settings.try_into()?,
                 self.settings(),
                 on_progress,
             )?),
             3 => Self::Base3(Sudoku::<Base3>::generate(
-                GeneratorSettings {
-                    target,
-                    givens_grid: None,
-                    strategies,
-                    seed,
-                },
+                dynamic_generator_settings.try_into()?,
                 self.settings(),
                 on_progress,
             )?),
             4 => Self::Base4(Sudoku::<Base4>::generate(
-                GeneratorSettings {
-                    target,
-                    givens_grid: None,
-                    strategies,
-                    seed,
-                },
+                dynamic_generator_settings.try_into()?,
                 self.settings(),
                 on_progress,
             )?),
             5 => Self::Base5(Sudoku::<Base5>::generate(
-                GeneratorSettings {
-                    target,
-                    givens_grid: None,
-                    strategies,
-                    seed,
-                },
+                dynamic_generator_settings.try_into()?,
                 self.settings(),
                 on_progress,
             )?),

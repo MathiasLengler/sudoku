@@ -1,4 +1,4 @@
-//! Fork of [tdoku `solver_basic.cc`](https://github.com/t-dillon/tdoku/blob/master/src/solver_basic.cc)
+//! Adaptation of [tdoku `solver_basic.cc`](https://github.com/t-dillon/tdoku/blob/master/src/solver_basic.cc)
 
 use log::trace;
 
@@ -8,6 +8,8 @@ use crate::base::SudokuBase;
 use crate::cell::CandidatesIter;
 use crate::grid::Grid;
 use crate::position::Position;
+
+// TODO: evaluate CandidatesVisitOrder setting
 
 pub(crate) mod group_availability;
 
