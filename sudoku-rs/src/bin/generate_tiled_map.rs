@@ -7,15 +7,12 @@ use tabled::builder::Builder;
 
 use sudoku::base::consts::*;
 use sudoku::base::SudokuBase;
-use sudoku::cell::{Candidates, Cell};
+use sudoku::cell::Cell;
 use sudoku::error::Result;
 use sudoku::generator::{Generator, GeneratorSettings, SolutionSettings};
 use sudoku::grid::Grid;
-use sudoku::samples::base_2_candidates_coordinates;
-use sudoku::solver;
-use sudoku::solver::backtracking_bitset;
 
-type Base = Base3;
+type Base = Base2;
 
 // Idea for different data structure:
 // "world of cells" => grid index => generate Grid instance on demand
@@ -164,7 +161,12 @@ fn main() -> Result<()> {
     let (tile_row_count, tile_col_count) = (3, 3);
 
     // FIXME: breaks for overlap % Base::BASE != 0
-    let overlap = 3;
+    //  root cause are the corners, where 4 different grids meet.
+    //  nothing prevents the selection of the same values across the diagonal:
+    //   2 1
+    //   1 0
+    //  this breaks the top left block uniqueness constraint of the bottom right grid, resulting in an unsolvable border configuration.
+    let overlap = 1;
     let mut world = CellWorld::new((tile_row_count, tile_col_count), overlap);
     println!("{world}");
 
@@ -177,7 +179,7 @@ fn main() -> Result<()> {
             let generated_grid = Generator::with_settings(GeneratorSettings {
                 prune: None,
                 solution: Some(SolutionSettings { values_grid: grid }),
-                seed: Some(2),
+                seed: Some(0),
             })
             .generate()
             .unwrap();
