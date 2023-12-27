@@ -56,7 +56,7 @@ pub enum PruningGroupBehaviour {
 }
 
 // TODO: introduce PruningSegmentation vs PruningVisitOrder
-
+// TODO: test
 /// Define the order in which cells should be pruned.
 #[derive(Debug, Default, Clone)]
 pub enum PruningOrder<Base: SudokuBase> {
@@ -105,7 +105,7 @@ impl<Base: SudokuBase> Default for PruningSettings<Base> {
 
 /// Influence the generated solution.
 #[derive(Debug, Clone)]
-struct SolutionSettings<Base: SudokuBase> {
+pub struct SolutionSettings<Base: SudokuBase> {
     /// Every value cell in this grid will be included in the solution of the generated grid.
     values_grid: Grid<Base>,
 }
@@ -130,16 +130,13 @@ pub struct GeneratorSettings<Base: SudokuBase> {
 }
 
 mod dynamic_settings {
-    use serde::{Deserialize, Serialize};
-    #[cfg(feature = "wasm")]
-    use ts_rs::TS;
+    use anyhow::ensure;
 
-    use crate::base::SudokuBase;
-    use crate::error::{Error, Result};
-    use crate::generator::{GeneratorSettings, PruningGroupBehaviour, PruningTarget};
+    use crate::error::Error;
     use crate::grid::dynamic::DynamicGrid;
     use crate::position::DynamicPosition;
-    use crate::solver::strategic::strategies::DynamicStrategy;
+
+    use super::*;
 
     #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
     #[derive(Debug, Serialize, Deserialize)]
@@ -155,6 +152,29 @@ mod dynamic_settings {
         },
     }
 
+    impl<Base: SudokuBase> TryFrom<DynamicPruningOrder> for PruningOrder<Base> {
+        type Error = Error;
+
+        fn try_from(dynamic_pruning_order: DynamicPruningOrder) -> Result<Self> {
+            Ok(match dynamic_pruning_order {
+                DynamicPruningOrder::Random => Self::Random,
+                DynamicPruningOrder::Positions {
+                    positions,
+                    behaviour,
+                } => Self::Positions {
+                    positions: positions
+                        .into_iter()
+                        .map(TryInto::try_into)
+                        .collect::<Result<_>>()?,
+                    behaviour,
+                },
+                DynamicPruningOrder::SolutionValues { behaviour } => {
+                    Self::SolutionValues { behaviour }
+                }
+            })
+        }
+    }
+
     #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
     #[derive(Debug, Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
@@ -165,11 +185,42 @@ mod dynamic_settings {
         pub order: DynamicPruningOrder,
     }
 
+    impl<Base: SudokuBase> TryFrom<DynamicPruningSettings> for PruningSettings<Base> {
+        type Error = Error;
+
+        fn try_from(dynamic_pruning_settings: DynamicPruningSettings) -> Result<Self> {
+            let DynamicPruningSettings {
+                set_all_direct_candidates,
+                strategies,
+                target,
+                order,
+            } = dynamic_pruning_settings;
+
+            Ok(Self {
+                set_all_direct_candidates,
+                strategies,
+                target,
+                order: order.try_into()?,
+            })
+        }
+    }
+
     #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
     #[derive(Debug, Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct DynamicSolutionSettings {
         values_grid: DynamicGrid,
+    }
+
+    impl<Base: SudokuBase> TryFrom<DynamicSolutionSettings> for SolutionSettings<Base> {
+        type Error = Error;
+
+        fn try_from(dynamic_solution_settings: DynamicSolutionSettings) -> Result<Self> {
+            let DynamicSolutionSettings { values_grid } = dynamic_solution_settings;
+            Ok(Self {
+                values_grid: values_grid.try_into()?,
+            })
+        }
     }
 
     #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
@@ -194,15 +245,21 @@ mod dynamic_settings {
                 seed,
             } = dynamic_generator_settings;
 
-            todo!();
+            ensure!(base == Base::BASE);
 
-            // ensure!(base == Base::BASE);
-            //
-            // Ok(Self {
-            //     prune: None,
-            //     solution: None,
-            //     seed,
-            // })
+            Ok(Self {
+                prune: if let Some(prune) = prune {
+                    Some(prune.try_into()?)
+                } else {
+                    None
+                },
+                solution: if let Some(solution) = solution {
+                    Some(solution.try_into()?)
+                } else {
+                    None
+                },
+                seed,
+            })
         }
     }
 }
