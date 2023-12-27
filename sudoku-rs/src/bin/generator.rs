@@ -1,11 +1,12 @@
 use sudoku::base::consts::*;
 use sudoku::error::Result;
-use sudoku::generator::{Generator, GeneratorTarget};
+use sudoku::generator::{Generator, PruningSettings, PruningTarget};
 
 fn main() -> Result<()> {
-    let grid = Generator::<Base3>::with_target(GeneratorTarget::FromFilled {
-        distance_from_filled: 85,
+    let grid = Generator::<Base3>::with_pruning(PruningSettings {
+        target: PruningTarget::Minimal,
         set_all_direct_candidates: true,
+        ..Default::default()
     })
     .generate()
     .unwrap();
