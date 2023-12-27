@@ -268,8 +268,10 @@ mod tests {
 
     mod execute {
         use super::*;
+
         mod base_2 {
             use super::*;
+
             #[test]
             fn test() {
                 let grid: Grid<Base2> = "╔═══════════╦═══════════╗
@@ -348,6 +350,7 @@ mod tests {
 
         mod base_3 {
             use super::*;
+
             mod block_to_axis {
                 use super::*;
 

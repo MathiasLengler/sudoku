@@ -1,8 +1,10 @@
+use std::fmt::{self, Display, Formatter};
+
+use itertools::Either;
+
 use crate::base::SudokuBase;
 use crate::cell::Candidates;
 use crate::position::{BlockCoordinate, Coordinate, Position};
-use itertools::Either;
-use std::fmt::{self, Display, Formatter};
 
 /// The position of a block segment inside a sudoku grid.
 ///
@@ -216,9 +218,11 @@ pub enum CellOrder {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::base::consts::Base2;
     use itertools::{assert_equal, zip_eq};
+
+    use crate::base::consts::Base2;
+
+    use super::*;
 
     #[test]
     fn test_all() {

@@ -1,18 +1,9 @@
-#![allow(unused)]
-
-use std::fs::File;
-use std::io::{BufRead, BufReader};
-use std::path::Path;
-use std::thread::sleep;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 use sudoku::base::consts::Base3;
-use sudoku::base::SudokuBase;
 use sudoku::error::Result;
 use sudoku::grid::deserialization::read_grids_from_file;
-use sudoku::grid::Grid;
 use sudoku::solver::strategic;
-use sudoku::solver::strategic::strategies::{GroupIntersectionBoth, Strategy};
 use sudoku::solver::{backtracking, backtracking_bitset};
 
 enum SolverSelection {

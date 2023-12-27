@@ -1,6 +1,5 @@
 use std::iter;
 
-use crate::base::consts::ALL_SIDE_LENGTHS;
 use anyhow::{bail, ensure, Context};
 use itertools::Itertools;
 use num::Integer;
@@ -8,6 +7,7 @@ use owo_colors::Style as OwoStyle;
 use tabled::builder::Builder;
 use tabled::settings::{Padding, Style};
 
+use crate::base::consts::ALL_SIDE_LENGTHS;
 use crate::base::SudokuBase;
 use crate::cell::dynamic::{char_value_to_u8, DynamicCandidates, DynamicCell};
 use crate::cell::{CellState, Value};

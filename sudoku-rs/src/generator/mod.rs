@@ -8,9 +8,11 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "wasm")]
 use ts_rs::TS;
 
+pub use dynamic_settings::*;
+
 use crate::base::SudokuBase;
 use crate::cell::Value;
-use crate::error::{Error, Result};
+use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::solver::backtracking;
@@ -127,16 +129,13 @@ pub struct GeneratorSettings<Base: SudokuBase> {
     pub seed: Option<u64>,
 }
 
-pub use dynamic_settings::*;
-
 mod dynamic_settings {
-    use crate::base::SudokuBase;
-    use crate::error::{Error, Result};
-    use anyhow::ensure;
     use serde::{Deserialize, Serialize};
     #[cfg(feature = "wasm")]
     use ts_rs::TS;
 
+    use crate::base::SudokuBase;
+    use crate::error::{Error, Result};
     use crate::generator::{GeneratorSettings, PruningGroupBehaviour, PruningTarget};
     use crate::grid::dynamic::DynamicGrid;
     use crate::position::DynamicPosition;

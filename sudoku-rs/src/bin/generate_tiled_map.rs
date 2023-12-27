@@ -1,17 +1,14 @@
 #![allow(unused_imports)]
 
-use itertools::Itertools;
 use std::fmt::{Display, Formatter};
 
 use ndarray::{s, Array2};
 use tabled::builder::Builder;
 
-use sudoku::base::consts::{Base2, Base3};
-use sudoku::base::SudokuBase;
+use sudoku::base::consts::Base2;
 use sudoku::cell::Cell;
 use sudoku::error::Result;
 use sudoku::grid::Grid;
-use sudoku::position::Position;
 use sudoku::samples::base_2_candidates_coordinates;
 
 type Base = Base2;
@@ -24,6 +21,22 @@ type Base = Base2;
 // - would solve grid cross-synchronization at least partially
 //   - tbd. `update_candidates` on edges for adjacent grids
 
+// Strategies for generating sudokus with matching boundaries
+// - Boundaries are assumed as fixed values
+// - Boundaries are not assumed as fixed values
+//   - Starting from a solved sudoku, deletion of givens while ensuring a unique solution will *not* change the single solution.
+//     If the solved sudoku was tileable, all minimized sudokus derived from it will remain tileable.
+// Tileable sudokus are easier to solve, since two/four sudoku grids constrain the edges/corners.
+
+struct CellWorld {
+    cells: Array2<Cell<Base>>,
+    overlap: u8,
+}
+
+// impl CellWorld {
+//     fn new()
+// }
+
 #[derive(Debug)]
 struct Tiles {
     grids: Array2<Grid<Base>>,
@@ -32,14 +45,6 @@ struct Tiles {
 
 impl Tiles {
     fn boundary_grid(&self, (tile_row_i, tile_col_i): (usize, usize)) -> Grid<Base> {
-        let nrows = self.grids.nrows();
-        let ncols = self.grids.ncols();
-
-        // let tl = self.grids.get((tile_row_i - 1, tile_col_i - 1));
-        // let tr = self.grids.get((tile_row_i - 1, tile_col_i + 1));
-        // let bl = self.grids.get((tile_row_i + 1, tile_col_i - 1));
-        // let br = self.grids.get((tile_row_i + 1, tile_col_i + 1));
-
         let center_grid = &self.grids[(tile_col_i, tile_col_i)];
 
         let overlap = isize::from(self.overlap);
@@ -113,6 +118,10 @@ fn main() -> Result<()> {
     let boundary_grid = tiles.boundary_grid((1, 1));
 
     println!("{boundary_grid}");
+
+    tiles.grids[(1, 1)] = boundary_grid;
+
+    println!("{tiles}");
 
     Ok(())
 }

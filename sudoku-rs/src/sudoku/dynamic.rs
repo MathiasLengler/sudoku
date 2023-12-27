@@ -13,7 +13,7 @@ use crate::base::consts::*;
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
 use crate::error::{Error, Result};
-use crate::generator::{DynamicGeneratorSettings, GeneratorProgress, GeneratorSettings};
+use crate::generator::{DynamicGeneratorSettings, GeneratorProgress};
 use crate::grid::format::DynamicGridFormat;
 use crate::grid::Grid;
 use crate::position::DynamicPosition;
