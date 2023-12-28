@@ -166,6 +166,13 @@ fn main() -> Result<()> {
     //   2 1
     //   1 0
     //  this breaks the top left block uniqueness constraint of the bottom right grid, resulting in an unsolvable border configuration.
+
+    // Potential solutions:
+    // - when generating the bottom left grid,
+    //   disallow assignment of values contained in the top right "overlap-slice"
+    //   to the bottom right "overlap-slice" of the top left block.
+    // - Prototype with Constraint programming based solver:
+    //   Are all scenarios solvable? Especially for overlap > base, which results in multiple intersected blocks.
     let overlap = 1;
     let mut world = CellWorld::new((tile_row_count, tile_col_count), overlap);
     println!("{world}");
