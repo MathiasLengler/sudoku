@@ -13,7 +13,7 @@ use criterion::{BenchmarkGroup, Criterion};
 use sudoku::base::{consts::*, SudokuBase};
 use sudoku::cell::Candidates;
 use sudoku::cell::Value;
-use sudoku::generator::{Generator, GeneratorTarget};
+use sudoku::generator::{Generator, PruningTarget};
 use sudoku::grid::deserialization::read_grids_from_file;
 use sudoku::grid::Grid;
 use sudoku::position::test_utils::{consume_iter, consume_nested_iter};
@@ -38,14 +38,13 @@ fn sample_grid<Base: SudokuBase>() -> Grid<Base> {
 fn bench_generator_group<Base: SudokuBase>(generator_group: &mut BenchmarkGroup<WallTime>) {
     let base = Base::BASE;
 
-    for target in &[
-        GeneratorTarget::Minimal {
-            set_all_direct_candidates: false,
-        },
-        GeneratorTarget::Filled,
-    ] {
+    for target in &[Some(PruningTarget::Minimal), None] {
         let parameter_string = format!("Base={} Target={:?}", base, target);
-        let generator = Generator::<Base>::with_target(*target);
+        let generator = if let Some(target) = target {
+            Generator::<Base>::with_target(*target)
+        } else {
+            Generator::<Base>::default()
+        };
 
         generator_group.bench_with_input(
             BenchmarkId::new("generate", parameter_string),
