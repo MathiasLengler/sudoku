@@ -2,13 +2,13 @@
 
 use log::trace;
 
+pub use group_availability::{AvailabilityDenyList, AvailabilityDenyListView};
 use group_availability::{GroupAvailability, GroupAvailabilityIndex};
 
 use crate::base::SudokuBase;
 use crate::cell::CandidatesIter;
 use crate::grid::Grid;
 use crate::position::Position;
-use crate::solver::backtracking_bitset::group_availability::AvailabilityDenyList;
 
 // TODO: evaluate CandidatesVisitOrder setting
 //  achievable via modification or forked abstraction of `CandidatesIter`
@@ -41,7 +41,7 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Solver<Base, GridRef> {
         Self::new_with_optional_denylist(grid, Some(denylist))
     }
 
-    fn new_with_optional_denylist(
+    pub fn new_with_optional_denylist(
         grid: GridRef,
         denylist: Option<AvailabilityDenyList<Base>>,
     ) -> Self {
@@ -77,6 +77,10 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Solver<Base, GridRef> {
             self.candidates_iters
                 .push(self.availability.intersection(*availability_index).iter());
         }
+    }
+
+    pub fn denylist(&self) -> Option<AvailabilityDenyListView<Base>> {
+        self.availability.denylist()
     }
 
     pub fn move_best_choice_to_front(&mut self, front_i: usize) {

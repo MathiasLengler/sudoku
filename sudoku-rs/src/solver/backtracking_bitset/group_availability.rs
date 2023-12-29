@@ -1,3 +1,5 @@
+use ndarray::{Array2, ArrayView2};
+
 use crate::base::SudokuBase;
 use crate::cell::{Candidates, Value};
 use crate::position::{Coordinate, Position};
@@ -40,7 +42,8 @@ impl<Base: SudokuBase> IntoIterator for CandidatesGroup<Base> {
     }
 }
 
-pub(crate) type AvailabilityDenyList<Base> = Vec<Candidates<Base>>;
+pub type AvailabilityDenyList<Base> = Array2<Candidates<Base>>;
+pub type AvailabilityDenyListView<'a, Base> = ArrayView2<'a, Candidates<Base>>;
 
 /// A compact data structure representing group information of a sudoku grid.
 ///
@@ -73,10 +76,15 @@ impl<Base: SudokuBase> GroupAvailability<Base> {
 
         if let Some(denylist) = denylist {
             assert_eq!(denylist.len(), usize::from(Base::CELL_COUNT));
+            assert!(denylist.is_square());
             this.denylist = Some(denylist);
         }
 
         this
+    }
+
+    pub(crate) fn denylist(&self) -> Option<AvailabilityDenyListView<Base>> {
+        self.denylist.as_ref().map(|denylist| denylist.view())
     }
 
     fn iter_mut(&mut self) -> impl Iterator<Item = &mut Candidates<Base>> {
@@ -140,7 +148,9 @@ impl<Base: SudokuBase> GroupAvailability<Base> {
             .intersection(column_candidates)
             .intersection(block_candidates);
         if let Some(denylist) = &self.denylist {
-            intersection.without(denylist[usize::from(Position::from(index).cell_index())])
+            intersection.without(
+                denylist.as_slice().unwrap()[usize::from(Position::from(index).cell_index())],
+            )
         } else {
             intersection
         }

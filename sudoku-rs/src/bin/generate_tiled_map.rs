@@ -10,15 +10,17 @@ use tabled::settings::{Padding, Style};
 
 use sudoku::base::consts::*;
 use sudoku::base::SudokuBase;
-use sudoku::cell::Cell;
+use sudoku::cell::{Candidates, Cell};
 use sudoku::error::Result;
 use sudoku::grid::Grid;
 use sudoku::solver::backtracking_bitset;
+use sudoku::solver::backtracking_bitset::AvailabilityDenyList;
 
 type Base = Base3;
 
 type TileIndex = (usize, usize);
 
+// TODO: has_conflict/is_solved
 struct CellWorld {
     tile_dim: TileIndex,
     cells: Array2<Cell<Base>>,
@@ -53,7 +55,8 @@ struct WorldGenerationResult {
 
 impl CellWorld {
     pub fn new((tile_row_count, tile_col_count): TileIndex, overlap: u8) -> Self {
-        assert!(overlap < Base::SIDE_LENGTH);
+        // Various indexing patterns break down for larger overlaps.
+        assert!(overlap <= Base::BASE);
 
         Self {
             tile_dim: (tile_row_count, tile_col_count),
@@ -65,17 +68,6 @@ impl CellWorld {
         }
     }
 
-    // TODO: optimize
-    //  naive backtracking gets stuck in single backtrack cycles
-    //  example: base 3, overlap 1
-    //  the solver generates solutions which are in direct conflict with the top right adjacent grid, making the next grid unsolvable.
-    //  Idea:
-    //    evaluate corner cross-grid constraints (for `overlap < base`)
-    //    generate candidates blocklist for affected positions
-    //    pass to solver
-    //    => solver skips all solutions which would result in a immediate conflict.
-    //   requires refactor/extension of solver
-    //    candidates_iters construction (every call to `availability.intersection`)
     pub fn generate(&mut self) -> WorldGenerationResult {
         let (tile_row_count, tile_col_count) = self.tile_dim;
 
@@ -107,8 +99,11 @@ impl CellWorld {
                     };
                 } else {
                     // next grid
-                    solver_stack.push(backtracking_bitset::Solver::new(
-                        self.to_grid_at(tile_indexes[solver_stack.len()]),
+                    let next_tile_index = tile_indexes[solver_stack.len()];
+                    let denylist = self.direct_denylist_from_top_right_grid(next_tile_index);
+                    solver_stack.push(backtracking_bitset::Solver::new_with_optional_denylist(
+                        self.to_grid_at(next_tile_index),
+                        denylist,
                     ));
                 }
             } else {
@@ -116,6 +111,11 @@ impl CellWorld {
                 backtrack_count += 1;
 
                 let (tile_row_i, tile_col_i) = tile_indexes[solver_stack.len() - 1];
+
+                println!(
+                    "backtrack_count {backtrack_count}, grid:\n{}",
+                    self.to_grid_at((tile_row_i, tile_col_i))
+                );
 
                 let is_tile_at_left_world_edge = tile_col_i == 0;
                 let is_tile_at_top_world_edge = tile_row_i == 0;
@@ -139,13 +139,62 @@ impl CellWorld {
             }
 
             // println!("{self}\n");
-            dbg!(backtrack_count);
         }
 
         WorldGenerationResult {
             success: false,
             backtrack_count,
         }
+    }
+
+    fn direct_denylist_from_top_right_grid(
+        &self,
+        (tile_row_i, tile_col_i): TileIndex,
+    ) -> Option<AvailabilityDenyList<Base>> {
+        let top_right_tile_index = (
+            tile_row_i.checked_sub(1)?,
+            if tile_col_i + 1 != self.tile_dim.1 {
+                Some(tile_col_i + 1)
+            } else {
+                None
+            }?,
+        );
+
+        let top_right_grid_cells = self.cells.slice(Self::grid_cells_slice_info(
+            top_right_tile_index,
+            self.overlap,
+        ));
+
+        let overlap_isize = isize::from(self.overlap);
+
+        let top_right_constraining_corner_cells = top_right_grid_cells.slice(s![
+            // bottom overlap row band
+            -overlap_isize..=-1,
+            // left block column band without overlap
+            overlap_isize..isize::from(Base::BASE)
+        ]);
+
+        let denied_corner_candidates: Candidates<Base> = top_right_constraining_corner_cells
+            .into_iter()
+            .map(|cell| cell.value().expect("top right grid to contain only values"))
+            .collect();
+
+        let mut denylist = Array2::<Candidates<Base>>::default((
+            Base::SIDE_LENGTH.into(),
+            Base::SIDE_LENGTH.into(),
+        ));
+
+        denylist
+            .slice_mut(s![
+                // top block row band without overlap
+                overlap_isize..isize::from(Base::BASE),
+                // right overlap column band
+                -overlap_isize..=-1,
+            ])
+            .fill(denied_corner_candidates);
+
+        assert!(denylist.is_standard_layout());
+        Some(denylist.into())
     }
 
     fn tile_axis_count_to_cell_axis_count(tile_axis_count: usize, overlap: u8) -> usize {
@@ -293,7 +342,7 @@ mod tests {
 }
 
 fn main() -> Result<()> {
-    let (tile_row_count, tile_col_count) = (10, 10);
+    let (tile_row_count, tile_col_count) = (100, 100);
 
     // TODO: statistics
     //  - base
@@ -302,7 +351,7 @@ fn main() -> Result<()> {
     //  =>
     //  - how many single shot generations succeed?
     //  - how often is backtracking required?
-    let overlap = 3;
+    let overlap = 2;
     let mut world = CellWorld::new((tile_row_count, tile_col_count), overlap);
     let world_generation_result = world.generate();
 
