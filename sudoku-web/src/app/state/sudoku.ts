@@ -38,9 +38,9 @@ export const sudokuCellsState = selector<TransportCell[]>({
     key: "Sudoku.cells",
     get: ({ get }) => get(sudokuState).cells,
 });
-export const sudokuBlocksIndicesState = selector<TransportSudoku["blocksIndices"]>({
-    key: "Sudoku.blocksIndices",
-    get: ({ get }) => get(sudokuState).blocksIndices,
+export const sudokuBlocksIndexesState = selector<TransportSudoku["blocksIndexes"]>({
+    key: "Sudoku.blocksIndexes",
+    get: ({ get }) => get(sudokuState).blocksIndexes,
 });
 export const sudokuCanUndoState = selector<TransportSudoku["canUndo"]>({
     key: "Sudoku.canUndo",

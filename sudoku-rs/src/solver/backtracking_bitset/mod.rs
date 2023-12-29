@@ -20,8 +20,8 @@ pub struct Solver<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> {
     grid: GridRef,
     /// Cached remaining candidates for each group.
     availability: GroupAvailability<Base>,
-    /// Indices to non-value cells which must be solved.
-    availability_indices: Vec<GroupAvailabilityIndex<Base>>,
+    /// Indexes to non-value cells which must be solved.
+    availability_indexes: Vec<GroupAvailabilityIndex<Base>>,
     /// A list of iterators producing value assignments for each associated `availability_indices`.
     /// Can be inspected with `peek` to infer the current value assignment.
     candidates_iters: Vec<CandidatesIter<Base>>,
@@ -36,7 +36,7 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Solver<Base, GridRef> {
         let mut this = Self {
             grid,
             availability: GroupAvailability::all(),
-            availability_indices: vec![],
+            availability_indexes: vec![],
             candidates_iters: vec![],
             guess_count: 0,
             has_returned_pre_filled_grid_solution: false,
@@ -56,12 +56,12 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Solver<Base, GridRef> {
                 self.availability.delete(index, value);
             } else {
                 // Non-value cell, add to choices
-                self.availability_indices.push(index);
+                self.availability_indexes.push(index);
             }
         }
 
         self.move_best_choice_to_front(0);
-        if let Some(availability_index) = self.availability_indices.first() {
+        if let Some(availability_index) = self.availability_indexes.first() {
             self.candidates_iters
                 .push(self.availability.intersection(*availability_index).iter());
         }
@@ -72,7 +72,7 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Solver<Base, GridRef> {
 
         debug_assert!(self.candidates_iters.get(front_i).is_none());
 
-        if let Some((first_index, rest)) = self.availability_indices[front_i..].split_first_mut() {
+        if let Some((first_index, rest)) = self.availability_indexes[front_i..].split_first_mut() {
             let first_count = self.availability.intersection(*first_index).count();
             if first_count <= 1 {
                 return;
@@ -106,7 +106,7 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Solver<Base, GridRef> {
         for (candidates_iter, choice_index) in self
             .candidates_iters
             .iter()
-            .zip(self.availability_indices.iter())
+            .zip(self.availability_indexes.iter())
         {
             solution_grid
                 .get_mut((*choice_index).into())
@@ -121,10 +121,10 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Solver<Base, GridRef> {
                 // TODO: only update if there are multiple candidates
                 self.guess_count += 1;
 
-                let choice_index = self.availability_indices[self.candidates_iters.len() - 1];
+                let choice_index = self.availability_indexes[self.candidates_iters.len() - 1];
                 self.availability.delete(choice_index, candidate);
 
-                if self.candidates_iters.len() == self.availability_indices.len() {
+                if self.candidates_iters.len() == self.availability_indexes.len() {
                     // Found solution
                     let solution_grid = self.build_solution_grid();
 
@@ -137,7 +137,7 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Solver<Base, GridRef> {
                     // Next cell
                     let next_i = self.candidates_iters.len();
                     self.move_best_choice_to_front(next_i);
-                    let next_choice_index = self.availability_indices[next_i];
+                    let next_choice_index = self.availability_indexes[next_i];
                     let next_candidates_iter =
                         self.availability.intersection(next_choice_index).iter();
                     self.candidates_iters.push(next_candidates_iter);
@@ -148,7 +148,7 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Solver<Base, GridRef> {
                 let candidates_iters_len = self.candidates_iters.len();
                 if let Some(prev_candidates) = self.candidates_iters.last_mut() {
                     if let Some(prev_candidate) = prev_candidates.peek() {
-                        let prev_choice_index = self.availability_indices[candidates_iters_len - 1];
+                        let prev_choice_index = self.availability_indexes[candidates_iters_len - 1];
                         self.availability.insert(prev_choice_index, prev_candidate);
                     }
 
@@ -157,7 +157,7 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Solver<Base, GridRef> {
             }
         }
 
-        if self.availability_indices.is_empty() && !self.has_returned_pre_filled_grid_solution {
+        if self.availability_indexes.is_empty() && !self.has_returned_pre_filled_grid_solution {
             self.has_returned_pre_filled_grid_solution = true;
 
             let grid = self.grid.as_ref();
@@ -226,7 +226,7 @@ mod tests {
         let mut grid = crate::samples::base_2()[1].clone();
         grid.set_all_direct_candidates();
         let mut solver = Solver::new(&grid);
-        let mut expected_choice_indices = vec![
+        let mut expected_choice_indexes = vec![
             (0, 3),
             (0, 1),
             (1, 0),
@@ -245,11 +245,11 @@ mod tests {
             GroupAvailabilityIndex::<Base2>::from(Position::try_from((row, column)).unwrap())
         })
         .collect::<Vec<_>>();
-        assert_eq!(solver.availability_indices, expected_choice_indices);
+        assert_eq!(solver.availability_indexes, expected_choice_indexes);
 
         solver.move_best_choice_to_front(4);
-        expected_choice_indices.swap(4, 11);
-        assert_eq!(solver.availability_indices, expected_choice_indices);
+        expected_choice_indexes.swap(4, 11);
+        assert_eq!(solver.availability_indexes, expected_choice_indexes);
     }
 
     #[test]
