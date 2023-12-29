@@ -20,7 +20,6 @@ type Base = Base3;
 
 type TileIndex = (usize, usize);
 
-// TODO: has_conflict/is_solved
 struct CellWorld {
     tile_dim: TileIndex,
     cells: Array2<Cell<Base>>,
@@ -37,7 +36,9 @@ impl Display for CellWorld {
             .collect();
         write!(
             f,
-            "{}",
+            "tile_dim: {:?}, overlap: {}, cells:\n{}",
+            self.tile_dim,
+            self.overlap,
             builder
                 .build()
                 .with(Style::empty())
@@ -68,14 +69,16 @@ impl CellWorld {
         }
     }
 
-    pub fn generate(&mut self) -> WorldGenerationResult {
+    fn all_tile_indexes(&self) -> impl Iterator<Item = TileIndex> {
         let (tile_row_count, tile_col_count) = self.tile_dim;
 
-        let tile_indexes = (0..tile_row_count)
-            .flat_map(|tile_row_i| {
-                (0..tile_col_count).map(move |tile_col_i| (tile_row_i, tile_col_i))
-            })
-            .collect_vec();
+        (0..tile_row_count).flat_map(move |tile_row_i| {
+            (0..tile_col_count).map(move |tile_col_i| (tile_row_i, tile_col_i))
+        })
+    }
+
+    pub fn generate(&mut self) -> WorldGenerationResult {
+        let tile_indexes = self.all_tile_indexes().collect_vec();
 
         let mut backtrack_count = 0;
 
@@ -281,6 +284,11 @@ impl CellWorld {
             }
         }
     }
+
+    pub fn is_solved(&self) -> bool {
+        self.all_tile_indexes()
+            .all(|tile_index| self.to_grid_at(tile_index).is_solved())
+    }
 }
 
 #[derive(Copy, Clone, Debug, Default)]
@@ -342,7 +350,7 @@ mod tests {
 }
 
 fn main() -> Result<()> {
-    let (tile_row_count, tile_col_count) = (100, 100);
+    let (tile_row_count, tile_col_count) = (10, 10);
 
     // TODO: statistics
     //  - base
@@ -358,6 +366,8 @@ fn main() -> Result<()> {
     println!("{world}");
 
     dbg!(world_generation_result);
+
+    dbg!(world.is_solved());
 
     Ok(())
 }
