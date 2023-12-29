@@ -38,6 +38,12 @@ pub struct Grid<Base: SudokuBase> {
     cells: Array2<Cell<Base>>,
 }
 
+impl<Base: SudokuBase> AsRef<Grid<Base>> for Grid<Base> {
+    fn as_ref(&self) -> &Grid<Base> {
+        self
+    }
+}
+
 impl<Base: SudokuBase> Index<Position<Base>> for Grid<Base> {
     type Output = Cell<Base>;
 

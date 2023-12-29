@@ -10,13 +10,14 @@ use crate::grid::Grid;
 use crate::position::Position;
 
 // TODO: evaluate CandidatesVisitOrder setting
+//  achievable via modification or forked abstraction of `CandidatesIter`
 
 pub(crate) mod group_availability;
 
 #[derive(Debug, Clone)]
-pub struct Solver<'a, Base: SudokuBase> {
+pub struct Solver<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> {
     /// Grid to be solved
-    grid: &'a Grid<Base>,
+    grid: GridRef,
     /// Cached remaining candidates for each group.
     availability: GroupAvailability<Base>,
     /// Indices to non-value cells which must be solved.
@@ -30,8 +31,8 @@ pub struct Solver<'a, Base: SudokuBase> {
     has_returned_pre_filled_grid_solution: bool,
 }
 
-impl<'a, Base: SudokuBase> Solver<'a, Base> {
-    pub fn new(grid: &'a Grid<Base>) -> Self {
+impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Solver<Base, GridRef> {
+    pub fn new(grid: GridRef) -> Self {
         let mut this = Self {
             grid,
             availability: GroupAvailability::all(),
@@ -41,16 +42,16 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
             has_returned_pre_filled_grid_solution: false,
         };
 
-        this.initialize(grid);
+        this.initialize();
 
         this
     }
 
-    fn initialize(&mut self, grid: &Grid<Base>) {
+    fn initialize(&mut self) {
         for pos in Position::<Base>::all() {
             let index: GroupAvailabilityIndex<Base> = pos.into();
 
-            if let Some(value) = grid.get(pos).value() {
+            if let Some(value) = self.grid.as_ref().get(pos).value() {
                 // clue, clear group availability
                 self.availability.delete(index, value);
             } else {
@@ -101,7 +102,7 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
     }
 
     fn build_solution_grid(&self) -> Grid<Base> {
-        let mut solution_grid = self.grid.clone();
+        let mut solution_grid = self.grid.as_ref().clone();
         for (candidates_iter, choice_index) in self
             .candidates_iters
             .iter()
@@ -159,8 +160,9 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
         if self.availability_indices.is_empty() && !self.has_returned_pre_filled_grid_solution {
             self.has_returned_pre_filled_grid_solution = true;
 
-            if self.grid.is_solved() {
-                Some(self.grid.clone())
+            let grid = self.grid.as_ref();
+            if grid.is_solved() {
+                Some(grid.clone())
             } else {
                 None
             }
@@ -170,7 +172,7 @@ impl<'a, Base: SudokuBase> Solver<'a, Base> {
     }
 }
 
-impl<'s, Base: SudokuBase> Iterator for Solver<'s, Base> {
+impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Iterator for Solver<Base, GridRef> {
     type Item = Grid<Base>;
 
     fn next(&mut self) -> Option<Self::Item> {

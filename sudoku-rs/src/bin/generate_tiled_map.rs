@@ -2,36 +2,25 @@
 
 use std::fmt::{Display, Formatter};
 
-use ndarray::{s, Array2, Dim, SliceInfo, SliceInfoElem};
+use itertools::Itertools;
+use ndarray::{s, Array2, ArrayViewMut2, Axis, Dim, SliceInfo, SliceInfoElem};
+use rand::prelude::SliceRandom;
 use tabled::builder::Builder;
+use tabled::settings::{Padding, Style};
 
 use sudoku::base::consts::*;
 use sudoku::base::SudokuBase;
 use sudoku::cell::Cell;
 use sudoku::error::Result;
-use sudoku::generator::{Generator, GeneratorSettings, SolutionSettings};
 use sudoku::grid::Grid;
+use sudoku::solver::backtracking_bitset;
 
-type Base = Base2;
-
-// Idea for different data structure:
-// "world of cells" => grid index => generate Grid instance on demand
-// - cells overlapping with other grids are not duplicated (2x at edges, 4x at the corners)
-// - one active play Grid, needs to be back-propagated to the world of cells
-//   - alternative generic Grid cells: https://docs.rs/ndarray/latest/ndarray/type.ArrayViewMut2.html
-// - would solve grid cross-synchronization at least partially
-//   - tbd. `update_candidates` on edges for adjacent grids
-
-// Strategies for generating sudokus with matching boundaries
-// - Boundaries are assumed as fixed values
-// - Boundaries are not assumed as fixed values
-//   - Starting from a solved sudoku, deletion of givens while ensuring a unique solution will *not* change the single solution.
-//     If the solved sudoku was tileable, all minimized sudokus derived from it will remain tileable.
-// Tileable sudokus are easier to solve, since two/four sudoku grids constrain the edges/corners.
+type Base = Base3;
 
 type TileIndex = (usize, usize);
 
 struct CellWorld {
+    tile_dim: TileIndex,
     cells: Array2<Cell<Base>>,
     overlap: u8,
 }
@@ -44,8 +33,22 @@ impl Display for CellWorld {
             .into_iter()
             .map(|cell_row| cell_row.into_iter().map(|cell| cell.to_string()))
             .collect();
-        write!(f, "{}", builder.build().to_string())
+        write!(
+            f,
+            "{}",
+            builder
+                .build()
+                .with(Style::empty())
+                .with(Padding::zero())
+                .to_string()
+        )
     }
+}
+
+#[derive(Debug)]
+struct WorldGenerationResult {
+    success: bool,
+    backtrack_count: u32,
 }
 
 impl CellWorld {
@@ -53,11 +56,95 @@ impl CellWorld {
         assert!(overlap < Base::SIDE_LENGTH);
 
         Self {
+            tile_dim: (tile_row_count, tile_col_count),
             cells: Array2::default((
                 Self::tile_axis_count_to_cell_axis_count(tile_row_count, overlap),
                 Self::tile_axis_count_to_cell_axis_count(tile_col_count, overlap),
             )),
             overlap,
+        }
+    }
+
+    // TODO: optimize
+    //  naive backtracking gets stuck in single backtrack cycles
+    //  example: base 3, overlap 1
+    //  the solver generates solutions which are in direct conflict with the top right adjacent grid, making the next grid unsolvable.
+    //  Idea:
+    //    evaluate corner cross-grid constraints (for `overlap < base`)
+    //    generate candidates blocklist for affected positions
+    //    pass to solver
+    //    => solver skips all solutions which would result in a immediate conflict.
+    //   requires refactor/extension of solver
+    //    candidates_iters construction (every call to `availability.intersection`)
+    pub fn generate(&mut self) -> WorldGenerationResult {
+        let (tile_row_count, tile_col_count) = self.tile_dim;
+
+        let tile_indexes = (0..tile_row_count)
+            .flat_map(|tile_row_i| {
+                (0..tile_col_count).map(move |tile_col_i| (tile_row_i, tile_col_i))
+            })
+            .collect_vec();
+
+        let mut backtrack_count = 0;
+
+        // TODO: update with CandidatesVisitOrder
+        let mut solver_stack: Vec<backtracking_bitset::Solver<Base, _>> =
+            Vec::with_capacity(tile_indexes.len());
+
+        solver_stack.push(backtracking_bitset::Solver::new(self.to_grid_at((0, 0))));
+
+        while let Some(solver) = solver_stack.last_mut() {
+            if let Some(solution) = solver.next() {
+                let tile_index = tile_indexes[solver_stack.len() - 1];
+
+                self.set_grid_at(&solution, tile_index);
+
+                if solver_stack.len() == tile_indexes.len() {
+                    // world generated
+                    return WorldGenerationResult {
+                        success: true,
+                        backtrack_count,
+                    };
+                } else {
+                    // next grid
+                    solver_stack.push(backtracking_bitset::Solver::new(
+                        self.to_grid_at(tile_indexes[solver_stack.len()]),
+                    ));
+                }
+            } else {
+                // Backtrack
+                backtrack_count += 1;
+
+                let (tile_row_i, tile_col_i) = tile_indexes[solver_stack.len() - 1];
+
+                let is_tile_at_left_world_edge = tile_col_i == 0;
+                let is_tile_at_top_world_edge = tile_row_i == 0;
+
+                self.delete_grid_overlap_segments(
+                    (tile_row_i, tile_col_i),
+                    OverlapSegmentFilter {
+                        top_left: is_tile_at_left_world_edge && is_tile_at_top_world_edge,
+                        top: is_tile_at_top_world_edge,
+                        top_right: is_tile_at_top_world_edge,
+                        left: is_tile_at_left_world_edge,
+                        middle: true,
+                        right: true,
+                        bottom_left: is_tile_at_left_world_edge,
+                        bottom: true,
+                        bottom_right: true,
+                    },
+                );
+
+                solver_stack.pop().unwrap();
+            }
+
+            // println!("{self}\n");
+            dbg!(backtrack_count);
+        }
+
+        WorldGenerationResult {
+            success: false,
+            backtrack_count,
         }
     }
 
@@ -96,113 +183,132 @@ impl CellWorld {
             .slice_mut(Self::grid_cells_slice_info(tile_index, self.overlap));
         grid.cells().assign_to(world_grid_cells);
     }
-}
 
-#[derive(Debug)]
-struct Tiles {
-    grids: Array2<Grid<Base>>,
-    overlap: u8,
-}
+    // FIXME: panics for `overflow > Base::SIDE_LENGTH/2`
+    pub fn delete_grid_overlap_segments(
+        &mut self,
+        tile_index: TileIndex,
+        overlap_segment_filter: OverlapSegmentFilter,
+    ) {
+        fn split_cells_into_overlap_segments_single_axis(
+            grid_cells: ArrayViewMut2<Cell<Base>>,
+            axis: Axis,
+            overlap: u8,
+        ) -> [ArrayViewMut2<Cell<Base>>; 3] {
+            let overlap = usize::from(overlap);
 
-impl Tiles {
-    fn boundary_grid(&self, (tile_row_i, tile_col_i): (usize, usize)) -> Grid<Base> {
-        let center_grid = &self.grids[(tile_col_i, tile_col_i)];
+            let (first, rest) = grid_cells.split_at(axis, overlap);
+            let (middle, last) =
+                rest.split_at(axis, usize::from(Base::SIDE_LENGTH) - (overlap * 2));
 
-        let overlap = isize::from(self.overlap);
-
-        let mut boundary_grid = Grid::new();
-
-        let top_grid = self.grids.get((tile_row_i - 1, tile_col_i));
-        if let Some(top_grid) = top_grid {
-            top_grid
-                .cells()
-                .slice(s![-overlap..=-1, ..])
-                .assign_to(boundary_grid.cells_mut().slice_mut(s![0..overlap, ..]));
-        }
-        let left_grid = self.grids.get((tile_row_i, tile_col_i - 1));
-        if let Some(left_grid) = left_grid {
-            left_grid
-                .cells()
-                .slice(s![.., -overlap..=-1])
-                .assign_to(boundary_grid.cells_mut().slice_mut(s![.., 0..overlap]));
-        }
-        let right_grid = self.grids.get((tile_row_i, tile_col_i + 1));
-        if let Some(right_grid) = right_grid {
-            right_grid
-                .cells()
-                .slice(s![.., 0..overlap])
-                .assign_to(boundary_grid.cells_mut().slice_mut(s![.., -overlap..=-1]));
-        }
-        let bottom_grid = self.grids.get((tile_row_i + 1, tile_col_i));
-        if let Some(bottom_grid) = bottom_grid {
-            bottom_grid
-                .cells()
-                .slice(s![0..overlap, ..])
-                .assign_to(boundary_grid.cells_mut().slice_mut(s![-overlap..=-1, ..]));
+            [first, middle, last]
         }
 
-        boundary_grid
+        let grid_cells = self
+            .cells
+            .slice_mut(Self::grid_cells_slice_info(tile_index, self.overlap));
+
+        let row_bands =
+            split_cells_into_overlap_segments_single_axis(grid_cells, Axis(0), self.overlap);
+
+        let [[top_left, top, top_right], [left, middle, right], [bottom_left, bottom, bottom_right]] =
+            row_bands.map(|row_band| {
+                split_cells_into_overlap_segments_single_axis(row_band, Axis(1), self.overlap)
+            });
+
+        for (index, mut overlap_segment) in (0..).zip([
+            top_left,
+            top,
+            top_right,
+            left,
+            middle,
+            right,
+            bottom_left,
+            bottom,
+            bottom_right,
+        ]) {
+            if overlap_segment_filter.contains_index(index) {
+                overlap_segment.fill(Cell::new());
+            }
+        }
     }
 }
 
-impl Display for Tiles {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let builder: Builder = self
-            .grids
-            .rows()
-            .into_iter()
-            .map(|row_of_grids| row_of_grids.into_iter().map(|grid| grid.to_string()))
-            .collect();
-        write!(f, "{}", builder.build().to_string())
+#[derive(Copy, Clone, Debug, Default)]
+struct OverlapSegmentFilter {
+    top_left: bool,
+    top: bool,
+    top_right: bool,
+    left: bool,
+    middle: bool,
+    right: bool,
+    bottom_left: bool,
+    bottom: bool,
+    bottom_right: bool,
+}
+
+impl OverlapSegmentFilter {
+    fn contains_index(&self, index: u8) -> bool {
+        match index {
+            0 => self.top_left,
+            1 => self.top,
+            2 => self.top_right,
+            3 => self.left,
+            4 => self.middle,
+            5 => self.right,
+            6 => self.bottom_left,
+            7 => self.bottom,
+            8 => self.bottom_right,
+            _ => false,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_delete_grid_overlap_segments() {
+        let mut cell_world = CellWorld::new((1, 1), 2);
+        cell_world
+            .cells
+            .fill(Cell::with_value(1.try_into().unwrap(), false));
+
+        cell_world.delete_grid_overlap_segments(
+            (0, 0),
+            OverlapSegmentFilter {
+                top_left: true,
+                top_right: true,
+                bottom_left: true,
+                bottom_right: true,
+                ..Default::default()
+            },
+        );
+
+        println!("{cell_world}");
+
+        todo!("assert")
     }
 }
 
 fn main() -> Result<()> {
-    let (tile_row_count, tile_col_count) = (3, 3);
+    let (tile_row_count, tile_col_count) = (10, 10);
 
-    // FIXME: breaks for overlap % Base::BASE != 0
-    //  root cause are the corners, where 4 different grids meet.
-    //  nothing prevents the selection of the same values across the diagonal:
-    //   2 1
-    //   1 0
-    //  this breaks the top left block uniqueness constraint of the bottom right grid, resulting in an unsolvable border configuration.
-
-    // Potential solutions:
-    // - when generating the bottom left grid,
-    //   disallow assignment of values contained in the top right "overlap-slice"
-    //   to the bottom right "overlap-slice" of the top left block.
-    // - Prototype with Constraint programming based solver:
-    //   Are all scenarios solvable? Especially for overlap > base, which results in multiple intersected blocks.
-    let overlap = 1;
+    // TODO: statistics
+    //  - base
+    //  - overlap
+    //  - tile_count
+    //  =>
+    //  - how many single shot generations succeed?
+    //  - how often is backtracking required?
+    let overlap = 3;
     let mut world = CellWorld::new((tile_row_count, tile_col_count), overlap);
-    println!("{world}");
-
-    for tile_row_i in 0..tile_row_count {
-        for tile_col_i in 0..tile_col_count {
-            let tile_index = (tile_row_i, tile_col_i);
-            let grid = world.to_grid_at(tile_index);
-
-            println!("{grid}");
-            let generated_grid = Generator::with_settings(GeneratorSettings {
-                prune: None,
-                solution: Some(SolutionSettings { values_grid: grid }),
-                seed: Some(0),
-            })
-            .generate()
-            .unwrap();
-
-            println!("{generated_grid}");
-
-            world.set_grid_at(&generated_grid, tile_index);
-
-            println!("{world}");
-        }
-    }
+    let world_generation_result = world.generate();
 
     println!("{world}");
 
-    let grid = world.to_grid_at((0, 0));
-    println!("{grid}");
+    dbg!(world_generation_result);
 
     Ok(())
 }

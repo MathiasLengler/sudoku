@@ -336,6 +336,34 @@ impl<Base: SudokuBase> Generator<Base> {
         self.prune(solved_grid, prune_settings, on_progress)
     }
 
+    fn solved_grid(&self) -> Result<Grid<Base>> {
+        let mut grid = if let Some(solution_settings) = &self.settings.solution {
+            solution_settings.values_grid.clone()
+        } else {
+            Grid::<Base>::new()
+        };
+
+        let mut solver = backtracking::Solver::new_with_settings(
+            &mut grid,
+            backtracking::Settings {
+                candidates_visit_order: if let Some(seed) = self.settings.seed {
+                    CandidatesVisitOrder::RandomSeed(seed)
+                } else {
+                    CandidatesVisitOrder::Random
+                },
+                ..Default::default()
+            },
+        );
+
+        solver.next().ok_or_else(|| {
+            if self.settings.solution.is_some() {
+                format_err!("'solution.values_grid' has no solution")
+            } else {
+                panic!("Expected empty grid to have at least one solution")
+            }
+        })
+    }
+
     fn prune(
         &self,
         solved_grid: Grid<Base>,
@@ -367,34 +395,6 @@ impl<Base: SudokuBase> Generator<Base> {
         }
 
         Ok(pruned_grid)
-    }
-
-    fn solved_grid(&self) -> Result<Grid<Base>> {
-        let mut grid = if let Some(solution_settings) = &self.settings.solution {
-            solution_settings.values_grid.clone()
-        } else {
-            Grid::<Base>::new()
-        };
-
-        let mut solver = backtracking::Solver::new_with_settings(
-            &mut grid,
-            backtracking::Settings {
-                candidates_visit_order: if let Some(seed) = self.settings.seed {
-                    CandidatesVisitOrder::RandomSeed(seed)
-                } else {
-                    CandidatesVisitOrder::Random
-                },
-                ..Default::default()
-            },
-        );
-
-        solver.next().ok_or_else(|| {
-            if self.settings.solution.is_some() {
-                format_err!("'solution.values_grid' has no solution")
-            } else {
-                panic!("Expected empty grid to have at least one solution")
-            }
-        })
     }
 
     /// Try to delete a cell at specific position in a grid while preserving uniqueness of the grid solution.
