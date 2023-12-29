@@ -8,6 +8,7 @@ use crate::base::SudokuBase;
 use crate::cell::CandidatesIter;
 use crate::grid::Grid;
 use crate::position::Position;
+use crate::solver::backtracking_bitset::group_availability::AvailabilityDenyList;
 
 // TODO: evaluate CandidatesVisitOrder setting
 //  achievable via modification or forked abstraction of `CandidatesIter`
@@ -33,9 +34,20 @@ pub struct Solver<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> {
 
 impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Solver<Base, GridRef> {
     pub fn new(grid: GridRef) -> Self {
+        Self::new_with_optional_denylist(grid, None)
+    }
+
+    pub fn new_with_denylist(grid: GridRef, denylist: AvailabilityDenyList<Base>) -> Self {
+        Self::new_with_optional_denylist(grid, Some(denylist))
+    }
+
+    fn new_with_optional_denylist(
+        grid: GridRef,
+        denylist: Option<AvailabilityDenyList<Base>>,
+    ) -> Self {
         let mut this = Self {
             grid,
-            availability: GroupAvailability::all(),
+            availability: GroupAvailability::all(denylist),
             availability_indexes: vec![],
             candidates_iters: vec![],
             guess_count: 0,
@@ -183,6 +195,7 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Iterator for Solver<Base, Gri
 #[cfg(test)]
 mod tests {
     use crate::base::consts::*;
+    use crate::cell::Candidates;
     use crate::solver::test_util::{assert_solve_result, assert_solver_solutions_base_2};
 
     use super::*;
@@ -261,5 +274,24 @@ mod tests {
         assert_solve_result(solve_result);
 
         assert!(solver.try_solve().is_none());
+    }
+
+    #[test]
+    fn test_denylist() {
+        type Base = Base2;
+
+        let grid = Grid::<Base>::new();
+        let mut denylist = vec![Candidates::default(); Base::CELL_COUNT.into()];
+        denylist[0] = vec![1, 3]
+            .into_iter()
+            .map(|v| v.try_into().unwrap())
+            .collect();
+        let solver = Solver::new_with_denylist(&grid, denylist);
+
+        for solution in solver.clone() {
+            assert!(![1, 3].contains(&solution.get(Position::default()).value().unwrap().get()));
+        }
+
+        assert_eq!(solver.count(), 144);
     }
 }

@@ -40,6 +40,8 @@ impl<Base: SudokuBase> IntoIterator for CandidatesGroup<Base> {
     }
 }
 
+pub(crate) type AvailabilityDenyList<Base> = Vec<Candidates<Base>>;
+
 /// A compact data structure representing group information of a sudoku grid.
 ///
 /// Saves `Base::SIDE_LENGTH` bits of information for each group.
@@ -52,6 +54,10 @@ pub(crate) struct GroupAvailability<Base: SudokuBase> {
     rows: CandidatesGroup<Base>,
     columns: CandidatesGroup<Base>,
     blocks: CandidatesGroup<Base>,
+
+    // "Reserve" available candidates for specific positions.
+    // In row-major position order.
+    denylist: Option<AvailabilityDenyList<Base>>,
 }
 
 impl<Base: SudokuBase> GroupAvailability<Base> {
@@ -59,11 +65,16 @@ impl<Base: SudokuBase> GroupAvailability<Base> {
         Self::default()
     }
 
-    pub(crate) fn all() -> Self {
+    pub(crate) fn all(denylist: Option<AvailabilityDenyList<Base>>) -> Self {
         let mut this = Self::new();
 
         this.iter_mut()
             .for_each(|candidates| *candidates = Candidates::all());
+
+        if let Some(denylist) = denylist {
+            assert_eq!(denylist.len(), usize::from(Base::CELL_COUNT));
+            this.denylist = Some(denylist);
+        }
 
         this
     }
@@ -125,9 +136,14 @@ impl<Base: SudokuBase> GroupAvailability<Base> {
     pub(crate) fn intersection(&self, index: GroupAvailabilityIndex<Base>) -> Candidates<Base> {
         let (row_candidates, column_candidates, block_candidates) = self.get(index);
 
-        row_candidates
+        let intersection = row_candidates
             .intersection(column_candidates)
-            .intersection(block_candidates)
+            .intersection(block_candidates);
+        if let Some(denylist) = &self.denylist {
+            intersection.without(denylist[usize::from(Position::from(index).cell_index())])
+        } else {
+            intersection
+        }
     }
 }
 
@@ -199,7 +215,7 @@ mod tests {
 
         #[test]
         fn test_all() {
-            let group_availability = GroupAvailability::<Base>::all();
+            let group_availability = GroupAvailability::<Base>::all(None);
 
             let expected_candidates = Candidates::all();
             for pos in Position::<Base>::all() {
