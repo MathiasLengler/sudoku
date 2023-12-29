@@ -299,15 +299,7 @@ impl<Base: SudokuBase> IntoIterator for Candidates<Base> {
 
 impl<Base: SudokuBase> From<Vec<Value<Base>>> for Candidates<Base> {
     fn from(candidates: Vec<Value<Base>>) -> Self {
-        let mut this = Self::default();
-
-        for candidate in candidates {
-            this.set(candidate, true);
-        }
-
-        this.debug_assert_is_valid();
-
-        this
+        candidates.into_iter().collect()
     }
 }
 
