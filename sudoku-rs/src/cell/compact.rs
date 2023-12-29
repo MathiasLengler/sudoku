@@ -2,9 +2,9 @@ use std::fmt::{self, Debug, Display, Formatter};
 
 use anyhow::bail;
 
-pub use candidates::{Candidates, CandidatesIter};
-pub(crate) use cell_state::CellState;
-pub use value::Value;
+pub use candidates::*;
+pub(crate) use cell_state::*;
+pub use value::*;
 
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
