@@ -16,17 +16,16 @@ use sudoku::grid::Grid;
 use sudoku::solver::backtracking_bitset;
 use sudoku::solver::backtracking_bitset::AvailabilityDenyList;
 
-type Base = Base3;
-
 type TileIndex = (usize, usize);
 
-struct CellWorld {
+#[derive(Debug, Clone, Eq, PartialEq)]
+struct CellWorld<Base: SudokuBase> {
     tile_dim: TileIndex,
     cells: Array2<Cell<Base>>,
     overlap: u8,
 }
 
-impl Display for CellWorld {
+impl<Base: SudokuBase> Display for CellWorld<Base> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let builder: Builder = self
             .cells
@@ -54,7 +53,7 @@ struct WorldGenerationResult {
     backtrack_count: u32,
 }
 
-impl CellWorld {
+impl<Base: SudokuBase> CellWorld<Base> {
     pub fn new((tile_row_count, tile_col_count): TileIndex, overlap: u8) -> Self {
         // Various indexing patterns break down for larger overlaps.
         assert!(overlap <= Base::BASE);
@@ -236,36 +235,35 @@ impl CellWorld {
         grid.cells().assign_to(world_grid_cells);
     }
 
+    fn split_cells_into_overlap_segments_single_axis(
+        grid_cells: ArrayViewMut2<Cell<Base>>,
+        axis: Axis,
+        overlap: u8,
+    ) -> [ArrayViewMut2<Cell<Base>>; 3] {
+        let overlap = usize::from(overlap);
+
+        let (first, rest) = grid_cells.split_at(axis, overlap);
+        let (middle, last) = rest.split_at(axis, usize::from(Base::SIDE_LENGTH) - (overlap * 2));
+
+        [first, middle, last]
+    }
+
     // FIXME: panics for `overflow > Base::SIDE_LENGTH/2`
     pub fn delete_grid_overlap_segments(
         &mut self,
         tile_index: TileIndex,
         overlap_segment_filter: OverlapSegmentFilter,
     ) {
-        fn split_cells_into_overlap_segments_single_axis(
-            grid_cells: ArrayViewMut2<Cell<Base>>,
-            axis: Axis,
-            overlap: u8,
-        ) -> [ArrayViewMut2<Cell<Base>>; 3] {
-            let overlap = usize::from(overlap);
-
-            let (first, rest) = grid_cells.split_at(axis, overlap);
-            let (middle, last) =
-                rest.split_at(axis, usize::from(Base::SIDE_LENGTH) - (overlap * 2));
-
-            [first, middle, last]
-        }
-
         let grid_cells = self
             .cells
             .slice_mut(Self::grid_cells_slice_info(tile_index, self.overlap));
 
         let row_bands =
-            split_cells_into_overlap_segments_single_axis(grid_cells, Axis(0), self.overlap);
+            Self::split_cells_into_overlap_segments_single_axis(grid_cells, Axis(0), self.overlap);
 
         let [[top_left, top, top_right], [left, middle, right], [bottom_left, bottom, bottom_right]] =
             row_bands.map(|row_band| {
-                split_cells_into_overlap_segments_single_axis(row_band, Axis(1), self.overlap)
+                Self::split_cells_into_overlap_segments_single_axis(row_band, Axis(1), self.overlap)
             });
 
         for (index, mut overlap_segment) in (0..).zip([
@@ -327,25 +325,97 @@ mod tests {
 
     #[test]
     fn test_delete_grid_overlap_segments() {
-        let mut cell_world = CellWorld::new((1, 1), 2);
+        let mut cell_world = CellWorld::<Base2>::new((3, 3), 1);
         cell_world
             .cells
             .fill(Cell::with_value(1.try_into().unwrap(), false));
 
-        cell_world.delete_grid_overlap_segments(
-            (0, 0),
-            OverlapSegmentFilter {
-                top_left: true,
-                top_right: true,
-                bottom_left: true,
-                bottom_right: true,
-                ..Default::default()
-            },
-        );
+        let test_cases = vec![
+            (
+                OverlapSegmentFilter {
+                    top_left: true,
+                    ..Default::default()
+                },
+                vec![(0, 0)],
+            ),
+            (
+                OverlapSegmentFilter {
+                    top: true,
+                    ..Default::default()
+                },
+                vec![(0, 1), (0, 2)],
+            ),
+            (
+                OverlapSegmentFilter {
+                    top_right: true,
+                    ..Default::default()
+                },
+                vec![(0, 3)],
+            ),
+            (
+                OverlapSegmentFilter {
+                    left: true,
+                    ..Default::default()
+                },
+                vec![(1, 0), (2, 0)],
+            ),
+            (
+                OverlapSegmentFilter {
+                    middle: true,
+                    ..Default::default()
+                },
+                vec![(1, 1), (1, 2), (2, 1), (2, 2)],
+            ),
+            (
+                OverlapSegmentFilter {
+                    right: true,
+                    ..Default::default()
+                },
+                vec![(1, 3), (2, 3)],
+            ),
+            (
+                OverlapSegmentFilter {
+                    bottom_left: true,
+                    ..Default::default()
+                },
+                vec![(3, 0)],
+            ),
+            (
+                OverlapSegmentFilter {
+                    bottom: true,
+                    ..Default::default()
+                },
+                vec![(3, 1), (3, 2)],
+            ),
+            (
+                OverlapSegmentFilter {
+                    bottom_right: true,
+                    ..Default::default()
+                },
+                vec![(3, 3)],
+            ),
+        ];
 
-        println!("{cell_world}");
+        for (overlap_segment_filter, expected_deleted_positions) in test_cases {
+            let expected_deleted_positions = expected_deleted_positions
+                .into_iter()
+                .map(|pos| pos.try_into().unwrap())
+                .collect_vec();
 
-        todo!("assert")
+            let mut cell_world = cell_world.clone();
+
+            let tile_index = (1, 1);
+            cell_world.delete_grid_overlap_segments(tile_index, overlap_segment_filter);
+
+            dbg!(&expected_deleted_positions);
+
+            let grid = cell_world.to_grid_at(tile_index);
+            let deleted_positions = grid.all_candidates_positions();
+            assert_eq!(
+                deleted_positions, expected_deleted_positions,
+                "{overlap_segment_filter:?} => {grid}"
+            );
+        }
     }
 }
 
@@ -360,7 +430,7 @@ fn main() -> Result<()> {
     //  - how many single shot generations succeed?
     //  - how often is backtracking required?
     let overlap = 2;
-    let mut world = CellWorld::new((tile_row_count, tile_col_count), overlap);
+    let mut world = CellWorld::<Base3>::new((tile_row_count, tile_col_count), overlap);
     let world_generation_result = world.generate();
 
     println!("{world}");
