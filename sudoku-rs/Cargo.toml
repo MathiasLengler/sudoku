@@ -68,6 +68,7 @@ required-features = ["histogram"]
 
 [[bin]]
 name = "generate_tiled_map"
+required-features = ["parallel"]
 
 [[bin]]
 name = "solver_animation"

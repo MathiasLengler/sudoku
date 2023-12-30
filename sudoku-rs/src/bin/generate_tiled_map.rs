@@ -2,9 +2,11 @@
 
 use std::fmt::{Display, Formatter};
 
-use itertools::Itertools;
+use itertools::{iproduct, Itertools};
 use ndarray::{s, Array2, ArrayViewMut2, Axis, Dim, SliceInfo, SliceInfoElem};
 use rand::prelude::SliceRandom;
+use rand::SeedableRng;
+use rayon::prelude::*;
 use tabled::builder::Builder;
 use tabled::settings::{Padding, Style};
 
@@ -13,6 +15,7 @@ use sudoku::base::SudokuBase;
 use sudoku::cell::{Candidates, Cell};
 use sudoku::error::Result;
 use sudoku::grid::Grid;
+use sudoku::rng::{new_crate_rng, CrateRng};
 use sudoku::solver::backtracking_bitset;
 use sudoku::solver::backtracking_bitset::AvailabilityDenyList;
 
@@ -85,11 +88,13 @@ impl<Base: SudokuBase> CellWorld<Base> {
         let mut solver_stack: Vec<backtracking_bitset::Solver<Base, _, _>> =
             Vec::with_capacity(tile_indexes.len());
 
+        let mut rng = new_crate_rng(seed);
+
         solver_stack.push(
-            backtracking_bitset::Solver::new_with_optional_denylist_and_random_seed(
+            backtracking_bitset::Solver::new_with_optional_denylist_and_rng(
                 self.to_grid_at((0, 0)),
                 None,
-                seed,
+                CrateRng::from_rng(&mut rng).unwrap(),
             ),
         );
 
@@ -110,10 +115,10 @@ impl<Base: SudokuBase> CellWorld<Base> {
                     let next_tile_index = tile_indexes[solver_stack.len()];
                     let denylist = self.direct_denylist_from_top_right_grid(next_tile_index);
                     solver_stack.push(
-                        backtracking_bitset::Solver::new_with_optional_denylist_and_random_seed(
+                        backtracking_bitset::Solver::new_with_optional_denylist_and_rng(
                             self.to_grid_at(next_tile_index),
                             denylist,
-                            seed,
+                            CrateRng::from_rng(&mut rng).unwrap(),
                         ),
                     );
                 }
@@ -123,10 +128,10 @@ impl<Base: SudokuBase> CellWorld<Base> {
 
                 let (tile_row_i, tile_col_i) = tile_indexes[solver_stack.len() - 1];
 
-                println!(
-                    "backtrack_count {backtrack_count}, grid:\n{}",
-                    self.to_grid_at((tile_row_i, tile_col_i))
-                );
+                // println!(
+                //     "backtrack_count {backtrack_count}, grid:\n{}",
+                //     self.to_grid_at((tile_row_i, tile_col_i))
+                // );
 
                 let is_tile_at_left_world_edge = tile_col_i == 0;
                 let is_tile_at_top_world_edge = tile_row_i == 0;
@@ -157,6 +162,8 @@ impl<Base: SudokuBase> CellWorld<Base> {
             backtrack_count,
         }
     }
+
+    // TODO: prune
 
     fn direct_denylist_from_top_right_grid(
         &self,
@@ -429,24 +436,85 @@ mod tests {
 }
 
 fn main() -> Result<()> {
-    let (tile_row_count, tile_col_count) = (10, 10);
+    fn gen_world<Base: SudokuBase>(
+        overlap: u8,
+        tile_dim: TileIndex,
+        seed: u64,
+    ) -> WorldGenerationResult {
+        let mut world = CellWorld::<Base>::new(tile_dim, overlap);
+        world.generate(Some(seed))
+    }
 
-    // TODO: statistics
-    //  - base
-    //  - overlap
-    //  - tile_count
-    //  =>
-    //  - how many single shot generations succeed?
-    //  - how often is backtracking required?
-    let overlap = 2;
-    let mut world = CellWorld::<Base3>::new((tile_row_count, tile_col_count), overlap);
-    let world_generation_result = world.generate(Some(0));
+    fn gen_worlds_stats<Base: SudokuBase>() {
+        for (overlap, tile_dim) in iproduct!(
+            1..=Base::BASE,
+            vec![
+                (2, 2),
+                (3, 3),
+                (4, 4),
+                (5, 5),
+                (10, 10),
+                (50, 50),
+                (100, 100)
+            ]
+        ) {
+            let tile_count = u64::try_from(tile_dim.0 * tile_dim.1).unwrap();
+            let target_tile_count = 1_000_000;
 
-    println!("{world}");
+            let total_seeds = target_tile_count / tile_count;
+            let total_seeds_f64 = total_seeds as f64;
 
-    dbg!(world_generation_result);
+            let world_generation_results: Vec<_> = (0..total_seeds)
+                .into_par_iter()
+                .map(|seed| gen_world::<Base>(overlap, tile_dim, seed))
+                .collect();
 
-    dbg!(world.is_solved());
+            let total_success_count: u32 = world_generation_results
+                .iter()
+                .flat_map(|res| res.success.then_some(1))
+                .sum();
+
+            let backtrack_counts = world_generation_results
+                .iter()
+                .map(|res| res.backtrack_count);
+            let total_backtrack_count: u32 = backtrack_counts.clone().sum();
+            let min_backtrack_count: u32 = backtrack_counts.clone().min().unwrap();
+            let max_backtrack_count: u32 = backtrack_counts.max().unwrap();
+
+            println!(
+                "base {}, overlap {overlap}, tile_dim {tile_dim:?}:",
+                Base::BASE
+            );
+            println!(
+                "total_success_count {total_success_count} {:.2}%",
+                (f64::from(total_success_count) / total_seeds_f64) * 100.
+            );
+            println!(
+                "total_backtrack_count {total_backtrack_count} avg {:.2} min {min_backtrack_count} max {max_backtrack_count}",
+                (f64::from(total_backtrack_count) / total_seeds_f64)
+            );
+
+            println!()
+        }
+    }
+
+    fn playground() {
+        let (tile_row_count, tile_col_count) = (20, 20);
+
+        let overlap = 2;
+
+        let mut world = CellWorld::<Base2>::new((tile_row_count, tile_col_count), overlap);
+        let world_generation_result = world.generate(Some(0));
+
+        println!("{world}");
+        dbg!(world_generation_result);
+        dbg!(world.is_solved());
+    }
+
+    gen_worlds_stats::<Base2>();
+    gen_worlds_stats::<Base3>();
+
+    // playground();
 
     Ok(())
 }

@@ -9,7 +9,7 @@ use crate::base::SudokuBase;
 use crate::cell::{CandidatesAscIter, CandidatesIterator, CandidatesRandIter};
 use crate::grid::Grid;
 use crate::position::Position;
-use crate::rng::new_crate_rng;
+use crate::rng::CrateRng;
 
 pub(crate) mod group_availability;
 
@@ -68,17 +68,17 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Solver<Base, GridRef, Candida
 }
 
 impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Solver<Base, GridRef, CandidatesRandIter<Base>> {
-    pub fn new_with_optional_denylist_and_random_seed(
+    pub fn new_with_optional_denylist_and_rng(
         grid: GridRef,
         denylist: Option<AvailabilityDenyList<Base>>,
-        seed: Option<u64>,
+        rng: CrateRng,
     ) -> Self {
         let mut this = Self {
             grid,
             availability: GroupAvailability::all(denylist),
             availability_indexes: vec![],
             candidates_iters: vec![],
-            candidates_iter_init_context: new_crate_rng(seed),
+            candidates_iter_init_context: rng,
             guess_count: 0,
             has_returned_pre_filled_grid_solution: false,
         };

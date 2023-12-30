@@ -25,7 +25,7 @@ pub mod error;
 pub mod generator;
 pub mod grid;
 pub mod position;
-pub(crate) mod rng;
+pub mod rng;
 pub mod samples;
 pub mod solver;
 mod sudoku;
