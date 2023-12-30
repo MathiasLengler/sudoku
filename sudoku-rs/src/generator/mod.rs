@@ -3,7 +3,6 @@ use itertools::Itertools;
 use log::debug;
 use rand::prelude::SliceRandom;
 use rand::{thread_rng, Rng, SeedableRng};
-use rand_xoshiro::Xoshiro256StarStar;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "wasm")]
 use ts_rs::TS;
@@ -18,6 +17,7 @@ use crate::position::Position;
 use crate::solver::backtracking;
 use crate::solver::backtracking::CandidatesVisitOrder;
 use crate::solver::strategic::strategies::{Backtracking, DynamicStrategy};
+use crate::CrateRng;
 
 // TODO: strategic
 //  target difficulty: sum of weighted strategy applications
@@ -311,9 +311,9 @@ impl<Base: SudokuBase> Generator<Base> {
 
     fn rng(&self) -> impl Rng {
         if let Some(seed) = self.settings.seed {
-            Xoshiro256StarStar::seed_from_u64(seed)
+            CrateRng::seed_from_u64(seed)
         } else {
-            Xoshiro256StarStar::from_rng(thread_rng()).unwrap()
+            CrateRng::from_rng(thread_rng()).unwrap()
         }
     }
 

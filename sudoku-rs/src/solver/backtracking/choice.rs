@@ -2,17 +2,17 @@ use std::fmt::{self, Display};
 
 use rand::seq::SliceRandom;
 use rand::{thread_rng, SeedableRng};
-use rand_xoshiro::Xoshiro256StarStar;
 
 use crate::base::SudokuBase;
 use crate::cell::Value;
 use crate::solver::backtracking::CandidatesVisitOrder;
+use crate::CrateRng;
 
 #[derive(Debug)]
 pub(super) enum CandidatesProcessor {
     Asc,
     Desc,
-    Random(Xoshiro256StarStar),
+    Random(CrateRng),
 }
 
 impl From<CandidatesVisitOrder> for CandidatesProcessor {
@@ -21,10 +21,10 @@ impl From<CandidatesVisitOrder> for CandidatesProcessor {
             CandidatesVisitOrder::Asc => CandidatesProcessor::Asc,
             CandidatesVisitOrder::Desc => CandidatesProcessor::Desc,
             CandidatesVisitOrder::Random => {
-                CandidatesProcessor::Random(Xoshiro256StarStar::from_rng(thread_rng()).unwrap())
+                CandidatesProcessor::Random(CrateRng::from_rng(thread_rng()).unwrap())
             }
             CandidatesVisitOrder::RandomSeed(seed) => {
-                CandidatesProcessor::Random(Xoshiro256StarStar::seed_from_u64(seed))
+                CandidatesProcessor::Random(CrateRng::seed_from_u64(seed))
             }
         }
     }

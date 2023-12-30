@@ -6,33 +6,38 @@ pub use group_availability::{AvailabilityDenyList, AvailabilityDenyListView};
 use group_availability::{GroupAvailability, GroupAvailabilityIndex};
 
 use crate::base::SudokuBase;
-use crate::cell::CandidatesIter;
+use crate::cell::{CandidatesAscIter, CandidatesIterator};
 use crate::grid::Grid;
 use crate::position::Position;
-
-// TODO: evaluate CandidatesVisitOrder setting
-//  achievable via modification or forked abstraction of `CandidatesIter`
 
 pub(crate) mod group_availability;
 
 #[derive(Debug, Clone)]
-pub struct Solver<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> {
+pub struct Solver<
+    Base: SudokuBase,
+    GridRef: AsRef<Grid<Base>>,
+    ICandidates: CandidatesIterator<Base> = CandidatesAscIter<Base>,
+> {
     /// Grid to be solved
     grid: GridRef,
     /// Cached remaining candidates for each group.
     availability: GroupAvailability<Base>,
     /// Indexes to non-value cells which must be solved.
     availability_indexes: Vec<GroupAvailabilityIndex<Base>>,
+
     /// A list of iterators producing value assignments for each associated `availability_indices`.
     /// Can be inspected with `peek` to infer the current value assignment.
-    candidates_iters: Vec<CandidatesIter<Base>>,
+    candidates_iters: Vec<ICandidates>,
+
+    candidates_iter_init_context: ICandidates::InitContext,
 
     pub guess_count: u64,
 
     has_returned_pre_filled_grid_solution: bool,
 }
 
-impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Solver<Base, GridRef> {
+// TODO: add constructor/builder for CandidatesRandIter with seed
+impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Solver<Base, GridRef, CandidatesAscIter<Base>> {
     pub fn new(grid: GridRef) -> Self {
         Self::new_with_optional_denylist(grid, None)
     }
@@ -50,6 +55,7 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Solver<Base, GridRef> {
             availability: GroupAvailability::all(denylist),
             availability_indexes: vec![],
             candidates_iters: vec![],
+            candidates_iter_init_context: (),
             guess_count: 0,
             has_returned_pre_filled_grid_solution: false,
         };
@@ -58,7 +64,11 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Solver<Base, GridRef> {
 
         this
     }
+}
 
+impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, ICandidates: CandidatesIterator<Base>>
+    Solver<Base, GridRef, ICandidates>
+{
     fn initialize(&mut self) {
         for pos in Position::<Base>::all() {
             let index: GroupAvailabilityIndex<Base> = pos.into();
@@ -73,10 +83,18 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Solver<Base, GridRef> {
         }
 
         self.move_best_choice_to_front(0);
-        if let Some(availability_index) = self.availability_indexes.first() {
-            self.candidates_iters
-                .push(self.availability.intersection(*availability_index).iter());
+        if let Some(availability_index) = self.availability_indexes.first().copied() {
+            self.push_candidates_iter(availability_index);
         }
+    }
+
+    fn push_candidates_iter(&mut self, availability_index: GroupAvailabilityIndex<Base>) {
+        let candidates = self.availability.intersection(availability_index);
+        self.candidates_iters
+            .push(ICandidates::from_candidates_with_init_context(
+                candidates,
+                &mut self.candidates_iter_init_context,
+            ))
     }
 
     pub fn denylist(&self) -> Option<AvailabilityDenyListView<Base>> {
@@ -153,10 +171,8 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Solver<Base, GridRef> {
                     // Next cell
                     let next_i = self.candidates_iters.len();
                     self.move_best_choice_to_front(next_i);
-                    let next_choice_index = self.availability_indexes[next_i];
-                    let next_candidates_iter =
-                        self.availability.intersection(next_choice_index).iter();
-                    self.candidates_iters.push(next_candidates_iter);
+                    let next_availability_index = self.availability_indexes[next_i];
+                    self.push_candidates_iter(next_availability_index);
                 }
             } else {
                 // Backtrack
@@ -198,8 +214,9 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Iterator for Solver<Base, Gri
 
 #[cfg(test)]
 mod tests {
+    use ndarray::Array2;
+
     use crate::base::consts::*;
-    use crate::cell::Candidates;
     use crate::solver::test_util::{assert_solve_result, assert_solver_solutions_base_2};
 
     use super::*;
@@ -285,8 +302,8 @@ mod tests {
         type Base = Base2;
 
         let grid = Grid::<Base>::new();
-        let mut denylist = vec![Candidates::default(); Base::CELL_COUNT.into()];
-        denylist[0] = vec![1, 3]
+        let mut denylist = Array2::default((Base::SIDE_LENGTH.into(), Base::SIDE_LENGTH.into()));
+        denylist[(0, 0)] = vec![1, 3]
             .into_iter()
             .map(|v| v.try_into().unwrap())
             .collect();

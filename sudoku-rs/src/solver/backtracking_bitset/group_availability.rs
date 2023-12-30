@@ -58,6 +58,10 @@ pub(crate) struct GroupAvailability<Base: SudokuBase> {
     columns: CandidatesGroup<Base>,
     blocks: CandidatesGroup<Base>,
 
+    // FIXME: convert option into compile time generic
+    //  reduces size of GroupAvailability
+    //  e.g. "AvailabilityFilter"
+
     // "Reserve" available candidates for specific positions.
     // In row-major position order.
     denylist: Option<AvailabilityDenyList<Base>>,

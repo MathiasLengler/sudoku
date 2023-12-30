@@ -29,3 +29,5 @@ pub mod samples;
 pub mod solver;
 mod sudoku;
 pub(crate) mod unsafe_utils;
+
+type CrateRng = rand_xoshiro::Xoshiro256StarStar;

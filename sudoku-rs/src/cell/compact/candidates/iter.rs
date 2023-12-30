@@ -1,49 +1,48 @@
-use num::{One, PrimInt, Zero};
+use rand::prelude::*;
 
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
 use crate::cell::compact::value::Value;
-use crate::position::Coordinate;
+use crate::CrateRng;
+
+pub trait CandidatesIterator<Base: SudokuBase>: Iterator<Item = Value<Base>> {
+    type InitContext;
+
+    fn from_candidates_with_init_context(
+        candidates: Candidates<Base>,
+        init_context: &mut Self::InitContext,
+    ) -> Self;
+
+    fn peek(&self) -> Option<Value<Base>>;
+}
 
 #[derive(Debug, Clone)]
-struct IterOnes<Base: SudokuBase> {
-    /// # Safety invariant
-    ///
-    /// The bits at position `Base::MAX_VALUE` and greater must be zero.
-    bits: Base::CandidatesIntegral,
+pub struct CandidatesAscIter<Base: SudokuBase> {
+    candidates: Candidates<Base>,
 }
 
-impl<Base: SudokuBase> From<Candidates<Base>> for IterOnes<Base> {
-    fn from(candidates: Candidates<Base>) -> Self {
-        Self {
-            bits: candidates.bits,
-        }
+impl<Base: SudokuBase> CandidatesIterator<Base> for CandidatesAscIter<Base> {
+    type InitContext = ();
+
+    fn from_candidates_with_init_context(
+        candidates: Candidates<Base>,
+        (): &mut Self::InitContext,
+    ) -> Self {
+        candidates.into()
+    }
+
+    fn peek(&self) -> Option<Value<Base>> {
+        self.candidates.first()
     }
 }
 
-impl<Base: SudokuBase> IterOnes<Base> {
-    fn peek(&self) -> Option<Coordinate<Base>> {
-        if self.bits.is_zero() {
-            None
-        } else {
-            let trailing_zeros = self.bits.trailing_zeros();
-            // unwrap optimizes away
-            let candidate = u8::try_from(trailing_zeros).unwrap();
-
-            // Safety: the largest bit position is `Base::MAX_VALUE - 1`
-            Some(unsafe { Coordinate::new_unchecked(candidate) })
-        }
-    }
-}
-
-// TODO: benchmark
-impl<Base: SudokuBase> Iterator for IterOnes<Base> {
-    type Item = Coordinate<Base>;
+impl<Base: SudokuBase> Iterator for CandidatesAscIter<Base> {
+    type Item = Value<Base>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let candidate = self.peek();
         if let Some(candidate) = candidate {
-            self.bits ^= Base::CandidatesIntegral::one() << candidate.get();
+            self.candidates.toggle(candidate)
         }
         candidate
     }
@@ -54,84 +53,109 @@ impl<Base: SudokuBase> Iterator for IterOnes<Base> {
     }
 }
 
-impl<Base: SudokuBase> ExactSizeIterator for IterOnes<Base> {
+impl<Base: SudokuBase> ExactSizeIterator for CandidatesAscIter<Base> {
     fn len(&self) -> usize {
-        usize::try_from(self.bits.count_ones()).unwrap()
+        self.candidates.count().into()
+    }
+}
+
+impl<Base: SudokuBase> From<Candidates<Base>> for CandidatesAscIter<Base> {
+    fn from(candidates: Candidates<Base>) -> Self {
+        Self { candidates }
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct CandidatesIter<Base: SudokuBase> {
-    iter: IterOnes<Base>,
+struct CandidatesRandNoPeekIter<Base: SudokuBase> {
+    iter: CandidatesAscIter<Base>,
+    rng: CrateRng,
 }
 
-impl<Base: SudokuBase> CandidatesIter<Base> {
-    pub fn peek(&self) -> Option<Value<Base>> {
-        self.iter
-            .peek()
-            .map(|candidate| Candidates::export(candidate))
-    }
-}
-
-impl<Base: SudokuBase> Iterator for CandidatesIter<Base> {
+impl<Base: SudokuBase> Iterator for CandidatesRandNoPeekIter<Base> {
     type Item = Value<Base>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.iter
-            .next()
-            .map(|candidate| Candidates::export(candidate))
+        let cloned_iter = self.iter.clone();
+        let next = cloned_iter.choose(&mut self.rng);
+        if let Some(value) = next {
+            self.iter.candidates.toggle(value);
+        }
+        next
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iter.size_hint()
+        let len = self.len();
+        (len, Some(len))
     }
 }
 
-impl<Base: SudokuBase> ExactSizeIterator for CandidatesIter<Base> {
+impl<Base: SudokuBase> ExactSizeIterator for CandidatesRandNoPeekIter<Base> {
     fn len(&self) -> usize {
         self.iter.len()
     }
 }
 
-impl<Base: SudokuBase> From<Candidates<Base>> for CandidatesIter<Base> {
-    fn from(candidates: Candidates<Base>) -> Self {
-        Self {
+#[derive(Debug, Clone)]
+pub struct CandidatesRandIter<Base: SudokuBase> {
+    iter: CandidatesRandNoPeekIter<Base>,
+    next: Option<Value<Base>>,
+}
+
+impl<Base: SudokuBase> CandidatesIterator<Base> for CandidatesRandIter<Base> {
+    type InitContext = CrateRng;
+
+    fn from_candidates_with_init_context(
+        candidates: Candidates<Base>,
+        init_rng: &mut Self::InitContext,
+    ) -> Self {
+        let mut iter = CandidatesRandNoPeekIter {
             iter: candidates.into(),
+            rng: CrateRng::from_rng(init_rng).unwrap(),
+        };
+
+        Self {
+            next: iter.next(),
+            iter,
+        }
+    }
+
+    fn peek(&self) -> Option<Value<Base>> {
+        self.next
+    }
+}
+
+impl<Base: SudokuBase> Iterator for CandidatesRandIter<Base> {
+    type Item = Value<Base>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let current_next = self.next;
+        self.next = self.iter.next();
+        current_next
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let len = self.len();
+        (len, Some(len))
+    }
+}
+
+impl<Base: SudokuBase> ExactSizeIterator for CandidatesRandIter<Base> {
+    fn len(&self) -> usize {
+        if self.next.is_some() {
+            self.iter.len() + 1
+        } else {
+            0
         }
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use crate::base::consts::Base2;
-
-    use super::*;
-
-    #[test]
-    fn test_iter_ones() {
-        let mut iter_ones = IterOnes::<Base2> { bits: 0b1010 };
-
-        let candidate_1 = Coordinate::new(1).unwrap();
-        let candidate_3 = Coordinate::new(3).unwrap();
-        assert_eq!(
-            iter_ones.clone().collect::<Vec<_>>(),
-            vec![candidate_1, candidate_3]
-        );
-
-        assert_eq!(iter_ones.peek(), Some(candidate_1));
-        assert_eq!(iter_ones.peek(), Some(candidate_1));
-        assert_eq!(iter_ones.next(), Some(candidate_1));
-
-        assert_eq!(iter_ones.peek(), Some(candidate_3));
-        assert_eq!(iter_ones.peek(), Some(candidate_3));
-        assert_eq!(iter_ones.next(), Some(candidate_3));
-
-        assert_eq!(iter_ones.peek(), None);
-        assert_eq!(iter_ones.peek(), None);
-        assert_eq!(iter_ones.next(), None);
-
-        assert_eq!(iter_ones.peek(), None);
-        assert_eq!(iter_ones.peek(), None);
-        assert_eq!(iter_ones.next(), None);
+impl<Base: SudokuBase> From<Candidates<Base>> for CandidatesRandIter<Base> {
+    fn from(candidates: Candidates<Base>) -> Self {
+        Self::from_candidates_with_init_context(
+            candidates,
+            &mut CrateRng::from_rng(thread_rng()).unwrap(),
+        )
     }
 }
+
+// TODO: test
