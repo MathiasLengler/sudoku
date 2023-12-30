@@ -5,8 +5,8 @@ use rand::{thread_rng, SeedableRng};
 
 use crate::base::SudokuBase;
 use crate::cell::Value;
+use crate::rng::CrateRng;
 use crate::solver::backtracking::CandidatesVisitOrder;
-use crate::CrateRng;
 
 #[derive(Debug)]
 pub(super) enum CandidatesProcessor {

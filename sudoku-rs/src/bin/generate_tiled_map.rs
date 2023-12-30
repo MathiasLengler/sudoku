@@ -76,16 +76,22 @@ impl<Base: SudokuBase> CellWorld<Base> {
         })
     }
 
-    pub fn generate(&mut self) -> WorldGenerationResult {
+    pub fn generate(&mut self, seed: Option<u64>) -> WorldGenerationResult {
         let tile_indexes = self.all_tile_indexes().collect_vec();
 
         let mut backtrack_count = 0;
 
         // TODO: update with CandidatesVisitOrder
-        let mut solver_stack: Vec<backtracking_bitset::Solver<Base, _>> =
+        let mut solver_stack: Vec<backtracking_bitset::Solver<Base, _, _>> =
             Vec::with_capacity(tile_indexes.len());
 
-        solver_stack.push(backtracking_bitset::Solver::new(self.to_grid_at((0, 0))));
+        solver_stack.push(
+            backtracking_bitset::Solver::new_with_optional_denylist_and_random_seed(
+                self.to_grid_at((0, 0)),
+                None,
+                seed,
+            ),
+        );
 
         while let Some(solver) = solver_stack.last_mut() {
             if let Some(solution) = solver.next() {
@@ -103,10 +109,13 @@ impl<Base: SudokuBase> CellWorld<Base> {
                     // next grid
                     let next_tile_index = tile_indexes[solver_stack.len()];
                     let denylist = self.direct_denylist_from_top_right_grid(next_tile_index);
-                    solver_stack.push(backtracking_bitset::Solver::new_with_optional_denylist(
-                        self.to_grid_at(next_tile_index),
-                        denylist,
-                    ));
+                    solver_stack.push(
+                        backtracking_bitset::Solver::new_with_optional_denylist_and_random_seed(
+                            self.to_grid_at(next_tile_index),
+                            denylist,
+                            seed,
+                        ),
+                    );
                 }
             } else {
                 // Backtrack
@@ -431,7 +440,7 @@ fn main() -> Result<()> {
     //  - how often is backtracking required?
     let overlap = 2;
     let mut world = CellWorld::<Base3>::new((tile_row_count, tile_col_count), overlap);
-    let world_generation_result = world.generate();
+    let world_generation_result = world.generate(Some(0));
 
     println!("{world}");
 

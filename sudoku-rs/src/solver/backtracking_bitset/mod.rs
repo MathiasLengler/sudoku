@@ -6,9 +6,10 @@ pub use group_availability::{AvailabilityDenyList, AvailabilityDenyListView};
 use group_availability::{GroupAvailability, GroupAvailabilityIndex};
 
 use crate::base::SudokuBase;
-use crate::cell::{CandidatesAscIter, CandidatesIterator};
+use crate::cell::{CandidatesAscIter, CandidatesIterator, CandidatesRandIter};
 use crate::grid::Grid;
 use crate::position::Position;
+use crate::rng::new_crate_rng;
 
 pub(crate) mod group_availability;
 
@@ -56,6 +57,28 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Solver<Base, GridRef, Candida
             availability_indexes: vec![],
             candidates_iters: vec![],
             candidates_iter_init_context: (),
+            guess_count: 0,
+            has_returned_pre_filled_grid_solution: false,
+        };
+
+        this.initialize();
+
+        this
+    }
+}
+
+impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Solver<Base, GridRef, CandidatesRandIter<Base>> {
+    pub fn new_with_optional_denylist_and_random_seed(
+        grid: GridRef,
+        denylist: Option<AvailabilityDenyList<Base>>,
+        seed: Option<u64>,
+    ) -> Self {
+        let mut this = Self {
+            grid,
+            availability: GroupAvailability::all(denylist),
+            availability_indexes: vec![],
+            candidates_iters: vec![],
+            candidates_iter_init_context: new_crate_rng(seed),
             guess_count: 0,
             has_returned_pre_filled_grid_solution: false,
         };
@@ -204,7 +227,9 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, ICandidates: CandidatesIterat
     }
 }
 
-impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Iterator for Solver<Base, GridRef> {
+impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, ICandidates: CandidatesIterator<Base>> Iterator
+    for Solver<Base, GridRef, ICandidates>
+{
     type Item = Grid<Base>;
 
     fn next(&mut self) -> Option<Self::Item> {

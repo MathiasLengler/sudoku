@@ -25,9 +25,8 @@ pub mod error;
 pub mod generator;
 pub mod grid;
 pub mod position;
+pub(crate) mod rng;
 pub mod samples;
 pub mod solver;
 mod sudoku;
 pub(crate) mod unsafe_utils;
-
-type CrateRng = rand_xoshiro::Xoshiro256StarStar;

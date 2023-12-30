@@ -3,7 +3,7 @@ use rand::prelude::*;
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
 use crate::cell::compact::value::Value;
-use crate::CrateRng;
+use crate::rng::CrateRng;
 
 pub trait CandidatesIterator<Base: SudokuBase>: Iterator<Item = Value<Base>> {
     type InitContext;
@@ -146,15 +146,6 @@ impl<Base: SudokuBase> ExactSizeIterator for CandidatesRandIter<Base> {
         } else {
             0
         }
-    }
-}
-
-impl<Base: SudokuBase> From<Candidates<Base>> for CandidatesRandIter<Base> {
-    fn from(candidates: Candidates<Base>) -> Self {
-        Self::from_candidates_with_init_context(
-            candidates,
-            &mut CrateRng::from_rng(thread_rng()).unwrap(),
-        )
     }
 }
 

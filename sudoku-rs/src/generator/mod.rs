@@ -2,7 +2,7 @@ use anyhow::{bail, format_err};
 use itertools::Itertools;
 use log::debug;
 use rand::prelude::SliceRandom;
-use rand::{thread_rng, Rng, SeedableRng};
+use rand::{Rng, SeedableRng};
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "wasm")]
 use ts_rs::TS;
@@ -14,10 +14,10 @@ use crate::cell::Value;
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
+use crate::rng::{new_crate_rng, CrateRng};
 use crate::solver::backtracking;
 use crate::solver::backtracking::CandidatesVisitOrder;
 use crate::solver::strategic::strategies::{Backtracking, DynamicStrategy};
-use crate::CrateRng;
 
 // TODO: strategic
 //  target difficulty: sum of weighted strategy applications
@@ -309,12 +309,9 @@ impl<Base: SudokuBase> Generator<Base> {
         Self { settings }
     }
 
-    fn rng(&self) -> impl Rng {
-        if let Some(seed) = self.settings.seed {
-            CrateRng::seed_from_u64(seed)
-        } else {
-            CrateRng::from_rng(thread_rng()).unwrap()
-        }
+    // TODO: call only once per generate and pass around
+    fn rng(&self) -> CrateRng {
+        new_crate_rng(self.settings.seed)
     }
 
     pub fn generate(&self) -> Result<Grid<Base>> {

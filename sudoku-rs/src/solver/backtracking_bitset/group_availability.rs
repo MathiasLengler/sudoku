@@ -63,7 +63,6 @@ pub(crate) struct GroupAvailability<Base: SudokuBase> {
     //  e.g. "AvailabilityFilter"
 
     // "Reserve" available candidates for specific positions.
-    // In row-major position order.
     denylist: Option<AvailabilityDenyList<Base>>,
 }
 
@@ -151,6 +150,8 @@ impl<Base: SudokuBase> GroupAvailability<Base> {
         let intersection = row_candidates
             .intersection(column_candidates)
             .intersection(block_candidates);
+
+        // TODO: optimize
         if let Some(denylist) = &self.denylist {
             intersection.without(
                 denylist.as_slice().unwrap()[usize::from(Position::from(index).cell_index())],
