@@ -7,7 +7,7 @@ fn main() -> Result<()> {
     let seed = 1;
     let overlap = 1;
 
-    let mut world = CellWorld::<Base2>::new((tile_row_count, tile_col_count), overlap);
+    let mut world = CellWorld::<Base3>::new((tile_row_count, tile_col_count), overlap);
     let world_generation_result = world.generate(Some(seed));
     dbg!(&world_generation_result);
 
@@ -17,9 +17,12 @@ fn main() -> Result<()> {
     world.prune(Some(seed));
     println!("pruned world:\n{world}");
 
-    for grid in world.all_grids() {
-        println!("{grid}\n",);
+    for tile_index in world.all_tile_indexes() {
+        let grid = world.to_grid_at(tile_index);
+        println!("{tile_index:?}:\n{grid}\n",);
     }
+
+    assert!(world.is_directly_consistent());
 
     Ok(())
 }
