@@ -71,8 +71,5 @@ required-features = ["parallel"]
 name = "generate_histogram"
 required-features = ["parallel", "terminal", "histogram"]
 [[bin]]
-name = "generate_tiled_corners"
-required-features = ["histogram"]
-[[bin]]
 name = "solver_animation"
 required-features = ["solver_debug_print"]
