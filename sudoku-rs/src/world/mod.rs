@@ -14,7 +14,7 @@ use crate::generator::{
     Generator, GeneratorSettings, PruningOrder, PruningSettings, PruningTarget, SolutionSettings,
 };
 use crate::grid::Grid;
-use crate::rng::{new_crate_rng, CrateRng};
+use crate::rng::{new_crate_rng_from_rng, new_crate_rng_with_seed};
 use crate::solver::backtracking_bitset;
 use crate::solver::backtracking_bitset::AvailabilityDenyList;
 
@@ -82,17 +82,16 @@ impl<Base: SudokuBase> CellWorld<Base> {
 
         let mut backtrack_count = 0;
 
-        let mut solver_stack: Vec<backtracking_bitset::Solver<Base, _, _>> =
+        let mut solver_stack: Vec<backtracking_bitset::Solver<Base, _, _, _>> =
             Vec::with_capacity(tile_indexes.len());
 
-        let mut rng = new_crate_rng(seed);
+        let mut rng = new_crate_rng_with_seed(seed);
 
         solver_stack.push(
-            backtracking_bitset::Solver::new_with_optional_denylist_and_rng(
-                self.to_grid_at((0, 0)),
-                None,
-                CrateRng::from_rng(&mut rng).unwrap(),
-            ),
+            backtracking_bitset::Solver::builder(self.to_grid_at((0, 0)))
+                .rng(new_crate_rng_from_rng(&mut rng))
+                .availability_filter(None)
+                .build(),
         );
 
         while let Some(solver) = solver_stack.last_mut() {
@@ -117,11 +116,10 @@ impl<Base: SudokuBase> CellWorld<Base> {
                     let next_grid = self.to_grid_at(next_tile_index);
                     // println!("next_grid init:\n{next_grid}");
                     solver_stack.push(
-                        backtracking_bitset::Solver::new_with_optional_denylist_and_rng(
-                            next_grid,
-                            denylist,
-                            CrateRng::from_rng(&mut rng).unwrap(),
-                        ),
+                        backtracking_bitset::Solver::builder(next_grid)
+                            .rng(new_crate_rng_from_rng(&mut rng))
+                            .availability_filter(denylist)
+                            .build(),
                     );
                 }
             } else {
@@ -166,7 +164,7 @@ impl<Base: SudokuBase> CellWorld<Base> {
     }
 
     pub fn prune(&mut self, seed: Option<u64>) {
-        let mut rng = new_crate_rng(seed);
+        let mut rng = new_crate_rng_with_seed(seed);
 
         assert!(self.is_solved());
 

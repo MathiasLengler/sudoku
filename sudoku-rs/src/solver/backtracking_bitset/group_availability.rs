@@ -1,4 +1,4 @@
-use ndarray::{Array2, ArrayView2};
+use ndarray::Array2;
 
 use crate::base::SudokuBase;
 use crate::cell::{Candidates, Value};
@@ -43,7 +43,74 @@ impl<Base: SudokuBase> IntoIterator for CandidatesGroup<Base> {
 }
 
 pub type AvailabilityDenyList<Base> = Array2<Candidates<Base>>;
-pub type AvailabilityDenyListView<'a, Base> = ArrayView2<'a, Candidates<Base>>;
+
+pub trait AvailabilityFilter<Base: SudokuBase> {
+    /// For a given `available_candidates` at `index`, return `available_candidates` with 0 or more candidates removed.
+    fn filter(
+        &self,
+        available_candidates: Candidates<Base>,
+        index: GroupAvailabilityIndex<Base>,
+    ) -> Candidates<Base>;
+}
+
+// No-op
+impl<Base: SudokuBase> AvailabilityFilter<Base> for () {
+    fn filter(
+        &self,
+        available_candidates: Candidates<Base>,
+        _index: GroupAvailabilityIndex<Base>,
+    ) -> Candidates<Base> {
+        available_candidates
+    }
+}
+
+// A function can modify `available_candidates`
+impl<
+        Base: SudokuBase,
+        F: Fn(Candidates<Base>, GroupAvailabilityIndex<Base>) -> Candidates<Base>,
+    > AvailabilityFilter<Base> for F
+{
+    fn filter(
+        &self,
+        available_candidates: Candidates<Base>,
+        index: GroupAvailabilityIndex<Base>,
+    ) -> Candidates<Base> {
+        self(available_candidates, index)
+    }
+}
+
+// A grid of candidates defines denied candidates for each position.
+impl<Base: SudokuBase> AvailabilityFilter<Base> for AvailabilityDenyList<Base> {
+    fn filter(
+        &self,
+        available_candidates: Candidates<Base>,
+        index: GroupAvailabilityIndex<Base>,
+    ) -> Candidates<Base> {
+        // TODO: generic Grid: asserts sudoku grid size, but has no opinion on cell type
+        //  assert_eq!(denylist.len(), usize::from(Base::CELL_COUNT));
+        //  assert!(denylist.is_square());
+
+        // TODO: optimize
+        let denied_candidates =
+            self.as_slice().unwrap()[usize::from(Position::from(index).cell_index())];
+        available_candidates.without(denied_candidates)
+    }
+}
+
+// A optional grid of candidates defines denied candidates for each position.
+impl<Base: SudokuBase> AvailabilityFilter<Base> for Option<AvailabilityDenyList<Base>> {
+    fn filter(
+        &self,
+        available_candidates: Candidates<Base>,
+        index: GroupAvailabilityIndex<Base>,
+    ) -> Candidates<Base> {
+        if let Some(denylist) = self {
+            denylist.filter(available_candidates, index)
+        } else {
+            available_candidates
+        }
+    }
+}
 
 /// A compact data structure representing group information of a sudoku grid.
 ///
@@ -53,43 +120,46 @@ pub type AvailabilityDenyListView<'a, Base> = ArrayView2<'a, Candidates<Base>>;
 /// - What are the available candidates at a position?
 /// - Where in each group is a specific candidate set?
 #[derive(Debug, Clone, Default)]
-pub(crate) struct GroupAvailability<Base: SudokuBase> {
+pub(crate) struct GroupAvailability<Base: SudokuBase, Filter: AvailabilityFilter<Base>> {
     rows: CandidatesGroup<Base>,
     columns: CandidatesGroup<Base>,
     blocks: CandidatesGroup<Base>,
-
-    // FIXME: convert option into compile time generic
-    //  reduces size of GroupAvailability
-    //  e.g. "AvailabilityFilter"
-
-    // "Reserve" available candidates for specific positions.
-    denylist: Option<AvailabilityDenyList<Base>>,
+    filter: Filter,
 }
 
-impl<Base: SudokuBase> GroupAvailability<Base> {
+impl<Base: SudokuBase> GroupAvailability<Base, ()> {
     pub(crate) fn new() -> Self {
         Self::default()
     }
 
-    pub(crate) fn all(denylist: Option<AvailabilityDenyList<Base>>) -> Self {
+    pub(crate) fn all() -> Self {
         let mut this = Self::new();
-
         this.iter_mut()
             .for_each(|candidates| *candidates = Candidates::all());
-
-        if let Some(denylist) = denylist {
-            assert_eq!(denylist.len(), usize::from(Base::CELL_COUNT));
-            assert!(denylist.is_square());
-            this.denylist = Some(denylist);
-        }
-
         this
     }
 
-    pub(crate) fn denylist(&self) -> Option<AvailabilityDenyListView<Base>> {
-        self.denylist.as_ref().map(|denylist| denylist.view())
-    }
+    pub(crate) fn with_filter<Filter: AvailabilityFilter<Base>>(
+        self,
+        filter: Filter,
+    ) -> GroupAvailability<Base, Filter> {
+        let GroupAvailability {
+            rows,
+            columns,
+            blocks,
+            filter: (),
+        } = self;
 
+        GroupAvailability {
+            rows,
+            columns,
+            blocks,
+            filter,
+        }
+    }
+}
+
+impl<Base: SudokuBase, Filter: AvailabilityFilter<Base>> GroupAvailability<Base, Filter> {
     fn iter_mut(&mut self) -> impl Iterator<Item = &mut Candidates<Base>> {
         self.rows
             .iter_mut()
@@ -144,28 +214,24 @@ impl<Base: SudokuBase> GroupAvailability<Base> {
 
     /// Calculate the available (direct) candidates for a given index.
     /// This is calculated by intersecting the availability across the three different groups.
-    pub(crate) fn intersection(&self, index: GroupAvailabilityIndex<Base>) -> Candidates<Base> {
+    pub(crate) fn available_candidates_at(
+        &self,
+        index: GroupAvailabilityIndex<Base>,
+    ) -> Candidates<Base> {
         let (row_candidates, column_candidates, block_candidates) = self.get(index);
 
-        let intersection = row_candidates
+        let available_candidates = row_candidates
             .intersection(column_candidates)
             .intersection(block_candidates);
 
-        // TODO: optimize
-        if let Some(denylist) = &self.denylist {
-            intersection.without(
-                denylist.as_slice().unwrap()[usize::from(Position::from(index).cell_index())],
-            )
-        } else {
-            intersection
-        }
+        self.filter.filter(available_candidates, index)
     }
 }
 
 /// An index into `GroupAvailability`.
 /// Logically it is just a `Position`, but contains a pre-computed `Coordinate` for each group.
 #[derive(Debug, Copy, Clone, Default, Eq, PartialEq)]
-pub(crate) struct GroupAvailabilityIndex<Base: SudokuBase> {
+pub struct GroupAvailabilityIndex<Base: SudokuBase> {
     row: Coordinate<Base>,
     column: Coordinate<Base>,
     block: Coordinate<Base>,
@@ -218,7 +284,7 @@ mod tests {
 
         #[test]
         fn test_new() {
-            let group_availability = GroupAvailability::<Base>::new();
+            let group_availability = GroupAvailability::<Base, ()>::new();
 
             let expected_candidates = Candidates::new();
             for pos in Position::<Base>::all() {
@@ -230,7 +296,7 @@ mod tests {
 
         #[test]
         fn test_all() {
-            let group_availability = GroupAvailability::<Base>::all(None);
+            let group_availability = GroupAvailability::<Base, ()>::all();
 
             let expected_candidates = Candidates::all();
             for pos in Position::<Base>::all() {
@@ -242,7 +308,7 @@ mod tests {
 
         #[test]
         fn test_insert_delete_single() {
-            let mut group_availability = GroupAvailability::<Base>::new();
+            let mut group_availability = GroupAvailability::<Base, ()>::new();
 
             let candidate = Value::<Base>::try_from(3).unwrap();
 
@@ -275,7 +341,7 @@ mod tests {
                 (Candidates<Base>, Candidates<Base>, Candidates<Base>),
             );
 
-            let mut group_availability = GroupAvailability::<Base>::new();
+            let mut group_availability = GroupAvailability::<Base, ()>::new();
 
             let test_cases: Vec<TestCase> = vec![
                 ((0, 0), 1, (vec![1, 2], vec![1, 3], vec![1, 2])),
@@ -323,10 +389,10 @@ mod tests {
 
             assert_eq!(
                 vec![
-                    size_of::<GroupAvailability<Base2>>(),
-                    size_of::<GroupAvailability<Base3>>(),
-                    size_of::<GroupAvailability<Base4>>(),
-                    size_of::<GroupAvailability<Base5>>()
+                    size_of::<GroupAvailability<Base2, ()>>(),
+                    size_of::<GroupAvailability<Base3, ()>>(),
+                    size_of::<GroupAvailability<Base4, ()>>(),
+                    size_of::<GroupAvailability<Base5, ()>>()
                 ],
                 expected_sizes
             );

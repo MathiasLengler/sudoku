@@ -14,7 +14,7 @@ use crate::cell::Value;
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
-use crate::rng::{new_crate_rng, CrateRng};
+use crate::rng::{new_crate_rng_with_seed, CrateRng};
 use crate::solver::backtracking_bitset;
 use crate::solver::strategic::strategies::{Backtracking, DynamicStrategy};
 
@@ -316,7 +316,7 @@ impl<Base: SudokuBase> Generator<Base> {
     ) -> Result<Grid<Base>> {
         debug!("generate: {self:?}");
 
-        let mut rng = new_crate_rng(self.settings.seed);
+        let mut rng = new_crate_rng_with_seed(self.settings.seed);
 
         let solved_grid = self.solved_grid(&mut rng)?;
 
@@ -334,11 +334,9 @@ impl<Base: SudokuBase> Generator<Base> {
             Grid::<Base>::new()
         };
 
-        let mut solver = backtracking_bitset::Solver::new_with_optional_denylist_and_rng(
-            &grid,
-            None,
-            rng.clone(),
-        );
+        let mut solver = backtracking_bitset::Solver::builder(&grid)
+            .rng(rng.clone())
+            .build();
 
         solver.next().ok_or_else(|| {
             if self.settings.solution.is_some() {

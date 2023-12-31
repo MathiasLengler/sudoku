@@ -7,6 +7,9 @@ use crate::solver::backtracking::choice::{CandidatesProcessor, Choice};
 
 mod choice;
 
+// TODO: delete
+//  backtracking_bitset has inherited every feature of this solver and is faster.
+
 // TODO: how to externally drive and visualize solver (steps)
 //  make step into an iterator over step results
 

@@ -2,8 +2,9 @@
 
 use log::trace;
 
-pub use group_availability::{AvailabilityDenyList, AvailabilityDenyListView};
-use group_availability::{GroupAvailability, GroupAvailabilityIndex};
+pub use builder::SolverBuilder;
+use group_availability::GroupAvailability;
+pub use group_availability::{AvailabilityDenyList, AvailabilityFilter, GroupAvailabilityIndex};
 
 use crate::base::SudokuBase;
 use crate::cell::{CandidatesAscIter, CandidatesIterator, CandidatesRandIter};
@@ -17,12 +18,13 @@ pub(crate) mod group_availability;
 pub struct Solver<
     Base: SudokuBase,
     GridRef: AsRef<Grid<Base>>,
-    ICandidates: CandidatesIterator<Base> = CandidatesAscIter<Base>,
+    ICandidates: CandidatesIterator<Base>,
+    Filter: AvailabilityFilter<Base>,
 > {
     /// Grid to be solved
     grid: GridRef,
     /// Cached remaining candidates for each group.
-    availability: GroupAvailability<Base>,
+    availability: GroupAvailability<Base, Filter>,
     /// Indexes to non-value cells which must be solved.
     availability_indexes: Vec<GroupAvailabilityIndex<Base>>,
 
@@ -37,61 +39,139 @@ pub struct Solver<
     has_returned_pre_filled_grid_solution: bool,
 }
 
+mod builder {
+    use super::*;
+
+    #[derive(Debug)]
+    pub struct SolverBuilder<
+        Base: SudokuBase,
+        GridRef: AsRef<Grid<Base>>,
+        ICandidates: CandidatesIterator<Base>,
+        Filter: AvailabilityFilter<Base>,
+    > {
+        grid: GridRef,
+        availability: GroupAvailability<Base, Filter>,
+        candidates_iter_init_context: ICandidates::InitContext,
+    }
+
+    impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>>
+        SolverBuilder<Base, GridRef, CandidatesAscIter<Base>, ()>
+    {
+        pub fn new(grid: GridRef) -> Self {
+            Self {
+                grid,
+                availability: GroupAvailability::all(),
+                candidates_iter_init_context: (),
+            }
+        }
+    }
+
+    impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, Filter: AvailabilityFilter<Base>>
+        SolverBuilder<Base, GridRef, CandidatesAscIter<Base>, Filter>
+    {
+        // TODO: evaluate rng generic
+        //  this could enable the use of Rng references, eliminating the need for `new_crate_rng_from_rng`,
+        //  since a single Rng can be shared across solvers.
+        /// Visit candidates in a random order, instead of ascending.
+        pub fn rng(
+            self,
+            rng: CrateRng,
+        ) -> SolverBuilder<Base, GridRef, CandidatesRandIter<Base>, Filter> {
+            let Self {
+                grid,
+                availability,
+                candidates_iter_init_context: (),
+            } = self;
+
+            SolverBuilder {
+                grid,
+                availability,
+                candidates_iter_init_context: rng,
+            }
+        }
+    }
+
+    impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, ICandidates: CandidatesIterator<Base>>
+        SolverBuilder<Base, GridRef, ICandidates, ()>
+    {
+        /// Visit candidates in a random order, instead of ascending.
+        pub fn availability_filter<Filter: AvailabilityFilter<Base>>(
+            self,
+            filter: Filter,
+        ) -> SolverBuilder<Base, GridRef, ICandidates, Filter> {
+            let Self {
+                grid,
+                availability,
+                candidates_iter_init_context,
+            } = self;
+
+            SolverBuilder {
+                grid,
+                availability: availability.with_filter(filter),
+                candidates_iter_init_context,
+            }
+        }
+    }
+
+    impl<
+            Base: SudokuBase,
+            GridRef: AsRef<Grid<Base>>,
+            ICandidates: CandidatesIterator<Base>,
+            Filter: AvailabilityFilter<Base>,
+        > SolverBuilder<Base, GridRef, ICandidates, Filter>
+    {
+        pub fn build(self) -> Solver<Base, GridRef, ICandidates, Filter> {
+            let SolverBuilder {
+                grid,
+                availability,
+                candidates_iter_init_context,
+            } = self;
+            Solver::new_with(grid, availability, candidates_iter_init_context)
+        }
+    }
+}
+
 // TODO: add constructor/builder for CandidatesRandIter with seed
-impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Solver<Base, GridRef, CandidatesAscIter<Base>> {
-    pub fn new(grid: GridRef) -> Self {
-        Self::new_with_optional_denylist(grid, None)
-    }
-
-    pub fn new_with_denylist(grid: GridRef, denylist: AvailabilityDenyList<Base>) -> Self {
-        Self::new_with_optional_denylist(grid, Some(denylist))
-    }
-
-    pub fn new_with_optional_denylist(
-        grid: GridRef,
-        denylist: Option<AvailabilityDenyList<Base>>,
-    ) -> Self {
-        let mut this = Self {
-            grid,
-            availability: GroupAvailability::all(denylist),
-            availability_indexes: vec![],
-            candidates_iters: vec![],
-            candidates_iter_init_context: (),
-            guess_count: 0,
-            has_returned_pre_filled_grid_solution: false,
-        };
-
-        this.initialize();
-
-        this
-    }
-}
-
-impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Solver<Base, GridRef, CandidatesRandIter<Base>> {
-    pub fn new_with_optional_denylist_and_rng(
-        grid: GridRef,
-        denylist: Option<AvailabilityDenyList<Base>>,
-        rng: CrateRng,
-    ) -> Self {
-        let mut this = Self {
-            grid,
-            availability: GroupAvailability::all(denylist),
-            availability_indexes: vec![],
-            candidates_iters: vec![],
-            candidates_iter_init_context: rng,
-            guess_count: 0,
-            has_returned_pre_filled_grid_solution: false,
-        };
-
-        this.initialize();
-
-        this
-    }
-}
-
-impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, ICandidates: CandidatesIterator<Base>>
-    Solver<Base, GridRef, ICandidates>
+/// Convenience constructors
+impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>>
+    Solver<Base, GridRef, CandidatesAscIter<Base>, ()>
 {
+    pub fn new(grid: GridRef) -> Self {
+        SolverBuilder::new(grid).build()
+    }
+
+    pub fn builder(grid: GridRef) -> SolverBuilder<Base, GridRef, CandidatesAscIter<Base>, ()> {
+        SolverBuilder::new(grid)
+    }
+}
+
+impl<
+        Base: SudokuBase,
+        GridRef: AsRef<Grid<Base>>,
+        ICandidates: CandidatesIterator<Base>,
+        Filter: AvailabilityFilter<Base>,
+    > Solver<Base, GridRef, ICandidates, Filter>
+{
+    pub(crate) fn new_with(
+        grid: GridRef,
+        availability: GroupAvailability<Base, Filter>,
+        candidates_iter_init_context: ICandidates::InitContext,
+    ) -> Self {
+        let mut this = Self {
+            grid,
+            availability,
+            availability_indexes: vec![],
+            candidates_iters: vec![],
+            candidates_iter_init_context,
+            guess_count: 0,
+            has_returned_pre_filled_grid_solution: false,
+        };
+
+        this.initialize();
+
+        this
+    }
+
     fn initialize(&mut self) {
         for pos in Position::<Base>::all() {
             let index: GroupAvailabilityIndex<Base> = pos.into();
@@ -112,16 +192,14 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, ICandidates: CandidatesIterat
     }
 
     fn push_candidates_iter(&mut self, availability_index: GroupAvailabilityIndex<Base>) {
-        let candidates = self.availability.intersection(availability_index);
+        let candidates = self
+            .availability
+            .available_candidates_at(availability_index);
         self.candidates_iters
             .push(ICandidates::from_candidates_with_init_context(
                 candidates,
                 &mut self.candidates_iter_init_context,
             ))
-    }
-
-    pub fn denylist(&self) -> Option<AvailabilityDenyListView<Base>> {
-        self.availability.denylist()
     }
 
     pub fn move_best_choice_to_front(&mut self, front_i: usize) {
@@ -130,7 +208,10 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, ICandidates: CandidatesIterat
         debug_assert!(self.candidates_iters.get(front_i).is_none());
 
         if let Some((first_index, rest)) = self.availability_indexes[front_i..].split_first_mut() {
-            let first_count = self.availability.intersection(*first_index).count();
+            let first_count = self
+                .availability
+                .available_candidates_at(*first_index)
+                .count();
             if first_count <= 1 {
                 return;
             }
@@ -142,7 +223,10 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, ICandidates: CandidatesIterat
                 if better_count <= 1 {
                     break;
                 }
-                let next_count = self.availability.intersection(*next_index).count();
+                let next_count = self
+                    .availability
+                    .available_candidates_at(*next_index)
+                    .count();
                 if next_count < better_count {
                     better_count = next_count;
                     better_index = Some(next_index);
@@ -227,8 +311,12 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, ICandidates: CandidatesIterat
     }
 }
 
-impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, ICandidates: CandidatesIterator<Base>> Iterator
-    for Solver<Base, GridRef, ICandidates>
+impl<
+        Base: SudokuBase,
+        GridRef: AsRef<Grid<Base>>,
+        ICandidates: CandidatesIterator<Base>,
+        Filter: AvailabilityFilter<Base>,
+    > Iterator for Solver<Base, GridRef, ICandidates, Filter>
 {
     type Item = Grid<Base>;
 
@@ -323,7 +411,7 @@ mod tests {
     }
 
     #[test]
-    fn test_denylist() {
+    fn test_filter_denylist() {
         type Base = Base2;
 
         let grid = Grid::<Base>::new();
@@ -332,7 +420,7 @@ mod tests {
             .into_iter()
             .map(|v| v.try_into().unwrap())
             .collect();
-        let solver = Solver::new_with_denylist(&grid, denylist);
+        let solver = Solver::builder(&grid).availability_filter(denylist).build();
 
         for solution in solver.clone() {
             assert!(![1, 3].contains(&solution.get(Position::default()).value().unwrap().get()));
