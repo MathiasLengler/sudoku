@@ -10,7 +10,7 @@ use ts_rs::TS;
 pub use dynamic_settings::*;
 
 use crate::base::SudokuBase;
-use crate::cell::Value;
+use crate::cell::{Candidates, Value};
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
@@ -397,9 +397,11 @@ impl<Base: SudokuBase> Generator<Base> {
         pos: Position<Base>,
         prune_settings: &PruningSettings<Base>,
     ) -> Option<Value<Base>> {
+        // TODO: optimize with mem::swap
+        //  delete_and_get_value
         let cell = grid.get(pos);
 
-        let Some(value) = cell.value() else {
+        let Some(deleted_value) = cell.value() else {
             panic!("Expected value at {pos}, instead got: {cell:?}")
         };
 
@@ -423,16 +425,29 @@ impl<Base: SudokuBase> Generator<Base> {
                 grid
                 .is_solvable_with_strategies(prune_settings.strategies.clone())
                 .is_ok_and(|solution| solution.is_some())
-        ) &&
-            // Grid still needs to have a unique solution
-            grid.has_unique_solution();
+        ) && {
+            let has_ambiguous_solution = backtracking_bitset::Solver::builder(&grid)
+                .availability_filter(|mut available_candidates: Candidates<Base>, index| {
+                    if Position::from(index) == pos {
+                        available_candidates.delete(deleted_value);
+                        available_candidates
+                    } else {
+                        available_candidates
+                    }
+                })
+                .build()
+                .next()
+                .is_some();
+
+            !has_ambiguous_solution
+        };
 
         if can_be_deleted {
             // current position can be removed without losing uniqueness of the grid solution.
-            Some(value)
+            Some(deleted_value)
         } else {
             // current position is necessary for unique solution
-            grid.get_mut(pos).set_value(value);
+            grid.get_mut(pos).set_value(deleted_value);
             None
         }
     }
