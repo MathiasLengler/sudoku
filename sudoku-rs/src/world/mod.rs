@@ -75,16 +75,8 @@ impl<Base: SudokuBase> CellWorld<Base> {
     }
 }
 
-///
+/// Generation
 impl<Base: SudokuBase> CellWorld<Base> {
-    fn all_tile_indexes(&self) -> impl Iterator<Item = TileIndex> {
-        let (tile_row_count, tile_col_count) = self.tile_dim;
-
-        (0..tile_row_count).flat_map(move |tile_row_i| {
-            (0..tile_col_count).map(move |tile_col_i| (tile_row_i, tile_col_i))
-        })
-    }
-
     pub fn generate(&mut self, seed: Option<u64>) -> WorldGenerationResult {
         let tile_indexes = self.all_tile_indexes().collect_vec();
 
@@ -182,6 +174,7 @@ impl<Base: SudokuBase> CellWorld<Base> {
             let grid = self.to_grid_at(tile_index);
 
             let pruned_grid = Generator::with_settings(GeneratorSettings {
+                // TODO: expose
                 prune: Some(PruningSettings {
                     set_all_direct_candidates: true,
                     order: PruningOrder::Random,
@@ -197,19 +190,65 @@ impl<Base: SudokuBase> CellWorld<Base> {
             self.set_grid_at(&pruned_grid, tile_index);
         }
 
-        // TODO: remove, when set_grid_at updates adjacent grid candidates.
+        // TODO: remove when `set_grid_at` updates adjacent grid candidates.
         for tile_index in self.all_tile_indexes() {
             let mut grid = self.to_grid_at(tile_index);
             grid.update_all_direct_candidates();
             self.set_grid_at(&grid, tile_index);
         }
     }
+}
 
+/// Grid interop
+impl<Base: SudokuBase> CellWorld<Base> {
+    pub fn to_grid_at(&self, tile_index: TileIndex) -> Grid<Base> {
+        let grid_cells_array_view = self
+            .cells
+            .slice(Self::grid_cells_slice_info(tile_index, self.overlap));
+
+        grid_cells_array_view.try_into().unwrap()
+    }
+
+    // TODO: update candidates for adjacent grids
+    pub fn set_grid_at(&mut self, grid: &Grid<Base>, tile_index: TileIndex) {
+        let world_grid_cells = self
+            .cells
+            .slice_mut(Self::grid_cells_slice_info(tile_index, self.overlap));
+        grid.cells().assign_to(world_grid_cells);
+    }
+}
+
+/// Iterators
+impl<Base: SudokuBase> CellWorld<Base> {
     pub fn all_grids(&self) -> impl Iterator<Item = Grid<Base>> + '_ {
         self.all_tile_indexes()
             .map(move |tile_index| self.to_grid_at(tile_index))
     }
 
+    pub fn all_tile_indexes(&self) -> impl Iterator<Item = TileIndex> {
+        let (tile_row_count, tile_col_count) = self.tile_dim;
+
+        (0..tile_row_count).flat_map(move |tile_row_i| {
+            (0..tile_col_count).map(move |tile_col_i| (tile_row_i, tile_col_i))
+        })
+    }
+}
+
+/// Queries
+impl<Base: SudokuBase> CellWorld<Base> {
+    pub fn is_solved(&self) -> bool {
+        self.all_tile_indexes()
+            .all(|tile_index| self.to_grid_at(tile_index).is_solved())
+    }
+
+    pub fn is_directly_consistent(&self) -> bool {
+        self.all_tile_indexes()
+            .all(|tile_index| self.to_grid_at(tile_index).is_directly_consistent())
+    }
+}
+
+/// Internal helpers
+impl<Base: SudokuBase> CellWorld<Base> {
     fn direct_denylist_from_top_right_grid(
         &self,
         (tile_row_i, tile_col_i): TileIndex,
@@ -281,22 +320,6 @@ impl<Base: SudokuBase> CellWorld<Base> {
         ]
     }
 
-    pub fn to_grid_at(&self, tile_index: TileIndex) -> Grid<Base> {
-        let grid_cells_array_view = self
-            .cells
-            .slice(Self::grid_cells_slice_info(tile_index, self.overlap));
-
-        grid_cells_array_view.try_into().unwrap()
-    }
-
-    // TODO: update candidates for adjacent grids
-    pub fn set_grid_at(&mut self, grid: &Grid<Base>, tile_index: TileIndex) {
-        let world_grid_cells = self
-            .cells
-            .slice_mut(Self::grid_cells_slice_info(tile_index, self.overlap));
-        grid.cells().assign_to(world_grid_cells);
-    }
-
     fn split_cells_into_overlap_segments_single_axis(
         grid_cells: ArrayViewMut2<Cell<Base>>,
         axis: Axis,
@@ -310,8 +333,7 @@ impl<Base: SudokuBase> CellWorld<Base> {
         [first, middle, last]
     }
 
-    // FIXME: panics for `overflow > Base::SIDE_LENGTH/2`
-    pub fn delete_grid_overlap_segments(
+    fn delete_grid_overlap_segments(
         &mut self,
         tile_index: TileIndex,
         overlap_segment_filter: OverlapSegmentFilter,
@@ -343,16 +365,6 @@ impl<Base: SudokuBase> CellWorld<Base> {
                 overlap_segment.fill(Cell::new());
             }
         }
-    }
-
-    pub fn is_solved(&self) -> bool {
-        self.all_tile_indexes()
-            .all(|tile_index| self.to_grid_at(tile_index).is_solved())
-    }
-
-    pub fn is_directly_consistent(&self) -> bool {
-        self.all_tile_indexes()
-            .all(|tile_index| self.to_grid_at(tile_index).is_directly_consistent())
     }
 }
 
