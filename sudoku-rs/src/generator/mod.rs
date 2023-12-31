@@ -404,18 +404,34 @@ impl<Base: SudokuBase> Generator<Base> {
         grid.get_mut(pos).delete();
 
         // FIXME: optimize
-        //  is_solvable_with_strategies => strategic::Solver
-        //  has_unique_solution => backtracking_bitset::Solver
-        match grid.is_solvable_with_strategies(prune_settings.strategies.clone()) {
-            Ok(Some(_)) if grid.has_unique_solution() => {
-                // current position can be removed without losing uniqueness of the grid solution.
-                Some(value)
-            }
-            _ => {
-                // current position is necessary for unique solution
-                grid.get_mut(pos).set_value(value);
-                None
-            }
+        // Multiple solvers:
+        //   is_solvable_with_strategies => strategic::Solver
+        //   has_unique_solution => backtracking_bitset::Solver
+        //
+        // `grid.has_unique_solution` could skip the solution before deletion using `backtracking_bitset`'s `availability_filter`
+        // The unique solution does not change while pruning, so we can skip it.
+        // => does not work, since a other non-unique solution could only vary by a few values.
+        // They can and will probably share the majority of the values.
+
+        let can_be_deleted: bool = (
+            // Either default strategies
+            prune_settings.strategies == &[Backtracking.into()]
+            ||
+                // Or ensure the grid remains solvable with the non-default strategies
+                grid
+                .is_solvable_with_strategies(prune_settings.strategies.clone())
+                .is_ok_and(|solution| solution.is_some())
+        ) &&
+            // Grid still needs to have a unique solution
+            grid.has_unique_solution();
+
+        if can_be_deleted {
+            // current position can be removed without losing uniqueness of the grid solution.
+            Some(value)
+        } else {
+            // current position is necessary for unique solution
+            grid.get_mut(pos).set_value(value);
+            None
         }
     }
 
