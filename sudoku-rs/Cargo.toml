@@ -44,7 +44,7 @@ serde_json = "1.0.105"
 
 [target.'cfg(not(target_family="wasm"))'.dev-dependencies]
 # version 0.5.1 seems broken, stay on 0.4.0 until fix is released.
-criterion = { version = "0.4.0", features = ["html_reports"] }
+criterion = { version = "0.5.1", features = ["html_reports"] }
 
 [features]
 default = []
