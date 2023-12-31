@@ -55,6 +55,8 @@ pub enum PruningGroupBehaviour {
 }
 
 // TODO: introduce PruningSegmentation vs PruningVisitOrder
+// TODO: group_breath_first vs group_depth_first
+//  prioritize most empty groups vs even number of values across all groups
 // TODO: test
 /// Define the order in which cells should be pruned.
 #[derive(Debug, Default, Clone)]
