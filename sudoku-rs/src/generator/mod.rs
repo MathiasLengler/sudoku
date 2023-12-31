@@ -881,8 +881,7 @@ mod tests {
 
         #[test]
         fn test_solved_values_grid_prune_minimal() {
-            let mut values_grid = samples::base_2_solved();
-            values_grid.fix_all_values();
+            let values_grid = samples::base_2_solved();
 
             let grid = Generator::<Base2>::with_settings(GeneratorSettings {
                 solution: Some(SolutionSettings {
@@ -900,6 +899,10 @@ mod tests {
             .unwrap();
 
             assert!(grid.is_minimal());
+
+            let mut solution = grid.unique_solution().unwrap();
+            solution.unfix_all_values();
+            assert_eq!(solution, values_grid, "{solution}\n!=\n{values_grid}");
         }
     }
 }
