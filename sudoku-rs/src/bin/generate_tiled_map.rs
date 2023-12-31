@@ -2,10 +2,10 @@
 
 use std::fmt::{Display, Formatter};
 
+use indicatif::ParallelProgressIterator;
 use itertools::{iproduct, Itertools};
 use ndarray::{s, Array2, ArrayViewMut2, Axis, Dim, SliceInfo, SliceInfoElem};
-use rand::prelude::SliceRandom;
-use rand::SeedableRng;
+use rand::prelude::*;
 use rayon::prelude::*;
 use tabled::builder::Builder;
 use tabled::settings::{Padding, Style};
@@ -14,6 +14,9 @@ use sudoku::base::consts::*;
 use sudoku::base::SudokuBase;
 use sudoku::cell::{Candidates, Cell};
 use sudoku::error::Result;
+use sudoku::generator::{
+    Generator, GeneratorSettings, PruningOrder, PruningSettings, PruningTarget, SolutionSettings,
+};
 use sudoku::grid::Grid;
 use sudoku::rng::{new_crate_rng, CrateRng};
 use sudoku::solver::backtracking_bitset;
@@ -84,7 +87,6 @@ impl<Base: SudokuBase> CellWorld<Base> {
 
         let mut backtrack_count = 0;
 
-        // TODO: update with CandidatesVisitOrder
         let mut solver_stack: Vec<backtracking_bitset::Solver<Base, _, _>> =
             Vec::with_capacity(tile_indexes.len());
 
@@ -100,6 +102,8 @@ impl<Base: SudokuBase> CellWorld<Base> {
 
         while let Some(solver) = solver_stack.last_mut() {
             if let Some(solution) = solver.next() {
+                // println!("solution:\n{solution}");
+
                 let tile_index = tile_indexes[solver_stack.len() - 1];
 
                 self.set_grid_at(&solution, tile_index);
@@ -114,9 +118,12 @@ impl<Base: SudokuBase> CellWorld<Base> {
                     // next grid
                     let next_tile_index = tile_indexes[solver_stack.len()];
                     let denylist = self.direct_denylist_from_top_right_grid(next_tile_index);
+                    // dbg!(&denylist);
+                    let next_grid = self.to_grid_at(next_tile_index);
+                    // println!("next_grid init:\n{next_grid}");
                     solver_stack.push(
                         backtracking_bitset::Solver::new_with_optional_denylist_and_rng(
-                            self.to_grid_at(next_tile_index),
+                            next_grid,
                             denylist,
                             CrateRng::from_rng(&mut rng).unwrap(),
                         ),
@@ -128,10 +135,10 @@ impl<Base: SudokuBase> CellWorld<Base> {
 
                 let (tile_row_i, tile_col_i) = tile_indexes[solver_stack.len() - 1];
 
-                // println!(
-                //     "backtrack_count {backtrack_count}, grid:\n{}",
-                //     self.to_grid_at((tile_row_i, tile_col_i))
-                // );
+                println!(
+                    "backtrack_count {backtrack_count}, grid:\n{}",
+                    self.to_grid_at((tile_row_i, tile_col_i))
+                );
 
                 let is_tile_at_left_world_edge = tile_col_i == 0;
                 let is_tile_at_top_world_edge = tile_row_i == 0;
@@ -163,7 +170,41 @@ impl<Base: SudokuBase> CellWorld<Base> {
         }
     }
 
-    // TODO: prune
+    pub fn prune(&mut self, seed: Option<u64>) {
+        let mut rng = new_crate_rng(seed);
+
+        assert!(self.is_solved());
+
+        for tile_index in self.all_tile_indexes() {
+            let grid = self.to_grid_at(tile_index);
+
+            let pruned_grid = Generator::with_settings(GeneratorSettings {
+                prune: Some(PruningSettings {
+                    set_all_direct_candidates: true,
+                    order: PruningOrder::Random,
+                    target: PruningTarget::Minimal,
+                    ..Default::default()
+                }),
+                solution: Some(SolutionSettings { values_grid: grid }),
+                seed: Some(rng.gen()),
+            })
+            .generate()
+            .unwrap();
+
+            self.set_grid_at(&pruned_grid, tile_index);
+        }
+
+        for tile_index in self.all_tile_indexes() {
+            let mut grid = self.to_grid_at(tile_index);
+            grid.update_all_direct_candidates();
+            self.set_grid_at(&grid, tile_index);
+        }
+    }
+
+    fn all_grids(&self) -> impl Iterator<Item = Grid<Base>> + '_ {
+        self.all_tile_indexes()
+            .map(move |tile_index| self.to_grid_at(tile_index))
+    }
 
     fn direct_denylist_from_top_right_grid(
         &self,
@@ -244,6 +285,7 @@ impl<Base: SudokuBase> CellWorld<Base> {
         grid_cells_array_view.try_into().unwrap()
     }
 
+    // TODO: update candidates for adjacent grids
     pub fn set_grid_at(&mut self, grid: &Grid<Base>, tile_index: TileIndex) {
         let world_grid_cells = self
             .cells
@@ -302,6 +344,11 @@ impl<Base: SudokuBase> CellWorld<Base> {
     pub fn is_solved(&self) -> bool {
         self.all_tile_indexes()
             .all(|tile_index| self.to_grid_at(tile_index).is_solved())
+    }
+
+    pub fn is_directly_consistent(&self) -> bool {
+        self.all_tile_indexes()
+            .all(|tile_index| self.to_grid_at(tile_index).is_directly_consistent())
     }
 }
 
@@ -498,23 +545,87 @@ fn main() -> Result<()> {
         }
     }
 
-    fn playground() {
-        let (tile_row_count, tile_col_count) = (20, 20);
+    fn find_tile_backtrack() {
+        let (tile_row_count, tile_col_count) = (100, 100);
 
-        let overlap = 2;
+        let overlap = 3;
 
-        let mut world = CellWorld::<Base2>::new((tile_row_count, tile_col_count), overlap);
-        let world_generation_result = world.generate(Some(0));
+        let world = (0..1_000_000u32)
+            .into_par_iter()
+            .progress()
+            .filter_map(|seed| {
+                let mut world = CellWorld::<Base3>::new((tile_row_count, tile_col_count), overlap);
+                let world_generation_result = world.generate(Some(seed.into()));
+                if world_generation_result.backtrack_count > 0 {
+                    dbg!(&world_generation_result);
+                    Some(world)
+                } else {
+                    None
+                }
+            })
+            .find_any(|_| true)
+            .unwrap();
 
-        println!("{world}");
-        dbg!(world_generation_result);
-        dbg!(world.is_solved());
+        println!("solved world:\n{world}");
+        assert!(world.is_solved());
+
+        // world.prune(Some(seed));
+        // println!("pruned world:\n{world}");
     }
 
-    gen_worlds_stats::<Base2>();
-    gen_worlds_stats::<Base3>();
+    fn prune_directly_consistent() {
+        let (tile_row_count, tile_col_count) = (3, 3);
 
-    // playground();
+        let seed = 1;
+
+        let overlap = 1;
+
+        let mut world = CellWorld::<Base2>::new((tile_row_count, tile_col_count), overlap);
+        let world_generation_result = world.generate(Some(seed));
+        dbg!(&world_generation_result);
+
+        println!("solved world:\n{world}");
+        assert!(world.is_solved());
+
+        world.prune(Some(seed));
+        println!("pruned world:\n{world}");
+
+        for grid in world.all_grids() {
+            println!(
+                "{grid}\nvalidate_directly_consistent: {:#?}",
+                grid.validate_directly_consistent()
+            );
+        }
+        assert!(world.is_directly_consistent());
+    }
+
+    fn playground() {
+        let (tile_row_count, tile_col_count) = (3, 3);
+
+        let seed = 1;
+
+        let overlap = 1;
+
+        let mut world = CellWorld::<Base2>::new((tile_row_count, tile_col_count), overlap);
+        let world_generation_result = world.generate(Some(seed));
+        dbg!(&world_generation_result);
+
+        println!("solved world:\n{world}");
+        assert!(world.is_solved());
+
+        world.prune(Some(seed));
+        println!("pruned world:\n{world}");
+
+        for grid in world.all_grids() {
+            println!("{grid}\n",);
+        }
+        assert!(world.is_directly_consistent());
+    }
+
+    // gen_worlds_stats::<Base2>();
+    // gen_worlds_stats::<Base3>();
+
+    playground();
 
     Ok(())
 }

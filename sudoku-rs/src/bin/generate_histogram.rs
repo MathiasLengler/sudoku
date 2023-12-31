@@ -59,7 +59,7 @@ use rayon::prelude::*;
 
 use sudoku::base::consts::*;
 use sudoku::error::Result;
-use sudoku::generator::{Generator, GeneratorSettings, GeneratorTarget};
+use sudoku::generator::{Generator, GeneratorSettings, PruningSettings, PruningTarget};
 use sudoku::solver::strategic::strategies::{HiddenSingles, NakedSingles};
 
 type Base = Base2;
@@ -77,16 +77,17 @@ fn main() -> Result<()> {
     )?);
 
     let generator = Generator::<Base>::with_settings(GeneratorSettings {
-        target: GeneratorTarget::Minimal {
+        prune: Some(PruningSettings {
             set_all_direct_candidates: false,
-        },
-        // strategies: DynamicStrategy::default_solver_strategies(),
-        strategies: vec![
-            //
-            NakedSingles.into(),
-            HiddenSingles.into(),
-            // Backtracking.into(),
-        ],
+            target: PruningTarget::Minimal,
+            strategies: vec![
+                //
+                NakedSingles.into(),
+                HiddenSingles.into(),
+                // Backtracking.into(),
+            ],
+            ..Default::default()
+        }),
         ..Default::default()
     });
     (0..MAX)

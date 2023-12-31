@@ -2,7 +2,7 @@ use anyhow::{bail, format_err};
 use itertools::Itertools;
 use log::debug;
 use rand::prelude::SliceRandom;
-use rand::{Rng, SeedableRng};
+use rand::prelude::*;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "wasm")]
 use ts_rs::TS;
@@ -15,8 +15,7 @@ use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::rng::{new_crate_rng, CrateRng};
-use crate::solver::backtracking;
-use crate::solver::backtracking::CandidatesVisitOrder;
+use crate::solver::backtracking_bitset;
 use crate::solver::strategic::strategies::{Backtracking, DynamicStrategy};
 
 // TODO: strategic
@@ -72,7 +71,7 @@ pub enum PruningOrder<Base: SudokuBase> {
         behaviour: PruningGroupBehaviour,
     },
     /// Handle the set of values defined in `settings.solution.values_grid` differently.
-    SolutionValues {
+    SolutionUnfixedValues {
         /// How to handle those cells
         /// If pruning is allowed, the visit order will be random.
         behaviour: PruningGroupBehaviour,
@@ -107,7 +106,16 @@ impl<Base: SudokuBase> Default for PruningSettings<Base> {
 #[derive(Debug, Clone)]
 pub struct SolutionSettings<Base: SudokuBase> {
     /// Every value cell in this grid will be included in the solution of the generated grid.
+    /// Fixed values will never be pruned.
     pub values_grid: Grid<Base>,
+}
+
+impl<Base: SudokuBase> Default for SolutionSettings<Base> {
+    fn default() -> Self {
+        Self {
+            values_grid: Default::default(),
+        }
+    }
 }
 
 #[derive(Debug, Default, Clone)]
@@ -147,7 +155,7 @@ mod dynamic_settings {
             positions: Vec<DynamicPosition>,
             behaviour: PruningGroupBehaviour,
         },
-        SolutionValues {
+        SolutionUnfixedValues {
             behaviour: PruningGroupBehaviour,
         },
     }
@@ -168,8 +176,8 @@ mod dynamic_settings {
                         .collect::<Result<_>>()?,
                     behaviour,
                 },
-                DynamicPruningOrder::SolutionValues { behaviour } => {
-                    Self::SolutionValues { behaviour }
+                DynamicPruningOrder::SolutionUnfixedValues { behaviour } => {
+                    Self::SolutionUnfixedValues { behaviour }
                 }
             })
         }
@@ -209,7 +217,7 @@ mod dynamic_settings {
     #[derive(Debug, Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct DynamicSolutionSettings {
-        values_grid: DynamicGrid,
+        pub values_grid: DynamicGrid,
     }
 
     impl<Base: SudokuBase> TryFrom<DynamicSolutionSettings> for SolutionSettings<Base> {
@@ -264,17 +272,6 @@ mod dynamic_settings {
     }
 }
 
-// #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
-// #[derive(Debug, Serialize, Deserialize)]
-// #[serde(rename_all = "camelCase")]
-// pub struct DynamicGeneratorSettings {
-//     pub base: u8,
-//     pub target: GeneratorTarget,
-//     pub strategies: Vec<DynamicStrategy>,
-//     #[serde(skip_serializing_if = "Option::is_none")]
-//     pub seed: Option<u64>,
-// }
-
 #[derive(Debug, Default)]
 pub struct Generator<Base: SudokuBase> {
     settings: GeneratorSettings<Base>,
@@ -309,11 +306,6 @@ impl<Base: SudokuBase> Generator<Base> {
         Self { settings }
     }
 
-    // TODO: call only once per generate and pass around
-    fn rng(&self) -> CrateRng {
-        new_crate_rng(self.settings.seed)
-    }
-
     pub fn generate(&self) -> Result<Grid<Base>> {
         self.generate_with_progress(|_| Ok(()))
     }
@@ -324,32 +316,28 @@ impl<Base: SudokuBase> Generator<Base> {
     ) -> Result<Grid<Base>> {
         debug!("generate: {self:?}");
 
-        let solved_grid = self.solved_grid()?;
+        let mut rng = new_crate_rng(self.settings.seed);
+
+        let solved_grid = self.solved_grid(&mut rng)?;
 
         let Some(prune_settings) = &self.settings.prune else {
             return Ok(solved_grid);
         };
 
-        self.prune(solved_grid, prune_settings, on_progress)
+        self.prune(solved_grid, prune_settings, on_progress, &mut rng)
     }
 
-    fn solved_grid(&self) -> Result<Grid<Base>> {
-        let mut grid = if let Some(solution_settings) = &self.settings.solution {
+    fn solved_grid(&self, rng: &mut CrateRng) -> Result<Grid<Base>> {
+        let grid = if let Some(solution_settings) = &self.settings.solution {
             solution_settings.values_grid.clone()
         } else {
             Grid::<Base>::new()
         };
 
-        let mut solver = backtracking::Solver::new_with_settings(
-            &mut grid,
-            backtracking::Settings {
-                candidates_visit_order: if let Some(seed) = self.settings.seed {
-                    CandidatesVisitOrder::RandomSeed(seed)
-                } else {
-                    CandidatesVisitOrder::Random
-                },
-                ..Default::default()
-            },
+        let mut solver = backtracking_bitset::Solver::new_with_optional_denylist_and_rng(
+            &grid,
+            None,
+            rng.clone(),
         );
 
         solver.next().ok_or_else(|| {
@@ -366,29 +354,35 @@ impl<Base: SudokuBase> Generator<Base> {
         solved_grid: Grid<Base>,
         prune_settings: &PruningSettings<Base>,
         on_progress: impl FnMut(GeneratorProgress) -> Result<()>,
+        rng: &mut CrateRng,
     ) -> Result<Grid<Base>> {
         let mut pruned_grid = match prune_settings.target {
             PruningTarget::Minimal => {
-                self.prune_from_minimal(solved_grid, 0, prune_settings, on_progress)?
+                self.prune_from_minimal(solved_grid, 0, prune_settings, on_progress, rng)?
             }
             PruningTarget::MinimalPlusClueCunt(clue_count) => {
-                self.prune_from_minimal(solved_grid, clue_count, prune_settings, on_progress)?
+                self.prune_from_minimal(solved_grid, clue_count, prune_settings, on_progress, rng)?
             }
-            PruningTarget::MaxEmptyCellCount(empty_cell_count) => {
-                self.prune_from_filled(solved_grid, empty_cell_count, prune_settings, on_progress)?
-            }
+            PruningTarget::MaxEmptyCellCount(empty_cell_count) => self.prune_from_filled(
+                solved_grid,
+                empty_cell_count,
+                prune_settings,
+                on_progress,
+                rng,
+            )?,
             PruningTarget::MinClueCount(clue_count) => self.prune_from_filled(
                 solved_grid,
                 Base::CELL_COUNT - clue_count,
                 prune_settings,
                 on_progress,
+                rng,
             )?,
         };
 
         pruned_grid.fix_all_values();
 
         if prune_settings.set_all_direct_candidates {
-            pruned_grid.set_all_direct_candidates();
+            pruned_grid.set_all_direct_candidates()
         }
 
         Ok(pruned_grid)
@@ -435,26 +429,38 @@ impl<Base: SudokuBase> Generator<Base> {
     fn pruning_positions(
         &self,
         prune_settings: &PruningSettings<Base>,
+        rng: &mut CrateRng,
     ) -> Result<Vec<Position<Base>>> {
+        // TODO: abstract PruningGroupBehaviour processing
+        //  param: first last
+        //  ret: shuffled list of positions
+
         Ok(match &prune_settings.order {
             PruningOrder::Random => {
-                let mut rng = self.rng();
-                Self::shuffle_vec(&mut rng, Grid::<Base>::all_positions().collect_vec())
+                let prunable_positions = if let Some(SolutionSettings { values_grid, .. }) =
+                    &self.settings.solution
+                {
+                    let mut all_unfixed_value_positions = values_grid.all_unfixed_value_positions();
+                    all_unfixed_value_positions.extend(values_grid.all_candidates_positions());
+                    all_unfixed_value_positions
+                } else {
+                    Grid::<Base>::all_positions().collect_vec()
+                };
+
+                Self::shuffle_vec(rng, prunable_positions)
             }
             PruningOrder::Positions {
                 positions,
                 behaviour,
             } => {
                 let other_positions = {
-                    let mut rng = self.rng();
-
                     let sorted_positions = {
                         let mut positions = positions.clone();
                         positions.sort_unstable();
                         positions
                     };
                     Self::shuffle_vec(
-                        &mut rng,
+                        rng,
                         Grid::<Base>::all_positions()
                             // Remove positions contained in sorted_positions
                             .filter(|pos| sorted_positions.binary_search(pos).is_err())
@@ -477,36 +483,35 @@ impl<Base: SudokuBase> Generator<Base> {
                     }
                 }
             }
-            PruningOrder::SolutionValues { behaviour } => {
-                let Some(SolutionSettings { values_grid }) = &self.settings.solution else {
+            PruningOrder::SolutionUnfixedValues { behaviour } => {
+                let Some(SolutionSettings { values_grid, .. }) = &self.settings.solution else {
                     bail!(
-                        "'PruningOrder::SolutionValues' requires 'settings.solution.values_grid' to be defined"
+                        "'PruningOrder::SolutionUnfixedValues' requires 'settings.solution.values_grid' to be defined"
                     )
                 };
 
-                let mut rng = self.rng();
                 match behaviour {
                     PruningGroupBehaviour::Retain => {
-                        Self::shuffle_vec(&mut rng, values_grid.all_candidates_positions())
+                        Self::shuffle_vec(rng, values_grid.all_candidates_positions())
                     }
                     PruningGroupBehaviour::Exclusive => {
-                        Self::shuffle_vec(&mut rng, values_grid.all_value_positions())
+                        Self::shuffle_vec(rng, values_grid.all_unfixed_value_positions())
                     }
                     PruningGroupBehaviour::First => {
                         let mut pruning_positions =
-                            Self::shuffle_vec(&mut rng, values_grid.all_value_positions());
+                            Self::shuffle_vec(rng, values_grid.all_unfixed_value_positions());
                         pruning_positions.extend(Self::shuffle_vec(
-                            &mut rng,
+                            rng,
                             values_grid.all_candidates_positions(),
                         ));
                         pruning_positions
                     }
                     PruningGroupBehaviour::Last => {
                         let mut pruning_positions =
-                            Self::shuffle_vec(&mut rng, values_grid.all_candidates_positions());
+                            Self::shuffle_vec(rng, values_grid.all_candidates_positions());
                         pruning_positions.extend(Self::shuffle_vec(
-                            &mut rng,
-                            values_grid.all_value_positions(),
+                            rng,
+                            values_grid.all_unfixed_value_positions(),
                         ));
                         pruning_positions
                     }
@@ -521,6 +526,7 @@ impl<Base: SudokuBase> Generator<Base> {
         distance_from_filled: u16,
         prune_settings: &PruningSettings<Base>,
         mut on_progress: impl FnMut(GeneratorProgress) -> Result<()>,
+        rng: &mut CrateRng,
     ) -> Result<Grid<Base>> {
         debug_assert!(grid.is_solved());
 
@@ -528,7 +534,7 @@ impl<Base: SudokuBase> Generator<Base> {
             return Ok(grid);
         }
 
-        let pruning_positions: Vec<_> = self.pruning_positions(prune_settings)?;
+        let pruning_positions: Vec<_> = self.pruning_positions(prune_settings, rng)?;
         let pruning_position_count = pruning_positions.len();
 
         let mut deleted_count = 0;
@@ -570,6 +576,7 @@ impl<Base: SudokuBase> Generator<Base> {
         distance_from_minimal: u16,
         prune_settings: &PruningSettings<Base>,
         mut on_progress: impl FnMut(GeneratorProgress) -> Result<()>,
+        rng: &mut CrateRng,
     ) -> Result<Grid<Base>> {
         debug_assert!(grid.is_solved());
 
@@ -578,7 +585,7 @@ impl<Base: SudokuBase> Generator<Base> {
             return Ok(grid);
         }
 
-        let pruning_positions: Vec<_> = self.pruning_positions(prune_settings)?;
+        let pruning_positions: Vec<_> = self.pruning_positions(prune_settings, rng)?;
         let pruning_position_count = pruning_positions.len();
 
         let mut deleted: Vec<(Position<Base>, Value<Base>)> = vec![];
@@ -770,10 +777,12 @@ mod tests {
     }
 
     mod solution {
+        use crate::samples;
+
         use super::*;
 
         #[test]
-        fn test_values_grid_solved() {
+        fn test_partial_values_grid_no_prune() {
             let values_grid: Grid<Base2> = "
   4  3  │  0  0  
   2  1  │  0  0  
@@ -786,6 +795,7 @@ mod tests {
             let grid = Generator::<Base2>::with_settings(GeneratorSettings {
                 solution: Some(SolutionSettings {
                     values_grid: values_grid.clone(),
+                    ..Default::default()
                 }),
                 ..Default::default()
             })
@@ -802,7 +812,7 @@ mod tests {
         }
 
         #[test]
-        fn test_values_grid_minimal() {
+        fn test_partial_values_grid_prune_minimal_retain_solution_values() {
             let values_grid: Grid<Base2> = "
   4  3  │  0  0  
   2  1  │  0  0  
@@ -815,10 +825,11 @@ mod tests {
             let grid = Generator::<Base2>::with_settings(GeneratorSettings {
                 solution: Some(SolutionSettings {
                     values_grid: values_grid.clone(),
+                    ..Default::default()
                 }),
                 prune: Some(PruningSettings {
                     target: PruningTarget::Minimal,
-                    order: PruningOrder::SolutionValues {
+                    order: PruningOrder::SolutionUnfixedValues {
                         behaviour: PruningGroupBehaviour::Retain,
                     },
                     ..Default::default()
@@ -848,6 +859,47 @@ mod tests {
                 grid.get_mut(non_top_left_block_pos).delete();
                 assert!(!grid.has_unique_solution());
             }
+        }
+
+        #[test]
+        fn test_solved_values_grid_no_prune() {
+            let values_grid = samples::base_2_solved();
+
+            let grid = Generator::<Base2>::with_settings(GeneratorSettings {
+                solution: Some(SolutionSettings {
+                    values_grid: values_grid.clone(),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            })
+            .generate()
+            .unwrap();
+
+            // No-op
+            assert_eq!(values_grid, grid);
+        }
+
+        #[test]
+        fn test_solved_values_grid_prune_minimal() {
+            let mut values_grid = samples::base_2_solved();
+            values_grid.fix_all_values();
+
+            let grid = Generator::<Base2>::with_settings(GeneratorSettings {
+                solution: Some(SolutionSettings {
+                    values_grid: values_grid.clone(),
+                    ..Default::default()
+                }),
+                prune: Some(PruningSettings {
+                    target: PruningTarget::Minimal,
+                    order: PruningOrder::Random,
+                    ..Default::default()
+                }),
+                ..Default::default()
+            })
+            .generate()
+            .unwrap();
+
+            assert!(grid.is_minimal());
         }
     }
 }

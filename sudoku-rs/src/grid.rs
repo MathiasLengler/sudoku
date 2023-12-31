@@ -139,15 +139,30 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 }
 
-/// Direct Candidates
+/// Direct candidates
+///
+/// All candidates of a position which can't be removed by a group-adjacent value.
 impl<Base: SudokuBase> Grid<Base> {
+    /// Replace all candidates cells with the direct candidates for its position.
     pub fn set_all_direct_candidates(&mut self) {
         self.all_candidates_positions().into_iter().for_each(|pos| {
-            let candidates = self.direct_candidates(pos);
+            let direct_candidates = self.direct_candidates(pos);
 
-            self.get_mut(pos).set_candidates(candidates);
+            self.get_mut(pos).set_candidates(direct_candidates);
         });
     }
+
+    /// Update all candidates cells by removing group-adjacent values from the existing candidates.
+    pub fn update_all_direct_candidates(&mut self) {
+        self.all_candidates_positions().into_iter().for_each(|pos| {
+            let existing_candidates = self.get(pos).candidates().unwrap();
+            let direct_candidates = self.direct_candidates(pos);
+
+            self.get_mut(pos)
+                .set_candidates(existing_candidates.intersection(direct_candidates));
+        });
+    }
+
     pub fn set_all_direct_candidates_if_all_candidates_are_empty(&mut self) {
         let all_candidates_are_empty = self
             .all_candidates_positions()
@@ -158,7 +173,12 @@ impl<Base: SudokuBase> Grid<Base> {
             self.set_all_direct_candidates();
         }
     }
-    pub fn update_direct_candidates(&mut self, pos: Position<Base>, value: Value<Base>) {
+
+    pub fn update_direct_candidates_for_new_value(
+        &mut self,
+        pos: Position<Base>,
+        value: Value<Base>,
+    ) {
         Self::neighbor_positions_with_duplicates(pos).for_each(|pos| {
             let cell = self.get_mut(pos);
             if cell.has_candidates() {
@@ -203,6 +223,33 @@ impl<Base: SudokuBase> Grid<Base> {
             self
                 .all_group_cells()
                 .all(|group| Self::is_group_directly_consistent(group))
+    }
+
+    pub fn validate_directly_consistent(&self) -> Result<()> {
+        // Every candidate is directly consistent at its position
+        for candidates_pos in self.all_candidates_positions() {
+            ensure!(
+                self.is_directly_consistent_at(candidates_pos),
+                "Inconsistent candidates position {candidates_pos}"
+            );
+        }
+
+        // Every group is directly consistent
+        for (group_i, group) in (0..).zip(self.all_group_cells()) {
+            ensure!(
+                Self::is_group_directly_consistent(group),
+                "Inconsistent group {} {}",
+                match group_i / Base::SIDE_LENGTH {
+                    0 => "row",
+                    1 => "column",
+                    2 => "block",
+                    _ => "??",
+                },
+                group_i % Base::SIDE_LENGTH
+            );
+        }
+
+        Ok(())
     }
 
     /// A group is directly consistent, if it:
@@ -606,6 +653,12 @@ impl<Base: SudokuBase> Grid<Base> {
             .collect()
     }
 
+    pub fn all_fixed_value_positions(&self) -> Vec<Position<Base>> {
+        Self::all_positions()
+            .filter(|pos| self.get(*pos).has_fixed_value())
+            .collect()
+    }
+
     pub fn all_candidates_positions(&self) -> Vec<Position<Base>> {
         Self::all_positions()
             .filter(|pos| self.get(*pos).has_candidates())
@@ -749,7 +802,7 @@ mod tests {
             {
                 let mut grid = grid.clone();
                 let pos = (3, 0).try_into().unwrap();
-                grid.update_direct_candidates(pos, 1.try_into()?);
+                grid.update_direct_candidates_for_new_value(pos, 1.try_into()?);
                 grid
             },
             { grid.clone() }
@@ -759,7 +812,7 @@ mod tests {
             {
                 let mut grid = grid.clone();
                 let pos = (3, 0).try_into().unwrap();
-                grid.update_direct_candidates(pos, 2.try_into()?);
+                grid.update_direct_candidates_for_new_value(pos, 2.try_into()?);
                 grid
             },
             {
@@ -772,7 +825,7 @@ mod tests {
             {
                 let mut grid = grid.clone();
                 let pos = (3, 0).try_into().unwrap();
-                grid.update_direct_candidates(pos, 4.try_into()?);
+                grid.update_direct_candidates_for_new_value(pos, 4.try_into()?);
                 grid
             },
             {

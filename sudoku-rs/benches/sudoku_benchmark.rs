@@ -254,7 +254,7 @@ fn bench_grid_group<Base: SudokuBase>(grid_group: &mut BenchmarkGroup<WallTime>)
         |b, grid| b.iter(|| grid.direct_candidates(black_box(pos))),
     );
     grid_group.bench_with_input(
-        BenchmarkId::new("update_direct_candidates", &parameter_string),
+        BenchmarkId::new("update_direct_candidates_for_new_value", &parameter_string),
         &grid,
         |b, grid| {
             let mut grid = grid.clone();
@@ -265,7 +265,7 @@ fn bench_grid_group<Base: SudokuBase>(grid_group: &mut BenchmarkGroup<WallTime>)
                 || (grid.clone(), Value::try_from(2).unwrap()),
                 |(mut grid, value)| {
                     grid.get_mut(pos).set_or_toggle_value(value);
-                    grid.update_direct_candidates(pos, value);
+                    grid.update_direct_candidates_for_new_value(pos, value);
                 },
                 BatchSize::SmallInput,
             )

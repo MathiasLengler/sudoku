@@ -111,7 +111,7 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
             cell.set_value(value);
 
             if self.settings.update_candidates {
-                self.grid.update_direct_candidates(pos, value);
+                self.grid.update_direct_candidates_for_new_value(pos, value);
             }
         } else {
             cell.delete();
@@ -132,7 +132,7 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
             let set_value = cell.set_or_toggle_value(value);
 
             if self.settings.update_candidates && set_value {
-                self.grid.update_direct_candidates(pos, value);
+                self.grid.update_direct_candidates_for_new_value(pos, value);
             }
         } else {
             cell.delete();
