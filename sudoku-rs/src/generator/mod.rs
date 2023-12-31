@@ -397,8 +397,6 @@ impl<Base: SudokuBase> Generator<Base> {
         pos: Position<Base>,
         prune_settings: &PruningSettings<Base>,
     ) -> Option<Value<Base>> {
-        // TODO: optimize with mem::swap
-        //  delete_and_get_value
         let cell = grid.get(pos);
 
         let Some(deleted_value) = cell.value() else {
@@ -406,16 +404,6 @@ impl<Base: SudokuBase> Generator<Base> {
         };
 
         grid.get_mut(pos).delete();
-
-        // FIXME: optimize
-        // Multiple solvers:
-        //   is_solvable_with_strategies => strategic::Solver
-        //   has_unique_solution => backtracking_bitset::Solver
-        //
-        // `grid.has_unique_solution` could skip the solution before deletion using `backtracking_bitset`'s `availability_filter`
-        // The unique solution does not change while pruning, so we can skip it.
-        // => does not work, since a other non-unique solution could only vary by a few values.
-        // They can and will probably share the majority of the values.
 
         let can_be_deleted: bool = (
             // Either default strategies
