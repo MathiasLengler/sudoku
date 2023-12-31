@@ -42,7 +42,7 @@ impl<Base: SudokuBase> Iterator for CandidatesAscIter<Base> {
     fn next(&mut self) -> Option<Self::Item> {
         let candidate = self.peek();
         if let Some(candidate) = candidate {
-            self.candidates.toggle(candidate)
+            self.candidates.toggle(candidate);
         }
         candidate
     }

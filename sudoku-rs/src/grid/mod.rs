@@ -134,6 +134,7 @@ impl<Base: SudokuBase> Grid<Base> {
         self.cells.view()
     }
 
+    #[allow(dead_code)]
     pub(crate) fn cells_mut(&mut self) -> ArrayViewMut2<Cell<Base>> {
         self.cells.view_mut()
     }
