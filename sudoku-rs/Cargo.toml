@@ -59,17 +59,20 @@ name = "sudoku_benchmark"
 harness = false
 
 [[bin]]
+name = "cell_world_find_tile_backtrack"
+required-features = ["parallel"]
+[[bin]]
+name = "cell_world_gen_stats"
+required-features = ["parallel"]
+[[bin]]
+name = "cell_world_playground"
+required-features = ["parallel"]
+[[bin]]
 name = "generate_histogram"
 required-features = ["parallel", "terminal", "histogram"]
-
 [[bin]]
 name = "generate_tiled_corners"
 required-features = ["histogram"]
-
-[[bin]]
-name = "generate_tiled_map"
-required-features = ["parallel"]
-
 [[bin]]
 name = "solver_animation"
 required-features = ["solver_debug_print"]

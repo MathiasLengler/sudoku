@@ -1,31 +1,30 @@
-#![allow(unused_imports)]
-
 use std::fmt::{Display, Formatter};
 
-use indicatif::ParallelProgressIterator;
-use itertools::{iproduct, Itertools};
+use itertools::Itertools;
 use ndarray::{s, Array2, ArrayViewMut2, Axis, Dim, SliceInfo, SliceInfoElem};
 use rand::prelude::*;
-use rayon::prelude::*;
 use tabled::builder::Builder;
 use tabled::settings::{Padding, Style};
 
-use sudoku::base::consts::*;
-use sudoku::base::SudokuBase;
-use sudoku::cell::{Candidates, Cell};
-use sudoku::error::Result;
-use sudoku::generator::{
+use overlap_segment_filter::*;
+
+use crate::base::SudokuBase;
+use crate::cell::{Candidates, Cell};
+use crate::generator::{
     Generator, GeneratorSettings, PruningOrder, PruningSettings, PruningTarget, SolutionSettings,
 };
-use sudoku::grid::Grid;
-use sudoku::rng::{new_crate_rng, CrateRng};
-use sudoku::solver::backtracking_bitset;
-use sudoku::solver::backtracking_bitset::AvailabilityDenyList;
+use crate::grid::Grid;
+use crate::rng::{new_crate_rng, CrateRng};
+use crate::solver::backtracking_bitset;
+use crate::solver::backtracking_bitset::AvailabilityDenyList;
 
-type TileIndex = (usize, usize);
+mod overlap_segment_filter;
 
+pub type TileIndex = (usize, usize);
+
+/// A two dimensional grid of overlapping sudoku grids.
 #[derive(Debug, Clone, Eq, PartialEq)]
-struct CellWorld<Base: SudokuBase> {
+pub struct CellWorld<Base: SudokuBase> {
     tile_dim: TileIndex,
     cells: Array2<Cell<Base>>,
     overlap: u8,
@@ -54,11 +53,12 @@ impl<Base: SudokuBase> Display for CellWorld<Base> {
 }
 
 #[derive(Debug)]
-struct WorldGenerationResult {
-    success: bool,
-    backtrack_count: u32,
+pub struct WorldGenerationResult {
+    pub success: bool,
+    pub backtrack_count: u32,
 }
 
+/// Constructors
 impl<Base: SudokuBase> CellWorld<Base> {
     pub fn new((tile_row_count, tile_col_count): TileIndex, overlap: u8) -> Self {
         // Various indexing patterns break down for larger overlaps.
@@ -73,7 +73,10 @@ impl<Base: SudokuBase> CellWorld<Base> {
             overlap,
         }
     }
+}
 
+///
+impl<Base: SudokuBase> CellWorld<Base> {
     fn all_tile_indexes(&self) -> impl Iterator<Item = TileIndex> {
         let (tile_row_count, tile_col_count) = self.tile_dim;
 
@@ -194,6 +197,7 @@ impl<Base: SudokuBase> CellWorld<Base> {
             self.set_grid_at(&pruned_grid, tile_index);
         }
 
+        // TODO: remove, when set_grid_at updates adjacent grid candidates.
         for tile_index in self.all_tile_indexes() {
             let mut grid = self.to_grid_at(tile_index);
             grid.update_all_direct_candidates();
@@ -201,7 +205,7 @@ impl<Base: SudokuBase> CellWorld<Base> {
         }
     }
 
-    fn all_grids(&self) -> impl Iterator<Item = Grid<Base>> + '_ {
+    pub fn all_grids(&self) -> impl Iterator<Item = Grid<Base>> + '_ {
         self.all_tile_indexes()
             .map(move |tile_index| self.to_grid_at(tile_index))
     }
@@ -352,39 +356,24 @@ impl<Base: SudokuBase> CellWorld<Base> {
     }
 }
 
-#[derive(Copy, Clone, Debug, Default)]
-struct OverlapSegmentFilter {
-    top_left: bool,
-    top: bool,
-    top_right: bool,
-    left: bool,
-    middle: bool,
-    right: bool,
-    bottom_left: bool,
-    bottom: bool,
-    bottom_right: bool,
-}
-
-impl OverlapSegmentFilter {
-    fn contains_index(&self, index: u8) -> bool {
-        match index {
-            0 => self.top_left,
-            1 => self.top,
-            2 => self.top_right,
-            3 => self.left,
-            4 => self.middle,
-            5 => self.right,
-            6 => self.bottom_left,
-            7 => self.bottom,
-            8 => self.bottom_right,
-            _ => false,
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
+    use crate::base::consts::*;
+
     use super::*;
+
+    #[test]
+    fn test_prune_is_directly_consistent() {
+        let (tile_row_count, tile_col_count) = (3, 3);
+        let seed = 1;
+        let overlap = 1;
+
+        let mut world = CellWorld::<Base2>::new((tile_row_count, tile_col_count), overlap);
+        world.generate(Some(seed));
+        assert!(world.is_solved());
+        world.prune(Some(seed));
+        assert!(world.is_directly_consistent());
+    }
 
     #[test]
     fn test_delete_grid_overlap_segments() {
@@ -480,152 +469,4 @@ mod tests {
             );
         }
     }
-}
-
-fn main() -> Result<()> {
-    fn gen_world<Base: SudokuBase>(
-        overlap: u8,
-        tile_dim: TileIndex,
-        seed: u64,
-    ) -> WorldGenerationResult {
-        let mut world = CellWorld::<Base>::new(tile_dim, overlap);
-        world.generate(Some(seed))
-    }
-
-    fn gen_worlds_stats<Base: SudokuBase>() {
-        for (overlap, tile_dim) in iproduct!(
-            1..=Base::BASE,
-            vec![
-                (2, 2),
-                (3, 3),
-                (4, 4),
-                (5, 5),
-                (10, 10),
-                (50, 50),
-                (100, 100)
-            ]
-        ) {
-            let tile_count = u64::try_from(tile_dim.0 * tile_dim.1).unwrap();
-            let target_tile_count = 1_000_000;
-
-            let total_seeds = target_tile_count / tile_count;
-            let total_seeds_f64 = total_seeds as f64;
-
-            let world_generation_results: Vec<_> = (0..total_seeds)
-                .into_par_iter()
-                .map(|seed| gen_world::<Base>(overlap, tile_dim, seed))
-                .collect();
-
-            let total_success_count: u32 = world_generation_results
-                .iter()
-                .flat_map(|res| res.success.then_some(1))
-                .sum();
-
-            let backtrack_counts = world_generation_results
-                .iter()
-                .map(|res| res.backtrack_count);
-            let total_backtrack_count: u32 = backtrack_counts.clone().sum();
-            let min_backtrack_count: u32 = backtrack_counts.clone().min().unwrap();
-            let max_backtrack_count: u32 = backtrack_counts.max().unwrap();
-
-            println!(
-                "base {}, overlap {overlap}, tile_dim {tile_dim:?}:",
-                Base::BASE
-            );
-            println!(
-                "total_success_count {total_success_count} {:.2}%",
-                (f64::from(total_success_count) / total_seeds_f64) * 100.
-            );
-            println!(
-                "total_backtrack_count {total_backtrack_count} avg {:.2} min {min_backtrack_count} max {max_backtrack_count}",
-                (f64::from(total_backtrack_count) / total_seeds_f64)
-            );
-
-            println!()
-        }
-    }
-
-    fn find_tile_backtrack() {
-        let (tile_row_count, tile_col_count) = (100, 100);
-
-        let overlap = 3;
-
-        let world = (0..1_000_000u32)
-            .into_par_iter()
-            .progress()
-            .filter_map(|seed| {
-                let mut world = CellWorld::<Base3>::new((tile_row_count, tile_col_count), overlap);
-                let world_generation_result = world.generate(Some(seed.into()));
-                if world_generation_result.backtrack_count > 0 {
-                    dbg!(&world_generation_result);
-                    Some(world)
-                } else {
-                    None
-                }
-            })
-            .find_any(|_| true)
-            .unwrap();
-
-        println!("solved world:\n{world}");
-        assert!(world.is_solved());
-
-        // world.prune(Some(seed));
-        // println!("pruned world:\n{world}");
-    }
-
-    fn prune_directly_consistent() {
-        let (tile_row_count, tile_col_count) = (3, 3);
-
-        let seed = 1;
-
-        let overlap = 1;
-
-        let mut world = CellWorld::<Base2>::new((tile_row_count, tile_col_count), overlap);
-        let world_generation_result = world.generate(Some(seed));
-        dbg!(&world_generation_result);
-
-        println!("solved world:\n{world}");
-        assert!(world.is_solved());
-
-        world.prune(Some(seed));
-        println!("pruned world:\n{world}");
-
-        for grid in world.all_grids() {
-            println!(
-                "{grid}\nvalidate_directly_consistent: {:#?}",
-                grid.validate_directly_consistent()
-            );
-        }
-        assert!(world.is_directly_consistent());
-    }
-
-    fn playground() {
-        let (tile_row_count, tile_col_count) = (3, 3);
-
-        let seed = 1;
-
-        let overlap = 1;
-
-        let mut world = CellWorld::<Base2>::new((tile_row_count, tile_col_count), overlap);
-        let world_generation_result = world.generate(Some(seed));
-        dbg!(&world_generation_result);
-
-        println!("solved world:\n{world}");
-        assert!(world.is_solved());
-
-        world.prune(Some(seed));
-        println!("pruned world:\n{world}");
-
-        for grid in world.all_grids() {
-            println!("{grid}\n",);
-        }
-        assert!(world.is_directly_consistent());
-    }
-
-    // gen_worlds_stats::<Base2>();
-    // gen_worlds_stats::<Base3>();
-
-    playground();
-
-    Ok(())
 }
