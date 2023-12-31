@@ -2,9 +2,4 @@
 import type { DynamicPruningSettings } from "./DynamicPruningSettings";
 import type { DynamicSolutionSettings } from "./DynamicSolutionSettings";
 
-export interface DynamicGeneratorSettings {
-  base: number;
-  prune?: DynamicPruningSettings;
-  solution?: DynamicSolutionSettings;
-  seed?: bigint;
-}
+export interface DynamicGeneratorSettings { base: number, prune?: DynamicPruningSettings, solution?: DynamicSolutionSettings, seed?: bigint, }
