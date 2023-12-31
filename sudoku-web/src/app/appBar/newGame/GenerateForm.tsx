@@ -46,8 +46,8 @@ function GenerateProgress({ progress, cellCount }: GenerateProgressProps) {
         return null;
     }
 
-    const { positionsCount, positionIndex, deletedCount } = progress;
-    const value = (positionIndex / positionsCount) * 100;
+    const { pruningPositionCount, pruningPositionIndex, deletedCount } = progress;
+    const value = (pruningPositionIndex / pruningPositionCount) * 100;
 
     return (
         <Box sx={{ display: "flex", alignItems: "center", pt: 2, flexDirection: "column" }}>
@@ -58,7 +58,7 @@ function GenerateProgress({ progress, cellCount }: GenerateProgressProps) {
                 <Typography
                     variant="body2"
                     color="text.secondary"
-                >{`Cell ${positionIndex}/${positionsCount} - deleted ${deletedCount}, remaining ${
+                >{`Cell ${pruningPositionIndex}/${pruningPositionCount} - deleted ${deletedCount}, remaining ${
                     cellCount - deletedCount
                 }`}</Typography>
             </Box>
@@ -93,7 +93,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
         }
     }, [cellCount, minGivens, setValue]);
 
-    const [progress, setProgress] = useState<GeneratorProgress>();
+    const [progress, setProgress] = useState<GeneratorProgress | undefined>();
 
     const [generateAbortController, setGenerateAbortController] = useState(() => new AbortController());
 
@@ -128,14 +128,16 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                             try {
                                 await generate({
                                     base,
-                                    target: {
-                                        fromFilled: {
-                                            distanceFromFilled: cellCount - minGivens,
-                                            setAllDirectCandidates,
+                                    prune: {
+                                        target: {
+                                            minClueCount: minGivens,
                                         },
+                                        strategies,
+                                        setAllDirectCandidates,
+                                        order: "random",
                                     },
+                                    solution: undefined,
                                     seed: useSeed && !_.isUndefined(seed) ? BigInt(seed) : undefined,
-                                    strategies,
                                 });
                             } catch (err) {
                                 if (!(err instanceof DOMException && err.name === "AbortError")) {

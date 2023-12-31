@@ -238,7 +238,9 @@ mod dynamic_settings {
     #[serde(rename_all = "camelCase")]
     pub struct DynamicGeneratorSettings {
         pub base: u8,
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub prune: Option<DynamicPruningSettings>,
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub solution: Option<DynamicSolutionSettings>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub seed: Option<u64>,
