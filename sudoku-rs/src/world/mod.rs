@@ -22,6 +22,8 @@ mod overlap_segment_filter;
 
 pub type TileIndex = (usize, usize);
 
+// TODO: debug/poc UI
+
 /// A two dimensional grid of overlapping sudoku grids.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct CellWorld<Base: SudokuBase> {
