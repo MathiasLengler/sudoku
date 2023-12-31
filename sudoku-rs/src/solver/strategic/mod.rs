@@ -16,6 +16,8 @@ pub mod strategies;
 #[derive(Debug)]
 pub struct Solver<'g, Base: SudokuBase> {
     grid: &'g mut Grid<Base>,
+    // TODO: generic: AsRef: IntoIterator<DynamicStrategy>
+    //  `Generator::try_delete_cell_at_pos` would not need to clone its strategies
     strategies: Vec<DynamicStrategy>,
 }
 
