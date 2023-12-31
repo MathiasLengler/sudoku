@@ -1,5 +1,3 @@
-use std::fmt::Display;
-
 use indicatif::ParallelProgressIterator;
 use rayon::prelude::*;
 

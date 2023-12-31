@@ -1,6 +1,3 @@
-use std::fmt::Display;
-
-use sudoku::base::consts::Base2;
 use sudoku::base::consts::*;
 use sudoku::error::Result;
 use sudoku::world::CellWorld;
