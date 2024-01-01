@@ -27,9 +27,15 @@ impl From<SudokuError> for SudokuWasmError {
     }
 }
 
+impl From<JsValue> for SudokuWasmError {
+    fn from(err: JsValue) -> Self {
+        Self::JsValue(err)
+    }
+}
+
 impl From<serde_wasm_bindgen::Error> for SudokuWasmError {
     fn from(err: serde_wasm_bindgen::Error) -> Self {
-        err.into()
+        JsValue::from(err).into()
     }
 }
 

@@ -8,6 +8,7 @@ import type {
     DynamicPosition,
     DynamicStrategies,
     GeneratorProgress,
+    RelativeTileDir,
     TransportDeductions,
 } from "../../types";
 import type { CellAction } from "../state/input";
@@ -399,6 +400,18 @@ export function useApplyDeductions() {
             async (deductions: TransportDeductions) => {
                 const wasmSudokuProxy = await getWasmSudokuProxy(snapshot);
                 await wasmSudokuProxy.applyDeductions(deductions);
+                await updateSudoku({ set, wasmSudokuProxy });
+            },
+        []
+    );
+}
+
+export function useChangeTile() {
+    return useRecoilCallback(
+        ({ snapshot, set }) =>
+            async (dir: RelativeTileDir) => {
+                const wasmSudokuProxy = await getWasmSudokuProxy(snapshot);
+                await wasmSudokuProxy.changeTile(dir);
                 await updateSudoku({ set, wasmSudokuProxy });
             },
         []

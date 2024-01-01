@@ -55,5 +55,6 @@ extern "C" {
     pub type ITransportDeductions;
     #[wasm_bindgen(typescript_type = "bindings.DynamicTryStrategiesReturn")]
     pub type IDynamicTryStrategiesReturn;
-
+    #[wasm_bindgen(typescript_type = "bindings.RelativeTileDir")]
+    pub type IRelativeTileDir;
 }

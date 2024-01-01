@@ -4,7 +4,7 @@ use rayon::prelude::*;
 use sudoku::base::consts::*;
 use sudoku::base::SudokuBase;
 use sudoku::error::Result;
-use sudoku::world::CellWorld;
+use sudoku::world::{CellWorld, TileDim};
 
 fn main() -> Result<()> {
     fn gen_worlds_stats<Base: SudokuBase>() {
@@ -19,8 +19,13 @@ fn main() -> Result<()> {
                 (50, 50),
                 (100, 100)
             ]
+            .into_iter()
+            .map(|(row_count, column_count)| TileDim {
+                row_count,
+                column_count
+            })
         ) {
-            let tile_count = u64::try_from(tile_dim.0 * tile_dim.1).unwrap();
+            let tile_count = u64::try_from(tile_dim.tile_count()).unwrap();
             let target_tile_count = 1_000_000;
 
             let total_seeds = target_tile_count / tile_count;

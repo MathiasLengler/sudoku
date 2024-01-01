@@ -3,7 +3,7 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { MyMenu } from "../components/MyMenu";
 import InfoIcon from "@mui/icons-material/Info";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { useDeleteSelectedCell, useRedo, useSetAllDirectCandidates } from "../actions/sudokuActions";
+import { useChangeTile, useDeleteSelectedCell, useRedo, useSetAllDirectCandidates } from "../actions/sudokuActions";
 import { inputStickyModeState } from "../state/input";
 import RedoIcon from "@mui/icons-material/Redo";
 import { useRecoilValue } from "recoil";
@@ -16,6 +16,7 @@ export const ToolbarMenu = () => {
     const inputStickyMode = useRecoilValue(inputStickyModeState);
     const canRedo = useRecoilValue(sudokuCanRedoState);
     const redo = useRedo();
+    const changeTile = useChangeTile();
 
     return (
         <MyMenu
@@ -42,6 +43,22 @@ export const ToolbarMenu = () => {
                     label: "Fill candidates",
                     icon: <InfoIcon />,
                     onClick: async () => await setAllDirectCandidates(),
+                },
+                {
+                    label: "Tile ←",
+                    onClick: async () => await changeTile("left"),
+                },
+                {
+                    label: "Tile →",
+                    onClick: async () => await changeTile("right"),
+                },
+                {
+                    label: "Tile ↑",
+                    onClick: async () => await changeTile("top"),
+                },
+                {
+                    label: "Tile ↓",
+                    onClick: async () => await changeTile("bottom"),
                 },
             ]}
         >

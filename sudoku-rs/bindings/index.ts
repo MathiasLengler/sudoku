@@ -18,6 +18,7 @@ export type * from "./PositionedTransportAction";
 export type * from "./PositionedTransportReason";
 export type * from "./PruningGroupBehaviour";
 export type * from "./PruningTarget";
+export type * from "./RelativeTileDir";
 export type * from "./TransportAction";
 export type * from "./TransportCell";
 export type * from "./TransportDeduction";

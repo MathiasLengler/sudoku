@@ -1,4 +1,4 @@
-use anyhow::anyhow;
+use anyhow::{anyhow, Context};
 use log::trace;
 use serde_wasm_bindgen::Serializer;
 use wasm_bindgen::prelude::*;
@@ -16,8 +16,8 @@ use sudoku::position::DynamicPosition;
 use sudoku::solver::strategic::deduction::transport::TransportDeductions;
 use sudoku::solver::strategic::strategies::DynamicStrategy;
 use sudoku::transport::TransportSudoku;
+use sudoku::world::{CellWorld, TileDim, TileIndex};
 use sudoku::{DynamicSudoku, Game, Sudoku};
-use typescript::{ICandidates, IDynamicGridFormat, ITransportSudoku};
 
 use crate::typescript::*;
 
@@ -46,6 +46,10 @@ pub fn init() {
 #[wasm_bindgen]
 pub struct WasmSudoku {
     sudoku: DynamicSudoku,
+
+    // POC world
+    world: CellWorld<Base3>,
+    tile_index: TileIndex,
 }
 
 impl Default for WasmSudoku {
@@ -56,7 +60,28 @@ impl Default for WasmSudoku {
 
 impl From<DynamicSudoku> for WasmSudoku {
     fn from(sudoku: DynamicSudoku) -> Self {
-        WasmSudoku { sudoku }
+        let mut world = CellWorld::new(
+            TileDim {
+                row_count: 3,
+                column_count: 3,
+            },
+            1,
+        );
+
+        let DynamicSudoku::Base3(sudoku_base_3) = &sudoku else {
+            panic!("POC: base 3 only")
+        };
+        let tile_index = TileIndex::default();
+        world.set_grid_at(sudoku_base_3.grid(), tile_index);
+        let seed = Some(1);
+        world.generate(seed);
+        world.prune(seed);
+
+        WasmSudoku {
+            sudoku,
+            world,
+            tile_index,
+        }
     }
 }
 
@@ -178,10 +203,39 @@ impl WasmSudoku {
             .apply_deductions(import_deductions(deductions)?)?;
         Ok(())
     }
+
+    #[wasm_bindgen(js_name = changeTile)]
+    pub fn change_tile(&mut self, dir: IRelativeTileDir) -> Result<()> {
+        let dir = import_dir(dir)?;
+
+        let new_tile_index =
+            self.tile_index
+                .adjacent(dir, self.world.tile_dim())
+                .ok_or(anyhow!(
+                    "Currently at world boundary {:?}, can't move {:?}",
+                    self.tile_index,
+                    dir
+                ))?;
+
+        let DynamicSudoku::Base3(sudoku_base_3) = &self.sudoku else {
+            panic!("POC: base 3 only")
+        };
+
+        self.world
+            .set_grid_at(sudoku_base_3.grid(), self.tile_index);
+
+        self.sudoku =
+            DynamicSudoku::Base3(Sudoku::with_grid(self.world.to_grid_at(new_tile_index)));
+        self.tile_index = new_tile_index;
+
+        Ok(())
+    }
 }
 
 /// Import helpers
 mod import {
+    use sudoku::world::RelativeTileDir;
+
     use super::*;
 
     pub(crate) fn import_err(err: &JsValue) -> SudokuError {
@@ -249,6 +303,9 @@ mod import {
     }
     pub(crate) fn import_deductions(strategy: ITransportDeductions) -> Result<TransportDeductions> {
         Ok(serde_wasm_bindgen::from_value(strategy.into())?)
+    }
+    pub(crate) fn import_dir(dir: IRelativeTileDir) -> Result<RelativeTileDir> {
+        Ok(serde_wasm_bindgen::from_value(dir.into())?)
     }
 }
 

@@ -3,10 +3,13 @@ use rayon::prelude::*;
 
 use sudoku::base::consts::*;
 use sudoku::error::Result;
-use sudoku::world::CellWorld;
+use sudoku::world::{CellWorld, TileDim};
 
 fn main() -> Result<()> {
-    let (tile_row_count, tile_col_count) = (100, 100);
+    let tile_dim = TileDim {
+        row_count: 100,
+        column_count: 100,
+    };
 
     let overlap = 3;
 
@@ -14,7 +17,7 @@ fn main() -> Result<()> {
         .into_par_iter()
         .progress()
         .filter_map(|seed| {
-            let mut world = CellWorld::<Base3>::new((tile_row_count, tile_col_count), overlap);
+            let mut world = CellWorld::<Base3>::new(tile_dim, overlap);
             let world_generation_result = world.generate(Some(seed.into()));
             if world_generation_result.backtrack_count > 0 {
                 dbg!(&world_generation_result);

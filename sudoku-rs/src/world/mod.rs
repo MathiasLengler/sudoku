@@ -7,6 +7,7 @@ use tabled::builder::Builder;
 use tabled::settings::{Padding, Style};
 
 use overlap_segment_filter::*;
+pub use tile_index::*;
 
 use crate::base::SudokuBase;
 use crate::cell::{Candidates, Cell};
@@ -17,17 +18,16 @@ use crate::grid::Grid;
 use crate::rng::{new_crate_rng_from_rng, new_crate_rng_with_seed};
 use crate::solver::backtracking_bitset;
 use crate::solver::backtracking_bitset::AvailabilityDenyList;
+use crate::world::RelativeTileDir::TopRight;
 
 mod overlap_segment_filter;
 
-pub type TileIndex = (usize, usize);
-
-// TODO: debug/poc UI
+mod tile_index;
 
 /// A two dimensional grid of overlapping sudoku grids.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct CellWorld<Base: SudokuBase> {
-    tile_dim: TileIndex,
+    tile_dim: TileDim,
     cells: Array2<Cell<Base>>,
     overlap: u8,
 }
@@ -62,15 +62,15 @@ pub struct WorldGenerationResult {
 
 /// Constructors
 impl<Base: SudokuBase> CellWorld<Base> {
-    pub fn new((tile_row_count, tile_col_count): TileIndex, overlap: u8) -> Self {
+    pub fn new(tile_dim: TileDim, overlap: u8) -> Self {
         // Various indexing patterns break down for larger overlaps.
         assert!(overlap <= Base::BASE);
 
         Self {
-            tile_dim: (tile_row_count, tile_col_count),
+            tile_dim,
             cells: Array2::default((
-                Self::tile_axis_count_to_cell_axis_count(tile_row_count, overlap),
-                Self::tile_axis_count_to_cell_axis_count(tile_col_count, overlap),
+                Self::tile_axis_count_to_cell_axis_count(tile_dim.row_count, overlap),
+                Self::tile_axis_count_to_cell_axis_count(tile_dim.column_count, overlap),
             )),
             overlap,
         }
@@ -90,7 +90,7 @@ impl<Base: SudokuBase> CellWorld<Base> {
         let mut rng = new_crate_rng_with_seed(seed);
 
         solver_stack.push(
-            backtracking_bitset::Solver::builder(self.to_grid_at((0, 0)))
+            backtracking_bitset::Solver::builder(self.to_grid_at(TileIndex::default()))
                 .rng(new_crate_rng_from_rng(&mut rng))
                 .availability_filter(None)
                 .build(),
@@ -128,18 +128,18 @@ impl<Base: SudokuBase> CellWorld<Base> {
                 // Backtrack
                 backtrack_count += 1;
 
-                let (tile_row_i, tile_col_i) = tile_indexes[solver_stack.len() - 1];
+                let tile_index = tile_indexes[solver_stack.len() - 1];
 
                 println!(
                     "backtrack_count {backtrack_count}, grid:\n{}",
-                    self.to_grid_at((tile_row_i, tile_col_i))
+                    self.to_grid_at(tile_index)
                 );
 
-                let is_tile_at_left_world_edge = tile_col_i == 0;
-                let is_tile_at_top_world_edge = tile_row_i == 0;
+                let is_tile_at_left_world_edge = tile_index.is_at_left_edge();
+                let is_tile_at_top_world_edge = tile_index.is_at_top_edge();
 
                 self.delete_grid_overlap_segments(
-                    (tile_row_i, tile_col_i),
+                    tile_index,
                     OverlapSegmentFilter {
                         top_left: is_tile_at_left_world_edge && is_tile_at_top_world_edge,
                         top: is_tile_at_top_world_edge,
@@ -226,16 +226,16 @@ impl<Base: SudokuBase> CellWorld<Base> {
     }
 
     pub fn all_tile_indexes(&self) -> impl Iterator<Item = TileIndex> {
-        let (tile_row_count, tile_col_count) = self.tile_dim;
-
-        (0..tile_row_count).flat_map(move |tile_row_i| {
-            (0..tile_col_count).map(move |tile_col_i| (tile_row_i, tile_col_i))
-        })
+        self.tile_dim.all_indexes()
     }
 }
 
 /// Queries
 impl<Base: SudokuBase> CellWorld<Base> {
+    pub fn tile_dim(&self) -> TileDim {
+        self.tile_dim
+    }
+
     pub fn is_solved(&self) -> bool {
         self.all_tile_indexes()
             .all(|tile_index| self.to_grid_at(tile_index).is_solved())
@@ -251,16 +251,9 @@ impl<Base: SudokuBase> CellWorld<Base> {
 impl<Base: SudokuBase> CellWorld<Base> {
     fn direct_denylist_from_top_right_grid(
         &self,
-        (tile_row_i, tile_col_i): TileIndex,
+        tile_index: TileIndex,
     ) -> Option<AvailabilityDenyList<Base>> {
-        let top_right_tile_index = (
-            tile_row_i.checked_sub(1)?,
-            if tile_col_i + 1 != self.tile_dim.1 {
-                Some(tile_col_i + 1)
-            } else {
-                None
-            }?,
-        );
+        let top_right_tile_index = tile_index.adjacent(TopRight, self.tile_dim)?;
 
         let top_right_grid_cells = self.cells.slice(Self::grid_cells_slice_info(
             top_right_tile_index,
@@ -305,12 +298,12 @@ impl<Base: SudokuBase> CellWorld<Base> {
     }
 
     fn grid_cells_slice_info(
-        (tile_row_i, tile_col_i): TileIndex,
+        tile_index: TileIndex,
         overlap: u8,
     ) -> SliceInfo<[SliceInfoElem; 2], Dim<[usize; 2]>, Dim<[usize; 2]>> {
         let tile_stride = usize::from(Base::SIDE_LENGTH - overlap);
-        let top_left_cell_row_i = tile_row_i * tile_stride;
-        let top_left_cell_col_i = tile_col_i * tile_stride;
+        let top_left_cell_row_i = tile_index.row * tile_stride;
+        let top_left_cell_col_i = tile_index.column * tile_stride;
 
         let side_length_usize = usize::from(Base::SIDE_LENGTH);
 
@@ -376,11 +369,14 @@ mod tests {
 
     #[test]
     fn test_prune_is_directly_consistent() {
-        let (tile_row_count, tile_col_count) = (3, 3);
+        let tile_dim = TileDim {
+            row_count: 3,
+            column_count: 3,
+        };
         let seed = 1;
         let overlap = 1;
 
-        let mut world = CellWorld::<Base2>::new((tile_row_count, tile_col_count), overlap);
+        let mut world = CellWorld::<Base2>::new(tile_dim, overlap);
         world.generate(Some(seed));
         assert!(world.is_solved());
         world.prune(Some(seed));
@@ -389,7 +385,13 @@ mod tests {
 
     #[test]
     fn test_delete_grid_overlap_segments() {
-        let mut cell_world = CellWorld::<Base2>::new((3, 3), 1);
+        let mut cell_world = CellWorld::<Base2>::new(
+            TileDim {
+                row_count: 3,
+                column_count: 3,
+            },
+            1,
+        );
         cell_world
             .cells
             .fill(Cell::with_value(1.try_into().unwrap(), false));
@@ -468,7 +470,7 @@ mod tests {
 
             let mut cell_world = cell_world.clone();
 
-            let tile_index = (1, 1);
+            let tile_index = TileIndex { row: 1, column: 1 };
             cell_world.delete_grid_overlap_segments(tile_index, overlap_segment_filter);
 
             dbg!(&expected_deleted_positions);
