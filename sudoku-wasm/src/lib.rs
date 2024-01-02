@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context};
+use anyhow::anyhow;
 use log::trace;
 use serde_wasm_bindgen::Serializer;
 use wasm_bindgen::prelude::*;

@@ -189,13 +189,6 @@ impl<Base: SudokuBase> CellWorld<Base> {
 
             self.set_grid_at(&pruned_grid, tile_index);
         }
-
-        // TODO: remove when `set_grid_at` updates adjacent grid candidates.
-        for tile_index in self.all_tile_indexes() {
-            let mut grid = self.to_grid_at(tile_index);
-            grid.update_all_direct_candidates();
-            self.set_grid_at(&grid, tile_index);
-        }
     }
 }
 
@@ -209,8 +202,21 @@ impl<Base: SudokuBase> CellWorld<Base> {
         grid_cells_array_view.try_into().unwrap()
     }
 
-    // TODO: update candidates for adjacent grids
     pub fn set_grid_at(&mut self, grid: &Grid<Base>, tile_index: TileIndex) {
+        // TODO: update only newly set values
+        self.set_grid_at_no_candidates_update(grid, tile_index);
+
+        let tile_dim = self.tile_dim;
+        RelativeTileDir::all()
+            .filter_map(|dir| tile_index.adjacent(dir, tile_dim))
+            .for_each(|adj_tile_index| {
+                let mut adj_grid = self.to_grid_at(adj_tile_index);
+                adj_grid.update_all_direct_candidates();
+                self.set_grid_at_no_candidates_update(&adj_grid, adj_tile_index);
+            });
+    }
+
+    fn set_grid_at_no_candidates_update(&mut self, grid: &Grid<Base>, tile_index: TileIndex) {
         let world_grid_cells = self
             .cells
             .slice_mut(Self::grid_cells_slice_info(tile_index, self.overlap));

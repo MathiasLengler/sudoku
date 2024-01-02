@@ -113,3 +113,21 @@ pub enum RelativeTileDir {
     Bottom,
     BottomRight,
 }
+
+impl RelativeTileDir {
+    pub fn all() -> impl Iterator<Item = Self> {
+        use RelativeTileDir::*;
+
+        [
+            TopLeft,
+            Top,
+            TopRight,
+            Left,
+            Right,
+            BottomLeft,
+            Bottom,
+            BottomRight,
+        ]
+        .into_iter()
+    }
+}
