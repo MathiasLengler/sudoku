@@ -12,9 +12,11 @@ pub use tile_index::*;
 use crate::base::SudokuBase;
 use crate::cell::{Candidates, Cell};
 use crate::generator::{
-    Generator, GeneratorSettings, PruningOrder, PruningSettings, PruningTarget, SolutionSettings,
+    Generator, GeneratorSettings, PruningGroupBehaviour, PruningOrder, PruningSettings,
+    PruningTarget, SolutionSettings,
 };
 use crate::grid::Grid;
+use crate::position::Position;
 use crate::rng::{new_crate_rng_from_rng, new_crate_rng_with_seed};
 use crate::solver::backtracking_bitset;
 use crate::solver::backtracking_bitset::AvailabilityDenyList;
@@ -170,6 +172,16 @@ impl<Base: SudokuBase> CellWorld<Base> {
 
         assert!(self.is_solved());
 
+        let (middle_positions, overlap_positions): (Vec<_>, Vec<_>) = Position::<Base>::all()
+            .partition(|pos| {
+                let (row, column) = pos.to_row_and_column();
+                let (row, column) = (row.get(), column.get());
+
+                let middle_axis_range = self.overlap..(Base::SIDE_LENGTH - self.overlap);
+
+                middle_axis_range.contains(&row) && middle_axis_range.contains(&column)
+            });
+
         for tile_index in self.all_tile_indexes() {
             let grid = self.to_grid_at(tile_index);
 
@@ -177,7 +189,14 @@ impl<Base: SudokuBase> CellWorld<Base> {
                 // TODO: expose
                 prune: Some(PruningSettings {
                     set_all_direct_candidates: true,
-                    order: PruningOrder::Random,
+                    order: PruningOrder::Positions {
+                        positions: middle_positions
+                            .iter()
+                            .filter(|pos| !grid.get(**pos).has_fixed_value())
+                            .copied()
+                            .collect(),
+                        behaviour: PruningGroupBehaviour::Exclusive,
+                    },
                     target: PruningTarget::Minimal,
                     ..Default::default()
                 }),
