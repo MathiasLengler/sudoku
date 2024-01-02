@@ -13,6 +13,11 @@ pub mod strategies;
 
 // TODO: return/persist chain of deductions for complete solve
 
+// TODO: `solver.grade`
+//  add "difficulty" score for each strategy
+//  sum difficulty for each applied strategy
+// Reference: sudokuwiki "Grader"/"Solve path"
+
 #[derive(Debug)]
 pub struct Solver<'g, Base: SudokuBase> {
     grid: &'g mut Grid<Base>,

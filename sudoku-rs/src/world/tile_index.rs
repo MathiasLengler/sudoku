@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "wasm")]
 use ts_rs::TS;
 
 #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]

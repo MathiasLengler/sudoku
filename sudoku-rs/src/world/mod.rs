@@ -204,6 +204,7 @@ impl<Base: SudokuBase> CellWorld<Base> {
 
     pub fn set_grid_at(&mut self, grid: &Grid<Base>, tile_index: TileIndex) {
         // TODO: update only newly set values
+        //  `grid.update_direct_candidates_for_new_value`
         self.set_grid_at_no_candidates_update(grid, tile_index);
 
         let tile_dim = self.tile_dim;

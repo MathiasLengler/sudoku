@@ -173,6 +173,8 @@ impl WasmSudoku {
             import_dynamic_generator_settings(generator_settings)?,
             import_generate_on_progress(on_progress)?,
         )?;
+
+        *self = self.sudoku.clone().into();
         Ok(())
     }
 
