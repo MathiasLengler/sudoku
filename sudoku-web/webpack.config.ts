@@ -89,6 +89,8 @@ export default async (
                 crateDirectory: path.resolve(__dirname, "../sudoku-wasm"),
                 watchDirectories: [path.resolve(__dirname, "../sudoku-rs")],
                 outDir: path.resolve(__dirname, "../sudoku-wasm/pkg"),
+                // Wait for: https://github.com/webpack/webpack/issues/15566
+                // extraArgs: "--reference-types",
             }),
             // PWA
             ((isProduction && !reactProfiling) || debugSW) &&
