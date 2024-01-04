@@ -1,3 +1,5 @@
+use std::fmt::Write;
+
 use anyhow::bail;
 
 use crate::base::consts::*;
@@ -30,21 +32,20 @@ impl GridFormat for BinaryFixedCandidatesLine {
     fn render<Base: SudokuBase>(self, grid: &Grid<Base>) -> String {
         use radix_fmt::radix_32;
 
-        grid.all_cells()
-            .map(|cell| {
-                let candidates: Candidates<_> = cell.clone().into();
+        grid.all_cells().fold(String::new(), |mut output, cell| {
+            let candidates: Candidates<_> = cell.clone().into();
 
-                let mut bits: u32 = candidates.integral().into();
-                // Make space for fixed value bit
-                bits <<= 1;
-                if cell.has_fixed_value() {
-                    bits += 1;
-                }
-                let base32string = format!("{}", radix_32(bits));
-                let width = Base::BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS;
-                format!("{base32string:0>width$}")
-            })
-            .collect()
+            let mut bits: u32 = candidates.integral().into();
+            // Make space for fixed value bit
+            bits <<= 1;
+            if cell.has_fixed_value() {
+                bits += 1;
+            }
+            let base32string = format!("{}", radix_32(bits));
+            let width = Base::BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS;
+            let _ = write!(output, "{base32string:0>width$}");
+            output
+        })
     }
 
     fn parse(self, input: &str) -> Result<Vec<DynamicCell>> {

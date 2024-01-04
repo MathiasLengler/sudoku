@@ -115,7 +115,7 @@ pub struct SolutionSettings<Base: SudokuBase> {
 impl<Base: SudokuBase> Default for SolutionSettings<Base> {
     fn default() -> Self {
         Self {
-            values_grid: Default::default(),
+            values_grid: Grid::default(),
         }
     }
 }
@@ -384,7 +384,7 @@ impl<Base: SudokuBase> Generator<Base> {
         pruned_grid.fix_all_values();
 
         if prune_settings.set_all_direct_candidates {
-            pruned_grid.set_all_direct_candidates()
+            pruned_grid.set_all_direct_candidates();
         }
 
         Ok(pruned_grid)
@@ -394,7 +394,6 @@ impl<Base: SudokuBase> Generator<Base> {
     ///
     /// Returns the value of the deleted cell, if any.
     fn try_delete_cell_at_pos(
-        &self,
         grid: &mut Grid<Base>,
         pos: Position<Base>,
         prune_settings: &PruningSettings<Base>,
@@ -409,7 +408,7 @@ impl<Base: SudokuBase> Generator<Base> {
 
         let can_be_deleted: bool = (
             // Either default strategies
-            prune_settings.strategies == &[Backtracking.into()]
+            prune_settings.strategies == [Backtracking.into()]
             ||
                 // Or ensure the grid remains solvable with the non-default strategies
                 grid
@@ -566,9 +565,12 @@ impl<Base: SudokuBase> Generator<Base> {
                 break;
             }
 
-            let is_position_required = if self
-                .try_delete_cell_at_pos(&mut grid, pos, prune_settings)
-                .is_some()
+            let is_position_required = if Self::try_delete_cell_at_pos(
+                &mut grid,
+                pos,
+                prune_settings,
+            )
+            .is_some()
             {
                 deleted_count += 1;
                 debug!("Position {pruning_position_index}/{pruning_position_count} deleted, totaling {deleted_count}/{distance_from_filled} deleted positions");
@@ -618,7 +620,7 @@ impl<Base: SudokuBase> Generator<Base> {
             let deleted_count = u16::try_from(deleted.len()).unwrap();
 
             let is_position_required = if let Some(deleted_value) =
-                self.try_delete_cell_at_pos(&mut grid, pos, prune_settings)
+                Self::try_delete_cell_at_pos(&mut grid, pos, prune_settings)
             {
                 debug!("Position {pruning_position_index}/{pruning_position_count} deleted, totaling {deleted_count} deleted positions");
 
@@ -816,7 +818,6 @@ mod tests {
             let grid = Generator::<Base2>::with_settings(GeneratorSettings {
                 solution: Some(SolutionSettings {
                     values_grid: values_grid.clone(),
-                    ..Default::default()
                 }),
                 ..Default::default()
             })
@@ -846,7 +847,6 @@ mod tests {
             let grid = Generator::<Base2>::with_settings(GeneratorSettings {
                 solution: Some(SolutionSettings {
                     values_grid: values_grid.clone(),
-                    ..Default::default()
                 }),
                 prune: Some(PruningSettings {
                     target: PruningTarget::Minimal,
@@ -889,7 +889,6 @@ mod tests {
             let grid = Generator::<Base2>::with_settings(GeneratorSettings {
                 solution: Some(SolutionSettings {
                     values_grid: values_grid.clone(),
-                    ..Default::default()
                 }),
                 ..Default::default()
             })
@@ -907,7 +906,6 @@ mod tests {
             let grid = Generator::<Base2>::with_settings(GeneratorSettings {
                 solution: Some(SolutionSettings {
                     values_grid: values_grid.clone(),
-                    ..Default::default()
                 }),
                 prune: Some(PruningSettings {
                     target: PruningTarget::Minimal,

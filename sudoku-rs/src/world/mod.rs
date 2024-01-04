@@ -47,11 +47,7 @@ impl<Base: SudokuBase> Display for CellWorld<Base> {
             "tile_dim: {:?}, overlap: {}, cells:\n{}",
             self.tile_dim,
             self.overlap,
-            builder
-                .build()
-                .with(Style::empty())
-                .with(Padding::zero())
-                .to_string()
+            builder.build().with(Style::empty()).with(Padding::zero())
         )
     }
 }
@@ -172,7 +168,7 @@ impl<Base: SudokuBase> CellWorld<Base> {
 
         assert!(self.is_solved());
 
-        let (middle_positions, overlap_positions): (Vec<_>, Vec<_>) = Position::<Base>::all()
+        let (middle_positions, _overlap_positions): (Vec<_>, Vec<_>) = Position::<Base>::all()
             .partition(|pos| {
                 let (row, column) = pos.to_row_and_column();
                 let (row, column) = (row.get(), column.get());
@@ -315,7 +311,7 @@ impl<Base: SudokuBase> CellWorld<Base> {
             .fill(denied_corner_candidates);
 
         assert!(denylist.is_standard_layout());
-        Some(denylist.into())
+        Some(denylist)
     }
 
     fn tile_axis_count_to_cell_axis_count(tile_axis_count: usize, overlap: u8) -> usize {

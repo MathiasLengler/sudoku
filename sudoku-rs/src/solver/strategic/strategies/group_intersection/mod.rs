@@ -43,7 +43,7 @@ impl Strategy for GroupIntersectionBoth {
     }
 }
 
-/// An implementation of the group intersection / ["intersection removal"](https://www.sudokuwiki.org/Intersection_Removal) strategy.
+/// An implementation of the group intersection / [intersection removal](https://www.sudokuwiki.org/Intersection_Removal) strategy.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 struct GroupIntersection(GroupIntersectionTypeFilter);
 

@@ -320,6 +320,15 @@ impl<Base: SudokuBase> IntoIterator for Candidates<Base> {
     }
 }
 
+impl<Base: SudokuBase> IntoIterator for &'_ Candidates<Base> {
+    type Item = Value<Base>;
+    type IntoIter = CandidatesAscIter<Base>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
 impl<Base: SudokuBase> From<Vec<Value<Base>>> for Candidates<Base> {
     fn from(candidates: Vec<Value<Base>>) -> Self {
         candidates.into_iter().collect()
@@ -377,7 +386,7 @@ impl<Base: SudokuBase> Serialize for Candidates<Base> {
         S: Serializer,
     {
         let mut seq = serializer.serialize_seq(Some(usize::from(self.count())))?;
-        for candidate in self.iter() {
+        for candidate in self {
             seq.serialize_element(&candidate)?;
         }
         seq.end()

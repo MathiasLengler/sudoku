@@ -199,7 +199,7 @@ impl<
             .push(ICandidates::from_candidates_with_init_context(
                 candidates,
                 &mut self.candidates_iter_init_context,
-            ))
+            ));
     }
 
     pub fn move_best_choice_to_front(&mut self, front_i: usize) {

@@ -1,3 +1,4 @@
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Copy, Clone, Debug, Default)]
 pub(crate) struct OverlapSegmentFilter {
     pub(crate) top_left: bool,

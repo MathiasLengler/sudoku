@@ -1,4 +1,3 @@
-use log::info;
 use std::convert::TryInto;
 use std::fmt::{self, Display, Formatter};
 
@@ -125,6 +124,7 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
         // FIXME: remove
         #[cfg(feature = "parallel")]
         {
+            use log::info;
             use rayon::prelude::*;
 
             info!(

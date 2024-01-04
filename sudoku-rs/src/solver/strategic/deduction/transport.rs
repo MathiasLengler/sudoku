@@ -134,15 +134,15 @@ mod tests {
                     ],
                     actions: vec![
                         PositionedTransportAction {
-                            position: (1, 2).try_into().unwrap(),
+                            position: (1, 2).into(),
                             action: TransportAction::SetValue(1.into()),
                         },
                         PositionedTransportAction {
-                            position: (1, 3).try_into().unwrap(),
+                            position: (1, 3).into(),
                             action: TransportAction::DeleteCandidates(vec![1].into()),
                         },
                         PositionedTransportAction {
-                            position: (2, 0).try_into().unwrap(),
+                            position: (2, 0).into(),
                             action: TransportAction::DeleteCandidates(vec![1, 2, 3].into()),
                         },
                     ],

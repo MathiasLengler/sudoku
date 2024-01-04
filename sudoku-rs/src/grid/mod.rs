@@ -107,7 +107,7 @@ impl<Base: SudokuBase> Grid<Base> {
         });
     }
 
-    fn validate_vec_groups<T>(groups: &Vec<Vec<T>>) -> Result<()> {
+    fn validate_vec_groups<T>(groups: &'_ [Vec<T>]) -> Result<()> {
         let side_length = Self::side_length_usize();
 
         ensure!(

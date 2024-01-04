@@ -84,7 +84,7 @@ impl GroupReduction {
         reduced_group: &mut [Candidates<Base>],
     ) {
         if let Some((candidate, rest)) = group.split_first() {
-            for value in candidate.into_iter() {
+            for value in candidate {
                 if assigned_values.has(value) {
                     continue;
                 }
