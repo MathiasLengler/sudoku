@@ -1,17 +1,27 @@
+use std::time::Instant;
 use sudoku::base::consts::*;
 use sudoku::error::Result;
-use sudoku::generator::{Generator, PruningSettings, PruningTarget};
+use sudoku::generator::{Generator, GeneratorSettings, PruningSettings, PruningTarget};
 
 fn main() -> Result<()> {
-    let grid = Generator::<Base3>::with_pruning(PruningSettings {
-        target: PruningTarget::Minimal,
-        set_all_direct_candidates: true,
-        ..Default::default()
+    let before = Instant::now();
+    let grid = Generator::<Base4>::with_settings(GeneratorSettings {
+        prune: Some(PruningSettings {
+            target: PruningTarget::Minimal,
+            set_all_direct_candidates: true,
+            ..Default::default()
+        }),
+        solution: None,
+        seed: Some(2),
     })
     .generate()
     .unwrap();
 
+    let after = Instant::now();
+    let total_time = after - before;
+
     println!("{grid}");
+    dbg!(total_time);
 
     Ok(())
 }
