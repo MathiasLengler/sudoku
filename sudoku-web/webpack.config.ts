@@ -93,11 +93,9 @@ export default async (
                 crateDirectory: path.resolve(__dirname, "../sudoku-wasm"),
                 watchDirectories: [path.resolve(__dirname, "../sudoku-rs")],
                 outDir: path.resolve(__dirname, "../sudoku-wasm/pkg"),
-                extraArgs: "--target web",
-                // Wait for: https://github.com/webpack/webpack/issues/15566
+                extraArgs: "--target web . -- -Z build-std=panic_abort,std",
+                // webpack currently doesn't support wasm reference types: https://github.com/webpack/webpack/issues/15566
                 // extraArgs: "--reference-types",
-                // FIXME: does not work
-                // extraArgs: "-- -Z build-std=panic_abort,std",
             }),
             // PWA
             ((isProduction && !reactProfiling) || debugSW) &&
