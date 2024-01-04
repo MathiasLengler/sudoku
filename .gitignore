@@ -5,3 +5,5 @@ cargo-timing*.html
 sudoku-bubblewrap/*
 !sudoku-bubblewrap/twa-manifest.json
 !sudoku-bubblewrap/gradle.properties
+
+sudoku-api/load-testing/k6.exe
