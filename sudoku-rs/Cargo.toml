@@ -20,27 +20,27 @@ log = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 # Required dependencies
 enum_dispatch = "0.3.12"
-getrandom = "0.2.10"
-indexmap = "2.0.0"
-itertools = "0.11.0"
+getrandom = "0.2.11"
+indexmap = "2.1.0"
+itertools = "0.12.0"
 ndarray = { version = "0.15.6", features = ["serde"] }
 num = "0.4.1"
-owo-colors = "3.5.0"
-papergrid = "0.10.0"
+owo-colors = "4.0.0"
+papergrid = "0.11.0"
 radix_fmt = "1.0.0"
 rand = "0.8.5"
 rand_xoshiro = "0.6.0"
 strip-ansi-escapes = "0.2.0"
-tabled = { version = "0.14.0", features = ["color"] }
+tabled = { version = "0.15.0", features = ["ansi"] }
 # Optional dependencies enabled via features
 crossterm = { version = "0.27.0", optional = true }
-indicatif = { version = "0.17.6", optional = true }
-rayon = { version = "1.7.0", optional = true }
+indicatif = { version = "0.17.7", optional = true }
+rayon = { version = "1.8.0", optional = true }
 ts-rs = { version = "7.0.0", optional = true }
-hdrhistogram = { version = "7.5.2", optional = true }
+hdrhistogram = { version = "7.5.4", optional = true }
 
 [dev-dependencies]
-serde_json = "1.0.105"
+serde_json = "1.0.111"
 
 [target.'cfg(not(target_family="wasm"))'.dev-dependencies]
 # version 0.5.1 seems broken, stay on 0.4.0 until fix is released.

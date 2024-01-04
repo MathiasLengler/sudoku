@@ -20,8 +20,8 @@ version = "0.2.0"
 
 [workspace.dependencies]
 log = { version = "0.4.20", features = ["max_level_debug"] }
-serde = { version = "1.0.188" }
-anyhow = { version = "1.0.75", features = ["backtrace"] }
+serde = { version = "1.0.194" }
+anyhow = { version = "1.0.79", features = ["backtrace"] }
 
 [profile.release-with-debug]
 inherits = "release"
