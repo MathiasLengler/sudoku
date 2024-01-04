@@ -48,8 +48,8 @@ criterion = { version = "0.5.1", features = ["html_reports"] }
 
 [features]
 default = []
-terminal = ["crossterm"]
-parallel = ["rayon", "indicatif", "indicatif/rayon"]
+terminal = ["crossterm", "indicatif"]
+parallel = ["rayon", "indicatif/rayon"]
 wasm = ["getrandom/js", "ts-rs"]
 solver_debug_print = ["terminal"]
 histogram = ["hdrhistogram"]

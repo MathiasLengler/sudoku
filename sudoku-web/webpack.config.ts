@@ -68,6 +68,10 @@ export default async (
             },
             host: hostAny ? "0.0.0.0" : "127.0.0.1",
             hot: true,
+            headers: {
+                "Cross-Origin-Embedder-Policy": "require-corp",
+                "Cross-Origin-Opener-Policy": "same-origin",
+            },
         },
         devtool,
         resolve: {
@@ -89,8 +93,11 @@ export default async (
                 crateDirectory: path.resolve(__dirname, "../sudoku-wasm"),
                 watchDirectories: [path.resolve(__dirname, "../sudoku-rs")],
                 outDir: path.resolve(__dirname, "../sudoku-wasm/pkg"),
+                extraArgs: "--target web",
                 // Wait for: https://github.com/webpack/webpack/issues/15566
                 // extraArgs: "--reference-types",
+                // FIXME: does not work
+                // extraArgs: "-- -Z build-std=panic_abort,std",
             }),
             // PWA
             ((isProduction && !reactProfiling) || debugSW) &&

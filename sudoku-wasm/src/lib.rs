@@ -21,6 +21,9 @@ use sudoku::{DynamicSudoku, Game, Sudoku};
 
 use crate::typescript::*;
 
+#[cfg(target_family = "wasm")]
+pub use wasm_bindgen_rayon::init_thread_pool;
+
 mod typescript;
 
 mod error;

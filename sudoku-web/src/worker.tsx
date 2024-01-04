@@ -1,9 +1,8 @@
 import * as Comlink from "comlink";
-import wasm from "./wasmSudoku";
+import wbgInit, { WasmSudoku as WasmSudokuValue, init as wasmInit, initThreadPool } from "../../sudoku-wasm/pkg";
+
 import { WORKER_BOOT_UP_MESSAGE } from "./constants";
 import type { DynamicCells, WasmSudoku } from "./types";
-
-const { WasmSudoku: WasmSudokuValue, init: wasmInit } = wasm;
 
 if (process.env.NODE_ENV !== "production") {
     self.addEventListener("message", ev => {
@@ -35,7 +34,14 @@ async function init(cells?: DynamicCells) {
     console.debug("Worker init");
 
     console.debug("Initializing WASM module");
+    // wasm-bindgen with `--target web` requires manual initialization of the module
+    await wbgInit();
+
+    // Our own init function (`console_error_panic_hook` and `console_log`)
     wasmInit();
+
+    // `wasm_bindgen_rayon`
+    await initThreadPool(navigator.hardwareConcurrency);
 
     if (cells) {
         console.debug("Restoring sudoku from cells");
