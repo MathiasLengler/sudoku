@@ -172,11 +172,15 @@ impl<
         this
     }
 
+    fn grid(&self) -> &Grid<Base> {
+        self.grid.as_ref()
+    }
+
     fn initialize(&mut self) {
         for pos in Position::<Base>::all() {
             let index: GroupAvailabilityIndex<Base> = pos.into();
 
-            if let Some(value) = self.grid.as_ref().get(pos).value() {
+            if let Some(value) = self.grid().get(pos).value() {
                 // clue, clear group availability
                 self.availability.delete(index, value);
             } else {
@@ -243,7 +247,7 @@ impl<
     }
 
     fn build_solution_grid(&self) -> Grid<Base> {
-        let mut solution_grid = self.grid.as_ref().clone();
+        let mut solution_grid = self.grid().clone();
         for (candidates_iter, choice_index) in self
             .candidates_iters
             .iter()
@@ -299,7 +303,7 @@ impl<
         if self.availability_indexes.is_empty() && !self.has_returned_pre_filled_grid_solution {
             self.has_returned_pre_filled_grid_solution = true;
 
-            let grid = self.grid.as_ref();
+            let grid = self.grid();
             if grid.is_solved() {
                 Some(grid.clone())
             } else {
