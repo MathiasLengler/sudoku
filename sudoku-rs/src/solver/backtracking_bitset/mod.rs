@@ -1,7 +1,8 @@
 //! Adaptation of [tdoku `solver_basic.cc`](https://github.com/t-dillon/tdoku/blob/master/src/solver_basic.cc)
 
+use std::fmt::{Debug, Display, Formatter};
+
 use log::trace;
-use std::fmt::{write, Debug, Display, Formatter};
 
 pub use builder::SolverBuilder;
 use group_availability::GroupAvailability;
@@ -375,26 +376,25 @@ where
         // Find index with two available candidates, yet to be solved
         // We will split the search space by those two candidates.
         let candidates_iters_len = self.candidates_iters.len();
-        let Some((i, availability_index, available_candidates, available_candidates_count)) =
-            (candidates_iters_len..)
-                .zip(self.availability_indexes[candidates_iters_len..].iter())
-                .filter_map(|(i, &availability_index)| {
-                    let available_candidates = self
-                        .availability
-                        .available_candidates_at(availability_index);
-                    let available_candidates_count = available_candidates.count();
-                    if available_candidates_count > 1 {
-                        Some((
-                            i,
-                            availability_index,
-                            available_candidates,
-                            available_candidates_count,
-                        ))
-                    } else {
-                        None
-                    }
-                })
-                .min_by_key(|(_, _, _, available_candidates_count)| *available_candidates_count)
+        let Some((i, availability_index, available_candidates, _)) = (candidates_iters_len..)
+            .zip(self.availability_indexes[candidates_iters_len..].iter())
+            .filter_map(|(i, &availability_index)| {
+                let available_candidates = self
+                    .availability
+                    .available_candidates_at(availability_index);
+                let available_candidates_count = available_candidates.count();
+                if available_candidates_count > 1 {
+                    Some((
+                        i,
+                        availability_index,
+                        available_candidates,
+                        available_candidates_count,
+                    ))
+                } else {
+                    None
+                }
+            })
+            .min_by_key(|(_, _, _, available_candidates_count)| *available_candidates_count)
         else {
             return (self, None);
         };
