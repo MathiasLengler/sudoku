@@ -330,6 +330,7 @@ mod tests {
     use ndarray::Array2;
 
     use crate::base::consts::*;
+    use crate::rng::new_crate_rng_with_seed;
     use crate::solver::test_util::{assert_solve_result, assert_solver_solutions_base_2};
 
     use super::*;
@@ -338,6 +339,16 @@ mod tests {
     fn test_iter_all_solutions() {
         let grid = Grid::<Base2>::new();
         let solver = Solver::new(&grid);
+
+        assert_solver_solutions_base_2(solver);
+    }
+
+    #[test]
+    fn test_test_iter_all_solutions_rng() {
+        let grid = Grid::<Base2>::new();
+        let solver = Solver::builder(&grid)
+            .rng(new_crate_rng_with_seed(Some(1)))
+            .build();
 
         assert_solver_solutions_base_2(solver);
     }
