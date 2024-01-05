@@ -404,6 +404,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     solver_sample_group.sample_size(20);
     bench_solver_sample_group::<Base2>(&mut solver_sample_group);
     bench_solver_sample_group::<Base3>(&mut solver_sample_group);
+    // TODO: add base4 sample
     solver_sample_group.finish();
 
     let mut solver_tdoku_group = c.benchmark_group("SolverTdoku");

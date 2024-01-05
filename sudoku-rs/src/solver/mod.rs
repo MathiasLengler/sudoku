@@ -1,6 +1,14 @@
 pub mod backtracking_bitset;
 pub mod strategic;
 
+// TODO: exact-cover based solver:
+//  Could be more performant for bigger sudokus
+//  References:
+//  Section 4.4 Sequential DLX algorithm (0.3 seconds?)
+//   https://github.com/huaminghuangtw/Parallel-Sudoku-Solver/blob/master/Project_Report.pdf
+//  Rust exact cover solver
+//   https://github.com/jw013/exact-cover-rs
+
 #[cfg(test)]
 mod test_util {
     use std::collections::HashSet;
