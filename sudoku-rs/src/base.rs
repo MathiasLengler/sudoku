@@ -236,6 +236,8 @@ where
         + Display
         + Binary
         + Hash
+        + Send
+        + Sync
         // Generic bit twiddling
         + PrimInt
         + CheckedShl
