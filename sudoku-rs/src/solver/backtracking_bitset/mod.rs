@@ -432,6 +432,13 @@ mod parallel {
 
 #[cfg(test)]
 mod tests {
+    // TODO: test filled sudoku with conflict
+    // TODO: test filled sudoku without conflict
+    // TODO: test partial filled sudoku without conflict and no possible solution
+    // TODO: test partial filled sudoku without conflict and one possible solution
+    // TODO: test partial filled sudoku without conflict and multiple possible solutions
+    // TODO: test partial filled sudoku with conflict (implies no solutions)
+
     use itertools::chain;
     use ndarray::Array2;
 

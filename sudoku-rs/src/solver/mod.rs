@@ -1,10 +1,5 @@
-// FIXME: delete
-// pub mod backtracking;
-
 pub mod backtracking_bitset;
 pub mod strategic;
-
-// TODO: Solver trait
 
 #[cfg(test)]
 mod test_util {
