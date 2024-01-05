@@ -5,7 +5,9 @@ use crate::cell::compact::candidates::Candidates;
 use crate::cell::compact::value::Value;
 use crate::rng::CrateRng;
 
-pub trait CandidatesIterator<Base: SudokuBase>: Iterator<Item = Value<Base>> {
+pub trait CandidatesIterator<Base: SudokuBase>:
+    ExactSizeIterator<Item = Value<Base>> + Clone
+{
     type InitContext;
 
     fn from_candidates_with_init_context(

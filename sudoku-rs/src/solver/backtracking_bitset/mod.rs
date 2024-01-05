@@ -7,10 +7,25 @@ use group_availability::GroupAvailability;
 pub use group_availability::{AvailabilityDenyList, AvailabilityFilter, GroupAvailabilityIndex};
 
 use crate::base::SudokuBase;
-use crate::cell::{CandidatesAscIter, CandidatesIterator, CandidatesRandIter};
+use crate::cell::{Candidates, CandidatesAscIter, CandidatesIterator, CandidatesRandIter};
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::rng::CrateRng;
+
+// TODO: parallel solver
+//  initialize "sub" solvers with one candidate assigned to different values
+//  execute those solvers in parallel
+//  capture solutions:
+//  - in order (compatibility, deterministic)
+//  - out of order
+//  API:
+//  split at current state?
+//  How many solvers to spawn?
+//  How balanced is the execution tree?
+// Rayon entry points:
+//  https://docs.rs/rayon/latest/rayon/fn.join.html
+//  https://docs.rs/rayon/latest/rayon/fn.scope.html
+//  https://docs.rs/rayon/latest/rayon/iter/fn.split.html
 
 pub(crate) mod group_availability;
 
@@ -320,6 +335,84 @@ impl<
         GridRef: AsRef<Grid<Base>>,
         ICandidates: CandidatesIterator<Base>,
         Filter: AvailabilityFilter<Base>,
+    > Solver<Base, GridRef, ICandidates, Filter>
+where
+    Self: Clone,
+{
+    // TODO: measure solution space split fairness
+    //  for efficient parallelization both solvers should search the approx. same solution space.
+
+    // Split the current solver into two.
+    // The two solvers will search distinct solution spaces of the same sudoku.
+    // Each solver will produce unique solutions in its search space.
+    // Used for parallel solving.
+    pub fn split(mut self) -> (Self, Option<Self>) {
+        // Find index with two available candidates, yet to be solved
+        // We will split the search space by those two candidates.
+        let candidates_iters_len = self.candidates_iters.len();
+        let Some((i, availability_index, available_candidates)) = self.availability_indexes
+            [candidates_iters_len..]
+            .iter()
+            .enumerate()
+            .find_map(|(i, &availability_index)| {
+                let available_candidates = self
+                    .availability
+                    .available_candidates_at(availability_index);
+                if available_candidates.count() == 2 {
+                    Some((
+                        i + candidates_iters_len,
+                        availability_index,
+                        available_candidates,
+                    ))
+                } else {
+                    None
+                }
+            })
+        else {
+            return (self, None);
+        };
+
+        // Get the two candidates
+        let mut available_candidates_iter = available_candidates.iter();
+        let (first_candidate, second_candidate) = (
+            available_candidates_iter.next().unwrap(),
+            available_candidates_iter.next().unwrap(),
+        );
+
+        // Modify each solver as if each solver had chosen its split candidate as the first choice.
+
+        // Move availability index to the front
+        self.availability_indexes[0..=i].rotate_right(1);
+        self.candidates_iters.insert(
+            0,
+            ICandidates::from_candidates_with_init_context(
+                Candidates::with_single(first_candidate),
+                &mut self.candidates_iter_init_context,
+            ),
+        );
+
+        let mut other = self.clone();
+        other.candidates_iters[0] = ICandidates::from_candidates_with_init_context(
+            Candidates::with_single(second_candidate),
+            &mut self.candidates_iter_init_context,
+        );
+        other.guess_count = 0;
+
+        self.availability
+            .delete(availability_index, first_candidate);
+        other
+            .availability
+            .delete(availability_index, second_candidate);
+
+        (self, Some(other))
+    }
+}
+
+impl<
+        Base: SudokuBase,
+        GridRef: AsRef<Grid<Base>>,
+        ICandidates: CandidatesIterator<Base>,
+        Filter: AvailabilityFilter<Base>,
     > Iterator for Solver<Base, GridRef, ICandidates, Filter>
 {
     type Item = Grid<Base>;
@@ -442,5 +535,24 @@ mod tests {
         }
 
         assert_eq!(solver.count(), 144);
+    }
+
+    // TODO: fix test
+    #[test]
+    fn test_split() {
+        let grids = crate::samples::base_2();
+
+        for grid in grids {
+            let mut solver = Solver::new(&grid);
+
+            let (mut solver, Some(mut other)) = solver.split() else {
+                panic!()
+            };
+
+            let solve_result = solver.next();
+            assert_solve_result(solve_result);
+            let solve_result = other.next();
+            assert_solve_result(solve_result);
+        }
     }
 }
