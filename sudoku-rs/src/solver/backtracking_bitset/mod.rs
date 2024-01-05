@@ -1,6 +1,6 @@
 //! Adaptation of [tdoku `solver_basic.cc`](https://github.com/t-dillon/tdoku/blob/master/src/solver_basic.cc)
 
-use std::fmt::{Debug, Display, Formatter};
+use std::fmt::Debug;
 
 use log::trace;
 
@@ -338,18 +338,6 @@ impl<
         } else {
             None
         }
-    }
-}
-
-impl<
-        Base: SudokuBase,
-        GridRef: AsRef<Grid<Base>> + Debug,
-        ICandidates: CandidatesIterator<Base>,
-        Filter: AvailabilityFilter<Base>,
-    > Display for Solver<Base, GridRef, ICandidates, Filter>
-{
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "",)
     }
 }
 
