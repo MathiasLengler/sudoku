@@ -1,7 +1,6 @@
 use anyhow::{bail, format_err};
 use itertools::Itertools;
 use log::debug;
-use ndarray::Array2;
 use rand::prelude::SliceRandom;
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -419,6 +418,7 @@ impl<Base: SudokuBase> Generator<Base> {
             let has_ambiguous_solution = {
                 #[cfg(feature = "parallel")]
                 {
+                    use ndarray::Array2;
                     use rayon::prelude::*;
 
                     // TODO: optimize denylist
