@@ -124,7 +124,7 @@ pub(crate) struct GroupAvailability<Base: SudokuBase, Filter: AvailabilityFilter
     rows: CandidatesGroup<Base>,
     columns: CandidatesGroup<Base>,
     blocks: CandidatesGroup<Base>,
-    filter: Filter,
+    pub(crate) filter: Filter,
 }
 
 impl<Base: SudokuBase> GroupAvailability<Base, ()> {
@@ -185,7 +185,7 @@ impl<Base: SudokuBase, Filter: AvailabilityFilter<Base>> GroupAvailability<Base,
         )
     }
 
-    pub(crate) fn get_mut(
+    fn get_mut(
         &mut self,
         index: GroupAvailabilityIndex<Base>,
     ) -> (

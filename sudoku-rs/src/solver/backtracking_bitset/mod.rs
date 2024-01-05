@@ -14,21 +14,6 @@ use crate::grid::Grid;
 use crate::position::Position;
 use crate::rng::CrateRng;
 
-// TODO: parallel solver
-//  initialize "sub" solvers with one candidate assigned to different values
-//  execute those solvers in parallel
-//  capture solutions:
-//  - in order (compatibility, deterministic)
-//  - out of order
-//  API:
-//  split at current state?
-//  How many solvers to spawn?
-//  How balanced is the execution tree?
-// Rayon entry points:
-//  https://docs.rs/rayon/latest/rayon/fn.join.html
-//  https://docs.rs/rayon/latest/rayon/fn.scope.html
-//  https://docs.rs/rayon/latest/rayon/iter/fn.split.html
-
 pub(crate) mod group_availability;
 
 #[derive(Debug, Clone)]
@@ -157,7 +142,6 @@ mod builder {
     }
 }
 
-// TODO: add constructor/builder for CandidatesRandIter with seed
 /// Convenience constructors
 impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>>
     Solver<Base, GridRef, CandidatesAscIter<Base>, ()>
@@ -341,12 +325,8 @@ impl<
     }
 }
 
-impl<
-        Base: SudokuBase,
-        GridRef: AsRef<Grid<Base>>,
-        ICandidates: CandidatesIterator<Base>,
-        Filter: AvailabilityFilter<Base>,
-    > Solver<Base, GridRef, ICandidates, Filter>
+impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, ICandidates: CandidatesIterator<Base>>
+    Solver<Base, GridRef, ICandidates, AvailabilityDenyList<Base>>
 where
     Self: Clone,
 {
@@ -362,16 +342,16 @@ where
     pub fn split(self) -> (Self, Option<Self>) {
         // Find yet to be solved index with at least two available candidates
         let candidates_iters_len = self.candidates_iters.len();
-        let Some((i, availability_index, available_candidates, _)) = (candidates_iters_len..)
-            .zip(self.availability_indexes[candidates_iters_len..].iter())
-            .filter_map(|(i, &availability_index)| {
+        let Some((split_availability_index, split_available_candidates, _)) = self
+            .availability_indexes[candidates_iters_len..]
+            .iter()
+            .filter_map(|&availability_index| {
                 let available_candidates = self
                     .availability
                     .available_candidates_at(availability_index);
                 let available_candidates_count = available_candidates.count();
                 if available_candidates_count > 1 {
                     Some((
-                        i,
                         availability_index,
                         available_candidates,
                         available_candidates_count,
@@ -380,45 +360,36 @@ where
                     None
                 }
             })
-            .min_by_key(|(_, _, _, available_candidates_count)| *available_candidates_count)
+            // TODO: benchmark: min vs max while generating
+            .min_by_key(|(_, _, available_candidates_count)| *available_candidates_count)
         else {
             return (self, None);
         };
 
-        let mut left = self;
+        let available_candidates_vec = split_available_candidates.to_vec_value();
 
-        let available_candidates_vec = available_candidates.to_vec_value();
-
-        let (&left_value, right_values) = available_candidates_vec.split_first().unwrap();
         // We have at least two candidates
+        debug_assert!(available_candidates_vec.len() >= 2);
+
+        let (left_values, right_values) =
+            available_candidates_vec.split_at(available_candidates_vec.len() / 2);
+
+        // Both halves have at least on candidate
+        debug_assert!(!left_values.is_empty());
         debug_assert!(!right_values.is_empty());
 
-        let left_candidates = Candidates::with_single(left_value);
+        let left_candidates: Candidates<Base> = left_values.iter().copied().collect();
         let right_candidates: Candidates<Base> = right_values.iter().copied().collect();
 
-        // Modify each solver as if each solver had chosen its split candidate as the first choice.
-
-        // Move availability index to the front
-        left.availability_indexes[0..=i].rotate_right(1);
-        left.candidates_iters.insert(
-            0,
-            ICandidates::from_candidates_with_init_context(
-                left_candidates,
-                &mut left.candidates_iter_init_context,
-            ),
-        );
-
+        let mut left = self;
         let mut right = left.clone();
-        right.candidates_iters[0] = ICandidates::from_candidates_with_init_context(
-            right_candidates,
-            &mut right.candidates_iter_init_context,
-        );
-        right.guess_count = 0;
 
-        left.availability.delete(availability_index, left_value);
-        right
-            .availability
-            .delete(availability_index, right_candidates.first().unwrap());
+        let cell_index = usize::from(Position::from(split_availability_index).cell_index());
+        let left_filter_slice = left.availability.filter.as_slice_mut().unwrap();
+        left_filter_slice[cell_index] = left_filter_slice[cell_index].union(right_candidates);
+
+        let right_filter_slice = right.availability.filter.as_slice_mut().unwrap();
+        right_filter_slice[cell_index] = right_filter_slice[cell_index].union(left_candidates);
 
         (left, Some(right))
     }
@@ -440,16 +411,13 @@ impl<
 
 #[cfg(feature = "parallel")]
 mod parallel {
-    use super::*;
     use rayon::iter::{split, Split};
     use rayon::prelude::*;
 
-    impl<
-            Base: SudokuBase,
-            GridRef: AsRef<Grid<Base>>,
-            ICandidates: CandidatesIterator<Base>,
-            Filter: AvailabilityFilter<Base>,
-        > IntoParallelIterator for Solver<Base, GridRef, ICandidates, Filter>
+    use super::*;
+
+    impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, ICandidates: CandidatesIterator<Base>>
+        IntoParallelIterator for Solver<Base, GridRef, ICandidates, AvailabilityDenyList<Base>>
     where
         Self: Clone + Send,
     {
@@ -464,6 +432,7 @@ mod parallel {
 
 #[cfg(test)]
 mod tests {
+    use itertools::chain;
     use ndarray::Array2;
 
     use crate::base::consts::*;
@@ -570,44 +539,135 @@ mod tests {
         assert_eq!(solver.count(), 144);
     }
 
+    fn assert_single_solution_with_split<Base: SudokuBase>(
+        grid: &Grid<Base>,
+        assert_is_splittable: bool,
+    ) {
+        let solver = Solver::builder(grid)
+            .availability_filter(Array2::default((
+                Base::SIDE_LENGTH.into(),
+                Base::SIDE_LENGTH.into(),
+            )))
+            .build();
+
+        let (left_solver, Some(right_solver)) = solver.split() else {
+            if assert_is_splittable {
+                panic!("Solver should be splittable")
+            } else {
+                return;
+            }
+        };
+
+        // Both solvers chained together should still produce a single solution
+        assert_solver_single_solution(left_solver.chain(right_solver));
+    }
+
     #[test]
-    fn test_split() {
-        fn assert_single_solution_with_split<Base: SudokuBase>(
-            grid: &Grid<Base>,
-            assert_is_splittable: bool,
-        ) {
-            let solver = Solver::new(grid);
-
-            let (left_solver, Some(right_solver)) = solver.split() else {
-                if assert_is_splittable {
-                    panic!("Solver should be splittable")
-                } else {
-                    return;
-                }
-            };
-
-            // Both solvers chained together should still produce a single solution
-            assert_solver_single_solution(left_solver.chain(right_solver));
-        }
-
+    fn test_split_sample_base_2() {
         for grid in crate::samples::base_2() {
             // Some base 2 sample grids contain only single candidate cells, which currently can't be split.
             assert_single_solution_with_split(&grid, false);
         }
+    }
+
+    #[test]
+    fn test_split_sample_base_3() {
         for grid in crate::samples::base_3() {
             assert_single_solution_with_split(&grid, true);
         }
+    }
 
-        let grid = Grid::<Base2>::new();
-        let solver = Solver::new(&grid);
+    #[test]
+    fn test_split_all_base_2() {
+        type Base = Base2;
+
+        let grid = Grid::<Base>::new();
+        let solver = Solver::builder(grid)
+            .availability_filter(Array2::default((
+                Base::SIDE_LENGTH.into(),
+                Base::SIDE_LENGTH.into(),
+            )))
+            .build();
 
         let (left_solver, Some(right_solver)) = solver.split() else {
             panic!("Solver should be splittable")
         };
 
-        dbg!(left_solver.clone().count());
-        dbg!(right_solver.clone().count());
-
         assert_solver_all_solutions_base_2(left_solver.chain(right_solver));
+    }
+
+    #[test]
+    fn test_split_twice() {
+        type Base = Base2;
+
+        let grid = Grid::<Base>::new();
+        let solver = Solver::builder(grid)
+            .availability_filter(Array2::default((
+                Base::SIDE_LENGTH.into(),
+                Base::SIDE_LENGTH.into(),
+            )))
+            .build();
+
+        let (l, Some(r)) = solver.split() else {
+            panic!("Solver should be splittable")
+        };
+
+        let (ll, Some(lr)) = l.split() else {
+            panic!("Solver should be splittable")
+        };
+
+        assert_solver_all_solutions_base_2(chain!(ll, lr, r,));
+    }
+
+    #[test]
+    fn test_split_recursive() {
+        type Base = Base2;
+
+        let grid = Grid::<Base>::new();
+        let solver = Solver::builder(grid)
+            .availability_filter(Array2::default((
+                Base::SIDE_LENGTH.into(),
+                Base::SIDE_LENGTH.into(),
+            )))
+            .build();
+
+        let mut split_solvers = vec![solver];
+
+        for _ in 0..10 {
+            split_solvers = split_solvers
+                .into_iter()
+                .flat_map(|solver| {
+                    let (left, right) = solver.split();
+                    [Some(left), right]
+                })
+                .flatten()
+                .collect();
+        }
+
+        assert_solver_all_solutions_base_2(split_solvers.into_iter().flatten());
+    }
+
+    #[cfg(feature = "parallel")]
+    #[test]
+    fn test_par_iter() {
+        type Base = Base2;
+
+        use rayon::prelude::*;
+
+        let grid = Grid::<Base>::new();
+        let solver = Solver::builder(grid)
+            .availability_filter(Array2::default((
+                Base::SIDE_LENGTH.into(),
+                Base::SIDE_LENGTH.into(),
+            )))
+            .build();
+
+        assert_solver_all_solutions_base_2(
+            solver
+                .into_par_iter()
+                .flat_map_iter(|solver| solver)
+                .collect::<Vec<_>>()
+                .into_iter(),
+        );
     }
 }
