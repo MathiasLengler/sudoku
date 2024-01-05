@@ -1,6 +1,7 @@
 use anyhow::{bail, format_err};
 use itertools::Itertools;
 use log::debug;
+use ndarray::Array2;
 use rand::prelude::SliceRandom;
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -415,18 +416,43 @@ impl<Base: SudokuBase> Generator<Base> {
                 .is_solvable_with_strategies(prune_settings.strategies.clone())
                 .is_ok_and(|solution| solution.is_some())
         ) && {
-            let has_ambiguous_solution = backtracking_bitset::Solver::builder(&grid)
-                .availability_filter(|mut available_candidates: Candidates<Base>, index| {
-                    if Position::from(index) == pos {
-                        available_candidates.delete(deleted_value);
-                        available_candidates
-                    } else {
-                        available_candidates
-                    }
-                })
-                .build()
-                .next()
-                .is_some();
+            let has_ambiguous_solution = {
+                #[cfg(feature = "parallel")]
+                {
+                    use rayon::prelude::*;
+
+                    // TODO: optimize denylist
+                    let mut denylist =
+                        Array2::default((Base::SIDE_LENGTH.into(), Base::SIDE_LENGTH.into()));
+                    denylist[(pos.to_row().get_usize(), pos.to_column().get_usize())] =
+                        Candidates::with_single(deleted_value);
+                    let solver = backtracking_bitset::Solver::builder(&grid)
+                        .availability_filter(denylist)
+                        .build();
+
+                    solver
+                        .into_par_iter()
+                        .flatten_iter()
+                        .any(|_solution: Grid<Base>| true)
+                }
+                #[cfg(not(feature = "parallel"))]
+                {
+                    let mut solver = backtracking_bitset::Solver::builder(&grid)
+                        .availability_filter(
+                            move |mut available_candidates: Candidates<Base>, index| {
+                                if Position::from(index) == pos {
+                                    available_candidates.delete(deleted_value);
+                                    available_candidates
+                                } else {
+                                    available_candidates
+                                }
+                            },
+                        )
+                        .build();
+
+                    solver.next().is_some()
+                }
+            };
 
             !has_ambiguous_solution
         };
