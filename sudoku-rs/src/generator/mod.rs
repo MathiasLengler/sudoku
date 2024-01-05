@@ -921,7 +921,10 @@ mod tests {
 
             let mut solution = grid.unique_solution().unwrap();
             solution.unfix_all_values();
-            assert_eq!(solution, values_grid, "{solution}\n!=\n{values_grid}");
+            assert_eq!(
+                solution, values_grid,
+                "Solution differs from target solution:\n{solution}\n!=\n{values_grid}"
+            );
         }
     }
 }

@@ -197,7 +197,9 @@ impl<'s, Base: SudokuBase> Iterator for Solver<'s, Base> {
 #[cfg(test)]
 mod tests {
     use crate::base::consts::*;
-    use crate::solver::test_util::{assert_solve_result, assert_solver_solutions_base_2};
+    use crate::solver::test_util::{
+        assert_solver_all_solutions_base_2, assert_solver_single_solution,
+    };
 
     use super::*;
 
@@ -219,7 +221,7 @@ mod tests {
         let mut grid = Grid::<Base2>::new();
         let solver = Solver::new(&mut grid);
 
-        assert_solver_solutions_base_2(solver);
+        assert_solver_all_solutions_base_2(solver);
     }
 
     #[test]
@@ -233,7 +235,7 @@ mod tests {
             },
         );
 
-        assert_solver_solutions_base_2(solver);
+        assert_solver_all_solutions_base_2(solver);
     }
 
     #[test]
@@ -241,11 +243,8 @@ mod tests {
         let grids = crate::samples::base_2();
 
         for mut grid in grids {
-            let mut solver = Solver::new(&mut grid);
-
-            let solve_result = solver.try_solve();
-
-            assert_solve_result(solve_result);
+            let solver = Solver::new(&mut grid);
+            assert_solver_single_solution(solver);
         }
     }
 
@@ -255,10 +254,7 @@ mod tests {
 
         for mut grid in grids {
             let mut solver = Solver::new(&mut grid);
-
-            let solve_result = solver.try_solve();
-
-            assert_solve_result(solve_result);
+            assert_solver_single_solution(solver);
         }
     }
 }
