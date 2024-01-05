@@ -13,7 +13,7 @@
         "lint": "npm run lint:tsc && npm run lint:eslint",
         "lint:tsc": "tsc",
         "lint:eslint": "eslint src/** webpack.config.ts",
-        "serve": "npx serve -l 8080 dist",
+        "serve": "npx serve -l 8080 -c ../serve.json dist",
         "bubblewrap:merge": "cd ../sudoku-bubblewrap && bubblewrap merge",
         "bubblewrap:update": "cd ../sudoku-bubblewrap && bubblewrap update",
         "bubblewrap:build": "cd ../sudoku-bubblewrap && bubblewrap build"
