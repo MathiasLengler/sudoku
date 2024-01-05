@@ -38,7 +38,7 @@ fn sample_grid<Base: SudokuBase>() -> Grid<Base> {
 fn bench_generator_group<Base: SudokuBase>(generator_group: &mut BenchmarkGroup<WallTime>) {
     let base = Base::BASE;
 
-    for prune_settings in vec![
+    for prune_settings in [
         Some(PruningSettings::<Base> {
             target: PruningTarget::Minimal,
             ..Default::default()

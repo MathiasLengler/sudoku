@@ -253,7 +253,7 @@ mod tests {
         let grids = crate::samples::base_3();
 
         for mut grid in grids {
-            let mut solver = Solver::new(&mut grid);
+            let solver = Solver::new(&mut grid);
             assert_solver_single_solution(solver);
         }
     }
