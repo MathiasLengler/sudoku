@@ -3,12 +3,11 @@ use std::time::Instant;
 use sudoku::base::consts::Base3;
 use sudoku::error::Result;
 use sudoku::grid::deserialization::read_grids_from_file;
+use sudoku::solver::backtracking_bitset;
 use sudoku::solver::strategic;
-use sudoku::solver::{backtracking, backtracking_bitset};
 
 #[allow(dead_code)]
 enum SolverSelection {
-    Backtracking,
     Strategic,
     BacktrackingBitset,
 }
@@ -26,9 +25,6 @@ fn main() -> Result<()> {
 
     for (i, grid) in grids.iter_mut().enumerate() {
         match solver_selection {
-            SolverSelection::Backtracking => {
-                assert!(backtracking::Solver::new(grid).next().is_some());
-            }
             SolverSelection::Strategic => {
                 assert!(strategic::Solver::new(grid).try_solve().unwrap().is_some());
             }

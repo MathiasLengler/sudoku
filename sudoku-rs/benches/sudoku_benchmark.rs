@@ -21,7 +21,7 @@ use sudoku::position::Coordinate;
 use sudoku::position::Position;
 use sudoku::samples::{base_2, base_3};
 use sudoku::solver::strategic::strategies::{GroupIntersectionBoth, GroupReduction, Strategy};
-use sudoku::solver::{backtracking, backtracking_bitset, strategic};
+use sudoku::solver::{backtracking_bitset, strategic};
 
 fn cast_grid<Base: SudokuBase>(any_grid: Box<dyn Any>) -> Grid<Base> {
     *any_grid.downcast().unwrap()
@@ -81,20 +81,6 @@ fn bench_solver_sample_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup
     let grid = sample_grid::<Base>();
 
     solver_group.bench_with_input(
-        BenchmarkId::new("backtracking", &parameter_string),
-        &grid,
-        |b, grid| {
-            b.iter_batched_ref(
-                || grid.clone(),
-                |grid| {
-                    assert!(backtracking::Solver::new(grid).next().is_some());
-                },
-                BatchSize::SmallInput,
-            )
-        },
-    );
-
-    solver_group.bench_with_input(
         BenchmarkId::new("backtracking_bitset", &parameter_string),
         &grid,
         |b, grid| {
@@ -144,21 +130,6 @@ fn bench_solver_tdoku_group(solver_tdoku_group: &mut BenchmarkGroup<WallTime>) {
 
         solver_tdoku_group.throughput(Throughput::Elements(grids.len() as u64));
 
-        solver_tdoku_group.bench_with_input(
-            BenchmarkId::new("backtracking", tdoku_dataset),
-            grids,
-            |b, grids| {
-                b.iter_batched_ref(
-                    || grids.to_vec(),
-                    |grids| {
-                        for grid in grids {
-                            assert!(backtracking::Solver::new(grid).next().is_some());
-                        }
-                    },
-                    BatchSize::SmallInput,
-                )
-            },
-        );
         solver_tdoku_group.bench_with_input(
             BenchmarkId::new("backtracking_bitset", tdoku_dataset),
             grids,

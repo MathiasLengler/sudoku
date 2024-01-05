@@ -1,4 +1,6 @@
-pub mod backtracking;
+// FIXME: delete
+// pub mod backtracking;
+
 pub mod backtracking_bitset;
 pub mod strategic;
 
