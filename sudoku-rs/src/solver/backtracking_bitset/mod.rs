@@ -343,13 +343,12 @@ impl<
 
 impl<
         Base: SudokuBase,
-        GridRef: AsRef<Grid<Base>> + Debug,
-        ICandidates: CandidatesIterator<Base> + Debug,
-        Filter: AvailabilityFilter<Base> + Debug,
+        GridRef: AsRef<Grid<Base>>,
+        ICandidates: CandidatesIterator<Base>,
+        Filter: AvailabilityFilter<Base>,
     > Solver<Base, GridRef, ICandidates, Filter>
 where
     Self: Clone,
-    ICandidates::InitContext: Debug,
 {
     // TODO: measure solution space split fairness
     //  for efficient parallelization both solvers should search the approx. same solution space.
@@ -361,8 +360,7 @@ where
     ///
     /// Used for parallel solving.
     pub fn split(self) -> (Self, Option<Self>) {
-        // Find index with two available candidates, yet to be solved
-        // We will split the search space by those two candidates.
+        // Find yet to be solved index with at least two available candidates
         let candidates_iters_len = self.candidates_iters.len();
         let Some((i, availability_index, available_candidates, _)) = (candidates_iters_len..)
             .zip(self.availability_indexes[candidates_iters_len..].iter())
@@ -428,7 +426,7 @@ where
 
 impl<
         Base: SudokuBase,
-        GridRef: AsRef<Grid<Base>> + Debug,
+        GridRef: AsRef<Grid<Base>>,
         ICandidates: CandidatesIterator<Base>,
         Filter: AvailabilityFilter<Base>,
     > Iterator for Solver<Base, GridRef, ICandidates, Filter>
@@ -437,6 +435,30 @@ impl<
 
     fn next(&mut self) -> Option<Self::Item> {
         self.try_solve()
+    }
+}
+
+#[cfg(feature = "parallel")]
+mod parallel {
+    use super::*;
+    use rayon::iter::{split, Split};
+    use rayon::prelude::*;
+
+    impl<
+            Base: SudokuBase,
+            GridRef: AsRef<Grid<Base>>,
+            ICandidates: CandidatesIterator<Base>,
+            Filter: AvailabilityFilter<Base>,
+        > IntoParallelIterator for Solver<Base, GridRef, ICandidates, Filter>
+    where
+        Self: Clone + Send,
+    {
+        type Iter = Split<Self, fn(Self) -> (Self, Option<Self>)>;
+        type Item = Self;
+
+        fn into_par_iter(self) -> Self::Iter {
+            split(self, Solver::split)
+        }
     }
 }
 
@@ -548,7 +570,6 @@ mod tests {
         assert_eq!(solver.count(), 144);
     }
 
-    // TODO: fix test
     #[test]
     fn test_split() {
         fn assert_single_solution_with_split<Base: SudokuBase>(
@@ -583,6 +604,9 @@ mod tests {
         let (left_solver, Some(right_solver)) = solver.split() else {
             panic!("Solver should be splittable")
         };
+
+        dbg!(left_solver.clone().count());
+        dbg!(right_solver.clone().count());
 
         assert_solver_all_solutions_base_2(left_solver.chain(right_solver));
     }

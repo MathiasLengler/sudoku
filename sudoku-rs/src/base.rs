@@ -180,7 +180,7 @@ mod block_index_to_top_left_cell_index {
 /// An incorrect implementation could result in undefined behaviour.
 pub unsafe trait SudokuBase
 where
-    Self: Ord + Hash + Clone + Copy + Debug + Default + 'static + private::Sealed,
+    Self: Ord + Hash + Clone + Copy + Debug + Default + Send + Sync + 'static + private::Sealed,
 {
     // TODO: evaluate `as` casting of constants
     /// The side length of a sudoku block. Must be non-zero.
@@ -268,7 +268,9 @@ where
         + Clone
         + Debug
         + Default
-        + IntoIterator<Item = Candidates<Self>, IntoIter = Self::CandidatesGroupIntoIter>;
+        + IntoIterator<Item = Candidates<Self>, IntoIter = Self::CandidatesGroupIntoIter>
+        + Send
+        + Sync;
 
     type CandidatesGroupIntoIter: Iterator<Item = Candidates<Self>>;
 }
