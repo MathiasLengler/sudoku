@@ -236,7 +236,7 @@ impl<Base: SudokuBase> CellWorld<Base> {
         let world_grid_cells = self
             .cells
             .slice_mut(Self::grid_cells_slice_info(tile_index, self.overlap));
-        grid.cells().assign_to(world_grid_cells);
+        grid.cells_view().assign_to(world_grid_cells);
     }
 }
 

@@ -17,6 +17,12 @@ mod value;
 // TODO: reduce boilerplate with enum dispatch:
 //  trait SudokuCell<Base: SudokuBase> {}
 
+// TODO: Cell without fixed state ("SimpleCell")
+//  could be useful for:
+//  - solvers operating on a grid of SimpleCells
+//    - for solvers, every value is fixed
+//  - more memory-compact 2d array, with fixed state in separate bitfield
+
 /// Memory efficient representation of a single Sudoku cell.
 ///
 /// # Cell filters wording

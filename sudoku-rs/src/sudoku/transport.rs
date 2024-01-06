@@ -49,9 +49,9 @@ impl<Base: SudokuBase> From<&Sudoku<Base>> for TransportSudoku {
             blocks_indexes: Grid::<Base>::all_block_positions()
                 .map(|block| block.map(|pos| pos.cell_index()).collect())
                 .collect(),
-            base: Grid::<Base>::base(),
-            side_length: Grid::<Base>::side_length(),
-            cell_count: Grid::<Base>::cell_count(),
+            base: Base::BASE,
+            side_length: Base::SIDE_LENGTH,
+            cell_count: Base::CELL_COUNT,
             is_solved: grid.is_solved(),
             can_undo: sudoku.history.can_go_back(),
             can_redo: sudoku.history.can_go_forward(),

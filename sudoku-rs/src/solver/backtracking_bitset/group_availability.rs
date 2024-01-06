@@ -44,6 +44,8 @@ impl<Base: SudokuBase> IntoIterator for CandidatesGroup<Base> {
 
 pub type AvailabilityDenyList<Base> = Array2<Candidates<Base>>;
 
+// TODO: impl AvailabilityFilter<Base> for Grid<Base, Candidates<Base>>
+
 pub trait AvailabilityFilter<Base: SudokuBase> {
     /// For a given `available_candidates` at `index`, return `available_candidates` with 0 or more candidates removed.
     fn filter(

@@ -1,6 +1,7 @@
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::fmt::{Display, Formatter};
+use std::marker::PhantomData;
 use std::ops::{Index, IndexMut};
 use std::str::FromStr;
 
@@ -26,43 +27,46 @@ pub mod format;
 
 pub mod dynamic;
 
-// TODO: run tests under miri in release mode
-
+/// A square grid of cells with side length `Base::SIDE_LENGTH`.
+///
+/// By default, the cell type `T` is `Cell<Base>`.
+/// Other cell types are supported, but with less functionality.
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
-pub struct Grid<Base: SudokuBase> {
+pub struct Grid<Base: SudokuBase, T = Cell<Base>> {
     /// The cells of this grid.
     ///
     /// # Safety invariants
     /// - `cells.len() == Base::CELL_COUNT`
     /// - `cells.is_standard_layout()`
-    cells: Array2<Cell<Base>>,
+    cells: Array2<T>,
+    _base: PhantomData<Base>,
 }
 
-impl<Base: SudokuBase> AsRef<Grid<Base>> for Grid<Base> {
-    fn as_ref(&self) -> &Grid<Base> {
+impl<Base: SudokuBase, T> AsRef<Grid<Base, T>> for Grid<Base, T> {
+    fn as_ref(&self) -> &Grid<Base, T> {
         self
     }
 }
 
-impl<Base: SudokuBase> Index<Position<Base>> for Grid<Base> {
-    type Output = Cell<Base>;
+impl<Base: SudokuBase, T> Index<Position<Base>> for Grid<Base, T> {
+    type Output = T;
 
     fn index(&self, pos: Position<Base>) -> &Self::Output {
         self.get(pos)
     }
 }
 
-impl<Base: SudokuBase> IndexMut<Position<Base>> for Grid<Base> {
+impl<Base: SudokuBase, T> IndexMut<Position<Base>> for Grid<Base, T> {
     fn index_mut(&mut self, pos: Position<Base>) -> &mut Self::Output {
         self.get_mut(pos)
     }
 }
 
 /// Indexing
-impl<Base: SudokuBase> Grid<Base> {
+impl<Base: SudokuBase, T> Grid<Base, T> {
     // TODO: evaluate `cells: Box<[Cell<Base>; Base::CELL_COUNT]>`
     //  requires new associated type in `Base`, but could reduce the amount of unsafe code for slice conversions.
-    fn cells_slice(&self) -> &[Cell<Base>] {
+    fn cells_slice(&self) -> &[T] {
         self.debug_assert();
 
         // Safety: this is a unsafe fork of ndarray `ArrayBase::as_slice()`.
@@ -70,7 +74,7 @@ impl<Base: SudokuBase> Grid<Base> {
         // The length is inlined, since `Grid` guarantees it.
         unsafe { std::slice::from_raw_parts(self.cells.as_ptr(), usize::from(Base::CELL_COUNT)) }
     }
-    fn cells_slice_mut(&mut self) -> &mut [Cell<Base>] {
+    fn cells_slice_mut(&mut self) -> &mut [T] {
         self.debug_assert();
 
         // Safety: this is a unsafe fork of ndarray `ArrayBase::as_slice_mut()`.
@@ -84,8 +88,8 @@ impl<Base: SudokuBase> Grid<Base> {
 }
 
 /// Validation
-impl<Base: SudokuBase> Grid<Base> {
-    fn validate_cells(cells: &Array2<Cell<Base>>) -> Result<()> {
+impl<Base: SudokuBase, T> Grid<Base, T> {
+    fn validate_cells(cells: &Array2<T>) -> Result<()> {
         ensure!(cells.len() == usize::from(Base::CELL_COUNT));
         ensure!(cells.is_standard_layout());
 
@@ -107,8 +111,8 @@ impl<Base: SudokuBase> Grid<Base> {
         });
     }
 
-    fn validate_vec_groups<T>(groups: &'_ [Vec<T>]) -> Result<()> {
-        let side_length = Self::side_length_usize();
+    fn validate_vec_groups<U>(groups: &'_ [Vec<U>]) -> Result<()> {
+        let side_length = usize::from(Base::SIDE_LENGTH);
 
         ensure!(
             groups.len() == side_length,
@@ -129,13 +133,13 @@ impl<Base: SudokuBase> Grid<Base> {
 }
 
 /// internal ndarray views for cells
-impl<Base: SudokuBase> Grid<Base> {
-    pub(crate) fn cells(&self) -> ArrayView2<Cell<Base>> {
+impl<Base: SudokuBase, T> Grid<Base, T> {
+    pub(crate) fn cells_view(&self) -> ArrayView2<T> {
         self.cells.view()
     }
 
     #[allow(dead_code)]
-    pub(crate) fn cells_mut(&mut self) -> ArrayViewMut2<Cell<Base>> {
+    pub(crate) fn cells_view_mut(&mut self) -> ArrayViewMut2<T> {
         self.cells.view_mut()
     }
 }
@@ -389,20 +393,22 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 }
 
-impl<Base: SudokuBase> Default for Grid<Base> {
+impl<Base: SudokuBase, T: Default + Clone> Default for Grid<Base, T> {
     fn default() -> Self {
         Grid::new()
     }
 }
 
-/// Public Grid API
-impl<Base: SudokuBase> Grid<Base> {
+impl<Base: SudokuBase, T: Default + Clone> Grid<Base, T> {
     pub fn new() -> Self {
-        Self::with_cells(vec![Cell::new(); Self::cell_count_usize()]).unwrap()
+        Self::with(vec![T::default(); Base::CELL_COUNT.into()]).unwrap()
     }
+}
 
-    pub fn with_cells(cells: Vec<Cell<Base>>) -> Result<Self> {
-        let cell_count = Self::cell_count_usize();
+/// Public Grid API
+impl<Base: SudokuBase, T> Grid<Base, T> {
+    pub fn with(cells: Vec<T>) -> Result<Self> {
+        let cell_count = usize::from(Base::CELL_COUNT);
 
         ensure!(
             cells.len() == cell_count,
@@ -410,17 +416,20 @@ impl<Base: SudokuBase> Grid<Base> {
             cells.len()
         );
 
-        let side_length = Self::side_length_usize();
+        let side_length = usize::from(Base::SIDE_LENGTH);
 
         // This is the only direct instantiation of Grid.
         let grid = Self {
             cells: Array2::from_shape_vec((side_length, side_length), cells)?,
+            _base: PhantomData,
         };
         // Check for safety invariants in debug builds.
         grid.debug_assert();
         Ok(grid)
     }
+}
 
+impl<Base: SudokuBase> Grid<Base> {
     pub fn try_from_blocks(blocks: Vec<Vec<DynamicCell>>) -> Result<Self> {
         Self::validate_vec_groups(&blocks)?;
 
@@ -439,8 +448,9 @@ impl<Base: SudokuBase> Grid<Base> {
 
         Ok(grid)
     }
-
-    pub fn get(&self, pos: Position<Base>) -> &Cell<Base> {
+}
+impl<Base: SudokuBase, T> Grid<Base, T> {
+    pub fn get(&self, pos: Position<Base>) -> &T {
         // Debug validation
         pos.debug_assert();
         self.debug_assert();
@@ -457,7 +467,7 @@ impl<Base: SudokuBase> Grid<Base> {
         cell
     }
 
-    pub fn get_mut(&mut self, pos: Position<Base>) -> &mut Cell<Base> {
+    pub fn get_mut(&mut self, pos: Position<Base>) -> &mut T {
         // Debug validation
         pos.debug_assert();
         self.debug_assert();
@@ -473,7 +483,9 @@ impl<Base: SudokuBase> Grid<Base> {
 
         cell
     }
+}
 
+impl<Base: SudokuBase> Grid<Base> {
     pub fn fix_all_values(&mut self) {
         for pos in self.all_value_positions() {
             self.get_mut(pos).fix();
@@ -490,34 +502,6 @@ impl<Base: SudokuBase> Grid<Base> {
         for pos in self.all_unfixed_value_positions() {
             self.get_mut(pos).delete();
         }
-    }
-}
-
-/// Base constant accessors
-impl<Base: SudokuBase> Grid<Base> {
-    pub fn base() -> u8 {
-        Base::BASE
-    }
-    pub fn side_length() -> u8 {
-        Base::SIDE_LENGTH
-    }
-    pub fn max_value() -> u8 {
-        Base::MAX_VALUE
-    }
-    pub fn cell_count() -> u16 {
-        Base::CELL_COUNT
-    }
-    pub fn cell_count_usize() -> usize {
-        Base::CELL_COUNT.into()
-    }
-    pub fn base_usize() -> usize {
-        Base::BASE.into()
-    }
-    pub fn side_length_usize() -> usize {
-        Base::SIDE_LENGTH.into()
-    }
-    pub fn max_value_usize() -> usize {
-        Base::MAX_VALUE.into()
     }
 }
 
@@ -545,60 +529,60 @@ impl<Base: SudokuBase> Grid<Base> {
 ///    - `all_value_positions`
 ///    - `all_unfixed_value_positions`
 ///    - `all_candidates_positions`
-impl<Base: SudokuBase> Grid<Base> {
+impl<Base: SudokuBase, T> Grid<Base, T> {
     fn positions_to_cells(
         &self,
         positions: impl Iterator<Item = Position<Base>>,
-    ) -> impl Iterator<Item = &Cell<Base>> {
+    ) -> impl Iterator<Item = &T> {
         positions.map(move |pos| self.get(pos))
     }
 
     fn nested_positions_to_nested_cells(
         &self,
         nested_positions: impl Iterator<Item = impl Iterator<Item = Position<Base>>>,
-    ) -> impl Iterator<Item = impl Iterator<Item = &Cell<Base>>> {
+    ) -> impl Iterator<Item = impl Iterator<Item = &T>> {
         nested_positions.map(move |row_pos| row_pos.map(move |pos| self.get(pos)))
     }
 
-    pub fn all_cells(&self) -> impl Iterator<Item = &Cell<Base>> {
+    pub fn all_cells(&self) -> impl Iterator<Item = &T> {
         self.cells.iter()
     }
 
-    pub fn row_cells(&self, row: Coordinate<Base>) -> impl Iterator<Item = &Cell<Base>> {
+    pub fn row_cells(&self, row: Coordinate<Base>) -> impl Iterator<Item = &T> {
         self.cells.row(usize::from(row.get())).into_iter()
     }
 
-    pub fn all_row_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell<Base>>> {
+    pub fn all_row_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &T>> {
         self.cells.rows().into_iter().map(|row| row.into_iter())
     }
 
-    pub fn column_cells(&self, column: Coordinate<Base>) -> impl Iterator<Item = &Cell<Base>> {
+    pub fn column_cells(&self, column: Coordinate<Base>) -> impl Iterator<Item = &T> {
         self.cells.column(usize::from(column.get())).into_iter()
     }
 
-    pub fn all_column_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell<Base>>> {
+    pub fn all_column_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &T>> {
         self.cells
             .columns()
             .into_iter()
             .map(|column| column.into_iter())
     }
 
-    pub fn block_cells(&self, block: Coordinate<Base>) -> impl Iterator<Item = &Cell<Base>> {
+    pub fn block_cells(&self, block: Coordinate<Base>) -> impl Iterator<Item = &T> {
         self.positions_to_cells(Self::block_positions(block))
     }
 
     // TODO: exact chunks
-    pub fn all_block_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell<Base>>> {
+    pub fn all_block_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &T>> {
         self.nested_positions_to_nested_cells(Self::all_block_positions())
     }
 
-    pub fn all_group_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &Cell<Base>>> {
+    pub fn all_group_cells(&self) -> impl Iterator<Item = impl Iterator<Item = &T>> {
         self.nested_positions_to_nested_cells(Self::all_group_positions())
     }
 }
 
 /// Position iterators
-impl<Base: SudokuBase> Grid<Base> {
+impl<Base: SudokuBase, T> Grid<Base, T> {
     pub fn all_positions() -> impl Iterator<Item = Position<Base>> {
         Position::all()
     }
@@ -668,7 +652,8 @@ impl<Base: SudokuBase> Grid<Base> {
 }
 
 /// Neighbor iterators
-impl<Base: SudokuBase> Grid<Base> {
+impl<Base: SudokuBase, T> Grid<Base, T> {
+    // TODO: test
     fn neighbor_positions_with_duplicates(
         pos: Position<Base>,
     ) -> impl Iterator<Item = Position<Base>> {
@@ -711,17 +696,17 @@ impl<Base: SudokuBase, IntoCell: Into<DynamicCell>> TryFrom<Vec<IntoCell>> for G
             .map(|view| view.into().try_into())
             .collect::<Result<_>>()?;
 
-        Self::with_cells(cells)
+        Self::with(cells)
     }
 }
 
-impl<Base: SudokuBase> TryFrom<ArrayView2<'_, Cell<Base>>> for Grid<Base> {
+impl<Base: SudokuBase, T: Clone> TryFrom<ArrayView2<'_, T>> for Grid<Base, T> {
     type Error = Error;
 
-    fn try_from(cells_array_view: ArrayView2<Cell<Base>>) -> Result<Self> {
+    fn try_from(cells_array_view: ArrayView2<T>) -> Result<Self> {
         let cells_vec: Vec<_> = cells_array_view.iter().cloned().collect();
 
-        Self::with_cells(cells_vec)
+        Self::with(cells_vec)
     }
 }
 

@@ -53,7 +53,7 @@ pub fn base_2_solved() -> Grid<Base2> {
 }
 
 pub fn base_2_candidates_coordinates() -> Grid<Base2> {
-    Grid::<Base2>::with_cells(
+    Grid::<Base2>::with(
         (0..u8::try_from(Base2::CELL_COUNT).unwrap())
             .map(|i| Cell::with_candidates(Candidates::with_integral(i)))
             .collect(),

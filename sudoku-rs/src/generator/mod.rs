@@ -632,7 +632,7 @@ impl<Base: SudokuBase> Generator<Base> {
         debug_assert!(grid.is_solved());
 
         // If the distance results in a filled sudoku, return it directly.
-        if distance_from_minimal >= Grid::<Base>::cell_count() {
+        if distance_from_minimal >= Base::CELL_COUNT {
             return Ok(grid);
         }
 
