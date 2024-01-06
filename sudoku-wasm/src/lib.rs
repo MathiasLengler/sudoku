@@ -28,6 +28,19 @@ mod typescript;
 
 mod error;
 
+/*
+TODO: design API for sudoku world
+
+Requirements:
+- Change active grid
+- Generate world with settings
+    - Settings regions?
+- View state of the world
+- Play single vs world
+    - Different entry points?
+    - Game states?
+*/
+
 #[wasm_bindgen]
 pub fn init() {
     #[cfg(feature = "console")]
