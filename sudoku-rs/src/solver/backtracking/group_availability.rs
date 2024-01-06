@@ -80,7 +80,7 @@ impl<
     }
 }
 
-impl<Base: SudokuBase> AvailabilityFilter<Base> for Grid<Base, Candidates<Base>> {
+impl<Base: SudokuBase> AvailabilityFilter<Base> for DeniedCandidatesGrid<Base> {
     fn filter(
         &self,
         available_candidates: Candidates<Base>,

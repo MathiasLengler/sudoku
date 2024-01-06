@@ -19,6 +19,7 @@ use sudoku::grid::Grid;
 use sudoku::position::test_utils::{consume_iter, consume_nested_iter};
 use sudoku::position::Coordinate;
 use sudoku::position::Position;
+use sudoku::rng::{new_crate_rng_from_rng, new_crate_rng_with_seed};
 use sudoku::samples::{base_2, base_3, base_4};
 use sudoku::solver::strategic::strategies::{GroupIntersectionBoth, GroupReduction, Strategy};
 use sudoku::solver::{backtracking, strategic};
@@ -82,14 +83,38 @@ fn bench_solver_sample_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup
     let grid = sample_grid::<Base>();
 
     // TODO: backtracking parallel
-    // TODO: backtracking with availability filter
 
     solver_group.bench_with_input(
         BenchmarkId::new("backtracking", &parameter_string),
         &grid,
+        |b, grid| b.iter(|| backtracking::Solver::new(grid).next().unwrap()),
+    );
+
+    solver_group.bench_with_input(
+        BenchmarkId::new("backtracking filter empty", &parameter_string),
+        &grid,
         |b, grid| {
             b.iter(|| {
-                assert!(backtracking::Solver::new(grid).try_solve().is_some());
+                backtracking::Solver::builder(grid)
+                    .availability_filter(Grid::new())
+                    .build()
+                    .next()
+                    .unwrap()
+            })
+        },
+    );
+
+    solver_group.bench_with_input(
+        BenchmarkId::new("backtracking random", &parameter_string),
+        &grid,
+        |b, grid| {
+            let mut rng = new_crate_rng_with_seed(Some(0));
+            b.iter(|| {
+                backtracking::Solver::builder(grid)
+                    .rng(new_crate_rng_from_rng(&mut rng))
+                    .build()
+                    .next()
+                    .unwrap()
             })
         },
     );
@@ -100,9 +125,7 @@ fn bench_solver_sample_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup
         |b, grid| {
             b.iter_batched_ref(
                 || grid.clone(),
-                |grid| {
-                    assert!(strategic::Solver::new(grid).try_solve().unwrap().is_some());
-                },
+                |grid| strategic::Solver::new(grid).try_solve().unwrap().unwrap(),
                 BatchSize::SmallInput,
             )
         },
