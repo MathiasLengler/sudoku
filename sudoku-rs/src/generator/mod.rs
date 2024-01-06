@@ -426,12 +426,7 @@ impl<Base: SudokuBase> Generator<Base> {
                         .availability_filter(denylist)
                         .build();
 
-                    // TODO: find root cause for sporadic crash:
-                    //  thread '<unknown>' has overflowed its stack
-                    solver
-                        .into_par_iter()
-                        .flatten_iter()
-                        .any(|_solution: Grid<Base>| true)
+                    solver.has_any_solution()
                 }
                 #[cfg(not(feature = "parallel"))]
                 {

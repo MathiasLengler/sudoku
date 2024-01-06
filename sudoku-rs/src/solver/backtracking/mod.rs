@@ -426,6 +426,23 @@ mod parallel {
             split(self, Solver::split)
         }
     }
+
+    impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, ICandidates: CandidatesIterator<Base>>
+        Solver<Base, GridRef, ICandidates, DeniedCandidatesGrid<Base>>
+    where
+        Self: Clone + Send,
+    {
+        // TODO: find root cause for sporadic crash:
+        //  thread '<unknown>' has overflowed its stack
+        // Assumption: way too aggressive splitting
+        //  also kills perf
+
+        pub fn has_any_solution(self) -> bool {
+            self.into_par_iter()
+                .flatten_iter()
+                .any(|_solution: Grid<Base>| true)
+        }
+    }
 }
 
 #[cfg(test)]
