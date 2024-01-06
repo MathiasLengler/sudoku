@@ -19,7 +19,7 @@ use crate::grid::Grid;
 use crate::position::Position;
 use crate::rng::{new_crate_rng_from_rng, new_crate_rng_with_seed};
 use crate::solver::backtracking_bitset;
-use crate::solver::backtracking_bitset::AvailabilityDenyList;
+use crate::solver::backtracking_bitset::DeniedCandidatesGrid;
 use crate::world::RelativeTileDir::TopRight;
 
 mod overlap_segment_filter;
@@ -274,7 +274,7 @@ impl<Base: SudokuBase> CellWorld<Base> {
     fn direct_denylist_from_top_right_grid(
         &self,
         tile_index: TileIndex,
-    ) -> Option<AvailabilityDenyList<Base>> {
+    ) -> Option<DeniedCandidatesGrid<Base>> {
         let top_right_tile_index = tile_index.adjacent(TopRight, self.tile_dim)?;
 
         let top_right_grid_cells = self.cells.slice(Self::grid_cells_slice_info(
@@ -296,12 +296,9 @@ impl<Base: SudokuBase> CellWorld<Base> {
             .map(|cell| cell.value().expect("top right grid to contain only values"))
             .collect();
 
-        let mut denylist = Array2::<Candidates<Base>>::default((
-            Base::SIDE_LENGTH.into(),
-            Base::SIDE_LENGTH.into(),
-        ));
-
+        let mut denylist = Grid::new();
         denylist
+            .cells_view_mut()
             .slice_mut(s![
                 // top block row band without overlap
                 overlap_isize..isize::from(Base::BASE),
@@ -310,7 +307,6 @@ impl<Base: SudokuBase> CellWorld<Base> {
             ])
             .fill(denied_corner_candidates);
 
-        assert!(denylist.is_standard_layout());
         Some(denylist)
     }
 

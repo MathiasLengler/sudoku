@@ -1,7 +1,6 @@
-use ndarray::Array2;
-
 use crate::base::SudokuBase;
 use crate::cell::{Candidates, Value};
+use crate::grid::Grid;
 use crate::position::{Coordinate, Position};
 use crate::unsafe_utils::{get_unchecked, get_unchecked_mut};
 
@@ -42,7 +41,7 @@ impl<Base: SudokuBase> IntoIterator for CandidatesGroup<Base> {
     }
 }
 
-pub type AvailabilityDenyList<Base> = Array2<Candidates<Base>>;
+pub type DeniedCandidatesGrid<Base> = Grid<Base, Candidates<Base>>;
 
 // TODO: impl AvailabilityFilter<Base> for Grid<Base, Candidates<Base>>
 
@@ -81,26 +80,20 @@ impl<
     }
 }
 
-// A grid of candidates defines denied candidates for each position.
-impl<Base: SudokuBase> AvailabilityFilter<Base> for AvailabilityDenyList<Base> {
+impl<Base: SudokuBase> AvailabilityFilter<Base> for Grid<Base, Candidates<Base>> {
     fn filter(
         &self,
         available_candidates: Candidates<Base>,
         index: GroupAvailabilityIndex<Base>,
     ) -> Candidates<Base> {
-        // TODO: generic Grid: asserts sudoku grid size, but has no opinion on cell type
-        //  assert_eq!(denylist.len(), usize::from(Base::CELL_COUNT));
-        //  assert!(denylist.is_square());
+        let denied_candidates = *self.get(index.into());
 
-        // TODO: optimize
-        let denied_candidates =
-            self.as_slice().unwrap()[usize::from(Position::from(index).cell_index())];
         available_candidates.without(denied_candidates)
     }
 }
 
 // A optional grid of candidates defines denied candidates for each position.
-impl<Base: SudokuBase> AvailabilityFilter<Base> for Option<AvailabilityDenyList<Base>> {
+impl<Base: SudokuBase> AvailabilityFilter<Base> for Option<DeniedCandidatesGrid<Base>> {
     fn filter(
         &self,
         available_candidates: Candidates<Base>,

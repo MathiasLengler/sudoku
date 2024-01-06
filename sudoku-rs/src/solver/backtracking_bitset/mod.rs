@@ -6,7 +6,7 @@ use log::trace;
 
 pub use builder::SolverBuilder;
 use group_availability::GroupAvailability;
-pub use group_availability::{AvailabilityDenyList, AvailabilityFilter, GroupAvailabilityIndex};
+pub use group_availability::{AvailabilityFilter, DeniedCandidatesGrid, GroupAvailabilityIndex};
 
 use crate::base::SudokuBase;
 use crate::cell::{Candidates, CandidatesAscIter, CandidatesIterator, CandidatesRandIter};
@@ -326,7 +326,7 @@ impl<
 }
 
 impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, ICandidates: CandidatesIterator<Base>>
-    Solver<Base, GridRef, ICandidates, AvailabilityDenyList<Base>>
+    Solver<Base, GridRef, ICandidates, DeniedCandidatesGrid<Base>>
 where
     Self: Clone,
 {
@@ -384,12 +384,10 @@ where
         let mut left = self;
         let mut right = left.clone();
 
-        let cell_index = usize::from(Position::from(split_availability_index).cell_index());
-        let left_filter_slice = left.availability.filter.as_slice_mut().unwrap();
-        left_filter_slice[cell_index] = left_filter_slice[cell_index].union(right_candidates);
-
-        let right_filter_slice = right.availability.filter.as_slice_mut().unwrap();
-        right_filter_slice[cell_index] = right_filter_slice[cell_index].union(left_candidates);
+        // Remove availability for each other
+        let pos = Position::from(split_availability_index);
+        left.availability.filter[pos] = left.availability.filter[pos].union(right_candidates);
+        right.availability.filter[pos] = right.availability.filter[pos].union(left_candidates);
 
         (left, Some(right))
     }
@@ -417,7 +415,7 @@ mod parallel {
     use super::*;
 
     impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, ICandidates: CandidatesIterator<Base>>
-        IntoParallelIterator for Solver<Base, GridRef, ICandidates, AvailabilityDenyList<Base>>
+        IntoParallelIterator for Solver<Base, GridRef, ICandidates, DeniedCandidatesGrid<Base>>
     where
         Self: Clone + Send,
     {
@@ -440,7 +438,6 @@ mod tests {
     // TODO: test partial filled sudoku with conflict (implies no solutions)
 
     use itertools::chain;
-    use ndarray::Array2;
 
     use crate::base::consts::*;
     use crate::rng::new_crate_rng_with_seed;
@@ -532,8 +529,8 @@ mod tests {
         type Base = Base2;
 
         let grid = Grid::<Base>::new();
-        let mut denylist = Array2::default((Base::SIDE_LENGTH.into(), Base::SIDE_LENGTH.into()));
-        denylist[(0, 0)] = vec![1, 3]
+        let mut denylist = Grid::new();
+        denylist[Position::default()] = vec![1, 3]
             .into_iter()
             .map(|v| v.try_into().unwrap())
             .collect();
@@ -551,10 +548,7 @@ mod tests {
         assert_is_splittable: bool,
     ) {
         let solver = Solver::builder(grid)
-            .availability_filter(Array2::default((
-                Base::SIDE_LENGTH.into(),
-                Base::SIDE_LENGTH.into(),
-            )))
+            .availability_filter(Grid::new())
             .build();
 
         let (left_solver, Some(right_solver)) = solver.split() else {
@@ -590,10 +584,7 @@ mod tests {
 
         let grid = Grid::<Base>::new();
         let solver = Solver::builder(grid)
-            .availability_filter(Array2::default((
-                Base::SIDE_LENGTH.into(),
-                Base::SIDE_LENGTH.into(),
-            )))
+            .availability_filter(Grid::new())
             .build();
 
         let (left_solver, Some(right_solver)) = solver.split() else {
@@ -609,10 +600,7 @@ mod tests {
 
         let grid = Grid::<Base>::new();
         let solver = Solver::builder(grid)
-            .availability_filter(Array2::default((
-                Base::SIDE_LENGTH.into(),
-                Base::SIDE_LENGTH.into(),
-            )))
+            .availability_filter(Grid::new())
             .build();
 
         let (l, Some(r)) = solver.split() else {
@@ -632,10 +620,7 @@ mod tests {
 
         let grid = Grid::<Base>::new();
         let solver = Solver::builder(grid)
-            .availability_filter(Array2::default((
-                Base::SIDE_LENGTH.into(),
-                Base::SIDE_LENGTH.into(),
-            )))
+            .availability_filter(Grid::new())
             .build();
 
         let mut split_solvers = vec![solver];
@@ -663,10 +648,7 @@ mod tests {
 
         let grid = Grid::<Base>::new();
         let solver = Solver::builder(grid)
-            .availability_filter(Array2::default((
-                Base::SIDE_LENGTH.into(),
-                Base::SIDE_LENGTH.into(),
-            )))
+            .availability_filter(Grid::new())
             .build();
 
         assert_solver_all_solutions_base_2(

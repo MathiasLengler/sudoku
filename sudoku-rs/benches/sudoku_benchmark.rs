@@ -81,6 +81,9 @@ fn bench_solver_sample_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup
     let parameter_string = format!("Base={}", base);
     let grid = sample_grid::<Base>();
 
+    // TODO: backtracking parallel
+    // TODO: backtracking with availability filter
+
     solver_group.bench_with_input(
         BenchmarkId::new("backtracking_bitset", &parameter_string),
         &grid,

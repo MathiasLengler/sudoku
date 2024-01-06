@@ -418,14 +418,10 @@ impl<Base: SudokuBase> Generator<Base> {
             let has_ambiguous_solution = {
                 #[cfg(feature = "parallel")]
                 {
-                    use ndarray::Array2;
                     use rayon::prelude::*;
 
-                    // TODO: optimize denylist
-                    let mut denylist =
-                        Array2::default((Base::SIDE_LENGTH.into(), Base::SIDE_LENGTH.into()));
-                    denylist[(pos.to_row().get_usize(), pos.to_column().get_usize())] =
-                        Candidates::with_single(deleted_value);
+                    let mut denylist = Grid::new();
+                    denylist[pos] = Candidates::with_single(deleted_value);
                     let solver = backtracking_bitset::Solver::builder(&grid)
                         .availability_filter(denylist)
                         .build();
