@@ -3,7 +3,7 @@ use std::time::Instant;
 use sudoku::base::consts::Base3;
 use sudoku::error::Result;
 use sudoku::grid::deserialization::read_grids_from_file;
-use sudoku::solver::backtracking_bitset;
+use sudoku::solver::backtracking;
 use sudoku::solver::strategic;
 
 #[allow(dead_code)]
@@ -29,7 +29,7 @@ fn main() -> Result<()> {
                 assert!(strategic::Solver::new(grid).try_solve().unwrap().is_some());
             }
             SolverSelection::BacktrackingBitset => {
-                let mut solver = backtracking_bitset::Solver::new(grid);
+                let mut solver = backtracking::Solver::new(grid);
                 assert!(solver.try_solve().is_some());
                 total_guess_count += solver.guess_count;
             }

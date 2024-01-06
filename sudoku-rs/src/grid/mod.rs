@@ -19,7 +19,7 @@ use crate::grid::format::{CandidatesGridANSIStyled, DynamicGridFormat, GridForma
 use crate::position::Coordinate;
 use crate::position::Position;
 use crate::solver::strategic::strategies::DynamicStrategy;
-use crate::solver::{backtracking_bitset, strategic};
+use crate::solver::{backtracking, strategic};
 use crate::unsafe_utils::{get_unchecked, get_unchecked_mut};
 
 pub mod deserialization;
@@ -360,7 +360,7 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 
     pub fn unique_solution(&self) -> Option<Self> {
-        let mut solver = backtracking_bitset::Solver::new(self);
+        let mut solver = backtracking::Solver::new(self);
 
         match (solver.next(), solver.next()) {
             (Some(unique_solution), None) => Some(unique_solution),
@@ -376,7 +376,7 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 
     pub fn solution_count(&self) -> usize {
-        let solver = backtracking_bitset::Solver::new(self);
+        let solver = backtracking::Solver::new(self);
         solver.count()
     }
 

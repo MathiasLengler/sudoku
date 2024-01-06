@@ -15,7 +15,7 @@ use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::rng::{new_crate_rng_with_seed, CrateRng};
-use crate::solver::backtracking_bitset;
+use crate::solver::backtracking;
 use crate::solver::strategic::strategies::{Backtracking, DynamicStrategy};
 
 // TODO: strategic
@@ -338,7 +338,7 @@ impl<Base: SudokuBase> Generator<Base> {
             Grid::<Base>::new()
         };
 
-        let mut solver = backtracking_bitset::Solver::builder(&grid)
+        let mut solver = backtracking::Solver::builder(&grid)
             .rng(rng.clone())
             .build();
 
@@ -422,7 +422,7 @@ impl<Base: SudokuBase> Generator<Base> {
 
                     let mut denylist = Grid::new();
                     denylist[pos] = Candidates::with_single(deleted_value);
-                    let solver = backtracking_bitset::Solver::builder(&grid)
+                    let solver = backtracking::Solver::builder(&grid)
                         .availability_filter(denylist)
                         .build();
 
@@ -435,7 +435,7 @@ impl<Base: SudokuBase> Generator<Base> {
                 }
                 #[cfg(not(feature = "parallel"))]
                 {
-                    let mut solver = backtracking_bitset::Solver::builder(&grid)
+                    let mut solver = backtracking::Solver::builder(&grid)
                         .availability_filter(
                             move |mut available_candidates: Candidates<Base>, index| {
                                 if Position::from(index) == pos {

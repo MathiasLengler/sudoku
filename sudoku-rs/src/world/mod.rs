@@ -18,8 +18,8 @@ use crate::generator::{
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::rng::{new_crate_rng_from_rng, new_crate_rng_with_seed};
-use crate::solver::backtracking_bitset;
-use crate::solver::backtracking_bitset::DeniedCandidatesGrid;
+use crate::solver::backtracking;
+use crate::solver::backtracking::DeniedCandidatesGrid;
 use crate::world::RelativeTileDir::TopRight;
 
 mod overlap_segment_filter;
@@ -82,13 +82,13 @@ impl<Base: SudokuBase> CellWorld<Base> {
 
         let mut backtrack_count = 0;
 
-        let mut solver_stack: Vec<backtracking_bitset::Solver<Base, _, _, _>> =
+        let mut solver_stack: Vec<backtracking::Solver<Base, _, _, _>> =
             Vec::with_capacity(tile_indexes.len());
 
         let mut rng = new_crate_rng_with_seed(seed);
 
         solver_stack.push(
-            backtracking_bitset::Solver::builder(self.to_grid_at(TileIndex::default()))
+            backtracking::Solver::builder(self.to_grid_at(TileIndex::default()))
                 .rng(new_crate_rng_from_rng(&mut rng))
                 .availability_filter(None)
                 .build(),
@@ -116,7 +116,7 @@ impl<Base: SudokuBase> CellWorld<Base> {
                     let next_grid = self.to_grid_at(next_tile_index);
                     // println!("next_grid init:\n{next_grid}");
                     solver_stack.push(
-                        backtracking_bitset::Solver::builder(next_grid)
+                        backtracking::Solver::builder(next_grid)
                             .rng(new_crate_rng_from_rng(&mut rng))
                             .availability_filter(denylist)
                             .build(),

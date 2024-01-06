@@ -1,4 +1,4 @@
-pub mod backtracking_bitset;
+pub mod backtracking;
 pub mod strategic;
 
 // TODO: exact-cover based solver:

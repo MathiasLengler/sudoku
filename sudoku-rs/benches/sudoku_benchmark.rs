@@ -21,7 +21,7 @@ use sudoku::position::Coordinate;
 use sudoku::position::Position;
 use sudoku::samples::{base_2, base_3, base_4};
 use sudoku::solver::strategic::strategies::{GroupIntersectionBoth, GroupReduction, Strategy};
-use sudoku::solver::{backtracking_bitset, strategic};
+use sudoku::solver::{backtracking, strategic};
 
 fn cast_grid<Base: SudokuBase>(any_grid: Box<dyn Any>) -> Grid<Base> {
     *any_grid.downcast().unwrap()
@@ -85,11 +85,11 @@ fn bench_solver_sample_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup
     // TODO: backtracking with availability filter
 
     solver_group.bench_with_input(
-        BenchmarkId::new("backtracking_bitset", &parameter_string),
+        BenchmarkId::new("backtracking", &parameter_string),
         &grid,
         |b, grid| {
             b.iter(|| {
-                assert!(backtracking_bitset::Solver::new(grid).try_solve().is_some());
+                assert!(backtracking::Solver::new(grid).try_solve().is_some());
             })
         },
     );
@@ -135,12 +135,12 @@ fn bench_solver_tdoku_group(solver_tdoku_group: &mut BenchmarkGroup<WallTime>) {
         solver_tdoku_group.throughput(Throughput::Elements(grids.len() as u64));
 
         solver_tdoku_group.bench_with_input(
-            BenchmarkId::new("backtracking_bitset", tdoku_dataset),
+            BenchmarkId::new("backtracking", tdoku_dataset),
             grids,
             |b, grids| {
                 b.iter(|| {
                     for grid in grids {
-                        assert!(backtracking_bitset::Solver::new(grid).try_solve().is_some());
+                        assert!(backtracking::Solver::new(grid).try_solve().is_some());
                     }
                 })
             },
@@ -176,7 +176,7 @@ fn bench_solver_micro_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup<
         &grid,
         |b, grid| {
             b.iter_batched_ref(
-                || backtracking_bitset::Solver::new(grid),
+                || backtracking::Solver::new(grid),
                 |solver| solver.move_best_choice_to_front(black_box(1)),
                 BatchSize::SmallInput,
             )
