@@ -88,6 +88,11 @@ pub fn base_3() -> Vec<Grid<Base3>> {
     grids
 }
 
+pub fn base_4() -> Vec<Grid<Base4>> {
+    let minimal = "001b600e000f0000d00010b00e0008470ce30000d40000a04500000g0700f000000000160ged000af0600002001000050005a0008000100200b00470f050000c0d06000000gce00000870d0041000bc9c000003a0bf000200g005000200007f450000e006ca0097800g0f1c0309804d000009060000000g00ec0080d0000b501".parse().unwrap();
+    vec![minimal]
+}
+
 pub fn minimal<Base: SudokuBase>() -> Grid<Base> {
     Generator::with_pruning(PruningSettings {
         target: PruningTarget::Minimal,

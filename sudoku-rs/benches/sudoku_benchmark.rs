@@ -19,7 +19,7 @@ use sudoku::grid::Grid;
 use sudoku::position::test_utils::{consume_iter, consume_nested_iter};
 use sudoku::position::Coordinate;
 use sudoku::position::Position;
-use sudoku::samples::{base_2, base_3};
+use sudoku::samples::{base_2, base_3, base_4};
 use sudoku::solver::strategic::strategies::{GroupIntersectionBoth, GroupReduction, Strategy};
 use sudoku::solver::{backtracking_bitset, strategic};
 
@@ -31,6 +31,7 @@ fn sample_grid<Base: SudokuBase>() -> Grid<Base> {
     match Base::BASE {
         2 => cast_grid(Box::new(base_2().into_iter().next().unwrap())),
         3 => cast_grid(Box::new(base_3().into_iter().next().unwrap())),
+        4 => cast_grid(Box::new(base_4().into_iter().next().unwrap())),
         _ => panic!("unexpected base"),
     }
 }
@@ -404,6 +405,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     solver_sample_group.sample_size(20);
     bench_solver_sample_group::<Base2>(&mut solver_sample_group);
     bench_solver_sample_group::<Base3>(&mut solver_sample_group);
+    bench_solver_sample_group::<Base4>(&mut solver_sample_group);
     // TODO: add base4 sample
     solver_sample_group.finish();
 
