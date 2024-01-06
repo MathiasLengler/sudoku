@@ -121,18 +121,6 @@ impl<Base: SudokuBase> Game for Sudoku<Base> {
     }
 
     fn set_or_toggle_value(&mut self, pos: DynamicPosition, value: u8) -> Result<()> {
-        // FIXME: remove
-        #[cfg(feature = "parallel")]
-        {
-            use log::info;
-            use rayon::prelude::*;
-
-            info!(
-                "Hello rayon: {:?}",
-                (0..1_000_000).into_par_iter().sum::<u64>()
-            );
-        }
-
         let pos = pos.try_into()?;
         let value = Value::new(value)?;
 
