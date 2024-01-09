@@ -407,6 +407,50 @@ impl<
     }
 }
 
+impl<
+        Base: SudokuBase,
+        GridRef: AsRef<Grid<Base>>,
+        ICandidates: CandidatesIterator<Base>,
+        Filter: AvailabilityFilter<Base>,
+    > Display for Solver<Base, GridRef, ICandidates, Filter>
+{
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        use itertools::Itertools;
+        use tabled::{Table, Tabled};
+
+        #[derive(Tabled)]
+        struct BacktrackingStackEntry<Base: SudokuBase, ICandidates: Display> {
+            // From availability_indexes
+            pos: Position<Base>,
+            // From candidates_iters
+            candidates: ICandidates,
+        }
+
+        let Self {
+            // TODO
+            availability: _availability,
+            availability_indexes,
+            candidates_iters,
+            guess_count,
+            has_returned_pre_filled_grid_solution,
+            ..
+        } = self;
+
+        write!(f, "backtracking::Solver:\nGrid:\n{}\n", self.grid())?;
+
+        let backtracking_stack = std::iter::zip(availability_indexes, candidates_iters).map(
+            |(&availability_index, candidates)| BacktrackingStackEntry {
+                pos: availability_index.into(),
+                candidates,
+            },
+        );
+
+        let backtracking_stack_table = Table::new(backtracking_stack);
+
+        write!(f, "{backtracking_stack_table}\nguess_count: {guess_count}, has_returned_pre_filled_grid_solution: {has_returned_pre_filled_grid_solution}")
+    }
+}
+
 #[cfg(feature = "parallel")]
 mod parallel {
     use rayon::iter::{split, Split};

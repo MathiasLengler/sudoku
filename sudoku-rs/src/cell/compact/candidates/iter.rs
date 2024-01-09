@@ -1,4 +1,5 @@
 use rand::prelude::*;
+use std::fmt::{write, Binary, Debug, Display, Formatter};
 
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
@@ -6,9 +7,9 @@ use crate::cell::compact::value::Value;
 use crate::rng::CrateRng;
 
 pub trait CandidatesIterator<Base: SudokuBase>:
-    ExactSizeIterator<Item = Value<Base>> + Clone
+    ExactSizeIterator<Item = Value<Base>> + Clone + Display
 {
-    type InitContext;
+    type InitContext: Debug;
 
     fn from_candidates_with_init_context(
         candidates: Candidates<Base>,
@@ -21,6 +22,12 @@ pub trait CandidatesIterator<Base: SudokuBase>:
 #[derive(Debug, Clone)]
 pub struct CandidatesAscIter<Base: SudokuBase> {
     candidates: Candidates<Base>,
+}
+
+impl<Base: SudokuBase> Display for CandidatesAscIter<Base> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        Display::fmt(&self.candidates, f)
+    }
 }
 
 impl<Base: SudokuBase> CandidatesIterator<Base> for CandidatesAscIter<Base> {
@@ -73,6 +80,12 @@ struct CandidatesRandNoPeekIter<Base: SudokuBase> {
     rng: CrateRng,
 }
 
+impl<Base: SudokuBase> Display for CandidatesRandNoPeekIter<Base> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        Display::fmt(&self.iter, f)
+    }
+}
+
 impl<Base: SudokuBase> Iterator for CandidatesRandNoPeekIter<Base> {
     type Item = Value<Base>;
 
@@ -101,6 +114,16 @@ impl<Base: SudokuBase> ExactSizeIterator for CandidatesRandNoPeekIter<Base> {
 pub struct CandidatesRandIter<Base: SudokuBase> {
     iter: CandidatesRandNoPeekIter<Base>,
     next: Option<Value<Base>>,
+}
+
+impl<Base: SudokuBase> Display for CandidatesRandIter<Base> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        if let Some(next) = self.next {
+            Display::fmt(&next, f)?;
+        }
+
+        Display::fmt(&self.iter, f)
+    }
 }
 
 impl<Base: SudokuBase> CandidatesIterator<Base> for CandidatesRandIter<Base> {

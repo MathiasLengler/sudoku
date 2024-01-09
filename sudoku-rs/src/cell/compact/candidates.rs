@@ -370,7 +370,18 @@ impl<Base: SudokuBase> TryFrom<DynamicCandidates> for Candidates<Base> {
 
 impl<Base: SudokuBase> Display for Candidates<Base> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self.to_vec_u8())
+        if f.alternate() {
+            write!(f, "{:?}", self.to_vec_value())
+        } else {
+            write!(
+                f,
+                "{:?}",
+                self.to_vec_value()
+                    .into_iter()
+                    .map(|value| value.to_string())
+                    .collect::<String>()
+            )
+        }
     }
 }
 
