@@ -73,3 +73,6 @@ required-features = ["parallel", "terminal", "histogram"]
 [[bin]]
 name = "solver_animation"
 required-features = ["solver_debug_print"]
+[[bin]]
+name = "solver_parallel"
+required-features = ["parallel"]
