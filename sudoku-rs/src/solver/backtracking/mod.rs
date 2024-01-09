@@ -1,6 +1,7 @@
 //! Adaptation of [tdoku `solver_basic.cc`](https://github.com/t-dillon/tdoku/blob/master/src/solver_basic.cc)
 
-use std::fmt::Debug;
+use std::fmt::{Debug, Display, Formatter};
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use log::trace;
 
@@ -325,6 +326,8 @@ impl<
     }
 }
 
+pub static SPLIT_COUNT: AtomicU64 = AtomicU64::new(0);
+
 impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, ICandidates: CandidatesIterator<Base>>
     Solver<Base, GridRef, ICandidates, DeniedCandidatesGrid<Base>>
 where
@@ -340,6 +343,8 @@ where
     ///
     /// Used for parallel solving.
     pub fn split(self) -> (Self, Option<Self>) {
+        SPLIT_COUNT.fetch_add(1, Ordering::Release);
+
         // Find yet to be solved index with at least two available candidates
         let candidates_iters_len = self.candidates_iters.len();
         let Some((split_availability_index, split_available_candidates, _)) = self

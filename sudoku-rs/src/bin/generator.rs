@@ -1,7 +1,9 @@
+use std::sync::atomic::Ordering;
 use std::time::Instant;
 use sudoku::base::consts::*;
 use sudoku::error::Result;
 use sudoku::generator::{Generator, GeneratorSettings, PruningSettings, PruningTarget};
+use sudoku::solver::backtracking::SPLIT_COUNT;
 
 fn main() -> Result<()> {
     let before = Instant::now();
@@ -22,6 +24,8 @@ fn main() -> Result<()> {
 
     println!("{grid}");
     dbg!(total_time);
+
+    dbg!(SPLIT_COUNT.load(Ordering::Acquire));
 
     Ok(())
 }
