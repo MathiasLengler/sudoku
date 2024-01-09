@@ -156,6 +156,18 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>>
     }
 }
 
+enum StepResult<Base: SudokuBase> {
+    Solution(Grid<Base>),
+    NextCell,
+    Backtrack,
+    Done,
+}
+
+enum FueledSolveResult<Base: SudokuBase> {
+    OutOfFuel,
+    Result(Option<Grid<Base>>),
+}
+
 impl<
         Base: SudokuBase,
         GridRef: AsRef<Grid<Base>>,
@@ -268,15 +280,13 @@ impl<
                 .get_mut((*choice_index).into())
                 .set_value(candidates_iter.peek().unwrap());
         }
+        debug_assert!(solution_grid.is_solved());
         solution_grid
     }
 
-    pub fn try_solve(&mut self) -> Option<Grid<Base>> {
-        while let Some(candidates) = self.candidates_iters.last() {
+    fn step(&mut self) -> StepResult<Base> {
+        if let Some(candidates) = self.candidates_iters.last() {
             if let Some(candidate) = candidates.peek() {
-                // TODO: only update if there are multiple candidates
-                self.guess_count += 1;
-
                 let choice_index = self.availability_indexes[self.candidates_iters.len() - 1];
                 self.availability.delete(choice_index, candidate);
 
@@ -288,13 +298,15 @@ impl<
                     self.candidates_iters.last_mut().unwrap().next();
                     self.availability.insert(choice_index, candidate);
 
-                    return Some(solution_grid);
+                    StepResult::Solution(solution_grid)
                 } else {
                     // Next cell
                     let next_i = self.candidates_iters.len();
                     self.move_best_choice_to_front(next_i);
                     let next_availability_index = self.availability_indexes[next_i];
                     self.push_candidates_iter(next_availability_index);
+
+                    StepResult::NextCell
                 }
             } else {
                 // Backtrack
@@ -305,23 +317,45 @@ impl<
                         let prev_choice_index = self.availability_indexes[candidates_iters_len - 1];
                         self.availability.insert(prev_choice_index, prev_candidate);
                     }
-
                     prev_candidates.next();
                 }
+                StepResult::Backtrack
             }
-        }
-
-        if self.availability_indexes.is_empty() && !self.has_returned_pre_filled_grid_solution {
+        } else if self.availability_indexes.is_empty()
+            && !self.has_returned_pre_filled_grid_solution
+        {
             self.has_returned_pre_filled_grid_solution = true;
 
             let grid = self.grid();
             if grid.is_solved() {
-                Some(grid.clone())
+                StepResult::Solution(grid.clone())
             } else {
-                None
+                StepResult::Done
             }
         } else {
-            None
+            StepResult::Done
+        }
+    }
+
+    fn try_solve_with_fuel(&mut self, mut fuel: u64) -> FueledSolveResult<Base> {
+        for _ in 0..fuel {
+            match self.step() {
+                StepResult::Solution(solution) => return FueledSolveResult::Result(Some(solution)),
+                StepResult::Done => return FueledSolveResult::Result(None),
+                _ => {}
+            }
+        }
+
+        FueledSolveResult::OutOfFuel
+    }
+
+    pub fn try_solve(&mut self) -> Option<Grid<Base>> {
+        loop {
+            match self.step() {
+                StepResult::Solution(solution) => return Some(solution),
+                StepResult::Done => return None,
+                _ => {}
+            }
         }
     }
 }
@@ -336,6 +370,11 @@ where
     // TODO: measure solution space split fairness
     //  for efficient parallelization both solvers should search the approx. same solution space.
 
+    // Alternative implementation without Filter: DeniedCandidatesGrid
+    //  find split cell with least candidates >= 2
+    //  candidates.len() cloned solvers:
+    //   copy grid, set values for each candidates_iter.peek, select on candidate from split cell, set as value in cloned grid, re-initialize solver
+
     /// Split the current solver into two.
     ///
     /// The two solvers will search distinct solution spaces of the same sudoku.
@@ -347,26 +386,26 @@ where
 
         // Find yet to be solved index with at least two available candidates
         let candidates_iters_len = self.candidates_iters.len();
-        let Some((split_availability_index, split_available_candidates, _)) = self
-            .availability_indexes[candidates_iters_len..]
-            .iter()
-            .filter_map(|&availability_index| {
-                let available_candidates = self
-                    .availability
-                    .available_candidates_at(availability_index);
-                let available_candidates_count = available_candidates.count();
-                if available_candidates_count > 1 {
-                    Some((
-                        availability_index,
-                        available_candidates,
-                        available_candidates_count,
-                    ))
-                } else {
-                    None
-                }
-            })
-            // TODO: benchmark: min vs max while generating
-            .min_by_key(|(_, _, available_candidates_count)| *available_candidates_count)
+        let availability_indexes_to_be_solved = &self.availability_indexes[candidates_iters_len..];
+        let Some((split_availability_index, split_available_candidates, _)) =
+            availability_indexes_to_be_solved
+                .iter()
+                .filter_map(|&availability_index| {
+                    let available_candidates = self
+                        .availability
+                        .available_candidates_at(availability_index);
+                    let available_candidates_count = available_candidates.count();
+                    if available_candidates_count > 1 {
+                        Some((
+                            availability_index,
+                            available_candidates,
+                            available_candidates_count,
+                        ))
+                    } else {
+                        None
+                    }
+                })
+                .min_by_key(|(_, _, available_candidates_count)| *available_candidates_count)
         else {
             return (self, None);
         };
@@ -420,7 +459,6 @@ impl<
     > Display for Solver<Base, GridRef, ICandidates, Filter>
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        use itertools::Itertools;
         use tabled::{Table, Tabled};
 
         #[derive(Tabled)]
@@ -485,6 +523,27 @@ mod parallel {
         //  thread '<unknown>' has overflowed its stack
         // Assumption: way too aggressive splitting
         //  also kills perf
+
+        // Possible solution:
+        //  switch to lower level rayon API
+        //  we could provide hints about the size of the search space
+        //  the current implementation using split has no knowledge about the search space.
+        //  This could result in lop-sided splitting, resulting in overhead.
+
+        // Possible solution:
+        //  Refuse to split if search space is too small
+        //   unclear, how to estimate the size of the search space
+
+        // Possible solution:
+        //  interrupt iteration
+        //  a single .next call can take an arbitrary amount of time.
+        //  if the is a upper limit, we could identify slow solvers and split them further
+        //  Better: adaptive splitting:
+        //   - start with a few/a single solver
+        //   - search with fuel amount X
+        //   - if found solution, ret
+        //   - if found no solution left, ret
+        //   - if out of fuel, split and run in parallel
 
         pub fn has_any_solution(self) -> bool {
             self.into_par_iter()
