@@ -3,12 +3,12 @@ use std::time::Instant;
 
 use sudoku::error::Result;
 use sudoku::grid::Grid;
-use sudoku::samples::base_4;
+use sudoku::samples;
 use sudoku::solver::backtracking::{Solver, SPLIT_COUNT};
 
 fn main() -> Result<()> {
     let before = Instant::now();
-    let grid = base_4().into_iter().next().unwrap();
+    let grid = samples::base_4().into_iter().next().unwrap();
     let solver = Solver::builder(&grid)
         .availability_filter(Grid::new())
         .build();

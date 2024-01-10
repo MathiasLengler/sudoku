@@ -21,7 +21,7 @@ fn main() -> Result<()> {
 
     let before = Instant::now();
 
-    let mut total_guess_count = 0;
+    let mut total_backtrack_count = 0;
 
     for (i, grid) in grids.iter_mut().enumerate() {
         match solver_selection {
@@ -31,7 +31,7 @@ fn main() -> Result<()> {
             SolverSelection::BacktrackingBitset => {
                 let mut solver = backtracking::Solver::new(grid);
                 assert!(solver.try_solve().is_some());
-                total_guess_count += solver.guess_count;
+                total_backtrack_count += solver.backtrack_count;
             }
         }
 
@@ -45,7 +45,7 @@ fn main() -> Result<()> {
 
     dbg!(total_time);
     dbg!(grids.len() as f64 / total_time.as_secs_f64());
-    dbg!(total_guess_count);
+    dbg!(total_backtrack_count);
 
     Ok(())
 }

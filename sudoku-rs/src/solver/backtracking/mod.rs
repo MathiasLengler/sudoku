@@ -46,7 +46,7 @@ pub struct Solver<
 
     candidates_iter_init_context: ICandidates::InitContext,
 
-    pub guess_count: u64,
+    pub backtrack_count: u64,
 
     has_returned_pre_filled_grid_solution: bool,
 }
@@ -186,7 +186,7 @@ impl<
             availability_indexes: vec![],
             candidates_iters: vec![],
             candidates_iter_init_context,
-            guess_count: 0,
+            backtrack_count: 0,
             has_returned_pre_filled_grid_solution: false,
         };
 
@@ -310,6 +310,7 @@ impl<
                 }
             } else {
                 // Backtrack
+                self.backtrack_count += 1;
                 self.candidates_iters.pop().unwrap();
                 let candidates_iters_len = self.candidates_iters.len();
                 if let Some(prev_candidates) = self.candidates_iters.last_mut() {
@@ -474,7 +475,7 @@ impl<
             availability: _availability,
             availability_indexes,
             candidates_iters,
-            guess_count,
+            backtrack_count: backtrack_count,
             has_returned_pre_filled_grid_solution,
             ..
         } = self;
@@ -490,12 +491,14 @@ impl<
 
         let backtracking_stack_table = Table::new(backtracking_stack);
 
-        write!(f, "{backtracking_stack_table}\nguess_count: {guess_count}, has_returned_pre_filled_grid_solution: {has_returned_pre_filled_grid_solution}")
+        write!(f, "{backtracking_stack_table}\nbacktrack_count: {backtrack_count}, has_returned_pre_filled_grid_solution: {has_returned_pre_filled_grid_solution}")
     }
 }
 
 #[cfg(feature = "parallel")]
 mod parallel {
+    use std::cmp;
+
     use rayon::iter::{split, Split};
     use rayon::prelude::*;
 
@@ -532,7 +535,7 @@ mod parallel {
 
         // Possible solution:
         //  Refuse to split if search space is too small
-        //   unclear, how to estimate the size of the search space
+        //   unclear how to estimate the size of the search space
 
         // Possible solution:
         //  interrupt iteration
@@ -546,9 +549,170 @@ mod parallel {
         //   - if out of fuel, split and run in parallel
 
         pub fn has_any_solution(self) -> bool {
+            self.any_solution().is_some()
+        }
+
+        pub fn any_solution(self) -> Option<Grid<Base>> {
+            // self.any_solution_sequential()
+            // self.any_solution_split_par_iter_split()
+            self.any_solution_pre_split()
+            // self.any_solution_pre_split_histogram()
+            // self.any_solution_fuel_join_recursive()
+        }
+
+        fn any_solution_sequential(mut self) -> Option<Grid<Base>> {
+            self.next()
+        }
+
+        fn any_solution_split_par_iter_split(self) -> Option<Grid<Base>> {
             self.into_par_iter()
-                .flatten_iter()
-                .any(|_solution: Grid<Base>| true)
+                .find_map_any(|mut solver| solver.next())
+        }
+
+        fn pre_split_solvers(self) -> Vec<Self> {
+            let mut split_solvers = vec![self];
+
+            // TODO: expose initial parallel factor
+            //  define for each base?
+            // current value tuned for Base4
+            // seq: 314ms => any_solution_pre_split: 54.5ms
+            for _ in 0..12 {
+                split_solvers = split_solvers
+                    .into_iter()
+                    .flat_map(|solver| {
+                        let (left, right) = solver.split();
+                        [Some(left), right]
+                    })
+                    .flatten()
+                    .collect();
+            }
+            split_solvers
+        }
+
+        fn any_solution_pre_split(self) -> Option<Grid<Base>> {
+            let split_solvers = self.pre_split_solvers();
+            split_solvers
+                .into_par_iter()
+                .find_map_any(|mut solver| solver.next())
+        }
+
+        #[cfg(feature = "histogram")]
+        fn any_solution_pre_split_histogram(self) -> Option<Grid<Base>> {
+            use hdrhistogram::Histogram;
+
+            let split_solvers = self.pre_split_solvers();
+
+            let mut histogram = Histogram::<u64>::new(3).unwrap().into_sync();
+
+            let res = split_solvers
+                .into_par_iter()
+                .map_with(histogram.recorder(), |recorder, mut solver| {
+                    // let clone = solver.clone();
+
+                    let ret = solver.next();
+                    recorder.record(solver.backtrack_count).unwrap();
+                    // if solver.backtrack_count <= 2 {
+                    //     println!("solver with two guesses: {clone}");
+                    //
+                    //     std::process::exit(1);
+                    // }
+
+                    ret
+                })
+                .find_map_any(|res| res);
+
+            histogram.refresh();
+
+            for v in histogram.iter_recorded() {
+                println!("{}: {}", v.value_iterated_to(), v.count_at_value());
+            }
+
+            res
+        }
+
+        fn any_solution_fuel_join_recursive(mut self) -> Option<Grid<Base>> {
+            const FUEL: u64 = 20_000_000;
+
+            // Fork of: rayon-1.8.0/src/iter/plumbing/mod.rs:256
+            /// A splitter controls the policy for splitting into smaller work items.
+            ///
+            /// Thief-splitting is an adaptive policy that starts by splitting into
+            /// enough jobs for every worker thread, and then resets itself whenever a
+            /// job is actually stolen into a different thread.
+            #[derive(Clone, Copy)]
+            struct Splitter {
+                /// The `splits` tell us approximately how many remaining times we'd
+                /// like to split this job.  We always just divide it by two though, so
+                /// the effective number of pieces will be `next_power_of_two()`.
+                splits: usize,
+            }
+
+            impl Splitter {
+                #[inline]
+                fn new() -> Splitter {
+                    Splitter {
+                        splits: rayon::current_num_threads(),
+                    }
+                }
+
+                #[inline]
+                fn try_split(&mut self, stolen: bool) -> bool {
+                    let Splitter { splits } = *self;
+
+                    if stolen {
+                        // This job was stolen!  Reset the number of desired splits to the
+                        // thread count, if that's more than we had remaining anyway.
+                        self.splits = cmp::max(rayon::current_num_threads(), self.splits / 2);
+                        true
+                    } else if splits > 0 {
+                        // We have splits remaining, make it so.
+                        self.splits /= 2;
+                        true
+                    } else {
+                        // Not stolen, and no more splits -- we're done!
+                        false
+                    }
+                }
+            }
+
+            fn inner<
+                Base: SudokuBase,
+                GridRef: AsRef<Grid<Base>>,
+                ICandidates: CandidatesIterator<Base>,
+            >(
+                mut this: Solver<Base, GridRef, ICandidates, DeniedCandidatesGrid<Base>>,
+                migrated: bool,
+                mut splitter: Splitter,
+            ) -> Option<Grid<Base>>
+            where
+                Solver<Base, GridRef, ICandidates, DeniedCandidatesGrid<Base>>: Clone + Send,
+            {
+                loop {
+                    return match this.try_solve_with_fuel(FUEL) {
+                        FueledSolveResult::OutOfFuel => {
+                            if splitter.try_split(migrated) {
+                                let (left, right) = this.split();
+                                if let Some(right) = right {
+                                    let (left_res, right_res) = rayon::join_context(
+                                        |context| inner(left, context.migrated(), splitter),
+                                        |context| inner(right, context.migrated(), splitter),
+                                    );
+
+                                    left_res.or(right_res)
+                                } else {
+                                    this = left;
+                                    continue;
+                                }
+                            } else {
+                                continue;
+                            }
+                        }
+                        FueledSolveResult::Result(opt_grid) => opt_grid,
+                    };
+                }
+            }
+
+            inner(self, false, Splitter::new())
         }
     }
 }

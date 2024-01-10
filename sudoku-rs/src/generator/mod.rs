@@ -416,10 +416,20 @@ impl<Base: SudokuBase> Generator<Base> {
                 .is_ok_and(|solution| solution.is_some())
         ) && {
             let has_ambiguous_solution = {
+                // TODO: evaluate parallelism higher up in the generation call stack
+                //  parallel solving of a single grid is quite tricky to parallelize efficiently,
+                //  especially for Base <= 3
+                // Idea 1:
+                //  race multiple positions with try_delete_cell_at_pos
+                //   if one succeeds, abort all, delete value and race again
+                // Idea 2:
+                //  generate multiple sudokus in parallel:
+                //   - optimize for some metric
+                //     - generate n-thread count, select the "best" by some metric
+                //     - keep generating until some metric is meet
+                //   - generate n-thread count, return the first successful one
                 #[cfg(feature = "parallel")]
                 {
-                    use rayon::prelude::*;
-
                     let mut denylist = Grid::new();
                     denylist[pos] = Candidates::with_single(deleted_value);
                     let solver = backtracking::Solver::builder(&grid)
