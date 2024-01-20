@@ -62,10 +62,9 @@ pub fn init() {
 #[wasm_bindgen]
 pub struct WasmSudoku {
     sudoku: DynamicSudoku,
-
     // POC world
-    world: CellWorld<Base3>,
-    tile_index: TileIndex,
+    // world: CellWorld<Base3>,
+    // tile_index: TileIndex,
 }
 
 impl Default for WasmSudoku {
@@ -76,27 +75,27 @@ impl Default for WasmSudoku {
 
 impl From<DynamicSudoku> for WasmSudoku {
     fn from(sudoku: DynamicSudoku) -> Self {
-        let mut world = CellWorld::new(
-            TileDim {
-                row_count: 3,
-                column_count: 3,
-            },
-            1,
-        );
-
-        let DynamicSudoku::Base3(sudoku_base_3) = &sudoku else {
-            panic!("POC: base 3 only")
-        };
-        let tile_index = TileIndex::default();
-        world.set_grid_at(sudoku_base_3.grid(), tile_index);
-        let seed = Some(1);
-        world.generate(seed);
-        world.prune(seed);
+        // let mut world = CellWorld::new(
+        //     TileDim {
+        //         row_count: 3,
+        //         column_count: 3,
+        //     },
+        //     1,
+        // );
+        //
+        // let DynamicSudoku::Base3(sudoku_base_3) = &sudoku else {
+        //     panic!("POC: base 3 only")
+        // };
+        // let tile_index = TileIndex::default();
+        // world.set_grid_at(sudoku_base_3.grid(), tile_index);
+        // let seed = Some(1);
+        // world.generate(seed);
+        // world.prune(seed);
 
         WasmSudoku {
             sudoku,
-            world,
-            tile_index,
+            // world,
+            // tile_index,
         }
     }
 }
@@ -190,7 +189,7 @@ impl WasmSudoku {
             import_generate_on_progress(on_progress)?,
         )?;
 
-        *self = self.sudoku.clone().into();
+        // *self = self.sudoku.clone().into();
         Ok(())
     }
 
@@ -224,29 +223,31 @@ impl WasmSudoku {
 
     #[wasm_bindgen(js_name = changeTile)]
     pub fn change_tile(&mut self, dir: IRelativeTileDir) -> Result<()> {
-        let dir = import_dir(dir)?;
-
-        let new_tile_index =
-            self.tile_index
-                .adjacent(dir, self.world.tile_dim())
-                .ok_or(anyhow!(
-                    "Currently at world boundary {:?}, can't move {:?}",
-                    self.tile_index,
-                    dir
-                ))?;
-
-        let DynamicSudoku::Base3(sudoku_base_3) = &self.sudoku else {
-            panic!("POC: base 3 only")
-        };
-
-        self.world
-            .set_grid_at(sudoku_base_3.grid(), self.tile_index);
-
-        self.sudoku =
-            DynamicSudoku::Base3(Sudoku::with_grid(self.world.to_grid_at(new_tile_index)));
-        self.tile_index = new_tile_index;
-
-        Ok(())
+        todo!()
+        //
+        // let dir = import_dir(dir)?;
+        //
+        // let new_tile_index =
+        //     self.tile_index
+        //         .adjacent(dir, self.world.tile_dim())
+        //         .ok_or(anyhow!(
+        //             "Currently at world boundary {:?}, can't move {:?}",
+        //             self.tile_index,
+        //             dir
+        //         ))?;
+        //
+        // let DynamicSudoku::Base3(sudoku_base_3) = &self.sudoku else {
+        //     panic!("POC: base 3 only")
+        // };
+        //
+        // self.world
+        //     .set_grid_at(sudoku_base_3.grid(), self.tile_index);
+        //
+        // self.sudoku =
+        //     DynamicSudoku::Base3(Sudoku::with_grid(self.world.to_grid_at(new_tile_index)));
+        // self.tile_index = new_tile_index;
+        //
+        // Ok(())
     }
 }
 
