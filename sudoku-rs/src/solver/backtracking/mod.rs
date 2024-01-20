@@ -361,6 +361,71 @@ impl<
     }
 }
 
+impl<
+        Base: SudokuBase,
+        GridRef: AsRef<Grid<Base>>,
+        ICandidates: CandidatesIterator<Base>,
+        Filter: AvailabilityFilter<Base>,
+    > Iterator for Solver<Base, GridRef, ICandidates, Filter>
+{
+    type Item = Grid<Base>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.try_solve()
+    }
+}
+
+impl<
+        Base: SudokuBase,
+        GridRef: AsRef<Grid<Base>>,
+        ICandidates: CandidatesIterator<Base>,
+        Filter: AvailabilityFilter<Base>,
+    > Display for Solver<Base, GridRef, ICandidates, Filter>
+{
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        use tabled::{Table, Tabled};
+
+        #[derive(Tabled)]
+        struct BacktrackingStackEntry<Base: SudokuBase, ICandidates: Display> {
+            // From availability_indexes
+            pos: Position<Base>,
+            // From candidates_iters
+            candidates: ICandidates,
+        }
+
+        let Self {
+            // TODO
+            availability,
+            availability_indexes,
+            candidates_iters,
+            backtrack_count,
+            has_returned_pre_filled_grid_solution,
+            ..
+        } = self;
+
+        write!(f, "backtracking::Solver:\nGrid:\n{}\n", self.grid())?;
+
+        let mut availability_preview_grid = self.grid().clone();
+        for &index in availability_indexes.iter() {
+            let candidates = availability.available_candidates_at(index);
+            availability_preview_grid[index.into()].set_candidates(candidates);
+        }
+
+        write!(f, "Availability grid:\n{availability_preview_grid}\n")?;
+
+        let backtracking_stack = std::iter::zip(availability_indexes, candidates_iters).map(
+            |(&availability_index, candidates)| BacktrackingStackEntry {
+                pos: availability_index.into(),
+                candidates,
+            },
+        );
+
+        let backtracking_stack_table = Table::new(backtracking_stack);
+
+        write!(f, "{backtracking_stack_table}\nbacktrack_count: {backtrack_count}, has_returned_pre_filled_grid_solution: {has_returned_pre_filled_grid_solution}")
+    }
+}
+
 pub static SPLIT_COUNT: AtomicU64 = AtomicU64::new(0);
 
 impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, ICandidates: CandidatesIterator<Base>>
@@ -376,6 +441,34 @@ where
     //  candidates.len() cloned solvers:
     //   copy grid, set values for each candidates_iter.peek, select on candidate from split cell, set as value in cloned grid, re-initialize solver
 
+    // FIXME: this estimate is hilariously inaccurate
+    fn estimate_search_space(&self) -> u64 {
+        let availability_indexes_to_be_solved =
+            &self.availability_indexes[self.candidates_iters.len()..];
+
+        let total_candidates_iter_len: u64 = self
+            .candidates_iters
+            .iter()
+            .map(|candidates_iter| candidates_iter.len() as u64)
+            .sum();
+
+        dbg!(total_candidates_iter_len);
+
+        let total_available_candidates: u64 = availability_indexes_to_be_solved
+            .iter()
+            .map(|&availability_index| -> u64 {
+                self.availability
+                    .available_candidates_at(availability_index)
+                    .count()
+                    .into()
+            })
+            .sum();
+
+        dbg!(total_available_candidates);
+
+        total_candidates_iter_len + total_available_candidates
+    }
+
     /// Split the current solver into two.
     ///
     /// The two solvers will search distinct solution spaces of the same sudoku.
@@ -385,9 +478,15 @@ where
     pub fn split(self) -> (Self, Option<Self>) {
         SPLIT_COUNT.fetch_add(1, Ordering::Release);
 
+        // Heuristic: is it worth it to split the solver?
+        // let estimated_search_space = self.estimate_search_space();
+        //
+        // dbg!(estimated_search_space);
+
         // Find yet to be solved index with at least two available candidates
         let candidates_iters_len = self.candidates_iters.len();
         let availability_indexes_to_be_solved = &self.availability_indexes[candidates_iters_len..];
+
         let Some((split_availability_index, split_available_candidates, _)) =
             availability_indexes_to_be_solved
                 .iter()
@@ -434,64 +533,10 @@ where
         left.availability.filter[pos] = left.availability.filter[pos].union(right_candidates);
         right.availability.filter[pos] = right.availability.filter[pos].union(left_candidates);
 
+        left.backtrack_count = 0;
+        right.backtrack_count = 0;
+
         (left, Some(right))
-    }
-}
-
-impl<
-        Base: SudokuBase,
-        GridRef: AsRef<Grid<Base>>,
-        ICandidates: CandidatesIterator<Base>,
-        Filter: AvailabilityFilter<Base>,
-    > Iterator for Solver<Base, GridRef, ICandidates, Filter>
-{
-    type Item = Grid<Base>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.try_solve()
-    }
-}
-
-impl<
-        Base: SudokuBase,
-        GridRef: AsRef<Grid<Base>>,
-        ICandidates: CandidatesIterator<Base>,
-        Filter: AvailabilityFilter<Base>,
-    > Display for Solver<Base, GridRef, ICandidates, Filter>
-{
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        use tabled::{Table, Tabled};
-
-        #[derive(Tabled)]
-        struct BacktrackingStackEntry<Base: SudokuBase, ICandidates: Display> {
-            // From availability_indexes
-            pos: Position<Base>,
-            // From candidates_iters
-            candidates: ICandidates,
-        }
-
-        let Self {
-            // TODO
-            availability: _availability,
-            availability_indexes,
-            candidates_iters,
-            backtrack_count: backtrack_count,
-            has_returned_pre_filled_grid_solution,
-            ..
-        } = self;
-
-        write!(f, "backtracking::Solver:\nGrid:\n{}\n", self.grid())?;
-
-        let backtracking_stack = std::iter::zip(availability_indexes, candidates_iters).map(
-            |(&availability_index, candidates)| BacktrackingStackEntry {
-                pos: availability_index.into(),
-                candidates,
-            },
-        );
-
-        let backtracking_stack_table = Table::new(backtracking_stack);
-
-        write!(f, "{backtracking_stack_table}\nbacktrack_count: {backtrack_count}, has_returned_pre_filled_grid_solution: {has_returned_pre_filled_grid_solution}")
     }
 }
 
