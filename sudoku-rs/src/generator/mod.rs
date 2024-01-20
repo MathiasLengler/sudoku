@@ -29,6 +29,13 @@ Ideas:
 - from minimal insertion order
  */
 
+// TODO: optimization: constrain ambiguous sudoku by adding solution values
+//  Reference: https://github.com/t-dillon/tdoku/blob/master/src/solver_dpll_triad_simd.cc#L707
+//  The constrained sudoku is not guaranteed to be minimal.
+//  This has an advantage of providing a "almost" minimal sudoku way faster,
+//  since checking for an ambiguous solution is way faster (early abort) than proofing a unique solution.
+//  The near minimal sudoku can then be minimized as usual.
+
 #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[derive(Debug, Copy, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -422,6 +429,8 @@ impl<Base: SudokuBase> Generator<Base> {
                 // Idea 1:
                 //  race multiple positions with try_delete_cell_at_pos
                 //   if one succeeds, abort all, delete value and race again
+                //  find required cells breath-first in parallel
+                //   if one cell is required, this cell will still be required if another cell is deleted
                 // Idea 2:
                 //  generate multiple sudokus in parallel:
                 //   - optimize for some metric
