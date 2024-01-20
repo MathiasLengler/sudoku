@@ -30,13 +30,6 @@ import { Fieldset } from "../../components/Fieldset";
 import TabPanel from "@mui/lab/TabPanel";
 import type { NewGameTabValue } from "./NewGameDialog";
 
-// TODO: Spawn multiple workers for multi-threaded generation
-//  - Racing: fastest wins
-//  - Wait for all:
-//    - User selection
-//    - Auto select "best"
-//  - Keep generating until some criterion is met
-
 interface GenerateProgressProps {
     progress?: GeneratorProgress;
     cellCount: number;
@@ -113,6 +106,8 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
     }, [generateAbortController]);
 
     const generate = useGenerate(onProgress, generateAbortController.signal);
+
+    // TODO: abort generation on ESC
 
     return (
         <>
