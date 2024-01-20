@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import { SliderElement, SwitchElement, TextFieldElement, useForm } from "react-hook-form-mui";
@@ -122,8 +122,6 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                         id="generate-form"
                         onSubmit={handleSubmit(async formValues => {
                             const { base, minGivens, setAllDirectCandidates, strategies, seed, useSeed } = formValues;
-
-                            const cellCount = baseToCellCount(base);
 
                             try {
                                 await generate({
