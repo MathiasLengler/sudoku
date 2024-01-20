@@ -1,6 +1,6 @@
 # Reference: https://github.com/RReverser/wasm-bindgen-rayon/tree/main?tab=readme-ov-file#using-config-files
 [target.wasm32-unknown-unknown]
-rustflags = ["-C", "target-feature=+atomics,+bulk-memory,+mutable-globals"]
+rustflags = ["-C", "target-feature=+atomics,+bulk-memory,+mutable-globals,+simd128"]
 
 # Unstable cargo features affect all targets, but we only want to affect wasm32-unknown-unknown
 # Reference: https://github.com/rust-lang/cargo/issues/8733
