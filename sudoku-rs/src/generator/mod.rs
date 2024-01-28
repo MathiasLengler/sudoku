@@ -61,7 +61,30 @@ pub enum PruningGroupBehaviour {
     Last,
 }
 
-// TODO: introduce PruningSegmentation vs PruningVisitOrder
+impl PruningGroupBehaviour {
+    fn process_pruning_positions<Base: SudokuBase>(
+        self,
+        rng: &mut CrateRng,
+        get_group_pruning_positions: impl FnOnce(&mut CrateRng) -> Vec<Position<Base>>,
+        get_other_pruning_positions: impl FnOnce(&mut CrateRng) -> Vec<Position<Base>>,
+    ) -> Vec<Position<Base>> {
+        match self {
+            PruningGroupBehaviour::Retain => get_other_pruning_positions(rng),
+            PruningGroupBehaviour::Exclusive => get_group_pruning_positions(rng),
+            PruningGroupBehaviour::First => {
+                let mut pruning_positions = get_group_pruning_positions(rng);
+                pruning_positions.extend(get_other_pruning_positions(rng));
+                pruning_positions
+            }
+            PruningGroupBehaviour::Last => {
+                let mut pruning_positions = get_other_pruning_positions(rng);
+                pruning_positions.extend(get_group_pruning_positions(rng));
+                pruning_positions
+            }
+        }
+    }
+}
+
 // TODO: group_breath_first vs group_depth_first
 //  prioritize most empty groups vs even number of values across all groups
 // TODO: test
@@ -489,10 +512,6 @@ impl<Base: SudokuBase> Generator<Base> {
         prune_settings: &PruningSettings<Base>,
         rng: &mut CrateRng,
     ) -> Result<Vec<Position<Base>>> {
-        // TODO: abstract PruningGroupBehaviour processing
-        //  param: first last
-        //  ret: shuffled list of positions
-
         Ok(match &prune_settings.order {
             PruningOrder::Random => {
                 let prunable_positions = if let Some(SolutionSettings { values_grid, .. }) =
@@ -511,35 +530,24 @@ impl<Base: SudokuBase> Generator<Base> {
                 positions,
                 behaviour,
             } => {
-                let other_positions = {
-                    let sorted_positions = {
-                        let mut positions = positions.clone();
-                        positions.sort_unstable();
-                        positions
-                    };
-                    Self::shuffle_vec(
-                        rng,
-                        Grid::<Base>::all_positions()
-                            // Remove positions contained in sorted_positions
-                            .filter(|pos| sorted_positions.binary_search(pos).is_err())
-                            .collect_vec(),
-                    )
-                };
-
-                match behaviour {
-                    PruningGroupBehaviour::Retain => other_positions,
-                    PruningGroupBehaviour::Exclusive => positions.clone(),
-                    PruningGroupBehaviour::First => {
-                        let mut pruning_positions = positions.clone();
-                        pruning_positions.extend(other_positions);
-                        pruning_positions
-                    }
-                    PruningGroupBehaviour::Last => {
-                        let mut pruning_positions = other_positions;
-                        pruning_positions.extend(positions);
-                        pruning_positions
-                    }
-                }
+                behaviour.process_pruning_positions(
+                    rng,
+                    |_| positions.clone(),
+                    |rng| {
+                        let sorted_positions = {
+                            let mut positions = positions.clone();
+                            positions.sort_unstable();
+                            positions
+                        };
+                        Self::shuffle_vec(
+                            rng,
+                            Grid::<Base>::all_positions()
+                                // Remove positions contained in sorted_positions
+                                .filter(|pos| sorted_positions.binary_search(pos).is_err())
+                                .collect_vec(),
+                        )
+                    },
+                )
             }
             PruningOrder::SolutionUnfixedValues { behaviour } => {
                 let Some(SolutionSettings { values_grid, .. }) = &self.settings.solution else {
@@ -548,32 +556,11 @@ impl<Base: SudokuBase> Generator<Base> {
                     )
                 };
 
-                match behaviour {
-                    PruningGroupBehaviour::Retain => {
-                        Self::shuffle_vec(rng, values_grid.all_candidates_positions())
-                    }
-                    PruningGroupBehaviour::Exclusive => {
-                        Self::shuffle_vec(rng, values_grid.all_unfixed_value_positions())
-                    }
-                    PruningGroupBehaviour::First => {
-                        let mut pruning_positions =
-                            Self::shuffle_vec(rng, values_grid.all_unfixed_value_positions());
-                        pruning_positions.extend(Self::shuffle_vec(
-                            rng,
-                            values_grid.all_candidates_positions(),
-                        ));
-                        pruning_positions
-                    }
-                    PruningGroupBehaviour::Last => {
-                        let mut pruning_positions =
-                            Self::shuffle_vec(rng, values_grid.all_candidates_positions());
-                        pruning_positions.extend(Self::shuffle_vec(
-                            rng,
-                            values_grid.all_unfixed_value_positions(),
-                        ));
-                        pruning_positions
-                    }
-                }
+                behaviour.process_pruning_positions(
+                    rng,
+                    |rng| Self::shuffle_vec(rng, values_grid.all_value_positions()),
+                    |rng| Self::shuffle_vec(rng, values_grid.all_candidates_positions()),
+                )
             }
         })
     }
@@ -694,6 +681,7 @@ mod tests {
 
     use crate::base::consts::*;
     use crate::position::Coordinate;
+    use crate::samples;
 
     use super::*;
 
@@ -838,8 +826,6 @@ mod tests {
     }
 
     mod solution {
-        use crate::samples;
-
         use super::*;
 
         #[test]
