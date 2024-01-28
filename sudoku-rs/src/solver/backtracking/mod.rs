@@ -338,7 +338,7 @@ impl<
         }
     }
 
-    fn try_solve_with_fuel(&mut self, mut fuel: u64) -> FueledSolveResult<Base> {
+    fn try_solve_with_fuel(&mut self, fuel: u64) -> FueledSolveResult<Base> {
         for _ in 0..fuel {
             match self.step() {
                 StepResult::Solution(solution) => return FueledSolveResult::Result(Some(solution)),
@@ -406,7 +406,7 @@ impl<
         write!(f, "backtracking::Solver:\nGrid:\n{}\n", self.grid())?;
 
         let mut availability_preview_grid = self.grid().clone();
-        for &index in availability_indexes.iter() {
+        for &index in availability_indexes {
             let candidates = availability.available_candidates_at(index);
             availability_preview_grid[index.into()].set_candidates(candidates);
         }

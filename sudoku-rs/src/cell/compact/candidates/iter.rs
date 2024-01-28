@@ -1,5 +1,5 @@
 use rand::prelude::*;
-use std::fmt::{write, Binary, Debug, Display, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
