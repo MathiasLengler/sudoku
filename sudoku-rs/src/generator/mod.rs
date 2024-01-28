@@ -381,6 +381,31 @@ impl<Base: SudokuBase> Generator<Base> {
         })
     }
 
+    // TODO: use in prune_from_minimal
+    fn near_minimal_grid(solution: &Grid<Base>, rng: &mut CrateRng) -> Grid<Base> {
+        // TODO: preserve non-pruning positions
+
+        debug_assert!(solution.is_solved());
+
+        let solution_value_positions = Self::shuffle_vec(rng, solution.all_value_positions());
+
+        let mut grid = Grid::<Base>::new();
+
+        // TODO: optimize
+        //  find minimal clue count for a unique solution for each Base
+        //  add them without checking for a unique solution
+        for solution_value_position in solution_value_positions {
+            let solution_value = solution[solution_value_position].clone();
+            grid[solution_value_position] = solution_value;
+            if let Some(unique_solution) = grid.unique_solution() {
+                debug_assert_eq!(unique_solution, *solution);
+                break;
+            }
+        }
+
+        grid
+    }
+
     fn prune(
         &self,
         solved_grid: Grid<Base>,
@@ -690,6 +715,26 @@ mod tests {
         let grid = Generator::<Base2>::default().generate().unwrap();
 
         assert!(grid.is_solved());
+    }
+
+    mod unit {
+        use super::*;
+
+        #[ignore]
+        #[test]
+        fn test_solved_grid() {
+            todo!()
+        }
+
+        #[test]
+        fn test_near_minimal_grid() {
+            let solution = samples::base_2_solved();
+            let mut rng = new_crate_rng_with_seed(None);
+
+            let near_minimal_grid = Generator::near_minimal_grid(&solution, &mut rng);
+            assert!(!near_minimal_grid.is_solved());
+            assert_eq!(near_minimal_grid.unique_solution().unwrap(), solution);
+        }
     }
 
     mod prune {
