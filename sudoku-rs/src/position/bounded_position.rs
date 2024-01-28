@@ -291,6 +291,35 @@ impl<Base: SudokuBase> Position<Base> {
     }
 }
 
+// TODO: data structures for
+//  - Set of Positions
+//   - Current representation: `Vec<Position<Base>>`
+//    - uniqueness of Positions is not ensured
+//    - Redundant order information
+//   - Options:
+//    - wrapper around std HashSet/BTreeSet
+//    - re-use Base::CandidatesGroup as bitset? correct bit count, but split into SIDE_LENGTH candidates
+//  - Ordered Set of Positions
+//   - Current representation: `Vec<Position<Base>>`
+//    - uniqueness of Positions is not ensured
+//   - Options
+//    - No standard data structure?
+
+/// Set of positions
+impl<Base: SudokuBase> Position<Base> {
+    /// All positions *not* included in `positions`.
+    pub fn complement(positions: Vec<Self>) -> impl Iterator<Item = Self> {
+        let sorted_positions = {
+            let mut positions = positions.clone();
+            positions.sort_unstable();
+            positions
+        };
+        Self::all()
+            // Remove positions contained in sorted_positions
+            .filter(move |pos| sorted_positions.binary_search(pos).is_err())
+    }
+}
+
 impl<Base: SudokuBase> Serialize for Position<Base> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

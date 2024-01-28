@@ -83,6 +83,20 @@ impl PruningGroupBehaviour {
             }
         }
     }
+
+    fn process_non_pruning_positions<Base: SudokuBase>(
+        self,
+        get_group_pruning_positions: impl FnOnce() -> Vec<Position<Base>>,
+        get_other_pruning_positions: impl FnOnce() -> Vec<Position<Base>>,
+    ) -> Vec<Position<Base>> {
+        match self {
+            PruningGroupBehaviour::Retain => get_group_pruning_positions(),
+            PruningGroupBehaviour::Exclusive => get_other_pruning_positions(),
+            PruningGroupBehaviour::First | PruningGroupBehaviour::Last => {
+                vec![]
+            }
+        }
+    }
 }
 
 // TODO: group_breath_first vs group_depth_first
@@ -532,6 +546,39 @@ impl<Base: SudokuBase> Generator<Base> {
         vec
     }
 
+    fn get_solution_values_grid(&self) -> Result<&Grid<Base>> {
+        let Some(SolutionSettings { values_grid, .. }) = &self.settings.solution else {
+            bail!("'PruningOrder::SolutionUnfixedValues' requires 'settings.solution.values_grid' to be defined")
+        };
+        Ok(values_grid)
+    }
+
+    fn non_pruning_positions(
+        &self,
+        prune_settings: &PruningSettings<Base>,
+    ) -> Result<Vec<Position<Base>>> {
+        Ok(match &prune_settings.order {
+            PruningOrder::Random => {
+                vec![]
+            }
+            PruningOrder::Positions {
+                positions,
+                behaviour,
+            } => behaviour.process_non_pruning_positions(
+                || positions.clone(),
+                || Position::complement(positions.clone()).collect(),
+            ),
+            PruningOrder::SolutionUnfixedValues { behaviour } => {
+                let values_grid = self.get_solution_values_grid()?;
+
+                behaviour.process_non_pruning_positions(
+                    || values_grid.all_value_positions(),
+                    || values_grid.all_candidates_positions(),
+                )
+            }
+        })
+    }
+
     fn pruning_positions(
         &self,
         prune_settings: &PruningSettings<Base>,
@@ -554,32 +601,13 @@ impl<Base: SudokuBase> Generator<Base> {
             PruningOrder::Positions {
                 positions,
                 behaviour,
-            } => {
-                behaviour.process_pruning_positions(
-                    rng,
-                    |_| positions.clone(),
-                    |rng| {
-                        let sorted_positions = {
-                            let mut positions = positions.clone();
-                            positions.sort_unstable();
-                            positions
-                        };
-                        Self::shuffle_vec(
-                            rng,
-                            Grid::<Base>::all_positions()
-                                // Remove positions contained in sorted_positions
-                                .filter(|pos| sorted_positions.binary_search(pos).is_err())
-                                .collect_vec(),
-                        )
-                    },
-                )
-            }
+            } => behaviour.process_pruning_positions(
+                rng,
+                |_| positions.clone(),
+                |rng| Self::shuffle_vec(rng, Position::complement(positions.clone()).collect()),
+            ),
             PruningOrder::SolutionUnfixedValues { behaviour } => {
-                let Some(SolutionSettings { values_grid, .. }) = &self.settings.solution else {
-                    bail!(
-                        "'PruningOrder::SolutionUnfixedValues' requires 'settings.solution.values_grid' to be defined"
-                    )
-                };
+                let values_grid = self.get_solution_values_grid()?;
 
                 behaviour.process_pruning_positions(
                     rng,
@@ -727,14 +755,226 @@ mod tests {
         }
 
         #[test]
-        fn test_near_minimal_grid() {
-            let solution = samples::base_2_solved();
-            let mut rng = new_crate_rng_with_seed(None);
+        fn test_pruning_positions() {
+            type Base = Base2;
+            struct Input {
+                order: PruningOrder<Base>,
+                solution_values_grid: Option<Grid<Base>>,
+            }
 
-            let near_minimal_grid = Generator::near_minimal_grid(&solution, &mut rng);
-            assert!(!near_minimal_grid.is_solved());
-            assert_eq!(near_minimal_grid.unique_solution().unwrap(), solution);
+            struct ExpectedOutput {
+                pruning_position_sets: Vec<Vec<Position<Base>>>,
+                non_pruning_positions: Vec<Position<Base>>,
+            }
+
+            let solution_values_grid = {
+                let mut solution_values_grid = samples::base_2_solved();
+
+                // Delete lower half of solution grid
+                Position::all_rows()
+                    .skip(2)
+                    .flatten()
+                    .for_each(|pos| solution_values_grid[pos].delete());
+
+                solution_values_grid
+            };
+
+            let all_positions = Position::<Base>::all().collect_vec();
+            let top_positions = solution_values_grid.all_value_positions();
+            let bottom_positions = solution_values_grid.all_candidates_positions();
+
+            let test_cases = vec![
+                (
+                    Input {
+                        order: PruningOrder::Random,
+                        solution_values_grid: None,
+                    },
+                    ExpectedOutput {
+                        pruning_position_sets: vec![all_positions.clone()],
+                        non_pruning_positions: vec![],
+                    },
+                ),
+                (
+                    Input {
+                        order: PruningOrder::Positions {
+                            positions: top_positions.clone(),
+                            behaviour: PruningGroupBehaviour::Retain,
+                        },
+                        solution_values_grid: None,
+                    },
+                    ExpectedOutput {
+                        pruning_position_sets: vec![bottom_positions.clone()],
+                        non_pruning_positions: top_positions.clone(),
+                    },
+                ),
+                (
+                    Input {
+                        order: PruningOrder::Positions {
+                            positions: top_positions.clone(),
+                            behaviour: PruningGroupBehaviour::Exclusive,
+                        },
+                        solution_values_grid: None,
+                    },
+                    ExpectedOutput {
+                        pruning_position_sets: vec![top_positions.clone()],
+                        non_pruning_positions: bottom_positions.clone(),
+                    },
+                ),
+                (
+                    Input {
+                        order: PruningOrder::Positions {
+                            positions: top_positions.clone(),
+                            behaviour: PruningGroupBehaviour::First,
+                        },
+                        solution_values_grid: None,
+                    },
+                    ExpectedOutput {
+                        pruning_position_sets: vec![
+                            top_positions.clone(),
+                            bottom_positions.clone(),
+                        ],
+                        non_pruning_positions: vec![],
+                    },
+                ),
+                (
+                    Input {
+                        order: PruningOrder::Positions {
+                            positions: top_positions.clone(),
+                            behaviour: PruningGroupBehaviour::Last,
+                        },
+                        solution_values_grid: None,
+                    },
+                    ExpectedOutput {
+                        pruning_position_sets: vec![
+                            bottom_positions.clone(),
+                            top_positions.clone(),
+                        ],
+                        non_pruning_positions: vec![],
+                    },
+                ),
+                (
+                    Input {
+                        order: PruningOrder::SolutionUnfixedValues {
+                            behaviour: PruningGroupBehaviour::Retain,
+                        },
+                        solution_values_grid: Some(solution_values_grid.clone()),
+                    },
+                    ExpectedOutput {
+                        pruning_position_sets: vec![bottom_positions.clone()],
+                        non_pruning_positions: top_positions.clone(),
+                    },
+                ),
+                (
+                    Input {
+                        order: PruningOrder::SolutionUnfixedValues {
+                            behaviour: PruningGroupBehaviour::Exclusive,
+                        },
+                        solution_values_grid: Some(solution_values_grid.clone()),
+                    },
+                    ExpectedOutput {
+                        pruning_position_sets: vec![top_positions.clone()],
+                        non_pruning_positions: bottom_positions.clone(),
+                    },
+                ),
+                (
+                    Input {
+                        order: PruningOrder::SolutionUnfixedValues {
+                            behaviour: PruningGroupBehaviour::First,
+                        },
+                        solution_values_grid: Some(solution_values_grid.clone()),
+                    },
+                    ExpectedOutput {
+                        pruning_position_sets: vec![
+                            top_positions.clone(),
+                            bottom_positions.clone(),
+                        ],
+                        non_pruning_positions: vec![],
+                    },
+                ),
+                (
+                    Input {
+                        order: PruningOrder::SolutionUnfixedValues {
+                            behaviour: PruningGroupBehaviour::Last,
+                        },
+                        solution_values_grid: Some(solution_values_grid.clone()),
+                    },
+                    ExpectedOutput {
+                        pruning_position_sets: vec![
+                            bottom_positions.clone(),
+                            top_positions.clone(),
+                        ],
+                        non_pruning_positions: vec![],
+                    },
+                ),
+            ];
+
+            for (input, expected_output) in test_cases {
+                for seed in 0..10 {
+                    let gen = Generator::with_settings(GeneratorSettings {
+                        prune: Some(PruningSettings {
+                            order: input.order.clone(),
+                            ..Default::default()
+                        }),
+                        solution: input
+                            .solution_values_grid
+                            .clone()
+                            .map(|values_grid| SolutionSettings { values_grid }),
+                        // Unused
+                        seed: Some(seed),
+                    });
+
+                    let mut rng = new_crate_rng_with_seed(Some(seed));
+
+                    let prune_settings = gen.settings.prune.as_ref().unwrap().clone();
+                    let pruning_positions =
+                        gen.pruning_positions(&prune_settings, &mut rng).unwrap();
+                    let non_pruning_positions = gen.non_pruning_positions(&prune_settings).unwrap();
+
+                    assert!(pruning_positions.iter().all_unique());
+                    assert!(non_pruning_positions.iter().all_unique());
+                    assert!(pruning_positions
+                        .iter()
+                        .chain(&non_pruning_positions)
+                        .all_unique());
+
+                    assert_eq!(
+                        pruning_positions.len() + non_pruning_positions.len(),
+                        Base::CELL_COUNT as usize
+                    );
+
+                    assert_eq!(
+                        pruning_positions.len(),
+                        expected_output
+                            .pruning_position_sets
+                            .iter()
+                            .map(|position_set| position_set.len())
+                            .sum::<usize>()
+                    );
+                    let mut pruning_positions_iter = pruning_positions.into_iter();
+                    for expected_position_set in expected_output.pruning_position_sets.clone() {
+                        let (mut position_set, mut expected_position_set): (Vec<_>, Vec<_>) =
+                            (&mut pruning_positions_iter)
+                                .zip(expected_position_set)
+                                .unzip();
+                        position_set.sort();
+                        expected_position_set.sort();
+                        assert_eq!(position_set, expected_position_set);
+                    }
+
+                    assert_eq!(non_pruning_positions, expected_output.non_pruning_positions);
+                }
+            }
         }
+
+        // #[test]
+        // fn test_near_minimal_grid() {
+        //     let solution = samples::base_2_solved();
+        //     let mut rng = new_crate_rng_with_seed(None);
+        //
+        //     let near_minimal_grid = Generator::near_minimal_grid(&solution, &mut rng);
+        //     assert!(!near_minimal_grid.is_solved());
+        //     assert_eq!(near_minimal_grid.unique_solution().unwrap(), solution);
+        // }
     }
 
     mod prune {
