@@ -19,6 +19,7 @@ import type { WasmSudokuProxy } from "../../spawnWorker";
 import { spawnWorker } from "../../spawnWorker";
 import assertNever from "assert-never/index";
 import { getInput } from "./inputActions";
+import { useCancelableMutation } from "../useCancelableMutation";
 
 // Snapshot accessors
 async function getWasmSudokuProxy(snapshot: Snapshot): Promise<WasmSudokuProxy> {
@@ -316,21 +317,15 @@ export function useRedo() {
     );
 }
 
-export function useGenerate(onProgress: (progress: GeneratorProgress) => void, signal: AbortSignal) {
-    return useRecoilCallback(
+export function useGenerate() {
+    const generateImpl = useRecoilCallback(
         ({ snapshot, set }) =>
-            async (settings: DynamicGeneratorSettings) => {
+            async (
+                settings: DynamicGeneratorSettings,
+                abortPromise: Promise<never>,
+                onProgress: (progress: GeneratorProgress) => void
+            ) => {
                 const wasmSudokuProxy = await getWasmSudokuProxy(snapshot);
-
-                const abortPromise = new Promise<never>((resolve, reject) => {
-                    signal.addEventListener(
-                        "abort",
-                        () => {
-                            reject(signal.reason);
-                        },
-                        { once: true }
-                    );
-                });
 
                 try {
                     await Promise.race([abortPromise, wasmSudokuProxy.generate(settings, Comlink.proxy(onProgress))]);
@@ -352,8 +347,20 @@ export function useGenerate(onProgress: (progress: GeneratorProgress) => void, s
 
                 await updateSudoku({ set, wasmSudokuProxy });
             },
-        [onProgress, signal]
+        []
     );
+
+    const {
+        mutation,
+        progress,
+        cancel: cancelGenerate,
+    } = useCancelableMutation<DynamicGeneratorSettings, GeneratorProgress>(
+        async ({ variables: settings, abortPromise, onProgress }) => {
+            await generateImpl(settings, abortPromise, onProgress);
+        }
+    );
+
+    return { generate: mutation.mutateAsync, progress, cancelGenerate };
 }
 
 export function useImportSudokuString() {

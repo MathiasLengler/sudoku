@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect } from "react";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import { SliderElement, SwitchElement, TextFieldElement, useForm } from "react-hook-form-mui";
@@ -77,7 +77,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
         resolver: zodResolver(generateFormValuesSchema),
     });
 
-    const { base, minGivens, useSeed, seed } = watch();
+    const { base, minGivens, useSeed } = watch();
     const cellCount = baseToCellCount(base);
 
     useEffect(() => {
@@ -86,28 +86,14 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
         }
     }, [cellCount, minGivens, setValue]);
 
-    const [progress, setProgress] = useState<GeneratorProgress | undefined>();
+    const { generate, progress, cancelGenerate } = useGenerate();
 
-    const [generateAbortController, setGenerateAbortController] = useState(() => new AbortController());
-
-    const onProgress = useCallback(
-        (progress: GeneratorProgress) => {
-            if (generateAbortController.signal.aborted) return;
-            console.debug("onProgress", progress);
-            setProgress(progress);
-        },
-        [generateAbortController.signal]
-    );
-
-    const abortGenerate = useCallback(() => {
-        generateAbortController.abort();
-        setGenerateAbortController(new AbortController());
-        setProgress(undefined);
-    }, [generateAbortController]);
-
-    const generate = useGenerate(onProgress, generateAbortController.signal);
-
-    // TODO: abort generation on ESC
+    // Cancel generation on unmount/modal close
+    useEffect(() => {
+        return () => {
+            cancelGenerate();
+        };
+    }, [cancelGenerate]);
 
     return (
         <>
@@ -221,7 +207,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                     type="button"
                     onClick={() => {
                         if (isSubmitting) {
-                            abortGenerate();
+                            cancelGenerate();
                         } else {
                             onClose();
                         }
