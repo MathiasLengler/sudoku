@@ -78,6 +78,18 @@ const fn base_to_binary_fixed_candidates_line_cell_chars(base: u8) -> usize {
     }
 }
 
+const fn base_to_minimum_clue_count_for_unique_solution(base: u8) -> u16 {
+    // Reference:
+    match base {
+        2 => 4,
+        3 => 17,
+        // Unknown, conservative estimates
+        4 => 18,
+        5 => 19,
+        _ => panic!("Unexpected base"),
+    }
+}
+
 mod cell_index_to_block_index {
     //! # Safety
     //! Each `array` must fulfill the following properties for its respective `Base`:
@@ -217,6 +229,8 @@ where
     /// Defines how many chars are representing a single cell in this grid format.
     const BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS: usize;
 
+    const MINIMUM_CLUE_COUNT_FOR_UNIQUE_SOLUTION: u16;
+
     /// For a given cell position, returns the coordinate of the block it is contained in.
     fn pos_to_block(pos: Position<Self>) -> Coordinate<Self>;
 
@@ -287,6 +301,7 @@ unsafe impl SudokuBase for $type_num {
     const MAX_VALUE: u8 = base_to_max_value(Self::BASE);
     const CELL_COUNT: u16 = base_to_cell_count(Self::BASE);
     const BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS: usize = base_to_binary_fixed_candidates_line_cell_chars(Self::BASE);
+    const MINIMUM_CLUE_COUNT_FOR_UNIQUE_SOLUTION: u16 = base_to_minimum_clue_count_for_unique_solution(Self::BASE);
 
     fn pos_to_block(pos: Position<Self>) -> Coordinate<Self> {
         let cell_index = usize::from(pos.cell_index());
