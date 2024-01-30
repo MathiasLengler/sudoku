@@ -819,6 +819,25 @@ mod tests {
         }
     }
 
+    #[cfg(not(debug_assertions))]
+    #[test]
+    fn test_base_4() {
+        let grids = crate::samples::base_4();
+
+        for grid in grids {
+            let solver = Solver::new(&grid);
+            assert_solver_single_solution(solver);
+        }
+    }
+
+    #[test]
+    fn test_solved() {
+        let grid = crate::samples::base_2_solved();
+
+        let solver = Solver::new(&grid);
+        assert_solver_single_solution(solver);
+    }
+
     #[test]
     fn test_move_best_choice_to_front() {
         let mut grid = crate::samples::base_2()[1].clone();
@@ -848,14 +867,6 @@ mod tests {
         solver.move_best_choice_to_front(4);
         expected_choice_indexes.swap(4, 11);
         assert_eq!(solver.availability_indexes, expected_choice_indexes);
-    }
-
-    #[test]
-    fn test_solved() {
-        let grid = crate::samples::base_2_solved();
-
-        let solver = Solver::new(&grid);
-        assert_solver_single_solution(solver);
     }
 
     #[test]
