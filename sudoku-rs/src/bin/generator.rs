@@ -7,7 +7,9 @@ use sudoku::generator::{Generator, GeneratorSettings, PruningSettings, PruningTa
 use sudoku::solver::backtracking::SPLIT_COUNT;
 
 fn main() -> Result<()> {
-    env_logger::Builder::from_env(Env::default().default_filter_or("debug")).init();
+    env_logger::Builder::from_env(Env::default().default_filter_or("debug"))
+        .format_indent(Some(0))
+        .init();
 
     let before = Instant::now();
     let grid = Generator::<Base4>::with_settings(GeneratorSettings {
