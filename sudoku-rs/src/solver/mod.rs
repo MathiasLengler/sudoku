@@ -9,6 +9,10 @@ pub mod strategic;
 //  Rust exact cover solver
 //   https://github.com/jw013/exact-cover-rs
 
+// TODO: base adaptive solver
+//  strategic solver gets better for base >= 4 than backtracking::Solver
+//  even simple strategies seem to reduce the backtracking space enough to be more efficient.
+
 #[cfg(test)]
 mod test_util {
     use std::collections::HashSet;
