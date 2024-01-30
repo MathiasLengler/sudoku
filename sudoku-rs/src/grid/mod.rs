@@ -48,6 +48,12 @@ impl<Base: SudokuBase, T> AsRef<Grid<Base, T>> for Grid<Base, T> {
     }
 }
 
+impl<Base: SudokuBase, T> AsMut<Grid<Base, T>> for Grid<Base, T> {
+    fn as_mut(&mut self) -> &mut Grid<Base, T> {
+        self
+    }
+}
+
 impl<Base: SudokuBase, T> Index<Position<Base>> for Grid<Base, T> {
     type Output = T;
 

@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use log::trace;
 
 use strategies::Strategy;
@@ -19,35 +21,38 @@ pub mod strategies;
 // Reference: sudokuwiki "Grader"/"Solve path"
 
 #[derive(Debug)]
-pub struct Solver<'g, Base: SudokuBase> {
-    grid: &'g mut Grid<Base>,
+pub struct Solver<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> {
+    grid: GridMut,
     // TODO: generic: AsRef: IntoIterator<DynamicStrategy>
     //  `Generator::try_delete_cell_at_pos` would not need to clone its strategies
     strategies: Vec<DynamicStrategy>,
+    _base: PhantomData<Base>,
 }
 
-impl<'g, Base: SudokuBase> Solver<'g, Base> {
-    pub fn new(grid: &'g mut Grid<Base>) -> Solver<'g, Base> {
+impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> Solver<Base, GridMut> {
+    pub fn new(grid: GridMut) -> Self {
         Self::new_with_strategies(grid, DynamicStrategy::default_solver_strategies())
     }
 
-    pub fn new_with_strategies(
-        grid: &'g mut Grid<Base>,
-        strategies: Vec<DynamicStrategy>,
-    ) -> Solver<'g, Base> {
-        grid.set_all_direct_candidates_if_all_candidates_are_empty();
+    pub fn new_with_strategies(mut grid: GridMut, strategies: Vec<DynamicStrategy>) -> Self {
+        grid.as_mut()
+            .set_all_direct_candidates_if_all_candidates_are_empty();
 
-        Self { grid, strategies }
+        Self {
+            grid,
+            strategies,
+            _base: PhantomData,
+        }
     }
 
     pub fn try_solve(&mut self) -> Result<Option<Grid<Base>>> {
         Ok(loop {
-            if self.grid.is_solved() {
-                break Some(self.grid.clone());
+            if self.grid.as_ref().is_solved() {
+                break Some(self.grid.as_ref().clone());
             }
 
             if let Some((_, deductions)) = self.try_strategies()? {
-                deductions.apply(self.grid)?;
+                deductions.apply(self.grid.as_mut())?;
                 // Continue with strategy execution
             } else {
                 // All strategies failed to make progress.
@@ -59,15 +64,19 @@ impl<'g, Base: SudokuBase> Solver<'g, Base> {
     /// Tries executing strategies until one strategy is able to make at least one deduction.
     pub fn try_strategies(&self) -> Result<Option<(DynamicStrategy, Deductions<Base>)>> {
         for strategy in &self.strategies {
-            let deductions = Strategy::execute(*strategy, self.grid)?;
+            let deductions = Strategy::execute(*strategy, self.grid.as_ref())?;
 
-            if !(deductions.is_empty()) {
-                trace!("{strategy:?}:\n{}\n{}", deductions, self.grid);
+            if !deductions.is_empty() {
+                trace!("{strategy:?}:\n{}\n{}", deductions, self.grid.as_ref());
 
                 return Ok(Some((*strategy, deductions)));
             }
         }
         Ok(None)
+    }
+
+    pub fn into_grid(self) -> GridMut {
+        self.grid
     }
 }
 
@@ -77,14 +86,12 @@ mod tests {
 
     use super::*;
 
-    fn assert_solvable<Base: SudokuBase>(grid: &mut Grid<Base>) {
+    fn assert_solvable<Base: SudokuBase>(mut grid: Grid<Base>) {
         grid.set_all_direct_candidates();
         grid.fix_all_values();
 
-        let mut solver = Solver::new(grid);
-
+        let mut solver = Solver::new(&mut grid);
         assert!(solver.try_solve().unwrap().is_some());
-
         assert!(grid.is_solved());
     }
 
@@ -92,8 +99,8 @@ mod tests {
     fn test_base_2() {
         let grids = crate::samples::base_2();
 
-        for mut grid in grids {
-            assert_solvable(&mut grid);
+        for grid in grids {
+            assert_solvable(grid);
         }
     }
 
@@ -101,8 +108,8 @@ mod tests {
     fn test_base_3() {
         let grids = crate::samples::base_3();
 
-        for mut grid in grids {
-            assert_solvable(&mut grid);
+        for grid in grids {
+            assert_solvable(grid);
         }
     }
 
