@@ -90,6 +90,16 @@ impl DynamicStrategy {
         ]
     }
 
+    pub fn default_solver_strategies_without_backtracking() -> Vec<Self> {
+        vec![
+            NakedSingles.into(),
+            HiddenSingles.into(),
+            NakedPairs.into(),
+            GroupReduction.into(),
+            GroupIntersectionBoth.into(),
+        ]
+    }
+
     fn variant_index(&self) -> u32 {
         // Reference: https://doc.rust-lang.org/std/mem/fn.discriminant.html
 

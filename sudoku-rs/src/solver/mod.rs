@@ -1,6 +1,8 @@
 pub mod backtracking;
 pub mod strategic;
 
+pub mod introspective;
+
 // TODO: exact-cover based solver:
 //  Could be more performant for bigger sudokus
 //  References:
@@ -8,10 +10,6 @@ pub mod strategic;
 //   https://github.com/huaminghuangtw/Parallel-Sudoku-Solver/blob/master/Project_Report.pdf
 //  Rust exact cover solver
 //   https://github.com/jw013/exact-cover-rs
-
-// TODO: base adaptive solver
-//  strategic solver gets better for base >= 4 than backtracking::Solver
-//  even simple strategies seem to reduce the backtracking space enough to be more efficient.
 
 #[cfg(test)]
 mod test_util {
