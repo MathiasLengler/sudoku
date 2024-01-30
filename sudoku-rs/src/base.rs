@@ -83,9 +83,10 @@ const fn base_to_minimum_clue_count_for_unique_solution(base: u8) -> u16 {
     match base {
         2 => 4,
         3 => 17,
-        // Unknown, conservative estimates
-        4 => 18,
-        5 => 19,
+        // Unknown, guess on ~200 minimal sudokus
+        4 => 75,
+        // Unknown, conservative estimate
+        5 => 75,
         _ => panic!("Unexpected base"),
     }
 }
