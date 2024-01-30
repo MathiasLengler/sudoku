@@ -48,7 +48,7 @@ serde_json = "1.0.111"
 criterion = { version = "0.5.1", features = ["html_reports"] }
 
 [features]
-default = []
+default = ["log"]
 log = ["env_logger"]
 terminal = ["crossterm", "indicatif"]
 parallel = ["rayon", "indicatif/rayon"]

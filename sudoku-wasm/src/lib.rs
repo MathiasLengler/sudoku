@@ -52,7 +52,7 @@ pub fn init() {
         static SET_HOOK: Once = Once::new();
         SET_HOOK.call_once(|| {
             panic::set_hook(Box::new(console_error_panic_hook::hook));
-            console_log::init_with_level(Level::Trace).unwrap();
+            console_log::init_with_level(Level::Debug).unwrap();
         });
     }
 
