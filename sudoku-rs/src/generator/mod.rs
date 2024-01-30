@@ -499,7 +499,7 @@ impl<Base: SudokuBase> Generator<Base> {
                 //     - generate n-thread count, select the "best" by some metric
                 //     - keep generating until some metric is meet
                 //   - generate n-thread count, return the first successful one
-                #[cfg(feature = "parallel")]
+                #[cfg(feature = "parallel_generator")]
                 {
                     let mut denylist = Grid::new();
                     denylist[pos] = Candidates::with_single(deleted_value);
@@ -509,7 +509,7 @@ impl<Base: SudokuBase> Generator<Base> {
 
                     solver.has_any_solution()
                 }
-                #[cfg(not(feature = "parallel"))]
+                #[cfg(not(feature = "parallel_generator"))]
                 {
                     let mut solver = backtracking::Solver::builder(&grid)
                         .availability_filter(
