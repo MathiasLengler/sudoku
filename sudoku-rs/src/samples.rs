@@ -75,6 +75,7 @@ pub fn base_3() -> Vec<Grid<Base3>> {
             vec![0, 0, 8, 5, 0, 0, 0, 1, 0],
             vec![0, 9, 0, 0, 0, 0, 4, 0, 0],
         ],
+        // TODO: add more samples for testing
     ]
     .into_iter()
     .map(TryInto::<Grid<Base3>>::try_into)
