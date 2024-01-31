@@ -20,7 +20,7 @@ use sudoku::position::test_utils::{consume_iter, consume_nested_iter};
 use sudoku::position::Coordinate;
 use sudoku::position::Position;
 use sudoku::rng::{new_crate_rng_from_rng, new_crate_rng_with_seed};
-use sudoku::samples::{base_2, base_3, base_4};
+use sudoku::samples::{base_2, base_3, base_4, base_5};
 use sudoku::solver::strategic::strategies::{GroupIntersectionBoth, GroupReduction, Strategy};
 use sudoku::solver::{backtracking, introspective, strategic};
 
@@ -33,6 +33,7 @@ fn sample_grid<Base: SudokuBase>() -> Grid<Base> {
         2 => cast_grid(Box::new(base_2().into_iter().next().unwrap())),
         3 => cast_grid(Box::new(base_3().into_iter().next().unwrap())),
         4 => cast_grid(Box::new(base_4().into_iter().next().unwrap())),
+        5 => cast_grid(Box::new(base_5().into_iter().next().unwrap())),
         _ => panic!("unexpected base"),
     }
 }
@@ -444,7 +445,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     bench_solver_sample_group::<Base2>(&mut solver_sample_group);
     bench_solver_sample_group::<Base3>(&mut solver_sample_group);
     bench_solver_sample_group::<Base4>(&mut solver_sample_group);
-    // TODO: add base4 sample
+    bench_solver_sample_group::<Base5>(&mut solver_sample_group);
     solver_sample_group.finish();
 
     let mut solver_tdoku_group = c.benchmark_group("SolverTdoku");
