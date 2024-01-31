@@ -64,10 +64,16 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> Solver<Ba
     /// Tries executing strategies until one strategy is able to make at least one deduction.
     pub fn try_strategies(&self) -> Result<Option<(DynamicStrategy, Deductions<Base>)>> {
         for strategy in &self.strategies {
+            trace!("Executing strategy: {strategy:?}");
+
             let deductions = Strategy::execute(*strategy, self.grid.as_ref())?;
 
             if !deductions.is_empty() {
-                trace!("{strategy:?}:\n{}\n{}", deductions, self.grid.as_ref());
+                trace!(
+                    "{strategy:?} made progress:\n{}\n{}",
+                    deductions,
+                    self.grid.as_ref()
+                );
 
                 return Ok(Some((*strategy, deductions)));
             }

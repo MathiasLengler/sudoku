@@ -90,12 +90,15 @@ impl DynamicStrategy {
         ]
     }
 
-    pub fn default_solver_strategies_without_backtracking() -> Vec<Self> {
+    pub fn introspective_solver_base_4_plus_strategies() -> Vec<Self> {
+        // TODO: benchmark
         vec![
             NakedSingles.into(),
             HiddenSingles.into(),
             NakedPairs.into(),
-            GroupReduction.into(),
+            // FIXME: Slow for empty groups
+            //  also slow for base 3, but impact is worse for larger bases
+            // GroupReduction.into(),
             GroupIntersectionBoth.into(),
         ]
     }

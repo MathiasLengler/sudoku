@@ -3,6 +3,7 @@ use crate::cell::CandidatesAscIter;
 use crate::grid::Grid;
 use crate::solver::strategic::strategies::DynamicStrategy;
 use crate::solver::{backtracking, strategic};
+use log::debug;
 
 #[derive(Debug, Default)]
 enum SolverImpl<Base: SudokuBase> {
@@ -30,7 +31,7 @@ impl<Base: SudokuBase> Solver<Base> {
                 // For base >= 4, a hybrid approach of strategic, then backtracking, is faster.
                 4 | 5 => SolverImpl::Strategic(strategic::Solver::new_with_strategies(
                     grid,
-                    DynamicStrategy::default_solver_strategies_without_backtracking(),
+                    DynamicStrategy::introspective_solver_base_4_plus_strategies(),
                 )),
                 unexpected_base => panic!("Unexpected base: {unexpected_base}"),
             },
@@ -48,6 +49,7 @@ impl<Base: SudokuBase> Solver<Base> {
                 } else {
                     // Strategic solver failed to find solution, but possibly made progress.
                     // Use the mutated grid as a starting point for the backtracking solver.
+                    debug!("Strategic solver failed to make progress, switching to backtracking solver");
                     let mut backtracking_solver = backtracking::Solver::new(solver.into_grid());
                     let res = backtracking_solver.next();
                     self.solver_impl = SolverImpl::Backtracking(backtracking_solver);

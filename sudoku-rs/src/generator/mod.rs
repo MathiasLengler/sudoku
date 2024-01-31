@@ -4,6 +4,7 @@ use log::debug;
 use rand::prelude::SliceRandom;
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeSet;
 #[cfg(feature = "wasm")]
 use ts_rs::TS;
 
@@ -15,8 +16,8 @@ use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::rng::{new_crate_rng_with_seed, CrateRng};
-use crate::solver::backtracking;
 use crate::solver::strategic::strategies::{Backtracking, DynamicStrategy};
+use crate::solver::{backtracking, introspective};
 
 // TODO: strategic
 //  target difficulty: sum of weighted strategy applications
@@ -362,13 +363,16 @@ impl<Base: SudokuBase> Generator<Base> {
         &self,
         on_progress: impl FnMut(GeneratorProgress) -> Result<()>,
     ) -> Result<Grid<Base>> {
-        debug!("generate: {self:?}");
+        debug!("Generating: {self:#?}");
 
         let mut rng = new_crate_rng_with_seed(self.settings.seed);
 
         let solved_grid = self.solved_grid(&mut rng)?;
 
+        debug!("Solution:\n{solved_grid}");
+
         let Some(prune_settings) = &self.settings.prune else {
+            debug!("No pruning, returning solution");
             return Ok(solved_grid);
         };
 
@@ -376,6 +380,8 @@ impl<Base: SudokuBase> Generator<Base> {
     }
 
     fn solved_grid(&self, rng: &mut CrateRng) -> Result<Grid<Base>> {
+        debug!("Generating solution");
+
         let grid = if let Some(solution_settings) = &self.settings.solution {
             solution_settings.values_grid.clone()
         } else {
@@ -396,28 +402,167 @@ impl<Base: SudokuBase> Generator<Base> {
     }
 
     // TODO: use in prune_from_minimal
-    fn near_minimal_grid(solution: &Grid<Base>, rng: &mut CrateRng) -> Grid<Base> {
-        // TODO: preserve non-pruning positions
+    // TODO: optimize
+    //  find minimal clue count for a unique solution for each Base
+    //  add them without checking for a unique solution
+    // TODO: optimize: re-add logic
+    //  - get two ambiguous solutions
+    //  - find differing values
+    //  - add one of those values
+    //  could result in generation of biased sudokus?
+    fn near_minimal_grid(
+        &self,
+        solved_grid: &Grid<Base>,
+        prune_settings: &PruningSettings<Base>,
+        rng: &mut CrateRng,
+    ) -> Result<(
+        // near_minimal_grid
+        Grid<Base>,
+        // deleted
+        Vec<(Position<Base>, Value<Base>)>,
+        // remaining_pruning_positions
+        Vec<Position<Base>>,
+    )> {
+        debug!("Generating near minimal grid");
 
-        debug_assert!(solution.is_solved());
+        // FIXME: prune_settings.strategies
 
-        let solution_value_positions = Self::shuffle_vec(rng, solution.all_value_positions());
+        debug_assert!(solved_grid.is_solved());
 
-        let mut grid = Grid::<Base>::new();
+        let mut near_minimal_grid = Grid::<Base>::new();
 
-        // TODO: optimize
-        //  find minimal clue count for a unique solution for each Base
-        //  add them without checking for a unique solution
-        for solution_value_position in solution_value_positions {
-            let solution_value = solution[solution_value_position].clone();
-            grid[solution_value_position] = solution_value;
-            if let Some(unique_solution) = grid.unique_solution() {
-                debug_assert_eq!(unique_solution, *solution);
-                break;
+        let pruning_positions = self.pruning_positions(prune_settings, rng)?;
+        let non_pruning_positions = self.non_pruning_positions(prune_settings)?;
+
+        let non_pruning_position_count = non_pruning_positions.len() as u16;
+
+        // Copy over non pruning positions into near_minimal_grid, since they must be contained in the final grid.
+        if !non_pruning_positions.is_empty() {
+            debug!("Restoring non-pruning positions: {non_pruning_positions:?}");
+            for non_pruning_position in non_pruning_positions {
+                let solution_value = solved_grid[non_pruning_position].clone();
+                debug_assert!(solution_value.has_value());
+                near_minimal_grid[non_pruning_position] = solution_value;
+            }
+            // Check if the non pruning positions already result in a unique solution.
+            if let Some(unique_solution) = near_minimal_grid.unique_solution() {
+                debug!("Non-pruning positions result in unique solution");
+                debug_assert_eq!(unique_solution, *solved_grid);
+                return Ok((
+                    near_minimal_grid,
+                    pruning_positions
+                        .iter()
+                        .map(|&pos| (pos, solved_grid[pos].value().unwrap()))
+                        .collect(),
+                    vec![],
+                ));
             }
         }
 
-        grid
+        debug!("Restoring pruning positions");
+
+        let pruning_position_count = pruning_positions.len();
+        let mut pruning_position_i = 0;
+
+        const SOLUTION_GUIDED: bool = true;
+        if SOLUTION_GUIDED {
+            let mut pruning_positions = pruning_positions;
+            let mut restored_positions = vec![];
+
+            while let Some(ambiguous_solution) = {
+                debug!("Checking grid for ambiguous_solution_pair:\n{near_minimal_grid}");
+
+                let mut solver = introspective::Solver::new(near_minimal_grid.clone());
+                if let Some(first_solution) = solver.next() {
+                    if &first_solution == solved_grid {
+                        if let Some(second_solution) = solver.next() {
+                            debug_assert_ne!(&second_solution, solved_grid);
+                            Some(second_solution)
+                        } else {
+                            None
+                        }
+                    } else {
+                        Some(first_solution)
+                    }
+                } else {
+                    None
+                }
+            } {
+                let non_equal_value_positions: BTreeSet<_> = Position::<Base>::all()
+                    .filter(|&pos| ambiguous_solution[pos] != solved_grid[pos])
+                    .collect();
+
+                let Some(next_pruning_i) = pruning_positions
+                    .iter()
+                    .position(|pos| non_equal_value_positions.contains(pos))
+                else {
+                    unreachable!()
+                };
+
+                let pruning_position = pruning_positions.remove(next_pruning_i);
+                restored_positions.push(pruning_position);
+
+                let solution_value = solved_grid[pruning_position].clone();
+                debug!("Restoring pruning position #{}/{pruning_position_count}: {solution_value} at {pruning_position}", restored_positions.len());
+                debug_assert!(solution_value.has_value());
+                near_minimal_grid[pruning_position] = solution_value;
+            }
+
+            debug!("Restored value resulted in unique solution, stop restoring");
+
+            let deleted: Vec<(Position<Base>, Value<Base>)> = pruning_positions
+                .iter()
+                .map(|&pos| (pos, solved_grid[pos].value().unwrap()))
+                .collect();
+
+            Ok((near_minimal_grid, deleted, restored_positions))
+        } else {
+            // Copy over pruning positions until the grid has a unique solution.
+            let Some(stop_index) = pruning_positions.iter().rposition(|&pruning_position| {
+                pruning_position_i += 1;
+
+                let solution_value = solved_grid[pruning_position].clone();
+                // FIXME: breaks rustfmt
+                // debug!("Restoring pruning position #{pruning_position_i}/{pruning_position_count}: {solution_value} at {pruning_position}");
+                debug_assert!(solution_value.has_value());
+
+                near_minimal_grid[pruning_position] = solution_value;
+
+                let restored_value_count = pruning_position_i + non_pruning_position_count;
+                let minimum_clue_count_for_unique_solution =
+                    Base::MINIMUM_CLUE_COUNT_FOR_UNIQUE_SOLUTION;
+                if restored_value_count < minimum_clue_count_for_unique_solution {
+                    // FIXME: breaks rustfmt
+                    // debug!("Skip check for unique solution, since restored value count {restored_value_count} is less than minimum clue count for unique solution {minimum_clue_count_for_unique_solution}");
+                    return false;
+                }
+
+                if let Some(unique_solution) = near_minimal_grid.unique_solution() {
+                    debug!("Restored value resulted in unique solution, stop restoring");
+                    debug_assert_eq!(unique_solution, *solved_grid);
+                    true
+                } else {
+                    false
+                }
+            }) else {
+                if self.settings.solution.is_some() {
+                    bail!("'solution.values_grid' has no solution")
+                } else {
+                    panic!("Expected adding of pruning positions to eventually result in a unique solution")
+                }
+            };
+
+            let (deleted_pruning_positions, remaining_pruning_positions) =
+                pruning_positions.split_at(stop_index);
+
+            let deleted: Vec<(Position<Base>, Value<Base>)> = deleted_pruning_positions
+                .iter()
+                .map(|&pos| (pos, solved_grid[pos].value().unwrap()))
+                .collect();
+            let remaining_pruning_positions = remaining_pruning_positions.to_vec();
+
+            Ok((near_minimal_grid, deleted, remaining_pruning_positions))
+        }
     }
 
     fn prune(
@@ -484,7 +629,15 @@ impl<Base: SudokuBase> Generator<Base> {
                 .is_solvable_with_strategies(prune_settings.strategies.clone())
                 .is_ok_and(|solution| solution.is_some())
         ) && {
-            let has_ambiguous_solution = {
+            const USE_INTROSPECTIVE_SOLVER: bool = true;
+
+            let has_ambiguous_solution = if USE_INTROSPECTIVE_SOLVER {
+                // Is actually faster for base 4:
+                //  USE_INTROSPECTIVE_SOLVER false: 17.9s
+                //  USE_INTROSPECTIVE_SOLVER true: 5.53s
+                // TODO: merge with backtracking availability_filter optimization below
+                !grid.has_unique_solution()
+            } else {
                 // TODO: evaluate parallelism higher up in the generation call stack
                 //  parallel solving of a single grid is quite tricky to parallelize efficiently,
                 //  especially for Base <= 3
@@ -673,26 +826,45 @@ impl<Base: SudokuBase> Generator<Base> {
 
     fn prune_from_minimal(
         &self,
-        mut grid: Grid<Base>,
+        solved_grid: Grid<Base>,
         distance_from_minimal: u16,
         prune_settings: &PruningSettings<Base>,
         mut on_progress: impl FnMut(GeneratorProgress) -> Result<()>,
         rng: &mut CrateRng,
     ) -> Result<Grid<Base>> {
-        debug_assert!(grid.is_solved());
+        debug!("Pruning solution to be minimal");
+
+        debug_assert!(solved_grid.is_solved());
 
         // If the distance results in a filled sudoku, return it directly.
         if distance_from_minimal >= Base::CELL_COUNT {
-            return Ok(grid);
+            debug!(
+                "Distance {distance_from_minimal} will result in a solved sudoku, exiting early"
+            );
+
+            return Ok(solved_grid);
         }
 
-        let pruning_positions: Vec<_> = self.pruning_positions(prune_settings, rng)?;
-        let pruning_position_count = pruning_positions.len();
+        // TODO: evaluate if near_minimal_grid is always a pessimization
+        //  root cause could be the basic backtracking solver implementation
+        //  DPLL-based solver could be faster at counting ambiguous solutions
+        const START_FROM_NEAR_MINIMAL_GRID: bool = false;
+        let (mut grid, mut deleted, remaining_pruning_positions) = if START_FROM_NEAR_MINIMAL_GRID {
+            self.near_minimal_grid(&solved_grid, prune_settings, rng)?
+        } else {
+            (
+                solved_grid,
+                vec![],
+                self.pruning_positions(prune_settings, rng)?,
+            )
+        };
 
-        let mut deleted: Vec<(Position<Base>, Value<Base>)> = vec![];
+        debug!("Pruning grid by trying to delete values at positions {remaining_pruning_positions:?} in grid:\n{grid}");
+
+        let remaining_pruning_position_count = remaining_pruning_positions.len();
 
         // Reduce grid to a minimal solution.
-        for (i, pos) in pruning_positions.into_iter().enumerate() {
+        for (i, pos) in remaining_pruning_positions.into_iter().enumerate() {
             let pruning_position_index = i + 1;
 
             let deleted_count = u16::try_from(deleted.len()).unwrap();
@@ -700,27 +872,32 @@ impl<Base: SudokuBase> Generator<Base> {
             let is_position_required = if let Some(deleted_value) =
                 Self::try_delete_cell_at_pos(&mut grid, pos, prune_settings)
             {
-                debug!("Position {pruning_position_index}/{pruning_position_count} deleted, totaling {deleted_count} deleted positions");
+                debug!("Position {pruning_position_index}/{remaining_pruning_position_count} deleted, totaling {deleted_count} deleted positions");
 
                 deleted.push((pos, deleted_value));
                 false
             } else {
                 debug!(
-                    "Position {pruning_position_index}/{pruning_position_count} is required for unique solution"
+                    "Position {pruning_position_index}/{remaining_pruning_position_count} is required for unique solution"
                 );
                 true
             };
 
-            on_progress(GeneratorProgress {
-                pruning_position_index,
-                pruning_position_count,
-                deleted_count,
-                is_position_required,
-            })?;
+            // TODO: update on_progress callback
+            // on_progress(GeneratorProgress {
+            //     pruning_position_index,
+            //     pruning_position_count,
+            //     deleted_count,
+            //     is_position_required,
+            // })?;
         }
 
         // Restore the required amount of values, specified by distance.
-        for (deleted_pos, deleted_value) in deleted.into_iter().take(distance_from_minimal.into()) {
+        for (restore_i, (deleted_pos, deleted_value)) in
+            (1..).zip(deleted.into_iter().rev().take(distance_from_minimal.into()))
+        {
+            debug!("Restoring deleted value #{restore_i}/{distance_from_minimal}: {deleted_value} at {deleted_pos}");
+
             grid.get_mut(deleted_pos).set_value(deleted_value);
         }
 

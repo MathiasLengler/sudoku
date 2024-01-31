@@ -19,7 +19,7 @@ use crate::grid::format::{CandidatesGridANSIStyled, DynamicGridFormat, GridForma
 use crate::position::Coordinate;
 use crate::position::Position;
 use crate::solver::strategic::strategies::DynamicStrategy;
-use crate::solver::{backtracking, strategic};
+use crate::solver::{backtracking, introspective, strategic};
 use crate::unsafe_utils::{get_unchecked, get_unchecked_mut};
 
 pub mod deserialization;
@@ -366,7 +366,8 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 
     pub fn unique_solution(&self) -> Option<Self> {
-        let mut solver = backtracking::Solver::new(self);
+        // FIXME: remove clone
+        let mut solver = introspective::Solver::new(self.clone());
 
         match (solver.next(), solver.next()) {
             (Some(unique_solution), None) => Some(unique_solution),
