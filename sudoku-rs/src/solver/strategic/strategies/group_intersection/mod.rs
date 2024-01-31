@@ -474,8 +474,6 @@ mod tests {
                     // Reference: https://www.sudokuwiki.org/Intersection_Removal#:~:text=in%20C7.-,Triple%20BLR,-%3A%20Load%20Example
                     let grid: Grid<Base3> = "a005a0g10h09410311g10a0hd24652210c8441110aa22622o80ho4116ama0h81m2g2k4m405e2u262m2m20h11090h62m2091105o2k0u0280h0570m8n0g881038aca1142ka0h0521k02ag16a056a8111480h".parse().unwrap();
 
-                    println!("{grid}");
-
                     let deductions = GroupIntersection(GroupIntersectionTypeFilter::AxisToBlock)
                         .execute(&grid)
                         .unwrap();
