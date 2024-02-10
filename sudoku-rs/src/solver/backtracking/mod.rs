@@ -3,11 +3,13 @@
 use std::fmt::{Debug, Display, Formatter};
 use std::sync::atomic::{AtomicU64, Ordering};
 
+pub use availability_filter::AvailabilityFilter;
+pub use availability_filter::DeniedCandidatesGrid;
 use log::trace;
 
 pub use builder::SolverBuilder;
 use group_availability::GroupAvailability;
-pub use group_availability::{AvailabilityFilter, DeniedCandidatesGrid, GroupAvailabilityIndex};
+pub use group_availability::GroupAvailabilityIndex;
 
 use crate::base::SudokuBase;
 use crate::cell::{Candidates, CandidatesAscIter, CandidatesIterator, CandidatesRandIter};
@@ -15,6 +17,7 @@ use crate::grid::Grid;
 use crate::position::Position;
 use crate::rng::CrateRng;
 
+pub(crate) mod availability_filter;
 pub(crate) mod group_availability;
 
 #[derive(Debug, Clone)]

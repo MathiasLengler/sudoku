@@ -19,7 +19,7 @@ use crate::grid::Grid;
 use crate::position::Position;
 use crate::rng::{new_crate_rng_from_rng, new_crate_rng_with_seed};
 use crate::solver::backtracking;
-use crate::solver::backtracking::DeniedCandidatesGrid;
+use crate::solver::backtracking::availability_filter::DeniedCandidatesGrid;
 use crate::world::RelativeTileDir::TopRight;
 
 mod overlap_segment_filter;
