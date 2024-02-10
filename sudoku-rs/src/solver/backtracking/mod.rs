@@ -178,7 +178,7 @@ impl<
         Filter: AvailabilityFilter<Base>,
     > Solver<Base, GridRef, ICandidates, Filter>
 {
-    pub(crate) fn new_with(
+    fn new_with(
         grid: GridRef,
         availability: GroupAvailability<Base, Filter>,
         candidates_iter_init_context: ICandidates::InitContext,
