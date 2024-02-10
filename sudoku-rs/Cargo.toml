@@ -82,3 +82,6 @@ required-features = ["solver_debug_print"]
 [[bin]]
 name = "solver_parallel"
 required-features = ["parallel"]
+[[bin]]
+name = "tdoku_benchmark"
+required-features = ["terminal"]
