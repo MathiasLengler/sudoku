@@ -34,6 +34,10 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> Solver<Ba
         Self::new_with_strategies(grid, DynamicStrategy::default_solver_strategies())
     }
 
+    // TODO: with_filter
+    //  pre-apply filter for every candidates in grid, write filtered candidate back into grid.
+    //  filter can then be dropped
+
     pub fn new_with_strategies(mut grid: GridMut, strategies: Vec<DynamicStrategy>) -> Self {
         grid.as_mut()
             .set_all_direct_candidates_if_all_candidates_are_empty();
