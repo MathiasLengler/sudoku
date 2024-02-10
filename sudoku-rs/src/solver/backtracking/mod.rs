@@ -109,7 +109,7 @@ mod builder {
     impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, ICandidates: CandidatesIterator<Base>>
         SolverBuilder<Base, GridRef, ICandidates, ()>
     {
-        /// Visit candidates in a random order, instead of ascending.
+        /// Filter the available candidates which the solver can use to find a solution.
         pub fn availability_filter<Filter: AvailabilityFilter<Base>>(
             self,
             filter: Filter,
