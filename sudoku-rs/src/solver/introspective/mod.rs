@@ -114,8 +114,8 @@ mod tests {
         let grids = crate::samples::base_2();
 
         for grid in grids {
-            let solver = Solver::new(grid);
-            assert_solver_single_solution(solver);
+            let solver = Solver::new(grid.clone());
+            assert_solver_single_solution(solver, &grid);
         }
     }
 
@@ -126,8 +126,8 @@ mod tests {
         let grids = crate::samples::base_3();
 
         for grid in grids {
-            let solver = Solver::new(grid);
-            assert_solver_single_solution(solver);
+            let solver = Solver::new(grid.clone());
+            assert_solver_single_solution(solver, &grid);
         }
     }
 
@@ -139,8 +139,8 @@ mod tests {
         let grids = crate::samples::base_4();
 
         for grid in grids {
-            let solver = Solver::new(grid);
-            assert_solver_single_solution(solver);
+            let solver = Solver::new(grid.clone());
+            assert_solver_single_solution(solver, &grid);
         }
     }
 }

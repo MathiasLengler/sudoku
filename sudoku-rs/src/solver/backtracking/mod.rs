@@ -808,7 +808,7 @@ mod tests {
 
         for grid in grids {
             let solver = Solver::new(&grid);
-            assert_solver_single_solution(solver);
+            assert_solver_single_solution(solver, &grid);
         }
     }
 
@@ -818,7 +818,7 @@ mod tests {
 
         for grid in grids {
             let solver = Solver::new(&grid);
-            assert_solver_single_solution(solver);
+            assert_solver_single_solution(solver, &grid);
         }
     }
 
@@ -829,7 +829,7 @@ mod tests {
 
         for grid in grids {
             let solver = Solver::new(&grid);
-            assert_solver_single_solution(solver);
+            assert_solver_single_solution(solver, &grid);
         }
     }
 
@@ -838,7 +838,7 @@ mod tests {
         let grid = crate::samples::base_2_solved();
 
         let solver = Solver::new(&grid);
-        assert_solver_single_solution(solver);
+        assert_solver_single_solution(solver, &grid);
     }
 
     #[test]
@@ -892,10 +892,10 @@ mod tests {
     }
 
     fn assert_single_solution_with_split<Base: SudokuBase>(
-        grid: &Grid<Base>,
+        puzzle: &Grid<Base>,
         assert_is_splittable: bool,
     ) {
-        let solver = Solver::builder(grid)
+        let solver = Solver::builder(puzzle)
             .availability_filter(Grid::new())
             .build();
 
@@ -908,7 +908,7 @@ mod tests {
         };
 
         // Both solvers chained together should still produce a single solution
-        assert_solver_single_solution(left_solver.chain(right_solver));
+        assert_solver_single_solution(left_solver.chain(right_solver), puzzle);
     }
 
     #[test]

@@ -925,12 +925,6 @@ mod tests {
     mod unit {
         use super::*;
 
-        #[ignore]
-        #[test]
-        fn test_solved_grid() {
-            todo!()
-        }
-
         #[test]
         fn test_pruning_positions() {
             type Base = Base2;

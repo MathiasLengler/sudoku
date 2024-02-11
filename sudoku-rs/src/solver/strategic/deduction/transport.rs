@@ -151,19 +151,6 @@ mod tests {
         }
     }
 
-    #[ignore]
-    #[test]
-    fn test_debug_serde() {
-        use serde_json;
-
-        let transport_deductions = sample_transport_deductions();
-
-        println!(
-            "{}",
-            serde_json::to_string_pretty(&transport_deductions).unwrap()
-        );
-    }
-
     #[test]
     fn test_transport_round_trip() {
         let sample_transport_deductions = sample_transport_deductions();

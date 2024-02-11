@@ -21,6 +21,7 @@ mod test_util {
 
     pub(crate) fn assert_solver_single_solution<Base: SudokuBase>(
         mut solver: impl Iterator<Item = Grid<Base>>,
+        puzzle: &Grid<Base>,
     ) {
         let solution = solver
             .next()
@@ -31,6 +32,15 @@ mod test_util {
             "The solution should be solved, instead got: {solution}"
         );
 
+        for value_pos in puzzle.all_value_positions() {
+            let puzzle_value = puzzle[value_pos].value().unwrap();
+            let solution_value = solution[value_pos].value().unwrap();
+            assert_eq!(
+                puzzle_value, solution_value,
+                "The returned solution is not a valid solution for the puzzle: different values at {value_pos}"
+            );
+        }
+
         assert!(
             solver.next().is_none(),
             "Solver should produce not more than one solution"
@@ -40,7 +50,9 @@ mod test_util {
     pub(crate) fn assert_solver_all_solutions_base_2(solver: impl Iterator<Item = Grid<Base2>>) {
         const NUMBER_OF_BASE_2_SOLUTIONS: usize = 288;
 
-        let solutions = solver.take(300).collect::<Vec<_>>();
+        let solutions = solver
+            .take(NUMBER_OF_BASE_2_SOLUTIONS + 1)
+            .collect::<Vec<_>>();
 
         assert_eq!(solutions.len(), NUMBER_OF_BASE_2_SOLUTIONS);
 
