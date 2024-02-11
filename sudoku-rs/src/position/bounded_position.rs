@@ -262,6 +262,9 @@ impl<Base: SudokuBase> Position<Base> {
             })
     }
 
+    /// Iterator over all `Position`s of a block.
+    ///
+    /// The block positions are yielded in column-major order.
     pub fn block_column_major(block: Coordinate<Base>) -> impl Iterator<Item = Self> {
         let base_usize = usize::from(Base::BASE);
 
@@ -286,6 +289,9 @@ impl<Base: SudokuBase> Position<Base> {
         Coordinate::all().map(Self::block)
     }
 
+    /// Iterator over all positions which are in the top left of a block.
+    ///
+    /// The blocks are visited in a row-major order.
     pub fn all_blocks_top_left() -> impl Iterator<Item = Self> {
         Coordinate::all().map(Base::block_to_top_left_pos)
     }
