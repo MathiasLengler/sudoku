@@ -57,7 +57,7 @@ fn work(
     solver_selection: SolverSelection,
     total_backtrack_count: &mut u64,
 ) {
-    for (i, grid) in grids.iter_mut().enumerate().progress() {
+    for grid in grids.iter_mut().progress() {
         match solver_selection {
             SolverSelection::Strategic => {
                 assert!(strategic::Solver::new(grid).try_solve().unwrap().is_some());
