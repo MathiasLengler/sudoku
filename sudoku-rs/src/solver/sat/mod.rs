@@ -13,6 +13,8 @@ use crate::position::Position;
 use crate::solver::sat::cell_variable::CellVariable;
 use crate::solver::FallibleSolver;
 
+type Clause = Vec<i32>;
+
 mod cell_variable;
 
 #[derive(Debug)]
@@ -49,7 +51,7 @@ impl<Base: SudokuBase> Solver<Base> {
     // TODO: evaluate caching/compile time construction/re-use of general constraints
     // TODO: implement other constraints from tdoku
     // Reference: https://t-dillon.github.io/tdoku/
-    fn formula(grid: &Grid<Base>) -> Vec<Vec<i32>> {
+    fn formula(grid: &Grid<Base>) -> Vec<Clause> {
         let mut clauses = Self::general_clauses();
 
         // Grid specific constraints
@@ -59,18 +61,24 @@ impl<Base: SudokuBase> Solver<Base> {
     }
 
     /// All clauses which only depend on the base of the sudoku.
-    fn general_clauses() -> Vec<Vec<i32>> {
-        let mut clauses: Vec<Vec<i32>> = vec![];
+    fn general_clauses() -> Vec<Clause> {
+        let mut clauses: Vec<Clause> = vec![];
+
+        // Base clauses
         clauses.extend(Self::each_cell_contains_a_value_clauses());
         clauses.extend(Self::no_group_contains_the_same_value_twice_clauses());
         clauses.extend(Self::no_cell_contains_more_than_one_value_clauses());
+
+        // Optimization clauses
+        clauses.extend(Self::each_group_contains_each_value_clauses());
+
         clauses
     }
 
     /// Each cell contains a value
     ///
     /// Base3: 81 positive clauses, 9 literals each
-    fn each_cell_contains_a_value_clauses() -> impl Iterator<Item = Vec<i32>> {
+    fn each_cell_contains_a_value_clauses() -> impl Iterator<Item = Clause> {
         Position::<Base>::all().map(|pos| {
             Value::<Base>::all()
                 .map(|value| CellVariable {
@@ -86,7 +94,7 @@ impl<Base: SudokuBase> Solver<Base> {
     /// No row|col|block contains the same value twice
     ///
     /// Base3: `3×81(9 choose 2)=8748` binary constraint clauses
-    fn no_group_contains_the_same_value_twice_clauses() -> impl Iterator<Item = Vec<i32>> {
+    fn no_group_contains_the_same_value_twice_clauses() -> impl Iterator<Item = Clause> {
         Value::<Base>::all().flat_map(|value| {
             Position::<Base>::all_groups().flat_map(move |group| {
                 group.tuple_combinations().map(move |(pos1, pos2)| {
@@ -112,7 +120,7 @@ impl<Base: SudokuBase> Solver<Base> {
     /// No cell contains more than one value
     ///
     /// Base3: `81(9 choose 2)=2916` binary constraint clauses
-    fn no_cell_contains_more_than_one_value_clauses() -> impl Iterator<Item = Vec<i32>> {
+    fn no_cell_contains_more_than_one_value_clauses() -> impl Iterator<Item = Clause> {
         Position::<Base>::all().flat_map(|pos| {
             Value::<Base>::all()
                 .tuple_combinations()
@@ -135,10 +143,32 @@ impl<Base: SudokuBase> Solver<Base> {
         })
     }
 
+    /// Each group contains each value
+    ///
+    /// Base3: 9 clauses, 9 literals each
+    ///
+    /// [tdoku reference](https://t-dillon.github.io/tdoku/#:~:text=new%20positive%20clauses%20that%20are%20group%2Daligned%20instead%20of%20cell%2Daligned)
+    fn each_group_contains_each_value_clauses() -> impl Iterator<Item = Clause> {
+        Value::<Base>::all().flat_map(|value| {
+            Position::<Base>::all_groups().map(move |group| {
+                group
+                    .map(|pos| {
+                        CellVariable {
+                            pos,
+                            value,
+                            is_true: false,
+                        }
+                        .into()
+                    })
+                    .collect()
+            })
+        })
+    }
+
     /// The values in the puzzle must be contained in the solution unchanged.
     ///
     /// `(number of puzzle values)` unit clauses
-    fn puzzle_values_must_remain_clauses(grid: &Grid<Base>) -> impl Iterator<Item = Vec<i32>> + '_ {
+    fn puzzle_values_must_remain_clauses(grid: &Grid<Base>) -> impl Iterator<Item = Clause> + '_ {
         grid.all_value_positions().into_iter().map(|pos| {
             let value = grid[pos].value().unwrap();
 
