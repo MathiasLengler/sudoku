@@ -22,7 +22,7 @@ use sudoku::position::Position;
 use sudoku::rng::{new_crate_rng_from_rng, new_crate_rng_with_seed};
 use sudoku::samples::{base_2, base_3, base_4, base_5};
 use sudoku::solver::strategic::strategies::{GroupIntersectionBoth, GroupReduction, Strategy};
-use sudoku::solver::{backtracking, introspective, strategic};
+use sudoku::solver::{backtracking, introspective, strategic, FallibleSolver, InfallibleSolver};
 
 fn cast_grid<Base: SudokuBase>(any_grid: Box<dyn Any>) -> Grid<Base> {
     *any_grid.downcast().unwrap()
@@ -138,7 +138,7 @@ fn bench_solver_sample_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup
         |b, grid| {
             b.iter_batched(
                 || grid.clone(),
-                |grid| introspective::Solver::new(grid).try_solve().unwrap(),
+                |grid| introspective::Solver::new(grid).solve().unwrap(),
                 BatchSize::SmallInput,
             )
         },
@@ -176,7 +176,7 @@ fn bench_solver_tdoku_group(solver_tdoku_group: &mut BenchmarkGroup<WallTime>) {
             |b, grids| {
                 b.iter(|| {
                     for grid in grids {
-                        assert!(backtracking::Solver::new(grid).try_solve().is_some());
+                        assert!(backtracking::Solver::new(grid).solve().is_some());
                     }
                 })
             },

@@ -1,9 +1,10 @@
+use log::debug;
+
 use crate::base::SudokuBase;
 use crate::cell::CandidatesAscIter;
 use crate::grid::Grid;
 use crate::solver::strategic::strategies::DynamicStrategy;
-use crate::solver::{backtracking, strategic};
-use log::debug;
+use crate::solver::{backtracking, strategic, FallibleSolver, InfallibleSolver};
 
 #[derive(Debug, Default)]
 enum SolverImpl<Base: SudokuBase> {
@@ -37,8 +38,10 @@ impl<Base: SudokuBase> Solver<Base> {
             },
         }
     }
+}
 
-    pub fn try_solve(&mut self) -> Option<Grid<Base>> {
+impl<Base: SudokuBase> InfallibleSolver<Base> for Solver<Base> {
+    fn solve(&mut self) -> Option<Grid<Base>> {
         let solver_impl = std::mem::take(&mut self.solver_impl);
         match solver_impl {
             SolverImpl::Strategic(mut solver) => {
@@ -70,7 +73,7 @@ impl<Base: SudokuBase> Iterator for Solver<Base> {
     type Item = Grid<Base>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.try_solve()
+        self.solve()
     }
 }
 
@@ -80,7 +83,8 @@ mod tests {
 
     use crate::base::consts::Base2;
     use crate::solver::test_util::{
-        assert_solver_all_solutions_base_2, assert_solver_single_solution,
+        assert_infallible_solver_single_solution, assert_solution_iter_all_solutions_base_2,
+        tests_solver_samples,
     };
 
     use super::*;
@@ -104,43 +108,14 @@ mod tests {
         let grid = Grid::<Base2>::new();
         let solver = Solver::new(grid);
 
-        assert_solver_all_solutions_base_2(solver);
+        assert_solution_iter_all_solutions_base_2(solver);
     }
 
-    #[test]
-    fn test_base_2() {
-        init_logger();
-
-        let grids = crate::samples::base_2();
-
-        for grid in grids {
+    tests_solver_samples! {
+        init_logger(),
+        |grid| {
             let solver = Solver::new(grid.clone());
-            assert_solver_single_solution(solver, &grid);
-        }
-    }
-
-    #[test]
-    fn test_base_3() {
-        init_logger();
-
-        let grids = crate::samples::base_3();
-
-        for grid in grids {
-            let solver = Solver::new(grid.clone());
-            assert_solver_single_solution(solver, &grid);
-        }
-    }
-
-    #[cfg(not(debug_assertions))]
-    #[test]
-    fn test_base_4() {
-        init_logger();
-
-        let grids = crate::samples::base_4();
-
-        for grid in grids {
-            let solver = Solver::new(grid.clone());
-            assert_solver_single_solution(solver, &grid);
+            assert_infallible_solver_single_solution(solver, &grid);
         }
     }
 }

@@ -7,8 +7,8 @@ use sudoku::base::consts::Base3;
 use sudoku::error::Result;
 use sudoku::grid::deserialization::read_grids_from_file;
 use sudoku::grid::Grid;
-use sudoku::solver::backtracking;
 use sudoku::solver::strategic;
+use sudoku::solver::{backtracking, FallibleSolver, InfallibleSolver};
 
 #[allow(dead_code)]
 enum SolverSelection {
@@ -64,7 +64,7 @@ fn work(
             }
             SolverSelection::BacktrackingBitset => {
                 let mut solver = backtracking::Solver::new(grid);
-                assert!(solver.try_solve().is_some());
+                assert!(solver.solve().is_some());
                 *total_backtrack_count += solver.backtrack_count;
             }
         }

@@ -16,6 +16,7 @@ use crate::cell::{Candidates, CandidatesAscIter, CandidatesIterator, CandidatesR
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::rng::CrateRng;
+use crate::solver::InfallibleSolver;
 
 pub(crate) mod availability_filter;
 pub(crate) mod group_availability;
@@ -341,7 +342,7 @@ impl<
         }
     }
 
-    fn try_solve_with_fuel(&mut self, fuel: u64) -> FueledSolveResult<Base> {
+    fn solve_with_fuel(&mut self, fuel: u64) -> FueledSolveResult<Base> {
         for _ in 0..fuel {
             match self.step() {
                 StepResult::Solution(solution) => return FueledSolveResult::Result(Some(solution)),
@@ -352,8 +353,16 @@ impl<
 
         FueledSolveResult::OutOfFuel
     }
+}
 
-    pub fn try_solve(&mut self) -> Option<Grid<Base>> {
+impl<
+        Base: SudokuBase,
+        GridRef: AsRef<Grid<Base>>,
+        ICandidates: CandidatesIterator<Base>,
+        Filter: AvailabilityFilter<Base>,
+    > InfallibleSolver<Base> for Solver<Base, GridRef, ICandidates, Filter>
+{
+    fn solve(&mut self) -> Option<Grid<Base>> {
         loop {
             match self.step() {
                 StepResult::Solution(solution) => return Some(solution),
@@ -374,7 +383,7 @@ impl<
     type Item = Grid<Base>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.try_solve()
+        self.solve()
     }
 }
 
@@ -736,7 +745,7 @@ mod parallel {
                 Solver<Base, GridRef, ICandidates, DeniedCandidatesGrid<Base>>: Clone + Send,
             {
                 loop {
-                    return match this.try_solve_with_fuel(FUEL) {
+                    return match this.solve_with_fuel(FUEL) {
                         FueledSolveResult::OutOfFuel => {
                             if splitter.try_split(migrated) {
                                 let (left, right) = this.split();
@@ -779,7 +788,8 @@ mod tests {
     use crate::base::consts::*;
     use crate::rng::new_crate_rng_with_seed;
     use crate::solver::test_util::{
-        assert_solver_all_solutions_base_2, assert_solver_single_solution,
+        assert_infallible_solver_single_solution, assert_solution_iter_all_solutions_base_2,
+        assert_solution_iter_single_solution, tests_solver_samples,
     };
 
     use super::*;
@@ -789,7 +799,7 @@ mod tests {
         let grid = Grid::<Base2>::new();
         let solver = Solver::new(&grid);
 
-        assert_solver_all_solutions_base_2(solver);
+        assert_solution_iter_all_solutions_base_2(solver);
     }
 
     #[test]
@@ -799,46 +809,14 @@ mod tests {
             .rng(new_crate_rng_with_seed(Some(1)))
             .build();
 
-        assert_solver_all_solutions_base_2(solver);
+        assert_solution_iter_all_solutions_base_2(solver);
     }
 
-    #[test]
-    fn test_base_2() {
-        let grids = crate::samples::base_2();
-
-        for grid in grids {
+    tests_solver_samples! {
+        |grid| {
             let solver = Solver::new(&grid);
-            assert_solver_single_solution(solver, &grid);
+            assert_infallible_solver_single_solution(solver, &grid);
         }
-    }
-
-    #[test]
-    fn test_base_3() {
-        let grids = crate::samples::base_3();
-
-        for grid in grids {
-            let solver = Solver::new(&grid);
-            assert_solver_single_solution(solver, &grid);
-        }
-    }
-
-    #[cfg(not(debug_assertions))]
-    #[test]
-    fn test_base_4() {
-        let grids = crate::samples::base_4();
-
-        for grid in grids {
-            let solver = Solver::new(&grid);
-            assert_solver_single_solution(solver, &grid);
-        }
-    }
-
-    #[test]
-    fn test_solved() {
-        let grid = crate::samples::base_2_solved();
-
-        let solver = Solver::new(&grid);
-        assert_solver_single_solution(solver, &grid);
     }
 
     #[test]
@@ -908,7 +886,7 @@ mod tests {
         };
 
         // Both solvers chained together should still produce a single solution
-        assert_solver_single_solution(left_solver.chain(right_solver), puzzle);
+        assert_solution_iter_single_solution(left_solver.chain(right_solver), puzzle);
     }
 
     #[test]
@@ -939,7 +917,7 @@ mod tests {
             panic!("Solver should be splittable")
         };
 
-        assert_solver_all_solutions_base_2(left_solver.chain(right_solver));
+        assert_solution_iter_all_solutions_base_2(left_solver.chain(right_solver));
     }
 
     #[test]
@@ -959,7 +937,7 @@ mod tests {
             panic!("Solver should be splittable")
         };
 
-        assert_solver_all_solutions_base_2(chain!(ll, lr, r,));
+        assert_solution_iter_all_solutions_base_2(chain!(ll, lr, r,));
     }
 
     #[test]
@@ -984,7 +962,7 @@ mod tests {
                 .collect();
         }
 
-        assert_solver_all_solutions_base_2(split_solvers.into_iter().flatten());
+        assert_solution_iter_all_solutions_base_2(split_solvers.into_iter().flatten());
     }
 
     #[cfg(feature = "parallel")]
@@ -999,7 +977,7 @@ mod tests {
             .availability_filter(Grid::new())
             .build();
 
-        assert_solver_all_solutions_base_2(
+        assert_solution_iter_all_solutions_base_2(
             solver
                 .into_par_iter()
                 .flat_map_iter(|solver| solver)

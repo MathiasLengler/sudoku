@@ -5,10 +5,11 @@ use log::trace;
 use strategies::Strategy;
 
 use crate::base::SudokuBase;
-use crate::error::Result;
+use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::solver::strategic::deduction::Deductions;
 use crate::solver::strategic::strategies::DynamicStrategy;
+use crate::solver::FallibleSolver;
 
 pub mod deduction;
 pub mod strategies;
@@ -49,22 +50,6 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> Solver<Ba
         }
     }
 
-    pub fn try_solve(&mut self) -> Result<Option<Grid<Base>>> {
-        Ok(loop {
-            if self.grid.as_ref().is_solved() {
-                break Some(self.grid.as_ref().clone());
-            }
-
-            if let Some((_, deductions)) = self.try_strategies()? {
-                deductions.apply(self.grid.as_mut())?;
-                // Continue with strategy execution
-            } else {
-                // All strategies failed to make progress.
-                break None;
-            }
-        })
-    }
-
     /// Tries executing strategies until one strategy is able to make at least one deduction.
     pub fn try_strategies(&self) -> Result<Option<(DynamicStrategy, Deductions<Base>)>> {
         for strategy in &self.strategies {
@@ -90,9 +75,31 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> Solver<Ba
     }
 }
 
+impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> FallibleSolver<Base>
+    for Solver<Base, GridMut>
+{
+    type Error = Error;
+
+    fn try_solve(&mut self) -> Result<Option<Grid<Base>>> {
+        Ok(loop {
+            if self.grid.as_ref().is_solved() {
+                break Some(self.grid.as_ref().clone());
+            }
+
+            if let Some((_, deductions)) = self.try_strategies()? {
+                deductions.apply(self.grid.as_mut())?;
+                // Continue with strategy execution
+            } else {
+                // All strategies failed to make progress.
+                break None;
+            }
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::base::consts::*;
+    use crate::solver::test_util::{assert_fallible_solver_single_solution, tests_solver_samples};
 
     use super::*;
 
@@ -105,35 +112,10 @@ mod tests {
         assert!(grid.is_solved());
     }
 
-    #[test]
-    fn test_base_2() {
-        let grids = crate::samples::base_2();
-
-        for grid in grids {
-            assert_solvable(grid);
+    tests_solver_samples! {
+        |grid| {
+            let solver = Solver::new(grid.clone());
+            assert_fallible_solver_single_solution(solver, &grid);
         }
-    }
-
-    #[test]
-    fn test_base_3() {
-        let grids = crate::samples::base_3();
-
-        for grid in grids {
-            assert_solvable(grid);
-        }
-    }
-
-    #[test]
-    fn test_minimal() {
-        let mut grid = crate::samples::minimal::<Base2>();
-
-        grid.set_all_direct_candidates();
-        grid.fix_all_values();
-
-        let mut solver = Solver::new(&mut grid);
-
-        assert!(solver.try_solve().unwrap().is_some());
-
-        assert!(grid.is_solved());
     }
 }
