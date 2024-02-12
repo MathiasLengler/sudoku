@@ -1186,6 +1186,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a507befe795404456341dfab10cef66ead4c041f62b8b11bbb92bffe5d0953e0"
 
 [[package]]
+name = "splr"
+version = "0.17.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c6c8d72268886573a95520ff76c282876c69d3776e02a0b4ac8eea2b310d69ca"
+dependencies = [
+ "bitflags 2.4.0",
+]
+
+[[package]]
 name = "spmc"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1225,6 +1234,7 @@ dependencies = [
  "rayon",
  "serde",
  "serde_json",
+ "splr",
  "strip-ansi-escapes",
  "tabled",
  "ts-rs",

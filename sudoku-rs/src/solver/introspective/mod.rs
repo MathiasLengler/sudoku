@@ -79,31 +79,18 @@ impl<Base: SudokuBase> Iterator for Solver<Base> {
 
 #[cfg(test)]
 mod tests {
-    use env_logger::Env;
-
     use crate::base::consts::Base2;
     use crate::solver::test_util::{
         assert_infallible_solver_single_solution, assert_solution_iter_all_solutions_base_2,
         tests_solver_samples,
     };
+    use crate::test_util::init_test_logger;
 
     use super::*;
 
-    #[cfg(feature = "log")]
-    fn init_logger() {
-        let _ = env_logger::Builder::from_env(
-            Env::default().default_filter_or("trace,sudoku::solver::backtracking=off"),
-        )
-        .is_test(true)
-        .try_init();
-    }
-
-    #[cfg(not(feature = "log"))]
-    fn init_logger() {}
-
     #[test]
     fn test_iter_all_solutions() {
-        init_logger();
+        init_test_logger();
 
         let grid = Grid::<Base2>::new();
         let solver = Solver::new(grid);
@@ -112,7 +99,7 @@ mod tests {
     }
 
     tests_solver_samples! {
-        init_logger(),
+        init_test_logger(),
         |grid| {
             let solver = Solver::new(grid.clone());
             assert_infallible_solver_single_solution(solver, &grid);

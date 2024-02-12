@@ -7,6 +7,9 @@ pub mod strategic;
 
 pub mod introspective;
 
+#[cfg(feature = "sat")]
+pub mod sat;
+
 // TODO: exact-cover based solver:
 //  Could be more performant for bigger sudokus
 //  References:
@@ -20,6 +23,7 @@ pub mod introspective;
 //  Pros:
 //   solutions are smaller
 //   solutions are guaranteed to contain only values, no empty/candidates cells
+//   no confusion about fix/unfixed values
 //   grid could provide solution-specific helpers
 //    is_solution_for(grid: Grid<Base>)
 //    is_valid_(solution)
@@ -147,7 +151,7 @@ mod test_util {
     pub(crate) fn assert_solution<Base: SudokuBase>(solution: &Grid<Base>, puzzle: &Grid<Base>) {
         assert!(
             solution.is_solved(),
-            "The solution should be solved, instead got: {solution}"
+            "The solution should be solved, instead got:\n{solution}"
         );
 
         for value_pos in puzzle.all_value_positions() {

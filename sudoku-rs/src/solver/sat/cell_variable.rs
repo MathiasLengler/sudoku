@@ -1,0 +1,87 @@
+use crate::base::SudokuBase;
+use crate::cell::Value;
+use crate::error::Error;
+use crate::position::{Coordinate, Position};
+use anyhow::bail;
+use num::Integer;
+use std::fmt::{Display, Formatter};
+
+/// A logical variable expressing that the cell at `pos` contains `value`.
+///
+/// Can be negated with `is_true = false`.
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub struct CellVariable<Base: SudokuBase> {
+    pub pos: Position<Base>,
+    pub value: Value<Base>,
+    pub is_true: bool,
+}
+
+impl<Base: SudokuBase> Display for CellVariable<Base> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let &Self {
+            pos,
+            value,
+            is_true,
+        } = self;
+        write!(f, "{pos} {} {value}", if is_true { "==" } else { "!=" })
+    }
+}
+
+impl<Base: SudokuBase> From<CellVariable<Base>> for i32 {
+    fn from(variable: CellVariable<Base>) -> Self {
+        let i = (i32::from(variable.pos.cell_index()) * i32::from(Base::SIDE_LENGTH)
+            + i32::from(Coordinate::from(variable.value).get()))
+            + 1;
+        if variable.is_true {
+            i
+        } else {
+            -i
+        }
+    }
+}
+
+impl<Base: SudokuBase> TryFrom<i32> for CellVariable<Base> {
+    type Error = Error;
+
+    fn try_from(value: i32) -> crate::error::Result<Self> {
+        if value == 0 {
+            bail!("Zero is a invalid variable assignment")
+        }
+
+        let is_true = value.is_positive();
+        let value = value.unsigned_abs() - 1;
+        let (cell_index, coordinate) = value.div_rem(&Base::SIDE_LENGTH.into());
+
+        Ok(Self {
+            pos: u16::try_from(cell_index)?.try_into()?,
+            value: Value::from(Coordinate::try_from(u8::try_from(coordinate)?)?),
+            is_true,
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use crate::base::consts::BaseMax;
+
+    #[test]
+    fn test_i32_roundtrip() {
+        type Base = BaseMax;
+
+        for pos in Position::<Base>::all() {
+            for value in Value::<Base>::all() {
+                for is_true in [true, false] {
+                    let variable = CellVariable {
+                        pos,
+                        value,
+                        is_true,
+                    };
+
+                    assert_eq!(variable, i32::from(variable).try_into().unwrap());
+                }
+            }
+        }
+    }
+}

@@ -335,7 +335,7 @@ impl<Base: SudokuBase> Grid<Base> {
             if seen_values.has(value) {
                 true
             } else {
-                seen_values.set(value, true);
+                seen_values.insert(value);
                 false
             }
         })
@@ -704,6 +704,8 @@ impl<Base: SudokuBase, T: Clone> TryFrom<ArrayView2<'_, T>> for Grid<Base, T> {
     type Error = Error;
 
     fn try_from(cells_array_view: ArrayView2<T>) -> Result<Self> {
+        // TODO: assert square + side_length
+
         let cells_vec: Vec<_> = cells_array_view.iter().cloned().collect();
 
         Self::with(cells_vec)

@@ -298,7 +298,7 @@ impl<Base: SudokuBase> Position<Base> {
 
     // TODO: optimize
     //  collect into `[Position: SIDE_LENGTH]`?
-    pub fn all_groups() -> impl Iterator<Item = impl Iterator<Item = Self>> {
+    pub fn all_groups() -> impl Iterator<Item = impl Iterator<Item = Self> + Clone> {
         Self::all_rows()
             .map(|rows| rows.collect::<Vec<_>>().into_iter())
             .chain(Self::all_columns().map(|columns| columns.collect::<Vec<_>>().into_iter()))

@@ -97,7 +97,7 @@ impl<Base: SudokuBase> Value<Base> {
 
 /// Iterators
 impl<Base: SudokuBase> Value<Base> {
-    pub fn all() -> impl Iterator<Item = Self> {
+    pub fn all() -> impl Iterator<Item = Self> + Clone {
         (1..=Base::MAX_VALUE).map(|value|
             // Safety: `value` remains in-bounds
             unsafe { Self::new_unchecked(value) })
