@@ -22,7 +22,9 @@ use sudoku::position::Position;
 use sudoku::rng::{new_crate_rng_from_rng, new_crate_rng_with_seed};
 use sudoku::samples::{base_2, base_3, base_4, base_5};
 use sudoku::solver::strategic::strategies::{GroupIntersectionBoth, GroupReduction, Strategy};
-use sudoku::solver::{backtracking, introspective, strategic, FallibleSolver, InfallibleSolver};
+use sudoku::solver::{
+    backtracking, introspective, sat, strategic, FallibleSolver, InfallibleSolver,
+};
 
 fn cast_grid<Base: SudokuBase>(any_grid: Box<dyn Any>) -> Grid<Base> {
     *any_grid.downcast().unwrap()
@@ -88,7 +90,7 @@ fn bench_solver_sample_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup
     solver_group.bench_with_input(
         BenchmarkId::new("backtracking", &parameter_string),
         &grid,
-        |b, grid| b.iter(|| backtracking::Solver::new(grid).next().unwrap()),
+        |b, grid| b.iter(|| backtracking::Solver::new(grid).solve().unwrap()),
     );
 
     solver_group.bench_with_input(
@@ -99,7 +101,7 @@ fn bench_solver_sample_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup
                 backtracking::Solver::builder(grid)
                     .availability_filter(Grid::new())
                     .build()
-                    .next()
+                    .solve()
                     .unwrap()
             })
         },
@@ -114,7 +116,7 @@ fn bench_solver_sample_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup
                 backtracking::Solver::builder(grid)
                     .rng(new_crate_rng_from_rng(&mut rng))
                     .build()
-                    .next()
+                    .solve()
                     .unwrap()
             })
         },
@@ -141,6 +143,20 @@ fn bench_solver_sample_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup
                 |grid| introspective::Solver::new(grid).solve().unwrap(),
                 BatchSize::SmallInput,
             )
+        },
+    );
+
+    solver_group.bench_with_input(
+        BenchmarkId::new("sat", &parameter_string),
+        &grid,
+        |b, grid| {
+            b.iter(|| {
+                sat::Solver::new(grid)
+                    .unwrap()
+                    .try_solve()
+                    .unwrap()
+                    .unwrap()
+            })
         },
     );
 }

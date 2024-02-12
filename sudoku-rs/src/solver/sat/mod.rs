@@ -25,7 +25,6 @@ pub struct Solver<Base: SudokuBase> {
 impl<Base: SudokuBase> Solver<Base> {
     pub fn new<GridRef: AsRef<Grid<Base>>>(grid: GridRef) -> Result<Self> {
         let formula = Self::formula(grid.as_ref());
-        dbg!(formula.len());
         let sat_solver = Box::new(
             match splr::Solver::try_from((splr::Config::default(), formula.as_slice())) {
                 Ok(s) => s,
@@ -50,7 +49,7 @@ impl<Base: SudokuBase> Solver<Base> {
     // TODO: extract constraints into helpers
     // TODO: test helpers
     // TODO: evaluate caching/compile time construction/re-use of general constraints
-    // TODO: implement other constraints from tdoku and benchmark
+    // TODO: implement other constraints from tdoku
     // Reference: https://t-dillon.github.io/tdoku/
     fn formula(grid: &Grid<Base>) -> Vec<Vec<i32>> {
         let mut clauses: Vec<Vec<i32>> = vec![];
