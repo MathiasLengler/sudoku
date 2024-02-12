@@ -295,6 +295,15 @@ impl<Base: SudokuBase> Position<Base> {
     pub fn all_blocks_top_left() -> impl Iterator<Item = Self> {
         Coordinate::all().map(Base::block_to_top_left_pos)
     }
+
+    // TODO: optimize
+    //  collect into `[Position: SIDE_LENGTH]`?
+    pub fn all_groups() -> impl Iterator<Item = impl Iterator<Item = Self>> {
+        Self::all_rows()
+            .map(|rows| rows.collect::<Vec<_>>().into_iter())
+            .chain(Self::all_columns().map(|columns| columns.collect::<Vec<_>>().into_iter()))
+            .chain(Self::all_blocks().map(|blocks| blocks.collect::<Vec<_>>().into_iter()))
+    }
 }
 
 // TODO: data structures for

@@ -19,7 +19,7 @@ use crate::grid::format::{CandidatesGridANSIStyled, DynamicGridFormat, GridForma
 use crate::position::Coordinate;
 use crate::position::Position;
 use crate::solver::strategic::strategies::DynamicStrategy;
-use crate::solver::{backtracking, introspective, strategic};
+use crate::solver::{backtracking, introspective, strategic, FallibleSolver};
 use crate::unsafe_utils::{get_unchecked, get_unchecked_mut};
 
 pub mod deserialization;
@@ -618,15 +618,8 @@ impl<Base: SudokuBase, T> Grid<Base, T> {
         Position::all_blocks()
     }
 
-    // TODO: optimize
-    //  collect into `[Position: SIDE_LENGTH]`?
     pub fn all_group_positions() -> impl Iterator<Item = impl Iterator<Item = Position<Base>>> {
-        Self::all_row_positions()
-            .map(|rows| rows.collect::<Vec<_>>().into_iter())
-            .chain(
-                Self::all_column_positions().map(|columns| columns.collect::<Vec<_>>().into_iter()),
-            )
-            .chain(Self::all_block_positions().map(|blocks| blocks.collect::<Vec<_>>().into_iter()))
+        Position::all_groups()
     }
 }
 
