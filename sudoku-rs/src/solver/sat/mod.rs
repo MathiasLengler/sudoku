@@ -3,7 +3,6 @@ use std::marker::PhantomData;
 use anyhow::bail;
 use itertools::Itertools;
 use log::trace;
-use num::Zero;
 use splr::{Certificate, SolveIF};
 
 use crate::base::SudokuBase;
@@ -46,18 +45,33 @@ impl<Base: SudokuBase> Solver<Base> {
         })
     }
 
-    // TODO: extract constraints into helpers
     // TODO: test helpers
     // TODO: evaluate caching/compile time construction/re-use of general constraints
     // TODO: implement other constraints from tdoku
     // Reference: https://t-dillon.github.io/tdoku/
     fn formula(grid: &Grid<Base>) -> Vec<Vec<i32>> {
+        let mut clauses = Self::general_clauses();
+
+        // Grid specific constraints
+        clauses.extend(Self::puzzle_values_must_remain_clauses(grid));
+
+        clauses
+    }
+
+    /// All clauses which only depend on the base of the sudoku.
+    fn general_clauses() -> Vec<Vec<i32>> {
         let mut clauses: Vec<Vec<i32>> = vec![];
+        clauses.extend(Self::each_cell_contains_a_value_clauses());
+        clauses.extend(Self::no_group_contains_the_same_value_twice_clauses());
+        clauses.extend(Self::no_cell_contains_more_than_one_value_clauses());
+        clauses
+    }
 
-        // General constraints
-
-        // Each cell contains a value (Base3: 81 positive clauses, 9 literals each)
-        clauses.extend(Position::<Base>::all().map(|pos| {
+    /// Each cell contains a value
+    ///
+    /// Base3: 81 positive clauses, 9 literals each
+    fn each_cell_contains_a_value_clauses() -> impl Iterator<Item = Vec<i32>> {
+        Position::<Base>::all().map(|pos| {
             Value::<Base>::all()
                 .map(|value| CellVariable {
                     pos,
@@ -66,10 +80,14 @@ impl<Base: SudokuBase> Solver<Base> {
                 })
                 .map(Into::into)
                 .collect()
-        }));
+        })
+    }
 
-        // No row|col|block contains the same value twice (Base3: 3×81(9 choose 2)=8748 binary constraint clauses)
-        clauses.extend(Value::<Base>::all().flat_map(|value| {
+    /// No row|col|block contains the same value twice
+    ///
+    /// Base3: `3×81(9 choose 2)=8748` binary constraint clauses
+    fn no_group_contains_the_same_value_twice_clauses() -> impl Iterator<Item = Vec<i32>> {
+        Value::<Base>::all().flat_map(|value| {
             Position::<Base>::all_groups().flat_map(move |group| {
                 group.tuple_combinations().map(move |(pos1, pos2)| {
                     vec![
@@ -88,10 +106,14 @@ impl<Base: SudokuBase> Solver<Base> {
                     ]
                 })
             })
-        }));
+        })
+    }
 
-        // No cell contains more than one value (Base3: 81(9 choose 2)=2916 binary constraint clauses)
-        clauses.extend(Position::<Base>::all().flat_map(|pos| {
+    /// No cell contains more than one value
+    ///
+    /// Base3: `81(9 choose 2)=2916` binary constraint clauses
+    fn no_cell_contains_more_than_one_value_clauses() -> impl Iterator<Item = Vec<i32>> {
+        Position::<Base>::all().flat_map(|pos| {
             Value::<Base>::all()
                 .tuple_combinations()
                 .map(move |(value1, value2)| {
@@ -110,10 +132,14 @@ impl<Base: SudokuBase> Solver<Base> {
                         .into(),
                     ]
                 })
-        }));
+        })
+    }
 
-        // Grid specific constraints
-        clauses.extend(grid.all_value_positions().into_iter().map(|pos| {
+    /// The values in the puzzle must be contained in the solution unchanged.
+    ///
+    /// `(number of puzzle values)` unit clauses
+    fn puzzle_values_must_remain_clauses(grid: &Grid<Base>) -> impl Iterator<Item = Vec<i32>> + '_ {
+        grid.all_value_positions().into_iter().map(|pos| {
             let value = grid[pos].value().unwrap();
 
             vec![CellVariable {
@@ -122,9 +148,7 @@ impl<Base: SudokuBase> Solver<Base> {
                 is_true: true,
             }
             .into()]
-        }));
-
-        clauses
+        })
     }
 }
 
