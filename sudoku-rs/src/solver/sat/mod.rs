@@ -17,15 +17,13 @@ use crate::solver::FallibleSolver;
 mod cell_variable;
 
 #[derive(Debug)]
-pub struct Solver<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> {
-    /// Grid to be solved
-    grid: GridRef,
+pub struct Solver<Base: SudokuBase> {
     sat_solver: Box<splr::Solver>,
     _base: PhantomData<Base>,
 }
 
-impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Solver<Base, GridRef> {
-    pub fn new(grid: GridRef) -> Result<Self> {
+impl<Base: SudokuBase> Solver<Base> {
+    pub fn new<GridRef: AsRef<Grid<Base>>>(grid: GridRef) -> Result<Self> {
         let formula = Self::formula(grid.as_ref());
         dbg!(formula.len());
         let sat_solver = Box::new(
@@ -45,13 +43,8 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Solver<Base, GridRef> {
 
         Ok(Self {
             sat_solver,
-            grid,
             _base: PhantomData,
         })
-    }
-
-    fn grid(&self) -> &Grid<Base> {
-        self.grid.as_ref()
     }
 
     // TODO: extract constraints into helpers
@@ -136,7 +129,7 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Solver<Base, GridRef> {
     }
 }
 
-impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> FallibleSolver<Base> for Solver<Base, GridRef> {
+impl<Base: SudokuBase> FallibleSolver<Base> for Solver<Base> {
     type Error = Error;
 
     fn try_solve(&mut self) -> Result<Option<Grid<Base>>> {
