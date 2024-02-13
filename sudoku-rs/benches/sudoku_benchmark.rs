@@ -7,7 +7,7 @@ use std::hint::black_box;
 use std::path::Path;
 
 use criterion::measurement::WallTime;
-use criterion::{BatchSize, BenchmarkId, Throughput};
+use criterion::{BatchSize, BenchmarkId, SamplingMode, Throughput};
 use criterion::{BenchmarkGroup, Criterion};
 
 use sudoku::base::{consts::*, SudokuBase};
@@ -192,7 +192,7 @@ fn bench_solver_tdoku_group(solver_tdoku_group: &mut BenchmarkGroup<WallTime>) {
             |b, grids| {
                 b.iter(|| {
                     for grid in grids {
-                        assert!(backtracking::Solver::new(grid).solve().is_some());
+                        backtracking::Solver::new(grid).solve().unwrap();
                     }
                 })
             },
@@ -205,11 +205,26 @@ fn bench_solver_tdoku_group(solver_tdoku_group: &mut BenchmarkGroup<WallTime>) {
                     || grids.to_vec(),
                     |grids| {
                         for grid in grids {
-                            assert!(strategic::Solver::new(grid).try_solve().unwrap().is_some());
+                            strategic::Solver::new(grid).try_solve().unwrap().unwrap();
                         }
                     },
                     BatchSize::SmallInput,
                 )
+            },
+        );
+        solver_tdoku_group.bench_with_input(
+            BenchmarkId::new("sat", tdoku_dataset),
+            grids,
+            |b, grids| {
+                b.iter(|| {
+                    for grid in grids {
+                        sat::Solver::new(grid)
+                            .unwrap()
+                            .try_solve()
+                            .unwrap()
+                            .unwrap();
+                    }
+                })
             },
         );
     }
@@ -466,6 +481,7 @@ fn criterion_benchmark(c: &mut Criterion) {
 
     let mut solver_tdoku_group = c.benchmark_group("SolverTdoku");
     solver_tdoku_group.sample_size(10);
+    solver_tdoku_group.sampling_mode(SamplingMode::Flat);
     bench_solver_tdoku_group(&mut solver_tdoku_group);
     solver_tdoku_group.finish();
 
