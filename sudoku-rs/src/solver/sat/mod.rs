@@ -50,6 +50,7 @@ impl<Base: SudokuBase> Solver<Base> {
     // TODO: test helpers
     // TODO: evaluate caching/compile time construction/re-use of general constraints
     // TODO: implement other constraints from tdoku
+    //  especially triad based-constraints
     // Reference: https://t-dillon.github.io/tdoku/
     fn formula(grid: &Grid<Base>) -> Vec<Clause> {
         let mut clauses = Self::general_clauses();
