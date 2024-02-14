@@ -7,17 +7,18 @@ use sudoku::base::consts::Base3;
 use sudoku::error::Result;
 use sudoku::grid::deserialization::read_grids_from_file;
 use sudoku::grid::Grid;
-use sudoku::solver::strategic;
 use sudoku::solver::{backtracking, FallibleSolver, InfallibleSolver};
+use sudoku::solver::{sat, strategic};
 
 #[allow(dead_code)]
 enum SolverSelection {
     Strategic,
-    BacktrackingBitset,
+    Backtracking,
+    Sat,
 }
 
 fn main() -> Result<()> {
-    let solver_selection = SolverSelection::BacktrackingBitset;
+    let solver_selection = SolverSelection::Sat;
 
     println!("Reading grids");
     let mut grids = read_grids_from_file::<Base3>(
@@ -29,7 +30,11 @@ fn main() -> Result<()> {
 
     let mut total_backtrack_count = 0;
 
-    work(&mut grids, solver_selection, &mut total_backtrack_count);
+    work(
+        &mut grids[..5_000],
+        solver_selection,
+        &mut total_backtrack_count,
+    );
 
     let after = Instant::now();
     let total_time = after - before;
@@ -60,12 +65,19 @@ fn work(
     for grid in grids.iter_mut().progress() {
         match solver_selection {
             SolverSelection::Strategic => {
-                assert!(strategic::Solver::new(grid).try_solve().unwrap().is_some());
+                strategic::Solver::new(grid).try_solve().unwrap().unwrap();
             }
-            SolverSelection::BacktrackingBitset => {
+            SolverSelection::Backtracking => {
                 let mut solver = backtracking::Solver::new(grid);
-                assert!(solver.solve().is_some());
+                solver.solve().unwrap();
                 *total_backtrack_count += solver.backtrack_count;
+            }
+            SolverSelection::Sat => {
+                sat::Solver::new(grid)
+                    .unwrap()
+                    .try_solve()
+                    .unwrap()
+                    .unwrap();
             }
         }
     }
