@@ -9,7 +9,7 @@ use num::traits::{
 use num::PrimInt;
 
 use consts::*;
-use dynamic::DynamicBase;
+pub use dynamic::DynamicBase;
 
 use crate::cell::Candidates;
 use crate::error::{Error, Result};
@@ -362,7 +362,7 @@ impl_sudoku_base!(
 );
 
 mod dynamic {
-    use anyhow::bail;
+    use anyhow::{bail, format_err};
 
     use super::*;
 
@@ -375,8 +375,9 @@ mod dynamic {
         Base5,
     }
 
+    /// const conversions between `u8` and `DynamicBase`
     impl DynamicBase {
-        pub(super) const fn assert_from_base_u8(base: u8) -> Self {
+        pub const fn assert_from_base_u8(base: u8) -> Self {
             assert!(2 <= base && base <= 5);
 
             match base {
@@ -398,6 +399,7 @@ mod dynamic {
         }
     }
 
+    /// runtime conversion from base as `u8`
     impl TryFrom<u8> for DynamicBase {
         type Error = Error;
 
@@ -433,9 +435,27 @@ mod dynamic {
         }
     }
 
+    /// conversions between runtime sizes parameters and `DynamicBase`
+    impl DynamicBase {
+        pub fn try_from_cell_count_usize(cell_count: usize) -> Result<DynamicBase> {
+            Ok(
+                match u16::try_from(cell_count)
+                    .map_err(|_| format_err!("Cell count {cell_count} too large"))?
+                {
+                    Base2::CELL_COUNT => DynamicBase::Base2,
+                    Base3::CELL_COUNT => DynamicBase::Base3,
+                    Base4::CELL_COUNT => DynamicBase::Base4,
+                    Base5::CELL_COUNT => DynamicBase::Base5,
+                    _ => bail!("Cell count {cell_count} has no valid sudoku base"),
+                },
+            )
+        }
+    }
+
     #[cfg(test)]
     mod tests {
         use super::*;
+        use crate::DynamicSudoku;
 
         #[test]
         fn test_assert_from_base_u8() {
@@ -467,6 +487,36 @@ mod dynamic {
             assert_eq!(DynamicBase::from(Base3), DynamicBase::Base3);
             assert_eq!(DynamicBase::from(Base4), DynamicBase::Base4);
             assert_eq!(DynamicBase::from(Base5), DynamicBase::Base5);
+        }
+
+        #[test]
+        fn test_try_from_cell_count_usize() -> Result<()> {
+            let test_cases = vec![
+                (16, DynamicBase::Base2),
+                (81, DynamicBase::Base3),
+                (256, DynamicBase::Base4),
+                (625, DynamicBase::Base5),
+            ];
+
+            for &(cell_count, expected_base) in &test_cases {
+                let base = DynamicBase::try_from_cell_count_usize(cell_count)?;
+
+                assert_eq!(base, expected_base);
+            }
+
+            let legal_cell_counts: Vec<_> = test_cases
+                .into_iter()
+                .map(|(cell_count, _)| cell_count)
+                .collect();
+
+            for cell_count in (0..=1000).filter(|x| !legal_cell_counts.contains(x)) {
+                let res_base = DynamicBase::try_from_cell_count_usize(cell_count);
+                assert!(
+                    res_base.is_err(),
+                    "Expected err, got {res_base:?} for cell_count: {cell_count}"
+                );
+            }
+            Ok(())
         }
     }
 }
