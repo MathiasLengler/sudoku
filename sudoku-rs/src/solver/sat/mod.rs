@@ -1,17 +1,34 @@
 use std::marker::PhantomData;
+use std::ops::Deref;
 
-use anyhow::bail;
+use anyhow::{anyhow, bail};
 use itertools::Itertools;
 use log::trace;
-use splr::{Certificate, SolveIF};
+use splr::{Certificate, SatSolverIF, SolveIF};
 
-use crate::base::SudokuBase;
+use crate::base::{DynamicBase, SudokuBase};
 use crate::cell::{Cell, Value};
 use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::solver::sat::cell_variable::CellVariable;
 use crate::solver::FallibleSolver;
+
+mod initialized_sat_solver {
+    use super::*;
+
+    use crate::base::consts::*;
+    use once_cell::sync::Lazy;
+
+    pub(super) static SOLVER_BASE_2: Lazy<Box<splr::Solver>> =
+        Lazy::new(|| Solver::<Base2>::init_sat_solver().unwrap());
+    pub(super) static SOLVER_BASE_3: Lazy<Box<splr::Solver>> =
+        Lazy::new(|| Solver::<Base3>::init_sat_solver().unwrap());
+    pub(super) static SOLVER_BASE_4: Lazy<Box<splr::Solver>> =
+        Lazy::new(|| Solver::<Base4>::init_sat_solver().unwrap());
+    pub(super) static SOLVER_BASE_5: Lazy<Box<splr::Solver>> =
+        Lazy::new(|| Solver::<Base5>::init_sat_solver().unwrap());
+}
 
 type Clause = Vec<i32>;
 
@@ -25,9 +42,54 @@ pub struct Solver<Base: SudokuBase> {
 
 impl<Base: SudokuBase> Solver<Base> {
     pub fn new<GridRef: AsRef<Grid<Base>>>(grid: GridRef) -> Result<Self> {
-        let formula = Self::formula(grid.as_ref());
+        let sat_solver = Self::init_sat_solver_for_grid(grid.as_ref())?;
+
+        Ok(Self {
+            sat_solver,
+            _base: PhantomData,
+        })
+    }
+
+    #[allow(clippy::needless_pass_by_value)]
+    fn export_sat_solver_error(err: splr::SolverError) -> Error {
+        anyhow!("SAT solver error: {}", err)
+    }
+
+    fn init_sat_solver_for_grid(grid: &Grid<Base>) -> Result<Box<splr::Solver>> {
+        let mut sat_solver = Self::get_initialized_sat_solver();
+
+        for pos in grid.all_value_positions() {
+            let value = grid[pos].value().unwrap();
+
+            sat_solver
+                .add_assignment(
+                    CellVariable {
+                        pos,
+                        value,
+                        is_true: true,
+                    }
+                    .into(),
+                )
+                .map_err(Self::export_sat_solver_error)?;
+        }
+
+        Ok(sat_solver)
+    }
+
+    #[allow(clippy::unnecessary_box_returns)]
+    fn get_initialized_sat_solver() -> Box<splr::Solver> {
+        match Base::DYNAMIC_BASE {
+            DynamicBase::Base2 => initialized_sat_solver::SOLVER_BASE_2.deref().clone(),
+            DynamicBase::Base3 => initialized_sat_solver::SOLVER_BASE_3.deref().clone(),
+            DynamicBase::Base4 => initialized_sat_solver::SOLVER_BASE_4.deref().clone(),
+            DynamicBase::Base5 => initialized_sat_solver::SOLVER_BASE_5.deref().clone(),
+        }
+    }
+
+    fn init_sat_solver() -> Result<Box<splr::Solver>> {
+        let clauses = Self::general_clauses();
         let sat_solver = Box::new(
-            match splr::Solver::try_from((splr::Config::default(), formula.as_slice())) {
+            match splr::Solver::try_from((splr::Config::default(), clauses.as_slice())) {
                 Ok(s) => s,
                 Err(Ok(Certificate::UNSAT)) => {
                     bail!("Grid is unsolvable")
@@ -36,32 +98,19 @@ impl<Base: SudokuBase> Solver<Base> {
                     unreachable!("SAT solver should not return solution while initializing")
                 }
                 Err(Err(err)) => {
-                    bail!("SAT solver error while initializing: {}", err)
+                    return Err(Self::export_sat_solver_error(err));
                 }
             },
         );
-
-        Ok(Self {
-            sat_solver,
-            _base: PhantomData,
-        })
+        Ok(sat_solver)
     }
 
     // TODO: test helpers
-    // TODO: evaluate caching/compile time construction/re-use of general constraints
     // TODO: implement other constraints from tdoku
     //  especially triad based-constraints
-    // Reference: https://t-dillon.github.io/tdoku/
-    fn formula(grid: &Grid<Base>) -> Vec<Clause> {
-        let mut clauses = Self::general_clauses();
-
-        // Grid specific constraints
-        clauses.extend(Self::puzzle_values_must_remain_clauses(grid));
-
-        clauses
-    }
-
     /// All clauses which only depend on the base of the sudoku.
+    ///
+    /// Reference: [tdoku blog](https://t-dillon.github.io/tdoku/)
     fn general_clauses() -> Vec<Clause> {
         let mut clauses: Vec<Clause> = vec![];
 
@@ -163,22 +212,6 @@ impl<Base: SudokuBase> Solver<Base> {
                     })
                     .collect()
             })
-        })
-    }
-
-    /// The values in the puzzle must be contained in the solution unchanged.
-    ///
-    /// `(number of puzzle values)` unit clauses
-    fn puzzle_values_must_remain_clauses(grid: &Grid<Base>) -> impl Iterator<Item = Clause> + '_ {
-        grid.all_value_positions().into_iter().map(|pos| {
-            let value = grid[pos].value().unwrap();
-
-            vec![CellVariable {
-                pos,
-                value,
-                is_true: true,
-            }
-            .into()]
         })
     }
 }
