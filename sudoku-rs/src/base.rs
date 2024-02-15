@@ -9,9 +9,10 @@ use num::traits::{
 use num::PrimInt;
 
 use consts::*;
+use dynamic::DynamicBase;
 
 use crate::cell::Candidates;
-use crate::error::Error;
+use crate::error::{Error, Result};
 use crate::position::Coordinate;
 use crate::position::Position;
 use crate::unsafe_utils::get_unchecked;
@@ -22,7 +23,6 @@ pub mod consts {
     pub use Base3 as Size9x9;
     pub use Base4 as Size16x16;
     pub use Base5 as Size25x25;
-
     pub use Base5 as BaseMax;
 
     use crate::base::SudokuBase;
@@ -92,7 +92,7 @@ const fn base_to_minimum_clue_count_for_unique_solution(base: u8) -> u16 {
         // Unknown, guess on ~200 minimal sudokus
         4 => 75,
         // Unknown, conservative estimate
-        5 => 75,
+        5 => 76,
         _ => panic!("Unexpected base"),
     }
 }
@@ -201,6 +201,14 @@ pub unsafe trait SudokuBase
 where
     Self: Ord + Hash + Clone + Copy + Debug + Default + Send + Sync + 'static + private::Sealed,
 {
+    /// A variant of the enum `DynamicBase`
+    ///
+    /// Used for matching of bases at runtime.
+    ///
+    /// # Safety
+    /// - `Base::DYNAMIC_BASE.into_u8() == Base::BASE`
+    const DYNAMIC_BASE: DynamicBase;
+
     // TODO: evaluate `as` casting of constants
     /// The side length of a sudoku block. Must be non-zero.
     ///
@@ -303,6 +311,7 @@ macro_rules! impl_sudoku_base {
         $(
 // Safety: this private macro is only instantiated below and the correctness of the generated impls is tested.
 unsafe impl SudokuBase for $type_num {
+    const DYNAMIC_BASE: DynamicBase = DynamicBase::assert_from_base_u8($base_u8);
     const BASE: u8 = $base_u8;
     const SIDE_LENGTH: u8 = base_to_side_length(Self::BASE);
     const MAX_VALUE: u8 = base_to_max_value(Self::BASE);
@@ -344,13 +353,123 @@ unsafe impl SudokuBase for $type_num {
     };
 }
 
-// All sudoku bases supported by DynamicSudoku, and U1 for testing.
+// Implement `SudokuBase` for all base structs
 impl_sudoku_base!(
     Base2, 2, u8, cell_index_to_block_index::BASE_2, block_index_to_top_left_cell_index::BASE_2;
     Base3, 3, u16, cell_index_to_block_index::BASE_3, block_index_to_top_left_cell_index::BASE_3;
     Base4, 4, u16, cell_index_to_block_index::BASE_4, block_index_to_top_left_cell_index::BASE_4;
     Base5, 5, u32, cell_index_to_block_index::BASE_5, block_index_to_top_left_cell_index::BASE_5;
 );
+
+mod dynamic {
+    use anyhow::bail;
+
+    use super::*;
+
+    // TODO: use internally for runtime base matching
+    #[derive(Debug, Copy, Clone, Eq, PartialEq)]
+    pub enum DynamicBase {
+        Base2,
+        Base3,
+        Base4,
+        Base5,
+    }
+
+    impl DynamicBase {
+        pub(super) const fn assert_from_base_u8(base: u8) -> Self {
+            assert!(2 <= base && base <= 5);
+
+            match base {
+                2 => DynamicBase::Base2,
+                3 => DynamicBase::Base3,
+                4 => DynamicBase::Base4,
+                5 => DynamicBase::Base5,
+                _unexpected_base => unreachable!(),
+            }
+        }
+
+        pub const fn into_u8(self) -> u8 {
+            match self {
+                DynamicBase::Base2 => 2,
+                DynamicBase::Base3 => 3,
+                DynamicBase::Base4 => 4,
+                DynamicBase::Base5 => 5,
+            }
+        }
+    }
+
+    impl TryFrom<u8> for DynamicBase {
+        type Error = Error;
+
+        fn try_from(base: u8) -> Result<Self> {
+            Ok(match base {
+                2 => DynamicBase::Base2,
+                3 => DynamicBase::Base3,
+                4 => DynamicBase::Base4,
+                5 => DynamicBase::Base5,
+                unexpected_base => bail!("Unexpected runtime base: {unexpected_base}"),
+            })
+        }
+    }
+
+    impl From<Base2> for DynamicBase {
+        fn from(_base: Base2) -> Self {
+            DynamicBase::Base2
+        }
+    }
+    impl From<Base3> for DynamicBase {
+        fn from(_base: Base3) -> Self {
+            DynamicBase::Base3
+        }
+    }
+    impl From<Base4> for DynamicBase {
+        fn from(_base: Base4) -> Self {
+            DynamicBase::Base4
+        }
+    }
+    impl From<Base5> for DynamicBase {
+        fn from(_base: Base5) -> Self {
+            DynamicBase::Base5
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn test_assert_from_base_u8() {
+            assert_eq!(DynamicBase::assert_from_base_u8(2), DynamicBase::Base2);
+            assert_eq!(DynamicBase::assert_from_base_u8(3), DynamicBase::Base3);
+            assert_eq!(DynamicBase::assert_from_base_u8(4), DynamicBase::Base4);
+            assert_eq!(DynamicBase::assert_from_base_u8(5), DynamicBase::Base5);
+        }
+
+        #[test]
+        fn test_into_u8() {
+            assert_eq!(DynamicBase::Base2.into_u8(), 2);
+            assert_eq!(DynamicBase::Base3.into_u8(), 3);
+            assert_eq!(DynamicBase::Base4.into_u8(), 4);
+            assert_eq!(DynamicBase::Base5.into_u8(), 5);
+        }
+
+        #[test]
+        fn test_try_from_u8() {
+            assert_eq!(DynamicBase::try_from(2).unwrap(), DynamicBase::Base2);
+            assert_eq!(DynamicBase::try_from(3).unwrap(), DynamicBase::Base3);
+            assert_eq!(DynamicBase::try_from(4).unwrap(), DynamicBase::Base4);
+            assert_eq!(DynamicBase::try_from(5).unwrap(), DynamicBase::Base5);
+        }
+
+        #[test]
+        fn test_from_base_structs() {
+            assert_eq!(DynamicBase::from(Base2), DynamicBase::Base2);
+            assert_eq!(DynamicBase::from(Base3), DynamicBase::Base3);
+            assert_eq!(DynamicBase::from(Base4), DynamicBase::Base4);
+            assert_eq!(DynamicBase::from(Base5), DynamicBase::Base5);
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -397,6 +516,9 @@ mod tests {
     fn assert_base_invariants<Base: SudokuBase>() {
         use std::mem::size_of;
 
+        // Safety invariant of Base::DYNAMIC_BASE
+        assert_eq!(Base::DYNAMIC_BASE.into_u8(), Base::BASE);
+
         // Safety invariant of Base::BASE
         assert_ne!(Base::BASE, 0);
 
@@ -427,6 +549,7 @@ mod tests {
     fn test_base_2() {
         type Base = Base2;
 
+        assert_eq!(Base::DYNAMIC_BASE, DynamicBase::Base2);
         assert_eq!(Base::BASE, 2);
         assert_eq!(Base::SIDE_LENGTH, 4);
         assert_eq!(Base::MAX_VALUE, 4);
@@ -442,6 +565,7 @@ mod tests {
     fn test_base_3() {
         type Base = Base3;
 
+        assert_eq!(Base::DYNAMIC_BASE, DynamicBase::Base3);
         assert_eq!(Base::BASE, 3);
         assert_eq!(Base::SIDE_LENGTH, 9);
         assert_eq!(Base::MAX_VALUE, 9);
@@ -457,6 +581,7 @@ mod tests {
     fn test_base_4() {
         type Base = Base4;
 
+        assert_eq!(Base::DYNAMIC_BASE, DynamicBase::Base4);
         assert_eq!(Base::BASE, 4);
         assert_eq!(Base::SIDE_LENGTH, 16);
         assert_eq!(Base::MAX_VALUE, 16);
@@ -472,6 +597,7 @@ mod tests {
     fn test_base_5() {
         type Base = Base5;
 
+        assert_eq!(Base::DYNAMIC_BASE, DynamicBase::Base5);
         assert_eq!(Base::BASE, 5);
         assert_eq!(Base::SIDE_LENGTH, 25);
         assert_eq!(Base::MAX_VALUE, 25);
