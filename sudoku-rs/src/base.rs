@@ -74,29 +74,6 @@ const fn base_to_cell_count(base: u8) -> u16 {
     (base as u16).pow(4)
 }
 
-const fn base_to_binary_fixed_candidates_line_cell_chars(base: u8) -> usize {
-    match base {
-        2 => 1,
-        3 => 2,
-        4 => 4,
-        5 => 6,
-        _ => panic!("Unexpected base"),
-    }
-}
-
-const fn base_to_minimum_clue_count_for_unique_solution(base: u8) -> u16 {
-    // Reference:
-    match base {
-        2 => 4,
-        3 => 17,
-        // Unknown, guess on ~200 minimal sudokus
-        4 => 75,
-        // Unknown, conservative estimate
-        5 => 76,
-        _ => panic!("Unexpected base"),
-    }
-}
-
 mod cell_index_to_block_index {
     //! # Safety
     //! Each `array` must fulfill the following properties for its respective `Base`:
@@ -316,8 +293,8 @@ unsafe impl SudokuBase for $type_num {
     const SIDE_LENGTH: u8 = base_to_side_length(Self::BASE);
     const MAX_VALUE: u8 = base_to_max_value(Self::BASE);
     const CELL_COUNT: u16 = base_to_cell_count(Self::BASE);
-    const BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS: usize = base_to_binary_fixed_candidates_line_cell_chars(Self::BASE);
-    const MINIMUM_CLUE_COUNT_FOR_UNIQUE_SOLUTION: u16 = base_to_minimum_clue_count_for_unique_solution(Self::BASE);
+    const BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS: usize = Self::DYNAMIC_BASE.binary_fixed_candidates_line_cell_chars();
+    const MINIMUM_CLUE_COUNT_FOR_UNIQUE_SOLUTION: u16 = Self::DYNAMIC_BASE.minimum_clue_count_for_unique_solution();
 
     fn pos_to_block(pos: Position<Self>) -> Coordinate<Self> {
         let cell_index = usize::from(pos.cell_index());
@@ -399,6 +376,30 @@ mod dynamic {
         }
     }
 
+    /// const definitions
+    impl DynamicBase {
+        pub const fn binary_fixed_candidates_line_cell_chars(self) -> usize {
+            match self {
+                DynamicBase::Base2 => 1,
+                DynamicBase::Base3 => 2,
+                DynamicBase::Base4 => 4,
+                DynamicBase::Base5 => 6,
+            }
+        }
+
+        pub const fn minimum_clue_count_for_unique_solution(self) -> u16 {
+            match self {
+                // Reference: https://math.stackexchange.com/questions/2170944/sudoku-what-is-the-relationship-between-minimum-number-of-clues-and-order-n
+                DynamicBase::Base2 => 4,
+                DynamicBase::Base3 => 17,
+                // Unknown, guess on ~200 minimal sudokus
+                DynamicBase::Base4 => 75,
+                // Unknown, conservative estimate
+                DynamicBase::Base5 => 76,
+            }
+        }
+    }
+
     /// runtime conversion from base as `u8`
     impl TryFrom<u8> for DynamicBase {
         type Error = Error;
@@ -455,7 +456,6 @@ mod dynamic {
     #[cfg(test)]
     mod tests {
         use super::*;
-        use crate::DynamicSudoku;
 
         #[test]
         fn test_assert_from_base_u8() {
