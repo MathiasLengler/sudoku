@@ -1,6 +1,6 @@
 use log::debug;
 
-use crate::base::SudokuBase;
+use crate::base::{DynamicBase, SudokuBase};
 use crate::cell::CandidatesAscIter;
 use crate::grid::Grid;
 use crate::solver::strategic::strategies::DynamicStrategy;
@@ -25,16 +25,19 @@ pub struct Solver<Base: SudokuBase> {
 impl<Base: SudokuBase> Solver<Base> {
     pub fn new(grid: Grid<Base>) -> Self {
         Self {
-            solver_impl: match Base::BASE {
+            solver_impl: match Base::DYNAMIC_BASE {
                 // Base 2 and 3 are small enough,
                 // that the overhead of the strategy evaluation is slower than the naive backtracking solver.
-                2 | 3 => SolverImpl::Backtracking(backtracking::Solver::new(grid)),
+                DynamicBase::Base2 | DynamicBase::Base3 => {
+                    SolverImpl::Backtracking(backtracking::Solver::new(grid))
+                }
                 // For base >= 4, a hybrid approach of strategic, then backtracking, is faster.
-                4 | 5 => SolverImpl::Strategic(strategic::Solver::new_with_strategies(
-                    grid,
-                    DynamicStrategy::introspective_solver_base_4_plus_strategies(),
-                )),
-                unexpected_base => panic!("Unexpected base: {unexpected_base}"),
+                DynamicBase::Base4 | DynamicBase::Base5 => {
+                    SolverImpl::Strategic(strategic::Solver::new_with_strategies(
+                        grid,
+                        DynamicStrategy::introspective_solver_base_4_plus_strategies(),
+                    ))
+                }
             },
         }
     }
