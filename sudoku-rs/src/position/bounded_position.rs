@@ -81,6 +81,11 @@ impl<Base: SudokuBase> Position<Base> {
         }
         .into()
     }
+
+    // TODO: other corners
+    pub fn top_left() -> Self {
+        Position::default()
+    }
 }
 
 impl<Base: SudokuBase> From<(Coordinate<Base>, Coordinate<Base>)> for Position<Base> {

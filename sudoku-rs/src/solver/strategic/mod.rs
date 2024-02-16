@@ -2,11 +2,13 @@ use std::marker::PhantomData;
 
 use log::trace;
 
+pub use builder::SolverBuilder;
 use strategies::Strategy;
 
 use crate::base::SudokuBase;
 use crate::error::{Error, Result};
 use crate::grid::Grid;
+use crate::solver::backtracking::AvailabilityFilter;
 use crate::solver::strategic::deduction::Deductions;
 use crate::solver::strategic::strategies::DynamicStrategy;
 use crate::solver::FallibleSolver;
@@ -19,9 +21,76 @@ pub mod strategies;
 // TODO: `solver.grade`
 //  add "difficulty" score for each strategy
 //  sum difficulty for each applied strategy
-// Reference: sudokuwiki "Grader"/"Solve path"
+//  Reference: sudokuwiki "Grader"/"Solve path"
 
-#[derive(Debug)]
+mod builder {
+    use super::*;
+
+    #[derive(Debug)]
+    pub struct SolverBuilder<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> {
+        grid: GridMut,
+        strategies: Vec<DynamicStrategy>,
+        _base: PhantomData<Base>,
+    }
+
+    impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>>
+        SolverBuilder<Base, GridMut>
+    {
+        pub fn new(grid: GridMut) -> Self {
+            Self {
+                grid,
+                strategies: vec![],
+                _base: PhantomData,
+            }
+        }
+    }
+
+    impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>>
+        SolverBuilder<Base, GridMut>
+    {
+        #[must_use]
+        pub fn strategies(mut self, strategies: Vec<DynamicStrategy>) -> Self {
+            self.strategies = strategies;
+            self
+        }
+    }
+
+    impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>>
+        SolverBuilder<Base, GridMut>
+    {
+        /// Filter the available candidates which the solver can use to find a solution.
+        #[must_use]
+        pub fn availability_filter<Filter: AvailabilityFilter<Base>>(
+            mut self,
+            filter: &Filter,
+        ) -> Self {
+            filter.apply_to_grid_candidates(self.grid.as_mut());
+            self
+        }
+    }
+
+    impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>>
+        SolverBuilder<Base, GridMut>
+    {
+        pub fn build(self) -> Solver<Base, GridMut> {
+            let SolverBuilder {
+                grid,
+                strategies,
+                _base,
+            } = self;
+            Solver::new_with_strategies(
+                grid,
+                if strategies.is_empty() {
+                    DynamicStrategy::default_solver_strategies()
+                } else {
+                    strategies
+                },
+            )
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct Solver<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> {
     grid: GridMut,
     // TODO: generic: AsRef: IntoIterator<DynamicStrategy>
@@ -32,12 +101,12 @@ pub struct Solver<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base
 
 impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> Solver<Base, GridMut> {
     pub fn new(grid: GridMut) -> Self {
-        Self::new_with_strategies(grid, DynamicStrategy::default_solver_strategies())
+        Self::builder(grid).build()
     }
 
-    // TODO: with_filter
-    //  pre-apply filter for every candidates in grid, write filtered candidate back into grid.
-    //  filter can then be dropped
+    pub fn builder(grid: GridMut) -> SolverBuilder<Base, GridMut> {
+        SolverBuilder::new(grid)
+    }
 
     pub fn new_with_strategies(mut grid: GridMut, strategies: Vec<DynamicStrategy>) -> Self {
         grid.as_mut()
@@ -99,23 +168,75 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> FallibleS
 
 #[cfg(test)]
 mod tests {
+    use crate::base::consts::Base2;
+    use crate::cell::{Candidates, Value};
+    use crate::position::Position;
+    use crate::solver::backtracking::GroupAvailabilityIndex;
     use crate::solver::test_util::{assert_fallible_solver_single_solution, tests_solver_samples};
 
     use super::*;
-
-    fn assert_solvable<Base: SudokuBase>(mut grid: Grid<Base>) {
-        grid.set_all_direct_candidates();
-        grid.fix_all_values();
-
-        let mut solver = Solver::new(&mut grid);
-        assert!(solver.try_solve().unwrap().is_some());
-        assert!(grid.is_solved());
-    }
 
     tests_solver_samples! {
         |grid| {
             let solver = Solver::new(grid.clone());
             assert_fallible_solver_single_solution(solver, &grid);
         }
+    }
+
+    #[test]
+    fn test_availability_filter_denied_candidates_grid() {
+        type Base = Base2;
+
+        let grid = {
+            let mut grid: Grid<Base> = "
+            1040
+            0000
+            0000
+            0102
+            "
+            .parse()
+            .unwrap();
+
+            grid.unfix_all_values();
+            grid
+        };
+
+        assert!(grid.is_minimal());
+
+        // Solver can solve the input grid
+        let solver = Solver::new_with_strategies(
+            grid.clone(),
+            DynamicStrategy::default_solver_strategies_no_backtracking(),
+        );
+        assert_fallible_solver_single_solution(solver, &grid);
+
+        // Delete top left value 1 => grid is ambiguous
+        let ambiguous_grid = {
+            let mut grid = grid.clone();
+            grid[Position::top_left()].delete();
+            grid.set_all_direct_candidates();
+            grid
+        };
+        assert!(!ambiguous_grid.has_unique_solution());
+
+        // Solver can no longer solve it
+        let mut solver = Solver::new_with_strategies(
+            ambiguous_grid.clone(),
+            DynamicStrategy::default_solver_strategies_no_backtracking(),
+        );
+        assert!(solver.try_solve().unwrap().is_none());
+
+        // But, solver with filter for top left cell can solve it.
+        let mut solver = Solver::builder(ambiguous_grid.clone())
+            .strategies(DynamicStrategy::default_solver_strategies_no_backtracking())
+            .availability_filter(&|available_candidates, index| {
+                if index == GroupAvailabilityIndex::default() {
+                    Candidates::with_single(Value::default())
+                } else {
+                    available_candidates
+                }
+            })
+            .build();
+        solver.try_solve().unwrap().unwrap();
     }
 }

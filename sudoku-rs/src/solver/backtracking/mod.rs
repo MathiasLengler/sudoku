@@ -794,6 +794,13 @@ mod tests {
 
     use super::*;
 
+    tests_solver_samples! {
+        |grid| {
+            let solver = Solver::new(&grid);
+            assert_infallible_solver_single_solution(solver, &grid);
+        }
+    }
+
     #[test]
     fn test_iter_all_solutions() {
         let grid = Grid::<Base2>::new();
@@ -810,13 +817,6 @@ mod tests {
             .build();
 
         assert_solution_iter_all_solutions_base_2(solver);
-    }
-
-    tests_solver_samples! {
-        |grid| {
-            let solver = Solver::new(&grid);
-            assert_infallible_solver_single_solution(solver, &grid);
-        }
     }
 
     #[test]
@@ -851,7 +851,7 @@ mod tests {
     }
 
     #[test]
-    fn test_filter_denylist() {
+    fn test_availability_filter_denied_candidates_grid() {
         type Base = Base2;
 
         let grid = Grid::<Base>::new();

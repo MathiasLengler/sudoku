@@ -90,6 +90,16 @@ impl DynamicStrategy {
         ]
     }
 
+    pub fn default_solver_strategies_no_backtracking() -> Vec<Self> {
+        vec![
+            NakedSingles.into(),
+            HiddenSingles.into(),
+            NakedPairs.into(),
+            GroupReduction.into(),
+            GroupIntersectionBoth.into(),
+        ]
+    }
+
     pub fn introspective_solver_base_4_plus_strategies() -> Vec<Self> {
         // TODO: benchmark
         vec![

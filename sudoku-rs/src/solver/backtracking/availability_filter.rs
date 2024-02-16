@@ -3,8 +3,20 @@ use crate::cell::Candidates;
 use crate::grid::Grid;
 use crate::solver::backtracking::GroupAvailabilityIndex;
 
+fn default_apply_to_grid_candidates<Base: SudokuBase>(
+    filter: &impl AvailabilityFilter<Base>,
+    grid: &mut Grid<Base>,
+) {
+    grid.all_candidates_positions().into_iter().for_each(|pos| {
+        let cell = &mut grid[pos];
+        let candidates = cell.candidates().unwrap();
+        cell.set_candidates(filter.filter(candidates, pos.into()));
+    });
+}
+
 pub type DeniedCandidatesGrid<Base> = Grid<Base, Candidates<Base>>;
 
+/// An additional constraint for a sudoku solver, defining which candidates are *not* available for a solution.
 pub trait AvailabilityFilter<Base: SudokuBase> {
     /// For a given `available_candidates` at `index`, return `available_candidates` with 0 or more candidates removed.
     fn filter(
@@ -12,6 +24,17 @@ pub trait AvailabilityFilter<Base: SudokuBase> {
         available_candidates: Candidates<Base>,
         index: GroupAvailabilityIndex<Base>,
     ) -> Candidates<Base>;
+
+    /// Apply this filter to a given grid.
+    ///
+    /// The default implementation iterates over the candidates in the grid
+    /// and replaces them with the result of `self.filter`.
+    fn apply_to_grid_candidates(&self, grid: &mut Grid<Base>)
+    where
+        Self: Sized,
+    {
+        default_apply_to_grid_candidates(self, grid);
+    }
 }
 
 // No-op
@@ -23,9 +46,13 @@ impl<Base: SudokuBase> AvailabilityFilter<Base> for () {
     ) -> Candidates<Base> {
         available_candidates
     }
+
+    fn apply_to_grid_candidates(&self, _grid: &mut Grid<Base>) {
+        // no-op
+    }
 }
 
-// A function can modify `available_candidates`
+/// A function can modify `available_candidates`
 impl<
         Base: SudokuBase,
         F: Fn(Candidates<Base>, GroupAvailabilityIndex<Base>) -> Candidates<Base>,
@@ -40,6 +67,7 @@ impl<
     }
 }
 
+/// A `Grid` containing `Candidates` defines candidates which are *not* available.
 impl<Base: SudokuBase> AvailabilityFilter<Base> for DeniedCandidatesGrid<Base> {
     fn filter(
         &self,
@@ -52,7 +80,8 @@ impl<Base: SudokuBase> AvailabilityFilter<Base> for DeniedCandidatesGrid<Base> {
     }
 }
 
-// A optional grid of candidates defines denied candidates for each position.
+/// If `Some`, a `Option<Grid>` containing `Candidates` defines candidates which are *not* available.
+/// If `None`, no-op.
 impl<Base: SudokuBase> AvailabilityFilter<Base> for Option<DeniedCandidatesGrid<Base>> {
     fn filter(
         &self,
