@@ -237,6 +237,6 @@ mod tests {
                 }
             })
             .build();
-        solver.try_solve().unwrap().unwrap();
+        assert_fallible_solver_single_solution(solver, &grid);
     }
 }
