@@ -11,6 +11,7 @@ use crate::cell::{Cell, Value};
 use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::position::Position;
+use crate::solver::backtracking::AvailabilityFilter;
 use crate::solver::sat::cell_variable::CellVariable;
 use crate::solver::FallibleSolver;
 
@@ -48,6 +49,16 @@ impl<Base: SudokuBase> Solver<Base> {
             sat_solver,
             _base: PhantomData,
         })
+    }
+
+    pub fn new_with_availability_filter<
+        GridRef: AsRef<Grid<Base>>,
+        Filter: AvailabilityFilter<Base>,
+    >(
+        grid: GridRef,
+        filter: Filter,
+    ) -> Result<Self> {
+        todo!("implement: translate filter into additional clauses/assignments")
     }
 
     #[allow(clippy::needless_pass_by_value)]
