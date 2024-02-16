@@ -19,6 +19,8 @@ pub type DeniedCandidatesGrid<Base> = Grid<Base, Candidates<Base>>;
 /// An additional constraint for a sudoku solver, defining which candidates are *not* available for a solution.
 pub trait AvailabilityFilter<Base: SudokuBase> {
     /// For a given `available_candidates` at `index`, return `available_candidates` with 0 or more candidates removed.
+    ///
+    /// Must be a pure function.
     fn filter(
         &self,
         available_candidates: Candidates<Base>,
@@ -92,6 +94,12 @@ impl<Base: SudokuBase> AvailabilityFilter<Base> for Option<DeniedCandidatesGrid<
             denylist.filter(available_candidates, index)
         } else {
             available_candidates
+        }
+    }
+
+    fn apply_to_grid_candidates(&self, grid: &mut Grid<Base>) {
+        if let Some(denylist) = self {
+            default_apply_to_grid_candidates(denylist, grid);
         }
     }
 }
