@@ -63,6 +63,7 @@ impl<Base: SudokuBase, Filter: AvailabilityFilter<Base>> InfallibleSolver<Base>
         match solver_impl {
             SolverImpl::Strategic(mut solver, filter) => {
                 if let Ok(Some(strategic_solution)) = solver.try_solve() {
+                    // TODO: does this assumption hold for ambiguous grids?
                     // Assumption: when strategic::Solver returns a solution, it is unique.
                     self.solver_impl = SolverImpl::Done;
                     Some(strategic_solution)

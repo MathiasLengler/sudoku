@@ -35,6 +35,8 @@ type Clause = Vec<i32>;
 
 mod cell_variable;
 
+// TODO: implement solutions iterator
+
 #[derive(Debug)]
 pub struct Solver<Base: SudokuBase> {
     sat_solver: Box<splr::Solver>,
@@ -116,7 +118,7 @@ impl<Base: SudokuBase> Solver<Base> {
         Ok(sat_solver)
     }
 
-    // TODO: test helpers
+    // TODO: test clauses
     // TODO: implement other constraints from tdoku
     //  especially triad based-constraints
     /// All clauses which only depend on the base of the sudoku.

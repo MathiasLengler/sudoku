@@ -637,6 +637,20 @@ impl<Base: SudokuBase> Generator<Base> {
                 //  USE_INTROSPECTIVE_SOLVER true: 5.53s
                 // TODO: merge with backtracking availability_filter optimization below
                 !grid.has_unique_solution()
+
+                // FIXME: why does this wrongly report a ambiguous solution?
+                // let mut solver = introspective::Solver::new_with_filter(
+                //     grid.clone(),
+                //     |mut available_candidates: Candidates<Base>, index| {
+                //         if Position::from(index) == pos {
+                //             available_candidates.delete(deleted_value);
+                //             available_candidates
+                //         } else {
+                //             available_candidates
+                //         }
+                //     },
+                // );
+                // solver.next().is_some()
             } else {
                 // TODO: evaluate parallelism higher up in the generation call stack
                 //  parallel solving of a single grid is quite tricky to parallelize efficiently,
