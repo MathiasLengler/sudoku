@@ -1,3 +1,4 @@
+use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 use std::ops::Deref;
 
@@ -7,7 +8,7 @@ use log::trace;
 use splr::{Certificate, SatSolverIF, SolveIF};
 
 use crate::base::{DynamicBase, SudokuBase};
-use crate::cell::{Cell, Value};
+use crate::cell::{Candidates, Cell, Value};
 use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::position::Position;
@@ -36,20 +37,16 @@ type Clause = Vec<i32>;
 
 mod cell_variable;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Solver<Base: SudokuBase> {
     sat_solver: Box<splr::Solver>,
     _base: PhantomData<Base>,
 }
 
+/// Public API
 impl<Base: SudokuBase> Solver<Base> {
     pub fn new<GridRef: AsRef<Grid<Base>>>(grid: GridRef) -> Result<Self> {
-        let sat_solver = Self::init_sat_solver_for_grid(grid.as_ref())?;
-
-        Ok(Self {
-            sat_solver,
-            _base: PhantomData,
-        })
+        Self::new_with_availability_filter(grid, &())
     }
 
     pub fn new_with_availability_filter<
@@ -57,16 +54,21 @@ impl<Base: SudokuBase> Solver<Base> {
         Filter: AvailabilityFilter<Base>,
     >(
         grid: GridRef,
-        filter: Filter,
+        filter: &Filter,
     ) -> Result<Self> {
-        todo!("implement: translate filter into additional clauses/assignments")
-    }
+        let mut sat_solver = Self::init_sat_solver_for_grid(grid.as_ref())?;
 
-    #[allow(clippy::needless_pass_by_value)]
-    fn export_sat_solver_error(err: splr::SolverError) -> Error {
-        anyhow!("SAT solver error: {}", err)
-    }
+        Self::apply_filter_to_sat_solver(filter, &mut sat_solver)?;
 
+        Ok(Self {
+            sat_solver,
+            _base: PhantomData,
+        })
+    }
+}
+
+/// Helpers
+impl<Base: SudokuBase> Solver<Base> {
     fn init_sat_solver_for_grid(grid: &Grid<Base>) -> Result<Box<splr::Solver>> {
         let mut sat_solver = Self::get_initialized_sat_solver();
 
@@ -88,6 +90,47 @@ impl<Base: SudokuBase> Solver<Base> {
         Ok(sat_solver)
     }
 
+    // false positive
+    // noinspection RsConstantConditionIf
+    fn apply_filter_to_sat_solver<Filter: AvailabilityFilter<Base>>(
+        filter: &Filter,
+        sat_solver: &mut splr::Solver,
+    ) -> Result<()> {
+        if Filter::IS_NOOP {
+            return Ok(());
+        }
+
+        let all_candidates = Candidates::<Base>::all();
+
+        for pos in Position::<Base>::all() {
+            let remaining_candidates = filter.filter(all_candidates, pos.into());
+            if remaining_candidates != all_candidates {
+                let denied_candidates = all_candidates.without(remaining_candidates);
+                for denied_value in denied_candidates {
+                    // Remove denied value via a negative assigment
+                    sat_solver
+                        .add_assignment(
+                            CellVariable {
+                                pos,
+                                value: denied_value,
+                                is_true: false,
+                            }
+                            .into(),
+                        )
+                        .map_err(Self::export_sat_solver_error)?;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    #[allow(clippy::needless_pass_by_value)]
+    fn export_sat_solver_error(err: splr::SolverError) -> Error {
+        anyhow!("SAT solver error: {}", err)
+    }
+
+    /// `Base`-cached version of `Self::init_sat_solver`
     #[allow(clippy::unnecessary_box_returns)]
     fn get_initialized_sat_solver() -> Box<splr::Solver> {
         match Base::DYNAMIC_BASE {
@@ -283,7 +326,7 @@ impl<Base: SudokuBase> FallibleSolver<Base> for Solver<Base> {
 }
 
 impl<Base: SudokuBase> Solver<Base> {
-    fn iter(&mut self) -> SolverIter<'_, Base> {
+    pub fn iter(&mut self) -> SolverIter<'_, Base> {
         SolverIter {
             iter: self.sat_solver.iter(),
             _base: PhantomData,
@@ -291,9 +334,18 @@ impl<Base: SudokuBase> Solver<Base> {
     }
 }
 
-struct SolverIter<'a, Base: SudokuBase> {
+pub struct SolverIter<'a, Base: SudokuBase> {
     iter: splr::solver::SolverIter<'a>,
     _base: PhantomData<Base>,
+}
+
+impl<'a, Base: SudokuBase> Debug for SolverIter<'a, Base> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SolverIter")
+            .field("iter", &"splr::solver::SolverIter")
+            .field("_base", &self._base)
+            .finish()
+    }
 }
 
 impl<'a, Base: SudokuBase> Iterator for SolverIter<'a, Base> {
@@ -353,5 +405,31 @@ mod tests {
         assert_infallible_solution_iter_all_solutions_base_2(
             assert_fallible_solution_iter_as_infallible(solver.iter()),
         );
+    }
+
+    #[test]
+    fn test_availability_filter_denied_candidates_grid() {
+        type Base = Base2;
+
+        let grid = Grid::<Base>::new();
+        let mut denylist = Grid::new();
+        denylist[Position::top_left()] = vec![1, 3]
+            .into_iter()
+            .map(|v| v.try_into().unwrap())
+            .collect();
+        let solver = Solver::new_with_availability_filter(&grid, &denylist).unwrap();
+
+        for solution in solver.clone().iter() {
+            assert!(![1, 3].contains(
+                &solution
+                    .unwrap()
+                    .get(Position::top_left())
+                    .value()
+                    .unwrap()
+                    .get()
+            ));
+        }
+
+        assert_eq!(solver.clone().iter().count(), 144);
     }
 }

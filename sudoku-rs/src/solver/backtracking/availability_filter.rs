@@ -16,9 +16,19 @@ fn default_apply_to_grid_candidates<Base: SudokuBase>(
 
 pub type DeniedCandidatesGrid<Base> = Grid<Base, Candidates<Base>>;
 
-/// An additional constraint for a sudoku solver, defining which candidates are *not* available for a solution.
+// TODO: test implementations
+
+/// A constraint for a sudoku solver.
+/// It limits which candidates are considered for a solution.
 pub trait AvailabilityFilter<Base: SudokuBase> {
-    /// For a given `available_candidates` at `index`, return `available_candidates` with 0 or more candidates removed.
+    /// Whether the filter keeps the `available_candidates` unchanged for all `index`es.
+    ///
+    /// Defaults to `false`.
+    const IS_NOOP: bool = false;
+
+    /// For a given `available_candidates` at `index`, return `available_candidates` with zero or more candidates removed.
+    ///
+    /// The returned candidates are considered available for a solution.
     ///
     /// Must be a pure function.
     fn filter(
@@ -41,6 +51,8 @@ pub trait AvailabilityFilter<Base: SudokuBase> {
 
 // No-op
 impl<Base: SudokuBase> AvailabilityFilter<Base> for () {
+    const IS_NOOP: bool = true;
+
     fn filter(
         &self,
         available_candidates: Candidates<Base>,
