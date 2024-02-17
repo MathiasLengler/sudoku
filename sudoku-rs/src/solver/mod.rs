@@ -1,7 +1,8 @@
+use std::fmt::Debug;
+
 use crate::base::SudokuBase;
 use crate::error::Result;
 use crate::grid::Grid;
-use std::fmt::Debug;
 
 pub mod backtracking;
 pub mod strategic;
@@ -134,7 +135,6 @@ mod test_util {
         };
     }
 
-    use crate::cell::Candidates;
     pub(crate) use tests_solver_samples;
 
     pub(crate) fn assert_infallible_solver_single_solution<Base: SudokuBase>(
