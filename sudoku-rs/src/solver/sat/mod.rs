@@ -16,10 +16,11 @@ use crate::solver::sat::cell_variable::CellVariable;
 use crate::solver::FallibleSolver;
 
 mod initialized_sat_solver {
-    use super::*;
+    use once_cell::sync::Lazy;
 
     use crate::base::consts::*;
-    use once_cell::sync::Lazy;
+
+    use super::*;
 
     pub(super) static SOLVER_BASE_2: Lazy<Box<splr::Solver>> =
         Lazy::new(|| Solver::<Base2>::init_sat_solver().unwrap());
@@ -34,8 +35,6 @@ mod initialized_sat_solver {
 type Clause = Vec<i32>;
 
 mod cell_variable;
-
-// TODO: implement solutions iterator
 
 #[derive(Debug)]
 pub struct Solver<Base: SudokuBase> {
@@ -118,6 +117,43 @@ impl<Base: SudokuBase> Solver<Base> {
         Ok(sat_solver)
     }
 
+    fn assigment_to_solution(assignment: Vec<i32>) -> Result<Grid<Base>> {
+        let variables = assignment
+            .into_iter()
+            .map(CellVariable::<Base>::try_from)
+            .collect::<Result<Vec<_>>>()?;
+
+        trace!(
+            "Assigned cell variables:\n{}",
+            variables.iter().map(ToString::to_string).join("\n")
+        );
+
+        let true_cell_variables = variables.into_iter().filter(|var| var.is_true);
+
+        // check if all positions have a true clause and are in ascending (row-major) order
+        debug_assert!({
+            let positions = true_cell_variables.clone().map(|var| var.pos);
+            itertools::assert_equal(positions, Position::<Base>::all());
+            true
+        });
+
+        let solution = Grid::<Base>::with(
+            true_cell_variables
+                .map(|var| Cell::with_value(var.value, false))
+                .collect(),
+        )?;
+
+        debug_assert!(
+            solution.is_solved(),
+            "Solution should be solved:\n{solution}"
+        );
+
+        Ok(solution)
+    }
+}
+
+/// Clauses
+impl<Base: SudokuBase> Solver<Base> {
     // TODO: test clauses
     // TODO: implement other constraints from tdoku
     //  especially triad based-constraints
@@ -233,60 +269,89 @@ impl<Base: SudokuBase> FallibleSolver<Base> for Solver<Base> {
     type Error = Error;
 
     fn try_solve(&mut self) -> Result<Option<Grid<Base>>> {
-        match self.sat_solver.solve() {
-            Ok(Certificate::SAT(assignment)) => {
-                let variables = assignment
-                    .into_iter()
-                    .map(CellVariable::<Base>::try_from)
-                    .collect::<Result<Vec<_>>>()?;
+        Ok(
+            match self
+                .sat_solver
+                .solve()
+                .map_err(Self::export_sat_solver_error)?
+            {
+                Certificate::SAT(assignment) => Some(Self::assigment_to_solution(assignment)?),
+                Certificate::UNSAT => None,
+            },
+        )
+    }
+}
 
-                trace!(
-                    "Assigned cell variables:\n{}",
-                    variables.iter().map(ToString::to_string).join("\n")
-                );
-
-                let true_cell_variables = variables.into_iter().filter(|var| var.is_true);
-
-                // check if all positions have a true clause and are in ascending (row-major) order
-                debug_assert!({
-                    let positions = true_cell_variables.clone().map(|var| var.pos);
-                    itertools::assert_equal(positions, Position::<Base>::all());
-                    true
-                });
-
-                let solution = Grid::<Base>::with(
-                    true_cell_variables
-                        .map(|var| Cell::with_value(var.value, false))
-                        .collect(),
-                )?;
-
-                debug_assert!(
-                    solution.is_solved(),
-                    "Solution should be solved:\n{solution}"
-                );
-
-                Ok(Some(solution))
-            }
-            Ok(Certificate::UNSAT) => Ok(None),
-            Err(err) => {
-                bail!("SAT solver error while solving: {}", err)
-            }
+impl<Base: SudokuBase> Solver<Base> {
+    fn iter(&mut self) -> SolverIter<'_, Base> {
+        SolverIter {
+            iter: self.sat_solver.iter(),
+            _base: PhantomData,
         }
+    }
+}
+
+struct SolverIter<'a, Base: SudokuBase> {
+    iter: splr::solver::SolverIter<'a>,
+    _base: PhantomData<Base>,
+}
+
+impl<'a, Base: SudokuBase> Iterator for SolverIter<'a, Base> {
+    type Item = Result<Grid<Base>>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next().map(Solver::assigment_to_solution)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::solver::test_util::{assert_fallible_solver_single_solution, tests_solver_samples};
+    use crate::base::consts::Base2;
+    use crate::solver::test_util::{
+        assert_fallible_solution_iter_as_infallible, assert_fallible_solver_single_solution,
+        assert_infallible_solution_iter_all_solutions_base_2,
+        assert_infallible_solution_iter_single_solution, tests_solver_samples,
+    };
     use crate::test_util::init_test_logger;
 
     use super::*;
 
-    tests_solver_samples! {
-        init_test_logger(),
-        |grid| {
-            let solver = Solver::new(&grid).unwrap();
-            assert_fallible_solver_single_solution(solver, &grid);
+    mod samples {
+        use super::*;
+
+        mod fallible_solver {
+            use super::*;
+
+            tests_solver_samples! {
+                init_test_logger(),
+                |grid| {
+                    let solver = Solver::new(&grid).unwrap();
+                    assert_fallible_solver_single_solution(solver, &grid);
+                }
+            }
         }
+
+        mod fallible_solution_iter {
+            use super::*;
+
+            tests_solver_samples! {
+                |grid| {
+                    let mut solver = Solver::new(&grid).unwrap();
+                    assert_infallible_solution_iter_single_solution(
+                        assert_fallible_solution_iter_as_infallible(solver.iter()), &grid
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_iter_all_solutions() {
+        let grid = Grid::<Base2>::new();
+        let mut solver = Solver::new(&grid).unwrap();
+
+        assert_infallible_solution_iter_all_solutions_base_2(
+            assert_fallible_solution_iter_as_infallible(solver.iter()),
+        );
     }
 }

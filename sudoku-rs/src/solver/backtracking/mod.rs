@@ -788,16 +788,34 @@ mod tests {
     use crate::base::consts::*;
     use crate::rng::new_crate_rng_with_seed;
     use crate::solver::test_util::{
-        assert_infallible_solver_single_solution, assert_solution_iter_all_solutions_base_2,
-        assert_solution_iter_single_solution, tests_solver_samples,
+        assert_infallible_solution_iter_all_solutions_base_2,
+        assert_infallible_solution_iter_single_solution, assert_infallible_solver_single_solution,
+        tests_solver_samples,
     };
 
     use super::*;
 
-    tests_solver_samples! {
-        |grid| {
-            let solver = Solver::new(&grid);
-            assert_infallible_solver_single_solution(solver, &grid);
+    mod samples {
+        use super::*;
+
+        mod infallible_solver {
+            use super::*;
+            tests_solver_samples! {
+                |grid| {
+                    let solver = Solver::new(&grid);
+                    assert_infallible_solver_single_solution(solver, &grid);
+                }
+            }
+        }
+
+        mod infallible_solution_iter {
+            use super::*;
+            tests_solver_samples! {
+                |grid| {
+                    let solver = Solver::new(&grid);
+                    assert_infallible_solution_iter_single_solution(solver, &grid);
+                }
+            }
         }
     }
 
@@ -806,7 +824,7 @@ mod tests {
         let grid = Grid::<Base2>::new();
         let solver = Solver::new(&grid);
 
-        assert_solution_iter_all_solutions_base_2(solver);
+        assert_infallible_solution_iter_all_solutions_base_2(solver);
     }
 
     #[test]
@@ -816,7 +834,7 @@ mod tests {
             .rng(new_crate_rng_with_seed(Some(1)))
             .build();
 
-        assert_solution_iter_all_solutions_base_2(solver);
+        assert_infallible_solution_iter_all_solutions_base_2(solver);
     }
 
     #[test]
@@ -886,7 +904,7 @@ mod tests {
         };
 
         // Both solvers chained together should still produce a single solution
-        assert_solution_iter_single_solution(left_solver.chain(right_solver), puzzle);
+        assert_infallible_solution_iter_single_solution(left_solver.chain(right_solver), puzzle);
     }
 
     #[test]
@@ -917,7 +935,7 @@ mod tests {
             panic!("Solver should be splittable")
         };
 
-        assert_solution_iter_all_solutions_base_2(left_solver.chain(right_solver));
+        assert_infallible_solution_iter_all_solutions_base_2(left_solver.chain(right_solver));
     }
 
     #[test]
@@ -937,7 +955,7 @@ mod tests {
             panic!("Solver should be splittable")
         };
 
-        assert_solution_iter_all_solutions_base_2(chain!(ll, lr, r,));
+        assert_infallible_solution_iter_all_solutions_base_2(chain!(ll, lr, r,));
     }
 
     #[test]
@@ -962,7 +980,7 @@ mod tests {
                 .collect();
         }
 
-        assert_solution_iter_all_solutions_base_2(split_solvers.into_iter().flatten());
+        assert_infallible_solution_iter_all_solutions_base_2(split_solvers.into_iter().flatten());
     }
 
     #[cfg(feature = "parallel")]
@@ -977,7 +995,7 @@ mod tests {
             .availability_filter(Grid::new())
             .build();
 
-        assert_solution_iter_all_solutions_base_2(
+        assert_infallible_solution_iter_all_solutions_base_2(
             solver
                 .into_par_iter()
                 .flat_map_iter(|solver| solver)

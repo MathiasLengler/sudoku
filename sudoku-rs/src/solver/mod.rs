@@ -1,4 +1,5 @@
 use crate::base::SudokuBase;
+use crate::error::Result;
 use crate::grid::Grid;
 use std::fmt::Debug;
 
@@ -67,13 +68,21 @@ pub trait FallibleSolver<Base: SudokuBase> {
 }
 
 /// An iterator over solutions.
-pub trait SolutionIter<Base: SudokuBase>: Iterator<Item = Grid<Base>> {}
+///
+/// Yields solutions as `Grid<Base>`
+pub trait InfallibleSolutionIter<Base: SudokuBase>: Iterator<Item = Grid<Base>> {}
+impl<Base: SudokuBase, S: Iterator<Item = Grid<Base>>> InfallibleSolutionIter<Base> for S {}
 
-impl<Base: SudokuBase, S: Iterator<Item = Grid<Base>>> SolutionIter<Base> for S {}
+/// An fallible iterator over solutions
+///
+/// Yields solutions as `Result<Grid<Base>>`
+pub trait FallibleSolutionIter<Base: SudokuBase>: Iterator<Item = Result<Grid<Base>>> {}
+impl<Base: SudokuBase, S: Iterator<Item = Result<Grid<Base>>>> FallibleSolutionIter<Base> for S {}
 
 #[cfg(test)]
 mod test_util {
     use std::collections::HashSet;
+    use std::marker::PhantomData;
 
     use crate::base::consts::Base2;
     use crate::base::SudokuBase;
@@ -125,6 +134,7 @@ mod test_util {
         };
     }
 
+    use crate::cell::Candidates;
     pub(crate) use tests_solver_samples;
 
     pub(crate) fn assert_infallible_solver_single_solution<Base: SudokuBase>(
@@ -164,26 +174,28 @@ mod test_util {
         }
     }
 
-    pub(crate) fn assert_solution_iter_single_solution<Base: SudokuBase>(
-        mut solver: impl SolutionIter<Base>,
+    pub(crate) fn assert_infallible_solution_iter_single_solution<Base: SudokuBase>(
+        mut solution_iter: impl InfallibleSolutionIter<Base>,
         puzzle: &Grid<Base>,
     ) {
-        let solution = solver
+        let solution = solution_iter
             .next()
-            .expect("Solver should produce at least one solution");
+            .expect("Solution iterator should yield at least one solution");
 
         assert_solution(&solution, puzzle);
 
         assert!(
-            solver.next().is_none(),
-            "Solver should produce not more than one solution"
+            solution_iter.next().is_none(),
+            "Solution iterator should yield not more than one solution"
         );
     }
 
-    pub(crate) fn assert_solution_iter_all_solutions_base_2(solver: impl SolutionIter<Base2>) {
+    pub(crate) fn assert_infallible_solution_iter_all_solutions_base_2(
+        solution_iter: impl InfallibleSolutionIter<Base2>,
+    ) {
         const NUMBER_OF_BASE_2_SOLUTIONS: usize = 288;
 
-        let solutions = solver
+        let solutions = solution_iter
             .take(NUMBER_OF_BASE_2_SOLUTIONS + 1)
             .collect::<Vec<_>>();
 
@@ -196,5 +208,38 @@ mod test_util {
         let unique_solutions = solutions.into_iter().collect::<HashSet<_>>();
 
         assert_eq!(unique_solutions.len(), NUMBER_OF_BASE_2_SOLUTIONS);
+    }
+
+    pub(crate) fn assert_fallible_solution_iter_as_infallible<Base: SudokuBase>(
+        fallible_solution_iter: impl FallibleSolutionIter<Base>,
+    ) -> impl InfallibleSolutionIter<Base> {
+        struct AssertFallibleSolutionIterAdapter<
+            Base: SudokuBase,
+            IFallible: FallibleSolutionIter<Base>,
+        >
+        where
+            Base: SudokuBase,
+        {
+            fallible_solution_iter: IFallible,
+            _base: PhantomData<Base>,
+        }
+        impl<Base: SudokuBase, IFallible: FallibleSolutionIter<Base>> Iterator
+            for AssertFallibleSolutionIterAdapter<Base, IFallible>
+        where
+            Base: SudokuBase,
+        {
+            type Item = Grid<Base>;
+
+            fn next(&mut self) -> Option<Self::Item> {
+                self.fallible_solution_iter.next().map(|solution_res| {
+                    solution_res.expect("FallibleSolutionIter should not return an error")
+                })
+            }
+        }
+
+        AssertFallibleSolutionIterAdapter {
+            fallible_solution_iter,
+            _base: PhantomData,
+        }
     }
 }

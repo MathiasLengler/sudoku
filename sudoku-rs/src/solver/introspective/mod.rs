@@ -100,8 +100,8 @@ impl<Base: SudokuBase, Filter: AvailabilityFilter<Base>> Iterator for Solver<Bas
 mod tests {
     use crate::base::consts::Base2;
     use crate::solver::test_util::{
-        assert_infallible_solver_single_solution, assert_solution_iter_all_solutions_base_2,
-        tests_solver_samples,
+        assert_infallible_solution_iter_all_solutions_base_2,
+        assert_infallible_solver_single_solution, tests_solver_samples,
     };
     use crate::test_util::init_test_logger;
 
@@ -115,6 +115,34 @@ mod tests {
         }
     }
 
+    mod samples {
+        use super::*;
+
+        use crate::solver::test_util::tests_solver_samples;
+
+        mod infallible_solver {
+            use super::*;
+            tests_solver_samples! {
+                init_test_logger(),
+                |grid| {
+                    let solver = Solver::new(grid.clone());
+                    assert_infallible_solver_single_solution(solver, &grid);
+                }
+            }
+        }
+
+        mod infallible_solution_iter {
+            use super::*;
+            use crate::solver::test_util::assert_infallible_solution_iter_single_solution;
+            tests_solver_samples! {
+                |grid| {
+                    let solver = Solver::new(grid.clone());
+                    assert_infallible_solution_iter_single_solution(solver, &grid);
+                }
+            }
+        }
+    }
+
     #[test]
     fn test_iter_all_solutions() {
         init_test_logger();
@@ -122,6 +150,6 @@ mod tests {
         let grid = Grid::<Base2>::new();
         let solver = Solver::new(grid);
 
-        assert_solution_iter_all_solutions_base_2(solver);
+        assert_infallible_solution_iter_all_solutions_base_2(solver);
     }
 }
