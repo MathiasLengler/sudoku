@@ -434,7 +434,7 @@ impl<Base: SudokuBase> Generator<Base> {
         let pruning_positions = self.pruning_positions(prune_settings, rng)?;
         let non_pruning_positions = self.non_pruning_positions(prune_settings)?;
 
-        let non_pruning_position_count = non_pruning_positions.len() as u16;
+        let non_pruning_position_count = u16::try_from(non_pruning_positions.len()).unwrap();
 
         // Copy over non pruning positions into near_minimal_grid, since they must be contained in the final grid.
         if !non_pruning_positions.is_empty() {

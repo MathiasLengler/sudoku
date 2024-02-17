@@ -1,7 +1,6 @@
 use std::any::Any;
 use std::convert::{TryFrom, TryInto};
 
-use anyhow::{bail, format_err};
 use serde::Serialize;
 #[cfg(feature = "wasm")]
 use ts_rs::TS;

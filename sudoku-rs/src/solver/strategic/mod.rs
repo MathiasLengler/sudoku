@@ -227,7 +227,7 @@ mod tests {
         assert!(solver.try_solve().unwrap().is_none());
 
         // But, solver with filter for top left cell can solve it.
-        let mut solver = Solver::builder(ambiguous_grid.clone())
+        let solver = Solver::builder(ambiguous_grid.clone())
             .strategies(DynamicStrategy::default_solver_strategies_no_backtracking())
             .availability_filter(&|available_candidates, index| {
                 if index == GroupAvailabilityIndex::default() {

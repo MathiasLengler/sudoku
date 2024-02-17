@@ -328,9 +328,8 @@ impl<Base: SudokuBase> Position<Base> {
 /// Set of positions
 impl<Base: SudokuBase> Position<Base> {
     /// All positions *not* included in `positions`.
-    pub fn complement(positions: Vec<Self>) -> impl Iterator<Item = Self> {
+    pub fn complement(mut positions: Vec<Self>) -> impl Iterator<Item = Self> {
         let sorted_positions = {
-            let mut positions = positions.clone();
             positions.sort_unstable();
             positions
         };
