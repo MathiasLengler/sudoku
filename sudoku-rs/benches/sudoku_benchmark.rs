@@ -21,7 +21,6 @@ use sudoku::position::Coordinate;
 use sudoku::position::Position;
 use sudoku::rng::{new_crate_rng_from_rng, new_crate_rng_with_seed};
 use sudoku::samples::{base_2, base_3, base_4, base_5};
-#[cfg(feature = "sat")]
 use sudoku::solver::sat;
 use sudoku::solver::strategic::strategies::{GroupIntersectionBoth, GroupReduction, Strategy};
 use sudoku::solver::{backtracking, introspective, strategic, FallibleSolver, InfallibleSolver};
@@ -145,7 +144,6 @@ fn bench_solver_sample_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup
         },
     );
 
-    #[cfg(feature = "sat")]
     solver_group.bench_with_input(
         BenchmarkId::new("sat", &parameter_string),
         &grid,
@@ -213,7 +211,6 @@ fn bench_solver_tdoku_group(solver_tdoku_group: &mut BenchmarkGroup<WallTime>) {
                 )
             },
         );
-        #[cfg(feature = "sat")]
         solver_tdoku_group.bench_with_input(
             BenchmarkId::new("sat", tdoku_dataset),
             grids,

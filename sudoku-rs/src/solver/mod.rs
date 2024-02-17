@@ -9,7 +9,6 @@ pub mod strategic;
 
 pub mod introspective;
 
-#[cfg(feature = "sat")]
 pub mod sat;
 
 // TODO: exact-cover based solver:
