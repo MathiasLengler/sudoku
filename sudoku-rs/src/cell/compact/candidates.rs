@@ -20,6 +20,10 @@ use crate::position::{BlockCoordinate, Coordinate};
 
 mod iter;
 
+// FIXME: replace all usages of `&self` with `self`
+//  `Candidates` is Copy and smaller than or equal to a 32-bit pointer
+//  benchmark before/after
+
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Copy, Clone, Debug)]
 pub struct Candidates<Base: SudokuBase> {
     /// # Safety invariants
@@ -144,6 +148,10 @@ impl<Base: SudokuBase> Candidates<Base> {
 
     pub fn is_empty(&self) -> bool {
         self.bits.is_zero()
+    }
+
+    pub fn is_single(self) -> bool {
+        self.count() == 1
     }
 
     pub fn is_full(&self) -> bool {
@@ -649,6 +657,17 @@ mod tests {
             assert!(empty.is_empty());
             assert!(!one.is_empty());
             assert!(!all.is_empty());
+        }
+
+        #[test]
+        fn test_is_single() {
+            let empty: Candidates<Base2> = Candidates::new();
+            let one: Candidates<Base2> = Candidates::with_single(1.try_into().unwrap());
+            let all: Candidates<Base2> = Candidates::all();
+
+            assert!(!empty.is_single());
+            assert!(one.is_single());
+            assert!(!all.is_single());
         }
 
         #[test]
