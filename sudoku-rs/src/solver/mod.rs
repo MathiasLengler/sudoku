@@ -79,8 +79,8 @@ impl<Base: SudokuBase, S: Iterator<Item = Grid<Base>>> InfallibleSolutionIter<Ba
 pub trait FallibleSolutionIter<Base: SudokuBase>: Iterator<Item = Result<Grid<Base>>> {}
 impl<Base: SudokuBase, S: Iterator<Item = Result<Grid<Base>>>> FallibleSolutionIter<Base> for S {}
 
-#[cfg(test)]
-mod test_util {
+// #[cfg(test)]
+pub mod test_util {
     use std::collections::HashSet;
     use std::marker::PhantomData;
 
@@ -157,7 +157,7 @@ mod test_util {
         assert_solution(&solution, puzzle);
     }
 
-    pub(crate) fn assert_solution<Base: SudokuBase>(solution: &Grid<Base>, puzzle: &Grid<Base>) {
+    pub fn assert_solution<Base: SudokuBase>(solution: &Grid<Base>, puzzle: &Grid<Base>) {
         assert!(
             solution.is_solved(),
             "The solution should be solved, instead got:\n{solution}"

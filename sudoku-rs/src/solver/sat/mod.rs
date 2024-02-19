@@ -1,6 +1,7 @@
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 use std::ops::Deref;
+use std::path::Path;
 
 use anyhow::{anyhow, bail};
 use itertools::Itertools;
@@ -65,6 +66,27 @@ impl<Base: SudokuBase> Solver<Base> {
             _base: PhantomData,
         })
     }
+
+    // Helpers for sat comparison
+    pub fn dump_cnf(&self, path: &Path) {
+        self.sat_solver.dump_cnf(path);
+    }
+
+    pub fn grid_assignments(grid: &Grid<Base>) -> Vec<i32> {
+        grid.all_value_positions()
+            .into_iter()
+            .map(|pos| {
+                let value = grid[pos].value().unwrap();
+
+                CellVariable {
+                    pos,
+                    value,
+                    is_true: true,
+                }
+                .into()
+            })
+            .collect()
+    }
 }
 
 /// Helpers
@@ -107,7 +129,7 @@ impl<Base: SudokuBase> Solver<Base> {
             if remaining_candidates != all_candidates {
                 let denied_candidates = all_candidates.without(remaining_candidates);
                 for denied_value in denied_candidates {
-                    // Remove denied value via a negative assigment
+                    // Remove denied value via a negative assignment
                     sat_solver
                         .add_assignment(
                             CellVariable {
@@ -160,7 +182,7 @@ impl<Base: SudokuBase> Solver<Base> {
         Ok(sat_solver)
     }
 
-    fn assigment_to_solution(assignment: Vec<i32>) -> Result<Grid<Base>> {
+    pub fn assigment_to_solution(assignment: Vec<i32>) -> Result<Grid<Base>> {
         let variables = assignment
             .into_iter()
             .map(CellVariable::<Base>::try_from)
