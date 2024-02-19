@@ -611,7 +611,7 @@ mod tests {
 
         #[test]
         fn test_render_base_3_compact() {
-            let grid = samples::base_3().pop().unwrap();
+            let grid = samples::base_3().into_iter().next().unwrap();
             assert_eq!(
                 CandidatesGridPlain.render(&grid),
                 "╔═══════════╦═══════════╦═══════════╗
@@ -637,7 +637,7 @@ mod tests {
         }
         #[test]
         fn test_render_base_3_sparse() {
-            let mut grid = samples::base_3().pop().unwrap();
+            let mut grid = samples::base_3().into_iter().next().unwrap();
             grid.set_all_direct_candidates();
             assert_eq!(
                 CandidatesGridPlain.render(&grid),

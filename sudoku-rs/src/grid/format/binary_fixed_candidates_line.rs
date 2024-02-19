@@ -102,7 +102,7 @@ mod tests {
     //noinspection SpellCheckingInspection
     #[test]
     fn test_render() {
-        let mut grid = samples::base_3().pop().unwrap();
+        let mut grid = samples::base_3().into_iter().next().unwrap();
         grid.set_all_direct_candidates();
         grid.get_mut((0, 1).try_into().unwrap())
             .set_value(2.try_into().unwrap());

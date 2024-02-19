@@ -771,7 +771,7 @@ mod tests {
 
     #[test]
     fn test_direct_candidates() -> Result<()> {
-        let grid = samples::base_3().pop().unwrap();
+        let grid = samples::base_3().into_iter().next().unwrap();
 
         let direct_candidates = grid.direct_candidates((1, 1).try_into().unwrap());
 
