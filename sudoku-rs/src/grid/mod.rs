@@ -398,6 +398,22 @@ impl<Base: SudokuBase> Grid<Base> {
 
         solver.try_solve()
     }
+
+    pub fn assert_is_solution_for(&self, puzzle: &Self) {
+        assert!(
+            self.is_solved(),
+            "The solution should be solved, instead got:\n{self}"
+        );
+
+        for value_pos in puzzle.all_value_positions() {
+            let puzzle_value = puzzle[value_pos].value().unwrap();
+            let solution_value = self[value_pos].value().unwrap();
+            assert_eq!(
+                puzzle_value, solution_value,
+                "The returned solution is not a valid solution for the puzzle: different values at {value_pos}"
+            );
+        }
+    }
 }
 
 impl<Base: SudokuBase, T: Default + Clone> Default for Grid<Base, T> {

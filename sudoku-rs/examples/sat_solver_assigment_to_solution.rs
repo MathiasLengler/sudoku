@@ -5,7 +5,6 @@ use sudoku::base::consts::*;
 use sudoku::error::Result;
 use sudoku::samples;
 use sudoku::solver::sat::Solver;
-use sudoku::solver::test_util::assert_solution;
 
 fn main() -> Result<()> {
     type Base = Base3;
@@ -18,7 +17,7 @@ fn main() -> Result<()> {
 
     let puzzle = samples::base_3().into_iter().last().unwrap();
     println!("Puzzle:\n{puzzle}");
-    assert_solution(&solution, &puzzle);
+    solution.assert_is_solution_for(&puzzle);
 
     Ok(())
 }

@@ -79,7 +79,7 @@ impl<Base: SudokuBase, S: Iterator<Item = Grid<Base>>> InfallibleSolutionIter<Ba
 pub trait FallibleSolutionIter<Base: SudokuBase>: Iterator<Item = Result<Grid<Base>>> {}
 impl<Base: SudokuBase, S: Iterator<Item = Result<Grid<Base>>>> FallibleSolutionIter<Base> for S {}
 
-// #[cfg(test)]
+#[cfg(test)]
 pub mod test_util {
     use std::collections::HashSet;
     use std::marker::PhantomData;
@@ -158,19 +158,7 @@ pub mod test_util {
     }
 
     pub fn assert_solution<Base: SudokuBase>(solution: &Grid<Base>, puzzle: &Grid<Base>) {
-        assert!(
-            solution.is_solved(),
-            "The solution should be solved, instead got:\n{solution}"
-        );
-
-        for value_pos in puzzle.all_value_positions() {
-            let puzzle_value = puzzle[value_pos].value().unwrap();
-            let solution_value = solution[value_pos].value().unwrap();
-            assert_eq!(
-                puzzle_value, solution_value,
-                "The returned solution is not a valid solution for the puzzle: different values at {value_pos}"
-            );
-        }
+        solution.assert_is_solution_for(puzzle);
     }
 
     pub(crate) fn assert_infallible_solution_iter_single_solution<Base: SudokuBase>(
