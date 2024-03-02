@@ -5,6 +5,7 @@ use crate::position::{Coordinate, Position};
 use anyhow::bail;
 use num::Integer;
 use std::fmt::{Display, Formatter};
+use varisat::{ExtendFormula, Lit, Solver as SatSolver, Var};
 
 /// A logical variable expressing that the cell at `pos` contains `value`.
 ///
@@ -37,6 +38,14 @@ impl<Base: SudokuBase> From<CellVariable<Base>> for i32 {
         } else {
             -i
         }
+    }
+}
+
+impl<Base: SudokuBase> From<CellVariable<Base>> for Lit {
+    fn from(variable: CellVariable<Base>) -> Self {
+        let i: i32 = variable.into();
+
+        Lit::from_dimacs(i.try_into().unwrap())
     }
 }
 
