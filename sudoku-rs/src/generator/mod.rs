@@ -17,7 +17,7 @@ use crate::grid::Grid;
 use crate::position::Position;
 use crate::rng::{new_crate_rng_with_seed, CrateRng};
 use crate::solver::strategic::strategies::{Backtracking, DynamicStrategy};
-use crate::solver::{backtracking, introspective};
+use crate::solver::{backtracking, introspective, sat};
 
 // TODO: strategic
 //  target difficulty: sum of weighted strategy applications
@@ -136,6 +136,10 @@ pub struct PruningSettings<Base: SudokuBase> {
     pub target: PruningTarget,
     /// Adjust order in which cells are pruned.
     pub order: PruningOrder<Base>,
+    /// Optimization: instead of pruning from a solved grid,
+    /// first generate a near minimal grid by adding values from the solution to a empty grid,
+    /// then prune from there.
+    pub start_from_near_minimal_grid: bool,
 }
 
 impl<Base: SudokuBase> Default for PruningSettings<Base> {
@@ -145,6 +149,7 @@ impl<Base: SudokuBase> Default for PruningSettings<Base> {
             set_all_direct_candidates: false,
             target: PruningTarget::default(),
             order: PruningOrder::default(),
+            start_from_near_minimal_grid: false,
         }
     }
 }
@@ -238,6 +243,7 @@ mod dynamic_settings {
         pub strategies: Vec<DynamicStrategy>,
         pub target: PruningTarget,
         pub order: DynamicPruningOrder,
+        pub start_from_near_minimal_grid: bool,
     }
 
     impl<Base: SudokuBase> TryFrom<DynamicPruningSettings> for PruningSettings<Base> {
@@ -249,6 +255,7 @@ mod dynamic_settings {
                 strategies,
                 target,
                 order,
+                start_from_near_minimal_grid,
             } = dynamic_pruning_settings;
 
             Ok(Self {
@@ -256,6 +263,7 @@ mod dynamic_settings {
                 strategies,
                 target,
                 order: order.try_into()?,
+                start_from_near_minimal_grid,
             })
         }
     }
@@ -464,7 +472,7 @@ impl<Base: SudokuBase> Generator<Base> {
         let pruning_position_count = pruning_positions.len();
         let mut pruning_position_i = 0;
 
-        const SOLUTION_GUIDED: bool = true;
+        const SOLUTION_GUIDED: bool = false;
         if SOLUTION_GUIDED {
             let mut pruning_positions = pruning_positions;
             let mut restored_positions = vec![];
@@ -472,10 +480,12 @@ impl<Base: SudokuBase> Generator<Base> {
             while let Some(ambiguous_solution) = {
                 debug!("Checking grid for ambiguous_solution_pair:\n{near_minimal_grid}");
 
-                let mut solver = introspective::Solver::new(near_minimal_grid.clone());
+                let mut solver = sat::Solver::new(&near_minimal_grid)?.into_iter();
                 if let Some(first_solution) = solver.next() {
+                    let first_solution = first_solution?;
                     if &first_solution == solved_grid {
                         if let Some(second_solution) = solver.next() {
+                            let second_solution = second_solution?;
                             debug_assert_ne!(&second_solution, solved_grid);
                             Some(second_solution)
                         } else {
@@ -843,7 +853,7 @@ impl<Base: SudokuBase> Generator<Base> {
         solved_grid: Grid<Base>,
         distance_from_minimal: u16,
         prune_settings: &PruningSettings<Base>,
-        mut on_progress: impl FnMut(GeneratorProgress) -> Result<()>,
+        mut _on_progress: impl FnMut(GeneratorProgress) -> Result<()>,
         rng: &mut CrateRng,
     ) -> Result<Grid<Base>> {
         debug!("Pruning solution to be minimal");
@@ -862,16 +872,16 @@ impl<Base: SudokuBase> Generator<Base> {
         // TODO: evaluate if near_minimal_grid is always a pessimization
         //  root cause could be the basic backtracking solver implementation
         //  DPLL-based solver could be faster at counting ambiguous solutions
-        const START_FROM_NEAR_MINIMAL_GRID: bool = false;
-        let (mut grid, mut deleted, remaining_pruning_positions) = if START_FROM_NEAR_MINIMAL_GRID {
-            self.near_minimal_grid(&solved_grid, prune_settings, rng)?
-        } else {
-            (
-                solved_grid,
-                vec![],
-                self.pruning_positions(prune_settings, rng)?,
-            )
-        };
+        let (mut grid, mut deleted, remaining_pruning_positions) =
+            if prune_settings.start_from_near_minimal_grid {
+                self.near_minimal_grid(&solved_grid, prune_settings, rng)?
+            } else {
+                (
+                    solved_grid,
+                    vec![],
+                    self.pruning_positions(prune_settings, rng)?,
+                )
+            };
 
         debug!("Pruning grid by trying to delete values at positions {remaining_pruning_positions:?} in grid:\n{grid}");
 

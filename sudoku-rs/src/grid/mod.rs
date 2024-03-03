@@ -1,4 +1,3 @@
-use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::marker::PhantomData;
@@ -19,7 +18,7 @@ use crate::grid::format::{CandidatesGridANSIStyled, DynamicGridFormat, GridForma
 use crate::position::Coordinate;
 use crate::position::Position;
 use crate::solver::strategic::strategies::DynamicStrategy;
-use crate::solver::{backtracking, introspective, strategic, FallibleSolver};
+use crate::solver::{backtracking, introspective, sat, strategic, FallibleSolver};
 use crate::unsafe_utils::{get_unchecked, get_unchecked_mut};
 
 pub mod deserialization;
@@ -366,11 +365,12 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 
     pub fn unique_solution(&self) -> Option<Self> {
-        // FIXME: remove clone
-        let mut solver = introspective::Solver::new(self.clone());
+        // FIXME: revert to introspective::Solver
+        //  add sat::Solver to introspective::Solver
+        let mut solver = sat::Solver::new(self).unwrap().into_iter();
 
         match (solver.next(), solver.next()) {
-            (Some(unique_solution), None) => Some(unique_solution),
+            (Some(Ok(unique_solution)), None) => Some(unique_solution),
             _ => None,
         }
     }

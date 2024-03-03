@@ -85,7 +85,7 @@ name = "cell_world_playground"
 required-features = ["parallel"]
 [[bin]]
 name = "generator"
-required-features = ["log"]
+required-features = ["log", "parallel", "terminal"]
 [[bin]]
 name = "generate_histogram"
 required-features = ["parallel", "terminal", "histogram"]
