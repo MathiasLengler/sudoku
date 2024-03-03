@@ -1,11 +1,11 @@
 use crate::base::SudokuBase;
 use crate::cell::Value;
-use crate::error::Error;
+use crate::error::{Error, Result};
 use crate::position::{Coordinate, Position};
 use anyhow::bail;
 use num::Integer;
 use std::fmt::{Display, Formatter};
-use varisat::{ExtendFormula, Lit, Solver as SatSolver, Var};
+use varisat::Lit;
 
 /// A logical variable expressing that the cell at `pos` contains `value`.
 ///
@@ -52,7 +52,7 @@ impl<Base: SudokuBase> From<CellVariable<Base>> for Lit {
 impl<Base: SudokuBase> TryFrom<i32> for CellVariable<Base> {
     type Error = Error;
 
-    fn try_from(value: i32) -> crate::error::Result<Self> {
+    fn try_from(value: i32) -> Result<Self> {
         if value == 0 {
             bail!("Zero is a invalid variable assignment")
         }
@@ -66,6 +66,14 @@ impl<Base: SudokuBase> TryFrom<i32> for CellVariable<Base> {
             value: Value::from(Coordinate::try_from(u8::try_from(coordinate)?)?),
             is_true,
         })
+    }
+}
+
+impl<Base: SudokuBase> TryFrom<Lit> for CellVariable<Base> {
+    type Error = Error;
+
+    fn try_from(lit: Lit) -> Result<Self> {
+        i32::try_from(lit.to_dimacs())?.try_into()
     }
 }
 
