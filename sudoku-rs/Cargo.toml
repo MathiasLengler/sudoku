@@ -43,17 +43,6 @@ ts-rs = { version = "7.0.0", optional = true }
 hdrhistogram = { version = "7.5.4", optional = true }
 env_logger = { version = "0.11.1", optional = true }
 
-# Sadly, splr's licence "MPL-2.0" is copyleft.
-# Evaluate what to do here. Options:
-# - Licence to "MPL-2.0" ourselves
-# - replace with different sat solver
-[dependencies.splr]
-version = "0.17.2"
-features = [
-    "incremental_solver",
-#    "no_IO"
-]
-
 [dev-dependencies]
 serde_json = "1.0.111"
 
@@ -66,7 +55,7 @@ log = ["env_logger"]
 terminal = ["crossterm", "indicatif"]
 parallel = ["rayon", "indicatif/rayon"]
 parallel_generator = ["parallel"]
-wasm = ["getrandom/js", "ts-rs", "splr/platform_wasm"]
+wasm = ["getrandom/js", "ts-rs"]
 solver_debug_print = ["terminal"]
 histogram = ["hdrhistogram"]
 
