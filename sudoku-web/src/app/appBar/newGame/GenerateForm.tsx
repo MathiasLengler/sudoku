@@ -114,6 +114,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                                         strategies,
                                         setAllDirectCandidates,
                                         order: "random",
+                                        startFromNearMinimalGrid: false,
                                     },
                                     solution: undefined,
                                     seed: useSeed && !_.isUndefined(seed) ? BigInt(seed) : undefined,
