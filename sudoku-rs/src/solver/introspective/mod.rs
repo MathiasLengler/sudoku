@@ -1,36 +1,36 @@
-use log::debug;
-
 use crate::base::{DynamicBase, SudokuBase};
 use crate::cell::CandidatesAscIter;
 use crate::grid::Grid;
 use crate::solver::backtracking::AvailabilityFilter;
-use crate::solver::strategic::strategies::DynamicStrategy;
-use crate::solver::{backtracking, strategic, FallibleSolver, InfallibleSolver};
+use crate::solver::sat;
+use crate::solver::{backtracking, InfallibleSolver};
 
 #[derive(Debug, Default)]
-enum SolverImpl<Base: SudokuBase, Filter: AvailabilityFilter<Base>> {
+enum SolverImpl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, Filter: AvailabilityFilter<Base>> {
     #[default]
     Done,
-    Strategic(strategic::Solver<Base, Grid<Base>>, Filter),
-    Backtracking(backtracking::Solver<Base, Grid<Base>, CandidatesAscIter<Base>, Filter>),
+    Sat(sat::SolverIter<Base>),
+    Backtracking(backtracking::Solver<Base, GridRef, CandidatesAscIter<Base>, Filter>),
 }
 
 /// A base-introspective solver with focus on performance.
 ///
-/// This is a meta-solver, which delegates the work to `backtracking::Solver` and `strategic::Solver`.
+/// This is a meta-solver, which delegates the work to the other solvers.
 #[derive(Debug)]
-pub struct Solver<Base: SudokuBase, Filter: AvailabilityFilter<Base>> {
-    solver_impl: SolverImpl<Base, Filter>,
+pub struct Solver<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, Filter: AvailabilityFilter<Base>> {
+    solver_impl: SolverImpl<Base, GridRef, Filter>,
 }
 
-impl<Base: SudokuBase> Solver<Base, ()> {
-    pub fn new(grid: Grid<Base>) -> Self {
+impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Solver<Base, GridRef, ()> {
+    pub fn new(grid: GridRef) -> Self {
         Self::new_with_filter(grid, ())
     }
 }
 
-impl<Base: SudokuBase, Filter: AvailabilityFilter<Base>> Solver<Base, Filter> {
-    pub fn new_with_filter(grid: Grid<Base>, filter: Filter) -> Self {
+impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, Filter: AvailabilityFilter<Base>>
+    Solver<Base, GridRef, Filter>
+{
+    pub fn new_with_filter(grid: GridRef, filter: Filter) -> Self {
         match Base::DYNAMIC_BASE {
             // Base 2 and 3 are small enough,
             // that the overhead of the strategy evaluation is slower than the naive backtracking solver.
@@ -41,54 +41,42 @@ impl<Base: SudokuBase, Filter: AvailabilityFilter<Base>> Solver<Base, Filter> {
                         .build(),
                 ),
             },
-            // For base >= 4, a hybrid approach of strategic, then backtracking, is faster.
+            // For base >= 4, sat solver is faster
             DynamicBase::Base4 | DynamicBase::Base5 => Self {
-                solver_impl: SolverImpl::Strategic(
-                    strategic::Solver::builder(grid)
-                        .strategies(DynamicStrategy::introspective_solver_base_4_plus_strategies())
-                        .availability_filter(&filter)
-                        .build(),
-                    filter,
+                solver_impl: SolverImpl::Sat(
+                    sat::Solver::new_with_availability_filter(grid, &filter)
+                        .unwrap()
+                        .into_iter(),
                 ),
             },
         }
     }
 }
 
-impl<Base: SudokuBase, Filter: AvailabilityFilter<Base>> InfallibleSolver<Base>
-    for Solver<Base, Filter>
+impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, Filter: AvailabilityFilter<Base>>
+    InfallibleSolver<Base> for Solver<Base, GridRef, Filter>
 {
     fn solve(&mut self) -> Option<Grid<Base>> {
         let solver_impl = std::mem::take(&mut self.solver_impl);
         match solver_impl {
-            SolverImpl::Strategic(mut solver, filter) => {
-                if let Ok(Some(strategic_solution)) = solver.try_solve() {
-                    // TODO: does this assumption hold for ambiguous grids?
-                    // Assumption: when strategic::Solver returns a solution, it is unique.
-                    self.solver_impl = SolverImpl::Done;
-                    Some(strategic_solution)
-                } else {
-                    debug!("Strategic solver failed to make progress, switching to backtracking solver");
-                    // Use the mutated grid as a starting point for the backtracking solver.
-                    let mut backtracking_solver = backtracking::Solver::builder(solver.into_grid())
-                        .availability_filter(filter)
-                        .build();
-                    let res = backtracking_solver.next();
-                    self.solver_impl = SolverImpl::Backtracking(backtracking_solver);
-                    res
-                }
-            }
             SolverImpl::Backtracking(mut solver) => {
                 let res = solver.next();
                 self.solver_impl = SolverImpl::Backtracking(solver);
                 res
+            }
+            SolverImpl::Sat(mut solver) => {
+                let res = solver.next();
+                self.solver_impl = SolverImpl::Sat(solver);
+                res.transpose().unwrap()
             }
             SolverImpl::Done => None,
         }
     }
 }
 
-impl<Base: SudokuBase, Filter: AvailabilityFilter<Base>> Iterator for Solver<Base, Filter> {
+impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, Filter: AvailabilityFilter<Base>> Iterator
+    for Solver<Base, GridRef, Filter>
+{
     type Item = Grid<Base>;
 
     fn next(&mut self) -> Option<Self::Item> {

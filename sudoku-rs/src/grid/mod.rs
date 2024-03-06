@@ -365,12 +365,10 @@ impl<Base: SudokuBase> Grid<Base> {
     }
 
     pub fn unique_solution(&self) -> Option<Self> {
-        // FIXME: revert to introspective::Solver
-        //  add sat::Solver to introspective::Solver
-        let mut solver = sat::Solver::new(self).unwrap().into_iter();
+        let mut solver = introspective::Solver::new(self);
 
         match (solver.next(), solver.next()) {
-            (Some(Ok(unique_solution)), None) => Some(unique_solution),
+            (Some(unique_solution), None) => Some(unique_solution),
             _ => None,
         }
     }
