@@ -45,7 +45,6 @@ export function ExportToClipboardDialog({ onClose }: ExportToClipboardDialogProp
         reset,
     } = useForm<ExportToClipboardFormValues>({
         values: exportToClipboardFormValues,
-        defaultValues: EXPORT_TO_CLIPBOARD_FORM_DEFAULT_VALUES,
         resolver: zodResolver(exportToClipboardFormValuesSchema),
     });
     const gridFormat = watch("gridFormat");
