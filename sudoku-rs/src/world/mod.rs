@@ -22,9 +22,13 @@ use crate::solver::backtracking;
 use crate::solver::backtracking::availability_filter::DeniedCandidatesGrid;
 use crate::world::RelativeTileDir::TopRight;
 
+use self::dynamic::BaseAgnosticCellWorld;
+
 mod overlap_segment_filter;
 
 mod tile_index;
+
+pub mod dynamic;
 
 /// A two dimensional grid of overlapping sudoku grids.
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -75,9 +79,8 @@ impl<Base: SudokuBase> CellWorld<Base> {
     }
 }
 
-/// Generation
-impl<Base: SudokuBase> CellWorld<Base> {
-    pub fn generate(&mut self, seed: Option<u64>) -> WorldGenerationResult {
+impl<Base: SudokuBase> BaseAgnosticCellWorld for CellWorld<Base> {
+    fn generate(&mut self, seed: Option<u64>) -> WorldGenerationResult {
         let tile_indexes = self.all_tile_indexes().collect_vec();
 
         let mut backtrack_count = 0;
@@ -96,8 +99,6 @@ impl<Base: SudokuBase> CellWorld<Base> {
 
         while let Some(solver) = solver_stack.last_mut() {
             if let Some(solution) = solver.next() {
-                // println!("solution:\n{solution}");
-
                 let tile_index = tile_indexes[solver_stack.len() - 1];
 
                 self.set_grid_at(&solution, tile_index);
@@ -112,9 +113,7 @@ impl<Base: SudokuBase> CellWorld<Base> {
                     // next grid
                     let next_tile_index = tile_indexes[solver_stack.len()];
                     let denylist = self.direct_denylist_from_top_right_grid(next_tile_index);
-                    // dbg!(&denylist);
                     let next_grid = self.to_grid_at(next_tile_index);
-                    // println!("next_grid init:\n{next_grid}");
                     solver_stack.push(
                         backtracking::Solver::builder(next_grid)
                             .rng(new_crate_rng_from_rng(&mut rng))
@@ -150,11 +149,8 @@ impl<Base: SudokuBase> CellWorld<Base> {
                         bottom_right: true,
                     },
                 );
-
                 solver_stack.pop().unwrap();
             }
-
-            // println!("{self}\n");
         }
 
         WorldGenerationResult {
@@ -162,19 +158,28 @@ impl<Base: SudokuBase> CellWorld<Base> {
             backtrack_count,
         }
     }
+}
 
+/// Generation
+impl<Base: SudokuBase> CellWorld<Base> {
     pub fn prune(&mut self, seed: Option<u64>) {
         let mut rng = new_crate_rng_with_seed(seed);
 
         assert!(self.is_solved());
 
+        // TODO: abstract world pruning
+        //  - overlap/middle
+        //  - PruningGroupBehaviour
+        //  - retain/modify already pruned values in overlap
+        // FIXME: how do we prevent pruning of fixed values in the overlap while exposing pruning settings?
+        //  *should* we prevent that? this could result in subgrids without a unique solution,
+        //  as long as its neighbours are unsolved.
+
         let (middle_positions, _overlap_positions): (Vec<_>, Vec<_>) = Position::<Base>::all()
             .partition(|pos| {
                 let (row, column) = pos.to_row_and_column();
                 let (row, column) = (row.get(), column.get());
-
                 let middle_axis_range = self.overlap..(Base::SIDE_LENGTH - self.overlap);
-
                 middle_axis_range.contains(&row) && middle_axis_range.contains(&column)
             });
 
@@ -381,9 +386,8 @@ impl<Base: SudokuBase> CellWorld<Base> {
 
 #[cfg(test)]
 mod tests {
-    use crate::base::consts::*;
-
     use super::*;
+    use crate::base::consts::*;
 
     #[test]
     fn test_prune_is_directly_consistent() {

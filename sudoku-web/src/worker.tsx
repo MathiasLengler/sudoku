@@ -14,12 +14,12 @@ export interface WorkerApi {
     init: typeof init;
     // We need to lie about the nullability of typedWasmSudoku
     // or else Comlink.Remote<WasmSudoku> doesn't narrow
-    typedWasmSudoku: WasmSudoku;
+    wasmSudoku: WasmSudoku;
 }
 
 const workerApi: WorkerApi = {
     init,
-    typedWasmSudoku: undefined as unknown as WasmSudoku,
+    wasmSudoku: undefined as unknown as WasmSudoku,
 };
 
 // Send boot up message
@@ -46,14 +46,14 @@ async function init(cells?: DynamicCells) {
     if (cells) {
         console.debug("Restoring sudoku from cells");
         try {
-            workerApi.typedWasmSudoku = WasmSudokuValue.restore(cells);
+            workerApi.wasmSudoku = WasmSudokuValue.restore(cells);
         } catch (err) {
             console.error("Failed to restore persisted grid:", err);
         }
     }
-    if (!workerApi.typedWasmSudoku) {
+    if (!workerApi.wasmSudoku) {
         console.debug("Generating initial sudoku");
-        workerApi.typedWasmSudoku = new WasmSudokuValue();
+        workerApi.wasmSudoku = new WasmSudokuValue();
     }
 
     console.debug("Worker init done");

@@ -71,7 +71,7 @@ export async function getRemoteWorkerApi(worker: Worker): Promise<RemoteWorkerAp
     console.debug("Worker initialized");
 
     // Incorrect type: `workerApi.typedWasmSudoku` is not wrapped in a Promise.
-    const wasmSudokuProxy = workerApi.typedWasmSudoku as unknown as WasmSudokuProxy;
+    const wasmSudokuProxy = workerApi.wasmSudoku as unknown as WasmSudokuProxy;
 
     // Important: wasmSudokuProxy is a Proxy.
     // We must be careful when setting it's state, since the Proxy gets misinterpreted as a Function or Promise.

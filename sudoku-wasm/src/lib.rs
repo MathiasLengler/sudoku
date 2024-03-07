@@ -1,6 +1,7 @@
 use anyhow::anyhow;
 use log::trace;
 use serde_wasm_bindgen::Serializer;
+use sudoku::world::dynamic::{BaseAgnosticCellWorld, DynamicCellWorld};
 use wasm_bindgen::prelude::*;
 
 use error::Result;
@@ -60,11 +61,38 @@ pub fn init() {
 }
 
 #[wasm_bindgen]
+pub struct WasmCellWorld {
+    world: DynamicCellWorld,
+    tile_index: TileIndex,
+}
+
+#[wasm_bindgen]
+impl WasmCellWorld {
+    #[wasm_bindgen(constructor)]
+    pub fn new() -> Self {
+        let mut world = CellWorld::<Base3>::new(
+            TileDim {
+                row_count: 3,
+                column_count: 3,
+            },
+            1,
+        );
+
+        let tile_index = TileIndex::default();
+        let seed = Some(1);
+        world.generate(seed);
+        world.prune(seed);
+
+        Self {
+            world: world.into(),
+            tile_index,
+        }
+    }
+}
+
+#[wasm_bindgen]
 pub struct WasmSudoku {
     sudoku: DynamicSudoku,
-    // POC world
-    // world: CellWorld<Base3>,
-    // tile_index: TileIndex,
 }
 
 impl Default for WasmSudoku {
@@ -75,28 +103,7 @@ impl Default for WasmSudoku {
 
 impl From<DynamicSudoku> for WasmSudoku {
     fn from(sudoku: DynamicSudoku) -> Self {
-        // let mut world = CellWorld::new(
-        //     TileDim {
-        //         row_count: 3,
-        //         column_count: 3,
-        //     },
-        //     1,
-        // );
-        //
-        // let DynamicSudoku::Base3(sudoku_base_3) = &sudoku else {
-        //     panic!("POC: base 3 only")
-        // };
-        // let tile_index = TileIndex::default();
-        // world.set_grid_at(sudoku_base_3.grid(), tile_index);
-        // let seed = Some(1);
-        // world.generate(seed);
-        // world.prune(seed);
-
-        WasmSudoku {
-            sudoku,
-            // world,
-            // tile_index,
-        }
+        WasmSudoku { sudoku }
     }
 }
 
@@ -106,9 +113,7 @@ impl WasmSudoku {
     pub fn new() -> Self {
         let grid: Grid<Base3> = sudoku::samples::minimal();
 
-        DynamicSudoku::with_sudoku(Sudoku::with_grid(grid))
-            .unwrap()
-            .into()
+        DynamicSudoku::from(Sudoku::with_grid(grid)).into()
     }
 
     pub fn restore(cells: Vec<IDynamicCell>) -> Result<WasmSudoku> {

@@ -343,7 +343,6 @@ mod dynamic {
 
     use super::*;
 
-    // TODO: use internally for runtime base matching
     #[derive(Debug, Copy, Clone, Eq, PartialEq)]
     pub enum DynamicBase {
         Base2,

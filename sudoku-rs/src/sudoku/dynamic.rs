@@ -1,5 +1,4 @@
 use std::any::Any;
-use std::convert::{TryFrom, TryInto};
 
 use serde::Serialize;
 #[cfg(feature = "wasm")]
@@ -64,16 +63,6 @@ impl DynamicSudoku {
             DynamicBase::Base3 => Self::Base3(Sudoku::<Base3>::new()),
             DynamicBase::Base4 => Self::Base4(Sudoku::<Base4>::new()),
             DynamicBase::Base5 => Self::Base5(Sudoku::<Base5>::new()),
-        })
-    }
-    pub fn with_sudoku<Base: SudokuBase>(sudoku: Sudoku<Base>) -> Result<Self> {
-        let any_sudoku: Box<dyn Any> = Box::new(sudoku);
-
-        Ok(match Base::DYNAMIC_BASE {
-            DynamicBase::Base2 => Self::Base2(*(any_sudoku.downcast().unwrap())),
-            DynamicBase::Base3 => Self::Base3(*(any_sudoku.downcast().unwrap())),
-            DynamicBase::Base4 => Self::Base4(*(any_sudoku.downcast().unwrap())),
-            DynamicBase::Base5 => Self::Base5(*(any_sudoku.downcast().unwrap())),
         })
     }
     pub fn generate(
