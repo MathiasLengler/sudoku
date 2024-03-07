@@ -2,6 +2,7 @@ import { atom, selector } from "recoil";
 import type { TransportCell, TransportSudoku } from "../../types";
 import type { RemoteWorkerApi } from "../../spawnWorker";
 import { getRemoteWorkerApi, spawnWorker } from "../../spawnWorker";
+import { hintState } from "./hint";
 
 export const workerState = atom<Worker>({
     key: "Worker",
@@ -44,7 +45,10 @@ export const sudokuBlocksIndexesState = selector<TransportSudoku["blocksIndexes"
 });
 export const sudokuCanUndoState = selector<TransportSudoku["canUndo"]>({
     key: "Sudoku.canUndo",
-    get: ({ get }) => get(sudokuState).canUndo,
+    get: ({ get }) => {
+        // showing of a hint can be undone
+        return !!get(hintState) || get(sudokuState).canUndo;
+    },
 });
 export const sudokuCanRedoState = selector<TransportSudoku["canRedo"]>({
     key: "Sudoku.canRedo",

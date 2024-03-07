@@ -20,6 +20,7 @@ import { spawnWorker } from "../../spawnWorker";
 import assertNever from "assert-never/index";
 import { getInput } from "./inputActions";
 import { useCancelableMutation } from "../useCancelableMutation";
+import { getHint, hintState } from "../state/hint";
 
 // Snapshot accessors
 async function getWasmSudokuProxy(snapshot: Snapshot): Promise<WasmSudokuProxy> {
@@ -298,6 +299,16 @@ export function useUndo() {
     return useRecoilCallback(
         ({ snapshot, set }) =>
             async () => {
+                // Hide hint if it's visible.
+                // This is somewhat of a hack:
+                // the sudoku history state lives inside Rust, but not the hint.
+                // As a result, hiding of the hint is not re-doable.
+                const hint = await getHint(snapshot);
+                if (hint) {
+                    set(hintState, undefined);
+                    return;
+                }
+
                 const wasmSudokuProxy = await getWasmSudokuProxy(snapshot);
                 await wasmSudokuProxy.undo();
                 await updateSudoku({ set, wasmSudokuProxy });
