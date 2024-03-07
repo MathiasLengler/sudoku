@@ -4,6 +4,10 @@ import { localStorageEffect } from "./localStorageEffect";
 import { z } from "zod";
 
 const baseInputSchema = z.object({
+    // Sticky mode:
+    //  Select value, then cell position
+    // Normal mode:
+    //  Select cell position, then value
     stickyMode: z.boolean(),
     candidateMode: z.boolean(),
 });
