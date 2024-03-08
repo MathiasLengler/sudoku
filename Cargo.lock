@@ -1444,6 +1444,7 @@ checksum = "711b9620af191e0cdc7468a8d14e709c3dcdb115b36f838e601583af800a370a"
 [[package]]
 name = "varisat"
 version = "0.2.2"
+source = "git+https://github.com/MathiasLengler/varisat#6ede7a1ea649146afe1372c79379c00f93db1455"
 dependencies = [
  "anyhow",
  "itoa 0.4.8",
@@ -1465,6 +1466,7 @@ dependencies = [
 [[package]]
 name = "varisat-checker"
 version = "0.2.2"
+source = "git+https://github.com/MathiasLengler/varisat#6ede7a1ea649146afe1372c79379c00f93db1455"
 dependencies = [
  "anyhow",
  "log",
@@ -1480,6 +1482,7 @@ dependencies = [
 [[package]]
 name = "varisat-dimacs"
 version = "0.2.2"
+source = "git+https://github.com/MathiasLengler/varisat#6ede7a1ea649146afe1372c79379c00f93db1455"
 dependencies = [
  "anyhow",
  "itoa 0.4.8",
@@ -1490,10 +1493,12 @@ dependencies = [
 [[package]]
 name = "varisat-formula"
 version = "0.2.2"
+source = "git+https://github.com/MathiasLengler/varisat#6ede7a1ea649146afe1372c79379c00f93db1455"
 
 [[package]]
 name = "varisat-internal-macros"
 version = "0.2.2"
+source = "git+https://github.com/MathiasLengler/varisat#6ede7a1ea649146afe1372c79379c00f93db1455"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1505,6 +1510,7 @@ dependencies = [
 [[package]]
 name = "varisat-internal-proof"
 version = "0.2.2"
+source = "git+https://github.com/MathiasLengler/varisat#6ede7a1ea649146afe1372c79379c00f93db1455"
 dependencies = [
  "anyhow",
  "varisat-formula",

@@ -34,5 +34,5 @@ git = "https://github.com/MathiasLengler/ts-rs"
 #path = "../ts-rs/ts-rs"
 
 [patch.crates-io.varisat]
-# git = "https://github.com/MathiasLengler/varisat"
-path = "../varisat/varisat"
+git = "https://github.com/MathiasLengler/varisat"
+# path = "../varisat/varisat"
