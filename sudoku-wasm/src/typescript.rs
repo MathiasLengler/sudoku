@@ -1,3 +1,5 @@
+#![allow(clippy::empty_docs)]
+
 use crate::error::Result;
 use anyhow::anyhow;
 use paste::paste;

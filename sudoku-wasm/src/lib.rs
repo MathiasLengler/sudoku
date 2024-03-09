@@ -49,10 +49,18 @@ pub fn init() {
     trace!("WASM initialized");
 }
 
+// TODO: continue PoC API design
+#[allow(dead_code)]
 #[wasm_bindgen]
 pub struct WasmCellWorld {
     world: DynamicCellWorld,
     tile_index: TileIndex,
+}
+
+impl Default for WasmCellWorld {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 #[wasm_bindgen]
