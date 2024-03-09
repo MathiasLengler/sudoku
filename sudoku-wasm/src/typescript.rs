@@ -55,6 +55,33 @@ import type {
     TransportReason,
     TransportSudoku,
 } from "../../sudoku-rs/bindings";
+
+export type {
+    DynamicCandidates,
+    DynamicCell,
+    DynamicGeneratorSettings,
+    DynamicGrid,
+    DynamicGridFormat,
+    DynamicPosition,
+    DynamicPruningOrder,
+    DynamicPruningSettings,
+    DynamicSolutionSettings,
+    DynamicStrategy,
+    DynamicTryStrategiesReturn,
+    DynamicValue,
+    GeneratorProgress,
+    PositionedTransportAction,
+    PositionedTransportReason,
+    PruningGroupBehaviour,
+    PruningTarget,
+    RelativeTileDir,
+    TransportAction,
+    TransportCell,
+    TransportDeduction,
+    TransportDeductions,
+    TransportReason,
+    TransportSudoku,
+};
 "#;
 
 pub(crate) fn export_value<T: serde::ser::Serialize + ?Sized>(value: &T) -> Result<JsValue> {
