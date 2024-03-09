@@ -22,7 +22,7 @@ use crate::solver::backtracking;
 use crate::solver::backtracking::availability_filter::DeniedCandidatesGrid;
 use crate::world::RelativeTileDir::TopRight;
 
-use self::dynamic::BaseAgnosticCellWorld;
+use self::dynamic::DynamicCellWorldActions;
 
 mod overlap_segment_filter;
 
@@ -79,7 +79,7 @@ impl<Base: SudokuBase> CellWorld<Base> {
     }
 }
 
-impl<Base: SudokuBase> BaseAgnosticCellWorld for CellWorld<Base> {
+impl<Base: SudokuBase> DynamicCellWorldActions for CellWorld<Base> {
     fn generate(&mut self, seed: Option<u64>) -> WorldGenerationResult {
         let tile_indexes = self.all_tile_indexes().collect_vec();
 
@@ -160,7 +160,6 @@ impl<Base: SudokuBase> BaseAgnosticCellWorld for CellWorld<Base> {
     }
 }
 
-/// Generation
 impl<Base: SudokuBase> CellWorld<Base> {
     pub fn prune(&mut self, seed: Option<u64>) {
         let mut rng = new_crate_rng_with_seed(seed);
@@ -171,6 +170,7 @@ impl<Base: SudokuBase> CellWorld<Base> {
         //  - overlap/middle
         //  - PruningGroupBehaviour
         //  - retain/modify already pruned values in overlap
+
         // FIXME: how do we prevent pruning of fixed values in the overlap while exposing pruning settings?
         //  *should* we prevent that? this could result in subgrids without a unique solution,
         //  as long as its neighbours are unsolved.

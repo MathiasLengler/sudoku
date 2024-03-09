@@ -1,5 +1,5 @@
 use log::trace;
-use sudoku::world::dynamic::{BaseAgnosticCellWorld, DynamicCellWorld};
+use sudoku::world::dynamic::{DynamicCellWorld, DynamicCellWorldActions};
 use wasm_bindgen::prelude::*;
 
 use error::Result;

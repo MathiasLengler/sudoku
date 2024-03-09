@@ -7,11 +7,11 @@ use super::{CellWorld, TileDim, WorldGenerationResult};
 
 // TODO: move more applicable methods of CellWorld to the trait
 #[enum_dispatch]
-pub trait BaseAgnosticCellWorld {
+pub trait DynamicCellWorldActions {
     fn generate(&mut self, seed: Option<u64>) -> WorldGenerationResult;
 }
 
-#[enum_dispatch(BaseAgnosticCellWorld)]
+#[enum_dispatch(DynamicCellWorldActions)]
 #[derive(Debug)]
 pub enum DynamicCellWorld {
     Base2(CellWorld<Base2>),
