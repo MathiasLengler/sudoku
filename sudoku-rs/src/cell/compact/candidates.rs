@@ -413,8 +413,6 @@ impl<Base: SudokuBase> Serialize for Candidates<Base> {
 
 #[cfg(test)]
 mod tests {
-    use std::mem::size_of;
-
     use crate::base::consts::*;
     use crate::error::Result;
 

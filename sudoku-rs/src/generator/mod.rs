@@ -1,7 +1,6 @@
 use anyhow::{bail, format_err};
 use itertools::Itertools;
 use log::debug;
-use rand::prelude::SliceRandom;
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
@@ -17,7 +16,7 @@ use crate::grid::Grid;
 use crate::position::Position;
 use crate::rng::{new_crate_rng_with_seed, CrateRng};
 use crate::solver::strategic::strategies::{Backtracking, DynamicStrategy};
-use crate::solver::{backtracking, introspective, sat};
+use crate::solver::{backtracking, introspective};
 
 // TODO: strategic
 //  target difficulty: sum of weighted strategy applications
@@ -344,6 +343,12 @@ pub struct GeneratorProgress {
     is_position_required: bool,
 }
 
+struct NearMinimalGridReturn<Base: SudokuBase> {
+    near_minimal_grid: Grid<Base>,
+    deleted: Vec<(Position<Base>, Value<Base>)>,
+    remaining_pruning_positions: Vec<Position<Base>>,
+}
+
 impl<Base: SudokuBase> Generator<Base> {
     pub fn with_target(target: PruningTarget) -> Self {
         Self::with_pruning(PruningSettings {
@@ -423,14 +428,7 @@ impl<Base: SudokuBase> Generator<Base> {
         solved_grid: &Grid<Base>,
         prune_settings: &PruningSettings<Base>,
         rng: &mut CrateRng,
-    ) -> Result<(
-        // near_minimal_grid
-        Grid<Base>,
-        // deleted
-        Vec<(Position<Base>, Value<Base>)>,
-        // remaining_pruning_positions
-        Vec<Position<Base>>,
-    )> {
+    ) -> Result<NearMinimalGridReturn<Base>> {
         debug!("Generating near minimal grid");
 
         // FIXME: prune_settings.strategies
@@ -456,14 +454,14 @@ impl<Base: SudokuBase> Generator<Base> {
             if let Some(unique_solution) = near_minimal_grid.unique_solution() {
                 debug!("Non-pruning positions result in unique solution");
                 debug_assert_eq!(unique_solution, *solved_grid);
-                return Ok((
+                return Ok(NearMinimalGridReturn {
                     near_minimal_grid,
-                    pruning_positions
+                    deleted: pruning_positions
                         .iter()
                         .map(|&pos| (pos, solved_grid[pos].value().unwrap()))
                         .collect(),
-                    vec![],
-                ));
+                    remaining_pruning_positions: vec![],
+                });
             }
         }
 
@@ -472,20 +470,18 @@ impl<Base: SudokuBase> Generator<Base> {
         let pruning_position_count = pruning_positions.len();
         let mut pruning_position_i = 0;
 
-        const SOLUTION_GUIDED: bool = false;
-        if SOLUTION_GUIDED {
+        let solution_guided = false;
+        if solution_guided {
             let mut pruning_positions = pruning_positions;
             let mut restored_positions = vec![];
 
             while let Some(ambiguous_solution) = {
                 debug!("Checking grid for ambiguous_solution_pair:\n{near_minimal_grid}");
 
-                let mut solver = sat::Solver::new(&near_minimal_grid)?.into_iter();
+                let mut solver = introspective::Solver::new(near_minimal_grid.clone());
                 if let Some(first_solution) = solver.next() {
-                    let first_solution = first_solution?;
                     if &first_solution == solved_grid {
                         if let Some(second_solution) = solver.next() {
-                            let second_solution = second_solution?;
                             debug_assert_ne!(&second_solution, solved_grid);
                             Some(second_solution)
                         } else {
@@ -525,7 +521,11 @@ impl<Base: SudokuBase> Generator<Base> {
                 .map(|&pos| (pos, solved_grid[pos].value().unwrap()))
                 .collect();
 
-            Ok((near_minimal_grid, deleted, restored_positions))
+            Ok(NearMinimalGridReturn {
+                near_minimal_grid,
+                deleted,
+                remaining_pruning_positions: restored_positions,
+            })
         } else {
             // Copy over pruning positions until the grid has a unique solution.
             let Some(stop_index) = pruning_positions.iter().rposition(|&pruning_position| {
@@ -571,7 +571,11 @@ impl<Base: SudokuBase> Generator<Base> {
                 .collect();
             let remaining_pruning_positions = remaining_pruning_positions.to_vec();
 
-            Ok((near_minimal_grid, deleted, remaining_pruning_positions))
+            Ok(NearMinimalGridReturn {
+                near_minimal_grid,
+                deleted,
+                remaining_pruning_positions,
+            })
         }
     }
 
@@ -872,16 +876,19 @@ impl<Base: SudokuBase> Generator<Base> {
         // TODO: evaluate if near_minimal_grid is always a pessimization
         //  root cause could be the basic backtracking solver implementation
         //  DPLL-based solver could be faster at counting ambiguous solutions
-        let (mut grid, mut deleted, remaining_pruning_positions) =
-            if prune_settings.start_from_near_minimal_grid {
-                self.near_minimal_grid(&solved_grid, prune_settings, rng)?
-            } else {
-                (
-                    solved_grid,
-                    vec![],
-                    self.pruning_positions(prune_settings, rng)?,
-                )
-            };
+        let NearMinimalGridReturn {
+            near_minimal_grid: mut grid,
+            mut deleted,
+            remaining_pruning_positions,
+        } = if prune_settings.start_from_near_minimal_grid {
+            self.near_minimal_grid(&solved_grid, prune_settings, rng)?
+        } else {
+            NearMinimalGridReturn {
+                near_minimal_grid: solved_grid,
+                deleted: vec![],
+                remaining_pruning_positions: self.pruning_positions(prune_settings, rng)?,
+            }
+        };
 
         debug!("Pruning grid by trying to delete values at positions {remaining_pruning_positions:?} in grid:\n{grid}");
 

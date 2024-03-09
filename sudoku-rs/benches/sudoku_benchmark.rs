@@ -2,7 +2,6 @@
 extern crate criterion;
 
 use std::any::Any;
-use std::convert::TryInto;
 use std::hint::black_box;
 use std::path::Path;
 

@@ -103,8 +103,8 @@ export type DynamicStrategies = bindings.DynamicStrategy[];
 export type DynamicCells = bindings.DynamicCell[];
 "#;
 
+// ts-rs
 serde_wasm_bindgen_interop! {
-    // ts-rs
     DynamicCandidates,
     DynamicCell,
     DynamicGeneratorSettings,
@@ -128,13 +128,14 @@ serde_wasm_bindgen_interop! {
     TransportDeduction,
     TransportDeductions,
     TransportReason,
-    TransportSudoku,
+    TransportSudoku
+}
 
-    // aliases
+// aliases
+serde_wasm_bindgen_interop! {
     DynamicStrategies,
     DynamicCells
 }
-
 // non-serde types - custom conversion functions
 #[wasm_bindgen(typescript_custom_section)]
 const EXTRA: &'static str = r#"
