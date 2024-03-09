@@ -167,11 +167,6 @@ enum StepResult<Base: SudokuBase> {
     Done,
 }
 
-enum FueledSolveResult<Base: SudokuBase> {
-    OutOfFuel,
-    Result(Option<Grid<Base>>),
-}
-
 impl<
         Base: SudokuBase,
         GridRef: AsRef<Grid<Base>>,
@@ -341,18 +336,6 @@ impl<
             StepResult::Done
         }
     }
-
-    fn solve_with_fuel(&mut self, fuel: u64) -> FueledSolveResult<Base> {
-        for _ in 0..fuel {
-            match self.step() {
-                StepResult::Solution(solution) => return FueledSolveResult::Result(Some(solution)),
-                StepResult::Done => return FueledSolveResult::Result(None),
-                _ => {}
-            }
-        }
-
-        FueledSolveResult::OutOfFuel
-    }
 }
 
 impl<
@@ -445,42 +428,6 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, ICandidates: CandidatesIterat
 where
     Self: Clone,
 {
-    // TODO: measure solution space split fairness
-    //  for efficient parallelization both solvers should search the approx. same solution space.
-
-    // Alternative implementation without Filter: DeniedCandidatesGrid
-    //  find split cell with least candidates >= 2
-    //  candidates.len() cloned solvers:
-    //   copy grid, set values for each candidates_iter.peek, select on candidate from split cell, set as value in cloned grid, re-initialize solver
-
-    // FIXME: this estimate is hilariously inaccurate
-    fn estimate_search_space(&self) -> u64 {
-        let availability_indexes_to_be_solved =
-            &self.availability_indexes[self.candidates_iters.len()..];
-
-        let total_candidates_iter_len: u64 = self
-            .candidates_iters
-            .iter()
-            .map(|candidates_iter| candidates_iter.len() as u64)
-            .sum();
-
-        dbg!(total_candidates_iter_len);
-
-        let total_available_candidates: u64 = availability_indexes_to_be_solved
-            .iter()
-            .map(|&availability_index| -> u64 {
-                self.availability
-                    .available_candidates_at(availability_index)
-                    .count()
-                    .into()
-            })
-            .sum();
-
-        dbg!(total_available_candidates);
-
-        total_candidates_iter_len + total_available_candidates
-    }
-
     /// Split the current solver into two.
     ///
     /// The two solvers will search distinct solution spaces of the same sudoku.
@@ -554,8 +501,6 @@ where
 
 #[cfg(feature = "parallel")]
 mod parallel {
-    use std::cmp;
-
     use rayon::iter::{split, Split};
     use rayon::prelude::*;
 
@@ -579,51 +524,12 @@ mod parallel {
     where
         Self: Clone + Send,
     {
-        // TODO: find root cause for sporadic crash:
-        //  thread '<unknown>' has overflowed its stack
-        // Assumption: way too aggressive splitting
-        //  also kills perf
-
-        // Possible solution:
-        //  switch to lower level rayon API
-        //  we could provide hints about the size of the search space
-        //  the current implementation using split has no knowledge about the search space.
-        //  This could result in lop-sided splitting, resulting in overhead.
-
-        // Possible solution:
-        //  Refuse to split if search space is too small
-        //   unclear how to estimate the size of the search space
-
-        // Possible solution:
-        //  interrupt iteration
-        //  a single .next call can take an arbitrary amount of time.
-        //  if the is a upper limit, we could identify slow solvers and split them further
-        //  Better: adaptive splitting:
-        //   - start with a few/a single solver
-        //   - search with fuel amount X
-        //   - if found solution, ret
-        //   - if found no solution left, ret
-        //   - if out of fuel, split and run in parallel
-
         pub fn has_any_solution(self) -> bool {
             self.any_solution().is_some()
         }
 
         pub fn any_solution(self) -> Option<Grid<Base>> {
-            // self.any_solution_sequential()
-            // self.any_solution_split_par_iter_split()
             self.any_solution_pre_split()
-            // self.any_solution_pre_split_histogram()
-            // self.any_solution_fuel_join_recursive()
-        }
-
-        fn any_solution_sequential(mut self) -> Option<Grid<Base>> {
-            self.next()
-        }
-
-        fn any_solution_split_par_iter_split(self) -> Option<Grid<Base>> {
-            self.into_par_iter()
-                .find_map_any(|mut solver| solver.next())
         }
 
         fn pre_split_solvers(self) -> Vec<Self> {
@@ -651,125 +557,6 @@ mod parallel {
             split_solvers
                 .into_par_iter()
                 .find_map_any(|mut solver| solver.next())
-        }
-
-        #[cfg(feature = "histogram")]
-        fn any_solution_pre_split_histogram(self) -> Option<Grid<Base>> {
-            use hdrhistogram::Histogram;
-
-            let split_solvers = self.pre_split_solvers();
-
-            let mut histogram = Histogram::<u64>::new(3).unwrap().into_sync();
-
-            let res = split_solvers
-                .into_par_iter()
-                .map_with(histogram.recorder(), |recorder, mut solver| {
-                    // let clone = solver.clone();
-
-                    let ret = solver.next();
-                    recorder.record(solver.backtrack_count).unwrap();
-                    // if solver.backtrack_count <= 2 {
-                    //     println!("solver with two guesses: {clone}");
-                    //
-                    //     std::process::exit(1);
-                    // }
-
-                    ret
-                })
-                .find_map_any(|res| res);
-
-            histogram.refresh();
-
-            for v in histogram.iter_recorded() {
-                println!("{}: {}", v.value_iterated_to(), v.count_at_value());
-            }
-
-            res
-        }
-
-        fn any_solution_fuel_join_recursive(mut self) -> Option<Grid<Base>> {
-            const FUEL: u64 = 20_000_000;
-
-            // Fork of: rayon-1.8.0/src/iter/plumbing/mod.rs:256
-            /// A splitter controls the policy for splitting into smaller work items.
-            ///
-            /// Thief-splitting is an adaptive policy that starts by splitting into
-            /// enough jobs for every worker thread, and then resets itself whenever a
-            /// job is actually stolen into a different thread.
-            #[derive(Clone, Copy)]
-            struct Splitter {
-                /// The `splits` tell us approximately how many remaining times we'd
-                /// like to split this job.  We always just divide it by two though, so
-                /// the effective number of pieces will be `next_power_of_two()`.
-                splits: usize,
-            }
-
-            impl Splitter {
-                #[inline]
-                fn new() -> Splitter {
-                    Splitter {
-                        splits: rayon::current_num_threads(),
-                    }
-                }
-
-                #[inline]
-                fn try_split(&mut self, stolen: bool) -> bool {
-                    let Splitter { splits } = *self;
-
-                    if stolen {
-                        // This job was stolen!  Reset the number of desired splits to the
-                        // thread count, if that's more than we had remaining anyway.
-                        self.splits = cmp::max(rayon::current_num_threads(), self.splits / 2);
-                        true
-                    } else if splits > 0 {
-                        // We have splits remaining, make it so.
-                        self.splits /= 2;
-                        true
-                    } else {
-                        // Not stolen, and no more splits -- we're done!
-                        false
-                    }
-                }
-            }
-
-            fn inner<
-                Base: SudokuBase,
-                GridRef: AsRef<Grid<Base>>,
-                ICandidates: CandidatesIterator<Base>,
-            >(
-                mut this: Solver<Base, GridRef, ICandidates, DeniedCandidatesGrid<Base>>,
-                migrated: bool,
-                mut splitter: Splitter,
-            ) -> Option<Grid<Base>>
-            where
-                Solver<Base, GridRef, ICandidates, DeniedCandidatesGrid<Base>>: Clone + Send,
-            {
-                loop {
-                    return match this.solve_with_fuel(FUEL) {
-                        FueledSolveResult::OutOfFuel => {
-                            if splitter.try_split(migrated) {
-                                let (left, right) = this.split();
-                                if let Some(right) = right {
-                                    let (left_res, right_res) = rayon::join_context(
-                                        |context| inner(left, context.migrated(), splitter),
-                                        |context| inner(right, context.migrated(), splitter),
-                                    );
-
-                                    left_res.or(right_res)
-                                } else {
-                                    this = left;
-                                    continue;
-                                }
-                            } else {
-                                continue;
-                            }
-                        }
-                        FueledSolveResult::Result(opt_grid) => opt_grid,
-                    };
-                }
-            }
-
-            inner(self, false, Splitter::new())
         }
     }
 }

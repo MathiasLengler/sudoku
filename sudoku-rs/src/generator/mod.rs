@@ -340,7 +340,6 @@ pub struct GeneratorProgress {
     pruning_position_index: usize,
     pruning_position_count: usize,
     deleted_count: u16,
-    is_position_required: bool,
 }
 
 struct NearMinimalGridReturn<Base: SudokuBase> {
@@ -824,28 +823,19 @@ impl<Base: SudokuBase> Generator<Base> {
                 break;
             }
 
-            let is_position_required = if Self::try_delete_cell_at_pos(
-                &mut grid,
-                pos,
-                prune_settings,
-            )
-            .is_some()
-            {
+            if Self::try_delete_cell_at_pos(&mut grid, pos, prune_settings).is_some() {
                 deleted_count += 1;
                 debug!("Position {pruning_position_index}/{pruning_position_count} deleted, totaling {deleted_count}/{distance_from_filled} deleted positions");
-                false
             } else {
                 debug!(
                     "Position {pruning_position_index}/{pruning_position_count} is required for unique solution"
                 );
-                true
-            };
+            }
 
             on_progress(GeneratorProgress {
                 pruning_position_index,
                 pruning_position_count,
                 deleted_count,
-                is_position_required,
             })?;
         }
 
@@ -857,7 +847,7 @@ impl<Base: SudokuBase> Generator<Base> {
         solved_grid: Grid<Base>,
         distance_from_minimal: u16,
         prune_settings: &PruningSettings<Base>,
-        mut _on_progress: impl FnMut(GeneratorProgress) -> Result<()>,
+        mut on_progress: impl FnMut(GeneratorProgress) -> Result<()>,
         rng: &mut CrateRng,
     ) -> Result<Grid<Base>> {
         debug!("Pruning solution to be minimal");
@@ -900,27 +890,23 @@ impl<Base: SudokuBase> Generator<Base> {
 
             let deleted_count = u16::try_from(deleted.len()).unwrap();
 
-            let is_position_required = if let Some(deleted_value) =
+            if let Some(deleted_value) =
                 Self::try_delete_cell_at_pos(&mut grid, pos, prune_settings)
             {
                 debug!("Position {pruning_position_index}/{remaining_pruning_position_count} deleted, totaling {deleted_count} deleted positions");
 
                 deleted.push((pos, deleted_value));
-                false
             } else {
                 debug!(
                     "Position {pruning_position_index}/{remaining_pruning_position_count} is required for unique solution"
                 );
-                true
-            };
+            }
 
-            // TODO: update on_progress callback
-            // on_progress(GeneratorProgress {
-            //     pruning_position_index,
-            //     pruning_position_count,
-            //     deleted_count,
-            //     is_position_required,
-            // })?;
+            on_progress(GeneratorProgress {
+                pruning_position_index,
+                pruning_position_count: remaining_pruning_position_count,
+                deleted_count,
+            })?;
         }
 
         // Restore the required amount of values, specified by distance.
@@ -938,8 +924,6 @@ impl<Base: SudokuBase> Generator<Base> {
 
 #[cfg(test)]
 mod tests {
-    use itertools::Itertools;
-
     use crate::base::consts::*;
     use crate::position::Coordinate;
     use crate::samples;

@@ -1,4 +1,3 @@
-use std::convert::TryInto;
 use std::fmt::{self, Display, Formatter};
 
 pub use dynamic::{DynamicSudoku, DynamicSudokuActions, DynamicTryStrategiesReturn};

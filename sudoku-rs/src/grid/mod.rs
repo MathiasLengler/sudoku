@@ -18,7 +18,7 @@ use crate::grid::format::{CandidatesGridANSIStyled, DynamicGridFormat, GridForma
 use crate::position::Coordinate;
 use crate::position::Position;
 use crate::solver::strategic::strategies::DynamicStrategy;
-use crate::solver::{backtracking, introspective, sat, strategic, FallibleSolver};
+use crate::solver::{backtracking, introspective, strategic, FallibleSolver};
 use crate::unsafe_utils::{get_unchecked, get_unchecked_mut};
 
 pub mod deserialization;
@@ -1020,7 +1020,7 @@ mod tests {
 
     #[test]
     fn test_has_duplicate_value() {
-        let cells_with_no_duplicate_value = vec![
+        let cells_with_no_duplicate_value = [
             DynamicCell::Value {
                 value: 1.into(),
                 fixed: false,
@@ -1048,7 +1048,7 @@ mod tests {
         assert!(!Grid::<Base2>::has_duplicate_value(
             cells_with_no_duplicate_value.iter()
         ));
-        let cells_with_duplicate_value = vec![
+        let cells_with_duplicate_value = [
             DynamicCell::Value {
                 value: 1.into(),
                 fixed: false,

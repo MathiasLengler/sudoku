@@ -5,7 +5,7 @@ use ts_rs::TS;
 use enum_dispatch::enum_dispatch;
 
 use crate::base::consts::*;
-use crate::base::{DynamicBase, SudokuBase};
+use crate::base::DynamicBase;
 use crate::cell::dynamic::DynamicCandidates;
 use crate::cell::dynamic::DynamicCell;
 use crate::cell::dynamic::DynamicValue;

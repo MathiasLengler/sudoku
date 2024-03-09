@@ -1,5 +1,6 @@
 use sudoku::base::consts::*;
 use sudoku::error::Result;
+use sudoku::world::dynamic::BaseAgnosticCellWorld;
 use sudoku::world::{CellWorld, TileDim};
 
 fn main() -> Result<()> {

@@ -85,8 +85,6 @@ pub mod test_util {
     use std::marker::PhantomData;
 
     use crate::base::consts::Base2;
-    use crate::base::SudokuBase;
-    use crate::grid::Grid;
 
     use super::*;
 

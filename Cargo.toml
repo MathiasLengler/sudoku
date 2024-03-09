@@ -15,7 +15,7 @@ keywords = ["sudoku"]
 license = "MIT"
 publish = false
 repository = "https://github.com/MathiasLengler/sudoku"
-rust-version = "1.66"
+rust-version = "1.78"
 version = "0.2.0"
 
 [workspace.dependencies]

@@ -1,5 +1,3 @@
-use std::convert::TryInto;
-
 use crate::base::consts::*;
 use crate::base::SudokuBase;
 use crate::cell::Candidates;

@@ -24,14 +24,10 @@ mod initialized_sat_solver {
 
     use super::*;
 
-    pub(super) static SOLVER_BASE_2: Lazy<SatSolver> =
-        Lazy::new(|| Solver::<Base2>::init_sat_solver().unwrap());
-    pub(super) static SOLVER_BASE_3: Lazy<SatSolver> =
-        Lazy::new(|| Solver::<Base3>::init_sat_solver().unwrap());
-    pub(super) static SOLVER_BASE_4: Lazy<SatSolver> =
-        Lazy::new(|| Solver::<Base4>::init_sat_solver().unwrap());
-    pub(super) static SOLVER_BASE_5: Lazy<SatSolver> =
-        Lazy::new(|| Solver::<Base5>::init_sat_solver().unwrap());
+    pub(super) static SOLVER_BASE_2: Lazy<SatSolver> = Lazy::new(Solver::<Base2>::init_sat_solver);
+    pub(super) static SOLVER_BASE_3: Lazy<SatSolver> = Lazy::new(Solver::<Base3>::init_sat_solver);
+    pub(super) static SOLVER_BASE_4: Lazy<SatSolver> = Lazy::new(Solver::<Base4>::init_sat_solver);
+    pub(super) static SOLVER_BASE_5: Lazy<SatSolver> = Lazy::new(Solver::<Base5>::init_sat_solver);
 }
 
 type Clause = Vec<Lit>;
@@ -66,7 +62,7 @@ impl<Base: SudokuBase> Solver<Base> {
         grid: GridRef,
         filter: &Filter,
     ) -> Result<Self> {
-        let sat_solver = Self::init_sat_solver_for_grid(grid.as_ref(), filter)?;
+        let sat_solver = Self::init_sat_solver_for_grid(grid.as_ref(), filter);
 
         Ok(Self {
             sat_solver,
@@ -102,7 +98,7 @@ impl<Base: SudokuBase> Solver<Base> {
     fn init_sat_solver_for_grid<Filter: AvailabilityFilter<Base>>(
         grid: &Grid<Base>,
         filter: &Filter,
-    ) -> Result<SatSolver<'static>> {
+    ) -> SatSolver<'static> {
         let mut sat_solver = Self::get_initialized_sat_solver();
 
         // Add grid assumptions
@@ -129,10 +125,10 @@ impl<Base: SudokuBase> Solver<Base> {
                 Position::<Base>::all()
                     .filter_map(|pos| {
                         let remaining_candidates = filter.filter(all_candidates, pos.into());
-                        if remaining_candidates != all_candidates {
-                            Some((pos, remaining_candidates))
-                        } else {
+                        if remaining_candidates == all_candidates {
                             None
+                        } else {
+                            Some((pos, remaining_candidates))
                         }
                     })
                     .flat_map(|(pos, remaining_candidates)| {
@@ -146,12 +142,12 @@ impl<Base: SudokuBase> Solver<Base> {
                             })
                         })
                     }),
-            )
+            );
         }
 
         sat_solver.assume(&assumptions);
 
-        Ok(sat_solver)
+        sat_solver
     }
 
     /// `Base`-cached version of `Self::init_sat_solver`
@@ -165,7 +161,7 @@ impl<Base: SudokuBase> Solver<Base> {
         }
     }
 
-    fn init_sat_solver() -> Result<SatSolver<'static>> {
+    fn init_sat_solver() -> SatSolver<'static> {
         let clauses = Self::general_clauses();
 
         let mut formula = CnfFormula::new();
@@ -178,16 +174,14 @@ impl<Base: SudokuBase> Solver<Base> {
 
         sat_solver.add_formula(&formula);
 
-        Ok(sat_solver)
+        sat_solver
     }
 
     fn solve_with_assignment(&mut self) -> Result<Option<Vec<Lit>>> {
         Ok(self.sat_solver.solve()?.then(|| {
-            let assignment = self
-                .sat_solver
+            self.sat_solver
                 .model()
-                .expect("SatSolver should return model on successful solve");
-            assignment
+                .expect("SatSolver should return model on successful solve")
         }))
     }
 
@@ -353,8 +347,12 @@ impl<Base: SudokuBase> FallibleSolver<Base> for Solver<Base> {
     }
 }
 
-impl<Base: SudokuBase> Solver<Base> {
-    pub fn into_iter(self) -> SolverIter<Base> {
+impl<Base: SudokuBase> IntoIterator for Solver<Base> {
+    type Item = Result<Grid<Base>>;
+
+    type IntoIter = SolverIter<Base>;
+
+    fn into_iter(self) -> Self::IntoIter {
         SolverIter {
             solver: self,
             last_assignment: None,
@@ -457,7 +455,7 @@ mod tests {
             .collect();
         let solver = Solver::new_with_availability_filter(&grid, &denylist).unwrap();
 
-        for solution in solver.clone().into_iter() {
+        for solution in solver.clone() {
             assert!(![1, 3].contains(
                 &solution
                     .unwrap()

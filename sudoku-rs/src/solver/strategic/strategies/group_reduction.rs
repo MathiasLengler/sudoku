@@ -104,8 +104,6 @@ impl GroupReduction {
 
 #[cfg(test)]
 mod tests {
-    use std::convert::TryInto;
-
     use crate::base::consts::*;
     use crate::solver::strategic::strategies::test_util::assert_deductions_with_grid;
 
