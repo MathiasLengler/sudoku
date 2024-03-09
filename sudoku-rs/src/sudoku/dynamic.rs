@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 #[cfg(feature = "wasm")]
 use ts_rs::TS;
 
@@ -112,7 +112,7 @@ impl DynamicSudoku {
 }
 
 #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct DynamicTryStrategiesReturn(pub Option<(DynamicStrategy, TransportDeductions)>);
 
 impl TryFrom<Vec<DynamicCell>> for DynamicSudoku {

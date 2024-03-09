@@ -335,7 +335,7 @@ pub struct Generator<Base: SudokuBase> {
 }
 
 #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GeneratorProgress {
     pruning_position_index: usize,
