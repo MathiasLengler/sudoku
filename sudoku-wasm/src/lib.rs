@@ -18,7 +18,7 @@ use sudoku::solver::strategic::deduction::transport::TransportDeductions;
 use sudoku::solver::strategic::strategies::DynamicStrategy;
 use sudoku::transport::TransportSudoku;
 use sudoku::world::{CellWorld, TileDim, TileIndex};
-use sudoku::{DynamicSudoku, Game, Sudoku};
+use sudoku::{DynamicSudoku, DynamicSudokuActions, Sudoku};
 
 use crate::typescript::*;
 

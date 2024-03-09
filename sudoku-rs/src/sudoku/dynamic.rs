@@ -1,15 +1,14 @@
-use std::any::Any;
-
 use serde::Serialize;
 #[cfg(feature = "wasm")]
 use ts_rs::TS;
 
-pub use game::DynamicSudoku;
-pub use game::Game;
+use enum_dispatch::enum_dispatch;
 
 use crate::base::consts::*;
 use crate::base::{DynamicBase, SudokuBase};
+use crate::cell::dynamic::DynamicCandidates;
 use crate::cell::dynamic::DynamicCell;
+use crate::cell::dynamic::DynamicValue;
 use crate::error::{Error, Result};
 use crate::generator::{DynamicGeneratorSettings, GeneratorProgress};
 use crate::grid::format::DynamicGridFormat;
@@ -20,40 +19,48 @@ use crate::solver::strategic::strategies::DynamicStrategy;
 use crate::sudoku::settings::Settings as SudokuSettings;
 use crate::sudoku::Sudoku;
 
-mod game {
-    use enum_dispatch::enum_dispatch;
+/// All methods provided by `Sudoku`, which:
+/// - do not depend on the generic `SudokuBase`
+/// - can't change the size of the board
+/// - take self by reference / are static
+#[enum_dispatch]
+pub trait DynamicSudokuActions {
+    // actions that handle base-dependend types
+    fn set_value(&mut self, pos: DynamicPosition, value: DynamicValue) -> Result<()>;
+    fn set_or_toggle_value(&mut self, pos: DynamicPosition, value: DynamicValue) -> Result<()>;
+    fn set_candidates(&mut self, pos: DynamicPosition, candidates: DynamicCandidates)
+        -> Result<()>;
+    fn toggle_candidate(&mut self, pos: DynamicPosition, candidate: DynamicValue) -> Result<()>;
+    fn set_candidate(&mut self, pos: DynamicPosition, candidate: DynamicValue) -> Result<()>;
+    fn delete_candidate(&mut self, pos: DynamicPosition, candidate: DynamicValue) -> Result<()>;
+    fn delete(&mut self, pos: DynamicPosition) -> Result<()>;
+    fn try_strategies(
+        &mut self,
+        strategies: Vec<DynamicStrategy>,
+    ) -> Result<DynamicTryStrategiesReturn>;
+    fn apply_deductions(&mut self, deductions: TransportDeductions) -> Result<()>;
 
-    use super::*;
-
-    #[enum_dispatch]
-    pub trait Game {
-        fn set_value(&mut self, pos: DynamicPosition, value: u8) -> Result<()>;
-        fn set_or_toggle_value(&mut self, pos: DynamicPosition, value: u8) -> Result<()>;
-        fn set_candidates(&mut self, pos: DynamicPosition, candidates: Vec<u8>) -> Result<()>;
-        fn toggle_candidate(&mut self, pos: DynamicPosition, candidate: u8) -> Result<()>;
-        fn set_candidate(&mut self, pos: DynamicPosition, candidate: u8) -> Result<()>;
-        fn delete_candidate(&mut self, pos: DynamicPosition, candidate: u8) -> Result<()>;
-        fn delete(&mut self, pos: DynamicPosition) -> Result<()>;
-        fn set_all_direct_candidates(&mut self);
-        fn undo(&mut self);
-        fn redo(&mut self);
-        fn settings(&self) -> SudokuSettings;
-        fn update_settings(&mut self, settings: SudokuSettings);
-        fn export(&self, format: &DynamicGridFormat) -> String;
-    }
-
-    /// A game of Sudoku which is able to change the size of the board at runtime.
-    #[enum_dispatch(Game)]
-    #[derive(Eq, PartialEq, Hash, Clone, Debug)]
-    pub enum DynamicSudoku {
-        Base2(Sudoku<Base2>),
-        Base3(Sudoku<Base3>),
-        Base4(Sudoku<Base4>),
-        Base5(Sudoku<Base5>),
-    }
+    // actions that don't depend on base
+    fn set_all_direct_candidates(&mut self);
+    fn undo(&mut self);
+    fn redo(&mut self);
+    fn settings(&self) -> SudokuSettings;
+    fn update_settings(&mut self, settings: SudokuSettings);
+    fn export(&self, format: &DynamicGridFormat) -> String;
 }
 
-// Requires runtime base
+/// A game of Sudoku which is able to change the size of the board at runtime.
+#[enum_dispatch(DynamicSudokuActions)]
+#[derive(Eq, PartialEq, Hash, Clone, Debug)]
+pub enum DynamicSudoku {
+    Base2(Sudoku<Base2>),
+    Base3(Sudoku<Base3>),
+    Base4(Sudoku<Base4>),
+    Base5(Sudoku<Base5>),
+}
+
+// TODO: re-evaluate constructors vs replacing &mut self methods (*self =)
+/// Actions which can change the currently used base
 impl DynamicSudoku {
     pub fn new(base: u8) -> Result<Self> {
         let base: DynamicBase = base.try_into()?;
@@ -102,43 +109,11 @@ impl DynamicSudoku {
 
         Ok(())
     }
-
-    pub fn try_strategies(
-        &mut self,
-        strategies: Vec<DynamicStrategy>,
-    ) -> Result<DynamicTryStrategiesReturn> {
-        fn inner<Base: SudokuBase>(
-            sudoku: &mut Sudoku<Base>,
-            strategies: Vec<DynamicStrategy>,
-        ) -> Result<DynamicTryStrategiesReturn> {
-            Ok(DynamicTryStrategiesReturn(
-                sudoku
-                    .try_strategies(strategies)?
-                    .map(|(strategy, deductions)| (strategy, deductions.into())),
-            ))
-        }
-
-        match self {
-            DynamicSudoku::Base2(sudoku) => inner(sudoku, strategies),
-            DynamicSudoku::Base3(sudoku) => inner(sudoku, strategies),
-            DynamicSudoku::Base4(sudoku) => inner(sudoku, strategies),
-            DynamicSudoku::Base5(sudoku) => inner(sudoku, strategies),
-        }
-    }
-
-    pub fn apply_deductions(&mut self, deductions: TransportDeductions) -> Result<()> {
-        match self {
-            DynamicSudoku::Base2(sudoku) => sudoku.apply_deductions(&deductions.try_into()?),
-            DynamicSudoku::Base3(sudoku) => sudoku.apply_deductions(&deductions.try_into()?),
-            DynamicSudoku::Base4(sudoku) => sudoku.apply_deductions(&deductions.try_into()?),
-            DynamicSudoku::Base5(sudoku) => sudoku.apply_deductions(&deductions.try_into()?),
-        }
-    }
 }
 
 #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[derive(Debug, Serialize)]
-pub struct DynamicTryStrategiesReturn(Option<(DynamicStrategy, TransportDeductions)>);
+pub struct DynamicTryStrategiesReturn(pub Option<(DynamicStrategy, TransportDeductions)>);
 
 impl TryFrom<Vec<DynamicCell>> for DynamicSudoku {
     type Error = Error;

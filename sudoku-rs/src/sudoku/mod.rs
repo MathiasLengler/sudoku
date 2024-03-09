@@ -1,17 +1,19 @@
 use std::convert::TryInto;
 use std::fmt::{self, Display, Formatter};
 
-pub use dynamic::{DynamicSudoku, DynamicTryStrategiesReturn, Game};
+pub use dynamic::{DynamicSudoku, DynamicSudokuActions, DynamicTryStrategiesReturn};
 use history::History;
 
 use crate::base::SudokuBase;
-use crate::cell::Value;
+use crate::cell::dynamic::{DynamicCandidates, DynamicValue};
+use crate::cell::{Candidates, Value};
 use crate::error::Result;
 use crate::generator::{Generator, GeneratorProgress, GeneratorSettings};
 use crate::grid::format::DynamicGridFormat;
 use crate::grid::format::GridFormat;
 use crate::grid::Grid;
-use crate::position::DynamicPosition;
+use crate::position::{DynamicPosition, Position};
+use crate::solver::strategic::deduction::transport::TransportDeductions;
 use crate::solver::strategic::deduction::Deductions;
 use crate::solver::strategic::strategies::DynamicStrategy;
 use crate::solver::strategic::Solver as StrategicSolver;
@@ -37,6 +39,7 @@ impl<Base: SudokuBase> Default for Sudoku<Base> {
     }
 }
 
+/// Constructors
 impl<Base: SudokuBase> Sudoku<Base> {
     pub fn new() -> Self {
         Self::with_grid(Grid::new())
@@ -79,6 +82,75 @@ impl<Base: SudokuBase> Sudoku<Base> {
     pub fn solved_grid(&self) -> &Option<Grid<Base>> {
         &self.solved_grid
     }
+}
+
+// base-specific implementations for `DynamicSudokuActions`
+impl<Base: SudokuBase> Sudoku<Base> {
+    pub fn set_value(&mut self, pos: Position<Base>, value: Value<Base>) -> Result<()> {
+        self.push_history();
+
+        self.grid.get_mut(pos).set_value(value);
+
+        if self.settings.update_candidates {
+            self.grid.update_direct_candidates_for_new_value(pos, value);
+        }
+
+        Ok(())
+    }
+
+    pub fn set_or_toggle_value(&mut self, pos: Position<Base>, value: Value<Base>) -> Result<()> {
+        self.push_history();
+
+        let set_value = self.grid.get_mut(pos).set_or_toggle_value(value);
+
+        if self.settings.update_candidates && set_value {
+            self.grid.update_direct_candidates_for_new_value(pos, value);
+        }
+
+        Ok(())
+    }
+
+    pub fn set_candidates(
+        &mut self,
+        pos: Position<Base>,
+        candidates: Candidates<Base>,
+    ) -> Result<()> {
+        self.push_history();
+
+        self.grid.get_mut(pos).set_candidates(candidates);
+
+        Ok(())
+    }
+
+    pub fn toggle_candidate(&mut self, pos: Position<Base>, candidate: Value<Base>) -> Result<()> {
+        self.push_history();
+
+        self.grid.get_mut(pos).toggle_candidate(candidate);
+
+        Ok(())
+    }
+    pub fn set_candidate(&mut self, pos: Position<Base>, candidate: Value<Base>) -> Result<()> {
+        self.push_history();
+
+        self.grid.get_mut(pos).set_candidate(candidate);
+
+        Ok(())
+    }
+    pub fn delete_candidate(&mut self, pos: Position<Base>, candidate: Value<Base>) -> Result<()> {
+        self.push_history();
+
+        self.grid.get_mut(pos).delete_candidate(candidate);
+
+        Ok(())
+    }
+
+    pub fn delete(&mut self, pos: Position<Base>) -> Result<()> {
+        self.push_history();
+
+        self.grid.get_mut(pos).delete();
+
+        Ok(())
+    }
 
     pub fn try_strategies(
         &mut self,
@@ -98,100 +170,77 @@ impl<Base: SudokuBase> Sudoku<Base> {
     }
 }
 
-impl<Base: SudokuBase> Game for Sudoku<Base> {
-    fn set_value(&mut self, pos: DynamicPosition, value: u8) -> Result<()> {
+impl<Base: SudokuBase> DynamicSudokuActions for Sudoku<Base> {
+    // actions that handle base-dependend types
+    // - convert runtime-base (`Dynamic*`) parameters to base-generic equivalents
+    // - call base-generic implementation
+    // - if return is base-generic, convert to its runtime-base eqivalent
+
+    fn set_value(&mut self, pos: DynamicPosition, value: DynamicValue) -> Result<()> {
         let pos = pos.try_into()?;
-        let value = Value::new(value)?;
+        let value = value.try_into()?;
 
-        self.push_history();
-
-        let cell = self.grid.get_mut(pos);
-
-        if let Some(value) = value {
-            cell.set_value(value);
-
-            if self.settings.update_candidates {
-                self.grid.update_direct_candidates_for_new_value(pos, value);
-            }
-        } else {
-            cell.delete();
-        }
-
-        Ok(())
+        self.set_value(pos, value)
     }
 
-    fn set_or_toggle_value(&mut self, pos: DynamicPosition, value: u8) -> Result<()> {
+    fn set_or_toggle_value(&mut self, pos: DynamicPosition, value: DynamicValue) -> Result<()> {
         let pos = pos.try_into()?;
-        let value = Value::new(value)?;
+        let value = value.try_into()?;
 
-        self.push_history();
-
-        let cell = self.grid.get_mut(pos);
-
-        if let Some(value) = value {
-            let set_value = cell.set_or_toggle_value(value);
-
-            if self.settings.update_candidates && set_value {
-                self.grid.update_direct_candidates_for_new_value(pos, value);
-            }
-        } else {
-            cell.delete();
-        }
-
-        Ok(())
+        self.set_or_toggle_value(pos, value)
     }
 
-    fn set_candidates(&mut self, pos: DynamicPosition, candidates: Vec<u8>) -> Result<()> {
+    fn set_candidates(
+        &mut self,
+        pos: DynamicPosition,
+        candidates: DynamicCandidates,
+    ) -> Result<()> {
         let pos = pos.try_into()?;
         let candidates = candidates.try_into()?;
 
-        self.push_history();
-
-        self.grid.get_mut(pos).set_candidates(candidates);
-
-        Ok(())
+        self.set_candidates(pos, candidates)
     }
 
-    fn toggle_candidate(&mut self, pos: DynamicPosition, candidate: u8) -> Result<()> {
+    fn toggle_candidate(&mut self, pos: DynamicPosition, candidate: DynamicValue) -> Result<()> {
         let pos = pos.try_into()?;
         let candidate = candidate.try_into()?;
 
-        self.push_history();
-
-        self.grid.get_mut(pos).toggle_candidate(candidate);
-
-        Ok(())
+        self.toggle_candidate(pos, candidate)
     }
-    fn set_candidate(&mut self, pos: DynamicPosition, candidate: u8) -> Result<()> {
+    fn set_candidate(&mut self, pos: DynamicPosition, candidate: DynamicValue) -> Result<()> {
         let pos = pos.try_into()?;
         let candidate = candidate.try_into()?;
 
-        self.push_history();
-
-        self.grid.get_mut(pos).set_candidate(candidate);
-
-        Ok(())
+        self.set_candidate(pos, candidate)
     }
-    fn delete_candidate(&mut self, pos: DynamicPosition, candidate: u8) -> Result<()> {
+    fn delete_candidate(&mut self, pos: DynamicPosition, candidate: DynamicValue) -> Result<()> {
         let pos = pos.try_into()?;
         let candidate = candidate.try_into()?;
 
-        self.push_history();
-
-        self.grid.get_mut(pos).delete_candidate(candidate);
-
-        Ok(())
+        self.delete_candidate(pos, candidate)
     }
 
     fn delete(&mut self, pos: DynamicPosition) -> Result<()> {
         let pos = pos.try_into()?;
 
-        self.push_history();
-
-        self.grid.get_mut(pos).delete();
-
-        Ok(())
+        self.delete(pos)
     }
+
+    fn try_strategies(
+        &mut self,
+        strategies: Vec<DynamicStrategy>,
+    ) -> Result<DynamicTryStrategiesReturn> {
+        Ok(DynamicTryStrategiesReturn(
+            self.try_strategies(strategies)?
+                .map(|(strategy, deductions)| (strategy, deductions.into())),
+        ))
+    }
+
+    fn apply_deductions(&mut self, deductions: TransportDeductions) -> Result<()> {
+        self.apply_deductions(&deductions.try_into()?)
+    }
+
+    // actions that don't depend on base
 
     fn set_all_direct_candidates(&mut self) {
         self.push_history();
