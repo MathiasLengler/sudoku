@@ -339,16 +339,17 @@ impl_sudoku_base!(
 );
 
 mod dynamic {
-    use anyhow::{bail, format_err};
-
     use super::*;
+    use anyhow::{bail, format_err};
+    use serde_repr::{Deserialize_repr, Serialize_repr};
 
-    #[derive(Debug, Copy, Clone, Eq, PartialEq)]
+    #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize_repr, Deserialize_repr)]
+    #[repr(u8)]
     pub enum BaseEnum {
-        Base2,
-        Base3,
-        Base4,
-        Base5,
+        Base2 = 2,
+        Base3 = 3,
+        Base4 = 4,
+        Base5 = 5,
     }
 
     /// const conversions between `u8` and `DynamicBase`
@@ -449,6 +450,52 @@ mod dynamic {
                     _ => bail!("Cell count {cell_count} has no valid sudoku base"),
                 },
             )
+        }
+    }
+
+    impl BaseEnum {
+        pub fn all() -> impl Iterator<Item = Self> {
+            [
+                BaseEnum::Base2,
+                BaseEnum::Base3,
+                BaseEnum::Base4,
+                BaseEnum::Base5,
+            ]
+            .into_iter()
+        }
+    }
+
+    #[cfg(feature = "wasm")]
+    mod wasm {
+        use itertools::Itertools;
+
+        use super::*;
+
+        impl ts_rs::TS for BaseEnum {
+            const EXPORT_TO: Option<&'static str> = Some("bindings/BaseEnum.ts");
+            fn decl() -> String {
+                format!("type BaseEnum = {};", Self::inline())
+            }
+            fn name() -> String {
+                "BaseEnum".to_owned()
+            }
+            fn inline() -> String {
+                BaseEnum::all().map(Self::into_u8).join(" | ")
+            }
+            fn dependencies() -> Vec<ts_rs::Dependency>
+            where
+                Self: 'static,
+            {
+                vec![]
+            }
+            fn transparent() -> bool {
+                false
+            }
+        }
+        #[cfg(test)]
+        #[test]
+        fn export_bindings_baseenum() {
+            <BaseEnum as ts_rs::TS>::export().expect("could not export type");
         }
     }
 

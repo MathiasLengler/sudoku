@@ -19,6 +19,7 @@ anyhow = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 # Required dependencies
+serde_repr = "0.1.18"
 enum_dispatch = "0.3.12"
 getrandom = "0.2.11"
 indexmap = "2.1.0"
