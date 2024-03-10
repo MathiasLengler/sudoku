@@ -178,13 +178,13 @@ pub unsafe trait SudokuBase
 where
     Self: Ord + Hash + Clone + Copy + Debug + Default + Send + Sync + 'static + private::Sealed,
 {
-    /// A variant of the enum `DynamicBase`
+    /// A variant of the enum `BaseEnum`
     ///
     /// Used for matching of bases at runtime.
     ///
     /// # Safety
     /// - `Base::DYNAMIC_BASE.into_u8() == Base::BASE`
-    const DYNAMIC_BASE: BaseEnum;
+    const ENUM: BaseEnum;
 
     // TODO: evaluate `as` casting of constants
     /// The side length of a sudoku block. Must be non-zero.
@@ -288,13 +288,13 @@ macro_rules! impl_sudoku_base {
         $(
 // Safety: this private macro is only instantiated below and the correctness of the generated impls is tested.
 unsafe impl SudokuBase for $type_num {
-    const DYNAMIC_BASE: BaseEnum = BaseEnum::assert_from_base_u8($base_u8);
+    const ENUM: BaseEnum = BaseEnum::assert_from_base_u8($base_u8);
     const BASE: u8 = $base_u8;
     const SIDE_LENGTH: u8 = base_to_side_length(Self::BASE);
     const MAX_VALUE: u8 = base_to_max_value(Self::BASE);
     const CELL_COUNT: u16 = base_to_cell_count(Self::BASE);
-    const BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS: usize = Self::DYNAMIC_BASE.binary_fixed_candidates_line_cell_chars();
-    const MINIMUM_CLUE_COUNT_FOR_UNIQUE_SOLUTION: u16 = Self::DYNAMIC_BASE.minimum_clue_count_for_unique_solution();
+    const BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS: usize = Self::ENUM.binary_fixed_candidates_line_cell_chars();
+    const MINIMUM_CLUE_COUNT_FOR_UNIQUE_SOLUTION: u16 = Self::ENUM.minimum_clue_count_for_unique_solution();
 
     fn pos_to_block(pos: Position<Self>) -> Coordinate<Self> {
         let cell_index = usize::from(pos.cell_index());
@@ -566,7 +566,7 @@ mod tests {
         use std::mem::size_of;
 
         // Safety invariant of Base::DYNAMIC_BASE
-        assert_eq!(Base::DYNAMIC_BASE.into_u8(), Base::BASE);
+        assert_eq!(Base::ENUM.into_u8(), Base::BASE);
 
         // Safety invariant of Base::BASE
         assert_ne!(Base::BASE, 0);
@@ -598,7 +598,7 @@ mod tests {
     fn test_base_2() {
         type Base = Base2;
 
-        assert_eq!(Base::DYNAMIC_BASE, BaseEnum::Base2);
+        assert_eq!(Base::ENUM, BaseEnum::Base2);
         assert_eq!(Base::BASE, 2);
         assert_eq!(Base::SIDE_LENGTH, 4);
         assert_eq!(Base::MAX_VALUE, 4);
@@ -614,7 +614,7 @@ mod tests {
     fn test_base_3() {
         type Base = Base3;
 
-        assert_eq!(Base::DYNAMIC_BASE, BaseEnum::Base3);
+        assert_eq!(Base::ENUM, BaseEnum::Base3);
         assert_eq!(Base::BASE, 3);
         assert_eq!(Base::SIDE_LENGTH, 9);
         assert_eq!(Base::MAX_VALUE, 9);
@@ -630,7 +630,7 @@ mod tests {
     fn test_base_4() {
         type Base = Base4;
 
-        assert_eq!(Base::DYNAMIC_BASE, BaseEnum::Base4);
+        assert_eq!(Base::ENUM, BaseEnum::Base4);
         assert_eq!(Base::BASE, 4);
         assert_eq!(Base::SIDE_LENGTH, 16);
         assert_eq!(Base::MAX_VALUE, 16);
@@ -646,7 +646,7 @@ mod tests {
     fn test_base_5() {
         type Base = Base5;
 
-        assert_eq!(Base::DYNAMIC_BASE, BaseEnum::Base5);
+        assert_eq!(Base::ENUM, BaseEnum::Base5);
         assert_eq!(Base::BASE, 5);
         assert_eq!(Base::SIDE_LENGTH, 25);
         assert_eq!(Base::MAX_VALUE, 25);

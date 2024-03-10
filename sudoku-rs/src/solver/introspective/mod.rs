@@ -31,7 +31,7 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, Filter: AvailabilityFilter<Ba
     Solver<Base, GridRef, Filter>
 {
     pub fn new_with_filter(grid: GridRef, filter: Filter) -> Self {
-        match Base::DYNAMIC_BASE {
+        match Base::ENUM {
             // Base 2 and 3 are small enough,
             // that the overhead of the strategy evaluation is slower than the naive backtracking solver.
             BaseEnum::Base2 | BaseEnum::Base3 => Self {

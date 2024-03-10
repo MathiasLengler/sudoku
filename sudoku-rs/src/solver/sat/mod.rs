@@ -153,7 +153,7 @@ impl<Base: SudokuBase> Solver<Base> {
     /// `Base`-cached version of `Self::init_sat_solver`
     #[allow(clippy::unnecessary_box_returns)]
     fn get_initialized_sat_solver() -> SatSolver<'static> {
-        match Base::DYNAMIC_BASE {
+        match Base::ENUM {
             BaseEnum::Base2 => initialized_sat_solver::SOLVER_BASE_2.deref().clone(),
             BaseEnum::Base3 => initialized_sat_solver::SOLVER_BASE_3.deref().clone(),
             BaseEnum::Base4 => initialized_sat_solver::SOLVER_BASE_4.deref().clone(),

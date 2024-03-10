@@ -5,7 +5,7 @@ import { assert } from "./typeUtils";
 
 export const WORKER_BOOT_UP_MESSAGE = "Worker loaded";
 
-export const dynamicStrategySchema = z.enum([
+export const strategyEnumSchema = z.enum([
     "NakedSingles",
     "HiddenSingles",
     "NakedPairs",
@@ -16,8 +16,8 @@ export const dynamicStrategySchema = z.enum([
     "Backtracking",
 ]);
 
-assert<IsEqual<z.infer<typeof dynamicStrategySchema>, StrategyEnum>>();
-export const ALL_STRATEGIES = dynamicStrategySchema.options;
+assert<IsEqual<z.infer<typeof strategyEnumSchema>, StrategyEnum>>();
+export const ALL_STRATEGIES = strategyEnumSchema.options;
 
 export const gridFormatSchema = z.enum([
     "CandidatesGridPlain",

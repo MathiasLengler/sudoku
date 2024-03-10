@@ -29,7 +29,7 @@ fn cast_grid<Base: SudokuBase>(any_grid: Box<dyn Any>) -> Grid<Base> {
 }
 
 fn sample_grid<Base: SudokuBase>() -> Grid<Base> {
-    match Base::DYNAMIC_BASE {
+    match Base::ENUM {
         BaseEnum::Base2 => cast_grid(Box::new(base_2().into_iter().next().unwrap())),
         BaseEnum::Base3 => cast_grid(Box::new(base_3().into_iter().next().unwrap())),
         BaseEnum::Base4 => cast_grid(Box::new(base_4().into_iter().next().unwrap())),
