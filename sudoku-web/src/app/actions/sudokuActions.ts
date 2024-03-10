@@ -4,7 +4,7 @@ import { useRecoilCallback } from "recoil";
 import { remoteWorkerApiState, sudokuSideLengthState, sudokuState, workerState } from "../state/sudoku";
 import type {
     DynamicGeneratorSettings,
-    DynamicGridFormat,
+    GridFormatEnum,
     DynamicPosition,
     DynamicStrategies,
     GeneratorProgress,
@@ -391,7 +391,7 @@ export function useImportSudokuString() {
 export function useExportSudokuString() {
     return useRecoilCallback(
         ({ snapshot }) =>
-            async (format: DynamicGridFormat) => {
+            async (format: GridFormatEnum) => {
                 const wasmSudokuProxy = await getWasmSudokuProxy(snapshot);
                 return await wasmSudokuProxy.export(format);
             },

@@ -1,7 +1,7 @@
 import { WORKER_BOOT_UP_MESSAGE } from "./constants";
 import * as Comlink from "comlink";
 import type { WorkerApi } from "./worker";
-import { loadCells } from "./app/celllsPersistence";
+import { loadCells } from "./app/cellsPersistence";
 import type { WasmSudoku } from "./types";
 
 export type RemoteWorkerApi = {

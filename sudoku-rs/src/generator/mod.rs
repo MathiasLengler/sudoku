@@ -15,7 +15,7 @@ use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::rng::{new_crate_rng_with_seed, CrateRng};
-use crate::solver::strategic::strategies::{Backtracking, DynamicStrategy};
+use crate::solver::strategic::strategies::{Backtracking, StrategyEnum};
 use crate::solver::{backtracking, introspective};
 
 // TODO: strategic
@@ -130,7 +130,7 @@ pub struct PruningSettings<Base: SudokuBase> {
     /// Whether to set all direct candidates after pruning is done.
     pub set_all_direct_candidates: bool,
     /// With which strategies the sudoku should remain solvable for.
-    pub strategies: Vec<DynamicStrategy>,
+    pub strategies: Vec<StrategyEnum>,
     /// How much to prune the solution.
     pub target: PruningTarget,
     /// Adjust order in which cells are pruned.
@@ -239,7 +239,7 @@ mod dynamic_settings {
     #[serde(rename_all = "camelCase")]
     pub struct DynamicPruningSettings {
         pub set_all_direct_candidates: bool,
-        pub strategies: Vec<DynamicStrategy>,
+        pub strategies: Vec<StrategyEnum>,
         pub target: PruningTarget,
         pub order: DynamicPruningOrder,
         pub start_from_near_minimal_grid: bool,
@@ -1220,7 +1220,7 @@ mod tests {
         fn test_strategies() {
             use crate::solver::strategic::strategies::*;
 
-            fn generate(target: PruningTarget, strategies: Vec<DynamicStrategy>) -> Grid<Base3> {
+            fn generate(target: PruningTarget, strategies: Vec<StrategyEnum>) -> Grid<Base3> {
                 Generator::<Base3>::with_pruning(PruningSettings {
                     strategies,
                     target,
@@ -1236,7 +1236,7 @@ mod tests {
                 let grid = generate(target, vec![]);
                 assert!(grid.is_solved());
 
-                let default_strategies = DynamicStrategy::default_solver_strategies();
+                let default_strategies = StrategyEnum::default_solver_strategies();
                 for i in 1..default_strategies.len() {
                     let strategies = default_strategies.clone().into_iter().take(i).collect_vec();
                     let grid = generate(target, strategies.clone());

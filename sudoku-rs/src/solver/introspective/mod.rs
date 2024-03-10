@@ -1,4 +1,4 @@
-use crate::base::{DynamicBase, SudokuBase};
+use crate::base::{BaseEnum, SudokuBase};
 use crate::cell::CandidatesAscIter;
 use crate::grid::Grid;
 use crate::solver::backtracking::AvailabilityFilter;
@@ -34,7 +34,7 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, Filter: AvailabilityFilter<Ba
         match Base::DYNAMIC_BASE {
             // Base 2 and 3 are small enough,
             // that the overhead of the strategy evaluation is slower than the naive backtracking solver.
-            DynamicBase::Base2 | DynamicBase::Base3 => Self {
+            BaseEnum::Base2 | BaseEnum::Base3 => Self {
                 solver_impl: SolverImpl::Backtracking(
                     backtracking::Solver::builder(grid)
                         .availability_filter(filter)
@@ -42,7 +42,7 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, Filter: AvailabilityFilter<Ba
                 ),
             },
             // For base >= 4, sat solver is faster
-            DynamicBase::Base4 | DynamicBase::Base5 => Self {
+            BaseEnum::Base4 | BaseEnum::Base5 => Self {
                 solver_impl: SolverImpl::Sat(
                     sat::Solver::new_with_availability_filter(grid, &filter)
                         .unwrap()

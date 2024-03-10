@@ -1,4 +1,4 @@
-import type { DynamicGridFormat, DynamicStrategy } from "./types";
+import type { GridFormatEnum, StrategyEnum } from "./types";
 import { z } from "zod";
 import type { IsEqual } from "type-fest";
 import { assert } from "./typeUtils";
@@ -16,7 +16,7 @@ export const dynamicStrategySchema = z.enum([
     "Backtracking",
 ]);
 
-assert<IsEqual<z.infer<typeof dynamicStrategySchema>, DynamicStrategy>>();
+assert<IsEqual<z.infer<typeof dynamicStrategySchema>, StrategyEnum>>();
 export const ALL_STRATEGIES = dynamicStrategySchema.options;
 
 export const gridFormatSchema = z.enum([
@@ -28,6 +28,6 @@ export const gridFormatSchema = z.enum([
     "BinaryCandidatesLine",
     "BinaryFixedCandidatesLine",
 ]);
-assert<IsEqual<z.infer<typeof gridFormatSchema>, DynamicGridFormat>>();
+assert<IsEqual<z.infer<typeof gridFormatSchema>, GridFormatEnum>>();
 
 export const ALL_GRID_FORMATS = gridFormatSchema.options;

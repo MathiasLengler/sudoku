@@ -9,7 +9,7 @@ use criterion::measurement::WallTime;
 use criterion::{BatchSize, BenchmarkId, SamplingMode, Throughput};
 use criterion::{BenchmarkGroup, Criterion};
 
-use sudoku::base::{consts::*, DynamicBase, SudokuBase};
+use sudoku::base::{consts::*, BaseEnum, SudokuBase};
 use sudoku::cell::Candidates;
 use sudoku::cell::Value;
 use sudoku::generator::{Generator, GeneratorSettings, PruningSettings, PruningTarget};
@@ -30,10 +30,10 @@ fn cast_grid<Base: SudokuBase>(any_grid: Box<dyn Any>) -> Grid<Base> {
 
 fn sample_grid<Base: SudokuBase>() -> Grid<Base> {
     match Base::DYNAMIC_BASE {
-        DynamicBase::Base2 => cast_grid(Box::new(base_2().into_iter().next().unwrap())),
-        DynamicBase::Base3 => cast_grid(Box::new(base_3().into_iter().next().unwrap())),
-        DynamicBase::Base4 => cast_grid(Box::new(base_4().into_iter().next().unwrap())),
-        DynamicBase::Base5 => cast_grid(Box::new(base_5().into_iter().next().unwrap())),
+        BaseEnum::Base2 => cast_grid(Box::new(base_2().into_iter().next().unwrap())),
+        BaseEnum::Base3 => cast_grid(Box::new(base_3().into_iter().next().unwrap())),
+        BaseEnum::Base4 => cast_grid(Box::new(base_4().into_iter().next().unwrap())),
+        BaseEnum::Base5 => cast_grid(Box::new(base_5().into_iter().next().unwrap())),
     }
 }
 

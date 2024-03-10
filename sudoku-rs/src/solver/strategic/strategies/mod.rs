@@ -31,7 +31,7 @@ mod hidden_singles;
 mod naked_pairs;
 mod naked_singles;
 
-#[enum_dispatch(DynamicStrategy)]
+#[enum_dispatch(StrategyEnum)]
 pub trait Strategy: Debug + Copy + Clone + Eq + Sized {
     /// The name of the strategy.
     fn name(self) -> &'static str;
@@ -54,7 +54,7 @@ pub trait Strategy: Debug + Copy + Clone + Eq + Sized {
 #[enum_dispatch]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u8)]
-pub enum DynamicStrategy {
+pub enum StrategyEnum {
     NakedSingles,
     HiddenSingles,
     NakedPairs,
@@ -65,7 +65,7 @@ pub enum DynamicStrategy {
     Backtracking,
 }
 
-impl DynamicStrategy {
+impl StrategyEnum {
     pub fn all() -> Vec<Self> {
         vec![
             NakedSingles.into(),
@@ -123,7 +123,7 @@ impl DynamicStrategy {
     }
 }
 
-impl Serialize for DynamicStrategy {
+impl Serialize for StrategyEnum {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -132,7 +132,7 @@ impl Serialize for DynamicStrategy {
     }
 }
 
-impl<'de> Deserialize<'de> for DynamicStrategy {
+impl<'de> Deserialize<'de> for StrategyEnum {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -140,7 +140,7 @@ impl<'de> Deserialize<'de> for DynamicStrategy {
         struct StrategyVisitor;
 
         impl<'de> Visitor<'de> for StrategyVisitor {
-            type Value = DynamicStrategy;
+            type Value = StrategyEnum;
 
             fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
                 formatter.write_str("a valid strategy name")
@@ -157,11 +157,11 @@ impl<'de> Deserialize<'de> for DynamicStrategy {
     }
 }
 
-impl FromStr for DynamicStrategy {
+impl FromStr for StrategyEnum {
     type Err = Error;
 
     fn from_str(strategy_name: &str) -> Result<Self> {
-        DynamicStrategy::all()
+        StrategyEnum::all()
             .into_iter()
             .find(|strategy| strategy.name() == strategy_name)
             .ok_or_else(|| format_err!("Unexpected strategy name: {strategy_name}"))
@@ -174,11 +174,11 @@ mod tests {
 
     #[test]
     fn test_serde_round_trip() {
-        let all_strategies = DynamicStrategy::all();
+        let all_strategies = StrategyEnum::all();
 
         let json_string = serde_json::to_string(&all_strategies).unwrap();
 
-        let all_strategies_round_tripped: Vec<DynamicStrategy> =
+        let all_strategies_round_tripped: Vec<StrategyEnum> =
             serde_json::from_str(&json_string).unwrap();
 
         assert_eq!(all_strategies, all_strategies_round_tripped);

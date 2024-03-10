@@ -9,7 +9,7 @@ use num::traits::{
 use num::PrimInt;
 
 use consts::*;
-pub use dynamic::DynamicBase;
+pub use dynamic::BaseEnum;
 
 use crate::cell::Candidates;
 use crate::error::{Error, Result};
@@ -184,7 +184,7 @@ where
     ///
     /// # Safety
     /// - `Base::DYNAMIC_BASE.into_u8() == Base::BASE`
-    const DYNAMIC_BASE: DynamicBase;
+    const DYNAMIC_BASE: BaseEnum;
 
     // TODO: evaluate `as` casting of constants
     /// The side length of a sudoku block. Must be non-zero.
@@ -288,7 +288,7 @@ macro_rules! impl_sudoku_base {
         $(
 // Safety: this private macro is only instantiated below and the correctness of the generated impls is tested.
 unsafe impl SudokuBase for $type_num {
-    const DYNAMIC_BASE: DynamicBase = DynamicBase::assert_from_base_u8($base_u8);
+    const DYNAMIC_BASE: BaseEnum = BaseEnum::assert_from_base_u8($base_u8);
     const BASE: u8 = $base_u8;
     const SIDE_LENGTH: u8 = base_to_side_length(Self::BASE);
     const MAX_VALUE: u8 = base_to_max_value(Self::BASE);
@@ -344,7 +344,7 @@ mod dynamic {
     use super::*;
 
     #[derive(Debug, Copy, Clone, Eq, PartialEq)]
-    pub enum DynamicBase {
+    pub enum BaseEnum {
         Base2,
         Base3,
         Base4,
@@ -352,100 +352,100 @@ mod dynamic {
     }
 
     /// const conversions between `u8` and `DynamicBase`
-    impl DynamicBase {
+    impl BaseEnum {
         pub const fn assert_from_base_u8(base: u8) -> Self {
             assert!(2 <= base && base <= 5);
 
             match base {
-                2 => DynamicBase::Base2,
-                3 => DynamicBase::Base3,
-                4 => DynamicBase::Base4,
-                5 => DynamicBase::Base5,
+                2 => BaseEnum::Base2,
+                3 => BaseEnum::Base3,
+                4 => BaseEnum::Base4,
+                5 => BaseEnum::Base5,
                 _unexpected_base => unreachable!(),
             }
         }
 
         pub const fn into_u8(self) -> u8 {
             match self {
-                DynamicBase::Base2 => 2,
-                DynamicBase::Base3 => 3,
-                DynamicBase::Base4 => 4,
-                DynamicBase::Base5 => 5,
+                BaseEnum::Base2 => 2,
+                BaseEnum::Base3 => 3,
+                BaseEnum::Base4 => 4,
+                BaseEnum::Base5 => 5,
             }
         }
     }
 
     /// const definitions
-    impl DynamicBase {
+    impl BaseEnum {
         pub const fn binary_fixed_candidates_line_cell_chars(self) -> usize {
             match self {
-                DynamicBase::Base2 => 1,
-                DynamicBase::Base3 => 2,
-                DynamicBase::Base4 => 4,
-                DynamicBase::Base5 => 6,
+                BaseEnum::Base2 => 1,
+                BaseEnum::Base3 => 2,
+                BaseEnum::Base4 => 4,
+                BaseEnum::Base5 => 6,
             }
         }
 
         pub const fn minimum_clue_count_for_unique_solution(self) -> u16 {
             match self {
                 // Reference: https://math.stackexchange.com/questions/2170944/sudoku-what-is-the-relationship-between-minimum-number-of-clues-and-order-n
-                DynamicBase::Base2 => 4,
-                DynamicBase::Base3 => 17,
+                BaseEnum::Base2 => 4,
+                BaseEnum::Base3 => 17,
                 // Unknown, guess on ~200 minimal sudokus
-                DynamicBase::Base4 => 75,
+                BaseEnum::Base4 => 75,
                 // Unknown, conservative estimate
-                DynamicBase::Base5 => 76,
+                BaseEnum::Base5 => 76,
             }
         }
     }
 
     /// runtime conversion from base as `u8`
-    impl TryFrom<u8> for DynamicBase {
+    impl TryFrom<u8> for BaseEnum {
         type Error = Error;
 
         fn try_from(base: u8) -> Result<Self> {
             Ok(match base {
-                2 => DynamicBase::Base2,
-                3 => DynamicBase::Base3,
-                4 => DynamicBase::Base4,
-                5 => DynamicBase::Base5,
+                2 => BaseEnum::Base2,
+                3 => BaseEnum::Base3,
+                4 => BaseEnum::Base4,
+                5 => BaseEnum::Base5,
                 unexpected_base => bail!("Unexpected runtime base: {unexpected_base}"),
             })
         }
     }
 
-    impl From<Base2> for DynamicBase {
+    impl From<Base2> for BaseEnum {
         fn from(_base: Base2) -> Self {
-            DynamicBase::Base2
+            BaseEnum::Base2
         }
     }
-    impl From<Base3> for DynamicBase {
+    impl From<Base3> for BaseEnum {
         fn from(_base: Base3) -> Self {
-            DynamicBase::Base3
+            BaseEnum::Base3
         }
     }
-    impl From<Base4> for DynamicBase {
+    impl From<Base4> for BaseEnum {
         fn from(_base: Base4) -> Self {
-            DynamicBase::Base4
+            BaseEnum::Base4
         }
     }
-    impl From<Base5> for DynamicBase {
+    impl From<Base5> for BaseEnum {
         fn from(_base: Base5) -> Self {
-            DynamicBase::Base5
+            BaseEnum::Base5
         }
     }
 
     /// conversions between runtime sizes parameters and `DynamicBase`
-    impl DynamicBase {
-        pub fn try_from_cell_count_usize(cell_count: usize) -> Result<DynamicBase> {
+    impl BaseEnum {
+        pub fn try_from_cell_count_usize(cell_count: usize) -> Result<BaseEnum> {
             Ok(
                 match u16::try_from(cell_count)
                     .map_err(|_| format_err!("Cell count {cell_count} too large"))?
                 {
-                    Base2::CELL_COUNT => DynamicBase::Base2,
-                    Base3::CELL_COUNT => DynamicBase::Base3,
-                    Base4::CELL_COUNT => DynamicBase::Base4,
-                    Base5::CELL_COUNT => DynamicBase::Base5,
+                    Base2::CELL_COUNT => BaseEnum::Base2,
+                    Base3::CELL_COUNT => BaseEnum::Base3,
+                    Base4::CELL_COUNT => BaseEnum::Base4,
+                    Base5::CELL_COUNT => BaseEnum::Base5,
                     _ => bail!("Cell count {cell_count} has no valid sudoku base"),
                 },
             )
@@ -458,47 +458,47 @@ mod dynamic {
 
         #[test]
         fn test_assert_from_base_u8() {
-            assert_eq!(DynamicBase::assert_from_base_u8(2), DynamicBase::Base2);
-            assert_eq!(DynamicBase::assert_from_base_u8(3), DynamicBase::Base3);
-            assert_eq!(DynamicBase::assert_from_base_u8(4), DynamicBase::Base4);
-            assert_eq!(DynamicBase::assert_from_base_u8(5), DynamicBase::Base5);
+            assert_eq!(BaseEnum::assert_from_base_u8(2), BaseEnum::Base2);
+            assert_eq!(BaseEnum::assert_from_base_u8(3), BaseEnum::Base3);
+            assert_eq!(BaseEnum::assert_from_base_u8(4), BaseEnum::Base4);
+            assert_eq!(BaseEnum::assert_from_base_u8(5), BaseEnum::Base5);
         }
 
         #[test]
         fn test_into_u8() {
-            assert_eq!(DynamicBase::Base2.into_u8(), 2);
-            assert_eq!(DynamicBase::Base3.into_u8(), 3);
-            assert_eq!(DynamicBase::Base4.into_u8(), 4);
-            assert_eq!(DynamicBase::Base5.into_u8(), 5);
+            assert_eq!(BaseEnum::Base2.into_u8(), 2);
+            assert_eq!(BaseEnum::Base3.into_u8(), 3);
+            assert_eq!(BaseEnum::Base4.into_u8(), 4);
+            assert_eq!(BaseEnum::Base5.into_u8(), 5);
         }
 
         #[test]
         fn test_try_from_u8() {
-            assert_eq!(DynamicBase::try_from(2).unwrap(), DynamicBase::Base2);
-            assert_eq!(DynamicBase::try_from(3).unwrap(), DynamicBase::Base3);
-            assert_eq!(DynamicBase::try_from(4).unwrap(), DynamicBase::Base4);
-            assert_eq!(DynamicBase::try_from(5).unwrap(), DynamicBase::Base5);
+            assert_eq!(BaseEnum::try_from(2).unwrap(), BaseEnum::Base2);
+            assert_eq!(BaseEnum::try_from(3).unwrap(), BaseEnum::Base3);
+            assert_eq!(BaseEnum::try_from(4).unwrap(), BaseEnum::Base4);
+            assert_eq!(BaseEnum::try_from(5).unwrap(), BaseEnum::Base5);
         }
 
         #[test]
         fn test_from_base_structs() {
-            assert_eq!(DynamicBase::from(Base2), DynamicBase::Base2);
-            assert_eq!(DynamicBase::from(Base3), DynamicBase::Base3);
-            assert_eq!(DynamicBase::from(Base4), DynamicBase::Base4);
-            assert_eq!(DynamicBase::from(Base5), DynamicBase::Base5);
+            assert_eq!(BaseEnum::from(Base2), BaseEnum::Base2);
+            assert_eq!(BaseEnum::from(Base3), BaseEnum::Base3);
+            assert_eq!(BaseEnum::from(Base4), BaseEnum::Base4);
+            assert_eq!(BaseEnum::from(Base5), BaseEnum::Base5);
         }
 
         #[test]
         fn test_try_from_cell_count_usize() -> Result<()> {
             let test_cases = vec![
-                (16, DynamicBase::Base2),
-                (81, DynamicBase::Base3),
-                (256, DynamicBase::Base4),
-                (625, DynamicBase::Base5),
+                (16, BaseEnum::Base2),
+                (81, BaseEnum::Base3),
+                (256, BaseEnum::Base4),
+                (625, BaseEnum::Base5),
             ];
 
             for &(cell_count, expected_base) in &test_cases {
-                let base = DynamicBase::try_from_cell_count_usize(cell_count)?;
+                let base = BaseEnum::try_from_cell_count_usize(cell_count)?;
 
                 assert_eq!(base, expected_base);
             }
@@ -509,7 +509,7 @@ mod dynamic {
                 .collect();
 
             for cell_count in (0..=1000).filter(|x| !legal_cell_counts.contains(x)) {
-                let res_base = DynamicBase::try_from_cell_count_usize(cell_count);
+                let res_base = BaseEnum::try_from_cell_count_usize(cell_count);
                 assert!(
                     res_base.is_err(),
                     "Expected err, got {res_base:?} for cell_count: {cell_count}"
@@ -598,7 +598,7 @@ mod tests {
     fn test_base_2() {
         type Base = Base2;
 
-        assert_eq!(Base::DYNAMIC_BASE, DynamicBase::Base2);
+        assert_eq!(Base::DYNAMIC_BASE, BaseEnum::Base2);
         assert_eq!(Base::BASE, 2);
         assert_eq!(Base::SIDE_LENGTH, 4);
         assert_eq!(Base::MAX_VALUE, 4);
@@ -614,7 +614,7 @@ mod tests {
     fn test_base_3() {
         type Base = Base3;
 
-        assert_eq!(Base::DYNAMIC_BASE, DynamicBase::Base3);
+        assert_eq!(Base::DYNAMIC_BASE, BaseEnum::Base3);
         assert_eq!(Base::BASE, 3);
         assert_eq!(Base::SIDE_LENGTH, 9);
         assert_eq!(Base::MAX_VALUE, 9);
@@ -630,7 +630,7 @@ mod tests {
     fn test_base_4() {
         type Base = Base4;
 
-        assert_eq!(Base::DYNAMIC_BASE, DynamicBase::Base4);
+        assert_eq!(Base::DYNAMIC_BASE, BaseEnum::Base4);
         assert_eq!(Base::BASE, 4);
         assert_eq!(Base::SIDE_LENGTH, 16);
         assert_eq!(Base::MAX_VALUE, 16);
@@ -646,7 +646,7 @@ mod tests {
     fn test_base_5() {
         type Base = Base5;
 
-        assert_eq!(Base::DYNAMIC_BASE, DynamicBase::Base5);
+        assert_eq!(Base::DYNAMIC_BASE, BaseEnum::Base5);
         assert_eq!(Base::BASE, 5);
         assert_eq!(Base::SIDE_LENGTH, 25);
         assert_eq!(Base::MAX_VALUE, 25);

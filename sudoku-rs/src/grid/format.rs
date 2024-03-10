@@ -28,7 +28,7 @@ mod candidates_grid_compact;
 mod givens_grid;
 mod givens_line;
 
-#[enum_dispatch(DynamicGridFormat)]
+#[enum_dispatch(GridFormatEnum)]
 pub trait GridFormat: Debug + Copy + Clone + Eq + Sized {
     fn render<Base: SudokuBase>(self, grid: &Grid<Base>) -> String;
 
@@ -71,7 +71,7 @@ pub trait GridFormat: Debug + Copy + Clone + Eq + Sized {
 #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[enum_dispatch]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum DynamicGridFormat {
+pub enum GridFormatEnum {
     BinaryCandidatesLine,
     BinaryFixedCandidatesLine,
     CandidatesGridANSIStyled,
@@ -81,7 +81,7 @@ pub enum DynamicGridFormat {
     GivensGrid,
 }
 
-impl DynamicGridFormat {
+impl GridFormatEnum {
     pub fn all() -> Vec<Self> {
         vec![
             BinaryCandidatesLine.into(),
@@ -116,7 +116,7 @@ impl DynamicGridFormat {
     }
 }
 
-impl Serialize for DynamicGridFormat {
+impl Serialize for GridFormatEnum {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -135,7 +135,7 @@ impl Serialize for DynamicGridFormat {
     }
 }
 
-impl<'de> Deserialize<'de> for DynamicGridFormat {
+impl<'de> Deserialize<'de> for GridFormatEnum {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -143,7 +143,7 @@ impl<'de> Deserialize<'de> for DynamicGridFormat {
         struct GridFormatVisitor;
 
         impl<'de> Visitor<'de> for GridFormatVisitor {
-            type Value = DynamicGridFormat;
+            type Value = GridFormatEnum;
 
             fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
                 formatter.write_str("a valid grid format name")
@@ -160,11 +160,11 @@ impl<'de> Deserialize<'de> for DynamicGridFormat {
     }
 }
 
-impl FromStr for DynamicGridFormat {
+impl FromStr for GridFormatEnum {
     type Err = Error;
 
     fn from_str(grid_format_name: &str) -> Result<Self> {
-        DynamicGridFormat::all()
+        GridFormatEnum::all()
             .into_iter()
             .find(|grid_format| grid_format.name() == grid_format_name)
             .ok_or_else(|| format_err!("Unexpected grid format name: {grid_format_name}"))
@@ -181,11 +181,11 @@ mod tests {
 
     #[test]
     fn test_serde_round_trip() {
-        let all_strategies = DynamicGridFormat::all();
+        let all_strategies = GridFormatEnum::all();
 
         let json_string = serde_json::to_string(&all_strategies).unwrap();
 
-        let all_strategies_round_tripped: Vec<DynamicGridFormat> =
+        let all_strategies_round_tripped: Vec<GridFormatEnum> =
             serde_json::from_str(&json_string).unwrap();
 
         assert_eq!(all_strategies, all_strategies_round_tripped);
@@ -195,13 +195,13 @@ mod tests {
     fn test_detect_and_parse_cells_roundtrip() {
         pub(crate) fn assert_grid_format_roundtrip_detect<Base: SudokuBase>(
             grid: &Grid<Base>,
-            grid_format: DynamicGridFormat,
+            grid_format: GridFormatEnum,
         ) -> Result<()> {
             (|| {
                 let grid_string = grid_format.render(grid);
 
                 let cell_views =
-                    DynamicGridFormat::detect_and_parse(&grid_string).with_context(|| {
+                    GridFormatEnum::detect_and_parse(&grid_string).with_context(|| {
                         format!("Failed to detect and parse grid_string:\n{grid_string}")
                     })?;
 
@@ -219,7 +219,7 @@ mod tests {
 
         // Grid formats which preserve:
         // - cell value
-        let grid_formats: Vec<DynamicGridFormat> = vec![
+        let grid_formats: Vec<GridFormatEnum> = vec![
             BinaryCandidatesLine.into(),
             BinaryFixedCandidatesLine.into(),
             CandidatesGridANSIStyled.into(),
@@ -252,7 +252,7 @@ mod tests {
         // Grid formats which preserve:
         // - cell value
         // - cell value fixed state
-        let grid_formats: Vec<DynamicGridFormat> = vec![
+        let grid_formats: Vec<GridFormatEnum> = vec![
             // BinaryCandidatesLine.into(),
             BinaryFixedCandidatesLine.into(),
             // CandidatesGridANSIStyled.into(),
@@ -278,7 +278,7 @@ mod tests {
         // Grid formats which preserve:
         // - cell value
         // - cell candidates
-        let grid_formats: Vec<DynamicGridFormat> = vec![
+        let grid_formats: Vec<GridFormatEnum> = vec![
             // BinaryCandidatesLine.into(),
             // BinaryFixedCandidatesLine.into(),
             CandidatesGridANSIStyled.into(),
@@ -299,7 +299,7 @@ mod tests {
         // - cell value
         // - cell value fixed state
         // - cell multiple candidates
-        let grid_formats: Vec<DynamicGridFormat> = vec![
+        let grid_formats: Vec<GridFormatEnum> = vec![
             // BinaryCandidatesLine.into(),
             BinaryFixedCandidatesLine.into(),
             // CandidatesGridANSIStyled.into(),

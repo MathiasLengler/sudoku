@@ -229,8 +229,8 @@ impl WasmSudoku {
         Ok(())
     }
 
-    pub fn export(&self, format: IDynamicGridFormat) -> Result<String> {
-        Ok(self.sudoku.export(&import_dynamic_grid_format(format)?))
+    pub fn export(&self, format: IGridFormatEnum) -> Result<String> {
+        Ok(self.sudoku.export(&import_grid_format_enum(format)?))
     }
 
     // FIXME: wasm bindgen return type

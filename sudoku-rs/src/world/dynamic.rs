@@ -1,6 +1,6 @@
 use enum_dispatch::enum_dispatch;
 
-use crate::base::{consts::*, DynamicBase};
+use crate::base::{consts::*, BaseEnum};
 use crate::error::Result;
 
 use super::{CellWorld, TileDim, WorldGenerationResult};
@@ -22,13 +22,13 @@ pub enum DynamicCellWorld {
 
 impl DynamicCellWorld {
     pub fn new(base: u8, tile_dim: TileDim, overlap: u8) -> Result<Self> {
-        let base: DynamicBase = base.try_into()?;
+        let base: BaseEnum = base.try_into()?;
 
         Ok(match base {
-            DynamicBase::Base2 => Self::Base2(CellWorld::<Base2>::new(tile_dim, overlap)),
-            DynamicBase::Base3 => Self::Base3(CellWorld::<Base3>::new(tile_dim, overlap)),
-            DynamicBase::Base4 => Self::Base4(CellWorld::<Base4>::new(tile_dim, overlap)),
-            DynamicBase::Base5 => Self::Base5(CellWorld::<Base5>::new(tile_dim, overlap)),
+            BaseEnum::Base2 => Self::Base2(CellWorld::<Base2>::new(tile_dim, overlap)),
+            BaseEnum::Base3 => Self::Base3(CellWorld::<Base3>::new(tile_dim, overlap)),
+            BaseEnum::Base4 => Self::Base4(CellWorld::<Base4>::new(tile_dim, overlap)),
+            BaseEnum::Base5 => Self::Base5(CellWorld::<Base5>::new(tile_dim, overlap)),
         })
     }
 }

@@ -11,14 +11,14 @@ use sudoku::{
         DynamicGeneratorSettings, DynamicPruningOrder, DynamicPruningSettings,
         DynamicSolutionSettings, GeneratorProgress, PruningGroupBehaviour, PruningTarget,
     },
-    grid::{dynamic::DynamicGrid, format::DynamicGridFormat},
+    grid::{dynamic::DynamicGrid, format::GridFormatEnum},
     position::DynamicPosition,
     solver::strategic::{
         deduction::transport::{
             PositionedTransportAction, PositionedTransportReason, TransportAction,
             TransportDeduction, TransportDeductions, TransportReason,
         },
-        strategies::DynamicStrategy,
+        strategies::StrategyEnum,
     },
     transport::{TransportCell, TransportSudoku},
     world::RelativeTileDir,
@@ -36,26 +36,26 @@ import type {
     DynamicCell,
     DynamicGeneratorSettings,
     DynamicGrid,
-    DynamicGridFormat,
     DynamicPosition,
     DynamicPruningOrder,
     DynamicPruningSettings,
     DynamicSolutionSettings,
-    DynamicStrategy,
     DynamicTryStrategiesReturn,
     DynamicValue,
     GeneratorProgress,
+    GridFormatEnum,
     PositionedTransportAction,
     PositionedTransportReason,
     PruningGroupBehaviour,
     PruningTarget,
     RelativeTileDir,
+    StrategyEnum,
     TransportAction,
     TransportCell,
     TransportDeduction,
     TransportDeductions,
     TransportReason,
-    TransportSudoku,
+    TransportSudoku
 } from "../../sudoku-rs/bindings";
 "#;
 
@@ -95,7 +95,7 @@ macro_rules! serde_wasm_bindgen_interop {
 }
 
 // Serde-compatbile aliases
-pub type DynamicStrategies = Vec<DynamicStrategy>;
+pub type DynamicStrategies = Vec<StrategyEnum>;
 pub type DynamicCells = Vec<DynamicCell>;
 
 // Must be keept in sync with aliases above
@@ -111,20 +111,20 @@ serde_wasm_bindgen_interop! {
     DynamicCell,
     DynamicGeneratorSettings,
     DynamicGrid,
-    DynamicGridFormat,
     DynamicPosition,
     DynamicPruningOrder,
     DynamicPruningSettings,
     DynamicSolutionSettings,
-    DynamicStrategy,
     DynamicTryStrategiesReturn,
     DynamicValue,
     GeneratorProgress,
+    GridFormatEnum,
     PositionedTransportAction,
     PositionedTransportReason,
     PruningGroupBehaviour,
     PruningTarget,
     RelativeTileDir,
+    StrategyEnum,
     TransportAction,
     TransportCell,
     TransportDeduction,

@@ -8,7 +8,7 @@ use itertools::Itertools;
 use log::trace;
 use varisat::{CnfFormula, ExtendFormula, Lit, Solver as SatSolver};
 
-use crate::base::{DynamicBase, SudokuBase};
+use crate::base::{BaseEnum, SudokuBase};
 use crate::cell::{Candidates, Cell, Value};
 use crate::error::{Error, Result};
 use crate::grid::Grid;
@@ -154,10 +154,10 @@ impl<Base: SudokuBase> Solver<Base> {
     #[allow(clippy::unnecessary_box_returns)]
     fn get_initialized_sat_solver() -> SatSolver<'static> {
         match Base::DYNAMIC_BASE {
-            DynamicBase::Base2 => initialized_sat_solver::SOLVER_BASE_2.deref().clone(),
-            DynamicBase::Base3 => initialized_sat_solver::SOLVER_BASE_3.deref().clone(),
-            DynamicBase::Base4 => initialized_sat_solver::SOLVER_BASE_4.deref().clone(),
-            DynamicBase::Base5 => initialized_sat_solver::SOLVER_BASE_5.deref().clone(),
+            BaseEnum::Base2 => initialized_sat_solver::SOLVER_BASE_2.deref().clone(),
+            BaseEnum::Base3 => initialized_sat_solver::SOLVER_BASE_3.deref().clone(),
+            BaseEnum::Base4 => initialized_sat_solver::SOLVER_BASE_4.deref().clone(),
+            BaseEnum::Base5 => initialized_sat_solver::SOLVER_BASE_5.deref().clone(),
         }
     }
 

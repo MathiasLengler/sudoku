@@ -14,10 +14,10 @@ use crate::cell::Cell;
 use crate::cell::CellState;
 use crate::cell::Value;
 use crate::error::{Error, Result};
-use crate::grid::format::{CandidatesGridANSIStyled, DynamicGridFormat, GridFormat};
+use crate::grid::format::{CandidatesGridANSIStyled, GridFormat, GridFormatEnum};
 use crate::position::Coordinate;
 use crate::position::Position;
-use crate::solver::strategic::strategies::DynamicStrategy;
+use crate::solver::strategic::strategies::StrategyEnum;
 use crate::solver::{backtracking, introspective, strategic, FallibleSolver};
 use crate::unsafe_utils::{get_unchecked, get_unchecked_mut};
 
@@ -387,7 +387,7 @@ impl<Base: SudokuBase> Grid<Base> {
 
     pub fn is_solvable_with_strategies(
         &self,
-        strategies: Vec<DynamicStrategy>,
+        strategies: Vec<StrategyEnum>,
     ) -> Result<Option<Self>> {
         let mut clone = self.clone();
         clone.fix_all_values();
@@ -730,7 +730,7 @@ impl<Base: SudokuBase> FromStr for Grid<Base> {
     type Err = Error;
 
     fn from_str(input: &str) -> Result<Self> {
-        DynamicGridFormat::detect_and_parse(input)?.try_into()
+        GridFormatEnum::detect_and_parse(input)?.try_into()
     }
 }
 

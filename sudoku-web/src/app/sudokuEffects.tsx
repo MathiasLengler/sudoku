@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect } from "react";
 import type { DynamicCell, DynamicPosition } from "../types";
-import { saveCells } from "./celllsPersistence";
+import { saveCells } from "./cellsPersistence";
 import { useRecoilValue, useSetRecoilState } from "recoil";
 import { sudokuBaseState, sudokuCellsState } from "./state/sudoku";
 import { inputState } from "./state/input";

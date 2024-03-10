@@ -10,7 +10,7 @@ use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::solver::backtracking::AvailabilityFilter;
 use crate::solver::strategic::deduction::Deductions;
-use crate::solver::strategic::strategies::DynamicStrategy;
+use crate::solver::strategic::strategies::StrategyEnum;
 use crate::solver::FallibleSolver;
 
 pub mod deduction;
@@ -29,7 +29,7 @@ mod builder {
     #[derive(Debug)]
     pub struct SolverBuilder<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> {
         grid: GridMut,
-        strategies: Vec<DynamicStrategy>,
+        strategies: Vec<StrategyEnum>,
         _base: PhantomData<Base>,
     }
 
@@ -49,7 +49,7 @@ mod builder {
         SolverBuilder<Base, GridMut>
     {
         #[must_use]
-        pub fn strategies(mut self, strategies: Vec<DynamicStrategy>) -> Self {
+        pub fn strategies(mut self, strategies: Vec<StrategyEnum>) -> Self {
             self.strategies = strategies;
             self
         }
@@ -81,7 +81,7 @@ mod builder {
             Solver::new_with_strategies(
                 grid,
                 if strategies.is_empty() {
-                    DynamicStrategy::default_solver_strategies()
+                    StrategyEnum::default_solver_strategies()
                 } else {
                     strategies
                 },
@@ -95,7 +95,7 @@ pub struct Solver<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base
     grid: GridMut,
     // TODO: generic: AsRef: IntoIterator<DynamicStrategy>
     //  `Generator::try_delete_cell_at_pos` would not need to clone its strategies
-    strategies: Vec<DynamicStrategy>,
+    strategies: Vec<StrategyEnum>,
     _base: PhantomData<Base>,
 }
 
@@ -108,7 +108,7 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> Solver<Ba
         SolverBuilder::new(grid)
     }
 
-    pub fn new_with_strategies(mut grid: GridMut, strategies: Vec<DynamicStrategy>) -> Self {
+    pub fn new_with_strategies(mut grid: GridMut, strategies: Vec<StrategyEnum>) -> Self {
         grid.as_mut()
             .set_all_direct_candidates_if_all_candidates_are_empty();
 
@@ -120,7 +120,7 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> Solver<Ba
     }
 
     /// Tries executing strategies until one strategy is able to make at least one deduction.
-    pub fn try_strategies(&self) -> Result<Option<(DynamicStrategy, Deductions<Base>)>> {
+    pub fn try_strategies(&self) -> Result<Option<(StrategyEnum, Deductions<Base>)>> {
         for strategy in &self.strategies {
             trace!("Executing strategy: {strategy:?}");
 
@@ -206,7 +206,7 @@ mod tests {
         // Solver can solve the input grid
         let solver = Solver::new_with_strategies(
             grid.clone(),
-            DynamicStrategy::default_solver_strategies_no_backtracking(),
+            StrategyEnum::default_solver_strategies_no_backtracking(),
         );
         assert_fallible_solver_single_solution(solver, &grid);
 
@@ -222,13 +222,13 @@ mod tests {
         // Solver can no longer solve it
         let mut solver = Solver::new_with_strategies(
             ambiguous_grid.clone(),
-            DynamicStrategy::default_solver_strategies_no_backtracking(),
+            StrategyEnum::default_solver_strategies_no_backtracking(),
         );
         assert!(solver.try_solve().unwrap().is_none());
 
         // But, solver with filter for top left cell can solve it.
         let solver = Solver::builder(ambiguous_grid.clone())
-            .strategies(DynamicStrategy::default_solver_strategies_no_backtracking())
+            .strategies(StrategyEnum::default_solver_strategies_no_backtracking())
             .availability_filter(&|available_candidates, index| {
                 if index == GroupAvailabilityIndex::default() {
                     Candidates::with_single(Value::default())

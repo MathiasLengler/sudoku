@@ -8,13 +8,13 @@ use crate::cell::dynamic::{DynamicCandidates, DynamicValue};
 use crate::cell::{Candidates, Value};
 use crate::error::Result;
 use crate::generator::{Generator, GeneratorProgress, GeneratorSettings};
-use crate::grid::format::DynamicGridFormat;
 use crate::grid::format::GridFormat;
+use crate::grid::format::GridFormatEnum;
 use crate::grid::Grid;
 use crate::position::{DynamicPosition, Position};
 use crate::solver::strategic::deduction::transport::TransportDeductions;
 use crate::solver::strategic::deduction::Deductions;
-use crate::solver::strategic::strategies::DynamicStrategy;
+use crate::solver::strategic::strategies::StrategyEnum;
 use crate::solver::strategic::Solver as StrategicSolver;
 
 use self::settings::Settings;
@@ -153,8 +153,8 @@ impl<Base: SudokuBase> Sudoku<Base> {
 
     pub fn try_strategies(
         &mut self,
-        strategies: Vec<DynamicStrategy>,
-    ) -> Result<Option<(DynamicStrategy, Deductions<Base>)>> {
+        strategies: Vec<StrategyEnum>,
+    ) -> Result<Option<(StrategyEnum, Deductions<Base>)>> {
         self.push_history();
 
         let solver = StrategicSolver::new_with_strategies(&mut self.grid, strategies);
@@ -227,7 +227,7 @@ impl<Base: SudokuBase> DynamicSudokuActions for Sudoku<Base> {
 
     fn try_strategies(
         &mut self,
-        strategies: Vec<DynamicStrategy>,
+        strategies: Vec<StrategyEnum>,
     ) -> Result<DynamicTryStrategiesReturn> {
         Ok(DynamicTryStrategiesReturn(
             self.try_strategies(strategies)?
@@ -269,7 +269,7 @@ impl<Base: SudokuBase> DynamicSudokuActions for Sudoku<Base> {
         self.history.set_limit(self.settings.history_limit);
     }
 
-    fn export(&self, format: &DynamicGridFormat) -> String {
+    fn export(&self, format: &GridFormatEnum) -> String {
         format.render(&self.grid)
     }
 }
