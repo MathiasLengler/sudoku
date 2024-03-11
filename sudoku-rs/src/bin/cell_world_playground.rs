@@ -12,7 +12,7 @@ fn main() -> Result<()> {
     let overlap = 1;
 
     let mut world = CellWorld::<Base3>::new(tile_dim, overlap);
-    let world_generation_result = world.generate(Some(seed));
+    let world_generation_result = world.generate_solved(Some(seed));
     dbg!(&world_generation_result);
 
     println!("solved world:\n{world}");

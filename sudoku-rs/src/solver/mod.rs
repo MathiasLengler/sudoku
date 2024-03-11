@@ -89,7 +89,7 @@ pub mod test_util {
     use super::*;
 
     macro_rules! tests_solver_samples {
-        ($setup: expr, |$grid:ident| $block:block) => {
+        ($setup:expr, |$grid:ident| $block:block) => {
             #[test]
             fn test_samples_base_2() {
                 $setup;

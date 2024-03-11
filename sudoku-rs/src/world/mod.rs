@@ -10,11 +10,14 @@ use overlap_segment_filter::*;
 pub use tile_index::*;
 
 use crate::base::SudokuBase;
+use crate::cell::dynamic::DynamicCell;
 use crate::cell::{Candidates, Cell};
+use crate::error::Result;
 use crate::generator::{
     Generator, GeneratorSettings, PruningGroupBehaviour, PruningOrder, PruningSettings,
     PruningTarget, SolutionSettings,
 };
+use crate::grid::dynamic::DynamicGrid;
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::rng::{new_crate_rng_from_rng, new_crate_rng_with_seed};
@@ -80,7 +83,8 @@ impl<Base: SudokuBase> CellWorld<Base> {
 }
 
 impl<Base: SudokuBase> DynamicCellWorldActions for CellWorld<Base> {
-    fn generate(&mut self, seed: Option<u64>) -> WorldGenerationResult {
+    // Generation
+    fn generate_solved(&mut self, seed: Option<u64>) -> WorldGenerationResult {
         let tile_indexes = self.all_tile_indexes().collect_vec();
 
         let mut backtrack_count = 0;
@@ -158,10 +162,8 @@ impl<Base: SudokuBase> DynamicCellWorldActions for CellWorld<Base> {
             backtrack_count,
         }
     }
-}
 
-impl<Base: SudokuBase> CellWorld<Base> {
-    pub fn prune(&mut self, seed: Option<u64>) {
+    fn prune(&mut self, seed: Option<u64>) {
         let mut rng = new_crate_rng_with_seed(seed);
 
         assert!(self.is_solved());
@@ -210,6 +212,35 @@ impl<Base: SudokuBase> CellWorld<Base> {
             self.set_grid_at(&pruned_grid, tile_index);
         }
     }
+
+    // DynamicGrid interop
+    fn to_grid_at(&self, tile_index: TileIndex) -> DynamicGrid<DynamicCell> {
+        self.to_grid_at(tile_index).into()
+    }
+
+    fn set_grid_at(&mut self, grid: DynamicGrid<DynamicCell>, tile_index: TileIndex) -> Result<()> {
+        self.set_grid_at(&grid.try_into()?, tile_index);
+        Ok(())
+    }
+
+    // Queries
+    fn tile_dim(&self) -> TileDim {
+        self.tile_dim
+    }
+
+    fn is_solved(&self) -> bool {
+        self.all_tile_indexes()
+            .all(|tile_index| self.to_grid_at(tile_index).is_solved())
+    }
+
+    fn is_directly_consistent(&self) -> bool {
+        self.all_tile_indexes()
+            .all(|tile_index| self.to_grid_at(tile_index).is_directly_consistent())
+    }
+
+    fn all_world_cells(&self) -> Vec<DynamicCell> {
+        self.cells.iter().map(|cell| cell.into()).collect()
+    }
 }
 
 /// Grid interop
@@ -254,23 +285,6 @@ impl<Base: SudokuBase> CellWorld<Base> {
 
     pub fn all_tile_indexes(&self) -> impl Iterator<Item = TileIndex> {
         self.tile_dim.all_indexes()
-    }
-}
-
-/// Queries
-impl<Base: SudokuBase> CellWorld<Base> {
-    pub fn tile_dim(&self) -> TileDim {
-        self.tile_dim
-    }
-
-    pub fn is_solved(&self) -> bool {
-        self.all_tile_indexes()
-            .all(|tile_index| self.to_grid_at(tile_index).is_solved())
-    }
-
-    pub fn is_directly_consistent(&self) -> bool {
-        self.all_tile_indexes()
-            .all(|tile_index| self.to_grid_at(tile_index).is_directly_consistent())
     }
 }
 
@@ -399,7 +413,7 @@ mod tests {
         let overlap = 1;
 
         let mut world = CellWorld::<Base2>::new(tile_dim, overlap);
-        world.generate(Some(seed));
+        world.generate_solved(Some(seed));
         assert!(world.is_solved());
         world.prune(Some(seed));
         assert!(world.is_directly_consistent());

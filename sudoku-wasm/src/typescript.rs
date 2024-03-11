@@ -26,39 +26,6 @@ use sudoku::{
 };
 use wasm_bindgen::prelude::*;
 
-// TODO: is sudoku-rs/bindings/index.ts needed?
-// All ts-rs annotated types:
-//  #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
-#[wasm_bindgen(typescript_custom_section)]
-const IMPORT_TS_RS_BINDINGS: &'static str = r#"
-import type {
-    DynamicCandidates,
-    DynamicCell,
-    DynamicGeneratorSettings,
-    DynamicGrid,
-    DynamicPosition,
-    DynamicPruningOrder,
-    DynamicPruningSettings,
-    DynamicSolutionSettings,
-    DynamicTryStrategiesReturn,
-    DynamicValue,
-    GeneratorProgress,
-    GridFormatEnum,
-    PositionedTransportAction,
-    PositionedTransportReason,
-    PruningGroupBehaviour,
-    PruningTarget,
-    RelativeTileDir,
-    StrategyEnum,
-    TransportAction,
-    TransportCell,
-    TransportDeduction,
-    TransportDeductions,
-    TransportReason,
-    TransportSudoku
-} from "../../sudoku-rs/bindings";
-"#;
-
 pub(crate) fn export_value<T: serde::ser::Serialize + ?Sized>(value: &T) -> Result<JsValue> {
     Ok(value.serialize(&Serializer::json_compatible())?)
 }
@@ -94,18 +61,37 @@ macro_rules! serde_wasm_bindgen_interop {
     };
 }
 
-// Serde-compatbile aliases
-pub type DynamicStrategies = Vec<StrategyEnum>;
-pub type DynamicCells = Vec<DynamicCell>;
-
-// Must be keept in sync with aliases above
+// All ts-rs annotated types:
+//  #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[wasm_bindgen(typescript_custom_section)]
-const SERDE_ALIASES: &'static str = r#"
-export type DynamicStrategies = bindings.DynamicStrategy[];
-export type DynamicCells = bindings.DynamicCell[];
+const IMPORT_TS_RS_BINDINGS: &'static str = r#"
+import type {
+    DynamicCandidates,
+    DynamicCell,
+    DynamicGeneratorSettings,
+    DynamicGrid,
+    DynamicPosition,
+    DynamicPruningOrder,
+    DynamicPruningSettings,
+    DynamicSolutionSettings,
+    DynamicTryStrategiesReturn,
+    DynamicValue,
+    GeneratorProgress,
+    GridFormatEnum,
+    PositionedTransportAction,
+    PositionedTransportReason,
+    PruningGroupBehaviour,
+    PruningTarget,
+    RelativeTileDir,
+    StrategyEnum,
+    TransportAction,
+    TransportCell,
+    TransportDeduction,
+    TransportDeductions,
+    TransportReason,
+    TransportSudoku
+} from "../../sudoku-rs/bindings";
 "#;
-
-// ts-rs
 serde_wasm_bindgen_interop! {
     DynamicCandidates,
     DynamicCell,
@@ -133,11 +119,22 @@ serde_wasm_bindgen_interop! {
     TransportSudoku
 }
 
-// aliases
+// Serde-compatbile aliases
+pub type DynamicStrategies = Vec<StrategyEnum>;
+pub type DynamicCells = Vec<DynamicCell>;
+
+// Must be keept in sync with aliases above
+#[wasm_bindgen(typescript_custom_section)]
+const SERDE_ALIASES: &'static str = r#"
+export type DynamicStrategies = bindings.DynamicStrategy[];
+export type DynamicCells = bindings.DynamicCell[];
+"#;
+
 serde_wasm_bindgen_interop! {
     DynamicStrategies,
     DynamicCells
 }
+
 // non-serde types - custom conversion functions
 #[wasm_bindgen(typescript_custom_section)]
 const EXTRA: &'static str = r#"

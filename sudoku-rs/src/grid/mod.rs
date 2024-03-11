@@ -448,6 +448,10 @@ impl<Base: SudokuBase, T> Grid<Base, T> {
         grid.debug_assert();
         Ok(grid)
     }
+
+    pub fn into_cells(self) -> Vec<T> {
+        self.cells.into_raw_vec()
+    }
 }
 
 impl<Base: SudokuBase> Grid<Base> {

@@ -191,6 +191,7 @@ pub struct GeneratorSettings<Base: SudokuBase> {
 mod dynamic_settings {
     use anyhow::ensure;
 
+    use crate::cell::dynamic::DynamicCell;
     use crate::error::Error;
     use crate::grid::dynamic::DynamicGrid;
     use crate::position::DynamicPosition;
@@ -271,7 +272,7 @@ mod dynamic_settings {
     #[derive(Debug, Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct DynamicSolutionSettings {
-        pub values_grid: DynamicGrid,
+        pub values_grid: DynamicGrid<DynamicCell>,
     }
 
     impl<Base: SudokuBase> TryFrom<DynamicSolutionSettings> for SolutionSettings<Base> {

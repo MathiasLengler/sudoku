@@ -19,7 +19,7 @@ fn main() -> Result<()> {
         .progress()
         .filter_map(|seed| {
             let mut world = CellWorld::<Base3>::new(tile_dim, overlap);
-            let world_generation_result = world.generate(Some(seed.into()));
+            let world_generation_result = world.generate_solved(Some(seed.into()));
             if world_generation_result.backtrack_count > 0 {
                 dbg!(&world_generation_result);
                 Some(world)

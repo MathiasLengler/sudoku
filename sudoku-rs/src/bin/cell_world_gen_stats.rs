@@ -36,7 +36,7 @@ fn main() -> Result<()> {
                 .into_par_iter()
                 .map(|seed| {
                     let mut world = CellWorld::<Base>::new(tile_dim, overlap);
-                    world.generate(Some(seed))
+                    world.generate_solved(Some(seed))
                 })
                 .collect();
 

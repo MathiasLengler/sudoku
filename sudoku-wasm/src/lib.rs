@@ -49,11 +49,13 @@ pub fn init() {
     trace!("WASM initialized");
 }
 
-// TODO: continue PoC API design
 #[allow(dead_code)]
 #[wasm_bindgen]
 pub struct WasmCellWorld {
+    // TODO: expose methods from DynamicCellWorldActions with wasm-bindgen
     world: DynamicCellWorld,
+    // FIXME: does wasm need to know the active grid in the world?
+    //  could instead be state in the UI
     tile_index: TileIndex,
 }
 
@@ -77,7 +79,7 @@ impl WasmCellWorld {
 
         let tile_index = TileIndex::default();
         let seed = Some(1);
-        world.generate(seed);
+        world.generate_solved(seed);
         world.prune(seed);
 
         Self {

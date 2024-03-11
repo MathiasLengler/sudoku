@@ -1,66 +1,154 @@
+use anyhow::ensure;
 use serde::{Deserialize, Serialize};
-#[cfg(feature = "wasm")]
-use ts_rs::TS;
 
-use crate::base::{BaseEnum, SudokuBase};
+use crate::base::{match_base_enum, BaseEnum, SudokuBase};
 use crate::cell::dynamic::DynamicCell;
 use crate::error::{Error, Result};
 use crate::grid::Grid;
 
-// FIXME: should this struct contain an instance of DynamicBase?
-//  two different use-cases:
-//  - use as serde-compatible parameters/return with ts_rs
-//  - "Controller" containing runtime state for base
-//
-//  implementation strategies:
-//  - define struct/enum using serde-compatible types and ts_rs.
-//    more user-friendly data represenation (no bit fiddling etc.)
-//    - sometimes contains base state:
-//      - DynamicGeneratorSettings (to specifiy to *new* base)
-//      - TransportSudoku (to inform the UI about the *current* base)
-//    - more often, does not:
-//      - DynamicCell
-//      - DynamicValue
-//      - DynamicPosition
-//  - enum variant for each base containing base-generic implementation,
-//    define trait with actions using base-agnostic types. Examples:
-//    - DynamicSudoku / DynamicSudokuActions => Sudoku<Base>
-//    - DynamicCellWorld / DynamicCellWorldActions => CellWorld<Base>
-// Factors:
-// - is the type used primarily as a DTO / parameter type?
-// - are its methods used/wrapped by sudoku-wasm for the UI?
-//   - more like a "Controller"
-// - used for writing test cases to reduce validation overhead?
-// - does the type validate that only correct instances are constructed?
-//   - if not, does the type indicate that it is in a (in)valid state?
-//   - can the type be even validated in isolation? (e.g. without a provided base?)
-// Additional confusion: we use the name prefix "Dynamic" for both:
-// - enums listing all trait implementations of unit structs
-//   Here the prefix is used to disambiguate the enum from the trait.
-//   - DynamicStrategy (serde string enum)
-//   - DynamicGridFormat (serde string enum)
-//   - DynamicBase (could become serde number enum 2|3|4|5)
-// - base "agnostic" types
-//   Here the prefix is used to disambiguate the type from its base-generic equivalent.
-//   - DynamicCell
-//   - DynamicValue
-//   - DynamicPosition
-// The distiction between DTOs and "Controller"-like types is not clear.
-//
-// Can/should we abstract some of these relationships with custom conversion traits?
-#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct DynamicGrid<T = DynamicCell> {
-    // TODO: see above
-    // base: DynamicBase,
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(try_from = "Vec<T>", into = "Vec<T>", rename_all = "camelCase")]
+pub struct DynamicGrid<T: Clone = DynamicCell> {
+    base: BaseEnum,
     cells: Vec<T>,
 }
 
-impl<Base: SudokuBase> TryFrom<DynamicGrid> for Grid<Base> {
+impl<T: Default + Clone> DynamicGrid<T> {
+    pub fn new(base: BaseEnum) -> Self {
+        Self {
+            cells: match_base_enum!(base, Grid::<Base, T>::new().into_cells()),
+            base,
+        }
+    }
+}
+
+// interop `Grid<Base>`
+impl<Base: SudokuBase, T: Clone + Into<DynamicCell>> TryFrom<DynamicGrid<T>> for Grid<Base> {
     type Error = Error;
 
-    fn try_from(dynamic_grid: DynamicGrid) -> Result<Self> {
+    fn try_from(dynamic_grid: DynamicGrid<T>) -> Result<Self> {
+        ensure!(dynamic_grid.base.is::<Base>());
+
         dynamic_grid.cells.try_into()
+    }
+}
+
+impl<Base: SudokuBase, T, U: Clone + From<T>> From<Grid<Base, T>> for DynamicGrid<U> {
+    fn from(value: Grid<Base, T>) -> Self {
+        Self {
+            base: Base::ENUM,
+            cells: value
+                .into_cells()
+                .into_iter()
+                .map(|cell| cell.into())
+                .collect(),
+        }
+    }
+}
+
+impl<Base: SudokuBase, T, U: Clone + for<'a> From<&'a T>> From<&Grid<Base, T>> for DynamicGrid<U> {
+    fn from(grid: &Grid<Base, T>) -> Self {
+        Self {
+            base: Base::ENUM,
+            cells: grid.all_cells().map(|cell| cell.into()).collect(),
+        }
+    }
+}
+
+// interop `Vec<T>`
+impl<T: Clone> From<DynamicGrid<T>> for Vec<T> {
+    fn from(grid: DynamicGrid<T>) -> Self {
+        grid.cells
+    }
+}
+
+impl<T: Clone> TryFrom<Vec<T>> for DynamicGrid<T> {
+    type Error = Error;
+
+    fn try_from(cells: Vec<T>) -> Result<Self> {
+        let base = BaseEnum::try_from_cell_count_usize(cells.len())?;
+
+        Ok(Self { base, cells })
+    }
+}
+
+#[cfg(feature = "wasm")]
+mod wasm {
+    #![allow(clippy::all)]
+
+    use super::*;
+
+    // ts_rs doesn't support serde(try_from) and serde(into)
+    // We use the following struct to expand the TS macro manually as a stand-in.
+    // When again uncommeted, the implementation of ts_rs::TS delegates to the real DynamicGrid.
+
+    // use ts_rs::TS;
+    // #[derive(TS)]
+    // #[ts(export)]
+    // struct DynamicGrid<T: Clone = DynamicCell>(Vec<T>);
+
+    // Recursive expansion of TS macro
+    // ================================
+
+    impl<T: Clone> ts_rs::TS for DynamicGrid<T>
+    where
+        T: ts_rs::TS,
+    {
+        const EXPORT_TO: Option<&'static str> = Some("bindings/DynamicGrid.ts");
+        fn decl() -> String {
+            format!(
+                "type {}{} = {};",
+                "DynamicGrid",
+                format!(
+                    "<{}>",
+                    [format!("{} = {}", "T", <DynamicCell as ts_rs::TS>::name())].join(", ")
+                ),
+                <Vec<T> as ts_rs::TS>::name_with_type_args(vec!["T".to_owned()])
+            )
+        }
+        fn name() -> String {
+            "DynamicGrid".to_owned()
+        }
+        fn inline() -> String {
+            <Vec<T> as ts_rs::TS>::name_with_type_args(vec!["T".to_owned()])
+        }
+        fn dependencies() -> Vec<ts_rs::Dependency>
+        where
+            Self: 'static,
+        {
+            {
+                let mut dependencies = Vec::new();
+                if <Vec<T> as ts_rs::TS>::transparent() {
+                    dependencies.append(&mut <Vec<T> as ts_rs::TS>::dependencies());
+                } else {
+                    if let Some(dep) = ts_rs::Dependency::from_ty::<Vec<T>>() {
+                        dependencies.push(dep);
+                    }
+                }
+                if <Vec<T> as ts_rs::TS>::transparent() {
+                    dependencies.append(&mut <Vec<T> as ts_rs::TS>::dependencies());
+                } else {
+                    if let Some(dep) = ts_rs::Dependency::from_ty::<Vec<T>>() {
+                        dependencies.push(dep);
+                    }
+                }
+                if <DynamicCell as ts_rs::TS>::transparent() {
+                    dependencies.append(&mut <DynamicCell as ts_rs::TS>::dependencies());
+                } else {
+                    if let Some(dep) = ts_rs::Dependency::from_ty::<DynamicCell>() {
+                        dependencies.push(dep);
+                    }
+                }
+                dependencies
+            }
+        }
+        fn transparent() -> bool {
+            false
+        }
+    }
+    #[cfg(test)]
+    #[test]
+    fn export_bindings_dynamicgrid() {
+        <DynamicGrid<()> as ts_rs::TS>::export().expect("could not export type");
     }
 }

@@ -9,7 +9,8 @@ use num::traits::{
 use num::PrimInt;
 
 use consts::*;
-pub use dynamic::BaseEnum;
+pub(crate) use enum_impl::match_base_enum;
+pub use enum_impl::BaseEnum;
 
 use crate::cell::Candidates;
 use crate::error::{Error, Result};
@@ -338,7 +339,7 @@ impl_sudoku_base!(
     Base5, 5, u32, cell_index_to_block_index::BASE_5, block_index_to_top_left_cell_index::BASE_5;
 );
 
-mod dynamic {
+mod enum_impl {
     use super::*;
     use anyhow::{bail, format_err};
     use serde_repr::{Deserialize_repr, Serialize_repr};
@@ -415,6 +416,7 @@ mod dynamic {
         }
     }
 
+    // interop with `SudokuBase`
     impl From<Base2> for BaseEnum {
         fn from(_base: Base2) -> Self {
             BaseEnum::Base2
@@ -433,6 +435,11 @@ mod dynamic {
     impl From<Base5> for BaseEnum {
         fn from(_base: Base5) -> Self {
             BaseEnum::Base5
+        }
+    }
+    impl BaseEnum {
+        pub fn is<Base: SudokuBase>(self) -> bool {
+            self == Base::ENUM
         }
     }
 
@@ -464,6 +471,32 @@ mod dynamic {
             .into_iter()
         }
     }
+
+    macro_rules! match_base_enum {
+        ($base_enum_value:expr, $using_base:expr) => {{
+            use $crate::base::consts::*;
+            match $base_enum_value {
+                BaseEnum::Base2 => {
+                    type Base = Base2;
+                    $using_base
+                }
+                BaseEnum::Base3 => {
+                    type Base = Base3;
+                    $using_base
+                }
+                BaseEnum::Base4 => {
+                    type Base = Base4;
+                    $using_base
+                }
+                BaseEnum::Base5 => {
+                    type Base = Base5;
+                    $using_base
+                }
+            }
+        }};
+    }
+
+    pub(crate) use match_base_enum;
 
     #[cfg(feature = "wasm")]
     mod wasm {
