@@ -19,7 +19,7 @@
         "bubblewrap:build": "cd ../sudoku-bubblewrap && bubblewrap build"
     },
     "engines": {
-        "node": "18"
+        "node": "20"
     },
     "devDependencies": {
         "@babel/core": "^7.24.0",
