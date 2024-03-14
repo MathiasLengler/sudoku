@@ -1,7 +1,8 @@
 import * as Comlink from "comlink";
 import type { SelectorCallbackInterface, Snapshot } from "recoil";
 import { useRecoilCallback } from "recoil";
-import { remoteWorkerApiState, sudokuSideLengthState, sudokuState, workerState } from "../state/sudoku";
+import { sudokuSideLengthState, sudokuState } from "../state/sudoku";
+import { remoteWorkerApiState, workerState } from "../state/worker";
 import type {
     DynamicGeneratorSettings,
     GridFormatEnum,

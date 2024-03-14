@@ -2,7 +2,8 @@ import { z } from "zod";
 import { gridFormatSchema } from "../../../constants";
 import { atom, selector } from "recoil";
 import { localStorageEffect } from "../localStorageEffect";
-import { remoteWorkerApiState, sudokuState } from "../sudoku";
+import { sudokuState } from "../sudoku";
+import { remoteWorkerApiState } from "../worker";
 
 export type ExportToClipboardFormValues = z.infer<typeof exportToClipboardFormValuesSchema>;
 export const exportToClipboardFormValuesSchema = z.object({
