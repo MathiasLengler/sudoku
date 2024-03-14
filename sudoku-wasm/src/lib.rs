@@ -42,7 +42,7 @@ pub fn init() {
         static SET_HOOK: Once = Once::new();
         SET_HOOK.call_once(|| {
             panic::set_hook(Box::new(console_error_panic_hook::hook));
-            console_log::init_with_level(Level::Debug).unwrap();
+            console_log::init_with_level(Level::Info).unwrap();
         });
     }
 
@@ -54,14 +54,17 @@ pub fn init() {
 pub struct WasmCellWorld {
     // TODO: expose methods from DynamicCellWorldActions with wasm-bindgen
     world: DynamicCellWorld,
-    // FIXME: does wasm need to know the active grid in the world?
-    //  could instead be state in the UI
-    tile_index: TileIndex,
 }
 
 impl Default for WasmCellWorld {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl From<DynamicCellWorld> for WasmCellWorld {
+    fn from(world: DynamicCellWorld) -> Self {
+        Self { world }
     }
 }
 
@@ -77,15 +80,49 @@ impl WasmCellWorld {
             1,
         );
 
-        let tile_index = TileIndex::default();
         let seed = Some(1);
         world.generate_solved(seed);
         world.prune(seed);
 
-        Self {
-            world: world.into(),
-            tile_index,
-        }
+        DynamicCellWorld::from(world).into()
+    }
+
+    #[wasm_bindgen(js_name = generateSolved)]
+    pub fn generate_solved(&mut self, seed: Option<u64>) -> Result<IWorldGenerationResult> {
+        export_world_generation_result(self.world.generate_solved(seed))
+    }
+    pub fn prune(&mut self, seed: Option<u64>) {
+        self.world.prune(seed);
+    }
+
+    // DynamicGrid interop
+    #[wasm_bindgen(js_name = toGridAt)]
+    pub fn to_grid_at(&self, tile_index: ITileIndex) -> Result<IDynamicGrid> {
+        export_dynamic_grid(self.world.to_grid_at(import_tile_index(tile_index)?))
+    }
+    #[wasm_bindgen(js_name = setGridAt)]
+    pub fn set_grid_at(&mut self, grid: IDynamicGrid, tile_index: ITileIndex) -> Result<()> {
+        self.world
+            .set_grid_at(import_dynamic_grid(grid)?, import_tile_index(tile_index)?)?;
+        Ok(())
+    }
+
+    // Queries
+    #[wasm_bindgen(js_name = tileDim)]
+    pub fn tile_dim(&self) -> Result<ITileDim> {
+        export_tile_dim(self.world.tile_dim())
+    }
+    #[wasm_bindgen(js_name = isSolved)]
+    pub fn is_solved(&self) -> bool {
+        self.world.is_solved()
+    }
+    #[wasm_bindgen(js_name = isDirectlyConsistent)]
+    pub fn is_directly_consistent(&self) -> bool {
+        self.world.is_directly_consistent()
+    }
+    #[wasm_bindgen(js_name = allWorldCells)]
+    pub fn all_world_cells(&self) -> Result<IDynamicCells> {
+        export_dynamic_cells(self.world.all_world_cells())
     }
 }
 
@@ -102,7 +139,7 @@ impl Default for WasmSudoku {
 
 impl From<DynamicSudoku> for WasmSudoku {
     fn from(sudoku: DynamicSudoku) -> Self {
-        WasmSudoku { sudoku }
+        Self { sudoku }
     }
 }
 
@@ -235,15 +272,14 @@ impl WasmSudoku {
         Ok(self.sudoku.export(&import_grid_format_enum(format)?))
     }
 
-    // FIXME: wasm bindgen return type
     #[wasm_bindgen(js_name = tryStrategies)]
     pub fn try_strategies(
         &mut self,
-        strategies: IDynamicStrategies,
+        strategies: IStrategyEnums,
     ) -> Result<IDynamicTryStrategiesReturn> {
         let dynamic_try_strategies_return = self
             .sudoku
-            .try_strategies(import_dynamic_strategies(strategies)?)?;
+            .try_strategies(import_strategy_enums(strategies)?)?;
 
         export_dynamic_try_strategies_return(dynamic_try_strategies_return)
     }
@@ -253,34 +289,5 @@ impl WasmSudoku {
         self.sudoku
             .apply_deductions(import_transport_deductions(deductions)?)?;
         Ok(())
-    }
-
-    #[wasm_bindgen(js_name = changeTile)]
-    pub fn change_tile(&mut self, _dir: IRelativeTileDir) -> Result<()> {
-        todo!()
-        //
-        // let dir = import_dir(dir)?;
-        //
-        // let new_tile_index =
-        //     self.tile_index
-        //         .adjacent(dir, self.world.tile_dim())
-        //         .ok_or(anyhow!(
-        //             "Currently at world boundary {:?}, can't move {:?}",
-        //             self.tile_index,
-        //             dir
-        //         ))?;
-        //
-        // let DynamicSudoku::Base3(sudoku_base_3) = &self.sudoku else {
-        //     panic!("POC: base 3 only")
-        // };
-        //
-        // self.world
-        //     .set_grid_at(sudoku_base_3.grid(), self.tile_index);
-        //
-        // self.sudoku =
-        //     DynamicSudoku::Base3(Sudoku::with_grid(self.world.to_grid_at(new_tile_index)));
-        // self.tile_index = new_tile_index;
-        //
-        // Ok(())
     }
 }

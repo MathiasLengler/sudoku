@@ -1,26 +1,32 @@
-import type React from "react";
 import type * as CSS from "csstype";
-import { useKeyboardInput } from "./useKeyboardInput";
-import { Grid } from "./grid/grid";
-import { ControlPanel } from "./controlPanel/controlPanel";
 import { useResizeDetector } from "react-resize-detector";
-import SudokuAppBar from "./appBar/sudokuAppBar";
+import type { OnRefChangeType } from "react-resize-detector/build/types/types";
 import { useRecoilValue } from "recoil";
+import SudokuAppBar from "./appBar/sudokuAppBar";
+import { ControlPanel } from "./controlPanel/controlPanel";
+import { Grid } from "./grid/grid";
 import { sudokuBaseState, sudokuSideLengthState } from "./state/sudoku";
 import { SudokuEffects } from "./sudokuEffects";
-import type { OnRefChangeType } from "react-resize-detector/build/types/types";
+import { useKeyboardInput } from "./useKeyboardInput";
+import { gameModeState } from "./state/world";
+import { WorldMap } from "./components/world/WorldMap";
 
 interface SudokuContentProps {
     gridRef: OnRefChangeType<HTMLDivElement>;
 }
 
 const SudokuContent = ({ gridRef }: SudokuContentProps) => {
+    const gameMode = useRecoilValue(gameModeState);
     return (
         <div className="app-content">
-            <div className="sudoku">
-                <Grid gridRef={gridRef} />
-                <ControlPanel />
-            </div>
+            {gameMode.mode === "world" && gameMode.view === "map" ? (
+                <WorldMap />
+            ) : (
+                <div className="sudoku">
+                    <Grid gridRef={gridRef} />
+                    <ControlPanel />
+                </div>
+            )}
         </div>
     );
 };

@@ -1,8 +1,8 @@
 import * as Comlink from "comlink";
-import wbgInit, { WasmSudoku as WasmSudokuValue, init as wasmInit, initThreadPool } from "../../sudoku-wasm/pkg";
+import wbgInit, { WasmSudoku, WasmCellWorld, init as wasmInit, initThreadPool } from "../../sudoku-wasm/pkg";
 
 import { WORKER_BOOT_UP_MESSAGE } from "./constants";
-import type { DynamicCells, WasmSudoku } from "./types";
+import type { DynamicCells } from "./types";
 
 if (process.env.NODE_ENV !== "production") {
     self.addEventListener("message", ev => {
@@ -15,15 +15,17 @@ export interface WorkerApi {
     // We need to lie about the nullability of typedWasmSudoku
     // or else Comlink.Remote<WasmSudoku> doesn't narrow
     wasmSudoku: WasmSudoku;
+    wasmCellWorld: WasmCellWorld;
 }
 
 const workerApi: WorkerApi = {
     init,
     wasmSudoku: undefined as unknown as WasmSudoku,
+    wasmCellWorld: undefined as unknown as WasmCellWorld,
 };
 
 // Send boot up message
-// Background: worker.tsx is an async module.
+// Background: worker.tsx is an async module. (TODO: is this still the case?)
 // This requires manual synchronization between Comlink.wrap and Comlink.expose,
 // otherwise initialization messages from comlink would get lost, resulting in a deadlock.
 postMessage(WORKER_BOOT_UP_MESSAGE);
@@ -46,15 +48,18 @@ async function init(cells?: DynamicCells) {
     if (cells) {
         console.debug("Restoring sudoku from cells");
         try {
-            workerApi.wasmSudoku = WasmSudokuValue.restore(cells);
+            workerApi.wasmSudoku = WasmSudoku.restore(cells);
         } catch (err) {
             console.error("Failed to restore persisted grid:", err);
         }
     }
     if (!workerApi.wasmSudoku) {
         console.debug("Generating initial sudoku");
-        workerApi.wasmSudoku = new WasmSudokuValue();
+        workerApi.wasmSudoku = new WasmSudoku();
     }
+
+    // TODO: restore
+    workerApi.wasmCellWorld = new WasmCellWorld();
 
     console.debug("Worker init done");
 }

@@ -5,6 +5,7 @@ use anyhow::anyhow;
 use paste::paste;
 use serde_wasm_bindgen::Serializer;
 use sudoku::{
+    base::BaseEnum,
     cell::dynamic::{DynamicCandidates, DynamicCell, DynamicValue},
     error::Error as SudokuError,
     generator::{
@@ -21,7 +22,7 @@ use sudoku::{
         strategies::StrategyEnum,
     },
     transport::{TransportCell, TransportSudoku},
-    world::RelativeTileDir,
+    world::{RelativeTileDir, TileDim, TileIndex, WorldGenerationResult},
     DynamicTryStrategiesReturn,
 };
 use wasm_bindgen::prelude::*;
@@ -66,6 +67,7 @@ macro_rules! serde_wasm_bindgen_interop {
 #[wasm_bindgen(typescript_custom_section)]
 const IMPORT_TS_RS_BINDINGS: &'static str = r#"
 import type {
+    BaseEnum,
     DynamicCandidates,
     DynamicCell,
     DynamicGeneratorSettings,
@@ -84,15 +86,19 @@ import type {
     PruningTarget,
     RelativeTileDir,
     StrategyEnum,
+    TileDim,
+    TileIndex,
     TransportAction,
     TransportCell,
     TransportDeduction,
     TransportDeductions,
     TransportReason,
-    TransportSudoku
+    TransportSudoku,
+    WorldGenerationResult
 } from "../../sudoku-rs/bindings";
 "#;
 serde_wasm_bindgen_interop! {
+    BaseEnum,
     DynamicCandidates,
     DynamicCell,
     DynamicGeneratorSettings,
@@ -111,34 +117,37 @@ serde_wasm_bindgen_interop! {
     PruningTarget,
     RelativeTileDir,
     StrategyEnum,
+    TileDim,
+    TileIndex,
     TransportAction,
     TransportCell,
     TransportDeduction,
     TransportDeductions,
     TransportReason,
-    TransportSudoku
+    TransportSudoku,
+    WorldGenerationResult
 }
 
 // Serde-compatbile aliases
-pub type DynamicStrategies = Vec<StrategyEnum>;
+pub type StrategyEnums = Vec<StrategyEnum>;
 pub type DynamicCells = Vec<DynamicCell>;
 
 // Must be keept in sync with aliases above
 #[wasm_bindgen(typescript_custom_section)]
 const SERDE_ALIASES: &'static str = r#"
-export type DynamicStrategies = bindings.DynamicStrategy[];
-export type DynamicCells = bindings.DynamicCell[];
+export type StrategyEnums = StrategyEnum[];
+export type DynamicCells = DynamicCell[];
 "#;
 
 serde_wasm_bindgen_interop! {
-    DynamicStrategies,
+    StrategyEnums,
     DynamicCells
 }
 
 // non-serde types - custom conversion functions
 #[wasm_bindgen(typescript_custom_section)]
 const EXTRA: &'static str = r#"
-export type GenerateOnProgress = (progress: bindings.GeneratorProgress) => void;
+export type GenerateOnProgress = (progress: GeneratorProgress) => void;
 "#;
 
 #[wasm_bindgen]

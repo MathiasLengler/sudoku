@@ -8,7 +8,7 @@ export const sudokuState = atom<TransportSudoku>({
     default: selector({
         key: "DefaultSudoku",
         get: async ({ get }) => {
-            const wasmSudokuProxy = get(remoteWorkerApiState).wasmSudokuProxy;
+            const { wasmSudokuProxy } = get(remoteWorkerApiState);
             return await wasmSudokuProxy.getSudoku();
         },
     }),

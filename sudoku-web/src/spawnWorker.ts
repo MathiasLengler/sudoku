@@ -2,16 +2,18 @@ import { WORKER_BOOT_UP_MESSAGE } from "./constants";
 import * as Comlink from "comlink";
 import type { WorkerApi } from "./worker";
 import { loadCells } from "./app/cellsPersistence";
-import type { WasmSudoku } from "./types";
+import type { WasmCellWorld, WasmSudoku } from "./types";
 
 export type RemoteWorkerApi = {
     wasmSudokuProxy: WasmSudokuProxy;
+    wasmCellWorldProxy: WasmCellWorldProxy;
 };
 export type WasmSudokuProxy = Comlink.Remote<WasmSudoku>;
+export type WasmCellWorldProxy = Comlink.Remote<WasmCellWorld>;
 
-function fixupWasmSudokuProxy(wasmSudokuProxy: WasmSudokuProxy): WasmSudokuProxy {
+function fixupComlinkProxy<T>(comlinkProxy: Comlink.Remote<T>): Comlink.Remote<T> {
     return new Proxy(
-        // Target a plain object for `typeof wasmSudokuProxy === "object"`
+        // Target a plain object for `typeof proxy === "object"`
         // Reference: https://stackoverflow.com/a/42493645
         {},
         {
@@ -22,10 +24,10 @@ function fixupWasmSudokuProxy(wasmSudokuProxy: WasmSudokuProxy): WasmSudokuProxy
                 if (property === "then") {
                     return undefined;
                 }
-                return (wasmSudokuProxy as unknown as Record<string, unknown>)[property];
+                return (comlinkProxy as unknown as Record<string, unknown>)[property];
             },
         }
-    ) as unknown as WasmSudokuProxy;
+    ) as unknown as Comlink.Remote<T>;
 }
 
 export async function spawnWorker() {
@@ -72,10 +74,12 @@ export async function getRemoteWorkerApi(worker: Worker): Promise<RemoteWorkerAp
 
     // Incorrect type: `workerApi.typedWasmSudoku` is not wrapped in a Promise.
     const wasmSudokuProxy = workerApi.wasmSudoku as unknown as WasmSudokuProxy;
+    const wasmCellWorldProxy = workerApi.wasmCellWorld as unknown as WasmCellWorldProxy;
 
     // Important: wasmSudokuProxy is a Proxy.
     // We must be careful when setting it's state, since the Proxy gets misinterpreted as a Function or Promise.
     return {
-        wasmSudokuProxy: fixupWasmSudokuProxy(wasmSudokuProxy),
+        wasmSudokuProxy: fixupComlinkProxy(wasmSudokuProxy),
+        wasmCellWorldProxy: fixupComlinkProxy(wasmCellWorldProxy),
     };
 }

@@ -5,6 +5,7 @@
     --base: 0;
     --grid-size: 70vmin;
 
+    /* TODO: switch to oklch */
     /*Style Variables*/
     --hue: 213;
     --block-border-color: hsl(var(--hue), 0%, 39%);
@@ -18,10 +19,10 @@
     --cell-value-color-fixed: hsl(0, 0%, 13%);
     --cell-value-color-user: hsl(var(--hue), 85%, 34%);
     --cell-value-color-incorrect-value: hsl(0, 100%, 50%);
-    --candiate-color: hsl(var(--hue), 3%, 39%);
-    --candiate-color-guide: hsl(var(--hue), 25%, 83%);
-    --candiate-bg-color-deduction-reason: hsl(120, 100%, 50%);
-    --candiate-bg-color-deduction-delete: hsl(60, 100%, 50%);
+    --candidate-color: hsl(var(--hue), 3%, 39%);
+    --candidate-color-guide: hsl(var(--hue), 25%, 83%);
+    --candidate-bg-color-deduction-reason: hsl(120, 100%, 50%);
+    --candidate-bg-color-deduction-delete: hsl(60, 100%, 50%);
     --bg-color: hsl(0, 0%, 100%);
 
     --sudoku-content-direction: column;
@@ -41,9 +42,9 @@
         --cell-value-color-fixed: hsl(0, 0%, 100%);
         --cell-value-color-user: hsl(var(--hue), 85%, 66%);
         --cell-value-color-incorrect-value: hsl(0, 100%, 50%);
-        --candiate-color: hsl(0, 0%, 100%);
-        --candiate-bg-color-deduction-reason: hsl(120, 100%, 25%);
-        --candiate-bg-color-deduction-delete: hsl(60, 100%, 25%);
+        --candidate-color: hsl(0, 0%, 100%);
+        --candidate-bg-color-deduction-reason: hsl(120, 100%, 25%);
+        --candidate-bg-color-deduction-delete: hsl(60, 100%, 25%);
         --bg-color: hsl(0, 0%, 7%);
     }
 }
@@ -233,7 +234,7 @@ body,
     grid-column: calc(1 + var(--candidate-column));
     grid-row: calc(1 + var(--candidate-row));
 
-    color: var(--candiate-color);
+    color: var(--candidate-color);
     font-size: calc(var(--cell-size) / (var(--base) + 0.1));
     line-height: 1;
     text-align: center;
@@ -247,12 +248,12 @@ body,
 }
 
 .candidate--deduction-reason {
-    background-color: var(--candiate-bg-color-deduction-reason);
+    background-color: var(--candidate-bg-color-deduction-reason);
     border-radius: 50%;
 }
 
 .candidate--deduction-delete {
-    background-color: var(--candiate-bg-color-deduction-delete);
+    background-color: var(--candidate-bg-color-deduction-delete);
     border-radius: 50%;
 }
 

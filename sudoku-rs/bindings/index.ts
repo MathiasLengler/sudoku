@@ -28,3 +28,4 @@ export type * from "./TransportDeduction";
 export type * from "./TransportDeductions";
 export type * from "./TransportReason";
 export type * from "./TransportSudoku";
+export type * from "./WorldGenerationResult";

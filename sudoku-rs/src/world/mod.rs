@@ -1,10 +1,12 @@
-use std::fmt::{Display, Formatter};
-
 use itertools::Itertools;
 use ndarray::{s, Array2, ArrayViewMut2, Axis, Dim, SliceInfo, SliceInfoElem};
 use rand::prelude::*;
+use serde::{Deserialize, Serialize};
+use std::fmt::{Display, Formatter};
 use tabled::builder::Builder;
 use tabled::settings::{Padding, Style};
+#[cfg(feature = "wasm")]
+use ts_rs::TS;
 
 use overlap_segment_filter::*;
 pub use tile_index::*;
@@ -59,7 +61,8 @@ impl<Base: SudokuBase> Display for CellWorld<Base> {
     }
 }
 
-#[derive(Debug)]
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct WorldGenerationResult {
     pub success: bool,
     pub backtrack_count: u32,

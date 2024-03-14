@@ -1,17 +1,16 @@
 import LightbulbIcon from "@mui/icons-material/Lightbulb";
-import MyIconButton from "../components/MyIconButton";
-import * as React from "react";
-import { useApplyDeductions, useTryStrategies } from "../actions/sudokuActions";
-import { useRecoilCallback, useRecoilValue } from "recoil";
-import { hintSettingsState, scaleLoopDelayIndex } from "../state/forms/hintSettings";
-import { type Hint, hintState, type OptionalHint } from "../state/hint";
-import assertNever from "assert-never/index";
+import CircularProgress from "@mui/material/CircularProgress";
+import type { IconButtonProps } from "@mui/material/IconButton/IconButton";
+import assertNever from "assert-never";
 import _ from "lodash";
-import { sudokuIsSolvedState } from "../state/sudoku";
 import { useSnackbar } from "notistack";
 import { useState } from "react";
-import type { IconButtonProps } from "@mui/material/IconButton/IconButton";
-import CircularProgress from "@mui/material/CircularProgress";
+import { useRecoilCallback, useRecoilValue } from "recoil";
+import { useApplyDeductions, useTryStrategies } from "../actions/sudokuActions";
+import MyIconButton from "../components/MyIconButton";
+import { hintSettingsState, scaleLoopDelayIndex } from "../state/forms/hintSettings";
+import { hintState, type Hint, type OptionalHint } from "../state/hint";
+import { sudokuIsSolvedState } from "../state/sudoku";
 
 export function RequestHintButton() {
     const [isRequestingHint, setIsRequestingHint] = useState(false);

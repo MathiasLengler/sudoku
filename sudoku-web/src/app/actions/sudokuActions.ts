@@ -1,27 +1,27 @@
+import assertNever from "assert-never";
 import * as Comlink from "comlink";
+import _ from "lodash";
 import type { SelectorCallbackInterface, Snapshot } from "recoil";
 import { useRecoilCallback } from "recoil";
-import { sudokuSideLengthState, sudokuState } from "../state/sudoku";
-import { remoteWorkerApiState, workerState } from "../state/worker";
-import type {
-    DynamicGeneratorSettings,
-    GridFormatEnum,
-    DynamicPosition,
-    DynamicStrategies,
-    GeneratorProgress,
-    RelativeTileDir,
-    TransportDeductions,
-} from "../../types";
-import type { CellAction } from "../state/input";
-import { inputState } from "../state/input";
-import { cellAtGridPositionState } from "../state/cellIndexing";
-import _ from "lodash";
 import type { WasmSudokuProxy } from "../../spawnWorker";
 import { spawnWorker } from "../../spawnWorker";
-import assertNever from "assert-never/index";
-import { getInput } from "./inputActions";
-import { useCancelableMutation } from "../useCancelableMutation";
+import type {
+    DynamicGeneratorSettings,
+    DynamicPosition,
+    GeneratorProgress,
+    GridFormatEnum,
+    RelativeTileDir,
+    StrategyEnums,
+    TransportDeductions,
+} from "../../types";
+import { cellAtGridPositionState } from "../state/cellIndexing";
 import { getHint, hintState } from "../state/hint";
+import type { CellAction } from "../state/input";
+import { inputState } from "../state/input";
+import { sudokuSideLengthState, sudokuState } from "../state/sudoku";
+import { remoteWorkerApiState, workerState } from "../state/worker";
+import { useCancelableMutation } from "../useCancelableMutation";
+import { getInput } from "./inputActions";
 
 // Snapshot accessors
 async function getWasmSudokuProxy(snapshot: Snapshot): Promise<WasmSudokuProxy> {
@@ -403,7 +403,7 @@ export function useExportSudokuString() {
 export function useTryStrategies() {
     return useRecoilCallback(
         ({ snapshot, set }) =>
-            async (strategies: DynamicStrategies) => {
+            async (strategies: StrategyEnums) => {
                 const wasmSudokuProxy = await getWasmSudokuProxy(snapshot);
                 const res = await wasmSudokuProxy.tryStrategies(strategies);
                 await updateSudoku({ set, wasmSudokuProxy });
@@ -419,18 +419,6 @@ export function useApplyDeductions() {
             async (deductions: TransportDeductions) => {
                 const wasmSudokuProxy = await getWasmSudokuProxy(snapshot);
                 await wasmSudokuProxy.applyDeductions(deductions);
-                await updateSudoku({ set, wasmSudokuProxy });
-            },
-        []
-    );
-}
-
-export function useChangeTile() {
-    return useRecoilCallback(
-        ({ snapshot, set }) =>
-            async (dir: RelativeTileDir) => {
-                const wasmSudokuProxy = await getWasmSudokuProxy(snapshot);
-                await wasmSudokuProxy.changeTile(dir);
                 await updateSudoku({ set, wasmSudokuProxy });
             },
         []

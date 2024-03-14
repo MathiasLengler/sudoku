@@ -1,12 +1,13 @@
 import { z } from "zod";
 import { localStorageEffect } from "./localStorageEffect";
-import { atom } from "recoil";
+import { atom, selector } from "recoil";
 import type { IsEqual } from "type-fest";
-import type { TileIndex } from "../../types";
+import type { DynamicCells, TileIndex } from "../../types";
 import { assert } from "../../typeUtils";
+import { remoteWorkerApiState } from "./worker";
 
 export type WorldView = z.infer<typeof worldViewSchema>;
-export const worldViewSchema = z.enum(["single", "map"]);
+export const worldViewSchema = z.enum(["sudoku", "map"]);
 
 const usizeSchema = z
     .number()
@@ -20,27 +21,33 @@ export const tileIndexSchema = z.object({
 });
 assert<IsEqual<z.infer<typeof tileIndexSchema>, TileIndex>>();
 
-export type GameModeWorldState = z.infer<typeof gameModeWorldStateSchema>;
-export const gameModeWorldStateSchema = z.object({
-    view: worldViewSchema,
-    currentTileIndex: tileIndexSchema,
-});
-
-export type GameModeState = z.infer<typeof gameModeStateSchema>;
-export const gameModeStateSchema = z.discriminatedUnion("mode", [
+export type GameMode = z.infer<typeof gameModeSchema>;
+export const gameModeSchema = z.discriminatedUnion("mode", [
     z.object({
-        mode: z.literal("single"),
+        mode: z.literal("sudoku"),
     }),
     z.object({
         mode: z.literal("world"),
-        state: gameModeWorldStateSchema,
+        view: worldViewSchema,
+        currentTileIndex: tileIndexSchema,
     }),
 ]);
 
-export const cellWorldGameState = atom<GameModeState>({
-    key: "GameModeState",
+export const gameModeState = atom<GameMode>({
+    key: "GameMode",
     default: {
-        mode: "single",
+        mode: "sudoku",
     },
-    effects: [localStorageEffect(gameModeStateSchema)],
+    effects: [localStorageEffect(gameModeSchema)],
+});
+
+export const allWorldCellsState = atom<DynamicCells>({
+    key: "AllWorldCells",
+    default: selector({
+        key: "DefaultAllWorldCells",
+        get: async ({ get }) => {
+            const { wasmCellWorldProxy } = get(remoteWorkerApiState);
+            return await wasmCellWorldProxy.allWorldCells();
+        },
+    }),
 });
