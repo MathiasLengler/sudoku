@@ -20,6 +20,8 @@ export type * from "./PruningGroupBehaviour";
 export type * from "./PruningTarget";
 export type * from "./RelativeTileDir";
 export type * from "./StrategyEnum";
+export type * from "./TileDim";
+export type * from "./TileIndex";
 export type * from "./TransportAction";
 export type * from "./TransportCell";
 export type * from "./TransportDeduction";
