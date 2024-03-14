@@ -22,6 +22,12 @@ impl<T: Default + Clone> DynamicGrid<T> {
     }
 }
 
+impl<T: Clone> DynamicGrid<T> {
+    pub fn base(&self) -> BaseEnum {
+        self.base
+    }
+}
+
 // interop `Grid<Base>`
 impl<Base: SudokuBase, T: Clone + Into<DynamicCell>> TryFrom<DynamicGrid<T>> for Grid<Base> {
     type Error = Error;
@@ -150,5 +156,31 @@ mod wasm {
     #[test]
     fn export_bindings_dynamicgrid() {
         <DynamicGrid<()> as ts_rs::TS>::export().expect("could not export type");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_serde_from_array() {
+        use serde_json::{from_value, json, Value};
+
+        let grid: DynamicGrid = from_value(Value::Array(vec![
+            json!({ "kind": "candidates", "candidates": [] });
+            16
+        ]))
+        .unwrap();
+
+        assert_eq!(grid.base(), BaseEnum::Base2);
+
+        let grid: DynamicGrid = from_value(Value::Array(vec![
+            json!({ "kind": "candidates", "candidates": [] });
+            81
+        ]))
+        .unwrap();
+
+        assert_eq!(grid.base(), BaseEnum::Base3);
     }
 }
