@@ -173,11 +173,14 @@ impl<Base: SudokuBase> Grid<Base> {
         });
     }
 
-    pub fn set_all_direct_candidates_if_all_candidates_are_empty(&mut self) {
-        let all_candidates_are_empty = self
-            .all_candidates_positions()
+    pub fn all_candidates_are_empty(&self) -> bool {
+        self.all_candidates_positions()
             .into_iter()
-            .all(|pos| self.get(pos).candidates().unwrap().is_empty());
+            .all(|pos| self.get(pos).candidates().unwrap().is_empty())
+    }
+
+    pub fn set_all_direct_candidates_if_all_candidates_are_empty(&mut self) {
+        let all_candidates_are_empty = self.all_candidates_are_empty();
 
         if all_candidates_are_empty {
             self.set_all_direct_candidates();

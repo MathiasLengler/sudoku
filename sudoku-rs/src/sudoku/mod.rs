@@ -155,10 +155,13 @@ impl<Base: SudokuBase> Sudoku<Base> {
         &mut self,
         strategies: Vec<StrategyEnum>,
     ) -> Result<Option<(StrategyEnum, Deductions<Base>)>> {
-        self.push_history();
+        // Only create history entry if all candidates are empty.
+        // If this is the case, StrategicSolver will mutate the grid by setting all direct candidates.
+        if self.grid.are_all_candidates_empty() {
+            self.push_history();
+        }
 
         let solver = StrategicSolver::new_with_strategies(&mut self.grid, strategies);
-
         solver.try_strategies()
     }
 
