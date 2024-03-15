@@ -22,7 +22,7 @@ use sudoku::{
         strategies::StrategyEnum,
     },
     transport::{TransportCell, TransportSudoku},
-    world::{RelativeTileDir, TileDim, TileIndex, WorldGenerationResult},
+    world::{CellWorldDimensions, RelativeTileDir, TileDim, TileIndex, WorldGenerationResult},
     DynamicTryStrategiesReturn,
 };
 use wasm_bindgen::prelude::*;
@@ -68,6 +68,7 @@ macro_rules! serde_wasm_bindgen_interop {
 const IMPORT_TS_RS_BINDINGS: &'static str = r#"
 import type {
     BaseEnum,
+    CellWorldDimensions,
     DynamicCandidates,
     DynamicCell,
     DynamicGeneratorSettings,
@@ -99,6 +100,7 @@ import type {
 "#;
 serde_wasm_bindgen_interop! {
     BaseEnum,
+    CellWorldDimensions,
     DynamicCandidates,
     DynamicCell,
     DynamicGeneratorSettings,

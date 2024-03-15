@@ -2,6 +2,7 @@
 // This file manually re-exports all bindings.
 
 export type * from "./BaseEnum";
+export type * from "./CellWorldDimensions";
 export type * from "./DynamicCandidates";
 export type * from "./DynamicCell";
 export type * from "./DynamicGeneratorSettings";

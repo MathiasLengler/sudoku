@@ -11,6 +11,7 @@ export const Code: React.FunctionComponent<CodeProps> = ({ children, wrap = fals
         <Typography
             sx={{
                 whiteSpace: wrap ? "pre-wrap" : "pre",
+                minHeight: "1lh",
             }}
             variant="code"
         >

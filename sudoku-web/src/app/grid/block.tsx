@@ -58,15 +58,7 @@ export const Block = ({ blockIndex, cells }: BlockProps) => {
                         selectedPos.row == cell.position.row;
                 }
 
-                return (
-                    <Cell
-                        key={blockCellIndex}
-                        blockCellIndex={blockCellIndex}
-                        cell={cell}
-                        isSelected={isSelected}
-                        isGuide={isGuide}
-                    />
-                );
+                return <Cell key={blockCellIndex} cell={cell} isSelected={isSelected} isGuide={isGuide} />;
             })}
         </div>
     );

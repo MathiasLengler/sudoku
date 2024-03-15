@@ -20,7 +20,7 @@ function cellBackgroundClass(isSelected: boolean, isGuide: boolean) {
     }
 }
 
-function cellColorClass(fixed: boolean, incorrectValue: boolean) {
+export function cellColorClass(fixed: boolean, incorrectValue: boolean) {
     if (fixed) {
         return "cell--fixed";
     }
@@ -35,7 +35,7 @@ interface CellValueProps {
     value: DynamicCellValue["value"];
 }
 
-const CellValue: React.FunctionComponent<CellValueProps> = props => {
+export const CellValue: React.FunctionComponent<CellValueProps> = props => {
     const { value } = props;
     return (
         <div className="cellValue">
@@ -49,7 +49,7 @@ interface CandidatesProps {
     gridPosition: DynamicPosition;
 }
 
-const Candidates = ({ candidates, gridPosition }: CandidatesProps) => {
+export const Candidates = ({ candidates, gridPosition }: CandidatesProps) => {
     const base = useRecoilValue(sudokuBaseState);
     const input = useRecoilValue(inputState);
     const hint = useRecoilValue(hintState);
@@ -101,25 +101,15 @@ const Candidates = ({ candidates, gridPosition }: CandidatesProps) => {
 };
 
 interface CellProps {
-    blockCellIndex: number;
     cell: TransportCell;
     isSelected: boolean;
     isGuide: boolean;
 }
 
 export const Cell = (props: CellProps) => {
-    const { blockCellIndex, cell, isSelected, isGuide } = props;
+    const { cell, isSelected, isGuide } = props;
 
     const { position: gridPosition } = cell;
-
-    const base = useRecoilValue(sudokuBaseState);
-
-    const cellPositionInBlock = indexToPosition({ blockIndex: blockCellIndex, base: base });
-
-    const style: CSS.Properties = {
-        "--cell-column": cellPositionInBlock.column,
-        "--cell-row": cellPositionInBlock.row,
-    };
 
     const cellClassNames = classnames(
         "cell",
@@ -132,7 +122,6 @@ export const Cell = (props: CellProps) => {
     return (
         <div
             className={cellClassNames}
-            style={style}
             onPointerDown={({ buttons, isPrimary, pointerId, pointerType, target }) => {
                 if (
                     // Left Mouse, Touch Contact, Pen contact

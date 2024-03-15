@@ -108,9 +108,8 @@ impl WasmCellWorld {
     }
 
     // Queries
-    #[wasm_bindgen(js_name = tileDim)]
-    pub fn tile_dim(&self) -> Result<ITileDim> {
-        export_tile_dim(self.world.tile_dim())
+    pub fn dimensions(&self) -> Result<ICellWorldDimensions> {
+        export_cell_world_dimensions(self.world.dimensions())
     }
     #[wasm_bindgen(js_name = isSolved)]
     pub fn is_solved(&self) -> bool {

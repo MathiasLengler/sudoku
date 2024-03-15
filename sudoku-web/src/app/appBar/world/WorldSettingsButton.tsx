@@ -1,10 +1,10 @@
 import LanguageIcon from "@mui/icons-material/Language";
 import assertNever from "assert-never";
 import { useRecoilState } from "recoil";
+import { useChangeTile } from "../../actions/worldActions";
 import MyIconButton from "../../components/MyIconButton";
 import { MyMenu } from "../../components/MyMenu";
-import { allWorldCellsState, gameModeState } from "../../state/world";
-import { useChangeTile } from "../../actions/worldActions";
+import { gameModeState } from "../../state/world";
 
 export function WorldSettingsButton() {
     const [gameMode, setGameMode] = useRecoilState(gameModeState);

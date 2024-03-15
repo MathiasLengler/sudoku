@@ -2,7 +2,7 @@ import { z } from "zod";
 import { localStorageEffect } from "./localStorageEffect";
 import { atom, selector } from "recoil";
 import type { IsEqual } from "type-fest";
-import type { DynamicCells, TileIndex } from "../../types";
+import type { CellWorldDimensions, DynamicCells, TileDim, TileIndex } from "../../types";
 import { assert } from "../../typeUtils";
 import { remoteWorkerApiState } from "./worker";
 
@@ -28,6 +28,8 @@ export const gameModeSchema = z.discriminatedUnion("mode", [
     }),
     z.object({
         mode: z.literal("world"),
+        // TODO: another discriminated union
+        //  currentTileIndex is only needed when view is "sudoku"
         view: worldViewSchema,
         currentTileIndex: tileIndexSchema,
     }),
@@ -48,6 +50,17 @@ export const allWorldCellsState = atom<DynamicCells>({
         get: async ({ get }) => {
             const { wasmCellWorldProxy } = get(remoteWorkerApiState);
             return await wasmCellWorldProxy.allWorldCells();
+        },
+    }),
+});
+
+export const cellWorldDimensionsState = atom<CellWorldDimensions>({
+    key: "CellWorldDimensions",
+    default: selector({
+        key: "DefaultCellWorldDimensions",
+        get: async ({ get }) => {
+            const { wasmCellWorldProxy } = get(remoteWorkerApiState);
+            return await wasmCellWorldProxy.dimensions();
         },
     }),
 });

@@ -8,6 +8,11 @@ async function getWasmCellWorldProxy(snapshot: Snapshot): Promise<WasmCellWorldP
     return wasmCellWorldProxy;
 }
 
+// TODO: set/get grid at tile index
+//  set grid when opening world
+//  get grid when selecting tile
+
+// TODO: port changeTile
 // #[wasm_bindgen(js_name = changeTile)]
 // pub fn change_tile(&mut self, _dir: IRelativeTileDir) -> Result<()> {
 //

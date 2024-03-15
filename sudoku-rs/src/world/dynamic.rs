@@ -5,7 +5,7 @@ use crate::cell::dynamic::DynamicCell;
 use crate::error::Result;
 use crate::grid::dynamic::DynamicGrid;
 
-use super::{CellWorld, TileDim, TileIndex, WorldGenerationResult};
+use super::{CellWorld, CellWorldDimensions, TileDim, TileIndex, WorldGenerationResult};
 
 #[enum_dispatch]
 pub trait DynamicCellWorldActions {
@@ -18,7 +18,7 @@ pub trait DynamicCellWorldActions {
     fn set_grid_at(&mut self, grid: DynamicGrid<DynamicCell>, tile_index: TileIndex) -> Result<()>;
 
     // Queries
-    fn tile_dim(&self) -> TileDim;
+    fn dimensions(&self) -> CellWorldDimensions;
     fn is_solved(&self) -> bool;
     fn is_directly_consistent(&self) -> bool;
     fn all_world_cells(&self) -> Vec<DynamicCell>;

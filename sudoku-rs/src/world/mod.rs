@@ -68,6 +68,15 @@ pub struct WorldGenerationResult {
     pub backtrack_count: u32,
 }
 
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub struct CellWorldDimensions {
+    pub tile_dim: TileDim,
+    // FIXME: better name or separate type
+    pub cell_dim: TileDim,
+    pub overlap: u8,
+}
+
 /// Constructors
 impl<Base: SudokuBase> CellWorld<Base> {
     pub fn new(tile_dim: TileDim, overlap: u8) -> Self {
@@ -88,7 +97,7 @@ impl<Base: SudokuBase> CellWorld<Base> {
 impl<Base: SudokuBase> DynamicCellWorldActions for CellWorld<Base> {
     // Generation
     fn generate_solved(&mut self, seed: Option<u64>) -> WorldGenerationResult {
-        let tile_indexes = self.all_tile_indexes().collect_vec();
+        let tile_indexes: Vec<TileIndex> = self.all_tile_indexes().collect_vec();
 
         let mut backtrack_count = 0;
 
@@ -227,8 +236,15 @@ impl<Base: SudokuBase> DynamicCellWorldActions for CellWorld<Base> {
     }
 
     // Queries
-    fn tile_dim(&self) -> TileDim {
-        self.tile_dim
+    fn dimensions(&self) -> CellWorldDimensions {
+        CellWorldDimensions {
+            tile_dim: self.tile_dim,
+            cell_dim: TileDim {
+                row_count: self.cells.nrows(),
+                column_count: self.cells.ncols(),
+            },
+            overlap: self.overlap,
+        }
     }
 
     fn is_solved(&self) -> bool {

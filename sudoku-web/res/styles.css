@@ -1,7 +1,6 @@
 :root {
     /*React Variables*/
     --side-length: 0;
-    --side-length-fr: 0fr;
     --base: 0;
     --grid-size: 70vmin;
 
@@ -112,6 +111,15 @@ body,
     flex: 4;
 }
 
+/* FIXME: evaluate subgrid (?)
+it would be convenient to re-use the single sudoku grid for the world view.
+But the world view has subtly different requirements:
+- arbitrary dimensions
+- visualize overlaps.
+  This creates "slices" of blocks, which should have gaps of --block-border-size
+  Our current structure does not support this, since blocks are always square.
+Shoot for the moon: transition between single and world view.
+*/
 .grid {
     /*Grid Variables*/
     --grid-gutter: var(--block-border-size);
@@ -172,9 +180,6 @@ body,
     aspect-ratio: 1;
 
     --cell-size: calc(var(--block-row-height) - var(--cell-padding));
-
-    grid-column: calc(1 + var(--cell-column));
-    grid-row: calc(1 + var(--cell-row));
 
     min-width: 0;
     min-height: 0;

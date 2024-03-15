@@ -40,7 +40,6 @@ export const Sudoku = () => {
 
     const cssVariables: CSS.Properties = {
         "--side-length": sideLength,
-        "--side-length-fr": `${sideLength}fr`,
         "--base": base,
         "--grid-size": gridWidth && gridHeight ? `${Math.min(gridWidth, gridHeight)}px` : "0",
     };
