@@ -4,6 +4,9 @@
     "version": "0.2.0",
     "license": "MIT",
     "repository": "https://github.com/MathiasLengler/sudoku",
+    "engines": {
+        "node": "20"
+    },
     "scripts": {
         "start": "webpack serve --mode development",
         "start:profiling": "webpack serve --mode production --env reactProfiling=true",
@@ -18,8 +21,31 @@
         "bubblewrap:update": "cd ../sudoku-bubblewrap && bubblewrap update",
         "bubblewrap:build": "cd ../sudoku-bubblewrap && bubblewrap build"
     },
-    "engines": {
-        "node": "20"
+    "dependencies": {
+        "@babel/runtime": "^7.24.0",
+        "@emotion/react": "^11.11.4",
+        "@emotion/styled": "^11.11.0",
+        "@fontsource-variable/inconsolata": "^5.0.17",
+        "@fontsource-variable/roboto-flex": "^5.0.13",
+        "@hookform/resolvers": "^3.3.4",
+        "@mui/icons-material": "^5.15.12",
+        "@mui/lab": "^5.0.0-alpha.167",
+        "@mui/material": "^5.15.12",
+        "@mui/x-date-pickers": "^6.19.6",
+        "@tanstack/react-query": "^5.25.0",
+        "assert-never": "^1.2.1",
+        "classnames": "^2.5.1",
+        "comlink": "^4.4.1",
+        "lodash": "^4.17.21",
+        "notistack": "^3.0.1",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "react-hook-form": "^7.51.0",
+        "react-hook-form-mui": "^6.8.0",
+        "react-resize-detector": "^10.0.1",
+        "recoil": "^0.7.7",
+        "workbox-window": "^7.0.0",
+        "zod": "^3.22.4"
     },
     "devDependencies": {
         "@babel/core": "^7.24.0",
@@ -59,32 +85,6 @@
         "webpack-pwa-manifest": "^4.3.0",
         "workbox-webpack-plugin": "^7.0.0",
         "worker-plugin": "^5.0.1"
-    },
-    "dependencies": {
-        "@babel/runtime": "^7.24.0",
-        "@emotion/react": "^11.11.4",
-        "@emotion/styled": "^11.11.0",
-        "@fontsource-variable/inconsolata": "^5.0.17",
-        "@fontsource-variable/roboto-flex": "^5.0.13",
-        "@hookform/resolvers": "^3.3.4",
-        "@mui/icons-material": "^5.15.12",
-        "@mui/lab": "^5.0.0-alpha.167",
-        "@mui/material": "^5.15.12",
-        "@mui/x-date-pickers": "^6.19.6",
-        "@tanstack/react-query": "^5.25.0",
-        "assert-never": "^1.2.1",
-        "classnames": "^2.5.1",
-        "comlink": "^4.4.1",
-        "lodash": "^4.17.21",
-        "notistack": "^3.0.1",
-        "react": "^18.2.0",
-        "react-dom": "^18.2.0",
-        "react-hook-form": "^7.51.0",
-        "react-hook-form-mui": "^6.8.0",
-        "react-resize-detector": "^10.0.1",
-        "recoil": "^0.7.7",
-        "workbox-window": "^7.0.0",
-        "zod": "^3.22.4"
     },
     "overrides": {
         "@pmmmwh/react-refresh-webpack-plugin": {
