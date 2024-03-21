@@ -8,7 +8,7 @@ import { strategyEnumSchema } from "../../../constants";
 
 export const BASE_MIN = 2;
 export const BASE_MAX = 5;
-export const BASE_MARKS = range(BASE_MIN, BASE_MAX + 1).map(base => {
+export const BASE_MARKS = range(BASE_MIN, BASE_MAX + 1).map((base) => {
     return {
         value: base,
         label: baseToLabel(base),
@@ -22,12 +22,12 @@ export function baseToLabel(base: number): string {
 }
 export const SEED_MAX = Number.MAX_SAFE_INTEGER;
 const parseBigintSchema = <T extends ZodBigInt>(bigIntSchema: T) =>
-    z.preprocess(value => {
+    z.preprocess((value) => {
         const safeParseResult = z
             .bigint()
             .or(z.number())
             .or(z.string())
-            .transform(value => {
+            .transform((value) => {
                 try {
                     return BigInt(value);
                 } catch (err) {

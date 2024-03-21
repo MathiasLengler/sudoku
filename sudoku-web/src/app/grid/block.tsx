@@ -18,7 +18,7 @@ interface BlockProps {
 const containsSelectedPosState = selectorFamily<boolean | undefined, CreateSerializableParam<DynamicPosition>>({
     key: "Block.containsSelectedPos",
     get:
-        blockPosition =>
+        (blockPosition) =>
         ({ get }) => {
             const selectedBlockPosition = get(selectedBlockPositionState);
             if (selectedBlockPosition) {

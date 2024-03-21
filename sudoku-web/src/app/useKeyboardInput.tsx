@@ -27,7 +27,7 @@ function keyToValue(key: string, sideLength: number): number | undefined {
 function keyToNewPos(
     key: string,
     selectedPos: DynamicPosition,
-    sideLength: TransportSudoku["sideLength"]
+    sideLength: TransportSudoku["sideLength"],
 ): DynamicPosition | undefined {
     let { column, row } = selectedPos;
     switch (key) {
@@ -118,7 +118,7 @@ export function useKeyboardInput() {
                     }
                 };
 
-                asyncEventHandler().catch(err => {
+                asyncEventHandler().catch((err) => {
                     console.error("Error in key down handler", ev, ":", err);
                 });
             },
@@ -130,7 +130,7 @@ export function useKeyboardInput() {
             toggleCandidateMode,
             toggleStickyMode,
             undo,
-        ]
+        ],
     );
 
     return {

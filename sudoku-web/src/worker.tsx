@@ -5,7 +5,7 @@ import { WORKER_BOOT_UP_MESSAGE } from "./constants";
 import type { DynamicCells } from "./types";
 
 if (process.env.NODE_ENV !== "production") {
-    self.addEventListener("message", ev => {
+    self.addEventListener("message", (ev) => {
         console.debug("Worker message RX:", ev.data);
     });
 }

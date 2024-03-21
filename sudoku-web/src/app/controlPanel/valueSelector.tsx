@@ -11,7 +11,7 @@ import _ from "lodash";
 const isSelectedState = selectorFamily<boolean, number>({
     key: "ValueButton.isSelected",
     get:
-        value =>
+        (value) =>
         ({ get }) => {
             const input = get(inputState);
             return input.stickyMode && input.selectedValue === value;
@@ -57,7 +57,7 @@ export const ValueSelector = () => {
     return (
         <div className="selector-container">
             <div className="selector">
-                {selectorValues.map(value => (
+                {selectorValues.map((value) => (
                     <ValueButton key={value} value={value} />
                 ))}
             </div>

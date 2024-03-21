@@ -8,7 +8,7 @@ import type { CreateSerializableParam } from "../../typeUtils";
 export const cellAtIndexState = selectorFamily<TransportCell, number>({
     key: "CellAtIndex",
     get:
-        cellIndex =>
+        (cellIndex) =>
         ({ get }) => {
             const cells = get(sudokuCellsState);
             const selectedCells = cells[cellIndex];
@@ -21,7 +21,7 @@ export const cellAtIndexState = selectorFamily<TransportCell, number>({
 export const cellAtGridPositionState = selectorFamily<TransportCell, CreateSerializableParam<DynamicPosition>>({
     key: "CellAtGridPosition",
     get:
-        gridPosition =>
+        (gridPosition) =>
         ({ get }) => {
             const sideLength = get(sudokuSideLengthState);
             return get(cellAtIndexState(positionToIndex({ gridPosition, sideLength })));

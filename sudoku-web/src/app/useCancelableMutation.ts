@@ -9,7 +9,7 @@ export interface CancelableMutationFnArgs<Variables, Progress> {
 }
 
 export function useCancelableMutation<Variables, Progress>(
-    cancelableMutationFn: (args: CancelableMutationFnArgs<Variables, Progress>) => Promise<void>
+    cancelableMutationFn: (args: CancelableMutationFnArgs<Variables, Progress>) => Promise<void>,
 ) {
     const [progress, setProgress] = useState<Progress>();
     const abortControllerRef = useRef<AbortController | null>(null);
@@ -24,7 +24,7 @@ export function useCancelableMutation<Variables, Progress>(
                     () => {
                         reject(signal.reason);
                     },
-                    { once: true }
+                    { once: true },
                 );
             });
             await cancelableMutationFn({

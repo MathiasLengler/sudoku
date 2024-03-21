@@ -15,7 +15,7 @@ export function MySnackbarProvider({ children }: MySnackbarProviderProps) {
                 vertical: "top",
                 horizontal: "left",
             }}
-            action={key => (
+            action={(key) => (
                 <IconButton
                     onClick={() => {
                         closeSnackbar(key);

@@ -101,7 +101,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                 <TabPanel value={"generate-form" satisfies NewGameTabValue} sx={{ p: 0 }}>
                     <form
                         id="generate-form"
-                        onSubmit={handleSubmit(async formValues => {
+                        onSubmit={handleSubmit(async (formValues) => {
                             const { base, minGivens, setAllDirectCandidates, strategies, seed, useSeed } = formValues;
 
                             try {
@@ -157,7 +157,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                                 ]}
                                 valueLabelDisplay="auto"
                                 getAriaLabel={() => "Minimum number of givens"}
-                                getAriaValueText={minGivens => `${minGivens}`}
+                                getAriaValueText={(minGivens) => `${minGivens}`}
                             />
                             <SelectStrategies control={control} name="strategies" />
 
@@ -188,7 +188,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                                                     onClick={() => {
                                                         setValue(
                                                             "seed",
-                                                            Math.trunc(Math.random() * SEED_MAX).toFixed(0)
+                                                            Math.trunc(Math.random() * SEED_MAX).toFixed(0),
                                                         );
                                                     }}
                                                 />

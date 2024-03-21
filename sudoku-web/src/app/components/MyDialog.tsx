@@ -16,7 +16,7 @@ export const MyDialog = ({ open, onClose, children }: MyDialogProps) => {
 
     return (
         <div
-            onKeyDown={e => {
+            onKeyDown={(e) => {
                 // Disable global game shortcuts in dialog boxes.
                 e.stopPropagation();
             }}

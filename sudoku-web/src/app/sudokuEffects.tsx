@@ -30,7 +30,7 @@ const PointerUpHandler = () => {
 
             endStickyChain().catch(console.error);
         },
-        [endStickyChain]
+        [endStickyChain],
     );
 
     useEffect(() => {
@@ -51,7 +51,7 @@ const SudokuBaseEffect = () => {
     const setInput = useSetRecoilState(inputState);
 
     useEffect(() => {
-        setInput(input => {
+        setInput((input) => {
             const sideLength = baseToSideLength(base);
             const clampValue = (value: number) => _.clamp(value, sideLength);
             const clampCoordinate = (coordinate: number) => _.clamp(coordinate, sideLength - 1);

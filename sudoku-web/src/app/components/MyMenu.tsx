@@ -27,7 +27,7 @@ export function MyMenu({ children, menuItems }: MyMenuProps) {
         }
     };
 
-    const onMenuOpen: MouseEventHandler<HTMLButtonElement> = e => setMenuAnchorEl(e.currentTarget);
+    const onMenuOpen: MouseEventHandler<HTMLButtonElement> = (e) => setMenuAnchorEl(e.currentTarget);
 
     return (
         <>

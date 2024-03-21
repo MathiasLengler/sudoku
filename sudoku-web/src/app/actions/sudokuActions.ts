@@ -65,8 +65,8 @@ async function isInvalidGridPosition({
     if (!_.inRange(gridPosition.row, 0, sideLength) || !_.inRange(gridPosition.column, 0, sideLength)) {
         console.warn(
             `Skip handling of grid position ${JSON.stringify(
-                gridPosition
-            )} with coordinate outside range [0, ${sideLength})`
+                gridPosition,
+            )} with coordinate outside range [0, ${sideLength})`,
         );
         return true;
     } else {
@@ -137,7 +137,7 @@ async function applyValueAtGridPosition({
             }
 
             // Initialize stickyChain
-            set(inputState, input => {
+            set(inputState, (input) => {
                 if (!input.stickyMode) {
                     console.warn("Expected stickyMode to be active");
                     return input;
@@ -158,8 +158,8 @@ async function applyValueAtGridPosition({
         if (_.find(input.stickyChain?.handledGridPositions, gridPosition)) {
             console.info(
                 `Skip handling of grid position ${JSON.stringify(
-                    gridPosition
-                )}, since it was already processed in the active sticky chain.`
+                    gridPosition,
+                )}, since it was already processed in the active sticky chain.`,
             );
             return;
         }
@@ -187,7 +187,7 @@ async function applyValueAtGridPosition({
         }
 
         // Add gridPosition to handledGridPositions
-        set(inputState, input => {
+        set(inputState, (input) => {
             if (!input.stickyMode) {
                 console.warn("Expected stickyMode to be active");
                 return input;
@@ -201,7 +201,7 @@ async function applyValueAtGridPosition({
                     "Expected handledGridPositions to not contain gridPosition",
                     gridPosition,
                     ":",
-                    input.stickyChain.handledGridPositions
+                    input.stickyChain.handledGridPositions,
                 );
                 return input;
             }
@@ -240,10 +240,10 @@ export function useHandlePosition() {
                 if (input.stickyMode) {
                     await applyValueAtGridPosition({ set, snapshot, gridPosition, value: input.selectedValue });
                 } else {
-                    set(inputState, input => ({ ...input, selectedPos: gridPosition }));
+                    set(inputState, (input) => ({ ...input, selectedPos: gridPosition }));
                 }
             },
-        []
+        [],
     );
 }
 
@@ -257,12 +257,12 @@ export function useHandleValue() {
 
                 const input = await getInput(snapshot);
                 if (input.stickyMode) {
-                    set(inputState, input => ({ ...input, selectedValue: value }));
+                    set(inputState, (input) => ({ ...input, selectedValue: value }));
                 } else {
                     await applyValueAtGridPosition({ set, snapshot, gridPosition: input.selectedPos, value });
                 }
             },
-        []
+        [],
     );
 }
 export function useDeleteSelectedCell() {
@@ -281,7 +281,7 @@ export function useDeleteSelectedCell() {
                     });
                 }
             },
-        []
+        [],
     );
 }
 
@@ -293,7 +293,7 @@ export function useSetAllDirectCandidates() {
                 await wasmSudokuProxy.setAllDirectCandidates();
                 await updateSudoku({ set, wasmSudokuProxy });
             },
-        []
+        [],
     );
 }
 export function useUndo() {
@@ -314,7 +314,7 @@ export function useUndo() {
                 await wasmSudokuProxy.undo();
                 await updateSudoku({ set, wasmSudokuProxy });
             },
-        []
+        [],
     );
 }
 export function useRedo() {
@@ -325,7 +325,7 @@ export function useRedo() {
                 await wasmSudokuProxy.redo();
                 await updateSudoku({ set, wasmSudokuProxy });
             },
-        []
+        [],
     );
 }
 
@@ -335,7 +335,7 @@ export function useGenerate() {
             async (
                 settings: DynamicGeneratorSettings,
                 abortPromise: Promise<never>,
-                onProgress: (progress: GeneratorProgress) => void
+                onProgress: (progress: GeneratorProgress) => void,
             ) => {
                 const wasmSudokuProxy = await getWasmSudokuProxy(snapshot);
 
@@ -359,7 +359,7 @@ export function useGenerate() {
 
                 await updateSudoku({ set, wasmSudokuProxy });
             },
-        []
+        [],
     );
 
     const {
@@ -369,7 +369,7 @@ export function useGenerate() {
     } = useCancelableMutation<DynamicGeneratorSettings, GeneratorProgress>(
         async ({ variables: settings, abortPromise, onProgress }) => {
             await generateImpl(settings, abortPromise, onProgress);
-        }
+        },
     );
 
     return { generate: mutation.mutateAsync, progress, cancelGenerate };
@@ -386,7 +386,7 @@ export function useImportSudokuString() {
                 }
                 await updateSudoku({ set, wasmSudokuProxy });
             },
-        []
+        [],
     );
 }
 export function useExportSudokuString() {
@@ -396,7 +396,7 @@ export function useExportSudokuString() {
                 const wasmSudokuProxy = await getWasmSudokuProxy(snapshot);
                 return await wasmSudokuProxy.export(format);
             },
-        []
+        [],
     );
 }
 
@@ -409,7 +409,7 @@ export function useTryStrategies() {
                 await updateSudoku({ set, wasmSudokuProxy });
                 return res;
             },
-        []
+        [],
     );
 }
 
@@ -421,6 +421,6 @@ export function useApplyDeductions() {
                 await wasmSudokuProxy.applyDeductions(deductions);
                 await updateSudoku({ set, wasmSudokuProxy });
             },
-        []
+        [],
     );
 }

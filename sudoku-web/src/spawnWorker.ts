@@ -26,7 +26,7 @@ function fixupComlinkProxy<T>(comlinkProxy: Comlink.Remote<T>): Comlink.Remote<T
                 }
                 return (comlinkProxy as unknown as Record<string, unknown>)[property];
             },
-        }
+        },
     ) as unknown as Comlink.Remote<T>;
 }
 
@@ -35,13 +35,13 @@ export async function spawnWorker() {
     const worker = new Worker(new URL("./worker.tsx", import.meta.url));
     if (process.env.NODE_ENV !== "production") {
         console.debug("Attaching debug event listeners");
-        worker.addEventListener("message", ev => {
+        worker.addEventListener("message", (ev) => {
             console.debug("Worker message TX:", ev.data);
         });
-        worker.addEventListener("error", ev => {
+        worker.addEventListener("error", (ev) => {
             console.error("Worker error:", ev);
         });
-        worker.addEventListener("messageerror", ev => {
+        worker.addEventListener("messageerror", (ev) => {
             console.error("Worker messageerror:", ev);
         });
     }
@@ -56,7 +56,7 @@ export async function spawnWorker() {
                     reject(new Error(`Unexpected message: ${ev.data}`));
                 }
             },
-            { once: true }
+            { once: true },
         );
     });
     console.debug("Received worker boot up message:", bootUpMessage);

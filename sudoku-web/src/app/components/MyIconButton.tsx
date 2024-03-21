@@ -32,9 +32,9 @@ function MyIconButton({
         <Tooltip title={label}>
             <Box className="icon-button-container">
                 <IconButton
-                    onClick={ev => {
-                        (async () => await onClick(ev))().catch(err =>
-                            console.error("Error in IconButton onClick:", err)
+                    onClick={(ev) => {
+                        (async () => await onClick(ev))().catch((err) =>
+                            console.error("Error in IconButton onClick:", err),
                         );
                     }}
                     size={size}

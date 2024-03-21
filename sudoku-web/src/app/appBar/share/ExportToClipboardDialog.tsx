@@ -35,7 +35,7 @@ interface ExportToClipboardDialogProps {
 
 export function ExportToClipboardDialog({ onClose }: ExportToClipboardDialogProps) {
     const [exportToClipboardFormValues, setExportToClipboardFormValues] = useRecoilState(
-        exportToClipboardFormValuesState
+        exportToClipboardFormValuesState,
     );
     const {
         control,
@@ -76,7 +76,7 @@ export function ExportToClipboardDialog({ onClose }: ExportToClipboardDialogProp
                             name="gridFormat"
                             label="Format"
                             fullWidth
-                            options={ALL_GRID_FORMATS.map(gridFormat => ({
+                            options={ALL_GRID_FORMATS.map((gridFormat) => ({
                                 id: gridFormat,
                                 label: gridFormat,
                             }))}

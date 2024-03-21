@@ -35,7 +35,7 @@ interface CellValueProps {
     value: DynamicCellValue["value"];
 }
 
-export const CellValue: React.FunctionComponent<CellValueProps> = props => {
+export const CellValue: React.FunctionComponent<CellValueProps> = (props) => {
     const { value } = props;
     return (
         <div className="cellValue">
@@ -56,7 +56,7 @@ export const Candidates = ({ candidates, gridPosition }: CandidatesProps) => {
 
     return (
         <div className="candidates">
-            {candidates.map(candidate => {
+            {candidates.map((candidate) => {
                 // Candidates are 1 based, grid calculations are 0 based.
                 const { column, row } = indexToPosition({ blockIndex: candidate - 1, base });
 
@@ -68,18 +68,18 @@ export const Candidates = ({ candidates, gridPosition }: CandidatesProps) => {
 
                 // TODO: optimize
                 //  prototype different deductions data structures via selector
-                const isDeductionReason = hint?.deductions.some(deduction =>
+                const isDeductionReason = hint?.deductions.some((deduction) =>
                     deduction.reasons.some(
-                        reason => isEqual(reason.position, gridPosition) && reason.candidates.includes(candidate)
-                    )
+                        (reason) => isEqual(reason.position, gridPosition) && reason.candidates.includes(candidate),
+                    ),
                 );
-                const isDeductionDelete = hint?.deductions.some(deduction =>
+                const isDeductionDelete = hint?.deductions.some((deduction) =>
                     deduction.actions.some(
-                        action =>
+                        (action) =>
                             isEqual(action.position, gridPosition) &&
                             "deleteCandidates" in action &&
-                            action.deleteCandidates.includes(candidate)
-                    )
+                            action.deleteCandidates.includes(candidate),
+                    ),
                 );
 
                 return (
@@ -114,7 +114,7 @@ export const Cell = (props: CellProps) => {
     const cellClassNames = classnames(
         "cell",
         cellBackgroundClass(isSelected, isGuide),
-        cellColorClass(cell.kind === "value" && cell.fixed, cell.incorrectValue)
+        cellColorClass(cell.kind === "value" && cell.fixed, cell.incorrectValue),
     );
 
     const handlePosition = useHandlePosition();

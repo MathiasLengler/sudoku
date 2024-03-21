@@ -45,7 +45,7 @@ export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
                 <form
                     id="hint-settings-form"
                     noValidate
-                    onSubmit={handleSubmit(async hintSettings => {
+                    onSubmit={handleSubmit(async (hintSettings) => {
                         setHintSettingsFormValues(hintSettings);
                         onClose();
                     })}
@@ -90,15 +90,15 @@ export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
                                     step={1}
                                     min={0}
                                     max={MAX_LOOP_DELAY_INDEX}
-                                    marks={[0, MAX_LOOP_DELAY_INDEX].map(loopDelayMs => ({
+                                    marks={[0, MAX_LOOP_DELAY_INDEX].map((loopDelayMs) => ({
                                         value: loopDelayMs,
                                         label: formatDurationMs(scaleLoopDelayIndex(loopDelayMs)),
                                     }))}
                                     scale={scaleLoopDelayIndex}
                                     valueLabelDisplay="auto"
-                                    valueLabelFormat={loopDelayMs => formatDurationMs(loopDelayMs)}
+                                    valueLabelFormat={(loopDelayMs) => formatDurationMs(loopDelayMs)}
                                     getAriaLabel={() => "Delay"}
-                                    getAriaValueText={loopDelayMs => formatDurationMs(loopDelayMs)}
+                                    getAriaValueText={(loopDelayMs) => formatDurationMs(loopDelayMs)}
                                 />
                             </Box>
                         </Fieldset>

@@ -50,6 +50,6 @@ export function useChangeTile() {
                 // await wasmCellWorldProxy.???;
                 // await updateSudoku({ set, wasmSudokuProxy });
             },
-        []
+        [],
     );
 }

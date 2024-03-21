@@ -37,7 +37,7 @@ export const WorldMap = () => {
                 {allWorldCells.map((cell, index) => {
                     const cellClassNames = classnames(
                         "cell",
-                        cellColorClass(cell.kind === "value" && cell.fixed, false)
+                        cellColorClass(cell.kind === "value" && cell.fixed, false),
                     );
                     return (
                         <Box

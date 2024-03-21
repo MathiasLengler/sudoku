@@ -17,7 +17,7 @@ export function WorldSettingsButton() {
                     label: `Toggle game mode (${gameMode.mode})`,
                     // icon: <OpenInNewIcon />,
                     onClick: () => {
-                        setGameMode(gameMode => {
+                        setGameMode((gameMode) => {
                             if (gameMode.mode === "sudoku") {
                                 return {
                                     mode: "world",

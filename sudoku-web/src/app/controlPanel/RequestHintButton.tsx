@@ -57,14 +57,14 @@ export function RequestHintButton() {
                     const deduction = _.head(deductions);
                     if (!deduction) {
                         throw new Error(
-                            `Expected at least one deduction from strategy ${strategy}, instead got: ${deductions}`
+                            `Expected at least one deduction from strategy ${strategy}, instead got: ${deductions}`,
                         );
                     }
                     console.info("Selected deduction:", deduction);
                     return { strategy, deductions: [deduction] };
                 }
             },
-        [enqueueSnackbar, tryStrategies]
+        [enqueueSnackbar, tryStrategies],
     );
 
     const showHint = useRecoilCallback(
@@ -78,7 +78,7 @@ export function RequestHintButton() {
                     return false;
                 }
             },
-        [getHint]
+        [getHint],
     );
 
     const applyHint = useRecoilCallback(
@@ -101,7 +101,7 @@ export function RequestHintButton() {
                 hideHint();
                 return madeProgress;
             },
-        [applyDeductions, enqueueSnackbar, hideHint]
+        [applyDeductions, enqueueSnackbar, hideHint],
     );
 
     const requestSingleHint = useRecoilCallback(
@@ -138,7 +138,7 @@ export function RequestHintButton() {
                 }
                 assertNever(mode);
             },
-        [applyHint, getHint, hideHint, showHint]
+        [applyHint, getHint, hideHint, showHint],
     );
 
     const requestHint = useRecoilCallback(
@@ -159,7 +159,7 @@ export function RequestHintButton() {
                             if (loopDelayIndex) {
                                 const loopDelayMs = scaleLoopDelayIndex(loopDelayIndex);
                                 console.info("Sleeping for", loopDelayMs);
-                                await new Promise(resolve => setTimeout(resolve, loopDelayMs));
+                                await new Promise((resolve) => setTimeout(resolve, loopDelayMs));
 
                                 if (requestHintAbortController.signal.aborted) {
                                     console.info("requestHint aborted");
@@ -175,7 +175,7 @@ export function RequestHintButton() {
                     setIsRequestingHint(false);
                 }
             },
-        [isRequestingHint, requestHintAbortController.signal, requestSingleHint]
+        [isRequestingHint, requestHintAbortController.signal, requestSingleHint],
     );
 
     let iconColor: IconButtonProps["color"];

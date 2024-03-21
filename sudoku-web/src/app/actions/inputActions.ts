@@ -9,9 +9,9 @@ export function useToggleCandidateMode() {
     return useRecoilCallback(
         ({ set }) =>
             () => {
-                set(inputState, input => ({ ...input, candidateMode: !input.candidateMode }));
+                set(inputState, (input) => ({ ...input, candidateMode: !input.candidateMode }));
             },
-        []
+        [],
     );
 }
 
@@ -38,7 +38,7 @@ export function useToggleStickyMode() {
                     }
                 });
             },
-        []
+        [],
     );
 }
 
@@ -51,6 +51,6 @@ export function useEndStickyChain() {
                     set(inputState, { ...input, stickyChain: undefined });
                 }
             },
-        []
+        [],
     );
 }

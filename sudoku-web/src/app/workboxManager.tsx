@@ -11,13 +11,13 @@ export function WorkboxManager() {
             const { Workbox } = await import("workbox-window");
 
             const wb = new Workbox("service-worker.js");
-            wb.addEventListener("waiting", event => {
+            wb.addEventListener("waiting", (event) => {
                 console.log(
                     "A new service worker has installed, but it can't activate until all tabs running the current version have fully unloaded.",
-                    event
+                    event,
                 );
             });
-            wb.addEventListener("message", event => {
+            wb.addEventListener("message", (event) => {
                 if (event.data.type === "CACHE_UPDATED") {
                     const { updatedURL } = event.data.payload;
 
@@ -27,7 +27,7 @@ export function WorkboxManager() {
 
             // Add an event listener to detect when the registered
             // service worker has installed but is waiting to activate.
-            wb.addEventListener("waiting", event => {
+            wb.addEventListener("waiting", (event) => {
                 (async () => {
                     setShowUpdateNotification(true);
 
@@ -46,11 +46,11 @@ export function WorkboxManager() {
                 })();
             });
 
-            wb.register().catch(err => console.error("Workbox failed to register SW:", err));
+            wb.register().catch((err) => console.error("Workbox failed to register SW:", err));
         }
 
         if (SW_ENABLED) {
-            initWorkbox().catch(err => console.error("Unexpected error while initializing Workbox:", err));
+            initWorkbox().catch((err) => console.error("Unexpected error while initializing Workbox:", err));
         }
     }, []);
 

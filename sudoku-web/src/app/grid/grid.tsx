@@ -19,7 +19,7 @@ export const Grid = ({ gridRef }: GridProps) => {
                     {blocksIndexes.map((cellIndices, blockIndex) => (
                         <Block
                             key={blockIndex}
-                            cells={cellIndices.map(cellIndex => cells[cellIndex])}
+                            cells={cellIndices.map((cellIndex) => cells[cellIndex])}
                             blockIndex={blockIndex}
                         />
                     ))}

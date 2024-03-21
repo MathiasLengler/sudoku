@@ -15,7 +15,7 @@ function SelectStrategies<T extends FieldValues>({ control, name }: SelectStrate
             control={control}
             name={name}
             label="Strategies"
-            options={ALL_STRATEGIES.map(strategy => ({ id: strategy, label: strategy }))}
+            options={ALL_STRATEGIES.map((strategy) => ({ id: strategy, label: strategy }))}
             row
             required
         />

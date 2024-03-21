@@ -15,7 +15,7 @@ import _ from "lodash";
 const dist = path.resolve(__dirname, "dist");
 export default async (
     env: Record<string, string | undefined>,
-    { mode }: { mode: webpack.Configuration["mode"] }
+    { mode }: { mode: webpack.Configuration["mode"] },
 ): Promise<webpack.Configuration> => {
     const reactProfiling = !!env.reactProfiling;
     const bundleAnalyzer = !!env.bundleAnalyzer;
