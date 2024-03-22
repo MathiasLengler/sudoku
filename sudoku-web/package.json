@@ -18,7 +18,7 @@
         "lint:eslint": "eslint src/** webpack.config.ts",
         "lint:prettier": "npm run lint:prettier:files -- --check",
         "lint:prettier:fix": "npm run lint:prettier:files -- --write",
-        "lint:prettier:files": "prettier src/** res/**/*.{css,html} webpack.config.ts",
+        "lint:prettier:files": "prettier src/** res/**/*.{css,html} ../.github/**/*.yml webpack.config.ts",
         "serve": "npx serve -l 8080 -c ../serve.json dist",
         "bubblewrap:merge": "cd ../sudoku-bubblewrap && bubblewrap merge",
         "bubblewrap:update": "cd ../sudoku-bubblewrap && bubblewrap update",
