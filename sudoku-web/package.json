@@ -8,8 +8,8 @@
         "node": "20"
     },
     "scripts": {
-        "start": "webpack serve --mode development",
-        "start:profiling": "webpack serve --mode production --env reactProfiling=true",
+        "dev": "webpack serve --mode development",
+        "dev:profiling": "webpack serve --mode production --env reactProfiling=true",
         "build": "webpack --mode production",
         "build:debugSW": "webpack --mode development --env debugSW=true",
         "build:analyze": "webpack --mode production --env bundleAnalyzer=true",
