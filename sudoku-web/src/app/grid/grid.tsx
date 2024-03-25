@@ -19,7 +19,15 @@ export const Grid = ({ gridRef }: GridProps) => {
                     {blocksIndexes.map((cellIndices, blockIndex) => (
                         <Block
                             key={blockIndex}
-                            cells={cellIndices.map((cellIndex) => cells[cellIndex])}
+                            cells={cellIndices.map((cellIndex) => {
+                                const cell = cells[cellIndex];
+                                if (!cell) {
+                                    throw new Error(
+                                        `index out of bounds: the length is ${cells.length} but the index is ${cellIndex}`,
+                                    );
+                                }
+                                return cell;
+                            })}
                             blockIndex={blockIndex}
                         />
                     ))}

@@ -3,7 +3,7 @@ import range from "lodash/range";
 import { baseToSideLength } from "../../utils";
 import { atom } from "recoil";
 import { localStorageEffect } from "../localStorageEffect";
-import { ZodBigInt } from "zod/lib/types";
+import type { ZodBigInt } from "zod";
 import { strategyEnumSchema } from "../../../constants";
 
 export const BASE_MIN = 2;

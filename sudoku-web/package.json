@@ -58,6 +58,7 @@
         "@babel/register": "^7.23.7",
         "@bubblewrap/cli": "^1.21.0",
         "@pmmmwh/react-refresh-webpack-plugin": "^0.5.11",
+        "@tsconfig/strictest": "^2.0.4",
         "@types/lodash": "^4.14.202",
         "@types/react": "^18.2.64",
         "@types/react-dom": "^18.2.21",
