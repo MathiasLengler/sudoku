@@ -10,7 +10,7 @@ import { WorldSettingsButton } from "./world/WorldSettingsButton";
 export default function SudokuAppBar() {
     return (
         <Box sx={{ flexGrow: 1 }} className="app-bar">
-            <AppBar position="static" variant="outlined">
+            <AppBar position="static" variant="outlined" color="default">
                 <Toolbar>
                     <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
                         Sudoku

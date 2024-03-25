@@ -89,9 +89,6 @@ export const MyTheme = ({ children }: MyThemeProps) => {
                         },
                     },
                 },
-                MuiAppBar: {
-                    defaultProps: prefersDarkMode ? {} : { color: "default" },
-                },
             },
         });
     }, [prefersDarkMode]);
