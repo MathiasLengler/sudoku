@@ -2,14 +2,14 @@ import { WORKER_BOOT_UP_MESSAGE } from "./constants";
 import * as Comlink from "comlink";
 import type { WorkerApi } from "./worker";
 import { loadCells } from "./app/cellsPersistence";
-import type { WasmCellWorld, WasmSudoku } from "./types";
+import type { DynamicCells, WasmCellWorld, WasmSudoku } from "./types";
 
+export type WasmSudokuProxy = Comlink.Remote<WasmSudoku>;
+export type WasmCellWorldProxy = Comlink.Remote<WasmCellWorld>;
 export type RemoteWorkerApi = {
     wasmSudokuProxy: WasmSudokuProxy;
     wasmCellWorldProxy: WasmCellWorldProxy;
 };
-export type WasmSudokuProxy = Comlink.Remote<WasmSudoku>;
-export type WasmCellWorldProxy = Comlink.Remote<WasmCellWorld>;
 
 function fixupComlinkProxy<T>(comlinkProxy: Comlink.Remote<T>): Comlink.Remote<T> {
     return new Proxy(
@@ -64,17 +64,33 @@ export async function spawnWorker() {
     return worker;
 }
 
+async function createWasmSudokuProxy(
+    workerApi: Comlink.Remote<WorkerApi>,
+    cells?: DynamicCells,
+): Promise<WasmSudokuProxy> {
+    if (cells) {
+        console.debug("Restoring sudoku from cells");
+        try {
+            return await workerApi.WasmSudoku.restore(cells);
+        } catch (err) {
+            console.error("Failed to restore persisted grid:", err);
+        }
+    }
+    console.debug("Generating initial sudoku");
+    return await new workerApi.WasmSudoku();
+}
+
 export async function getRemoteWorkerApi(worker: Worker): Promise<RemoteWorkerApi> {
     const workerApi = Comlink.wrap<WorkerApi>(worker, {});
 
-    const cellViews = loadCells();
-    console.debug("Initializing worker with cells", cellViews);
-    await workerApi.init(cellViews);
+    const cells = loadCells();
+    console.debug("Worker init");
+    await workerApi.init();
     console.debug("Worker initialized");
 
-    // Incorrect type: `workerApi.typedWasmSudoku` is not wrapped in a Promise.
-    const wasmSudokuProxy = workerApi.wasmSudoku as unknown as WasmSudokuProxy;
-    const wasmCellWorldProxy = workerApi.wasmCellWorld as unknown as WasmCellWorldProxy;
+    const wasmSudokuProxy = await createWasmSudokuProxy(workerApi, cells);
+    // TODO: restore
+    const wasmCellWorldProxy: WasmCellWorldProxy = await new workerApi.WasmCellWorld();
 
     // Important: wasmSudokuProxy is a Proxy.
     // We must be careful when setting it's state, since the Proxy gets misinterpreted as a Function or Promise.
