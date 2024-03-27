@@ -7,6 +7,8 @@ import { NewGameButton } from "./newGame/NewGameButton";
 import { ShareMenu } from "./share/ShareMenu";
 import { WorldSettingsButton } from "./world/WorldSettingsButton";
 import { ThemeErrorBoundary } from "../components/ErrorFallback";
+import { FullScreenSpinner } from "../components/FullScreenSpinner";
+import { Suspense } from "react";
 
 export default function SudokuAppBar() {
     return (
@@ -17,10 +19,12 @@ export default function SudokuAppBar() {
                         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
                             Sudoku
                         </Typography>
-                        <WorldSettingsButton />
-                        <ShareMenu />
-                        <HintSettingsButton />
-                        <NewGameButton />
+                        <Suspense fallback={<FullScreenSpinner />}>
+                            <WorldSettingsButton />
+                            <ShareMenu />
+                            <HintSettingsButton />
+                            <NewGameButton />
+                        </Suspense>
                     </ThemeErrorBoundary>
                 </Toolbar>
             </AppBar>

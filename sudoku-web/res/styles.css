@@ -75,7 +75,7 @@ body,
     container: app-content / size;
 }
 
-.sudoku {
+.sudoku-game {
     display: flex;
     height: 100%;
     flex-direction: var(--sudoku-content-direction);
@@ -92,7 +92,7 @@ body,
 }
 
 @container app-content (min-aspect-ratio: 1/1) {
-    .sudoku {
+    .sudoku-game {
         --sudoku-content-direction: row;
         --sudoku-toolbar-direction: column;
     }

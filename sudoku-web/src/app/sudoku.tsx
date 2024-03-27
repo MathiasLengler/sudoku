@@ -11,30 +11,10 @@ import { sudokuBaseState, sudokuSideLengthState } from "./state/sudoku";
 import { gameModeState } from "./state/world";
 import { SudokuEffects } from "./sudokuEffects";
 import { useKeyboardInput } from "./useKeyboardInput";
+import { FullScreenSpinner } from "./components/FullScreenSpinner";
+import { Suspense } from "react";
 
-type SudokuContentProps = {
-    gridRef: OnRefChangeType<HTMLDivElement>;
-};
-
-const SudokuContent = ({ gridRef }: SudokuContentProps) => {
-    const gameMode = useRecoilValue(gameModeState);
-    return (
-        <div className="app-content">
-            <ThemeErrorBoundary>
-                {gameMode.mode === "world" && gameMode.view === "map" ? (
-                    <WorldMap />
-                ) : (
-                    <div className="sudoku">
-                        <Grid gridRef={gridRef} />
-                        <ControlPanel />
-                    </div>
-                )}
-            </ThemeErrorBoundary>
-        </div>
-    );
-};
-
-export const Sudoku = () => {
+const SudokuGame = () => {
     const base = useRecoilValue(sudokuBaseState);
     const sideLength = useRecoilValue(sudokuSideLengthState);
 
@@ -47,18 +27,39 @@ export const Sudoku = () => {
         "--grid-size": gridWidth && gridHeight ? `${Math.min(gridWidth, gridHeight)}px` : "0",
     };
 
+    return (
+        <div className="sudoku-game" style={cssVariables}>
+            <Grid gridRef={gridRef} />
+            <ControlPanel />
+        </div>
+    );
+};
+
+const SudokuContent = () => {
+    const gameMode = useRecoilValue(gameModeState);
+    return (
+        <div className="app-content">
+            <ThemeErrorBoundary>
+                <Suspense fallback={<FullScreenSpinner />}>
+                    {gameMode.mode === "world" && gameMode.view === "map" ? <WorldMap /> : <SudokuGame />}
+                </Suspense>
+            </ThemeErrorBoundary>
+        </div>
+    );
+};
+
+export const Sudoku = () => {
     const { onKeyDown } = useKeyboardInput();
 
     return (
         <div
             className="app"
-            style={cssVariables}
             onKeyDown={onKeyDown}
             // Enable keyboard events
             tabIndex={0}
         >
             <SudokuAppBar />
-            <SudokuContent gridRef={gridRef} />
+            <SudokuContent />
             <SudokuEffects />
         </div>
     );
