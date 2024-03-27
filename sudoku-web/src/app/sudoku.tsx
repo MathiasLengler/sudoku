@@ -1,9 +1,10 @@
 import type * as CSS from "csstype";
+import { Suspense } from "react";
 import { useResizeDetector } from "react-resize-detector";
-import type { OnRefChangeType } from "react-resize-detector/build/types/types";
 import { useRecoilValue } from "recoil";
 import SudokuAppBar from "./appBar/sudokuAppBar";
 import { ThemeErrorBoundary } from "./components/ErrorFallback";
+import { FullScreenSpinner } from "./components/FullScreenSpinner";
 import { WorldMap } from "./components/world/WorldMap";
 import { ControlPanel } from "./controlPanel/controlPanel";
 import { Grid } from "./grid/grid";
@@ -11,8 +12,6 @@ import { sudokuBaseState, sudokuSideLengthState } from "./state/sudoku";
 import { gameModeState } from "./state/world";
 import { SudokuEffects } from "./sudokuEffects";
 import { useKeyboardInput } from "./useKeyboardInput";
-import { FullScreenSpinner } from "./components/FullScreenSpinner";
-import { Suspense } from "react";
 
 const SudokuGame = () => {
     const base = useRecoilValue(sudokuBaseState);
