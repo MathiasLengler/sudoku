@@ -91,6 +91,11 @@ export const MyTheme = ({ children }: MyThemeProps) => {
                         },
                     },
                 },
+                MuiStack: {
+                    defaultProps: {
+                        useFlexGap: true,
+                    },
+                },
             },
         });
     }, [prefersDarkMode]);

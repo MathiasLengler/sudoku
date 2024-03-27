@@ -1,12 +1,11 @@
-import type * as React from "react";
-import { Suspense } from "react";
-import { MyTheme } from "./theme/myTheme";
-import { RecoilRoot } from "recoil";
-import { SudokuLoader } from "./sudokuLoader";
-import { RecoilDebug } from "./RecoilDebug";
-import { WorkboxManager } from "./workboxManager";
-import { MySnackbarProvider } from "./MySnackbarProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { RecoilRoot } from "recoil";
+import { MySnackbarProvider } from "./MySnackbarProvider";
+import { RecoilDebug } from "./RecoilDebug";
+import { BasicErrorBoundary, ThemeErrorBoundary } from "./components/ErrorFallback";
+import { SudokuLoader } from "./sudokuLoader";
+import { MyTheme } from "./theme/myTheme";
+import { WorkboxManager } from "./workboxManager";
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -25,18 +24,20 @@ const queryClient = new QueryClient({
 
 export const App = () => {
     return (
-        <RecoilRoot>
-            {process.env.NODE_ENV !== "production" && <RecoilDebug />}
-            <QueryClientProvider client={queryClient}>
-                <MyTheme>
-                    <MySnackbarProvider>
-                        <Suspense fallback={"App fallback"}>
-                            <SudokuLoader />
-                        </Suspense>
-                        <WorkboxManager />
-                    </MySnackbarProvider>
-                </MyTheme>
-            </QueryClientProvider>
-        </RecoilRoot>
+        <BasicErrorBoundary>
+            <RecoilRoot>
+                {process.env.NODE_ENV !== "production" && <RecoilDebug />}
+                <QueryClientProvider client={queryClient}>
+                    <MyTheme>
+                        <ThemeErrorBoundary>
+                            <MySnackbarProvider>
+                                <SudokuLoader />
+                                <WorkboxManager />
+                            </MySnackbarProvider>
+                        </ThemeErrorBoundary>
+                    </MyTheme>
+                </QueryClientProvider>
+            </RecoilRoot>
+        </BasicErrorBoundary>
     );
 };

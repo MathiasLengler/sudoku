@@ -62,8 +62,10 @@ export default async (
             },
             client: {
                 overlay: {
-                    errors: true,
+                    // ReactRefreshPlugin has its own overlay
+                    errors: false,
                     warnings: false,
+                    runtimeErrors: false,
                 },
             },
             host: hostAny ? "0.0.0.0" : "127.0.0.1",

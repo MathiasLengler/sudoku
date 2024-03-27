@@ -1,8 +1,7 @@
-import type * as React from "react";
+import type { OnRefChangeType } from "react-resize-detector/build/types/types";
 import { useRecoilValue } from "recoil";
 import { sudokuBlocksIndexesState, sudokuCellsState } from "../state/sudoku";
 import { Block } from "./block";
-import type { OnRefChangeType } from "react-resize-detector/build/types/types";
 
 type GridProps = {
     gridRef: OnRefChangeType<HTMLDivElement>;

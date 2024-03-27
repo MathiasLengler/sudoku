@@ -6,19 +6,22 @@ import { HintSettingsButton } from "./hintSettings/HintSettingsButton";
 import { NewGameButton } from "./newGame/NewGameButton";
 import { ShareMenu } from "./share/ShareMenu";
 import { WorldSettingsButton } from "./world/WorldSettingsButton";
+import { ThemeErrorBoundary } from "../components/ErrorFallback";
 
 export default function SudokuAppBar() {
     return (
         <Box sx={{ flexGrow: 1 }} className="app-bar">
             <AppBar position="static" variant="outlined" color="default" elevation={0}>
                 <Toolbar>
-                    <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-                        Sudoku
-                    </Typography>
-                    <WorldSettingsButton />
-                    <ShareMenu />
-                    <HintSettingsButton />
-                    <NewGameButton />
+                    <ThemeErrorBoundary inline>
+                        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+                            Sudoku
+                        </Typography>
+                        <WorldSettingsButton />
+                        <ShareMenu />
+                        <HintSettingsButton />
+                        <NewGameButton />
+                    </ThemeErrorBoundary>
                 </Toolbar>
             </AppBar>
         </Box>
