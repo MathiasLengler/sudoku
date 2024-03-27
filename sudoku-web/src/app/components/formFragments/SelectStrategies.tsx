@@ -5,7 +5,7 @@ import type { Control, FieldValues, Path } from "react-hook-form";
 
 // FIXME: order of strategies gets shuffled
 
-interface SelectStrategiesProps<T extends FieldValues> {
+type SelectStrategiesProps<T extends FieldValues> = {
     control: Control<T>;
     name: Path<T>;
 }

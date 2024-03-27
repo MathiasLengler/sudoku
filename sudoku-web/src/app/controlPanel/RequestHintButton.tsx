@@ -57,7 +57,7 @@ export function RequestHintButton() {
                     const deduction = _.head(deductions);
                     if (!deduction) {
                         throw new Error(
-                            `Expected at least one deduction from strategy ${strategy}, instead got: ${deductions}`,
+                            `Expected at least one deduction from strategy ${strategy}, instead got: "${JSON.stringify(deductions)}"`,
                         );
                     }
                     console.info("Selected deduction:", deduction);

@@ -21,6 +21,7 @@ export function baseToLabel(base: number): string {
     return `${sideLength}x${sideLength}`;
 }
 export const SEED_MAX = Number.MAX_SAFE_INTEGER;
+// TODO: use zod pipe to simplify this
 const parseBigintSchema = <T extends ZodBigInt>(bigIntSchema: T) =>
     z.preprocess((value) => {
         const safeParseResult = z
@@ -30,7 +31,7 @@ const parseBigintSchema = <T extends ZodBigInt>(bigIntSchema: T) =>
             .transform((value) => {
                 try {
                     return BigInt(value);
-                } catch (err) {
+                } catch (_err) {
                     return value;
                 }
             })

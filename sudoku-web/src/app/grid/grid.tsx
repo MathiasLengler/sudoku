@@ -4,7 +4,7 @@ import { sudokuBlocksIndexesState, sudokuCellsState } from "../state/sudoku";
 import { Block } from "./block";
 import type { OnRefChangeType } from "react-resize-detector/build/types/types";
 
-interface GridProps {
+type GridProps = {
     gridRef: OnRefChangeType<HTMLDivElement>;
 }
 

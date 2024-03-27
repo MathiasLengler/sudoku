@@ -4,7 +4,7 @@ import Dialog from "@mui/material/Dialog";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
 
-interface MyDialogProps {
+type MyDialogProps = {
     open: boolean;
     onClose: () => void;
     children: (onClose: () => void) => ReactNode;

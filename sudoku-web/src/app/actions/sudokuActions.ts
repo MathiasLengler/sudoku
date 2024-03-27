@@ -10,7 +10,6 @@ import type {
     DynamicPosition,
     GeneratorProgress,
     GridFormatEnum,
-    RelativeTileDir,
     StrategyEnums,
     TransportDeductions,
 } from "../../types";

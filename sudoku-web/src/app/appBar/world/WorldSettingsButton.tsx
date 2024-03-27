@@ -38,7 +38,7 @@ export function WorldSettingsButton() {
                     ? [
                           {
                               label: `Toggle world view (${gameMode.view})`,
-                              onClick: async () => {
+                              onClick: () => {
                                   setGameMode({
                                       ...gameMode,
                                       view: gameMode.view === "sudoku" ? "map" : "sudoku",

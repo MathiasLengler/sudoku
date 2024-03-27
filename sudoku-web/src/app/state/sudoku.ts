@@ -1,7 +1,21 @@
 import { atom, selector } from "recoil";
-import type { TransportCell, TransportSudoku } from "../../types";
+import { z } from "zod";
+import type { DynamicCells, TransportCell, TransportSudoku } from "../../types";
 import { hintState } from "./hint";
+import { localStorageEffect, transformEffect } from "./localStorageEffect";
 import { remoteWorkerApiState } from "./worker";
+
+const valueSchema = z.number().int().positive().safe();
+
+const DynamicCellSchema = z.discriminatedUnion("kind", [
+    z.object({ kind: z.literal("value"), value: valueSchema, fixed: z.boolean() }),
+    z.object({ kind: z.literal("candidates"), candidates: z.array(valueSchema) }),
+]);
+
+export const DynamicCellsSchema = z.array(DynamicCellSchema);
+
+// TODO: evaluate IOC
+//  https://recoiljs.org/docs/guides/atom-effects/#state-synchronization-example
 
 export const sudokuState = atom<TransportSudoku>({
     key: "Sudoku",
@@ -12,6 +26,15 @@ export const sudokuState = atom<TransportSudoku>({
             return await wasmSudokuProxy.getSudoku();
         },
     }),
+    effects: [
+        transformEffect<TransportSudoku, DynamicCells>(
+            localStorageEffect(DynamicCellsSchema),
+            (sudoku) => sudoku.cells,
+            (_cells) => {
+                throw new Error("Not implemented");
+            },
+        ),
+    ],
 });
 
 export const sudokuBaseState = selector<number>({

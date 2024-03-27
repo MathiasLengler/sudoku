@@ -6,7 +6,7 @@ import TabContext from "@mui/lab/TabContext";
 import TabList from "@mui/lab/TabList";
 import { ImportForm } from "./ImportForm";
 
-interface NewGameTabsProps {
+type NewGameTabsProps = {
     onClose: () => void;
 }
 

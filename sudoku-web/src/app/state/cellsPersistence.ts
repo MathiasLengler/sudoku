@@ -1,4 +1,5 @@
-import type { DynamicCells } from "../types";
+import type { DynamicCells } from "../../types";
+import { DynamicCellsSchema } from "./sudoku";
 
 const KEY_CELLS = "cells_v1";
 
@@ -13,13 +14,11 @@ export function loadCells(): DynamicCells | undefined {
 
     if (!cellsString) return undefined;
 
-    let cellViews;
     try {
-        cellViews = JSON.parse(cellsString);
+        return DynamicCellsSchema.parse(JSON.parse(cellsString));
     } catch (err) {
         console.error("Error while parsing persisted cellViews:", err);
+        localStorage.removeItem(KEY_CELLS);
         return undefined;
     }
-
-    return cellViews;
 }

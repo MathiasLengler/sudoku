@@ -2,7 +2,7 @@ import ReplayIcon from "@mui/icons-material/Replay";
 import MyIconButton from "./MyIconButton";
 import React from "react";
 
-interface ResetFormButtonProps {
+type ResetFormButtonProps = {
     disabled?: boolean;
     onClick: () => void;
 }

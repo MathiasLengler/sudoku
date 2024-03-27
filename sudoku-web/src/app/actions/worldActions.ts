@@ -1,6 +1,6 @@
 import { Snapshot, useRecoilCallback } from "recoil";
-import type { RelativeTileDir } from "../../types";
 import type { WasmCellWorldProxy } from "../../spawnWorker";
+import type { RelativeTileDir } from "../../types";
 import { remoteWorkerApiState } from "../state/worker";
 
 async function getWasmCellWorldProxy(snapshot: Snapshot): Promise<WasmCellWorldProxy> {
@@ -42,7 +42,7 @@ async function getWasmCellWorldProxy(snapshot: Snapshot): Promise<WasmCellWorldP
 
 export function useChangeTile() {
     return useRecoilCallback(
-        ({ snapshot, set }) =>
+        ({ snapshot, set: _set }) =>
             async (dir: RelativeTileDir) => {
                 console.log("changeTile", dir);
                 const wasmCellWorldProxy = await getWasmCellWorldProxy(snapshot);

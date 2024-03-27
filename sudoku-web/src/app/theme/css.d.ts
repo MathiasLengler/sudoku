@@ -1,9 +1,8 @@
 // TS declaration merging
-
-// noinspection ES6UnusedImports
-import * as CSS from "csstype";
+import "csstype";
 
 declare module "csstype" {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
     interface Properties {
         "--base"?: number;
         "--side-length"?: number;

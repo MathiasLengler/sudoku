@@ -3,7 +3,7 @@ import React from "react";
 import { ListItemIcon, ListItemText, Menu } from "@mui/material";
 import MenuItem from "@mui/material/MenuItem";
 
-interface MyMenuProps {
+type MyMenuProps = {
     children: (params: { onMenuOpen: MouseEventHandler<HTMLButtonElement> }) => React.ReactNode;
     menuItems: {
         onClick: () => Promise<void> | void;

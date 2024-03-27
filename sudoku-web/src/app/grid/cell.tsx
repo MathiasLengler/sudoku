@@ -31,7 +31,7 @@ export function cellColorClass(fixed: boolean, incorrectValue: boolean) {
     }
 }
 
-interface CellValueProps {
+type CellValueProps = {
     value: DynamicCellValue["value"];
 }
 
@@ -44,7 +44,7 @@ export const CellValue: React.FunctionComponent<CellValueProps> = (props) => {
     );
 };
 
-interface CandidatesProps {
+type CandidatesProps = {
     candidates: DynamicCellCandidates["candidates"];
     gridPosition: DynamicPosition;
 }
@@ -100,7 +100,7 @@ export const Candidates = ({ candidates, gridPosition }: CandidatesProps) => {
     );
 };
 
-interface CellProps {
+type CellProps = {
     cell: TransportCell;
     isSelected: boolean;
     isGuide: boolean;

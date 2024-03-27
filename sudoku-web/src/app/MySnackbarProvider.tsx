@@ -4,7 +4,7 @@ import { closeSnackbar, SnackbarProvider } from "notistack";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
 
-interface MySnackbarProviderProps {
+type MySnackbarProviderProps = {
     children: ReactNode;
 }
 export function MySnackbarProvider({ children }: MySnackbarProviderProps) {

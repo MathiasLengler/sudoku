@@ -5,6 +5,7 @@ import { createTheme, StyledEngineProvider, ThemeProvider } from "@mui/material/
 import CssBaseline from "@mui/material/CssBaseline";
 import "./styles";
 
+/* eslint-disable @typescript-eslint/consistent-type-definitions */
 declare module "@mui/material/styles" {
     interface TypographyVariants {
         code: React.CSSProperties;
@@ -24,10 +25,11 @@ declare module "@mui/material/Typography" {
         code: true;
     }
 }
+/* eslint-enable @typescript-eslint/consistent-type-definitions */
 
-interface MyThemeProps {
+type MyThemeProps = {
     children: ReactNode;
-}
+};
 
 const fontFamily = ['"Roboto Flex Variable"', '"Roboto"', '"Helvetica"', '"Arial"', "sans-serif"].join(",");
 const fontFamilyMonospace = ['"Inconsolata"', "monospace"].join(",");

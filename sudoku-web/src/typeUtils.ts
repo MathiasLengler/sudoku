@@ -8,5 +8,5 @@ export type CreateSerializableParam<Type> = {
           : Type[Property];
 };
 
-// eslint-disable-next-line @typescript-eslint/no-empty-function
+// eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
 export function assert<T extends true>() {}

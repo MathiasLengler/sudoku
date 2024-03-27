@@ -11,7 +11,7 @@ import { useKeyboardInput } from "./useKeyboardInput";
 import { gameModeState } from "./state/world";
 import { WorldMap } from "./components/world/WorldMap";
 
-interface SudokuContentProps {
+type SudokuContentProps = {
     gridRef: OnRefChangeType<HTMLDivElement>;
 }
 

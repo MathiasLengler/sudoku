@@ -30,7 +30,7 @@ import { Fieldset } from "../../components/Fieldset";
 import TabPanel from "@mui/lab/TabPanel";
 import type { NewGameTabValue } from "./NewGameDialog";
 
-interface GenerateProgressProps {
+type GenerateProgressProps = {
     progress?: GeneratorProgress;
     cellCount: number;
 }
@@ -59,7 +59,7 @@ function GenerateProgress({ progress, cellCount }: GenerateProgressProps) {
     );
 }
 
-interface GenerateFormProps {
+type GenerateFormProps = {
     onClose: () => void;
 }
 export const GenerateForm = ({ onClose }: GenerateFormProps) => {
@@ -142,7 +142,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                                 marks={BASE_MARKS}
                                 valueLabelDisplay="auto"
                                 getAriaLabel={() => "Size"}
-                                getAriaValueText={(base, index) => baseToLabel(base)}
+                                getAriaValueText={(base) => baseToLabel(base)}
                             />
                             <SliderElement
                                 control={control}

@@ -9,13 +9,13 @@ if (process.env.NODE_ENV !== "production") {
     });
 }
 
-export interface WorkerApi {
+export type WorkerApi = {
     init: typeof init;
     // expose class constructors directly
     // Reference: https://github.com/GoogleChromeLabs/comlink/tree/main/docs/examples/03-classes-example
     WasmSudoku: typeof WasmSudoku;
     WasmCellWorld: typeof WasmCellWorld;
-}
+};
 
 const workerApi: WorkerApi = {
     init,
@@ -23,9 +23,10 @@ const workerApi: WorkerApi = {
     WasmCellWorld,
 };
 
-type Newable<T> = { new (...args: any[]): T };
+type Newable<T> = new (...args: unknown[]) => T;
 
 function markClassAsProxy<T>(cls: Newable<T>) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     cls.prototype[Comlink.proxyMarker] = true;
 }
 
@@ -36,12 +37,15 @@ markClassAsProxy(WasmCellWorld);
 // Use declaration merging (Module Augmentation) to reflect this modification.
 // This corrects the inferred type of `Comlink.Remote`
 declare module "../../sudoku-wasm/pkg" {
+    // Declaration merging of classes only works with `interface`
+    /* eslint-disable @typescript-eslint/consistent-type-definitions */
     interface WasmSudoku {
         [Comlink.proxyMarker]: true;
     }
     interface WasmCellWorld {
         [Comlink.proxyMarker]: true;
     }
+    /* eslint-enable @typescript-eslint/consistent-type-definitions */
 }
 
 // Send boot up message

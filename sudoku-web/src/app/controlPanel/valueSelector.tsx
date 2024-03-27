@@ -18,7 +18,7 @@ const isSelectedState = selectorFamily<boolean, number>({
         },
 });
 
-interface SelectorValueProps {
+type SelectorValueProps = {
     value: number;
 }
 

@@ -10,20 +10,18 @@ import * as React from "react";
 import type { CreateSerializableParam } from "../../typeUtils";
 import { selectedBlockPositionState } from "../state/cellIndexing";
 
-interface BlockProps {
+type BlockProps = {
     cells: TransportCell[];
     blockIndex: number;
-}
+};
 
-const containsSelectedPosState = selectorFamily<boolean | undefined, CreateSerializableParam<DynamicPosition>>({
+const containsSelectedPosState = selectorFamily<boolean, CreateSerializableParam<DynamicPosition>>({
     key: "Block.containsSelectedPos",
     get:
         (blockPosition) =>
         ({ get }) => {
             const selectedBlockPosition = get(selectedBlockPositionState);
-            if (selectedBlockPosition) {
-                return isEqual(blockPosition, selectedBlockPosition);
-            }
+            return !!selectedBlockPosition && isEqual(blockPosition, selectedBlockPosition);
         },
 });
 export const Block = ({ blockIndex, cells }: BlockProps) => {
@@ -51,7 +49,7 @@ export const Block = ({ blockIndex, cells }: BlockProps) => {
                     isGuide = !(cell.kind === "candidates" && cell.candidates.includes(selectedValue));
                 } else {
                     const { selectedPos } = input;
-                    isSelected = !!containsSelectedPos && isEqual(selectedPos, cell.position);
+                    isSelected = containsSelectedPos && isEqual(selectedPos, cell.position);
                     isGuide =
                         containsSelectedPos ||
                         selectedPos.column == cell.position.column ||

@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 
-export interface CancelableMutationFnArgs<Variables, Progress> {
+export type CancelableMutationFnArgs<Variables, Progress> = {
     variables: Variables;
     signal: AbortSignal;
     abortPromise: Promise<never>;

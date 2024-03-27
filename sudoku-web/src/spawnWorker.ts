@@ -1,7 +1,7 @@
 import { WORKER_BOOT_UP_MESSAGE } from "./constants";
 import * as Comlink from "comlink";
 import type { WorkerApi } from "./worker";
-import { loadCells } from "./app/cellsPersistence";
+import { loadCells } from "./app/state/cellsPersistence";
 import type { DynamicCells, WasmCellWorld, WasmSudoku } from "./types";
 
 export type WasmSudokuProxy = Comlink.Remote<WasmSudoku>;
@@ -39,7 +39,7 @@ function fixupComlinkProxy<T>(comlinkProxy: Comlink.Remote<T>): Comlink.Remote<T
 
 export async function spawnWorker() {
     console.debug("Spawning worker");
-    const worker = new Worker(new URL("./worker.tsx", import.meta.url));
+    const worker = new Worker(new URL("./worker.tsx", import.meta.url), { name: "SudokuWasmWorker" });
     if (process.env.NODE_ENV !== "production") {
         console.debug("Attaching debug event listeners");
         worker.addEventListener("message", (ev) => {
