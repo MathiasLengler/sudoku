@@ -33,7 +33,7 @@ export function cellColorClass(fixed: boolean, incorrectValue: boolean) {
 
 type CellValueProps = {
     value: DynamicCellValue["value"];
-}
+};
 
 export const CellValue: React.FunctionComponent<CellValueProps> = (props) => {
     const { value } = props;
@@ -47,7 +47,7 @@ export const CellValue: React.FunctionComponent<CellValueProps> = (props) => {
 type CandidatesProps = {
     candidates: DynamicCellCandidates["candidates"];
     gridPosition: DynamicPosition;
-}
+};
 
 export const Candidates = ({ candidates, gridPosition }: CandidatesProps) => {
     const base = useRecoilValue(sudokuBaseState);
@@ -104,7 +104,7 @@ type CellProps = {
     cell: TransportCell;
     isSelected: boolean;
     isGuide: boolean;
-}
+};
 
 export const Cell = (props: CellProps) => {
     const { cell, isSelected, isGuide } = props;

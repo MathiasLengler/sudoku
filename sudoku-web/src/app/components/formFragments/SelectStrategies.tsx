@@ -8,7 +8,7 @@ import type { Control, FieldValues, Path } from "react-hook-form";
 type SelectStrategiesProps<T extends FieldValues> = {
     control: Control<T>;
     name: Path<T>;
-}
+};
 function SelectStrategies<T extends FieldValues>({ control, name }: SelectStrategiesProps<T>) {
     return (
         <CheckboxButtonGroup

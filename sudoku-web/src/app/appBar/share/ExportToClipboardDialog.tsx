@@ -18,7 +18,7 @@ import {
 type DisplayExportedGridStringProps = {
     gridFormat: ExportToClipboardFormValues["gridFormat"];
     exportedGridStringLoadable: Loadable<string>;
-}
+};
 
 function DisplayExportedGridString({ gridFormat, exportedGridStringLoadable }: DisplayExportedGridStringProps) {
     return (
@@ -30,7 +30,7 @@ function DisplayExportedGridString({ gridFormat, exportedGridStringLoadable }: D
 
 type ExportToClipboardDialogProps = {
     onClose: () => void;
-}
+};
 
 export function ExportToClipboardDialog({ onClose }: ExportToClipboardDialogProps) {
     const [exportToClipboardFormValues, setExportToClipboardFormValues] = useRecoilState(

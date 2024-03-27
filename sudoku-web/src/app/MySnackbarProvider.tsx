@@ -6,7 +6,7 @@ import CloseIcon from "@mui/icons-material/Close";
 
 type MySnackbarProviderProps = {
     children: ReactNode;
-}
+};
 export function MySnackbarProvider({ children }: MySnackbarProviderProps) {
     return (
         <SnackbarProvider

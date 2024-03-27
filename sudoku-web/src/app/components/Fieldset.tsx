@@ -6,7 +6,7 @@ type FieldsetProps = {
     label: string;
     disabled?: boolean;
     children: ReactNode;
-}
+};
 
 export function Fieldset({ label, disabled, children }: FieldsetProps) {
     return (

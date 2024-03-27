@@ -71,7 +71,7 @@ export const importFormValuesSchema = z.object({
 
 type ImportFormProps = {
     onClose: () => void;
-}
+};
 
 export const ImportForm = ({ onClose }: ImportFormProps) => {
     const importSudokuString = useImportSudokuString();

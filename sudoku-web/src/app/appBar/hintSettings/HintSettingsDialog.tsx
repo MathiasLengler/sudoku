@@ -19,7 +19,7 @@ import {
 
 type HintSettingsDialogProps = {
     onClose: () => void;
-}
+};
 
 export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
     const [hintSettingsFormValues, setHintSettingsFormValues] = useRecoilState(hintSettingsState);

@@ -20,7 +20,7 @@ const isSelectedState = selectorFamily<boolean, number>({
 
 type SelectorValueProps = {
     value: number;
-}
+};
 
 const ValueButton: React.FunctionComponent<SelectorValueProps> = ({ value }: SelectorValueProps) => {
     const handleValue = useHandleValue();

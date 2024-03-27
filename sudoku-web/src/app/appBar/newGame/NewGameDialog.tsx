@@ -8,7 +8,7 @@ import { ImportForm } from "./ImportForm";
 
 type NewGameTabsProps = {
     onClose: () => void;
-}
+};
 
 export type NewGameTabValue = "generate-form" | "import-form";
 export const NewGameDialog = ({ onClose }: NewGameTabsProps) => {

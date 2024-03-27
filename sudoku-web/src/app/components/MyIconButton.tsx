@@ -15,7 +15,7 @@ type MyIconButtonProps = {
     color?: IconButtonProps["color"];
     badge?: ReactNode;
     badgeColor?: BadgeProps["color"];
-}
+};
 
 function MyIconButton({
     label,

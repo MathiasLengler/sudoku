@@ -8,7 +8,7 @@ type MyDialogProps = {
     open: boolean;
     onClose: () => void;
     children: (onClose: () => void) => ReactNode;
-}
+};
 
 export const MyDialog = ({ open, onClose, children }: MyDialogProps) => {
     const theme = useTheme();

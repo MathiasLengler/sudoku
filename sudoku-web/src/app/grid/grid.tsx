@@ -6,7 +6,7 @@ import type { OnRefChangeType } from "react-resize-detector/build/types/types";
 
 type GridProps = {
     gridRef: OnRefChangeType<HTMLDivElement>;
-}
+};
 
 export const Grid = ({ gridRef }: GridProps) => {
     const blocksIndexes = useRecoilValue(sudokuBlocksIndexesState);

@@ -33,7 +33,7 @@ import type { NewGameTabValue } from "./NewGameDialog";
 type GenerateProgressProps = {
     progress?: GeneratorProgress;
     cellCount: number;
-}
+};
 function GenerateProgress({ progress, cellCount }: GenerateProgressProps) {
     if (!progress) {
         return null;
@@ -61,7 +61,7 @@ function GenerateProgress({ progress, cellCount }: GenerateProgressProps) {
 
 type GenerateFormProps = {
     onClose: () => void;
-}
+};
 export const GenerateForm = ({ onClose }: GenerateFormProps) => {
     const [generateFormValues, setGenerateFormValues] = useRecoilState(generateFormValuesState);
 

@@ -13,7 +13,7 @@ import { WorldMap } from "./components/world/WorldMap";
 
 type SudokuContentProps = {
     gridRef: OnRefChangeType<HTMLDivElement>;
-}
+};
 
 const SudokuContent = ({ gridRef }: SudokuContentProps) => {
     const gameMode = useRecoilValue(gameModeState);

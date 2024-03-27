@@ -6,7 +6,7 @@ export type CancelableMutationFnArgs<Variables, Progress> = {
     signal: AbortSignal;
     abortPromise: Promise<never>;
     onProgress: (progress: Progress) => void;
-}
+};
 
 export function useCancelableMutation<Variables, Progress>(
     cancelableMutationFn: (args: CancelableMutationFnArgs<Variables, Progress>) => Promise<void>,

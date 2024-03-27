@@ -11,7 +11,7 @@ type MyMenuProps = {
         icon?: React.ReactNode;
         disabled?: boolean;
     }[];
-}
+};
 
 export function MyMenu({ children, menuItems }: MyMenuProps) {
     const [menuAnchorEl, setMenuAnchorEl] = React.useState<null | HTMLElement>(null);
