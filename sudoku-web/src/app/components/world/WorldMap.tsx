@@ -6,6 +6,8 @@ import { Candidates, CellValue, cellColorClass } from "../../grid/cell";
 import { sudokuBaseState, sudokuSideLengthState } from "../../state/sudoku";
 import { allWorldCellsState, cellWorldDimensionsState } from "../../state/world";
 import { Code } from "../Code";
+import { Slider } from "@mui/material";
+import { useState, useDeferredValue } from "react";
 
 export const WorldMap = () => {
     const allWorldCells = useRecoilValue(allWorldCellsState);
@@ -16,12 +18,14 @@ export const WorldMap = () => {
     // TODO: render tile boundaries
     // TODO: change tile
 
-    const cellSize = "4rem";
+    const [cellSize, setCellSize] = useState(100);
 
     const cssVariables: CSS.Properties = {
         "--side-length": sideLength,
         "--base": base,
     };
+
+    const cellSizeCss = `${useDeferredValue(cellSize)}px`;
 
     return (
         <Box
@@ -34,11 +38,13 @@ export const WorldMap = () => {
             }}
         >
             <Code wrap>{JSON.stringify(cellWorldDimensions)}</Code>
+            <Slider min={1} max={200} value={cellSize} onChange={(_e, value) => setCellSize(value as number)} />
             <Box
                 sx={{
                     display: "grid",
-                    gridTemplateRows: `repeat(${cellWorldDimensions.cell_dim.row_count}, ${cellSize})`,
-                    gridTemplateColumns: `repeat(${cellWorldDimensions.cell_dim.column_count}, ${cellSize})`,
+                    gridTemplateRows: `repeat(${cellWorldDimensions.cell_dim.row_count}, ${cellSizeCss})`,
+                    gridTemplateColumns: `repeat(${cellWorldDimensions.cell_dim.column_count}, ${cellSizeCss})`,
+                    "--cell-size": `${cellSizeCss}`,
                     overflow: "auto",
                     gap: "1px",
                     background: "var(--cell-border-color)",
@@ -62,7 +68,6 @@ export const WorldMap = () => {
                             className={cellClassNames}
                             sx={{
                                 aspectRatio: 1,
-                                "--cell-size": `${cellSize}`,
                             }}
                         >
                             {cell.kind === "value" ? (

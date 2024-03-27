@@ -219,7 +219,7 @@ Shoot for the moon: transition between single and world view.
 
 .cellValueText {
     line-height: 1;
-    font-size: calc(var(--cell-size));
+    font-size: var(--cell-size);
 }
 
 .candidates {
