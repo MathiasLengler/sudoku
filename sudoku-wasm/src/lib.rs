@@ -6,7 +6,7 @@ use error::Result;
 use sudoku::base::consts::*;
 use sudoku::grid::Grid;
 use sudoku::transport::TransportSudoku;
-use sudoku::world::{CellWorld, TileDim, TileIndex};
+use sudoku::world::{CellWorld, TileDim};
 use sudoku::{DynamicSudoku, DynamicSudokuActions, Sudoku};
 
 use crate::typescript::*;
