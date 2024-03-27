@@ -1,9 +1,8 @@
 import { atom, selector } from "recoil";
 import { z } from "zod";
-import type { DynamicCells, TransportCell, TransportSudoku } from "../../types";
+import type { TransportCell, TransportSudoku } from "../../types";
 import { hintState } from "./hint";
-import { localStorageEffect, transformEffect } from "./localStorageEffect";
-import { remoteWorkerApiState } from "./worker";
+import { remoteWasmSudokuState } from "./worker";
 
 const valueSchema = z.number().int().positive().safe();
 
@@ -22,19 +21,10 @@ export const sudokuState = atom<TransportSudoku>({
     default: selector({
         key: "DefaultSudoku",
         get: async ({ get }) => {
-            const { wasmSudokuProxy } = get(remoteWorkerApiState);
-            return await wasmSudokuProxy.getSudoku();
+            const remoteWasmSudoku = get(remoteWasmSudokuState);
+            return await remoteWasmSudoku.getSudoku();
         },
     }),
-    effects: [
-        transformEffect<TransportSudoku, DynamicCells>(
-            localStorageEffect(DynamicCellsSchema),
-            (sudoku) => sudoku.cells,
-            (_cells) => {
-                throw new Error("Not implemented");
-            },
-        ),
-    ],
 });
 
 export const sudokuBaseState = selector<number>({

@@ -4,7 +4,7 @@ import { z } from "zod";
 import { assert } from "../../typeUtils";
 import type { CellWorldDimensions, DynamicCells, TileIndex } from "../../types";
 import { localStorageEffect } from "./localStorageEffect";
-import { remoteWorkerApiState } from "./worker";
+import { remoteWasmCellWorldState } from "./worker";
 
 export type WorldView = z.infer<typeof worldViewSchema>;
 export const worldViewSchema = z.enum(["sudoku", "map"]);
@@ -48,8 +48,8 @@ export const allWorldCellsState = atom<DynamicCells>({
     default: selector({
         key: "DefaultAllWorldCells",
         get: async ({ get }) => {
-            const { wasmCellWorldProxy } = get(remoteWorkerApiState);
-            return await wasmCellWorldProxy.allWorldCells();
+            const remoteWasmCellWorld = get(remoteWasmCellWorldState);
+            return await remoteWasmCellWorld.allWorldCells();
         },
     }),
 });
@@ -59,8 +59,8 @@ export const cellWorldDimensionsState = atom<CellWorldDimensions>({
     default: selector({
         key: "DefaultCellWorldDimensions",
         get: async ({ get }) => {
-            const { wasmCellWorldProxy } = get(remoteWorkerApiState);
-            return await wasmCellWorldProxy.dimensions();
+            const remoteWasmCellWorld = get(remoteWasmCellWorldState);
+            return await remoteWasmCellWorld.dimensions();
         },
     }),
 });

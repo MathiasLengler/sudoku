@@ -3,8 +3,6 @@ import * as Comlink from "comlink";
 import _ from "lodash";
 import type { SelectorCallbackInterface, Snapshot } from "recoil";
 import { useRecoilCallback } from "recoil";
-import type { WasmSudokuProxy } from "../../spawnWorker";
-import { spawnWorker } from "../../spawnWorker";
 import type {
     DynamicGeneratorSettings,
     DynamicPosition,
@@ -18,14 +16,14 @@ import { getHint, hintState } from "../state/hint";
 import type { CellAction } from "../state/input";
 import { inputState } from "../state/input";
 import { sudokuSideLengthState, sudokuState } from "../state/sudoku";
-import { remoteWorkerApiState, workerState } from "../state/worker";
+import { remoteWasmSudokuState, workerState, type RemoteWasmSudoku } from "../state/worker";
+import { spawnWorker } from "../state/worker/spawn";
 import { useCancelableMutation } from "../useCancelableMutation";
 import { getInput } from "./inputActions";
 
 // Snapshot accessors
-async function getWasmSudokuProxy(snapshot: Snapshot): Promise<WasmSudokuProxy> {
-    const { wasmSudokuProxy } = await snapshot.getPromise(remoteWorkerApiState);
-    return wasmSudokuProxy;
+async function getRemoteWasmSudoku(snapshot: Snapshot): Promise<RemoteWasmSudoku> {
+    return await snapshot.getPromise(remoteWasmSudokuState);
 }
 
 // Validation
@@ -77,7 +75,7 @@ async function isInvalidGridPosition({
 async function updateSudoku({
     set,
     wasmSudokuProxy,
-}: Pick<SelectorCallbackInterface, "set"> & { wasmSudokuProxy: WasmSudokuProxy }) {
+}: Pick<SelectorCallbackInterface, "set"> & { wasmSudokuProxy: RemoteWasmSudoku }) {
     const newSudoku = await wasmSudokuProxy.getSudoku();
     set(sudokuState, newSudoku);
 }
@@ -94,7 +92,7 @@ async function applyValueAtGridPosition({
     if (await isFixedValueCell({ snapshot, gridPosition })) {
         return;
     }
-    const wasmSudokuProxy = await getWasmSudokuProxy(snapshot);
+    const wasmSudokuProxy = await getRemoteWasmSudoku(snapshot);
     const input = await getInput(snapshot);
 
     if (input.stickyMode) {
@@ -288,7 +286,7 @@ export function useSetAllDirectCandidates() {
     return useRecoilCallback(
         ({ snapshot, set }) =>
             async () => {
-                const wasmSudokuProxy = await getWasmSudokuProxy(snapshot);
+                const wasmSudokuProxy = await getRemoteWasmSudoku(snapshot);
                 await wasmSudokuProxy.setAllDirectCandidates();
                 await updateSudoku({ set, wasmSudokuProxy });
             },
@@ -309,7 +307,7 @@ export function useUndo() {
                     return;
                 }
 
-                const wasmSudokuProxy = await getWasmSudokuProxy(snapshot);
+                const wasmSudokuProxy = await getRemoteWasmSudoku(snapshot);
                 await wasmSudokuProxy.undo();
                 await updateSudoku({ set, wasmSudokuProxy });
             },
@@ -320,7 +318,7 @@ export function useRedo() {
     return useRecoilCallback(
         ({ snapshot, set }) =>
             async () => {
-                const wasmSudokuProxy = await getWasmSudokuProxy(snapshot);
+                const wasmSudokuProxy = await getRemoteWasmSudoku(snapshot);
                 await wasmSudokuProxy.redo();
                 await updateSudoku({ set, wasmSudokuProxy });
             },
@@ -336,7 +334,7 @@ export function useGenerate() {
                 abortPromise: Promise<never>,
                 onProgress: (progress: GeneratorProgress) => void,
             ) => {
-                const wasmSudokuProxy = await getWasmSudokuProxy(snapshot);
+                const wasmSudokuProxy = await getRemoteWasmSudoku(snapshot);
 
                 try {
                     await Promise.race([abortPromise, wasmSudokuProxy.generate(settings, Comlink.proxy(onProgress))]);
@@ -378,7 +376,7 @@ export function useImportSudokuString() {
     return useRecoilCallback(
         ({ snapshot, set }) =>
             async (input: string, setAllDirectCandidates: boolean) => {
-                const wasmSudokuProxy = await getWasmSudokuProxy(snapshot);
+                const wasmSudokuProxy = await getRemoteWasmSudoku(snapshot);
                 await wasmSudokuProxy.import(input);
                 if (setAllDirectCandidates) {
                     await wasmSudokuProxy.setAllDirectCandidates();
@@ -392,7 +390,7 @@ export function useExportSudokuString() {
     return useRecoilCallback(
         ({ snapshot }) =>
             async (format: GridFormatEnum) => {
-                const wasmSudokuProxy = await getWasmSudokuProxy(snapshot);
+                const wasmSudokuProxy = await getRemoteWasmSudoku(snapshot);
                 return await wasmSudokuProxy.export(format);
             },
         [],
@@ -403,7 +401,7 @@ export function useTryStrategies() {
     return useRecoilCallback(
         ({ snapshot, set }) =>
             async (strategies: StrategyEnums) => {
-                const wasmSudokuProxy = await getWasmSudokuProxy(snapshot);
+                const wasmSudokuProxy = await getRemoteWasmSudoku(snapshot);
                 const res = await wasmSudokuProxy.tryStrategies(strategies);
                 await updateSudoku({ set, wasmSudokuProxy });
                 return res;
@@ -416,7 +414,7 @@ export function useApplyDeductions() {
     return useRecoilCallback(
         ({ snapshot, set }) =>
             async (deductions: TransportDeductions) => {
-                const wasmSudokuProxy = await getWasmSudokuProxy(snapshot);
+                const wasmSudokuProxy = await getRemoteWasmSudoku(snapshot);
                 await wasmSudokuProxy.applyDeductions(deductions);
                 await updateSudoku({ set, wasmSudokuProxy });
             },

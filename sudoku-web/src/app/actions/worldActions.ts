@@ -1,11 +1,9 @@
 import { Snapshot, useRecoilCallback } from "recoil";
-import type { WasmCellWorldProxy } from "../../spawnWorker";
 import type { RelativeTileDir } from "../../types";
-import { remoteWorkerApiState } from "../state/worker";
+import { remoteWasmCellWorldState, type RemoteWasmCellWorld } from "../state/worker";
 
-async function getWasmCellWorldProxy(snapshot: Snapshot): Promise<WasmCellWorldProxy> {
-    const { wasmCellWorldProxy } = await snapshot.getPromise(remoteWorkerApiState);
-    return wasmCellWorldProxy;
+async function getWasmCellWorldProxy(snapshot: Snapshot): Promise<RemoteWasmCellWorld> {
+    return await snapshot.getPromise(remoteWasmCellWorldState);
 }
 
 // TODO: set/get grid at tile index

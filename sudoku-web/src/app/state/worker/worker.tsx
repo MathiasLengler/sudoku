@@ -1,7 +1,7 @@
 import * as Comlink from "comlink";
-import wbgInit, { WasmSudoku, WasmCellWorld, init as wasmInit, initThreadPool } from "../../sudoku-wasm/pkg";
+import wbgInit, { WasmSudoku, WasmCellWorld, init as wasmInit, initThreadPool } from "../../../../../sudoku-wasm/pkg";
 
-import { WORKER_BOOT_UP_MESSAGE } from "./constants";
+import { WORKER_BOOT_UP_MESSAGE } from "../../../constants";
 
 if (process.env.NODE_ENV !== "production") {
     self.addEventListener("message", (ev) => {
@@ -36,7 +36,7 @@ markClassAsProxy(WasmCellWorld);
 
 // Use declaration merging (Module Augmentation) to reflect this modification.
 // This corrects the inferred type of `Comlink.Remote`
-declare module "../../sudoku-wasm/pkg" {
+declare module "../../../../../sudoku-wasm/pkg" {
     // Declaration merging of classes only works with `interface`
     /* eslint-disable @typescript-eslint/consistent-type-definitions */
     interface WasmSudoku {

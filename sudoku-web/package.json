@@ -15,6 +15,7 @@
         "build:analyze": "webpack --mode production --env bundleAnalyzer=true",
         "lint": "npm run lint:tsc && npm run lint:eslint && npm run lint:prettier",
         "lint:tsc": "tsc",
+        "lint:tsc:watch": "tsc --watch",
         "lint:eslint": "npm run lint:eslint:files -- --max-warnings 0",
         "lint:eslint:fix": "npm run lint:eslint:files -- --fix",
         "lint:eslint:files": "eslint src/** webpack.config.ts",
