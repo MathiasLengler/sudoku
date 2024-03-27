@@ -170,10 +170,12 @@ Shoot for the moon: transition between single and world view.
     grid-gap: var(--block-gutter);
 }
 
+.block .cell {
+    --cell-size: calc(var(--block-row-height) - var(--cell-padding));
+}
+
 .cell {
     aspect-ratio: 1;
-
-    --cell-size: calc(var(--block-row-height) - var(--cell-padding));
 
     min-width: 0;
     min-height: 0;

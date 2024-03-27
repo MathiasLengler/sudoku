@@ -1,18 +1,27 @@
 import Box from "@mui/material/Box";
 import classnames from "classnames";
+import type * as CSS from "csstype";
 import { useRecoilValue } from "recoil";
 import { Candidates, CellValue, cellColorClass } from "../../grid/cell";
+import { sudokuBaseState, sudokuSideLengthState } from "../../state/sudoku";
 import { allWorldCellsState, cellWorldDimensionsState } from "../../state/world";
 import { Code } from "../Code";
 
 export const WorldMap = () => {
     const allWorldCells = useRecoilValue(allWorldCellsState);
     const cellWorldDimensions = useRecoilValue(cellWorldDimensionsState);
+    const base = useRecoilValue(sudokuBaseState);
+    const sideLength = useRecoilValue(sudokuSideLengthState);
 
     // TODO: render tile boundaries
     // TODO: change tile
 
     const cellSize = "4rem";
+
+    const cssVariables: CSS.Properties = {
+        "--side-length": sideLength,
+        "--base": base,
+    };
 
     return (
         <Box
@@ -21,6 +30,7 @@ export const WorldMap = () => {
                 display: "flex",
                 flexDirection: "column",
                 height: 1,
+                ...cssVariables,
             }}
         >
             <Code wrap>{JSON.stringify(cellWorldDimensions)}</Code>
@@ -41,11 +51,18 @@ export const WorldMap = () => {
                     );
                     return (
                         <Box
+                            onClick={(e) => {
+                                e.currentTarget.scrollIntoView({
+                                    behavior: "smooth",
+                                    block: "center",
+                                    inline: "center",
+                                });
+                            }}
                             key={index}
                             className={cellClassNames}
                             sx={{
                                 aspectRatio: 1,
-                                "--cell-size": `${cellSize} !important`,
+                                "--cell-size": `${cellSize}`,
                             }}
                         >
                             {cell.kind === "value" ? (

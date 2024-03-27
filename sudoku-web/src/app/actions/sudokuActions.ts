@@ -326,6 +326,7 @@ export function useRedo() {
     );
 }
 
+// TODO: reset hint
 export function useGenerate() {
     const generateImpl = useRecoilCallback(
         ({ snapshot, set }) =>
