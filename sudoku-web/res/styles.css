@@ -141,7 +141,7 @@ Shoot for the moon: transition between single and world view.
 
     /*Square blocks*/
     aspect-ratio: 1;
-    grid-gap: var(--grid-gutter);
+    gap: var(--grid-gutter);
 
     touch-action: none;
 }
@@ -167,7 +167,7 @@ Shoot for the moon: transition between single and world view.
     background-color: var(--cell-border-color);
 
     /*Square cells*/
-    grid-gap: var(--block-gutter);
+    gap: var(--block-gutter);
 }
 
 .block .cell {
@@ -213,8 +213,7 @@ Shoot for the moon: transition between single and world view.
 }
 
 .cellValue {
-    display: grid;
-    place-items: center;
+    text-align: center;
 }
 
 .cellValueText {
@@ -292,7 +291,7 @@ Shoot for the moon: transition between single and world view.
     place-items: stretch;
     grid-template-rows: var(--selector-grid-template-rows);
     grid-template-columns: var(--selector-grid-template-columns);
-    grid-gap: var(--selector-gutter);
+    gap: var(--selector-gutter);
 
     border: var(--block-border-size) solid var(--block-border-color);
 
