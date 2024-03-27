@@ -6,6 +6,23 @@ import type { CellWorldDimensions, DynamicCells, TileIndex } from "../../types";
 import { localStorageEffect } from "./localStorageEffect";
 import { remoteWasmCellWorldState } from "./worker";
 
+type FeatureFlags = {
+    experimentWorld: boolean;
+};
+
+export const featureFlagsState = atom<FeatureFlags>({
+    key: "FeatureFlags",
+    default: selector({
+        key: "DefaultFeatureFlags",
+        get: () => {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                experimentWorld: params.has("world"),
+            };
+        },
+    }),
+});
+
 export type WorldView = z.infer<typeof worldViewSchema>;
 export const worldViewSchema = z.enum(["sudoku", "map"]);
 

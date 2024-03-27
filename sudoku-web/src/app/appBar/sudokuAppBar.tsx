@@ -9,8 +9,12 @@ import { WorldSettingsButton } from "./world/WorldSettingsButton";
 import { ThemeErrorBoundary } from "../components/ErrorFallback";
 import { FullScreenSpinner } from "../components/FullScreenSpinner";
 import { Suspense } from "react";
+import { useRecoilValue } from "recoil";
+import { featureFlagsState } from "../state/world";
 
 export default function SudokuAppBar() {
+    const { experimentWorld } = useRecoilValue(featureFlagsState);
+
     return (
         <Box sx={{ flexGrow: 1 }} className="app-bar">
             <AppBar position="static" variant="outlined" color="default" elevation={0}>
@@ -20,7 +24,7 @@ export default function SudokuAppBar() {
                             Sudoku
                         </Typography>
                         <Suspense fallback={<FullScreenSpinner />}>
-                            <WorldSettingsButton />
+                            {experimentWorld && <WorldSettingsButton />}
                             <ShareMenu />
                             <HintSettingsButton />
                             <NewGameButton />
