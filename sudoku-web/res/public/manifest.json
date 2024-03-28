@@ -34,11 +34,5 @@
         { "src": "icon_256x256.png", "sizes": "256x256", "type": "image/png", "purpose": "any" },
         { "src": "icon_512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
     ],
-    "screenshots": [
-        {
-            "src": "assets/screenshots/TODO.png",
-            "sizes": "1920x1080",
-            "type": "image/png"
-        }
-    ]
+    "screenshots": []
 }
