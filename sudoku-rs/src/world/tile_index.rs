@@ -72,6 +72,7 @@ impl TileIndex {
 /// How many tiles/sudoku grids are in the world
 #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TileDim {
     pub row_count: usize,
     pub column_count: usize,

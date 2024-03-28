@@ -63,6 +63,7 @@ impl<Base: SudokuBase> Display for CellWorld<Base> {
 
 #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct WorldGenerationResult {
     pub success: bool,
     pub backtrack_count: u32,
@@ -70,6 +71,7 @@ pub struct WorldGenerationResult {
 
 #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CellWorldDimensions {
     pub tile_dim: TileDim,
     // FIXME: better name or separate type
