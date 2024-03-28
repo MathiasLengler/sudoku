@@ -107,42 +107,6 @@ export default async (
             new webpack.DefinePlugin({
                 "process.env.DEBUG_SW": debugSW,
             }),
-            new WebpackPwaManifest({
-                name: "Sudoku",
-                short_name: "Sudoku",
-                description: "Touch optimized sudoku built with Rust/WASM/TypeScript/React",
-                // MUI Theme: prefersDarkMode && palette.background.default
-                background_color: "#121212",
-                // CSS: (prefers-color-scheme: dark) var(--cell-bg-color-selected)
-                theme_color: "#042143",
-                icons: [
-                    {
-                        src: path.resolve("res/img/icon_dark.png"),
-                        sizes: [96, 128, 192, 256, 384, 512],
-                        destination: "assets",
-                    },
-                    {
-                        src: path.resolve("res/img/icon_dark_maskable.png"),
-                        sizes: [192, 512],
-                        purpose: "maskable",
-                        destination: "assets",
-                    },
-                ],
-            }) as WebpackPluginInstance,
-            new FaviconsWebpackPlugin({
-                logo: "./res/img/icon_light.png",
-                cache: true,
-                favicons: {
-                    icons: {
-                        android: false,
-                        appleIcon: ["apple-touch-icon-180x180.png"],
-                        appleStartup: false,
-                        favicons: true,
-                        windows: false,
-                        yandex: false,
-                    },
-                },
-            }),
             new CopyPlugin({ patterns: ["res/public"] }),
             bundleAnalyzer && new (await import("webpack-bundle-analyzer")).BundleAnalyzerPlugin(),
         ]),
