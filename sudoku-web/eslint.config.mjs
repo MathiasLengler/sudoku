@@ -58,6 +58,7 @@ export default tseslint.config(
                 },
             ],
             "@typescript-eslint/consistent-type-definitions": ["warn", "type"],
+            "@typescript-eslint/unbound-method": ["warn", { ignoreStatic: true }],
             "react-hooks/exhaustive-deps": [
                 "warn",
                 {
