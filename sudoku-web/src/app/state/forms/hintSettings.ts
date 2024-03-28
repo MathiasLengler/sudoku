@@ -29,8 +29,8 @@ export type HintSettings = z.infer<typeof hintSettingsSchema>;
 export const hintSettingsSchema = z.object({
     strategies: z.array(strategyEnumSchema).min(1),
     mode: z.enum(["toggleHint", "hintApply", "apply"]),
-    doLoop: z.boolean(),
-    loopDelayIndex: z.number().nonnegative().max(MAX_LOOP_DELAY_INDEX),
+    doLoop: z.boolean().default(false),
+    loopDelayIndex: z.number().nonnegative().max(MAX_LOOP_DELAY_INDEX).default(0),
     multipleDeductions: z.boolean(),
 });
 
