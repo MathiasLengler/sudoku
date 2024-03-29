@@ -1,14 +1,12 @@
-import path from "path";
-import HtmlWebpackPlugin from "html-webpack-plugin";
-import WebpackPwaManifest from "webpack-pwa-manifest";
-import WorkboxPlugin from "workbox-webpack-plugin";
-import WasmPackPlugin from "@wasm-tool/wasm-pack-plugin";
-import FaviconsWebpackPlugin from "favicons-webpack-plugin";
-import CopyPlugin from "copy-webpack-plugin";
 import ReactRefreshPlugin from "@pmmmwh/react-refresh-webpack-plugin";
+import WasmPackPlugin from "@wasm-tool/wasm-pack-plugin";
+import CopyPlugin from "copy-webpack-plugin";
 import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin";
-import webpack, { type WebpackPluginInstance } from "webpack";
+import HtmlWebpackPlugin from "html-webpack-plugin";
+import path from "path";
+import webpack from "webpack";
 import "webpack-dev-server";
+import WorkboxPlugin from "workbox-webpack-plugin";
 
 import _ from "lodash";
 
