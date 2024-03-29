@@ -1,3 +1,6 @@
+// FIXME: remove when feature complete
+/* eslint-disable */
+
 import { Slider } from "@mui/material";
 import Box from "@mui/material/Box";
 import type * as CSS from "csstype";
