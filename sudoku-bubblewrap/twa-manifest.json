@@ -21,7 +21,7 @@
     "alias": "android"
   },
   "appVersionName": "1",
-  "appVersionCode": 7,
+  "appVersionCode": 8,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://sudoku.lengler.dev/manifest.json",
@@ -35,7 +35,7 @@
   "isMetaQuest": false,
   "fullScopeUrl": "https://sudoku.lengler.dev/",
   "minSdkVersion": 23,
-  "orientation": "default",
+  "orientation": "any",
   "fingerprints": [
     {
       "value": "3B:E1:1F:30:31:DB:69:FA:9F:68:90:72:6D:6B:61:8C:19:01:A4:B4:76:3A:4A:64:03:6F:A5:67:B6:CD:63:1C"
