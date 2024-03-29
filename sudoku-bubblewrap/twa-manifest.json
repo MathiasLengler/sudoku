@@ -13,15 +13,15 @@
   "backgroundColor": "#121212",
   "enableNotifications": true,
   "startUrl": "/",
-  "iconUrl": "https://sudoku.lengler.dev/assets/icon_512x512.dd16de3142280d96f5b5d217d0b79912.png",
-  "maskableIconUrl": "https://sudoku.lengler.dev/assets/icon_512x512.b7c1763cb74df4c0aaf67f8c5e7b24eb.png",
+  "iconUrl": "https://sudoku.lengler.dev/assets/icon_512x512.png",
+  "maskableIconUrl": "https://sudoku.lengler.dev/assets/maskable_icon_512x512.png",
   "splashScreenFadeOutDuration": 300,
   "signingKey": {
     "path": "android.keystore",
     "alias": "android"
   },
   "appVersionName": "1",
-  "appVersionCode": 4,
+  "appVersionCode": 5,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://sudoku.lengler.dev/manifest.json",
