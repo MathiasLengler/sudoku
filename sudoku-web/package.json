@@ -25,7 +25,10 @@
         "serve": "npx serve -l 8080 -c ../serve.json dist",
         "bubblewrap:merge": "cd ../sudoku-bubblewrap && bubblewrap merge",
         "bubblewrap:update": "cd ../sudoku-bubblewrap && bubblewrap update",
-        "bubblewrap:build": "cd ../sudoku-bubblewrap && bubblewrap build"
+        "bubblewrap:build": "cd ../sudoku-bubblewrap && bubblewrap build",
+        "docker:build": "docker build -t sudoku-web .",
+        "docker:run": "docker run -it --rm -p 8080:80 sudoku-web",
+        "docker:dev": "npm run build && npm run docker:build && npm run docker:run"
     },
     "dependencies": {
         "@babel/runtime": "^7.24.0",
