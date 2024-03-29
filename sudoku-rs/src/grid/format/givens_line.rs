@@ -59,7 +59,7 @@ mod tests {
 
     #[test]
     fn test_render_givens_line() {
-        let grid = samples::base_3().pop().unwrap();
+        let grid = samples::base_3().into_iter().next().unwrap();
 
         assert_eq!(
             GivensLine.render(&grid),

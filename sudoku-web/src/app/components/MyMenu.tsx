@@ -3,7 +3,7 @@ import React from "react";
 import { ListItemIcon, ListItemText, Menu } from "@mui/material";
 import MenuItem from "@mui/material/MenuItem";
 
-interface MyMenuProps {
+type MyMenuProps = {
     children: (params: { onMenuOpen: MouseEventHandler<HTMLButtonElement> }) => React.ReactNode;
     menuItems: {
         onClick: () => Promise<void> | void;
@@ -11,7 +11,7 @@ interface MyMenuProps {
         icon?: React.ReactNode;
         disabled?: boolean;
     }[];
-}
+};
 
 export function MyMenu({ children, menuItems }: MyMenuProps) {
     const [menuAnchorEl, setMenuAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -27,7 +27,7 @@ export function MyMenu({ children, menuItems }: MyMenuProps) {
         }
     };
 
-    const onMenuOpen: MouseEventHandler<HTMLButtonElement> = e => setMenuAnchorEl(e.currentTarget);
+    const onMenuOpen: MouseEventHandler<HTMLButtonElement> = (e) => setMenuAnchorEl(e.currentTarget);
 
     return (
         <>

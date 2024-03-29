@@ -1,17 +1,16 @@
 import LightbulbIcon from "@mui/icons-material/Lightbulb";
-import MyIconButton from "../components/MyIconButton";
-import * as React from "react";
-import { useApplyDeductions, useTryStrategies } from "../actions/sudokuActions";
-import { useRecoilCallback, useRecoilValue } from "recoil";
-import { hintSettingsState, scaleLoopDelayIndex } from "../state/forms/hintSettings";
-import { type Hint, hintState, type OptionalHint } from "../state/hint";
-import assertNever from "assert-never/index";
+import CircularProgress from "@mui/material/CircularProgress";
+import type { IconButtonProps } from "@mui/material/IconButton/IconButton";
+import assertNever from "assert-never";
 import _ from "lodash";
-import { sudokuIsSolvedState } from "../state/sudoku";
 import { useSnackbar } from "notistack";
 import { useState } from "react";
-import type { IconButtonProps } from "@mui/material/IconButton/IconButton";
-import CircularProgress from "@mui/material/CircularProgress";
+import { useRecoilCallback, useRecoilValue } from "recoil";
+import { useApplyDeductions, useTryStrategies } from "../actions/sudokuActions";
+import MyIconButton from "../components/MyIconButton";
+import { hintSettingsState, scaleLoopDelayIndex } from "../state/forms/hintSettings";
+import { hintState, type Hint, type OptionalHint } from "../state/hint";
+import { sudokuIsSolvedState } from "../state/sudoku";
 
 export function RequestHintButton() {
     const [isRequestingHint, setIsRequestingHint] = useState(false);
@@ -58,14 +57,14 @@ export function RequestHintButton() {
                     const deduction = _.head(deductions);
                     if (!deduction) {
                         throw new Error(
-                            `Expected at least one deduction from strategy ${strategy}, instead got: ${deductions}`
+                            `Expected at least one deduction from strategy ${strategy}, instead got: "${JSON.stringify(deductions)}"`,
                         );
                     }
                     console.info("Selected deduction:", deduction);
                     return { strategy, deductions: [deduction] };
                 }
             },
-        [enqueueSnackbar, tryStrategies]
+        [enqueueSnackbar, tryStrategies],
     );
 
     const showHint = useRecoilCallback(
@@ -79,7 +78,7 @@ export function RequestHintButton() {
                     return false;
                 }
             },
-        [getHint]
+        [getHint],
     );
 
     const applyHint = useRecoilCallback(
@@ -102,7 +101,7 @@ export function RequestHintButton() {
                 hideHint();
                 return madeProgress;
             },
-        [applyDeductions, enqueueSnackbar, hideHint]
+        [applyDeductions, enqueueSnackbar, hideHint],
     );
 
     const requestSingleHint = useRecoilCallback(
@@ -139,7 +138,7 @@ export function RequestHintButton() {
                 }
                 assertNever(mode);
             },
-        [applyHint, getHint, hideHint, showHint]
+        [applyHint, getHint, hideHint, showHint],
     );
 
     const requestHint = useRecoilCallback(
@@ -160,7 +159,7 @@ export function RequestHintButton() {
                             if (loopDelayIndex) {
                                 const loopDelayMs = scaleLoopDelayIndex(loopDelayIndex);
                                 console.info("Sleeping for", loopDelayMs);
-                                await new Promise(resolve => setTimeout(resolve, loopDelayMs));
+                                await new Promise((resolve) => setTimeout(resolve, loopDelayMs));
 
                                 if (requestHintAbortController.signal.aborted) {
                                     console.info("requestHint aborted");
@@ -176,7 +175,7 @@ export function RequestHintButton() {
                     setIsRequestingHint(false);
                 }
             },
-        [isRequestingHint, requestHintAbortController.signal, requestSingleHint]
+        [isRequestingHint, requestHintAbortController.signal, requestSingleHint],
     );
 
     let iconColor: IconButtonProps["color"];

@@ -1,14 +1,14 @@
-use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::fmt::{Binary, Display, Formatter};
 use std::mem::size_of;
 
+use anyhow::ensure;
 use num::traits::{CheckedShl, WrappingSub};
 use num::{One, PrimInt, Zero};
 use serde::ser::SerializeSeq;
 use serde::{Serialize, Serializer};
 
-pub use iter::CandidatesIter;
+pub use iter::{CandidatesAscIter, CandidatesIterator, CandidatesRandIter};
 
 use crate::base::SudokuBase;
 use crate::cell::compact::value::Value;
@@ -19,12 +19,14 @@ use crate::position::{BlockCoordinate, Coordinate};
 
 mod iter;
 
+// FIXME: replace all usages of `&self` with `self`
+//  `Candidates` is Copy and smaller than or equal to a 32-bit pointer
+//  benchmark before/after
+
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Copy, Clone, Debug)]
 pub struct Candidates<Base: SudokuBase> {
     /// # Safety invariants
-    ///
     /// The bits at position `Base::MAX_VALUE` and greater must be zero.
-    /// Validated by `Self::is_valid`.
     bits: Base::CandidatesIntegral,
 }
 
@@ -42,14 +44,14 @@ impl<Base: SudokuBase> Candidates<Base> {
 
     fn with_integral_unchecked(bits: Base::CandidatesIntegral) -> Self {
         let this = Self { bits };
-        this.debug_assert_is_valid();
+        this.debug_assert();
         this
     }
 
     // TODO: refactor into TryFrom implementation
     pub fn with_integral(bits: Base::CandidatesIntegral) -> Self {
         let this = Self { bits };
-        this.assert_is_valid();
+        this.assert();
         this
     }
 
@@ -107,7 +109,7 @@ impl<Base: SudokuBase> Candidates<Base> {
 
         self.bits ^= Base::CandidatesIntegral::one() << imported_candidate;
 
-        self.debug_assert_is_valid();
+        self.debug_assert();
     }
 
     pub fn set(&mut self, candidate: Value<Base>, enabled: bool) {
@@ -119,7 +121,7 @@ impl<Base: SudokuBase> Candidates<Base> {
             self.bits &= !(Base::CandidatesIntegral::one() << imported_candidate);
         }
 
-        self.debug_assert_is_valid();
+        self.debug_assert();
     }
 
     pub fn insert(&mut self, candidate: Value<Base>) {
@@ -136,8 +138,7 @@ impl<Base: SudokuBase> Candidates<Base> {
     pub fn has(&self, candidate: Value<Base>) -> bool {
         let imported_candidate = Self::import(candidate);
 
-        (self.bits & Base::CandidatesIntegral::one() << imported_candidate)
-            != Base::CandidatesIntegral::zero()
+        !(self.bits & Base::CandidatesIntegral::one() << imported_candidate).is_zero()
     }
 
     pub fn integral(&self) -> Base::CandidatesIntegral {
@@ -145,11 +146,35 @@ impl<Base: SudokuBase> Candidates<Base> {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.bits == Base::CandidatesIntegral::zero()
+        self.bits.is_zero()
+    }
+
+    pub fn is_single(self) -> bool {
+        self.count() == 1
     }
 
     pub fn is_full(&self) -> bool {
         self.bits == Self::all_candidates_mask()
+    }
+
+    fn trailing_zeros(&self) -> u8 {
+        // unwrap optimizes away
+        self.bits.trailing_zeros().try_into().unwrap()
+    }
+
+    // Reference: https://lemire.me/blog/2018/02/21/iterating-over-set-bits-quickly/
+    pub fn first(&self) -> Option<Value<Base>> {
+        if self.is_empty() {
+            None
+        } else {
+            let candidate = self.trailing_zeros();
+
+            // Safety: the largest bit position is `Base::MAX_VALUE - 1`
+            // At least one bit is set, therefore `candidate` remains in-bounds.
+            let coordinate = unsafe { Coordinate::new_unchecked(candidate) };
+
+            Some(Self::export(coordinate))
+        }
     }
 
     /// Determine if the candidates are block segmented or not.
@@ -176,7 +201,7 @@ impl<Base: SudokuBase> Candidates<Base> {
             .try_into()
             .unwrap();
         let logic_leading_zeros = storage_leading_zeros - all_leading_zeros;
-        let trailing_zeros: u8 = self.bits.trailing_zeros().try_into().unwrap();
+        let trailing_zeros = self.trailing_zeros();
         let outer_zeros_count = logic_leading_zeros + trailing_zeros;
 
         let segment_width = Base::SIDE_LENGTH - outer_zeros_count;
@@ -205,7 +230,7 @@ impl<Base: SudokuBase> Candidates<Base> {
         self.bits.count_ones().try_into().unwrap()
     }
 
-    pub fn iter(&self) -> CandidatesIter<Base> {
+    pub fn iter(&self) -> CandidatesAscIter<Base> {
         (*self).into()
     }
 
@@ -219,7 +244,9 @@ impl<Base: SudokuBase> Candidates<Base> {
 
     pub fn to_single(self) -> Option<Value<Base>> {
         let mut iter = self.iter();
-        let (Some(single), None) = (iter.next(), iter.next()) else { return None; };
+        let (Some(single), None) = (iter.next(), iter.next()) else {
+            return None;
+        };
         Some(single)
     }
 
@@ -231,6 +258,7 @@ impl<Base: SudokuBase> Candidates<Base> {
 
 /// Internal helpers
 impl<Base: SudokuBase> Candidates<Base> {
+    // TODO: benchmark/view assembly; should evaluate to a constant for a specific base
     fn all_candidates_mask() -> Base::CandidatesIntegral {
         let zero = Base::CandidatesIntegral::zero();
         let one = Base::CandidatesIntegral::one();
@@ -246,29 +274,33 @@ impl<Base: SudokuBase> Candidates<Base> {
     fn export(candidate: Coordinate<Base>) -> Value<Base> {
         candidate.into()
     }
+}
 
-    fn debug_assert_is_valid(&self) {
-        debug_assert!(
-            self.is_valid(),
-            "Unexpected bit set in {}",
-            self.unused_bits()
-        );
+/// Validation
+impl<Base: SudokuBase> Candidates<Base> {
+    fn mask_unused_bits(bits: Base::CandidatesIntegral) -> Base::CandidatesIntegral {
+        bits & !Self::all_candidates_mask()
     }
 
-    fn assert_is_valid(&self) {
-        assert!(
-            self.is_valid(),
-            "Unexpected bit set in {}",
-            self.unused_bits()
-        );
+    fn validate_integral(bits: Base::CandidatesIntegral) -> Result<()> {
+        let unused_bits = Self::mask_unused_bits(bits);
+        ensure!(unused_bits.is_zero(), "Unexpected bit set in {unused_bits}");
+        Ok(())
     }
 
-    fn is_valid(&self) -> bool {
-        self.unused_bits() == Base::CandidatesIntegral::zero()
+    fn validate(self) -> Result<()> {
+        Self::validate_integral(self.bits)
     }
 
-    fn unused_bits(&self) -> Base::CandidatesIntegral {
-        self.bits & !Self::all_candidates_mask()
+    fn assert(self) {
+        self.validate().unwrap();
+    }
+
+    fn debug_assert(self) {
+        debug_assert!({
+            self.assert();
+            true
+        });
     }
 }
 
@@ -280,7 +312,7 @@ impl<Base: SudokuBase> FromIterator<Value<Base>> for Candidates<Base> {
             this.set(candidate, true);
         }
 
-        this.debug_assert_is_valid();
+        this.debug_assert();
 
         this
     }
@@ -288,24 +320,25 @@ impl<Base: SudokuBase> FromIterator<Value<Base>> for Candidates<Base> {
 
 impl<Base: SudokuBase> IntoIterator for Candidates<Base> {
     type Item = Value<Base>;
-    type IntoIter = CandidatesIter<Base>;
+    type IntoIter = CandidatesAscIter<Base>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.into()
     }
 }
 
+impl<Base: SudokuBase> IntoIterator for &'_ Candidates<Base> {
+    type Item = Value<Base>;
+    type IntoIter = CandidatesAscIter<Base>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
 impl<Base: SudokuBase> From<Vec<Value<Base>>> for Candidates<Base> {
     fn from(candidates: Vec<Value<Base>>) -> Self {
-        let mut this = Self::default();
-
-        for candidate in candidates {
-            this.set(candidate, true);
-        }
-
-        this.debug_assert_is_valid();
-
-        this
+        candidates.into_iter().collect()
     }
 }
 
@@ -328,7 +361,7 @@ impl<Base: SudokuBase> TryFrom<Vec<u8>> for Candidates<Base> {
             this.set(candidate.try_into()?, true);
         }
 
-        this.debug_assert_is_valid();
+        this.debug_assert();
 
         Ok(this)
     }
@@ -344,7 +377,18 @@ impl<Base: SudokuBase> TryFrom<DynamicCandidates> for Candidates<Base> {
 
 impl<Base: SudokuBase> Display for Candidates<Base> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self.to_vec_u8())
+        if f.alternate() {
+            write!(f, "{:?}", self.to_vec_value())
+        } else {
+            write!(
+                f,
+                "{:?}",
+                self.to_vec_value()
+                    .into_iter()
+                    .map(|value| value.to_string())
+                    .collect::<String>()
+            )
+        }
     }
 }
 
@@ -360,7 +404,7 @@ impl<Base: SudokuBase> Serialize for Candidates<Base> {
         S: Serializer,
     {
         let mut seq = serializer.serialize_seq(Some(usize::from(self.count())))?;
-        for candidate in self.iter() {
+        for candidate in self {
             seq.serialize_element(&candidate)?;
         }
         seq.end()
@@ -369,8 +413,6 @@ impl<Base: SudokuBase> Serialize for Candidates<Base> {
 
 #[cfg(test)]
 mod tests {
-    use std::mem::size_of;
-
     use crate::base::consts::*;
     use crate::error::Result;
 
@@ -615,6 +657,17 @@ mod tests {
         }
 
         #[test]
+        fn test_is_single() {
+            let empty: Candidates<Base2> = Candidates::new();
+            let one: Candidates<Base2> = Candidates::with_single(1.try_into().unwrap());
+            let all: Candidates<Base2> = Candidates::all();
+
+            assert!(!empty.is_single());
+            assert!(one.is_single());
+            assert!(!all.is_single());
+        }
+
+        #[test]
         fn test_is_full() {
             let empty: Candidates<Base2> = Candidates::new();
             let one: Candidates<Base2> = Candidates::with_single(1.try_into().unwrap());
@@ -623,6 +676,19 @@ mod tests {
             assert!(!empty.is_full());
             assert!(!one.is_full());
             assert!(all.is_full());
+        }
+
+        #[test]
+        fn test_first() {
+            let empty: Candidates<Base2> = Candidates::new();
+            let one: Candidates<Base2> = Candidates::with_single(1.try_into().unwrap());
+            let four: Candidates<Base2> = Candidates::with_single(4.try_into().unwrap());
+            let all: Candidates<Base2> = Candidates::all();
+
+            assert!(empty.first().is_none());
+            assert_eq!(one.first(), Some(1.try_into().unwrap()));
+            assert_eq!(four.first(), Some(4.try_into().unwrap()));
+            assert_eq!(all.first(), Some(1.try_into().unwrap()));
         }
 
         fn assert_block_segmentation<Base: SudokuBase>(

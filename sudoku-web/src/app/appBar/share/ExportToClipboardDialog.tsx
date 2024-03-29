@@ -1,25 +1,24 @@
+import { zodResolver } from "@hookform/resolvers/zod";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import { LoadingButton } from "@mui/lab";
 import { Button, DialogActions, DialogContent, DialogTitle, LinearProgress, Stack } from "@mui/material";
-import React, { Suspense, useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { SelectElement, useForm } from "react-hook-form-mui";
+import { useRecoilState, useRecoilValueLoadable, type Loadable } from "recoil";
 import { ALL_GRID_FORMATS } from "../../../constants";
 import { Code } from "../../components/Code";
-import { type Loadable, useRecoilState, useRecoilValueLoadable } from "recoil";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { ResetFormButton } from "../../components/ResetFormButton";
 import {
-    EXPORT_TO_CLIPBOARD_FORM_DEFAULT_VALUES,
-    exportedGridStringState,
-    type ExportToClipboardFormValues,
     exportToClipboardFormValuesSchema,
     exportToClipboardFormValuesState,
+    exportedGridStringState,
+    type ExportToClipboardFormValues,
 } from "../../state/forms/exportToClipboard";
-import { LoadingButton } from "@mui/lab";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import { ResetFormButton } from "../../components/ResetFormButton";
 
-interface DisplayExportedGridStringProps {
+type DisplayExportedGridStringProps = {
     gridFormat: ExportToClipboardFormValues["gridFormat"];
     exportedGridStringLoadable: Loadable<string>;
-}
+};
 
 function DisplayExportedGridString({ gridFormat, exportedGridStringLoadable }: DisplayExportedGridStringProps) {
     return (
@@ -29,13 +28,13 @@ function DisplayExportedGridString({ gridFormat, exportedGridStringLoadable }: D
     );
 }
 
-interface ExportToClipboardDialogProps {
+type ExportToClipboardDialogProps = {
     onClose: () => void;
-}
+};
 
 export function ExportToClipboardDialog({ onClose }: ExportToClipboardDialogProps) {
     const [exportToClipboardFormValues, setExportToClipboardFormValues] = useRecoilState(
-        exportToClipboardFormValuesState
+        exportToClipboardFormValuesState,
     );
     const {
         control,
@@ -45,7 +44,6 @@ export function ExportToClipboardDialog({ onClose }: ExportToClipboardDialogProp
         reset,
     } = useForm<ExportToClipboardFormValues>({
         values: exportToClipboardFormValues,
-        defaultValues: EXPORT_TO_CLIPBOARD_FORM_DEFAULT_VALUES,
         resolver: zodResolver(exportToClipboardFormValuesSchema),
     });
     const gridFormat = watch("gridFormat");
@@ -77,7 +75,7 @@ export function ExportToClipboardDialog({ onClose }: ExportToClipboardDialogProp
                             name="gridFormat"
                             label="Format"
                             fullWidth
-                            options={ALL_GRID_FORMATS.map(gridFormat => ({
+                            options={ALL_GRID_FORMATS.map((gridFormat) => ({
                                 id: gridFormat,
                                 label: gridFormat,
                             }))}

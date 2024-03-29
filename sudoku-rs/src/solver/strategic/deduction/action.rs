@@ -65,8 +65,8 @@ impl<Base: SudokuBase> Action<Base> {
     pub fn validate(&self, cell: &Cell<Base>) -> Result<Candidates<Base>> {
         (|| {
             let Some(existing_candidates) = cell.candidates() else {
-            bail!("expected cell to contain candidates")
-        };
+                bail!("expected cell to contain candidates")
+            };
             match *self {
                 Action::SetValue(value) => {
                     ensure!(
@@ -112,7 +112,7 @@ impl<Base: SudokuBase> Action<Base> {
 
     pub fn update_direct_candidates(&self, grid: &mut Grid<Base>, pos: Position<Base>) {
         if let Action::SetValue(value) = self {
-            grid.update_direct_candidates(pos, *value);
+            grid.update_direct_candidates_for_new_value(pos, *value);
         }
     }
 }

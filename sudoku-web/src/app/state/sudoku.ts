@@ -1,27 +1,28 @@
 import { atom, selector } from "recoil";
+import { z } from "zod";
 import type { TransportCell, TransportSudoku } from "../../types";
-import type { RemoteWorkerApi } from "../../spawnWorker";
-import { getRemoteWorkerApi, spawnWorker } from "../../spawnWorker";
+import { hintState } from "./hint";
+import { remoteWasmSudokuState } from "./worker";
 
-export const workerState = atom<Worker>({
-    key: "Worker",
-    default: spawnWorker(),
-});
+const valueSchema = z.number().int().positive().safe();
 
-export const remoteWorkerApiState = selector<RemoteWorkerApi>({
-    key: "RemoteWorkerApi",
-    get: async ({ get }) => {
-        const worker = get(workerState);
-        return await getRemoteWorkerApi(worker);
-    },
-});
+const DynamicCellSchema = z.discriminatedUnion("kind", [
+    z.object({ kind: z.literal("value"), value: valueSchema, fixed: z.boolean() }),
+    z.object({ kind: z.literal("candidates"), candidates: z.array(valueSchema) }),
+]);
+
+export const DynamicCellsSchema = z.array(DynamicCellSchema);
+
+// TODO: evaluate IOC
+//  https://recoiljs.org/docs/guides/atom-effects/#state-synchronization-example
+
 export const sudokuState = atom<TransportSudoku>({
     key: "Sudoku",
     default: selector({
         key: "DefaultSudoku",
         get: async ({ get }) => {
-            const wasmSudokuProxy = get(remoteWorkerApiState).wasmSudokuProxy;
-            return await wasmSudokuProxy.getSudoku();
+            const remoteWasmSudoku = get(remoteWasmSudokuState);
+            return await remoteWasmSudoku.getSudoku();
         },
     }),
 });
@@ -38,13 +39,16 @@ export const sudokuCellsState = selector<TransportCell[]>({
     key: "Sudoku.cells",
     get: ({ get }) => get(sudokuState).cells,
 });
-export const sudokuBlocksIndicesState = selector<TransportSudoku["blocksIndices"]>({
-    key: "Sudoku.blocksIndices",
-    get: ({ get }) => get(sudokuState).blocksIndices,
+export const sudokuBlocksIndexesState = selector<TransportSudoku["blocksIndexes"]>({
+    key: "Sudoku.blocksIndexes",
+    get: ({ get }) => get(sudokuState).blocksIndexes,
 });
 export const sudokuCanUndoState = selector<TransportSudoku["canUndo"]>({
     key: "Sudoku.canUndo",
-    get: ({ get }) => get(sudokuState).canUndo,
+    get: ({ get }) => {
+        // showing of a hint can be undone
+        return !!get(hintState) || get(sudokuState).canUndo;
+    },
 });
 export const sudokuCanRedoState = selector<TransportSudoku["canRedo"]>({
     key: "Sudoku.canRedo",

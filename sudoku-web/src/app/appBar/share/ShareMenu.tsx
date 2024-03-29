@@ -26,7 +26,7 @@ export function ShareMenu() {
                                 // sudokuwiki.org expects these characters to be unencoded.
                                 `https://www.sudokuwiki.org/sudoku.htm?bd=${binaryFixedCandidatesLine}`,
                                 "_blank",
-                                "noopener"
+                                "noopener",
                             );
                         },
                     },
@@ -44,7 +44,7 @@ export function ShareMenu() {
                 )}
             </MyMenu>
             <MyDialog open={isExportToClipboardDialogOpen} onClose={() => setIsExportToClipboardDialogOpen(false)}>
-                {onClose => <ExportToClipboardDialog onClose={onClose} />}
+                {(onClose) => <ExportToClipboardDialog onClose={onClose} />}
             </MyDialog>
         </>
     );

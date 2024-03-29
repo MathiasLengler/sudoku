@@ -110,7 +110,7 @@ mod tests {
 
     #[test]
     fn test_render() {
-        let mut grid = samples::base_3().pop().unwrap();
+        let mut grid = samples::base_3().into_iter().next().unwrap();
         grid.set_all_direct_candidates();
 
         assert_eq!(

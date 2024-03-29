@@ -2,57 +2,75 @@
 extern crate criterion;
 
 use std::any::Any;
-use std::convert::TryInto;
 use std::hint::black_box;
 use std::path::Path;
 
 use criterion::measurement::WallTime;
-use criterion::{BatchSize, BenchmarkId, Throughput};
+use criterion::{BatchSize, BenchmarkId, SamplingMode, Throughput};
 use criterion::{BenchmarkGroup, Criterion};
 
-use sudoku::base::{consts::*, SudokuBase};
+use sudoku::base::{consts::*, BaseEnum, SudokuBase};
 use sudoku::cell::Candidates;
 use sudoku::cell::Value;
-use sudoku::generator::{Generator, GeneratorTarget};
+use sudoku::generator::{Generator, GeneratorSettings, PruningSettings, PruningTarget};
 use sudoku::grid::deserialization::read_grids_from_file;
 use sudoku::grid::Grid;
 use sudoku::position::test_utils::{consume_iter, consume_nested_iter};
 use sudoku::position::Coordinate;
 use sudoku::position::Position;
-use sudoku::samples::{base_2, base_3};
+use sudoku::rng::{new_crate_rng_from_rng, new_crate_rng_with_seed};
+use sudoku::samples::{base_2, base_3, base_4, base_5};
+use sudoku::solver::sat;
 use sudoku::solver::strategic::strategies::{GroupIntersectionBoth, GroupReduction, Strategy};
-use sudoku::solver::{backtracking, backtracking_bitset, strategic};
+use sudoku::solver::{backtracking, introspective, strategic, FallibleSolver, InfallibleSolver};
 
 fn cast_grid<Base: SudokuBase>(any_grid: Box<dyn Any>) -> Grid<Base> {
     *any_grid.downcast().unwrap()
 }
 
 fn sample_grid<Base: SudokuBase>() -> Grid<Base> {
-    match Base::BASE {
-        2 => cast_grid(Box::new(base_2().into_iter().next().unwrap())),
-        3 => cast_grid(Box::new(base_3().into_iter().next().unwrap())),
-        _ => panic!("unexpected base"),
+    match Base::ENUM {
+        BaseEnum::Base2 => cast_grid(Box::new(base_2().into_iter().next().unwrap())),
+        BaseEnum::Base3 => cast_grid(Box::new(base_3().into_iter().next().unwrap())),
+        BaseEnum::Base4 => cast_grid(Box::new(base_4().into_iter().next().unwrap())),
+        BaseEnum::Base5 => cast_grid(Box::new(base_5().into_iter().next().unwrap())),
     }
 }
 
 fn bench_generator_group<Base: SudokuBase>(generator_group: &mut BenchmarkGroup<WallTime>) {
     let base = Base::BASE;
 
-    for target in &[
-        GeneratorTarget::Minimal {
-            set_all_direct_candidates: false,
-        },
-        GeneratorTarget::Filled,
+    for prune_settings in [
+        Some(PruningSettings::<Base> {
+            target: PruningTarget::Minimal,
+            ..Default::default()
+        }),
+        None,
     ] {
-        let parameter_string = format!("Base={} Target={:?}", base, target);
-        let generator = Generator::with_target(*target);
+        let parameter_string = format!(
+            "Base={} Target={:?}",
+            base,
+            prune_settings
+                .as_ref()
+                .map(|prune_settings| prune_settings.target)
+        );
 
         generator_group.bench_with_input(
             BenchmarkId::new("generate", parameter_string),
-            &generator,
-            |b, generator| {
+            &prune_settings,
+            |b, prune_settings| {
+                let mut seeds = 0..;
+
                 b.iter(|| {
-                    generator.generate::<Base>();
+                    let seed = seeds.next().unwrap();
+
+                    Generator::<Base>::with_settings(GeneratorSettings {
+                        prune: prune_settings.clone(),
+                        solution: None,
+                        seed: Some(seed),
+                    })
+                    .generate()
+                    .unwrap()
                 })
             },
         );
@@ -64,26 +82,39 @@ fn bench_solver_sample_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup
     let parameter_string = format!("Base={}", base);
     let grid = sample_grid::<Base>();
 
+    // TODO: backtracking parallel
+
     solver_group.bench_with_input(
         BenchmarkId::new("backtracking", &parameter_string),
         &grid,
+        |b, grid| b.iter(|| backtracking::Solver::new(grid).solve().unwrap()),
+    );
+
+    solver_group.bench_with_input(
+        BenchmarkId::new("backtracking filter empty", &parameter_string),
+        &grid,
         |b, grid| {
-            b.iter_batched_ref(
-                || grid.clone(),
-                |grid| {
-                    assert!(backtracking::Solver::new(grid).next().is_some());
-                },
-                BatchSize::SmallInput,
-            )
+            b.iter(|| {
+                backtracking::Solver::builder(grid)
+                    .availability_filter(Grid::new())
+                    .build()
+                    .solve()
+                    .unwrap()
+            })
         },
     );
 
     solver_group.bench_with_input(
-        BenchmarkId::new("backtracking_bitset", &parameter_string),
+        BenchmarkId::new("backtracking random", &parameter_string),
         &grid,
         |b, grid| {
+            let mut rng = new_crate_rng_with_seed(Some(0));
             b.iter(|| {
-                assert!(backtracking_bitset::Solver::new(grid).try_solve().is_some());
+                backtracking::Solver::builder(grid)
+                    .rng(new_crate_rng_from_rng(&mut rng))
+                    .build()
+                    .solve()
+                    .unwrap()
             })
         },
     );
@@ -94,11 +125,35 @@ fn bench_solver_sample_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup
         |b, grid| {
             b.iter_batched_ref(
                 || grid.clone(),
-                |grid| {
-                    assert!(strategic::Solver::new(grid).try_solve().unwrap().is_some());
-                },
+                |grid| strategic::Solver::new(grid).try_solve().unwrap().unwrap(),
                 BatchSize::SmallInput,
             )
+        },
+    );
+
+    solver_group.bench_with_input(
+        BenchmarkId::new("introspective", &parameter_string),
+        &grid,
+        |b, grid| {
+            b.iter_batched(
+                || grid.clone(),
+                |grid| introspective::Solver::new(grid).solve().unwrap(),
+                BatchSize::SmallInput,
+            )
+        },
+    );
+
+    solver_group.bench_with_input(
+        BenchmarkId::new("sat", &parameter_string),
+        &grid,
+        |b, grid| {
+            b.iter(|| {
+                sat::Solver::new(grid)
+                    .unwrap()
+                    .try_solve()
+                    .unwrap()
+                    .unwrap()
+            })
         },
     );
 }
@@ -110,13 +165,14 @@ fn bench_solver_tdoku_group(solver_tdoku_group: &mut BenchmarkGroup<WallTime>) {
 
     let tdoku_datasets = vec![
         "puzzles0_kaggle",
-        // "puzzles1_unbiased",
-        // "puzzles2_17_clue",
-        // "puzzles3_magictour_top1465",
-        // "puzzles4_forum_hardest_1905",
-        // "puzzles5_forum_hardest_1905_11+",
-        // "puzzles6_forum_hardest_1106",
-        // "puzzles7_serg_benchmark",
+        "puzzles1_unbiased",
+        "puzzles2_17_clue",
+        "puzzles3_magictour_top1465",
+        "puzzles4_forum_hardest_1905",
+        "puzzles5_forum_hardest_1905_11+",
+        "puzzles6_forum_hardest_1106",
+        "puzzles7_serg_benchmark",
+        // invalid puzzles with no solutions
         // "puzzles8_gen_puzzles",
     ];
 
@@ -124,7 +180,7 @@ fn bench_solver_tdoku_group(solver_tdoku_group: &mut BenchmarkGroup<WallTime>) {
         let path = tdoku_datasets_dir.join(tdoku_dataset);
 
         let all_grids = read_grids_from_file::<Base>(path).unwrap();
-        let grids = &all_grids[..];
+        let grids = &all_grids[..100];
 
         solver_tdoku_group.throughput(Throughput::Elements(grids.len() as u64));
 
@@ -132,24 +188,9 @@ fn bench_solver_tdoku_group(solver_tdoku_group: &mut BenchmarkGroup<WallTime>) {
             BenchmarkId::new("backtracking", tdoku_dataset),
             grids,
             |b, grids| {
-                b.iter_batched_ref(
-                    || grids.to_vec(),
-                    |grids| {
-                        for grid in grids {
-                            assert!(backtracking::Solver::new(grid).next().is_some());
-                        }
-                    },
-                    BatchSize::SmallInput,
-                )
-            },
-        );
-        solver_tdoku_group.bench_with_input(
-            BenchmarkId::new("backtracking_bitset", tdoku_dataset),
-            grids,
-            |b, grids| {
                 b.iter(|| {
                     for grid in grids {
-                        assert!(backtracking_bitset::Solver::new(grid).try_solve().is_some());
+                        backtracking::Solver::new(grid).solve().unwrap();
                     }
                 })
             },
@@ -162,11 +203,26 @@ fn bench_solver_tdoku_group(solver_tdoku_group: &mut BenchmarkGroup<WallTime>) {
                     || grids.to_vec(),
                     |grids| {
                         for grid in grids {
-                            assert!(strategic::Solver::new(grid).try_solve().unwrap().is_some());
+                            strategic::Solver::new(grid).try_solve().unwrap().unwrap();
                         }
                     },
                     BatchSize::SmallInput,
                 )
+            },
+        );
+        solver_tdoku_group.bench_with_input(
+            BenchmarkId::new("sat", tdoku_dataset),
+            grids,
+            |b, grids| {
+                b.iter(|| {
+                    for grid in grids {
+                        sat::Solver::new(grid)
+                            .unwrap()
+                            .try_solve()
+                            .unwrap()
+                            .unwrap();
+                    }
+                })
             },
         );
     }
@@ -185,7 +241,7 @@ fn bench_solver_micro_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup<
         &grid,
         |b, grid| {
             b.iter_batched_ref(
-                || backtracking_bitset::Solver::new(grid),
+                || backtracking::Solver::new(grid),
                 |solver| solver.move_best_choice_to_front(black_box(1)),
                 BatchSize::SmallInput,
             )
@@ -255,7 +311,7 @@ fn bench_grid_group<Base: SudokuBase>(grid_group: &mut BenchmarkGroup<WallTime>)
         |b, grid| b.iter(|| grid.direct_candidates(black_box(pos))),
     );
     grid_group.bench_with_input(
-        BenchmarkId::new("update_direct_candidates", &parameter_string),
+        BenchmarkId::new("update_direct_candidates_for_new_value", &parameter_string),
         &grid,
         |b, grid| {
             let mut grid = grid.clone();
@@ -266,7 +322,7 @@ fn bench_grid_group<Base: SudokuBase>(grid_group: &mut BenchmarkGroup<WallTime>)
                 || (grid.clone(), Value::try_from(2).unwrap()),
                 |(mut grid, value)| {
                     grid.get_mut(pos).set_or_toggle_value(value);
-                    grid.update_direct_candidates(pos, value);
+                    grid.update_direct_candidates_for_new_value(pos, value);
                 },
                 BatchSize::SmallInput,
             )
@@ -409,16 +465,21 @@ fn criterion_benchmark(c: &mut Criterion) {
     let mut generator_group: BenchmarkGroup<WallTime> = c.benchmark_group("Generator");
     bench_generator_group::<Base2>(&mut generator_group);
     bench_generator_group::<Base3>(&mut generator_group);
+    // Too slow
+    // bench_generator_group::<Base4>(&mut generator_group);
     generator_group.finish();
 
     let mut solver_sample_group = c.benchmark_group("SolverSample");
     solver_sample_group.sample_size(20);
     bench_solver_sample_group::<Base2>(&mut solver_sample_group);
     bench_solver_sample_group::<Base3>(&mut solver_sample_group);
+    bench_solver_sample_group::<Base4>(&mut solver_sample_group);
+    bench_solver_sample_group::<Base5>(&mut solver_sample_group);
     solver_sample_group.finish();
 
     let mut solver_tdoku_group = c.benchmark_group("SolverTdoku");
     solver_tdoku_group.sample_size(10);
+    solver_tdoku_group.sampling_mode(SamplingMode::Flat);
     bench_solver_tdoku_group(&mut solver_tdoku_group);
     solver_tdoku_group.finish();
 

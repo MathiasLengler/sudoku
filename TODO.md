@@ -3,50 +3,16 @@
 ## UI
 - show shortcuts
 ## UX
-- save (local storage)
-  - settings
-  - current board
-  - highscore
 - Share Sudoku
   - export as string
   - provide link / sync with url search param
-- Candidates
-  - Sticky Drag
-    - Decide toggle direction based on first value
-    - Ignore dragged over values
-    - Never change values into candidates
-  - Sticky deletion
-    - delete icon acts as selectedValue
-- Single Candidates recursive until no further progress
-
-### Selector Control Panel:
-- redo button
-- sudokuCan{Undo|Redo}
 
 ### New sudoku:
-- Generate with difficulty
-  - by needed strategies
 - Editable mode
   - freeze button
   - use cases:
     - input for solver
     - interactive import
-- Generation Progress
-  - Progress callback, analog to current progress logs
-    - https://github.com/GoogleChromeLabs/comlink#callbacks
-    - https://rustwasm.github.io/wasm-bindgen/reference/receiving-js-closures-in-rust.html
 
 ### Gameplay Options
-- fill direct candidates on new sudoku
 - remove direct candidates on set value (is implemented and hardcoded true)
-- Edit Mode
-
-### Solver Controls
-- Solve all
-- animation / speed
-- select strategies until stuck
-
-## Tooling
-- fix select cell performance
-  - evaluate useReduce
-  - profile

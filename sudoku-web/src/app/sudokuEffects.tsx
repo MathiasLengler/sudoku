@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect } from "react";
 import type { DynamicCell, DynamicPosition } from "../types";
-import { saveCells } from "./celllsPersistence";
+import { saveCells } from "./state/cellsPersistence";
 import { useRecoilValue, useSetRecoilState } from "recoil";
 import { sudokuBaseState, sudokuCellsState } from "./state/sudoku";
 import { inputState } from "./state/input";
@@ -22,15 +22,14 @@ const PointerUpHandler = () => {
     const endStickyChain = useEndStickyChain();
 
     const onPointerUp = useCallback(
-        ({ isPrimary, buttons, pointerId }: PointerEvent): void => {
+        ({ isPrimary }: PointerEvent): void => {
             if (!isPrimary) {
                 return;
             }
-            // console.debug("window.onPointerUp", { isPrimary, buttons, pointerId });
 
             endStickyChain().catch(console.error);
         },
-        [endStickyChain]
+        [endStickyChain],
     );
 
     useEffect(() => {
@@ -51,7 +50,7 @@ const SudokuBaseEffect = () => {
     const setInput = useSetRecoilState(inputState);
 
     useEffect(() => {
-        setInput(input => {
+        setInput((input) => {
             const sideLength = baseToSideLength(base);
             const clampValue = (value: number) => _.clamp(value, sideLength);
             const clampCoordinate = (coordinate: number) => _.clamp(coordinate, sideLength - 1);

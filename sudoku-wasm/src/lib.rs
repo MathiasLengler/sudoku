@@ -1,29 +1,35 @@
-use anyhow::anyhow;
 use log::trace;
-use serde_wasm_bindgen::Serializer;
+use sudoku::world::dynamic::{DynamicCellWorld, DynamicCellWorldActions};
 use wasm_bindgen::prelude::*;
 
 use error::Result;
-use export::*;
-use import::*;
 use sudoku::base::consts::*;
-use sudoku::cell::dynamic::DynamicCell;
-use sudoku::error::Error as SudokuError;
-use sudoku::generator::{DynamicGeneratorSettings, GeneratorProgress};
-use sudoku::grid::format::DynamicGridFormat;
 use sudoku::grid::Grid;
-use sudoku::position::DynamicPosition;
-use sudoku::solver::strategic::deduction::transport::TransportDeductions;
-use sudoku::solver::strategic::strategies::DynamicStrategy;
 use sudoku::transport::TransportSudoku;
-use sudoku::{DynamicSudoku, Game, Sudoku};
-use typescript::{ICandidates, IDynamicGridFormat, ITransportSudoku};
+use sudoku::world::{CellWorld, TileDim};
+use sudoku::{DynamicSudoku, DynamicSudokuActions, Sudoku};
 
 use crate::typescript::*;
+
+#[cfg(target_family = "wasm")]
+pub use wasm_bindgen_rayon::init_thread_pool;
 
 mod typescript;
 
 mod error;
+
+/*
+TODO: design API for sudoku world
+
+Requirements:
+- Change active grid
+- Generate world with settings
+    - Settings regions?
+- View state of the world
+- Play single vs world
+    - Different entry points?
+    - Game states?
+*/
 
 #[wasm_bindgen]
 pub fn init() {
@@ -36,11 +42,87 @@ pub fn init() {
         static SET_HOOK: Once = Once::new();
         SET_HOOK.call_once(|| {
             panic::set_hook(Box::new(console_error_panic_hook::hook));
-            console_log::init_with_level(Level::Trace).unwrap();
+            console_log::init_with_level(Level::Info).unwrap();
         });
     }
 
     trace!("WASM initialized");
+}
+
+#[allow(dead_code)]
+#[wasm_bindgen]
+pub struct WasmCellWorld {
+    // TODO: expose methods from DynamicCellWorldActions with wasm-bindgen
+    world: DynamicCellWorld,
+}
+
+impl Default for WasmCellWorld {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl From<DynamicCellWorld> for WasmCellWorld {
+    fn from(world: DynamicCellWorld) -> Self {
+        Self { world }
+    }
+}
+
+#[wasm_bindgen]
+impl WasmCellWorld {
+    #[wasm_bindgen(constructor)]
+    pub fn new() -> Self {
+        let mut world = CellWorld::<Base3>::new(
+            TileDim {
+                row_count: 3,
+                column_count: 3,
+            },
+            1,
+        );
+
+        let seed = Some(1);
+        world.generate_solved(seed);
+        world.prune(seed);
+
+        DynamicCellWorld::from(world).into()
+    }
+
+    #[wasm_bindgen(js_name = generateSolved)]
+    pub fn generate_solved(&mut self, seed: Option<u64>) -> Result<IWorldGenerationResult> {
+        export_world_generation_result(self.world.generate_solved(seed))
+    }
+    pub fn prune(&mut self, seed: Option<u64>) {
+        self.world.prune(seed);
+    }
+
+    // DynamicGrid interop
+    #[wasm_bindgen(js_name = toGridAt)]
+    pub fn to_grid_at(&self, tile_index: ITileIndex) -> Result<IDynamicGrid> {
+        export_dynamic_grid(self.world.to_grid_at(import_tile_index(tile_index)?))
+    }
+    #[wasm_bindgen(js_name = setGridAt)]
+    pub fn set_grid_at(&mut self, grid: IDynamicGrid, tile_index: ITileIndex) -> Result<()> {
+        self.world
+            .set_grid_at(import_dynamic_grid(grid)?, import_tile_index(tile_index)?)?;
+        Ok(())
+    }
+
+    // Queries
+    pub fn dimensions(&self) -> Result<ICellWorldDimensions> {
+        export_cell_world_dimensions(self.world.dimensions())
+    }
+    #[wasm_bindgen(js_name = isSolved)]
+    pub fn is_solved(&self) -> bool {
+        self.world.is_solved()
+    }
+    #[wasm_bindgen(js_name = isDirectlyConsistent)]
+    pub fn is_directly_consistent(&self) -> bool {
+        self.world.is_directly_consistent()
+    }
+    #[wasm_bindgen(js_name = allWorldCells)]
+    pub fn all_world_cells(&self) -> Result<IDynamicCells> {
+        export_dynamic_cells(self.world.all_world_cells())
+    }
 }
 
 #[wasm_bindgen]
@@ -56,7 +138,7 @@ impl Default for WasmSudoku {
 
 impl From<DynamicSudoku> for WasmSudoku {
     fn from(sudoku: DynamicSudoku) -> Self {
-        WasmSudoku { sudoku }
+        Self { sudoku }
     }
 }
 
@@ -66,13 +148,11 @@ impl WasmSudoku {
     pub fn new() -> Self {
         let grid: Grid<Base3> = sudoku::samples::minimal();
 
-        DynamicSudoku::with_sudoku(Sudoku::with_grid(grid))
-            .unwrap()
-            .into()
+        DynamicSudoku::from(Sudoku::with_grid(grid)).into()
     }
 
-    pub fn restore(cells: Vec<IDynamicCell>) -> Result<WasmSudoku> {
-        let cells = import_cells(cells)?;
+    pub fn restore(cells: IDynamicCells) -> Result<WasmSudoku> {
+        let cells = import_dynamic_cells(cells)?;
 
         Ok(DynamicSudoku::try_from(cells)?.into())
     }
@@ -81,48 +161,77 @@ impl WasmSudoku {
     pub fn get_sudoku(&self) -> Result<ITransportSudoku> {
         let transport_sudoku = TransportSudoku::from(&self.sudoku);
 
-        export_sudoku(transport_sudoku)
+        export_transport_sudoku(transport_sudoku)
     }
 
     #[wasm_bindgen(js_name = setValue)]
-    pub fn set_value(&mut self, pos: IDynamicPosition, value: u8) -> Result<()> {
-        self.sudoku.set_value(import_pos(pos)?, value)?;
+    pub fn set_value(&mut self, pos: IDynamicPosition, value: IDynamicValue) -> Result<()> {
+        self.sudoku
+            .set_value(import_dynamic_position(pos)?, import_dynamic_value(value)?)?;
         Ok(())
     }
 
     #[wasm_bindgen(js_name = setOrToggleValue)]
-    pub fn set_or_toggle_value(&mut self, pos: IDynamicPosition, value: u8) -> Result<()> {
-        self.sudoku.set_or_toggle_value(import_pos(pos)?, value)?;
+    pub fn set_or_toggle_value(
+        &mut self,
+        pos: IDynamicPosition,
+        value: IDynamicValue,
+    ) -> Result<()> {
+        self.sudoku
+            .set_or_toggle_value(import_dynamic_position(pos)?, import_dynamic_value(value)?)?;
         Ok(())
     }
 
     #[wasm_bindgen(js_name = setCandidates)]
-    pub fn set_candidates(&mut self, pos: IDynamicPosition, candidates: ICandidates) -> Result<()> {
-        self.sudoku
-            .set_candidates(import_pos(pos)?, import_candidates(candidates)?)?;
+    pub fn set_candidates(
+        &mut self,
+        pos: IDynamicPosition,
+        candidates: IDynamicCandidates,
+    ) -> Result<()> {
+        self.sudoku.set_candidates(
+            import_dynamic_position(pos)?,
+            import_dynamic_candidates(candidates)?,
+        )?;
         Ok(())
     }
 
     #[wasm_bindgen(js_name = toggleCandidate)]
-    pub fn toggle_candidate(&mut self, pos: IDynamicPosition, candidate: u8) -> Result<()> {
-        self.sudoku.toggle_candidate(import_pos(pos)?, candidate)?;
+    pub fn toggle_candidate(
+        &mut self,
+        pos: IDynamicPosition,
+        candidate: IDynamicValue,
+    ) -> Result<()> {
+        self.sudoku.toggle_candidate(
+            import_dynamic_position(pos)?,
+            import_dynamic_value(candidate)?,
+        )?;
         Ok(())
     }
 
     #[wasm_bindgen(js_name = setCandidate)]
-    pub fn set_candidate(&mut self, pos: IDynamicPosition, candidate: u8) -> Result<()> {
-        self.sudoku.set_candidate(import_pos(pos)?, candidate)?;
+    pub fn set_candidate(&mut self, pos: IDynamicPosition, candidate: IDynamicValue) -> Result<()> {
+        self.sudoku.set_candidate(
+            import_dynamic_position(pos)?,
+            import_dynamic_value(candidate)?,
+        )?;
         Ok(())
     }
 
     #[wasm_bindgen(js_name = deleteCandidate)]
-    pub fn delete_candidate(&mut self, pos: IDynamicPosition, candidate: u8) -> Result<()> {
-        self.sudoku.delete_candidate(import_pos(pos)?, candidate)?;
+    pub fn delete_candidate(
+        &mut self,
+        pos: IDynamicPosition,
+        candidate: IDynamicValue,
+    ) -> Result<()> {
+        self.sudoku.delete_candidate(
+            import_dynamic_position(pos)?,
+            import_dynamic_value(candidate)?,
+        )?;
         Ok(())
     }
 
     pub fn delete(&mut self, pos: IDynamicPosition) -> Result<()> {
-        self.sudoku.delete(import_pos(pos)?)?;
+        self.sudoku.delete(import_dynamic_position(pos)?)?;
         Ok(())
     }
 
@@ -148,6 +257,8 @@ impl WasmSudoku {
             import_dynamic_generator_settings(generator_settings)?,
             import_generate_on_progress(on_progress)?,
         )?;
+
+        // *self = self.sudoku.clone().into();
         Ok(())
     }
 
@@ -156,18 +267,18 @@ impl WasmSudoku {
         Ok(())
     }
 
-    pub fn export(&self, format: IDynamicGridFormat) -> Result<String> {
-        Ok(self.sudoku.export(&import_grid_format(format)?))
+    pub fn export(&self, format: IGridFormatEnum) -> Result<String> {
+        Ok(self.sudoku.export(&import_grid_format_enum(format)?))
     }
 
-    // FIXME: wasm bindgen return type
     #[wasm_bindgen(js_name = tryStrategies)]
     pub fn try_strategies(
         &mut self,
-        strategies: IDynamicStrategies,
+        strategies: IStrategyEnums,
     ) -> Result<IDynamicTryStrategiesReturn> {
-        let dynamic_try_strategies_return =
-            self.sudoku.try_strategies(import_strategies(strategies)?)?;
+        let dynamic_try_strategies_return = self
+            .sudoku
+            .try_strategies(import_strategy_enums(strategies)?)?;
 
         export_dynamic_try_strategies_return(dynamic_try_strategies_return)
     }
@@ -175,98 +286,7 @@ impl WasmSudoku {
     #[wasm_bindgen(js_name = applyDeductions)]
     pub fn apply_deductions(&mut self, deductions: ITransportDeductions) -> Result<()> {
         self.sudoku
-            .apply_deductions(import_deductions(deductions)?)?;
+            .apply_deductions(import_transport_deductions(deductions)?)?;
         Ok(())
-    }
-}
-
-/// Import helpers
-mod import {
-    use super::*;
-
-    pub(crate) fn import_err(err: &JsValue) -> SudokuError {
-        if let Some(err) = err.dyn_ref::<js_sys::Error>() {
-            if let Some(message) = err.message().as_string() {
-                anyhow!(message)
-            } else {
-                anyhow!("JsValue err message not convertible to string")
-            }
-        } else {
-            anyhow!("JsValue err not convertible to Error")
-        }
-    }
-
-    pub(crate) fn import_pos(pos: IDynamicPosition) -> Result<DynamicPosition> {
-        Ok(serde_wasm_bindgen::from_value(pos.into())?)
-    }
-
-    pub(crate) fn import_candidates(candidates: ICandidates) -> Result<Vec<u8>> {
-        Ok(serde_wasm_bindgen::from_value(candidates.into())?)
-    }
-
-    pub(crate) fn import_dynamic_generator_settings(
-        dynamic_generator_settings: IDynamicGeneratorSettings,
-    ) -> Result<DynamicGeneratorSettings> {
-        Ok(serde_wasm_bindgen::from_value(
-            dynamic_generator_settings.into(),
-        )?)
-    }
-
-    pub(crate) fn import_generate_on_progress(
-        on_progress: IGenerateOnProgress,
-    ) -> Result<impl FnMut(GeneratorProgress) -> Result<(), SudokuError>> {
-        let function = on_progress
-            .dyn_into::<js_sys::Function>()
-            .map_err(|value| {
-                anyhow!("Expected function, instead got: {:?}", JsValue::from(value))
-            })?;
-
-        Ok(
-            move |progress: GeneratorProgress| -> Result<(), SudokuError> {
-                function
-                    .call1(
-                        &JsValue::undefined(),
-                        &export_value(&progress).map_err(|err| import_err(&err.into()))?,
-                    )
-                    .map_err(|err| import_err(&err))?;
-                Ok(())
-            },
-        )
-    }
-
-    pub(crate) fn import_grid_format(format: IDynamicGridFormat) -> Result<DynamicGridFormat> {
-        Ok(serde_wasm_bindgen::from_value(format.into())?)
-    }
-
-    pub(crate) fn import_cells(cells: Vec<IDynamicCell>) -> Result<Vec<DynamicCell>> {
-        cells
-            .into_iter()
-            .map(|cell| serde_wasm_bindgen::from_value(cell.into()).map_err(Into::into))
-            .collect()
-    }
-    pub(crate) fn import_strategies(strategy: IDynamicStrategies) -> Result<Vec<DynamicStrategy>> {
-        Ok(serde_wasm_bindgen::from_value(strategy.into())?)
-    }
-    pub(crate) fn import_deductions(strategy: ITransportDeductions) -> Result<TransportDeductions> {
-        Ok(serde_wasm_bindgen::from_value(strategy.into())?)
-    }
-}
-
-/// Export helpers
-mod export {
-    use sudoku::DynamicTryStrategiesReturn;
-
-    use super::*;
-
-    pub(crate) fn export_value<T: serde::ser::Serialize + ?Sized>(value: &T) -> Result<JsValue> {
-        Ok(value.serialize(&Serializer::json_compatible())?)
-    }
-    pub(crate) fn export_sudoku(transport_sudoku: TransportSudoku) -> Result<ITransportSudoku> {
-        Ok(export_value(&transport_sudoku)?.into())
-    }
-    pub(crate) fn export_dynamic_try_strategies_return(
-        dynamic_try_strategies_return: DynamicTryStrategiesReturn,
-    ) -> Result<IDynamicTryStrategiesReturn> {
-        Ok(export_value(&dynamic_try_strategies_return)?.into())
     }
 }

@@ -4,11 +4,11 @@ import Dialog from "@mui/material/Dialog";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
 
-interface MyDialogProps {
+type MyDialogProps = {
     open: boolean;
     onClose: () => void;
     children: (onClose: () => void) => ReactNode;
-}
+};
 
 export const MyDialog = ({ open, onClose, children }: MyDialogProps) => {
     const theme = useTheme();
@@ -16,7 +16,7 @@ export const MyDialog = ({ open, onClose, children }: MyDialogProps) => {
 
     return (
         <div
-            onKeyDown={e => {
+            onKeyDown={(e) => {
                 // Disable global game shortcuts in dialog boxes.
                 e.stopPropagation();
             }}

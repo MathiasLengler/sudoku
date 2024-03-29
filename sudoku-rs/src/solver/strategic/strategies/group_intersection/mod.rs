@@ -5,7 +5,7 @@ use crate::cell::Value;
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::{BlockSegment, CellOrder, Coordinate, Position};
-use crate::solver::backtracking_bitset::group_availability::CandidatesGroup;
+use crate::solver::backtracking::group_availability::CandidatesGroup;
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions, Reason};
 use crate::solver::strategic::strategies::Strategy;
 
@@ -43,7 +43,7 @@ impl Strategy for GroupIntersectionBoth {
     }
 }
 
-/// An implementation of the group intersection / ["intersection removal"](https://www.sudokuwiki.org/Intersection_Removal) strategy.
+/// An implementation of the group intersection / [intersection removal](https://www.sudokuwiki.org/Intersection_Removal) strategy.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 struct GroupIntersection(GroupIntersectionTypeFilter);
 
@@ -268,8 +268,10 @@ mod tests {
 
     mod execute {
         use super::*;
+
         mod base_2 {
             use super::*;
+
             #[test]
             fn test() {
                 let grid: Grid<Base2> = "╔═══════════╦═══════════╗
@@ -348,6 +350,7 @@ mod tests {
 
         mod base_3 {
             use super::*;
+
             mod block_to_axis {
                 use super::*;
 
@@ -470,8 +473,6 @@ mod tests {
                 fn test_example_2() {
                     // Reference: https://www.sudokuwiki.org/Intersection_Removal#:~:text=in%20C7.-,Triple%20BLR,-%3A%20Load%20Example
                     let grid: Grid<Base3> = "a005a0g10h09410311g10a0hd24652210c8441110aa22622o80ho4116ama0h81m2g2k4m405e2u262m2m20h11090h62m2091105o2k0u0280h0570m8n0g881038aca1142ka0h0521k02ag16a056a8111480h".parse().unwrap();
-
-                    println!("{grid}");
 
                     let deductions = GroupIntersection(GroupIntersectionTypeFilter::AxisToBlock)
                         .execute(&grid)

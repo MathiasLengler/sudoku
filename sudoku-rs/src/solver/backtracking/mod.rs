@@ -1,209 +1,568 @@
-use std::num::NonZeroUsize;
+//! Adaptation of [tdoku `solver_basic.cc`](https://github.com/t-dillon/tdoku/blob/master/src/solver_basic.cc)
+
+use std::fmt::{Debug, Display, Formatter};
+use std::sync::atomic::{AtomicU64, Ordering};
+
+pub use availability_filter::AvailabilityFilter;
+pub use availability_filter::DeniedCandidatesGrid;
+use log::trace;
+
+pub use builder::SolverBuilder;
+use group_availability::GroupAvailability;
+pub use group_availability::GroupAvailabilityIndex;
 
 use crate::base::SudokuBase;
+use crate::cell::{Candidates, CandidatesAscIter, CandidatesIterator, CandidatesRandIter};
 use crate::grid::Grid;
 use crate::position::Position;
-use crate::solver::backtracking::choice::{CandidatesProcessor, Choice};
+use crate::rng::CrateRng;
+use crate::solver::InfallibleSolver;
 
-mod choice;
+pub(crate) mod availability_filter;
+pub(crate) mod group_availability;
 
-// TODO: how to externally drive and visualize solver (steps)
-//  make step into an iterator over step results
+#[derive(Debug, Clone)]
+pub struct Solver<
+    Base: SudokuBase,
+    GridRef: AsRef<Grid<Base>>,
+    ICandidates: CandidatesIterator<Base>,
+    Filter: AvailabilityFilter<Base>,
+> {
+    /// Grid to be solved
+    grid: GridRef,
+    /// Cached remaining candidates for each group.
+    availability: GroupAvailability<Base, Filter>,
+    /// Indexes to non-value cells which must be solved.
+    ///
+    /// # Invariants
+    ///
+    /// Length equals `grid.all_candidates_positions().len()`
+    availability_indexes: Vec<GroupAvailabilityIndex<Base>>,
 
-#[derive(Debug, Copy, Clone, Default)]
-pub enum CandidatesVisitOrder {
-    #[default]
-    Asc,
-    Desc,
-    Random,
-    RandomSeed(u64),
+    /// A list of iterators producing value assignments for each associated `availability_indices`.
+    /// Elements can be inspected with `peek` to infer the current value assignment.
+    /// Used as the central backtracking stack.
+    ///
+    /// # Invariants
+    ///
+    /// Length less than or equal to `availability_indexes.len()`
+    candidates_iters: Vec<ICandidates>,
+
+    candidates_iter_init_context: ICandidates::InitContext,
+
+    pub backtrack_count: u64,
+
+    has_returned_pre_filled_grid_solution: bool,
 }
 
-#[derive(Debug)]
-pub struct Solver<'s, Base: SudokuBase> {
-    grid: &'s mut Grid<Base>,
-    /// Cached
-    empty_positions: Vec<Position<Base>>,
-    /// Choices stack
-    choices: Vec<Choice<Base>>,
-    /// Step limit checking
-    step_count: usize,
-    /// Settings
-    settings: Settings,
-    /// Initialized by `settings.candidates_visit_order`
-    candidates_processor: CandidatesProcessor,
-}
+mod builder {
+    use super::*;
 
-#[derive(Debug, Default)]
-pub struct Settings {
-    pub step_limit: Option<NonZeroUsize>,
-    pub candidates_visit_order: CandidatesVisitOrder,
-}
-
-#[derive(Debug)]
-enum StepResult {
-    Solution,
-    /// Sudoku was filled completely
-    Filled,
-    /// Went through the whole solution space and marked all potential solutions on the way
-    Finished,
-    Backtrack,
-    NextCell,
-}
-
-impl<'s, Base: SudokuBase> Solver<'s, Base> {
-    pub fn new(grid: &'s mut Grid<Base>) -> Solver<'s, Base> {
-        Self::new_with_settings(grid, Settings::default())
+    #[derive(Debug)]
+    pub struct SolverBuilder<
+        Base: SudokuBase,
+        GridRef: AsRef<Grid<Base>>,
+        ICandidates: CandidatesIterator<Base>,
+        Filter: AvailabilityFilter<Base>,
+    > {
+        grid: GridRef,
+        availability: GroupAvailability<Base, Filter>,
+        candidates_iter_init_context: ICandidates::InitContext,
     }
 
-    pub fn new_with_settings(grid: &'s mut Grid<Base>, settings: Settings) -> Solver<'s, Base> {
-        let empty_positions = grid.all_candidates_positions();
-
-        let mut solver = Solver {
-            grid,
-            choices: Vec::with_capacity(empty_positions.len()),
-            empty_positions,
-            step_count: 0,
-            candidates_processor: settings.candidates_visit_order.into(),
-            settings,
-        };
-
-        solver.init();
-
-        solver
-    }
-
-    fn init(&mut self) {
-        if let Some(first_pos) = self.empty_positions.first().copied() {
-            self.push_choice(first_pos);
-        };
-    }
-
-    fn push_choice(&mut self, pos: Position<Base>) {
-        self.choices.push(Choice::new(
-            self.grid.direct_candidates(pos).to_vec_value(),
-            &mut self.candidates_processor,
-        ));
-    }
-
-    fn try_solve(&mut self) -> Option<Grid<Base>> {
-        loop {
-            let step_result = self.step();
-
-            self.step_count += 1;
-
-            #[cfg(feature = "solver_debug_print")]
-            self.debug_print(&step_result);
-
-            match step_result {
-                StepResult::Solution => return Some(self.grid.clone()),
-                StepResult::Filled | StepResult::Finished => return None,
-                _ => {}
-            }
-
-            if let Some(step_limit) = self.settings.step_limit {
-                if self.step_count >= step_limit.get() {
-                    return None;
-                }
+    impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>>
+        SolverBuilder<Base, GridRef, CandidatesAscIter<Base>, ()>
+    {
+        pub fn new(grid: GridRef) -> Self {
+            Self {
+                grid,
+                availability: GroupAvailability::all(),
+                candidates_iter_init_context: (),
             }
         }
     }
 
-    fn step(&mut self) -> StepResult {
-        let choices_len = self.choices.len();
+    impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, Filter: AvailabilityFilter<Base>>
+        SolverBuilder<Base, GridRef, CandidatesAscIter<Base>, Filter>
+    {
+        // TODO: evaluate rng generic
+        //  this could enable the use of Rng references, eliminating the need for `new_crate_rng_from_rng`,
+        //  since a single Rng can be shared across solvers.
+        /// Visit candidates in a random order, instead of ascending.
+        pub fn rng(
+            self,
+            rng: CrateRng,
+        ) -> SolverBuilder<Base, GridRef, CandidatesRandIter<Base>, Filter> {
+            let Self {
+                grid,
+                availability,
+                candidates_iter_init_context: (),
+            } = self;
 
-        match self.choices.last_mut() {
-            Some(choice) => {
-                let cell = self.grid.get_mut(self.empty_positions[choices_len - 1]);
+            SolverBuilder {
+                grid,
+                availability,
+                candidates_iter_init_context: rng,
+            }
+        }
+    }
 
-                if let Some(value) = choice.selection() {
-                    cell.set_value(value);
-                } else {
-                    cell.delete();
+    impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, ICandidates: CandidatesIterator<Base>>
+        SolverBuilder<Base, GridRef, ICandidates, ()>
+    {
+        /// Filter the available candidates which the solver can use to find a solution.
+        pub fn availability_filter<Filter: AvailabilityFilter<Base>>(
+            self,
+            filter: Filter,
+        ) -> SolverBuilder<Base, GridRef, ICandidates, Filter> {
+            let Self {
+                grid,
+                availability,
+                candidates_iter_init_context,
+            } = self;
+
+            SolverBuilder {
+                grid,
+                availability: availability.with_filter(filter),
+                candidates_iter_init_context,
+            }
+        }
+    }
+
+    impl<
+            Base: SudokuBase,
+            GridRef: AsRef<Grid<Base>>,
+            ICandidates: CandidatesIterator<Base>,
+            Filter: AvailabilityFilter<Base>,
+        > SolverBuilder<Base, GridRef, ICandidates, Filter>
+    {
+        pub fn build(self) -> Solver<Base, GridRef, ICandidates, Filter> {
+            let SolverBuilder {
+                grid,
+                availability,
+                candidates_iter_init_context,
+            } = self;
+            Solver::new_with(grid, availability, candidates_iter_init_context)
+        }
+    }
+}
+
+/// Convenience constructors
+impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>>
+    Solver<Base, GridRef, CandidatesAscIter<Base>, ()>
+{
+    pub fn new(grid: GridRef) -> Self {
+        SolverBuilder::new(grid).build()
+    }
+
+    pub fn builder(grid: GridRef) -> SolverBuilder<Base, GridRef, CandidatesAscIter<Base>, ()> {
+        SolverBuilder::new(grid)
+    }
+}
+
+enum StepResult<Base: SudokuBase> {
+    Solution(Grid<Base>),
+    NextCell,
+    Backtrack,
+    Done,
+}
+
+impl<
+        Base: SudokuBase,
+        GridRef: AsRef<Grid<Base>>,
+        ICandidates: CandidatesIterator<Base>,
+        Filter: AvailabilityFilter<Base>,
+    > Solver<Base, GridRef, ICandidates, Filter>
+{
+    fn new_with(
+        grid: GridRef,
+        availability: GroupAvailability<Base, Filter>,
+        candidates_iter_init_context: ICandidates::InitContext,
+    ) -> Self {
+        let mut this = Self {
+            grid,
+            availability,
+            availability_indexes: vec![],
+            candidates_iters: vec![],
+            candidates_iter_init_context,
+            backtrack_count: 0,
+            has_returned_pre_filled_grid_solution: false,
+        };
+
+        this.initialize();
+
+        this
+    }
+
+    fn grid(&self) -> &Grid<Base> {
+        self.grid.as_ref()
+    }
+
+    fn initialize(&mut self) {
+        for pos in Position::<Base>::all() {
+            let index: GroupAvailabilityIndex<Base> = pos.into();
+
+            if let Some(value) = self.grid().get(pos).value() {
+                // clue, clear group availability
+                self.availability.delete(index, value);
+            } else {
+                // Non-value cell, add to choices
+                self.availability_indexes.push(index);
+            }
+        }
+
+        self.move_best_choice_to_front(0);
+        if let Some(availability_index) = self.availability_indexes.first().copied() {
+            self.push_candidates_iter(availability_index);
+        }
+    }
+
+    fn push_candidates_iter(&mut self, availability_index: GroupAvailabilityIndex<Base>) {
+        let candidates = self
+            .availability
+            .available_candidates_at(availability_index);
+        self.candidates_iters
+            .push(ICandidates::from_candidates_with_init_context(
+                candidates,
+                &mut self.candidates_iter_init_context,
+            ));
+    }
+
+    pub fn move_best_choice_to_front(&mut self, front_i: usize) {
+        use std::mem::swap;
+
+        debug_assert!(self.candidates_iters.get(front_i).is_none());
+
+        if let Some((first_index, rest)) = self.availability_indexes[front_i..].split_first_mut() {
+            let first_count = self
+                .availability
+                .available_candidates_at(*first_index)
+                .count();
+            if first_count <= 1 {
+                return;
+            }
+
+            let mut better_count = first_count;
+            let mut better_index = None;
+
+            for next_index in rest {
+                if better_count <= 1 {
+                    break;
                 }
+                let next_count = self
+                    .availability
+                    .available_candidates_at(*next_index)
+                    .count();
+                if next_count < better_count {
+                    better_count = next_count;
+                    better_index = Some(next_index);
+                }
+            }
 
-                if choice.is_exhausted() {
-                    // Backtrack
-                    self.choices.pop();
+            if let Some(better_index) = better_index {
+                trace!(
+                    "swapping {first_count} @ {first_index:?} with {better_count} @ {better_index:?}"
+                );
+                swap(first_index, better_index);
+            }
+        }
+    }
 
-                    if let Some(prev_choice) = self.choices.last_mut() {
-                        prev_choice.set_next();
-                    }
+    fn build_solution_grid(&self) -> Grid<Base> {
+        let mut solution_grid = self.grid().clone();
+        for (candidates_iter, choice_index) in self
+            .candidates_iters
+            .iter()
+            .zip(self.availability_indexes.iter())
+        {
+            solution_grid
+                .get_mut((*choice_index).into())
+                .set_value(candidates_iter.peek().unwrap());
+        }
+        debug_assert!(solution_grid.is_solved());
+        solution_grid
+    }
 
-                    StepResult::Backtrack
-                } else if let Some(next_position) = self.empty_positions.get(choices_len).copied() {
-                    self.push_choice(next_position);
+    fn step(&mut self) -> StepResult<Base> {
+        if let Some(candidates) = self.candidates_iters.last() {
+            if let Some(candidate) = candidates.peek() {
+                let choice_index = self.availability_indexes[self.candidates_iters.len() - 1];
+                self.availability.delete(choice_index, candidate);
+
+                if self.candidates_iters.len() == self.availability_indexes.len() {
+                    // Found solution
+                    let solution_grid = self.build_solution_grid();
+
+                    // Continue at next candidate
+                    self.candidates_iters.last_mut().unwrap().next();
+                    self.availability.insert(choice_index, candidate);
+
+                    StepResult::Solution(solution_grid)
+                } else {
+                    // Next cell
+                    let next_i = self.candidates_iters.len();
+                    self.move_best_choice_to_front(next_i);
+                    let next_availability_index = self.availability_indexes[next_i];
+                    self.push_candidates_iter(next_availability_index);
 
                     StepResult::NextCell
-                } else {
-                    choice.set_next();
+                }
+            } else {
+                // Backtrack
+                self.backtrack_count += 1;
+                self.candidates_iters.pop().unwrap();
+                let candidates_iters_len = self.candidates_iters.len();
+                if let Some(prev_candidates) = self.candidates_iters.last_mut() {
+                    if let Some(prev_candidate) = prev_candidates.peek() {
+                        let prev_choice_index = self.availability_indexes[candidates_iters_len - 1];
+                        self.availability.insert(prev_choice_index, prev_candidate);
+                    }
+                    prev_candidates.next();
+                }
+                StepResult::Backtrack
+            }
+        } else if self.availability_indexes.is_empty()
+            && !self.has_returned_pre_filled_grid_solution
+        {
+            self.has_returned_pre_filled_grid_solution = true;
 
-                    StepResult::Solution
-                }
+            let grid = self.grid();
+            if grid.is_solved() {
+                StepResult::Solution(grid.clone())
+            } else {
+                StepResult::Done
             }
-            None => {
-                if self.empty_positions.is_empty() {
-                    StepResult::Filled
-                } else {
-                    StepResult::Finished
-                }
-            }
+        } else {
+            StepResult::Done
         }
-    }
-
-    #[cfg(feature = "solver_debug_print")]
-    fn debug_print(&self, step_result: &StepResult) {
-        use crossterm::{cursor, style::Print, terminal, QueueableCommand};
-        use std::io::{prelude::*, stdout};
-        use std::time::Duration;
-
-        let mut stdout = stdout();
-        stdout
-            .queue(terminal::Clear(terminal::ClearType::All))
-            .unwrap();
-        stdout.queue(cursor::MoveTo(0, 0)).unwrap();
-        stdout
-            .queue(Print(format!(
-                "Solver at step {}:
-{}
-Step result: {:?}
-Choices: {}
-Current Choice: {:?}",
-                self.step_count,
-                self.grid,
-                step_result,
-                self.choices.len(),
-                self.choices.last()
-            )))
-            .unwrap();
-
-        stdout.flush().unwrap();
-
-        std::thread::sleep(Duration::from_millis(50));
     }
 }
 
-impl<'s, Base: SudokuBase> Iterator for Solver<'s, Base> {
+impl<
+        Base: SudokuBase,
+        GridRef: AsRef<Grid<Base>>,
+        ICandidates: CandidatesIterator<Base>,
+        Filter: AvailabilityFilter<Base>,
+    > InfallibleSolver<Base> for Solver<Base, GridRef, ICandidates, Filter>
+{
+    fn solve(&mut self) -> Option<Grid<Base>> {
+        loop {
+            match self.step() {
+                StepResult::Solution(solution) => return Some(solution),
+                StepResult::Done => return None,
+                _ => {}
+            }
+        }
+    }
+}
+
+impl<
+        Base: SudokuBase,
+        GridRef: AsRef<Grid<Base>>,
+        ICandidates: CandidatesIterator<Base>,
+        Filter: AvailabilityFilter<Base>,
+    > Iterator for Solver<Base, GridRef, ICandidates, Filter>
+{
     type Item = Grid<Base>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.try_solve()
+        self.solve()
+    }
+}
+
+impl<
+        Base: SudokuBase,
+        GridRef: AsRef<Grid<Base>>,
+        ICandidates: CandidatesIterator<Base>,
+        Filter: AvailabilityFilter<Base>,
+    > Display for Solver<Base, GridRef, ICandidates, Filter>
+{
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        use tabled::{Table, Tabled};
+
+        #[derive(Tabled)]
+        struct BacktrackingStackEntry<Base: SudokuBase, ICandidates: Display> {
+            // From availability_indexes
+            pos: Position<Base>,
+            // From candidates_iters
+            candidates: ICandidates,
+        }
+
+        let Self {
+            // TODO
+            availability,
+            availability_indexes,
+            candidates_iters,
+            backtrack_count,
+            has_returned_pre_filled_grid_solution,
+            ..
+        } = self;
+
+        write!(f, "backtracking::Solver:\nGrid:\n{}\n", self.grid())?;
+
+        let mut availability_preview_grid = self.grid().clone();
+        for &index in availability_indexes {
+            let candidates = availability.available_candidates_at(index);
+            availability_preview_grid[index.into()].set_candidates(candidates);
+        }
+
+        write!(f, "Availability grid:\n{availability_preview_grid}\n")?;
+
+        let backtracking_stack = std::iter::zip(availability_indexes, candidates_iters).map(
+            |(&availability_index, candidates)| BacktrackingStackEntry {
+                pos: availability_index.into(),
+                candidates,
+            },
+        );
+
+        let backtracking_stack_table = Table::new(backtracking_stack);
+
+        write!(f, "{backtracking_stack_table}\nbacktrack_count: {backtrack_count}, has_returned_pre_filled_grid_solution: {has_returned_pre_filled_grid_solution}")
+    }
+}
+
+pub static SPLIT_COUNT: AtomicU64 = AtomicU64::new(0);
+
+impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, ICandidates: CandidatesIterator<Base>>
+    Solver<Base, GridRef, ICandidates, DeniedCandidatesGrid<Base>>
+where
+    Self: Clone,
+{
+    /// Split the current solver into two.
+    ///
+    /// The two solvers will search distinct solution spaces of the same sudoku.
+    /// Each solver will produce unique solutions in its search space.
+    ///
+    /// Used for parallel solving.
+    pub fn split(self) -> (Self, Option<Self>) {
+        SPLIT_COUNT.fetch_add(1, Ordering::Release);
+
+        // Heuristic: is it worth it to split the solver?
+        // let estimated_search_space = self.estimate_search_space();
+        //
+        // dbg!(estimated_search_space);
+
+        // Find yet to be solved index with at least two available candidates
+        let candidates_iters_len = self.candidates_iters.len();
+        let availability_indexes_to_be_solved = &self.availability_indexes[candidates_iters_len..];
+
+        let Some((split_availability_index, split_available_candidates, _)) =
+            availability_indexes_to_be_solved
+                .iter()
+                .filter_map(|&availability_index| {
+                    let available_candidates = self
+                        .availability
+                        .available_candidates_at(availability_index);
+                    let available_candidates_count = available_candidates.count();
+                    if available_candidates_count > 1 {
+                        Some((
+                            availability_index,
+                            available_candidates,
+                            available_candidates_count,
+                        ))
+                    } else {
+                        None
+                    }
+                })
+                .min_by_key(|(_, _, available_candidates_count)| *available_candidates_count)
+        else {
+            return (self, None);
+        };
+
+        let available_candidates_vec = split_available_candidates.to_vec_value();
+
+        // We have at least two candidates
+        debug_assert!(available_candidates_vec.len() >= 2);
+
+        let (left_values, right_values) =
+            available_candidates_vec.split_at(available_candidates_vec.len() / 2);
+
+        // Both halves have at least on candidate
+        debug_assert!(!left_values.is_empty());
+        debug_assert!(!right_values.is_empty());
+
+        let left_candidates: Candidates<Base> = left_values.iter().copied().collect();
+        let right_candidates: Candidates<Base> = right_values.iter().copied().collect();
+
+        let mut left = self;
+        let mut right = left.clone();
+
+        // Remove availability for each other
+        let pos = Position::from(split_availability_index);
+        left.availability.filter[pos] = left.availability.filter[pos].union(right_candidates);
+        right.availability.filter[pos] = right.availability.filter[pos].union(left_candidates);
+
+        left.backtrack_count = 0;
+        right.backtrack_count = 0;
+
+        (left, Some(right))
+    }
+}
+
+#[cfg(feature = "parallel")]
+mod parallel {
+    use rayon::iter::{split, Split};
+    use rayon::prelude::*;
+
+    use super::*;
+
+    impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, ICandidates: CandidatesIterator<Base>>
+        IntoParallelIterator for Solver<Base, GridRef, ICandidates, DeniedCandidatesGrid<Base>>
+    where
+        Self: Clone + Send,
+    {
+        type Iter = Split<Self, fn(Self) -> (Self, Option<Self>)>;
+        type Item = Self;
+
+        fn into_par_iter(self) -> Self::Iter {
+            split(self, Solver::split)
+        }
+    }
+
+    impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, ICandidates: CandidatesIterator<Base>>
+        Solver<Base, GridRef, ICandidates, DeniedCandidatesGrid<Base>>
+    where
+        Self: Clone + Send,
+    {
+        pub fn has_any_solution(self) -> bool {
+            self.any_solution().is_some()
+        }
+
+        pub fn any_solution(self) -> Option<Grid<Base>> {
+            self.any_solution_pre_split()
+        }
+
+        fn pre_split_solvers(self) -> Vec<Self> {
+            let mut split_solvers = vec![self];
+
+            // TODO: expose initial parallel factor
+            //  define for each base?
+            // current value tuned for Base4
+            // seq: 314ms => any_solution_pre_split: 54.5ms
+            for _ in 0..12 {
+                split_solvers = split_solvers
+                    .into_iter()
+                    .flat_map(|solver| {
+                        let (left, right) = solver.split();
+                        [Some(left), right]
+                    })
+                    .flatten()
+                    .collect();
+            }
+            split_solvers
+        }
+
+        fn any_solution_pre_split(self) -> Option<Grid<Base>> {
+            let split_solvers = self.pre_split_solvers();
+            split_solvers
+                .into_par_iter()
+                .find_map_any(|mut solver| solver.next())
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::base::consts::*;
-    use crate::solver::test_util::{assert_solve_result, assert_solver_solutions_base_2};
-
-    use super::*;
-
-    // Input space (
-    //      [empty, partial, full] sudoku,
-    //      [conflict/ no conflict],
-    //      [0, 1, n] solutions
-    // )
-
     // TODO: test filled sudoku with conflict
     // TODO: test filled sudoku without conflict
     // TODO: test partial filled sudoku without conflict and no possible solution
@@ -211,51 +570,224 @@ mod tests {
     // TODO: test partial filled sudoku without conflict and multiple possible solutions
     // TODO: test partial filled sudoku with conflict (implies no solutions)
 
+    use itertools::chain;
+
+    use crate::base::consts::*;
+    use crate::rng::new_crate_rng_with_seed;
+    use crate::solver::test_util::{
+        assert_infallible_solution_iter_all_solutions_base_2,
+        assert_infallible_solution_iter_single_solution, assert_infallible_solver_single_solution,
+        tests_solver_samples,
+    };
+
+    use super::*;
+
+    mod samples {
+        use super::*;
+
+        mod infallible_solver {
+            use super::*;
+            tests_solver_samples! {
+                |grid| {
+                    let solver = Solver::new(&grid);
+                    assert_infallible_solver_single_solution(solver, &grid);
+                }
+            }
+        }
+
+        mod infallible_solution_iter {
+            use super::*;
+            tests_solver_samples! {
+                |grid| {
+                    let solver = Solver::new(&grid);
+                    assert_infallible_solution_iter_single_solution(solver, &grid);
+                }
+            }
+        }
+    }
+
     #[test]
     fn test_iter_all_solutions() {
-        let mut grid = Grid::<Base2>::new();
-        let solver = Solver::new(&mut grid);
+        let grid = Grid::<Base2>::new();
+        let solver = Solver::new(&grid);
 
-        assert_solver_solutions_base_2(solver);
+        assert_infallible_solution_iter_all_solutions_base_2(solver);
     }
 
     #[test]
-    fn test_test_iter_all_solutions_shuffle_candidates() {
-        let mut grid = Grid::<Base2>::new();
-        let solver = Solver::new_with_settings(
-            &mut grid,
-            Settings {
-                candidates_visit_order: CandidatesVisitOrder::Random,
-                step_limit: None,
-            },
+    fn test_test_iter_all_solutions_rng() {
+        let grid = Grid::<Base2>::new();
+        let solver = Solver::builder(&grid)
+            .rng(new_crate_rng_with_seed(Some(1)))
+            .build();
+
+        assert_infallible_solution_iter_all_solutions_base_2(solver);
+    }
+
+    #[test]
+    fn test_move_best_choice_to_front() {
+        let mut grid = crate::samples::base_2()[1].clone();
+        grid.set_all_direct_candidates();
+        let mut solver = Solver::new(&grid);
+        let mut expected_choice_indexes = vec![
+            (0, 3),
+            (0, 1),
+            (1, 0),
+            (1, 1),
+            (1, 2),
+            (1, 3),
+            (2, 0),
+            (2, 1),
+            (2, 2),
+            (2, 3),
+            (3, 0),
+            (3, 2),
+        ]
+        .into_iter()
+        .map(|(row, column)| {
+            GroupAvailabilityIndex::<Base2>::from(Position::try_from((row, column)).unwrap())
+        })
+        .collect::<Vec<_>>();
+        assert_eq!(solver.availability_indexes, expected_choice_indexes);
+
+        solver.move_best_choice_to_front(4);
+        expected_choice_indexes.swap(4, 11);
+        assert_eq!(solver.availability_indexes, expected_choice_indexes);
+    }
+
+    #[test]
+    fn test_availability_filter_denied_candidates_grid() {
+        type Base = Base2;
+
+        let grid = Grid::<Base>::new();
+        let mut denylist = Grid::new();
+        denylist[Position::default()] = vec![1, 3]
+            .into_iter()
+            .map(|v| v.try_into().unwrap())
+            .collect();
+        let solver = Solver::builder(&grid).availability_filter(denylist).build();
+
+        for solution in solver.clone() {
+            assert!(![1, 3].contains(&solution.get(Position::default()).value().unwrap().get()));
+        }
+
+        assert_eq!(solver.count(), 144);
+    }
+
+    fn assert_single_solution_with_split<Base: SudokuBase>(
+        puzzle: &Grid<Base>,
+        assert_is_splittable: bool,
+    ) {
+        let solver = Solver::builder(puzzle)
+            .availability_filter(Grid::new())
+            .build();
+
+        let (left_solver, Some(right_solver)) = solver.split() else {
+            if assert_is_splittable {
+                panic!("Solver should be splittable")
+            } else {
+                return;
+            }
+        };
+
+        // Both solvers chained together should still produce a single solution
+        assert_infallible_solution_iter_single_solution(left_solver.chain(right_solver), puzzle);
+    }
+
+    #[test]
+    fn test_split_sample_base_2() {
+        for grid in crate::samples::base_2() {
+            // Some base 2 sample grids contain only single candidate cells, which currently can't be split.
+            assert_single_solution_with_split(&grid, false);
+        }
+    }
+
+    #[test]
+    fn test_split_sample_base_3() {
+        for grid in crate::samples::base_3() {
+            assert_single_solution_with_split(&grid, true);
+        }
+    }
+
+    #[test]
+    fn test_split_all_base_2() {
+        type Base = Base2;
+
+        let grid = Grid::<Base>::new();
+        let solver = Solver::builder(grid)
+            .availability_filter(Grid::new())
+            .build();
+
+        let (left_solver, Some(right_solver)) = solver.split() else {
+            panic!("Solver should be splittable")
+        };
+
+        assert_infallible_solution_iter_all_solutions_base_2(left_solver.chain(right_solver));
+    }
+
+    #[test]
+    fn test_split_twice() {
+        type Base = Base2;
+
+        let grid = Grid::<Base>::new();
+        let solver = Solver::builder(grid)
+            .availability_filter(Grid::new())
+            .build();
+
+        let (l, Some(r)) = solver.split() else {
+            panic!("Solver should be splittable")
+        };
+
+        let (ll, Some(lr)) = l.split() else {
+            panic!("Solver should be splittable")
+        };
+
+        assert_infallible_solution_iter_all_solutions_base_2(chain!(ll, lr, r,));
+    }
+
+    #[test]
+    fn test_split_recursive() {
+        type Base = Base2;
+
+        let grid = Grid::<Base>::new();
+        let solver = Solver::builder(grid)
+            .availability_filter(Grid::new())
+            .build();
+
+        let mut split_solvers = vec![solver];
+
+        for _ in 0..10 {
+            split_solvers = split_solvers
+                .into_iter()
+                .flat_map(|solver| {
+                    let (left, right) = solver.split();
+                    [Some(left), right]
+                })
+                .flatten()
+                .collect();
+        }
+
+        assert_infallible_solution_iter_all_solutions_base_2(split_solvers.into_iter().flatten());
+    }
+
+    #[cfg(feature = "parallel")]
+    #[test]
+    fn test_par_iter() {
+        type Base = Base2;
+
+        use rayon::prelude::*;
+
+        let grid = Grid::<Base>::new();
+        let solver = Solver::builder(grid)
+            .availability_filter(Grid::new())
+            .build();
+
+        assert_infallible_solution_iter_all_solutions_base_2(
+            solver
+                .into_par_iter()
+                .flat_map_iter(|solver| solver)
+                .collect::<Vec<_>>()
+                .into_iter(),
         );
-
-        assert_solver_solutions_base_2(solver);
-    }
-
-    #[test]
-    fn test_base_2() {
-        let grids = crate::samples::base_2();
-
-        for mut grid in grids {
-            let mut solver = Solver::new(&mut grid);
-
-            let solve_result = solver.try_solve();
-
-            assert_solve_result(solve_result);
-        }
-    }
-
-    #[test]
-    fn test_base_3() {
-        let grids = crate::samples::base_3();
-
-        for mut grid in grids {
-            let mut solver = Solver::new(&mut grid);
-
-            let solve_result = solver.try_solve();
-
-            assert_solve_result(solve_result);
-        }
     }
 }

@@ -1,26 +1,25 @@
-import { useRecoilState } from "recoil";
-import { RadioButtonGroup, SliderElement, SwitchElement, useForm } from "react-hook-form-mui";
 import { zodResolver } from "@hookform/resolvers/zod";
-import React from "react";
-import { Box, Button, DialogActions, DialogContent, DialogTitle, Stack } from "@mui/material";
-import {
-    DEFAULT_HINT_SETTINGS,
-    type HintSettings,
-    hintSettingsSchema,
-    hintSettingsState,
-    MAX_LOOP_DELAY_INDEX,
-    scaleLoopDelayIndex,
-} from "../../state/forms/hintSettings";
-import SelectStrategies from "../../components/formFragments/SelectStrategies";
-import { formatDurationMs } from "../../i18n";
-import { LoadingButton } from "@mui/lab";
 import SaveIcon from "@mui/icons-material/Save";
+import { LoadingButton } from "@mui/lab";
+import { Box, Button, DialogActions, DialogContent, DialogTitle, Stack } from "@mui/material";
+import { RadioButtonGroup, SliderElement, SwitchElement, useForm } from "react-hook-form-mui";
+import { useRecoilState } from "recoil";
 import { Fieldset } from "../../components/Fieldset";
 import { ResetFormButton } from "../../components/ResetFormButton";
+import SelectStrategies from "../../components/formFragments/SelectStrategies";
+import { formatDurationMs } from "../../i18n";
+import {
+    DEFAULT_HINT_SETTINGS,
+    MAX_LOOP_DELAY_INDEX,
+    hintSettingsSchema,
+    hintSettingsState,
+    scaleLoopDelayIndex,
+    type HintSettings,
+} from "../../state/forms/hintSettings";
 
-interface HintSettingsDialogProps {
+type HintSettingsDialogProps = {
     onClose: () => void;
-}
+};
 
 export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
     const [hintSettingsFormValues, setHintSettingsFormValues] = useRecoilState(hintSettingsState);
@@ -45,7 +44,7 @@ export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
                 <form
                     id="hint-settings-form"
                     noValidate
-                    onSubmit={handleSubmit(async hintSettings => {
+                    onSubmit={handleSubmit((hintSettings) => {
                         setHintSettingsFormValues(hintSettings);
                         onClose();
                     })}
@@ -90,15 +89,15 @@ export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
                                     step={1}
                                     min={0}
                                     max={MAX_LOOP_DELAY_INDEX}
-                                    marks={[0, MAX_LOOP_DELAY_INDEX].map(loopDelayMs => ({
+                                    marks={[0, MAX_LOOP_DELAY_INDEX].map((loopDelayMs) => ({
                                         value: loopDelayMs,
                                         label: formatDurationMs(scaleLoopDelayIndex(loopDelayMs)),
                                     }))}
                                     scale={scaleLoopDelayIndex}
                                     valueLabelDisplay="auto"
-                                    valueLabelFormat={loopDelayMs => formatDurationMs(loopDelayMs)}
+                                    valueLabelFormat={(loopDelayMs) => formatDurationMs(loopDelayMs)}
                                     getAriaLabel={() => "Delay"}
-                                    getAriaValueText={loopDelayMs => formatDurationMs(loopDelayMs)}
+                                    getAriaValueText={(loopDelayMs) => formatDurationMs(loopDelayMs)}
                                 />
                             </Box>
                         </Fieldset>

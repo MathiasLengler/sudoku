@@ -1,25 +1,32 @@
-import type * as React from "react";
-import { useRecoilValue } from "recoil";
-import { sudokuBlocksIndicesState, sudokuCellsState } from "../state/sudoku";
-import { Block } from "./block";
 import type { OnRefChangeType } from "react-resize-detector/build/types/types";
+import { useRecoilValue } from "recoil";
+import { sudokuBlocksIndexesState, sudokuCellsState } from "../state/sudoku";
+import { Block } from "./block";
 
-interface GridProps {
+type GridProps = {
     gridRef: OnRefChangeType<HTMLDivElement>;
-}
+};
 
 export const Grid = ({ gridRef }: GridProps) => {
-    const blocksIndices = useRecoilValue(sudokuBlocksIndicesState);
+    const blocksIndexes = useRecoilValue(sudokuBlocksIndexesState);
     const cells = useRecoilValue(sudokuCellsState);
 
     return (
         <>
             <div className="grid-container">
                 <div className="grid" ref={gridRef}>
-                    {blocksIndices.map((cellIndices, blockIndex) => (
+                    {blocksIndexes.map((cellIndices, blockIndex) => (
                         <Block
                             key={blockIndex}
-                            cells={cellIndices.map(cellIndex => cells[cellIndex])}
+                            cells={cellIndices.map((cellIndex) => {
+                                const cell = cells[cellIndex];
+                                if (!cell) {
+                                    throw new Error(
+                                        `index out of bounds: the length is ${cells.length} but the index is ${cellIndex}`,
+                                    );
+                                }
+                                return cell;
+                            })}
                             blockIndex={blockIndex}
                         />
                     ))}

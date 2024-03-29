@@ -20,7 +20,7 @@ impl<T> History<T> {
     pub(super) fn set_limit(&mut self, limit: usize) {
         self.limit = limit;
         self.past_records.truncate(limit);
-        self.past_records.truncate(limit);
+        self.future_records.truncate(limit);
     }
 
     fn push_bounded(&mut self, past: bool, value: T) {

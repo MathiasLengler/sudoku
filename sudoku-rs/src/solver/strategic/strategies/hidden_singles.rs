@@ -35,11 +35,11 @@ impl Strategy for HiddenSingles {
                 //  - stack allocated
                 //  - Value<Base> API, less conversions
                 let mut candidate_histogram =
-                    vec![CandidateStats::default(); Grid::<Base>::max_value_usize()];
+                    vec![CandidateStats::default(); Base::MAX_VALUE.into()];
 
                 for group_position in group_positions {
                     if let Some(candidates) = grid.get(group_position).candidates() {
-                        for candidate in candidates.iter() {
+                        for candidate in candidates {
                             let candidate = candidate.get() - 1;
 
                             let candidate_index = usize::from(candidate);

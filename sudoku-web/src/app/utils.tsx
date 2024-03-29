@@ -46,7 +46,7 @@ export function positionToIndex(params: PositionToIndexParam): number {
 
 export function cellPositionToBlockPosition(
     cellPosition: DynamicPosition,
-    base: TransportSudoku["base"]
+    base: TransportSudoku["base"],
 ): DynamicPosition {
     return {
         row: Math.floor(cellPosition.row / base),

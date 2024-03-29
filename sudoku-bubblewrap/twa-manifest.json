@@ -4,7 +4,8 @@
   "name": "Sudoku",
   "launcherName": "Sudoku",
   "display": "standalone",
-  "themeColor": "#042143",
+  "themeColor": "#BCD8FB",
+  "themeColorDark": "#042143",
   "navigationColor": "#000000",
   "navigationColorDark": "#000000",
   "navigationDividerColor": "#000000",
@@ -23,7 +24,7 @@
   "appVersionCode": 4,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
-  "webManifestUrl": "https://sudoku.lengler.dev/manifest.bc83027945474fa5da5bfc91168ffd47.json",
+  "webManifestUrl": "https://sudoku.lengler.dev/manifest.json",
   "fallbackType": "customtabs",
   "features": {},
   "alphaDependencies": {

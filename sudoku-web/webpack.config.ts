@@ -1,21 +1,19 @@
-import path from "path";
-import HtmlWebpackPlugin from "html-webpack-plugin";
-import WebpackPwaManifest from "webpack-pwa-manifest";
-import WorkboxPlugin from "workbox-webpack-plugin";
-import WasmPackPlugin from "@wasm-tool/wasm-pack-plugin";
-import FaviconsWebpackPlugin from "favicons-webpack-plugin";
-import CopyPlugin from "copy-webpack-plugin";
 import ReactRefreshPlugin from "@pmmmwh/react-refresh-webpack-plugin";
+import WasmPackPlugin from "@wasm-tool/wasm-pack-plugin";
+import CopyPlugin from "copy-webpack-plugin";
 import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin";
-import webpack, { type WebpackPluginInstance } from "webpack";
+import HtmlWebpackPlugin from "html-webpack-plugin";
+import path from "path";
+import webpack from "webpack";
 import "webpack-dev-server";
+import WorkboxPlugin from "workbox-webpack-plugin";
 
 import _ from "lodash";
 
 const dist = path.resolve(__dirname, "dist");
 export default async (
     env: Record<string, string | undefined>,
-    { mode }: { mode: webpack.Configuration["mode"] }
+    { mode }: { mode: webpack.Configuration["mode"] },
 ): Promise<webpack.Configuration> => {
     const reactProfiling = !!env.reactProfiling;
     const bundleAnalyzer = !!env.bundleAnalyzer;
@@ -62,12 +60,18 @@ export default async (
             },
             client: {
                 overlay: {
-                    errors: true,
+                    // ReactRefreshPlugin has its own overlay
+                    errors: false,
                     warnings: false,
+                    runtimeErrors: false,
                 },
             },
             host: hostAny ? "0.0.0.0" : "127.0.0.1",
             hot: true,
+            headers: {
+                "Cross-Origin-Embedder-Policy": "require-corp",
+                "Cross-Origin-Opener-Policy": "same-origin",
+            },
         },
         devtool,
         resolve: {
@@ -89,6 +93,9 @@ export default async (
                 crateDirectory: path.resolve(__dirname, "../sudoku-wasm"),
                 watchDirectories: [path.resolve(__dirname, "../sudoku-rs")],
                 outDir: path.resolve(__dirname, "../sudoku-wasm/pkg"),
+                extraArgs: "--target web . -- -Z build-std=panic_abort,std",
+                // webpack currently doesn't support wasm reference types: https://github.com/webpack/webpack/issues/15566
+                // extraArgs: "--reference-types",
             }),
             // PWA
             ((isProduction && !reactProfiling) || debugSW) &&
@@ -97,42 +104,6 @@ export default async (
                 }),
             new webpack.DefinePlugin({
                 "process.env.DEBUG_SW": debugSW,
-            }),
-            new WebpackPwaManifest({
-                name: "Sudoku",
-                short_name: "Sudoku",
-                description: "Touch optimized sudoku built with Rust/WASM/TypeScript/React",
-                // MUI Theme: prefersDarkMode && palette.background.default
-                background_color: "#121212",
-                // CSS: (prefers-color-scheme: dark) var(--cell-bg-color-selected)
-                theme_color: "#042143",
-                icons: [
-                    {
-                        src: path.resolve("res/img/icon_dark.png"),
-                        sizes: [96, 128, 192, 256, 384, 512],
-                        destination: "assets",
-                    },
-                    {
-                        src: path.resolve("res/img/icon_dark_maskable.png"),
-                        sizes: [192, 512],
-                        purpose: "maskable",
-                        destination: "assets",
-                    },
-                ],
-            }) as WebpackPluginInstance,
-            new FaviconsWebpackPlugin({
-                logo: "./res/img/icon_light.png",
-                cache: true,
-                favicons: {
-                    icons: {
-                        android: false,
-                        appleIcon: ["apple-touch-icon-180x180.png"],
-                        appleStartup: false,
-                        favicons: true,
-                        windows: false,
-                        yandex: false,
-                    },
-                },
             }),
             new CopyPlugin({ patterns: ["res/public"] }),
             bundleAnalyzer && new (await import("webpack-bundle-analyzer")).BundleAnalyzerPlugin(),

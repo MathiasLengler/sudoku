@@ -1,4 +1,3 @@
-use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::marker::PhantomData;
@@ -97,7 +96,7 @@ impl<Base: SudokuBase> Value<Base> {
 
 /// Iterators
 impl<Base: SudokuBase> Value<Base> {
-    pub fn all() -> impl Iterator<Item = Self> {
+    pub fn all() -> impl Iterator<Item = Self> + Clone {
         (1..=Base::MAX_VALUE).map(|value|
             // Safety: `value` remains in-bounds
             unsafe { Self::new_unchecked(value) })
@@ -108,7 +107,7 @@ impl<Base: SudokuBase> Display for Value<Base> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         use radix_fmt::radix_32;
 
-        write!(f, "{}", radix_32(self.value))
+        radix_32(self.value).fmt(f)
     }
 }
 

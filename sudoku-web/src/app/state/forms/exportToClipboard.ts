@@ -1,8 +1,9 @@
+import { atom, selector } from "recoil";
 import { z } from "zod";
 import { gridFormatSchema } from "../../../constants";
-import { atom, selector } from "recoil";
 import { localStorageEffect } from "../localStorageEffect";
-import { remoteWorkerApiState, sudokuState } from "../sudoku";
+import { sudokuState } from "../sudoku";
+import { remoteWasmSudokuState } from "../worker";
 
 export type ExportToClipboardFormValues = z.infer<typeof exportToClipboardFormValuesSchema>;
 export const exportToClipboardFormValuesSchema = z.object({
@@ -23,8 +24,8 @@ export const exportedGridStringState = selector<string>({
     get: async ({ get }) => {
         // The exported grid string depends on the sudoku state.
         get(sudokuState);
-        const wasmSudokuProxy = get(remoteWorkerApiState).wasmSudokuProxy;
+        const remoteWasmSudoku = get(remoteWasmSudokuState);
         const { gridFormat } = get(exportToClipboardFormValuesState);
-        return await wasmSudokuProxy.export(gridFormat);
+        return await remoteWasmSudoku.export(gridFormat);
     },
 });

@@ -4,6 +4,8 @@ use wasm_bindgen::{JsError, JsValue};
 
 use sudoku::error::Error as SudokuError;
 
+use crate::import_err;
+
 #[derive(Debug)]
 pub enum SudokuWasmError {
     SudokuError(SudokuError),
@@ -14,7 +16,7 @@ impl Display for SudokuWasmError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             SudokuWasmError::SudokuError(err) => err.fmt(f),
-            SudokuWasmError::JsValue(js_value) => crate::import::import_err(js_value).fmt(f),
+            SudokuWasmError::JsValue(js_value) => import_err(js_value).fmt(f),
         }
     }
 }
@@ -27,9 +29,15 @@ impl From<SudokuError> for SudokuWasmError {
     }
 }
 
+impl From<JsValue> for SudokuWasmError {
+    fn from(err: JsValue) -> Self {
+        Self::JsValue(err)
+    }
+}
+
 impl From<serde_wasm_bindgen::Error> for SudokuWasmError {
     fn from(err: serde_wasm_bindgen::Error) -> Self {
-        err.into()
+        JsValue::from(err).into()
     }
 }
 

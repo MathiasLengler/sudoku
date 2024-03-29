@@ -1,31 +1,19 @@
-import type React from "react";
 import type * as CSS from "csstype";
-import { useKeyboardInput } from "./useKeyboardInput";
-import { Grid } from "./grid/grid";
-import { ControlPanel } from "./controlPanel/controlPanel";
+import { Suspense } from "react";
 import { useResizeDetector } from "react-resize-detector";
-import SudokuAppBar from "./appBar/sudokuAppBar";
 import { useRecoilValue } from "recoil";
+import SudokuAppBar from "./appBar/sudokuAppBar";
+import { ThemeErrorBoundary } from "./components/ErrorFallback";
+import { FullScreenSpinner } from "./components/FullScreenSpinner";
+import { WorldMap } from "./components/world/WorldMap";
+import { ControlPanel } from "./controlPanel/controlPanel";
+import { Grid } from "./grid/grid";
 import { sudokuBaseState, sudokuSideLengthState } from "./state/sudoku";
+import { gameModeState } from "./state/world";
 import { SudokuEffects } from "./sudokuEffects";
-import type { OnRefChangeType } from "react-resize-detector/build/types/types";
+import { useKeyboardInput } from "./useKeyboardInput";
 
-interface SudokuContentProps {
-    gridRef: OnRefChangeType<HTMLDivElement>;
-}
-
-const SudokuContent = ({ gridRef }: SudokuContentProps) => {
-    return (
-        <div className="app-content">
-            <div className="sudoku">
-                <Grid gridRef={gridRef} />
-                <ControlPanel />
-            </div>
-        </div>
-    );
-};
-
-export const Sudoku = () => {
+const SudokuGame = () => {
     const base = useRecoilValue(sudokuBaseState);
     const sideLength = useRecoilValue(sudokuSideLengthState);
 
@@ -34,23 +22,43 @@ export const Sudoku = () => {
 
     const cssVariables: CSS.Properties = {
         "--side-length": sideLength,
-        "--side-length-fr": `${sideLength}fr`,
         "--base": base,
         "--grid-size": gridWidth && gridHeight ? `${Math.min(gridWidth, gridHeight)}px` : "0",
     };
 
+    return (
+        <div className="sudoku-game" style={cssVariables}>
+            <Grid gridRef={gridRef} />
+            <ControlPanel />
+        </div>
+    );
+};
+
+const SudokuContent = () => {
+    const gameMode = useRecoilValue(gameModeState);
+    return (
+        <div className="app-content">
+            <ThemeErrorBoundary>
+                <Suspense fallback={<FullScreenSpinner />}>
+                    {gameMode.mode === "world" && gameMode.view === "map" ? <WorldMap /> : <SudokuGame />}
+                </Suspense>
+            </ThemeErrorBoundary>
+        </div>
+    );
+};
+
+export const Sudoku = () => {
     const { onKeyDown } = useKeyboardInput();
 
     return (
         <div
             className="app"
-            style={cssVariables}
             onKeyDown={onKeyDown}
             // Enable keyboard events
             tabIndex={0}
         >
             <SudokuAppBar />
-            <SudokuContent gridRef={gridRef} />
+            <SudokuContent />
             <SudokuEffects />
         </div>
     );

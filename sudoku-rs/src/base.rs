@@ -9,14 +9,21 @@ use num::traits::{
 use num::PrimInt;
 
 use consts::*;
+pub(crate) use enum_impl::match_base_enum;
+pub use enum_impl::BaseEnum;
 
 use crate::cell::Candidates;
-use crate::error::Error;
+use crate::error::{Error, Result};
 use crate::position::Coordinate;
 use crate::position::Position;
 use crate::unsafe_utils::get_unchecked;
 
 pub mod consts {
+    // Aliases
+    pub use Base2 as Size4x4;
+    pub use Base3 as Size9x9;
+    pub use Base4 as Size16x16;
+    pub use Base5 as Size25x25;
     pub use Base5 as BaseMax;
 
     use crate::base::SudokuBase;
@@ -66,16 +73,6 @@ const fn base_to_max_value(base: u8) -> u8 {
 
 const fn base_to_cell_count(base: u8) -> u16 {
     (base as u16).pow(4)
-}
-
-const fn base_to_binary_fixed_candidates_line_cell_chars(base: u8) -> usize {
-    match base {
-        2 => 1,
-        3 => 2,
-        4 => 4,
-        5 => 6,
-        _ => panic!("Unexpected base"),
-    }
 }
 
 mod cell_index_to_block_index {
@@ -180,8 +177,16 @@ mod block_index_to_top_left_cell_index {
 /// An incorrect implementation could result in undefined behaviour.
 pub unsafe trait SudokuBase
 where
-    Self: Ord + Hash + Clone + Copy + Debug + Default + 'static + private::Sealed,
+    Self: Ord + Hash + Clone + Copy + Debug + Default + Send + Sync + 'static + private::Sealed,
 {
+    /// A variant of the enum `BaseEnum`
+    ///
+    /// Used for matching of bases at runtime.
+    ///
+    /// # Safety
+    /// - `Base::DYNAMIC_BASE.into_u8() == Base::BASE`
+    const ENUM: BaseEnum;
+
     // TODO: evaluate `as` casting of constants
     /// The side length of a sudoku block. Must be non-zero.
     ///
@@ -213,7 +218,11 @@ where
     const CELL_COUNT: u16;
 
     /// Used by `BinaryFixedCandidatesLine`
+    ///
+    /// Defines how many chars are representing a single cell in this grid format.
     const BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS: usize;
+
+    const MINIMUM_CLUE_COUNT_FOR_UNIQUE_SOLUTION: u16;
 
     /// For a given cell position, returns the coordinate of the block it is contained in.
     fn pos_to_block(pos: Position<Self>) -> Coordinate<Self>;
@@ -234,6 +243,8 @@ where
         + Display
         + Binary
         + Hash
+        + Send
+        + Sync
         // Generic bit twiddling
         + PrimInt
         + CheckedShl
@@ -266,7 +277,9 @@ where
         + Clone
         + Debug
         + Default
-        + IntoIterator<Item = Candidates<Self>, IntoIter = Self::CandidatesGroupIntoIter>;
+        + IntoIterator<Item = Candidates<Self>, IntoIter = Self::CandidatesGroupIntoIter>
+        + Send
+        + Sync;
 
     type CandidatesGroupIntoIter: Iterator<Item = Candidates<Self>>;
 }
@@ -276,11 +289,13 @@ macro_rules! impl_sudoku_base {
         $(
 // Safety: this private macro is only instantiated below and the correctness of the generated impls is tested.
 unsafe impl SudokuBase for $type_num {
+    const ENUM: BaseEnum = BaseEnum::assert_from_base_u8($base_u8);
     const BASE: u8 = $base_u8;
     const SIDE_LENGTH: u8 = base_to_side_length(Self::BASE);
     const MAX_VALUE: u8 = base_to_max_value(Self::BASE);
     const CELL_COUNT: u16 = base_to_cell_count(Self::BASE);
-    const BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS: usize = base_to_binary_fixed_candidates_line_cell_chars(Self::BASE);
+    const BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS: usize = Self::ENUM.binary_fixed_candidates_line_cell_chars();
+    const MINIMUM_CLUE_COUNT_FOR_UNIQUE_SOLUTION: u16 = Self::ENUM.minimum_clue_count_for_unique_solution();
 
     fn pos_to_block(pos: Position<Self>) -> Coordinate<Self> {
         let cell_index = usize::from(pos.cell_index());
@@ -316,13 +331,274 @@ unsafe impl SudokuBase for $type_num {
     };
 }
 
-// All sudoku bases supported by DynamicSudoku, and U1 for testing.
+// Implement `SudokuBase` for all base structs
 impl_sudoku_base!(
     Base2, 2, u8, cell_index_to_block_index::BASE_2, block_index_to_top_left_cell_index::BASE_2;
     Base3, 3, u16, cell_index_to_block_index::BASE_3, block_index_to_top_left_cell_index::BASE_3;
     Base4, 4, u16, cell_index_to_block_index::BASE_4, block_index_to_top_left_cell_index::BASE_4;
     Base5, 5, u32, cell_index_to_block_index::BASE_5, block_index_to_top_left_cell_index::BASE_5;
 );
+
+mod enum_impl {
+    use super::*;
+    use anyhow::{bail, format_err};
+    use serde_repr::{Deserialize_repr, Serialize_repr};
+
+    #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize_repr, Deserialize_repr)]
+    #[repr(u8)]
+    pub enum BaseEnum {
+        Base2 = 2,
+        Base3 = 3,
+        Base4 = 4,
+        Base5 = 5,
+    }
+
+    /// const conversions between `u8` and `DynamicBase`
+    impl BaseEnum {
+        pub const fn assert_from_base_u8(base: u8) -> Self {
+            assert!(2 <= base && base <= 5);
+
+            match base {
+                2 => BaseEnum::Base2,
+                3 => BaseEnum::Base3,
+                4 => BaseEnum::Base4,
+                5 => BaseEnum::Base5,
+                _unexpected_base => unreachable!(),
+            }
+        }
+
+        pub const fn into_u8(self) -> u8 {
+            match self {
+                BaseEnum::Base2 => 2,
+                BaseEnum::Base3 => 3,
+                BaseEnum::Base4 => 4,
+                BaseEnum::Base5 => 5,
+            }
+        }
+    }
+
+    /// const definitions
+    impl BaseEnum {
+        pub const fn binary_fixed_candidates_line_cell_chars(self) -> usize {
+            match self {
+                BaseEnum::Base2 => 1,
+                BaseEnum::Base3 => 2,
+                BaseEnum::Base4 => 4,
+                BaseEnum::Base5 => 6,
+            }
+        }
+
+        pub const fn minimum_clue_count_for_unique_solution(self) -> u16 {
+            match self {
+                // Reference: https://math.stackexchange.com/questions/2170944/sudoku-what-is-the-relationship-between-minimum-number-of-clues-and-order-n
+                BaseEnum::Base2 => 4,
+                BaseEnum::Base3 => 17,
+                // Unknown, guess on ~200 minimal sudokus
+                BaseEnum::Base4 => 75,
+                // Unknown, conservative estimate
+                BaseEnum::Base5 => 76,
+            }
+        }
+    }
+
+    /// runtime conversion from base as `u8`
+    impl TryFrom<u8> for BaseEnum {
+        type Error = Error;
+
+        fn try_from(base: u8) -> Result<Self> {
+            Ok(match base {
+                2 => BaseEnum::Base2,
+                3 => BaseEnum::Base3,
+                4 => BaseEnum::Base4,
+                5 => BaseEnum::Base5,
+                unexpected_base => bail!("Unexpected runtime base: {unexpected_base}"),
+            })
+        }
+    }
+
+    // interop with `SudokuBase`
+    impl From<Base2> for BaseEnum {
+        fn from(_base: Base2) -> Self {
+            BaseEnum::Base2
+        }
+    }
+    impl From<Base3> for BaseEnum {
+        fn from(_base: Base3) -> Self {
+            BaseEnum::Base3
+        }
+    }
+    impl From<Base4> for BaseEnum {
+        fn from(_base: Base4) -> Self {
+            BaseEnum::Base4
+        }
+    }
+    impl From<Base5> for BaseEnum {
+        fn from(_base: Base5) -> Self {
+            BaseEnum::Base5
+        }
+    }
+    impl BaseEnum {
+        pub fn is<Base: SudokuBase>(self) -> bool {
+            self == Base::ENUM
+        }
+    }
+
+    /// conversions between runtime sizes parameters and `DynamicBase`
+    impl BaseEnum {
+        pub fn try_from_cell_count_usize(cell_count: usize) -> Result<BaseEnum> {
+            Ok(
+                match u16::try_from(cell_count)
+                    .map_err(|_| format_err!("Cell count {cell_count} too large"))?
+                {
+                    Base2::CELL_COUNT => BaseEnum::Base2,
+                    Base3::CELL_COUNT => BaseEnum::Base3,
+                    Base4::CELL_COUNT => BaseEnum::Base4,
+                    Base5::CELL_COUNT => BaseEnum::Base5,
+                    _ => bail!("Cell count {cell_count} has no valid sudoku base"),
+                },
+            )
+        }
+    }
+
+    impl BaseEnum {
+        pub fn all() -> impl Iterator<Item = Self> {
+            [
+                BaseEnum::Base2,
+                BaseEnum::Base3,
+                BaseEnum::Base4,
+                BaseEnum::Base5,
+            ]
+            .into_iter()
+        }
+    }
+
+    macro_rules! match_base_enum {
+        ($base_enum_value:expr, $using_base:expr) => {{
+            use $crate::base::consts::*;
+            match $base_enum_value {
+                BaseEnum::Base2 => {
+                    type Base = Base2;
+                    $using_base
+                }
+                BaseEnum::Base3 => {
+                    type Base = Base3;
+                    $using_base
+                }
+                BaseEnum::Base4 => {
+                    type Base = Base4;
+                    $using_base
+                }
+                BaseEnum::Base5 => {
+                    type Base = Base5;
+                    $using_base
+                }
+            }
+        }};
+    }
+
+    pub(crate) use match_base_enum;
+
+    #[cfg(feature = "wasm")]
+    mod wasm {
+        use itertools::Itertools;
+
+        use super::*;
+
+        impl ts_rs::TS for BaseEnum {
+            const EXPORT_TO: Option<&'static str> = Some("bindings/BaseEnum.ts");
+            fn decl() -> String {
+                format!("type BaseEnum = {};", Self::inline())
+            }
+            fn name() -> String {
+                "BaseEnum".to_owned()
+            }
+            fn inline() -> String {
+                BaseEnum::all().map(Self::into_u8).join(" | ")
+            }
+            fn dependencies() -> Vec<ts_rs::Dependency>
+            where
+                Self: 'static,
+            {
+                vec![]
+            }
+            fn transparent() -> bool {
+                false
+            }
+        }
+        #[cfg(test)]
+        #[test]
+        fn export_bindings_baseenum() {
+            <BaseEnum as ts_rs::TS>::export().expect("could not export type");
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn test_assert_from_base_u8() {
+            assert_eq!(BaseEnum::assert_from_base_u8(2), BaseEnum::Base2);
+            assert_eq!(BaseEnum::assert_from_base_u8(3), BaseEnum::Base3);
+            assert_eq!(BaseEnum::assert_from_base_u8(4), BaseEnum::Base4);
+            assert_eq!(BaseEnum::assert_from_base_u8(5), BaseEnum::Base5);
+        }
+
+        #[test]
+        fn test_into_u8() {
+            assert_eq!(BaseEnum::Base2.into_u8(), 2);
+            assert_eq!(BaseEnum::Base3.into_u8(), 3);
+            assert_eq!(BaseEnum::Base4.into_u8(), 4);
+            assert_eq!(BaseEnum::Base5.into_u8(), 5);
+        }
+
+        #[test]
+        fn test_try_from_u8() {
+            assert_eq!(BaseEnum::try_from(2).unwrap(), BaseEnum::Base2);
+            assert_eq!(BaseEnum::try_from(3).unwrap(), BaseEnum::Base3);
+            assert_eq!(BaseEnum::try_from(4).unwrap(), BaseEnum::Base4);
+            assert_eq!(BaseEnum::try_from(5).unwrap(), BaseEnum::Base5);
+        }
+
+        #[test]
+        fn test_from_base_structs() {
+            assert_eq!(BaseEnum::from(Base2), BaseEnum::Base2);
+            assert_eq!(BaseEnum::from(Base3), BaseEnum::Base3);
+            assert_eq!(BaseEnum::from(Base4), BaseEnum::Base4);
+            assert_eq!(BaseEnum::from(Base5), BaseEnum::Base5);
+        }
+
+        #[test]
+        fn test_try_from_cell_count_usize() -> Result<()> {
+            let test_cases = vec![
+                (16, BaseEnum::Base2),
+                (81, BaseEnum::Base3),
+                (256, BaseEnum::Base4),
+                (625, BaseEnum::Base5),
+            ];
+
+            for &(cell_count, expected_base) in &test_cases {
+                let base = BaseEnum::try_from_cell_count_usize(cell_count)?;
+
+                assert_eq!(base, expected_base);
+            }
+
+            let legal_cell_counts: Vec<_> = test_cases
+                .into_iter()
+                .map(|(cell_count, _)| cell_count)
+                .collect();
+
+            for cell_count in (0..=1000).filter(|x| !legal_cell_counts.contains(x)) {
+                let res_base = BaseEnum::try_from_cell_count_usize(cell_count);
+                assert!(
+                    res_base.is_err(),
+                    "Expected err, got {res_base:?} for cell_count: {cell_count}"
+                );
+            }
+            Ok(())
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -369,6 +645,9 @@ mod tests {
     fn assert_base_invariants<Base: SudokuBase>() {
         use std::mem::size_of;
 
+        // Safety invariant of Base::DYNAMIC_BASE
+        assert_eq!(Base::ENUM.into_u8(), Base::BASE);
+
         // Safety invariant of Base::BASE
         assert_ne!(Base::BASE, 0);
 
@@ -399,6 +678,7 @@ mod tests {
     fn test_base_2() {
         type Base = Base2;
 
+        assert_eq!(Base::ENUM, BaseEnum::Base2);
         assert_eq!(Base::BASE, 2);
         assert_eq!(Base::SIDE_LENGTH, 4);
         assert_eq!(Base::MAX_VALUE, 4);
@@ -414,6 +694,7 @@ mod tests {
     fn test_base_3() {
         type Base = Base3;
 
+        assert_eq!(Base::ENUM, BaseEnum::Base3);
         assert_eq!(Base::BASE, 3);
         assert_eq!(Base::SIDE_LENGTH, 9);
         assert_eq!(Base::MAX_VALUE, 9);
@@ -429,6 +710,7 @@ mod tests {
     fn test_base_4() {
         type Base = Base4;
 
+        assert_eq!(Base::ENUM, BaseEnum::Base4);
         assert_eq!(Base::BASE, 4);
         assert_eq!(Base::SIDE_LENGTH, 16);
         assert_eq!(Base::MAX_VALUE, 16);
@@ -444,6 +726,7 @@ mod tests {
     fn test_base_5() {
         type Base = Base5;
 
+        assert_eq!(Base::ENUM, BaseEnum::Base5);
         assert_eq!(Base::BASE, 5);
         assert_eq!(Base::SIDE_LENGTH, 25);
         assert_eq!(Base::MAX_VALUE, 25);

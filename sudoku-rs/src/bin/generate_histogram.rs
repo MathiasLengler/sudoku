@@ -1,3 +1,4 @@
+//! # Base 3
 //! 21: 33                                                 
 //! 22: 1215
 //! 23: 18947
@@ -11,6 +12,7 @@
 //! 31: 97
 //! 33: 4
 //! Best grid #21:
+//! ```plaintext
 //! ╔═════════════════╦═════════════════╦═════════════════╗
 //! ║  2  │   3 │     ║     │     │     ║     │  2  │   3 ║
 //! ║ 4   │ 45  │  1  ║ 456 │     │  56 ║  7  │ 4 6 │   6 ║
@@ -48,6 +50,45 @@
 //! ║ 4   │ 4 6 │  8  ║   6 │  5  │   6 ║ 4 6 │ 4 6 │   6 ║
 //! ║ 7   │ 7   │     ║ 7 9 │     │ 7 9 ║   9 │ 7 9 │ 7   ║
 //! ╚═════════════════╩═════════════════╩═════════════════╝
+//! ```
+//!
+//! # Base 4
+//! best grid with 88 values:
+//! ```plaintext
+//! ╔═══════════════╦═══════════════╦═══════════════╦═══════════════╗
+//! ║   │   │ 5 │   ║ g │ c │   │   ║ 4 │   │   │   ║ 9 │ e │   │   ║
+//! ║───┼───┼───┼───║───┼───┼───┼───║───┼───┼───┼───║───┼───┼───┼───║
+//! ║   │   │   │ 2 ║   │ 7 │   │   ║   │   │   │ 1 ║   │   │   │   ║
+//! ║───┼───┼───┼───║───┼───┼───┼───║───┼───┼───┼───║───┼───┼───┼───║
+//! ║ d │   │   │ 9 ║   │   │ 5 │   ║   │ g │ 3 │   ║ 2 │   │   │ 8 ║
+//! ║───┼───┼───┼───║───┼───┼───┼───║───┼───┼───┼───║───┼───┼───┼───║
+//! ║   │   │   │   ║ 8 │ 4 │   │   ║ e │   │   │   ║   │ 6 │ 1 │   ║
+//! ╠═══════════════╬═══════════════╬═══════════════╬═══════════════╣
+//! ║ 3 │   │   │ a ║   │   │   │ 9 ║ f │ 5 │   │   ║   │ 2 │   │   ║
+//! ║───┼───┼───┼───║───┼───┼───┼───║───┼───┼───┼───║───┼───┼───┼───║
+//! ║   │   │   │   ║ f │ 1 │   │   ║   │   │   │   ║ a │   │   │ c ║
+//! ║───┼───┼───┼───║───┼───┼───┼───║───┼───┼───┼───║───┼───┼───┼───║
+//! ║   │ c │   │   ║   │   │   │   ║   │ a │ 2 │   ║ 3 │   │ 9 │   ║
+//! ║───┼───┼───┼───║───┼───┼───┼───║───┼───┼───┼───║───┼───┼───┼───║
+//! ║   │ e │   │   ║   │ 5 │   │ d ║ 1 │   │   │   ║ 7 │   │ f │   ║
+//! ╠═══════════════╬═══════════════╬═══════════════╬═══════════════╣
+//! ║ f │   │ 3 │   ║   │   │   │ 1 ║ b │   │   │ 4 ║ 6 │ 8 │ 5 │ a ║
+//! ║───┼───┼───┼───║───┼───┼───┼───║───┼───┼───┼───║───┼───┼───┼───║
+//! ║ 5 │ 8 │   │   ║   │   │   │ b ║   │   │ e │   ║   │   │   │ 9 ║
+//! ║───┼───┼───┼───║───┼───┼───┼───║───┼───┼───┼───║───┼───┼───┼───║
+//! ║   │   │   │   ║   │ 9 │   │   ║ 7 │ 6 │ a │   ║ g │   │   │ 1 ║
+//! ║───┼───┼───┼───║───┼───┼───┼───║───┼───┼───┼───║───┼───┼───┼───║
+//! ║ a │   │   │   ║ 2 │   │ e │   ║   │ 3 │   │ c ║   │ 7 │   │   ║
+//! ╠═══════════════╬═══════════════╬═══════════════╬═══════════════╣
+//! ║ g │   │ f │   ║ 4 │   │   │ 6 ║   │ 7 │   │ 5 ║   │   │   │   ║
+//! ║───┼───┼───┼───║───┼───┼───┼───║───┼───┼───┼───║───┼───┼───┼───║
+//! ║ c │ 5 │ 7 │   ║ b │   │   │ 8 ║   │   │   │   ║   │   │   │ f ║
+//! ║───┼───┼───┼───║───┼───┼───┼───║───┼───┼───┼───║───┼───┼───┼───║
+//! ║   │ d │ 2 │   ║   │   │   │   ║   │ 4 │   │ f ║   │ a │   │   ║
+//! ║───┼───┼───┼───║───┼───┼───┼───║───┼───┼───┼───║───┼───┼───┼───║
+//! ║   │   │   │   ║ e │   │   │ a ║   │   │   │   ║   │ c │   │   ║
+//! ╚═══════════════╩═══════════════╩═══════════════╩═══════════════╝
+//! ```
 
 #![allow(unused_imports)]
 
@@ -57,45 +98,41 @@ use hdrhistogram::Histogram;
 use indicatif::{ParallelProgressIterator, ProgressBar, ProgressStyle};
 use rayon::prelude::*;
 
-use sudoku::base::consts::Base3;
+use sudoku::base::consts::*;
 use sudoku::error::Result;
-use sudoku::generator::{Generator, GeneratorSettings, GeneratorTarget};
-use sudoku::solver::strategic::strategies::{
-    Backtracking, DynamicStrategy, HiddenSingles, NakedSingles,
-};
+use sudoku::generator::{Generator, GeneratorSettings, PruningSettings, PruningTarget};
+use sudoku::solver::strategic::strategies::{Backtracking, HiddenSingles, NakedSingles};
 
-type Base = Base3;
+type Base = Base4;
 
 fn main() -> Result<()> {
-    let mut hist = Histogram::<u64>::new_with_bounds(1, 100, 1)
-        .unwrap()
-        .into_sync();
+    let mut hist = Histogram::<u64>::new(3).unwrap().into_sync();
 
     let best_grid = Mutex::new(None);
 
-    const MAX: u64 = 100_000;
+    const MAX: u64 = 1_000;
     let pb = ProgressBar::new(MAX).with_style(ProgressStyle::default_bar().template(
         "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] ({pos}/{len}, ETA {eta}, {per_sec})",
     )?);
 
-    let generator = Generator::with_settings(GeneratorSettings {
-        target: GeneratorTarget::Minimal {
+    let generator = Generator::<Base>::with_settings(GeneratorSettings {
+        prune: Some(PruningSettings {
             set_all_direct_candidates: false,
-        },
-        // strategies: DynamicStrategy::default_solver_strategies(),
-        strategies: vec![
-            //
-            NakedSingles.into(),
-            HiddenSingles.into(),
-            // Backtracking.into(),
-        ],
-        seed: None,
+            target: PruningTarget::Minimal,
+            strategies: vec![
+                // NakedSingles.into(),
+                // HiddenSingles.into(),
+                Backtracking.into(),
+            ],
+            ..Default::default()
+        }),
+        ..Default::default()
     });
     (0..MAX)
         .into_par_iter()
         .progress_with(pb)
         .for_each_with(hist.recorder(), |recorder, _i| {
-            let grid = generator.generate::<Base>();
+            let grid = generator.generate().unwrap();
 
             let num_values = grid.all_value_positions().len();
 
@@ -105,6 +142,7 @@ fn main() -> Result<()> {
 
             match *res {
                 Some((prev_num_values, _)) if prev_num_values > num_values => {
+                    println!("New best grid with {num_values} values:\n{grid}");
                     *res = Some((num_values, grid))
                 }
                 None => *res = Some((num_values, grid)),

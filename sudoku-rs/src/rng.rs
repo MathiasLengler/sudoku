@@ -1,0 +1,15 @@
+use rand::prelude::*;
+
+pub type CrateRng = rand_xoshiro::Xoshiro256StarStar;
+
+pub fn new_crate_rng_with_seed(seed: Option<u64>) -> CrateRng {
+    if let Some(seed) = seed {
+        CrateRng::seed_from_u64(seed)
+    } else {
+        CrateRng::from_rng(thread_rng()).unwrap()
+    }
+}
+
+pub fn new_crate_rng_from_rng(rng: &mut CrateRng) -> CrateRng {
+    CrateRng::from_rng(rng).unwrap()
+}

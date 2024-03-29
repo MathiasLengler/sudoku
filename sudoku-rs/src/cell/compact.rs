@@ -2,9 +2,9 @@ use std::fmt::{self, Debug, Display, Formatter};
 
 use anyhow::bail;
 
-pub use candidates::{Candidates, CandidatesIter};
-pub(crate) use cell_state::CellState;
-pub use value::Value;
+pub use candidates::*;
+pub(crate) use cell_state::*;
+pub use value::*;
 
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
@@ -14,7 +14,26 @@ mod candidates;
 mod cell_state;
 mod value;
 
+// TODO: reduce boilerplate with enum dispatch:
+//  trait SudokuCell<Base: SudokuBase> {}
+
 /// Memory efficient representation of a single Sudoku cell.
+///
+/// # Cell filters wording
+///
+/// Used by:
+/// - `Cell::has_*`
+/// - `Grid::all_*_positions`
+///
+/// | Cell filter name  | Value | FixedValue | Candidates |
+/// |-------------------|-------|------------|------------|
+/// | unfixed_value     | x     |            |            |
+/// | fixed_value       |       | x          |            |
+/// | candidates        |       |            | x          |
+/// | value             | x     | x          |            |
+/// | non_unfixed_value |       | x          | x          |
+/// | unfixed           | x     |            | x          |
+/// | all               | x     | x          | x          |
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug, Default)]
 pub struct Cell<Base: SudokuBase>(CellState<Base>);
 

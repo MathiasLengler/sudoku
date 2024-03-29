@@ -18,7 +18,7 @@ export function HintSettingsButton() {
                 badge={<SettingsIcon fontSize="inherit" />}
             />
             <MyDialog open={isSolverConfigDialogOpen} onClose={() => setIsSolverConfigDialogOpen(false)}>
-                {onClose => <HintSettingsDialog onClose={onClose} />}
+                {(onClose) => <HintSettingsDialog onClose={onClose} />}
             </MyDialog>
         </>
     );

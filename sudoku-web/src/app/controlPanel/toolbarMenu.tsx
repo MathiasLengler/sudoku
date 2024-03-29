@@ -1,14 +1,13 @@
-import * as React from "react";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import { MyMenu } from "../components/MyMenu";
-import InfoIcon from "@mui/icons-material/Info";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { useDeleteSelectedCell, useRedo, useSetAllDirectCandidates } from "../actions/sudokuActions";
-import { inputStickyModeState } from "../state/input";
+import InfoIcon from "@mui/icons-material/Info";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
 import RedoIcon from "@mui/icons-material/Redo";
 import { useRecoilValue } from "recoil";
-import { sudokuCanRedoState } from "../state/sudoku";
+import { useDeleteSelectedCell, useRedo, useSetAllDirectCandidates } from "../actions/sudokuActions";
 import MyIconButton from "../components/MyIconButton";
+import { MyMenu } from "../components/MyMenu";
+import { inputStickyModeState } from "../state/input";
+import { sudokuCanRedoState } from "../state/sudoku";
 
 export const ToolbarMenu = () => {
     const deleteSelectedCell = useDeleteSelectedCell();

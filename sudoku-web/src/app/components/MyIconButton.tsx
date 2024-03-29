@@ -6,7 +6,7 @@ import Tooltip from "@mui/material/Tooltip";
 import type { IconButtonProps } from "@mui/material/IconButton/IconButton";
 import type { BadgeProps } from "@mui/material/Badge/Badge";
 
-interface MyIconButtonProps {
+type MyIconButtonProps = {
     label: string;
     onClick: (event: MouseEvent<HTMLButtonElement>) => Promise<void> | void;
     disabled?: boolean;
@@ -15,7 +15,7 @@ interface MyIconButtonProps {
     color?: IconButtonProps["color"];
     badge?: ReactNode;
     badgeColor?: BadgeProps["color"];
-}
+};
 
 function MyIconButton({
     label,
@@ -32,9 +32,9 @@ function MyIconButton({
         <Tooltip title={label}>
             <Box className="icon-button-container">
                 <IconButton
-                    onClick={ev => {
-                        (async () => await onClick(ev))().catch(err =>
-                            console.error("Error in IconButton onClick:", err)
+                    onClick={(ev) => {
+                        (async () => await onClick(ev))().catch((err) =>
+                            console.error("Error in IconButton onClick:", err),
                         );
                     }}
                     size={size}

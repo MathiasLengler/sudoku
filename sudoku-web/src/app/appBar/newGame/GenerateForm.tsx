@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import { SliderElement, SwitchElement, TextFieldElement, useForm } from "react-hook-form-mui";
@@ -30,24 +30,17 @@ import { Fieldset } from "../../components/Fieldset";
 import TabPanel from "@mui/lab/TabPanel";
 import type { NewGameTabValue } from "./NewGameDialog";
 
-// TODO: Spawn multiple workers for multi-threaded generation
-//  - Racing: fastest wins
-//  - Wait for all:
-//    - User selection
-//    - Auto select "best"
-//  - Keep generating until some criterion is met
-
-interface GenerateProgressProps {
+type GenerateProgressProps = {
     progress?: GeneratorProgress;
     cellCount: number;
-}
+};
 function GenerateProgress({ progress, cellCount }: GenerateProgressProps) {
     if (!progress) {
         return null;
     }
 
-    const { positionsCount, positionIndex, deletedCount } = progress;
-    const value = (positionIndex / positionsCount) * 100;
+    const { pruningPositionCount, pruningPositionIndex, deletedCount } = progress;
+    const value = (pruningPositionIndex / pruningPositionCount) * 100;
 
     return (
         <Box sx={{ display: "flex", alignItems: "center", pt: 2, flexDirection: "column" }}>
@@ -58,7 +51,7 @@ function GenerateProgress({ progress, cellCount }: GenerateProgressProps) {
                 <Typography
                     variant="body2"
                     color="text.secondary"
-                >{`Cell ${positionIndex}/${positionsCount} - deleted ${deletedCount}, remaining ${
+                >{`Cell ${pruningPositionIndex}/${pruningPositionCount} - deleted ${deletedCount}, remaining ${
                     cellCount - deletedCount
                 }`}</Typography>
             </Box>
@@ -66,9 +59,9 @@ function GenerateProgress({ progress, cellCount }: GenerateProgressProps) {
     );
 }
 
-interface GenerateFormProps {
+type GenerateFormProps = {
     onClose: () => void;
-}
+};
 export const GenerateForm = ({ onClose }: GenerateFormProps) => {
     const [generateFormValues, setGenerateFormValues] = useRecoilState(generateFormValuesState);
 
@@ -84,7 +77,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
         resolver: zodResolver(generateFormValuesSchema),
     });
 
-    const { base, minGivens, useSeed, seed } = watch();
+    const { base, minGivens, useSeed } = watch();
     const cellCount = baseToCellCount(base);
 
     useEffect(() => {
@@ -93,26 +86,14 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
         }
     }, [cellCount, minGivens, setValue]);
 
-    const [progress, setProgress] = useState<GeneratorProgress>();
+    const { generate, progress, cancelGenerate } = useGenerate();
 
-    const [generateAbortController, setGenerateAbortController] = useState(() => new AbortController());
-
-    const onProgress = useCallback(
-        (progress: GeneratorProgress) => {
-            if (generateAbortController.signal.aborted) return;
-            console.debug("onProgress", progress);
-            setProgress(progress);
-        },
-        [generateAbortController.signal]
-    );
-
-    const abortGenerate = useCallback(() => {
-        generateAbortController.abort();
-        setGenerateAbortController(new AbortController());
-        setProgress(undefined);
-    }, [generateAbortController]);
-
-    const generate = useGenerate(onProgress, generateAbortController.signal);
+    // Cancel generation on unmount/modal close
+    useEffect(() => {
+        return () => {
+            cancelGenerate();
+        };
+    }, [cancelGenerate]);
 
     return (
         <>
@@ -120,22 +101,23 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                 <TabPanel value={"generate-form" satisfies NewGameTabValue} sx={{ p: 0 }}>
                     <form
                         id="generate-form"
-                        onSubmit={handleSubmit(async formValues => {
+                        onSubmit={handleSubmit(async (formValues) => {
                             const { base, minGivens, setAllDirectCandidates, strategies, seed, useSeed } = formValues;
-
-                            const cellCount = baseToCellCount(base);
 
                             try {
                                 await generate({
                                     base,
-                                    target: {
-                                        fromFilled: {
-                                            distanceFromFilled: cellCount - minGivens,
-                                            setAllDirectCandidates,
+                                    prune: {
+                                        target: {
+                                            minClueCount: minGivens,
                                         },
+                                        strategies,
+                                        setAllDirectCandidates,
+                                        order: "random",
+                                        startFromNearMinimalGrid: false,
                                     },
+                                    solution: undefined,
                                     seed: useSeed && !_.isUndefined(seed) ? BigInt(seed) : undefined,
-                                    strategies,
                                 });
                             } catch (err) {
                                 if (!(err instanceof DOMException && err.name === "AbortError")) {
@@ -160,7 +142,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                                 marks={BASE_MARKS}
                                 valueLabelDisplay="auto"
                                 getAriaLabel={() => "Size"}
-                                getAriaValueText={(base, index) => baseToLabel(base)}
+                                getAriaValueText={(base) => baseToLabel(base)}
                             />
                             <SliderElement
                                 control={control}
@@ -175,7 +157,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                                 ]}
                                 valueLabelDisplay="auto"
                                 getAriaLabel={() => "Minimum number of givens"}
-                                getAriaValueText={minGivens => `${minGivens}`}
+                                getAriaValueText={(minGivens) => `${minGivens}`}
                             />
                             <SelectStrategies control={control} name="strategies" />
 
@@ -206,7 +188,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                                                     onClick={() => {
                                                         setValue(
                                                             "seed",
-                                                            Math.trunc(Math.random() * SEED_MAX).toFixed(0)
+                                                            Math.trunc(Math.random() * SEED_MAX).toFixed(0),
                                                         );
                                                     }}
                                                 />
@@ -226,7 +208,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                     type="button"
                     onClick={() => {
                         if (isSubmitting) {
-                            abortGenerate();
+                            cancelGenerate();
                         } else {
                             onClose();
                         }

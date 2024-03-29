@@ -1,10 +1,10 @@
 :root {
     /*React Variables*/
     --side-length: 0;
-    --side-length-fr: 0fr;
     --base: 0;
     --grid-size: 70vmin;
 
+    /* TODO: switch to oklch */
     /*Style Variables*/
     --hue: 213;
     --block-border-color: hsl(var(--hue), 0%, 39%);
@@ -18,10 +18,10 @@
     --cell-value-color-fixed: hsl(0, 0%, 13%);
     --cell-value-color-user: hsl(var(--hue), 85%, 34%);
     --cell-value-color-incorrect-value: hsl(0, 100%, 50%);
-    --candiate-color: hsl(var(--hue), 3%, 39%);
-    --candiate-color-guide: hsl(var(--hue), 25%, 83%);
-    --candiate-bg-color-deduction-reason: hsl(120, 100%, 50%);
-    --candiate-bg-color-deduction-delete: hsl(60, 100%, 50%);
+    --candidate-color: hsl(var(--hue), 3%, 39%);
+    --candidate-color-guide: hsl(var(--hue), 25%, 83%);
+    --candidate-bg-color-deduction-reason: hsl(120, 100%, 50%);
+    --candidate-bg-color-deduction-delete: hsl(60, 100%, 50%);
     --bg-color: hsl(0, 0%, 100%);
 
     --sudoku-content-direction: column;
@@ -31,19 +31,16 @@
 @media (prefers-color-scheme: dark) {
     :root {
         --block-border-color: hsl(0, 0%, 62%);
-        --block-border-size: 2px;
         --cell-border-color: hsl(0, 0%, 62%);
-        --cell-border-size: 1px;
-        --cell-padding: 0.2rem;
         --cell-bg-color-selected: hsl(var(--hue), 89%, 14%);
         --cell-bg-color-guide: hsl(var(--hue), 20%, 22%);
         --cell-bg-color-fixed-conflict: hsl(349, 94%, 13%);
         --cell-value-color-fixed: hsl(0, 0%, 100%);
         --cell-value-color-user: hsl(var(--hue), 85%, 66%);
         --cell-value-color-incorrect-value: hsl(0, 100%, 50%);
-        --candiate-color: hsl(0, 0%, 100%);
-        --candiate-bg-color-deduction-reason: hsl(120, 100%, 25%);
-        --candiate-bg-color-deduction-delete: hsl(60, 100%, 25%);
+        --candidate-color: hsl(0, 0%, 100%);
+        --candidate-bg-color-deduction-reason: hsl(120, 100%, 25%);
+        --candidate-bg-color-deduction-delete: hsl(60, 100%, 25%);
         --bg-color: hsl(0, 0%, 7%);
     }
 }
@@ -75,7 +72,7 @@ body,
     container: app-content / size;
 }
 
-.sudoku {
+.sudoku-game {
     display: flex;
     height: 100%;
     flex-direction: var(--sudoku-content-direction);
@@ -92,7 +89,7 @@ body,
 }
 
 @container app-content (min-aspect-ratio: 1/1) {
-    .sudoku {
+    .sudoku-game {
         --sudoku-content-direction: row;
         --sudoku-toolbar-direction: column;
     }
@@ -111,6 +108,15 @@ body,
     flex: 4;
 }
 
+/* FIXME: evaluate subgrid (?)
+it would be convenient to re-use the single sudoku grid for the world view.
+But the world view has subtly different requirements:
+- arbitrary dimensions
+- visualize overlaps.
+  This creates "slices" of blocks, which should have gaps of --block-border-size
+  Our current structure does not support this, since blocks are always square.
+Shoot for the moon: transition between single and world view.
+*/
 .grid {
     /*Grid Variables*/
     --grid-gutter: var(--block-border-size);
@@ -135,7 +141,7 @@ body,
 
     /*Square blocks*/
     aspect-ratio: 1;
-    grid-gap: var(--grid-gutter);
+    gap: var(--grid-gutter);
 
     touch-action: none;
 }
@@ -161,19 +167,15 @@ body,
     background-color: var(--cell-border-color);
 
     /*Square cells*/
-    grid-gap: var(--block-gutter);
+    gap: var(--block-gutter);
+}
+
+.block .cell {
+    --cell-size: calc(var(--block-row-height) - var(--cell-padding));
 }
 
 .cell {
-    --cell-column: 0;
-    --cell-row: 0;
-
     aspect-ratio: 1;
-
-    --cell-size: calc(var(--block-row-height) - var(--cell-padding));
-
-    grid-column: calc(1 + var(--cell-column));
-    grid-row: calc(1 + var(--cell-row));
 
     min-width: 0;
     min-height: 0;
@@ -211,13 +213,12 @@ body,
 }
 
 .cellValue {
-    display: grid;
-    place-items: center;
+    text-align: center;
 }
 
 .cellValueText {
     line-height: 1;
-    font-size: calc(var(--cell-size));
+    font-size: var(--cell-size);
 }
 
 .candidates {
@@ -233,7 +234,7 @@ body,
     grid-column: calc(1 + var(--candidate-column));
     grid-row: calc(1 + var(--candidate-row));
 
-    color: var(--candiate-color);
+    color: var(--candidate-color);
     font-size: calc(var(--cell-size) / (var(--base) + 0.1));
     line-height: 1;
     text-align: center;
@@ -247,12 +248,12 @@ body,
 }
 
 .candidate--deduction-reason {
-    background-color: var(--candiate-bg-color-deduction-reason);
+    background-color: var(--candidate-bg-color-deduction-reason);
     border-radius: 50%;
 }
 
 .candidate--deduction-delete {
-    background-color: var(--candiate-bg-color-deduction-delete);
+    background-color: var(--candidate-bg-color-deduction-delete);
     border-radius: 50%;
 }
 
@@ -290,7 +291,7 @@ body,
     place-items: stretch;
     grid-template-rows: var(--selector-grid-template-rows);
     grid-template-columns: var(--selector-grid-template-columns);
-    grid-gap: var(--selector-gutter);
+    gap: var(--selector-gutter);
 
     border: var(--block-border-size) solid var(--block-border-color);
 

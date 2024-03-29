@@ -6,9 +6,9 @@ import TabContext from "@mui/lab/TabContext";
 import TabList from "@mui/lab/TabList";
 import { ImportForm } from "./ImportForm";
 
-interface NewGameTabsProps {
+type NewGameTabsProps = {
     onClose: () => void;
-}
+};
 
 export type NewGameTabValue = "generate-form" | "import-form";
 export const NewGameDialog = ({ onClose }: NewGameTabsProps) => {

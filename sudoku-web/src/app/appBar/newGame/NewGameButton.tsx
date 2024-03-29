@@ -17,7 +17,7 @@ export function NewGameButton() {
                 onClick={() => setIsNewGameDialogOpen(true)}
             />
             <MyDialog open={isNewGameDialogOpen} onClose={() => setIsNewGameDialogOpen(false)}>
-                {onClose => <NewGameDialog onClose={onClose} />}
+                {(onClose) => <NewGameDialog onClose={onClose} />}
             </MyDialog>
         </>
     );

@@ -1,22 +1,21 @@
-import React from "react";
-import DialogActions from "@mui/material/DialogActions";
-import Button from "@mui/material/Button";
+import { zodResolver } from "@hookform/resolvers/zod";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import SaveAltIcon from "@mui/icons-material/SaveAlt";
+import { LoadingButton } from "@mui/lab";
+import TabPanel from "@mui/lab/TabPanel";
 import { DialogContent, Stack, Typography } from "@mui/material";
 import Accordion from "@mui/material/Accordion";
-import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import Button from "@mui/material/Button";
+import DialogActions from "@mui/material/DialogActions";
+import { SwitchElement, TextFieldElement, useForm } from "react-hook-form-mui";
+import { z } from "zod";
 import { useImportSudokuString } from "../../actions/sudokuActions";
 import { Code } from "../../components/Code";
-import { ResetFormButton } from "../../components/ResetFormButton";
-import { LoadingButton } from "@mui/lab";
-import SaveAltIcon from "@mui/icons-material/SaveAlt";
-import { SwitchElement, TextFieldElement, useForm } from "react-hook-form-mui";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Fieldset } from "../../components/Fieldset";
+import { ResetFormButton } from "../../components/ResetFormButton";
 import type { NewGameTabValue } from "./NewGameDialog";
-import TabPanel from "@mui/lab/TabPanel";
 
 function SupportedFormats() {
     return (
@@ -70,9 +69,9 @@ export const importFormValuesSchema = z.object({
     setAllDirectCandidates: z.boolean(),
 });
 
-interface ImportFormProps {
+type ImportFormProps = {
     onClose: () => void;
-}
+};
 
 export const ImportForm = ({ onClose }: ImportFormProps) => {
     const importSudokuString = useImportSudokuString();
@@ -80,9 +79,7 @@ export const ImportForm = ({ onClose }: ImportFormProps) => {
     const {
         control,
         handleSubmit,
-        watch,
         formState: { isSubmitting },
-        setValue,
         reset,
         setError,
     } = useForm<ImportFormValues>({

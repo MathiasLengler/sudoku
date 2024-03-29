@@ -1,8 +1,12 @@
-import { atom } from "recoil";
-import type { DynamicStrategy, TransportDeductions } from "../../types";
+import { Snapshot, atom } from "recoil";
+import type { StrategyEnum, TransportDeductions } from "../../types";
+
+export async function getHint(snapshot: Snapshot) {
+    return await snapshot.getPromise(hintState);
+}
 
 export type Hint = {
-    strategy: DynamicStrategy;
+    strategy: StrategyEnum;
 } & TransportDeductions;
 
 export type OptionalHint = Hint | undefined;

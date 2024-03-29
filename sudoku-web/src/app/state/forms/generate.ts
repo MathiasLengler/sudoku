@@ -3,12 +3,12 @@ import range from "lodash/range";
 import { baseToSideLength } from "../../utils";
 import { atom } from "recoil";
 import { localStorageEffect } from "../localStorageEffect";
-import { ZodBigInt } from "zod/lib/types";
-import { dynamicStrategySchema } from "../../../constants";
+import type { ZodBigInt } from "zod";
+import { strategyEnumSchema } from "../../../constants";
 
 export const BASE_MIN = 2;
 export const BASE_MAX = 5;
-export const BASE_MARKS = range(BASE_MIN, BASE_MAX + 1).map(base => {
+export const BASE_MARKS = range(BASE_MIN, BASE_MAX + 1).map((base) => {
     return {
         value: base,
         label: baseToLabel(base),
@@ -21,16 +21,17 @@ export function baseToLabel(base: number): string {
     return `${sideLength}x${sideLength}`;
 }
 export const SEED_MAX = Number.MAX_SAFE_INTEGER;
+// TODO: use zod pipe to simplify this
 const parseBigintSchema = <T extends ZodBigInt>(bigIntSchema: T) =>
-    z.preprocess(value => {
+    z.preprocess((value) => {
         const safeParseResult = z
             .bigint()
             .or(z.number())
             .or(z.string())
-            .transform(value => {
+            .transform((value) => {
                 try {
                     return BigInt(value);
-                } catch (err) {
+                } catch (_err) {
                     return value;
                 }
             })
@@ -41,7 +42,7 @@ export type GenerateFormValues = z.infer<typeof generateFormValuesSchema>;
 export const generateFormValuesSchema = z.object({
     base: z.number().int().min(BASE_MIN).max(BASE_MAX),
     minGivens: z.number().int().min(0),
-    strategies: dynamicStrategySchema.array().min(1),
+    strategies: strategyEnumSchema.array().min(1),
     setAllDirectCandidates: z.boolean(),
     useSeed: z.boolean(),
     seed: z

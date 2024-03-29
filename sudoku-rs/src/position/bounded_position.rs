@@ -81,6 +81,11 @@ impl<Base: SudokuBase> Position<Base> {
         }
         .into()
     }
+
+    // TODO: other corners
+    pub fn top_left() -> Self {
+        Position::default()
+    }
 }
 
 impl<Base: SudokuBase> From<(Coordinate<Base>, Coordinate<Base>)> for Position<Base> {
@@ -262,6 +267,9 @@ impl<Base: SudokuBase> Position<Base> {
             })
     }
 
+    /// Iterator over all `Position`s of a block.
+    ///
+    /// The block positions are yielded in column-major order.
     pub fn block_column_major(block: Coordinate<Base>) -> impl Iterator<Item = Self> {
         let base_usize = usize::from(Base::BASE);
 
@@ -286,8 +294,48 @@ impl<Base: SudokuBase> Position<Base> {
         Coordinate::all().map(Self::block)
     }
 
+    /// Iterator over all positions which are in the top left of a block.
+    ///
+    /// The blocks are visited in a row-major order.
     pub fn all_blocks_top_left() -> impl Iterator<Item = Self> {
         Coordinate::all().map(Base::block_to_top_left_pos)
+    }
+
+    // TODO: optimize
+    //  collect into `[Position: SIDE_LENGTH]`?
+    pub fn all_groups() -> impl Iterator<Item = impl Iterator<Item = Self> + Clone> {
+        Self::all_rows()
+            .map(|rows| rows.collect::<Vec<_>>().into_iter())
+            .chain(Self::all_columns().map(|columns| columns.collect::<Vec<_>>().into_iter()))
+            .chain(Self::all_blocks().map(|blocks| blocks.collect::<Vec<_>>().into_iter()))
+    }
+}
+
+// TODO: data structures for
+//  - Set of Positions
+//   - Current representation: `Vec<Position<Base>>`
+//    - uniqueness of Positions is not ensured
+//    - Redundant order information
+//   - Options:
+//    - wrapper around std HashSet/BTreeSet
+//    - re-use Base::CandidatesGroup as bitset? correct bit count, but split into SIDE_LENGTH candidates
+//  - Ordered Set of Positions
+//   - Current representation: `Vec<Position<Base>>`
+//    - uniqueness of Positions is not ensured
+//   - Options
+//    - No standard data structure?
+
+/// Set of positions
+impl<Base: SudokuBase> Position<Base> {
+    /// All positions *not* included in `positions`.
+    pub fn complement(mut positions: Vec<Self>) -> impl Iterator<Item = Self> {
+        let sorted_positions = {
+            positions.sort_unstable();
+            positions
+        };
+        Self::all()
+            // Remove positions contained in sorted_positions
+            .filter(move |pos| sorted_positions.binary_search(pos).is_err())
     }
 }
 

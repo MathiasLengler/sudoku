@@ -14,7 +14,7 @@ use crate::sudoku::Sudoku;
 #[serde(rename_all = "camelCase")]
 pub struct TransportSudoku {
     cells: Vec<TransportCell>,
-    blocks_indices: Vec<Vec<u16>>,
+    blocks_indexes: Vec<Vec<u16>>,
     base: u8,
     side_length: u8,
     cell_count: u16,
@@ -46,12 +46,12 @@ impl<Base: SudokuBase> From<&Sudoku<Base>> for TransportSudoku {
                     }
                 })
                 .collect(),
-            blocks_indices: Grid::<Base>::all_block_positions()
+            blocks_indexes: Grid::<Base>::all_block_positions()
                 .map(|block| block.map(|pos| pos.cell_index()).collect())
                 .collect(),
-            base: Grid::<Base>::base(),
-            side_length: Grid::<Base>::side_length(),
-            cell_count: Grid::<Base>::cell_count(),
+            base: Base::BASE,
+            side_length: Base::SIDE_LENGTH,
+            cell_count: Base::CELL_COUNT,
             is_solved: grid.is_solved(),
             can_undo: sudoku.history.can_go_back(),
             can_redo: sudoku.history.can_go_forward(),

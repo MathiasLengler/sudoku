@@ -21,7 +21,7 @@ impl Strategy for GroupReduction {
         "GroupReduction"
     }
     fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
-        Ok(Grid::<Base>::all_group_positions()
+        Grid::<Base>::all_group_positions()
             .map(|group| {
                 let (positions, candidates_group): (Vec<_>, Vec<_>) = group
                     .filter_map(|pos| {
@@ -52,10 +52,9 @@ impl Strategy for GroupReduction {
                     Ok(Some(deduction))
                 }
             })
-            .collect::<Result<Vec<_>>>()?
-            .into_iter()
-            .flatten()
-            .collect())
+            // TODO: copy `.filter_map(Result::transpose)` trick to other strategies
+            .filter_map(Result::transpose)
+            .collect()
     }
 }
 
@@ -85,7 +84,7 @@ impl GroupReduction {
         reduced_group: &mut [Candidates<Base>],
     ) {
         if let Some((candidate, rest)) = group.split_first() {
-            for value in candidate.into_iter() {
+            for value in candidate {
                 if assigned_values.has(value) {
                     continue;
                 }
@@ -105,8 +104,6 @@ impl GroupReduction {
 
 #[cfg(test)]
 mod tests {
-    use std::convert::TryInto;
-
     use crate::base::consts::*;
     use crate::solver::strategic::strategies::test_util::assert_deductions_with_grid;
 

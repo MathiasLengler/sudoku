@@ -20,7 +20,7 @@ function cellBackgroundClass(isSelected: boolean, isGuide: boolean) {
     }
 }
 
-function cellColorClass(fixed: boolean, incorrectValue: boolean) {
+export function cellColorClass(fixed: boolean, incorrectValue: boolean) {
     if (fixed) {
         return "cell--fixed";
     }
@@ -31,11 +31,11 @@ function cellColorClass(fixed: boolean, incorrectValue: boolean) {
     }
 }
 
-interface CellValueProps {
+type CellValueProps = {
     value: DynamicCellValue["value"];
-}
+};
 
-const CellValue: React.FunctionComponent<CellValueProps> = props => {
+export const CellValue: React.FunctionComponent<CellValueProps> = (props) => {
     const { value } = props;
     return (
         <div className="cellValue">
@@ -44,19 +44,19 @@ const CellValue: React.FunctionComponent<CellValueProps> = props => {
     );
 };
 
-interface CandidatesProps {
+type CandidatesProps = {
     candidates: DynamicCellCandidates["candidates"];
     gridPosition: DynamicPosition;
-}
+};
 
-const Candidates = ({ candidates, gridPosition }: CandidatesProps) => {
+export const Candidates = ({ candidates, gridPosition }: CandidatesProps) => {
     const base = useRecoilValue(sudokuBaseState);
     const input = useRecoilValue(inputState);
     const hint = useRecoilValue(hintState);
 
     return (
         <div className="candidates">
-            {candidates.map(candidate => {
+            {candidates.map((candidate) => {
                 // Candidates are 1 based, grid calculations are 0 based.
                 const { column, row } = indexToPosition({ blockIndex: candidate - 1, base });
 
@@ -68,18 +68,18 @@ const Candidates = ({ candidates, gridPosition }: CandidatesProps) => {
 
                 // TODO: optimize
                 //  prototype different deductions data structures via selector
-                const isDeductionReason = hint?.deductions.some(deduction =>
+                const isDeductionReason = hint?.deductions.some((deduction) =>
                     deduction.reasons.some(
-                        reason => isEqual(reason.position, gridPosition) && reason.candidates.includes(candidate)
-                    )
+                        (reason) => isEqual(reason.position, gridPosition) && reason.candidates.includes(candidate),
+                    ),
                 );
-                const isDeductionDelete = hint?.deductions.some(deduction =>
+                const isDeductionDelete = hint?.deductions.some((deduction) =>
                     deduction.actions.some(
-                        action =>
+                        (action) =>
                             isEqual(action.position, gridPosition) &&
                             "deleteCandidates" in action &&
-                            action.deleteCandidates.includes(candidate)
-                    )
+                            action.deleteCandidates.includes(candidate),
+                    ),
                 );
 
                 return (
@@ -100,31 +100,21 @@ const Candidates = ({ candidates, gridPosition }: CandidatesProps) => {
     );
 };
 
-interface CellProps {
-    blockCellIndex: number;
+type CellProps = {
     cell: TransportCell;
     isSelected: boolean;
     isGuide: boolean;
-}
+};
 
 export const Cell = (props: CellProps) => {
-    const { blockCellIndex, cell, isSelected, isGuide } = props;
+    const { cell, isSelected, isGuide } = props;
 
     const { position: gridPosition } = cell;
-
-    const base = useRecoilValue(sudokuBaseState);
-
-    const cellPositionInBlock = indexToPosition({ blockIndex: blockCellIndex, base: base });
-
-    const style: CSS.Properties = {
-        "--cell-column": cellPositionInBlock.column,
-        "--cell-row": cellPositionInBlock.row,
-    };
 
     const cellClassNames = classnames(
         "cell",
         cellBackgroundClass(isSelected, isGuide),
-        cellColorClass(cell.kind === "value" && cell.fixed, cell.incorrectValue)
+        cellColorClass(cell.kind === "value" && cell.fixed, cell.incorrectValue),
     );
 
     const handlePosition = useHandlePosition();
@@ -132,7 +122,6 @@ export const Cell = (props: CellProps) => {
     return (
         <div
             className={cellClassNames}
-            style={style}
             onPointerDown={({ buttons, isPrimary, pointerId, pointerType, target }) => {
                 if (
                     // Left Mouse, Touch Contact, Pen contact

@@ -70,10 +70,10 @@ impl<Base: SudokuBase> Deductions<Base> {
         let mut merged_deduction = Deduction::default();
 
         for deduction in &self.deductions {
-            for (pos, action) in deduction.actions.iter() {
+            for (pos, action) in &deduction.actions {
                 merged_deduction.actions.insert(pos, *action)?;
             }
-            for (pos, reasons) in deduction.reasons.iter() {
+            for (pos, reasons) in &deduction.reasons {
                 merged_deduction.reasons.insert(pos, *reasons)?;
             }
         }

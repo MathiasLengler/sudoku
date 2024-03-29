@@ -1,11 +1,11 @@
-import type { DynamicGridFormat, DynamicStrategy } from "./types";
+import type { GridFormatEnum, StrategyEnum } from "./types";
 import { z } from "zod";
 import type { IsEqual } from "type-fest";
 import { assert } from "./typeUtils";
 
 export const WORKER_BOOT_UP_MESSAGE = "Worker loaded";
 
-export const dynamicStrategySchema = z.enum([
+export const strategyEnumSchema = z.enum([
     "NakedSingles",
     "HiddenSingles",
     "NakedPairs",
@@ -16,8 +16,8 @@ export const dynamicStrategySchema = z.enum([
     "Backtracking",
 ]);
 
-assert<IsEqual<z.infer<typeof dynamicStrategySchema>, DynamicStrategy>>();
-export const ALL_STRATEGIES = dynamicStrategySchema.options;
+assert<IsEqual<z.infer<typeof strategyEnumSchema>, StrategyEnum>>();
+export const ALL_STRATEGIES = strategyEnumSchema.options;
 
 export const gridFormatSchema = z.enum([
     "CandidatesGridPlain",
@@ -28,6 +28,6 @@ export const gridFormatSchema = z.enum([
     "BinaryCandidatesLine",
     "BinaryFixedCandidatesLine",
 ]);
-assert<IsEqual<z.infer<typeof gridFormatSchema>, DynamicGridFormat>>();
+assert<IsEqual<z.infer<typeof gridFormatSchema>, GridFormatEnum>>();
 
 export const ALL_GRID_FORMATS = gridFormatSchema.options;

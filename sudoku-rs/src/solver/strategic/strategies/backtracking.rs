@@ -1,7 +1,7 @@
 use crate::base::SudokuBase;
 use crate::error::Result;
 use crate::grid::Grid;
-use crate::solver::backtracking_bitset::Solver;
+use crate::solver::backtracking::Solver;
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions};
 
 use super::Strategy;

@@ -1,6 +1,5 @@
 use std::iter;
 
-use crate::base::consts::ALL_SIDE_LENGTHS;
 use anyhow::{bail, ensure, Context};
 use itertools::Itertools;
 use num::Integer;
@@ -8,6 +7,7 @@ use owo_colors::Style as OwoStyle;
 use tabled::builder::Builder;
 use tabled::settings::{Padding, Style};
 
+use crate::base::consts::ALL_SIDE_LENGTHS;
 use crate::base::SudokuBase;
 use crate::cell::dynamic::{char_value_to_u8, DynamicCandidates, DynamicCell};
 use crate::cell::{CellState, Value};
@@ -35,7 +35,7 @@ impl GridFormat for CandidatesGridANSIStyled {
     }
 
     fn parse(self, input: &str) -> Result<Vec<DynamicCell>> {
-        let stripped_input_bytes = strip_ansi_escapes::strip(input.as_bytes())?;
+        let stripped_input_bytes = strip_ansi_escapes::strip(input.as_bytes());
         let stripped_input = String::from_utf8(stripped_input_bytes)?;
 
         CandidatesGridPlain.parse(&stripped_input)
@@ -611,7 +611,7 @@ mod tests {
 
         #[test]
         fn test_render_base_3_compact() {
-            let grid = samples::base_3().pop().unwrap();
+            let grid = samples::base_3().into_iter().next().unwrap();
             assert_eq!(
                 CandidatesGridPlain.render(&grid),
                 "╔═══════════╦═══════════╦═══════════╗
@@ -637,7 +637,7 @@ mod tests {
         }
         #[test]
         fn test_render_base_3_sparse() {
-            let mut grid = samples::base_3().pop().unwrap();
+            let mut grid = samples::base_3().into_iter().next().unwrap();
             grid.set_all_direct_candidates();
             assert_eq!(
                 CandidatesGridPlain.render(&grid),

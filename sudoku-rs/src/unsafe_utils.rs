@@ -34,7 +34,7 @@ mod tests {
 
     #[cfg(debug_assertions)]
     #[test]
-    #[should_panic]
+    #[should_panic(expected = "index out of bounds")]
     fn test_get_unchecked_panic() {
         let arr = [1, 2, 3];
 
@@ -46,7 +46,7 @@ mod tests {
 
     #[cfg(debug_assertions)]
     #[test]
-    #[should_panic]
+    #[should_panic(expected = "index out of bounds")]
     fn test_get_unchecked_mut_panic() {
         let mut arr = [1, 2, 3];
 
