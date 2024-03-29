@@ -22,7 +22,7 @@ jobs:
         with:
           toolchain: nightly-2024-03-02
           targets: wasm32-unknown-unknown
-          components: clippy
+          components: clippy, rust-src
 
       # https://github.com/actions/cache/blob/main/examples.md#rust---cargo
       - uses: actions/cache@v4
