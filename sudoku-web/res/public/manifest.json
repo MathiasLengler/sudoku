@@ -7,7 +7,7 @@
     "start_url": "/",
     "orientation": "any",
     "description": "Sudoku: design your own difficulty",
-    "theme_color": "#042143",
+    "theme_color": "#121212",
     "background_color": "#121212",
     "launch_handler": {
         "client_mode": "auto"
