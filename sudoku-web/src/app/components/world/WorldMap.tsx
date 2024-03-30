@@ -1,6 +1,3 @@
-// FIXME: remove when feature complete
-/* eslint-disable */
-
 import { Slider } from "@mui/material";
 import Box from "@mui/material/Box";
 import type * as CSS from "csstype";
@@ -29,11 +26,10 @@ type AxisBorders<T> = {
     end?: T;
 };
 
-// FIXME: start and end of consecutive indexes don't agree
 // TODO: test
 function getAxisBorders(
     // current cell
-    axisIndex: number,
+    worldAxisIndex: number,
     // world
     cellAxisCount: number,
     overlap: number,
@@ -47,34 +43,32 @@ function getAxisBorders(
     const blockStride = base;
     const blockStrideEndIndex = blockStride - 1;
 
-    const tileAxis = Math.floor(axisIndex / gridStride);
-    const firstGridAxis = axisIndex % gridStride;
-    const gridAxes = _.filter(
-        [
-            //
-            axisIndex < cellAxisCount - overlap && firstGridAxis,
-            axisIndex >= overlap && firstGridAxis < overlap && firstGridAxis + gridStride,
-        ],
-        // eslint-disable-next-line @typescript-eslint/unbound-method
-        _.isNumber,
-    );
+    const hasTileBefore = worldAxisIndex >= gridStride;
+    const hasTileAfter = worldAxisIndex < cellAxisCount - gridStride;
+
     const axisBorders: AxisBorders<BorderMarker> = {};
 
-    for (const gridAxis of gridAxes) {
-        const blockAxis = gridAxis % blockStride;
-        if (gridAxis === 0) {
-            axisBorders.start = "grid";
-        } else if (gridAxis === gridSideLengthEndIndex) {
-            axisBorders.end = "grid";
-        }
-        if (blockAxis === 0) {
-            axisBorders.start ??= "block";
-        } else if (blockAxis === blockStrideEndIndex) {
-            axisBorders.end ??= "block";
-        }
+    const gridAxis = worldAxisIndex % gridStride;
+    const blockIndex = Math.floor(gridAxis / blockStride);
+    const blockAxis = gridAxis % blockStride;
+
+    if ((gridAxis === 0 && hasTileAfter) || (gridAxis === overlap && hasTileBefore)) {
+        axisBorders.start = "grid";
+    }
+    if (
+        gridAxis === gridSideLengthEndIndex ||
+        (gridAxis === gridStrideEndIndex && hasTileAfter) ||
+        (gridAxis === overlap - 1 && hasTileBefore)
+    ) {
+        axisBorders.end = "grid";
+    }
+    if (blockAxis === 0 && blockIndex > 0) {
+        axisBorders.start ??= "block";
+    } else if (blockAxis === blockStrideEndIndex) {
+        axisBorders.end ??= "block";
     }
 
-    return { axisBorders, debug: gridAxes };
+    return { axisBorders, debug: "" };
 }
 
 function getCellBorders(
