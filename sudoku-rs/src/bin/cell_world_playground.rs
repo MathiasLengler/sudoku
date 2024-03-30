@@ -5,8 +5,8 @@ use sudoku::world::{CellWorld, TileDim};
 
 fn main() -> Result<()> {
     let tile_dim = TileDim {
-        row_count: 3,
-        column_count: 3,
+        row_count: 3.try_into().unwrap(),
+        column_count: 3.try_into().unwrap(),
     };
     let seed = 1;
     let overlap = 1;
@@ -18,11 +18,11 @@ fn main() -> Result<()> {
     println!("solved world:\n{world}");
     assert!(world.is_solved());
 
-    world.prune(Some(seed));
+    world.prune(Some(seed))?;
     println!("pruned world:\n{world}");
 
     for tile_index in world.all_tile_indexes() {
-        let grid = world.to_grid_at(tile_index);
+        let grid = world.to_grid_at(tile_index)?;
         println!("{tile_index:?}:\n{grid}\n",);
     }
 

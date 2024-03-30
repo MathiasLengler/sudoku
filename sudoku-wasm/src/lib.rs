@@ -75,7 +75,7 @@ impl WasmCellWorld {
         let mut world = CellWorld::<Base3>::new(
             TileDim {
                 row_count: 3.try_into().unwrap(),
-                column_count: 3.try_into().unwrap(),
+                column_count: 4.try_into().unwrap(),
             },
             1,
         );
@@ -91,8 +91,8 @@ impl WasmCellWorld {
     pub fn generate_solved(&mut self, seed: Option<u64>) -> Result<IWorldGenerationResult> {
         export_world_generation_result(self.world.generate_solved(seed)?)
     }
-    pub fn prune(&mut self, seed: Option<u64>) {
-        self.world.prune(seed);
+    pub fn prune(&mut self, seed: Option<u64>) -> Result<()> {
+        Ok(self.world.prune(seed)?)
     }
 
     // DynamicGrid interop

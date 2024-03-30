@@ -168,8 +168,7 @@ impl TileDim {
     pub(in crate::world) fn all_validated_indexes(
         self,
     ) -> impl Iterator<Item = ValidatedTileIndex> {
-        self.all_indexes()
-            .map(|index| ValidatedTileIndex::new_unchecked(index))
+        self.all_indexes().map(ValidatedTileIndex::new_unchecked)
     }
 
     pub fn tile_count(self) -> usize {

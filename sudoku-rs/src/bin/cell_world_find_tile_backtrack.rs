@@ -8,8 +8,8 @@ use sudoku::world::{CellWorld, TileDim};
 
 fn main() -> Result<()> {
     let tile_dim = TileDim {
-        row_count: 100,
-        column_count: 100,
+        row_count: 100.try_into().unwrap(),
+        column_count: 100.try_into().unwrap(),
     };
 
     let overlap = 3;
@@ -19,7 +19,7 @@ fn main() -> Result<()> {
         .progress()
         .filter_map(|seed| {
             let mut world = CellWorld::<Base3>::new(tile_dim, overlap);
-            let world_generation_result = world.generate_solved(Some(seed.into()));
+            let world_generation_result = world.generate_solved(Some(seed.into())).unwrap();
             if world_generation_result.backtrack_count > 0 {
                 dbg!(&world_generation_result);
                 Some(world)

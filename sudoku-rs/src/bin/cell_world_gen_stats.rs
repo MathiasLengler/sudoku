@@ -22,8 +22,8 @@ fn main() -> Result<()> {
             ]
             .into_iter()
             .map(|(row_count, column_count)| TileDim {
-                row_count,
-                column_count
+                row_count: row_count.try_into().unwrap(),
+                column_count: column_count.try_into().unwrap()
             })
         ) {
             let tile_count = u64::try_from(tile_dim.tile_count()).unwrap();
@@ -40,13 +40,12 @@ fn main() -> Result<()> {
                 })
                 .collect();
 
-            let total_success_count: u32 = world_generation_results
-                .iter()
-                .flat_map(|res| res.success.then_some(1))
-                .sum();
+            let total_success_count: u32 =
+                world_generation_results.iter().flatten().map(|_| 1).sum();
 
             let backtrack_counts = world_generation_results
                 .iter()
+                .flatten()
                 .map(|res| res.backtrack_count);
             let total_backtrack_count: u32 = backtrack_counts.clone().sum();
             let min_backtrack_count: u32 = backtrack_counts.clone().min().unwrap();

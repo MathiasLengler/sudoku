@@ -452,9 +452,9 @@ mod tests {
         let overlap = 1;
 
         let mut world = CellWorld::<Base2>::new(tile_dim, overlap);
-        world.generate_solved(Some(seed));
+        world.generate_solved(Some(seed)).unwrap();
         assert!(world.is_solved());
-        world.prune(Some(seed));
+        world.prune(Some(seed)).unwrap();
         assert!(world.is_directly_consistent());
     }
 
