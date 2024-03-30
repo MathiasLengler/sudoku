@@ -1,6 +1,6 @@
 import { z } from "zod";
 import range from "lodash/range";
-import { baseToSideLength } from "../../utils";
+import { baseToSideLength } from "../../utils/sudoku";
 import { atom } from "recoil";
 import { localStorageEffect } from "../localStorageEffect";
 import type { ZodBigInt } from "zod";

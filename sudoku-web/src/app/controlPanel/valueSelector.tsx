@@ -1,5 +1,5 @@
 import type * as React from "react";
-import { valueToString } from "../utils";
+import { valueToString } from "../utils/sudoku";
 import ButtonBase from "@mui/material/ButtonBase";
 import classnames from "classnames";
 import { useHandleValue } from "../actions/sudokuActions";

@@ -1,7 +1,7 @@
 import type * as React from "react";
 import type * as CSS from "csstype";
 import classnames from "classnames";
-import { indexToPosition, valueToString } from "../utils";
+import { indexToPosition, valueToString } from "../utils/sudoku";
 import type { DynamicCellCandidates, DynamicCellValue, DynamicPosition, TransportCell } from "../../types";
 import { inputState } from "../state/input";
 import { sudokuBaseState } from "../state/sudoku";

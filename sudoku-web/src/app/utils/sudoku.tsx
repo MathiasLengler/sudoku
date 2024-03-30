@@ -1,4 +1,4 @@
-import type { DynamicCellValue, DynamicPosition, TransportSudoku } from "../types";
+import type { DynamicCellValue, DynamicPosition, TransportSudoku } from "../../types";
 
 export function indexToPosition({
     blockIndex,

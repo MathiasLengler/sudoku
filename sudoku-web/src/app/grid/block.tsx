@@ -2,7 +2,7 @@ import type { DynamicPosition, TransportCell } from "../../types";
 import { selectorFamily, useRecoilValue } from "recoil";
 import { sudokuBaseState } from "../state/sudoku";
 import { inputState } from "../state/input";
-import { indexToPosition } from "../utils";
+import { indexToPosition } from "../utils/sudoku";
 import type * as CSS from "csstype";
 import isEqual from "lodash/isEqual";
 import { Cell } from "./cell";

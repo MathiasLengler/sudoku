@@ -1,6 +1,6 @@
 import type { DynamicPosition, TransportCell } from "../../types";
 import { selector, selectorFamily } from "recoil";
-import { cellPositionToBlockPosition, positionToIndex } from "../utils";
+import { cellPositionToBlockPosition, positionToIndex } from "../utils/sudoku";
 import { sudokuBaseState, sudokuCellsState, sudokuSideLengthState } from "./sudoku";
 import { selectedPosState } from "./input";
 import type { CreateSerializableParam } from "../../typeUtils";

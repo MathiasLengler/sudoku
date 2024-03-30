@@ -4,7 +4,7 @@ import { saveCells } from "./state/cellsPersistence";
 import { useRecoilValue, useSetRecoilState } from "recoil";
 import { sudokuBaseState, sudokuCellsState } from "./state/sudoku";
 import { inputState } from "./state/input";
-import { baseToSideLength } from "./utils";
+import { baseToSideLength } from "./utils/sudoku";
 import _ from "lodash";
 import { useEndStickyChain } from "./actions/inputActions";
 
