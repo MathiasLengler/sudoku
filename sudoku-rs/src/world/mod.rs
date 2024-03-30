@@ -437,14 +437,16 @@ impl<Base: SudokuBase> CellWorld<Base> {
 
 #[cfg(test)]
 mod tests {
+    use itertools::Itertools;
+
     use super::*;
     use crate::base::consts::*;
 
     #[test]
     fn test_prune_is_directly_consistent() {
         let tile_dim = TileDim {
-            row_count: 3,
-            column_count: 3,
+            row_count: 3.try_into().unwrap(),
+            column_count: 3.try_into().unwrap(),
         };
         let seed = 1;
         let overlap = 1;
@@ -458,13 +460,11 @@ mod tests {
 
     #[test]
     fn test_delete_grid_overlap_segments() {
-        let mut cell_world = CellWorld::<Base2>::new(
-            TileDim {
-                row_count: 3,
-                column_count: 3,
-            },
-            1,
-        );
+        let tile_dim = TileDim {
+            row_count: 3.try_into().unwrap(),
+            column_count: 3.try_into().unwrap(),
+        };
+        let mut cell_world = CellWorld::<Base2>::new(tile_dim, 1);
         cell_world
             .cells
             .fill(Cell::with_value(1.try_into().unwrap(), false));
@@ -543,12 +543,12 @@ mod tests {
 
             let mut cell_world = cell_world.clone();
 
-            let tile_index = TileIndex { row: 1, column: 1 };
+            let tile_index = TileIndex { row: 1, column: 1 }.validate(tile_dim).unwrap();
             cell_world.delete_grid_overlap_segments(tile_index, overlap_segment_filter);
 
             dbg!(&expected_deleted_positions);
 
-            let grid = cell_world.to_grid_at(tile_index);
+            let grid = cell_world.to_grid_at_validated(tile_index);
             let deleted_positions = grid.all_candidates_positions();
             assert_eq!(
                 deleted_positions, expected_deleted_positions,

@@ -74,22 +74,22 @@ impl WasmCellWorld {
     pub fn new() -> Self {
         let mut world = CellWorld::<Base3>::new(
             TileDim {
-                row_count: 3,
-                column_count: 3,
+                row_count: 3.try_into().unwrap(),
+                column_count: 3.try_into().unwrap(),
             },
             1,
         );
 
         let seed = Some(1);
-        world.generate_solved(seed);
-        world.prune(seed);
+        world.generate_solved(seed).unwrap();
+        world.prune(seed).unwrap();
 
         DynamicCellWorld::from(world).into()
     }
 
     #[wasm_bindgen(js_name = generateSolved)]
     pub fn generate_solved(&mut self, seed: Option<u64>) -> Result<IWorldGenerationResult> {
-        export_world_generation_result(self.world.generate_solved(seed))
+        export_world_generation_result(self.world.generate_solved(seed)?)
     }
     pub fn prune(&mut self, seed: Option<u64>) {
         self.world.prune(seed);
@@ -98,7 +98,7 @@ impl WasmCellWorld {
     // DynamicGrid interop
     #[wasm_bindgen(js_name = toGridAt)]
     pub fn to_grid_at(&self, tile_index: ITileIndex) -> Result<IDynamicGrid> {
-        export_dynamic_grid(self.world.to_grid_at(import_tile_index(tile_index)?))
+        export_dynamic_grid(self.world.to_grid_at(import_tile_index(tile_index)?)?)
     }
     #[wasm_bindgen(js_name = setGridAt)]
     pub fn set_grid_at(&mut self, grid: IDynamicGrid, tile_index: ITileIndex) -> Result<()> {
