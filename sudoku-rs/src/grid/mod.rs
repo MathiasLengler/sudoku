@@ -254,7 +254,8 @@ impl<Base: SudokuBase> Grid<Base> {
                     0 => "row",
                     1 => "column",
                     2 => "block",
-                    _ => "??",
+                    unexpected_group_type =>
+                        panic!("Unexpected goup type: {unexpected_group_type}"),
                 },
                 group_i % Base::SIDE_LENGTH
             );

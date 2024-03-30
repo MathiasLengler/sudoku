@@ -10,11 +10,11 @@ use super::{CellWorld, CellWorldDimensions, TileDim, TileIndex, WorldGenerationR
 #[enum_dispatch]
 pub trait DynamicCellWorldActions {
     // Generation
-    fn generate_solved(&mut self, seed: Option<u64>) -> WorldGenerationResult;
-    fn prune(&mut self, seed: Option<u64>);
+    fn generate_solved(&mut self, seed: Option<u64>) -> Result<WorldGenerationResult>;
+    fn prune(&mut self, seed: Option<u64>) -> Result<()>;
 
     // DynamicGrid interop
-    fn to_grid_at(&self, tile_index: TileIndex) -> DynamicGrid<DynamicCell>;
+    fn to_grid_at(&self, tile_index: TileIndex) -> Result<DynamicGrid<DynamicCell>>;
     fn set_grid_at(&mut self, grid: DynamicGrid<DynamicCell>, tile_index: TileIndex) -> Result<()>;
 
     // Queries
