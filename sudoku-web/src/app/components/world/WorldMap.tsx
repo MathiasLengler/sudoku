@@ -137,9 +137,9 @@ export const WorldMap = () => {
         "--base": base,
     };
 
-    const gridBorder = "11px solid red";
-    const blockBorder = "10px solid blue";
-    const cellBorder = "5px solid black";
+    const gridBorder = "4px solid var(--block-border-color)";
+    const blockBorder = "var(--block-border-size) solid var(--block-border-color)";
+    const cellBorder = "var(--cell-border-size) solid var(--cell-border-color)";
 
     const cellSizeCss = `${useDeferredValue(cellSize)}px`;
 
@@ -161,7 +161,7 @@ export const WorldMap = () => {
                     overflow: "auto",
                     display: "block",
                     borderCollapse: "collapse",
-                    borderStyle: "groove",
+                    borderWidth: 0,
                     "--cell-size": cellSizeCss,
                 }}
             >

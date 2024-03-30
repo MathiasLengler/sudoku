@@ -37,11 +37,7 @@ type CellValueProps = {
 
 export const CellValue: React.FunctionComponent<CellValueProps> = (props) => {
     const { value } = props;
-    return (
-        <div className="cellValue">
-            <span className="cellValueText">{valueToString(value)}</span>
-        </div>
-    );
+    return <div className="cellValue">{valueToString(value)}</div>;
 };
 
 type CandidatesProps = {

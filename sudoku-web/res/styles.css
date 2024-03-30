@@ -171,10 +171,11 @@ Shoot for the moon: transition between single and world view.
 }
 
 .block .cell {
-    --cell-size: calc(var(--block-row-height) - var(--cell-padding));
+    --cell-size: calc(var(--block-row-height));
 }
 
 .cell {
+    --cell-content-size: calc(var(--cell-size) - 2 * var(--cell-padding));
     aspect-ratio: 1;
 
     min-width: 0;
@@ -213,12 +214,9 @@ Shoot for the moon: transition between single and world view.
 }
 
 .cellValue {
-    text-align: center;
-}
-
-.cellValueText {
     line-height: 1;
-    font-size: var(--cell-size);
+    text-align: center;
+    font-size: var(--cell-content-size);
 }
 
 .candidates {
@@ -235,7 +233,7 @@ Shoot for the moon: transition between single and world view.
     grid-row: calc(1 + var(--candidate-row));
 
     color: var(--candidate-color);
-    font-size: calc(var(--cell-size) / (var(--base) + 0.1));
+    font-size: calc(var(--cell-content-size) / (var(--base) + 0.1));
     line-height: 1;
     text-align: center;
 
