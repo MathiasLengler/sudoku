@@ -15,6 +15,8 @@ import {
 } from "../../state/world";
 import { worldCellBorderClassesState } from "../../state/world/cellBorder";
 
+// TODO: virtualized rendering
+
 type WorldCellProps = {
     rowIndex: number;
     columnIndex: number;
