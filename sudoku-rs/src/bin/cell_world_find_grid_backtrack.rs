@@ -4,10 +4,10 @@ use rayon::prelude::*;
 use sudoku::base::consts::*;
 use sudoku::error::Result;
 use sudoku::world::dynamic::DynamicCellWorldActions;
-use sudoku::world::{CellWorld, TileDim};
+use sudoku::world::{CellWorld, WorldDim};
 
 fn main() -> Result<()> {
-    let tile_dim = TileDim {
+    let grid_dim = WorldDim {
         row_count: 100.try_into().unwrap(),
         column_count: 100.try_into().unwrap(),
     };
@@ -18,7 +18,7 @@ fn main() -> Result<()> {
         .into_par_iter()
         .progress()
         .filter_map(|seed| {
-            let mut world = CellWorld::<Base3>::new(tile_dim, overlap);
+            let mut world = CellWorld::<Base3>::new(grid_dim, overlap);
             let world_generation_result = world.generate_solved(Some(seed.into())).unwrap();
             if world_generation_result.backtrack_count > 0 {
                 dbg!(&world_generation_result);

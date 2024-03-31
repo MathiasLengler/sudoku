@@ -7,8 +7,8 @@ import type {
     DynamicCell,
     DynamicCells,
     DynamicPosition,
-    TileDim,
-    TileIndex,
+    WorldDim,
+    GridIndex,
 } from "../../../types";
 import { type Game, gameState } from "../gameMode";
 import { remoteWasmCellWorldState } from "../worker";
@@ -25,17 +25,17 @@ const usizeSchema = z
     .int()
     // wasm32 (bits)
     .max(Math.pow(2, 32) - 1);
-export const tileIndexSchema = z.object({
+export const GridIndexSchema = z.object({
     row: usizeSchema,
     column: usizeSchema,
 });
-assert<IsEqual<z.infer<typeof tileIndexSchema>, TileIndex>>();
+assert<IsEqual<z.infer<typeof GridIndexSchema>, GridIndex>>();
 
 export type GameModeWorld = z.infer<typeof gameModeWorldSchema>;
 export const gameModeWorldSchema = z.object({
     mode: z.literal("world"),
     view: worldViewSchema,
-    selectedGridIndex: tileIndexSchema,
+    selectedGridIndex: GridIndexSchema,
 });
 
 export const showWorldMapState = selector<boolean>({
@@ -70,11 +70,11 @@ export const cellWorldDimensionsState = selector<CellWorldDimensions>({
     },
 });
 
-export const tileDimState = selector<TileDim>({
-    key: "tileDim",
-    get: ({ get }) => get(cellWorldDimensionsState).tileDim,
+export const gridDimState = selector<WorldDim>({
+    key: "gridDim",
+    get: ({ get }) => get(cellWorldDimensionsState).gridDim,
 });
-export const cellDimState = selector<TileDim>({
+export const cellDimState = selector<WorldDim>({
     key: "cellDim",
     get: ({ get }) => get(cellWorldDimensionsState).cellDim,
 });
@@ -95,7 +95,7 @@ function assertGameModeWorld(gameMode: Game): GameModeWorld {
     return gameMode;
 }
 
-export const selectedGridIndexState = selector<TileIndex>({
+export const selectedGridIndexState = selector<GridIndex>({
     key: "SelectedGridIndex",
     get: ({ get }) => {
         const gameModeWorld = assertGameModeWorld(get(gameState));

@@ -6,7 +6,7 @@ use error::Result;
 use sudoku::base::consts::*;
 use sudoku::grid::Grid;
 use sudoku::transport::TransportSudoku;
-use sudoku::world::{CellWorld, TileDim};
+use sudoku::world::{CellWorld, WorldDim};
 use sudoku::{DynamicSudoku, DynamicSudokuActions, Sudoku};
 
 use crate::typescript::*;
@@ -73,7 +73,7 @@ impl WasmCellWorld {
     #[wasm_bindgen(constructor)]
     pub fn new() -> Self {
         let mut world = CellWorld::<Base3>::new(
-            TileDim {
+            WorldDim {
                 row_count: 100.try_into().unwrap(),
                 column_count: 100.try_into().unwrap(),
             },
@@ -97,13 +97,13 @@ impl WasmCellWorld {
 
     // DynamicGrid interop
     #[wasm_bindgen(js_name = toGridAt)]
-    pub fn to_grid_at(&self, tile_index: ITileIndex) -> Result<IDynamicGrid> {
-        export_dynamic_grid(self.world.to_grid_at(import_tile_index(tile_index)?)?)
+    pub fn to_grid_at(&self, grid_index: IGridIndex) -> Result<IDynamicGrid> {
+        export_dynamic_grid(self.world.to_grid_at(import_grid_index(grid_index)?)?)
     }
     #[wasm_bindgen(js_name = setGridAt)]
-    pub fn set_grid_at(&mut self, grid: IDynamicGrid, tile_index: ITileIndex) -> Result<()> {
+    pub fn set_grid_at(&mut self, grid: IDynamicGrid, grid_index: IGridIndex) -> Result<()> {
         self.world
-            .set_grid_at(import_dynamic_grid(grid)?, import_tile_index(tile_index)?)?;
+            .set_grid_at(import_dynamic_grid(grid)?, import_grid_index(grid_index)?)?;
         Ok(())
     }
 

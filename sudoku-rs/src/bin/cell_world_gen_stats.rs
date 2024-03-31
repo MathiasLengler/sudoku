@@ -5,11 +5,11 @@ use sudoku::base::consts::*;
 use sudoku::base::SudokuBase;
 use sudoku::error::Result;
 use sudoku::world::dynamic::DynamicCellWorldActions;
-use sudoku::world::{CellWorld, TileDim};
+use sudoku::world::{CellWorld, WorldDim};
 
 fn main() -> Result<()> {
     fn gen_worlds_stats<Base: SudokuBase>() {
-        for (overlap, tile_dim) in iproduct!(
+        for (overlap, grid_dim) in iproduct!(
             1..=Base::BASE,
             vec![
                 (2, 2),
@@ -21,21 +21,21 @@ fn main() -> Result<()> {
                 (100, 100)
             ]
             .into_iter()
-            .map(|(row_count, column_count)| TileDim {
+            .map(|(row_count, column_count)| WorldDim {
                 row_count: row_count.try_into().unwrap(),
                 column_count: column_count.try_into().unwrap()
             })
         ) {
-            let tile_count = u64::try_from(tile_dim.tile_count()).unwrap();
-            let target_tile_count = 1_000_000;
+            let grid_count = u64::try_from(grid_dim.grid_count()).unwrap();
+            let target_grid_count = 1_000_000;
 
-            let total_seeds = target_tile_count / tile_count;
+            let total_seeds = target_grid_count / grid_count;
             let total_seeds_f64 = total_seeds as f64;
 
             let world_generation_results: Vec<_> = (0..total_seeds)
                 .into_par_iter()
                 .map(|seed| {
-                    let mut world = CellWorld::<Base>::new(tile_dim, overlap);
+                    let mut world = CellWorld::<Base>::new(grid_dim, overlap);
                     world.generate_solved(Some(seed))
                 })
                 .collect();
@@ -52,7 +52,7 @@ fn main() -> Result<()> {
             let max_backtrack_count: u32 = backtrack_counts.max().unwrap();
 
             println!(
-                "base {}, overlap {overlap}, tile_dim {tile_dim:?}:",
+                "base {}, overlap {overlap}, grid_dim {grid_dim:?}:",
                 Base::BASE
             );
             println!(

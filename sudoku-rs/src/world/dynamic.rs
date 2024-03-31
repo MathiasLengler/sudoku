@@ -5,7 +5,7 @@ use crate::cell::dynamic::DynamicCell;
 use crate::error::Result;
 use crate::grid::dynamic::DynamicGrid;
 
-use super::{CellWorld, CellWorldDimensions, TileDim, TileIndex, WorldGenerationResult};
+use super::{CellWorld, CellWorldDimensions, GridIndex, WorldDim, WorldGenerationResult};
 
 #[enum_dispatch]
 pub trait DynamicCellWorldActions {
@@ -14,8 +14,8 @@ pub trait DynamicCellWorldActions {
     fn prune(&mut self, seed: Option<u64>) -> Result<()>;
 
     // DynamicGrid interop
-    fn to_grid_at(&self, tile_index: TileIndex) -> Result<DynamicGrid<DynamicCell>>;
-    fn set_grid_at(&mut self, grid: DynamicGrid<DynamicCell>, tile_index: TileIndex) -> Result<()>;
+    fn to_grid_at(&self, grid_index: GridIndex) -> Result<DynamicGrid<DynamicCell>>;
+    fn set_grid_at(&mut self, grid: DynamicGrid<DynamicCell>, grid_index: GridIndex) -> Result<()>;
 
     // Queries
     fn dimensions(&self) -> CellWorldDimensions;
@@ -34,12 +34,12 @@ pub enum DynamicCellWorld {
 }
 
 impl DynamicCellWorld {
-    pub fn new(base: BaseEnum, tile_dim: TileDim, overlap: u8) -> Self {
+    pub fn new(base: BaseEnum, grid_dim: WorldDim, overlap: u8) -> Self {
         match base {
-            BaseEnum::Base2 => Self::Base2(CellWorld::<Base2>::new(tile_dim, overlap)),
-            BaseEnum::Base3 => Self::Base3(CellWorld::<Base3>::new(tile_dim, overlap)),
-            BaseEnum::Base4 => Self::Base4(CellWorld::<Base4>::new(tile_dim, overlap)),
-            BaseEnum::Base5 => Self::Base5(CellWorld::<Base5>::new(tile_dim, overlap)),
+            BaseEnum::Base2 => Self::Base2(CellWorld::<Base2>::new(grid_dim, overlap)),
+            BaseEnum::Base3 => Self::Base3(CellWorld::<Base3>::new(grid_dim, overlap)),
+            BaseEnum::Base4 => Self::Base4(CellWorld::<Base4>::new(grid_dim, overlap)),
+            BaseEnum::Base5 => Self::Base5(CellWorld::<Base5>::new(grid_dim, overlap)),
         }
     }
 }

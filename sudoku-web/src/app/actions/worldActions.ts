@@ -1,27 +1,27 @@
 import { Snapshot, useRecoilCallback } from "recoil";
-import type { TileIndex } from "../../types";
+import type { GridIndex } from "../../types";
 import { remoteWasmCellWorldState, type RemoteWasmCellWorld } from "../state/worker";
 
 async function getRemoteWasmCellWorld(snapshot: Snapshot): Promise<RemoteWasmCellWorld> {
     return await snapshot.getPromise(remoteWasmCellWorldState);
 }
 
-// TODO: set/get grid at tile index
+// TODO: set/get grid at grid index
 //  set grid when opening world
-//  get grid when selecting tile
+//  get grid when selecting grid
 
-// TODO: port changeTile
-// #[wasm_bindgen(js_name = changeTile)]
-// pub fn change_tile(&mut self, _dir: IRelativeTileDir) -> Result<()> {
+// TODO: port changeGrid
+// #[wasm_bindgen(js_name = changeGrid)]
+// pub fn change_grid(&mut self, _dir: IRelativeGridDir) -> Result<()> {
 //
 // let dir = import_dir(dir)?;
 //
-// let new_tile_index =
-//     self.tile_index
-//         .adjacent(dir, self.world.tile_dim())
+// let new_grid_index =
+//     self.grid_index
+//         .adjacent(dir, self.world.grid_dim())
 //         .ok_or(anyhow!(
 //             "Currently at world boundary {:?}, can't move {:?}",
-//             self.tile_index,
+//             self.grid_index,
 //             dir
 //         ))?;
 //
@@ -30,23 +30,23 @@ async function getRemoteWasmCellWorld(snapshot: Snapshot): Promise<RemoteWasmCel
 // };
 //
 // self.world
-//     .set_grid_at(sudoku_base_3.grid(), self.tile_index);
+//     .set_grid_at(sudoku_base_3.grid(), self.grid_index);
 //
 // self.sudoku =
-//     DynamicSudoku::Base3(Sudoku::with_grid(self.world.to_grid_at(new_tile_index)));
-// self.tile_index = new_tile_index;
+//     DynamicSudoku::Base3(Sudoku::with_grid(self.world.to_grid_at(new_grid_index)));
+// self.grid_index = new_grid_index;
 //
 // Ok(())
 
-export function useSetWorldTileAsSingle() {
+export function useSetWorldGridAsSingle() {
     return useRecoilCallback(
         ({ snapshot, set: _set }) =>
-            async (tileIndex: TileIndex) => {
-                console.log("changeTile", tileIndex);
+            async (GridIndex: GridIndex) => {
+                console.log("changeGrid", GridIndex);
                 const remoteWasmCellWorldProxy = await getRemoteWasmCellWorld(snapshot);
                 console.log(remoteWasmCellWorldProxy);
 
-                const newGrid = await remoteWasmCellWorldProxy.toGridAt(tileIndex);
+                const newGrid = await remoteWasmCellWorldProxy.toGridAt(GridIndex);
 
                 console.log("newGrid", newGrid);
                 // await wasmCellWorldProxy.???;

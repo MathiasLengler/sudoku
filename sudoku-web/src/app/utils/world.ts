@@ -1,5 +1,5 @@
 import _ from "lodash";
-import type { DynamicPosition, TileDim } from "../../types";
+import type { DynamicPosition, WorldDim } from "../../types";
 
 // TODO: rename rest of `cellIndex` to `cellWorldPosition`
 export function validateCellWorldPosition({
@@ -9,7 +9,7 @@ export function validateCellWorldPosition({
     cellDim,
 }: {
     cellWorldPosition: DynamicPosition;
-    cellDim: TileDim;
+    cellDim: WorldDim;
 }) {
     if (!(_.inRange(cellRowIndex, 0, cellRowCount) && _.inRange(cellColumnIndex, 0, cellColumnCount))) {
         throw new Error(

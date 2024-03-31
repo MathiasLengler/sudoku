@@ -65,7 +65,7 @@ name = "sudoku_benchmark"
 harness = false
 
 [[bin]]
-name = "cell_world_find_tile_backtrack"
+name = "cell_world_find_grid_backtrack"
 required-features = ["parallel"]
 [[bin]]
 name = "cell_world_gen_stats"

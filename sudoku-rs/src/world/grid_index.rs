@@ -1,127 +1,123 @@
-// TODO: rename tile to grid
-//  using grid and tile while referring to the same thing is confusing
-//  we use grid everywhere, keep it consistent
-
 use std::{
     fmt::{self, Display, Formatter},
     num::NonZeroUsize,
 };
 
 use crate::error::Result;
-use anyhow::ensure;
+use anyhow::{ensure, Context};
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "wasm")]
 use ts_rs::TS;
-pub(in crate::world) use validated::ValidatedTileIndex;
+pub(in crate::world) use validated::ValidatedGridIndex;
 
 mod validated {
     use super::*;
 
-    /// A tile index that has been validated to be within bounds for some `TileDim`.
+    /// A grid index that has been validated to be within bounds for some `WorldDim`.
     ///
     /// In contrast to `SudokuBase`-bounded types, this can't be relied on.
-    /// It only works for indexing into a cells `Array2` created with the same `TileDim`, but this is not enfored by the type system.
+    /// It only works for indexing into a cells `Array2` created with the same `WorldDim`, but this is not enfored by the type system.
     ///
     /// The intended usage is inside `CellWorld`, to differentiate between use-provided (untrusted) and internally computed indexes.
     /// Since we don't provide a way to mutate the size of the world, this works in practice.
     #[derive(
         Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize,
     )]
-    pub(in crate::world) struct ValidatedTileIndex(TileIndex);
+    pub(in crate::world) struct ValidatedGridIndex(GridIndex);
 
-    impl ValidatedTileIndex {
-        pub(in crate::world) fn new(index: TileIndex, tile_dim: TileDim) -> Result<Self> {
+    impl ValidatedGridIndex {
+        pub(in crate::world) fn new(index: GridIndex, grid_dim: WorldDim) -> Result<Self> {
             ensure!(
-                index.contained_in(tile_dim),
-                "{index:?} out of bounds for {tile_dim:?}"
+                index.contained_in(grid_dim),
+                "{index:?} out of bounds for {grid_dim:?}"
             );
 
             Ok(Self::new_unchecked(index))
         }
 
-        pub(super) fn new_opt(index: TileIndex, tile_dim: TileDim) -> Option<Self> {
+        pub(super) fn new_opt(index: GridIndex, grid_dim: WorldDim) -> Option<Self> {
             index
-                .contained_in(tile_dim)
+                .contained_in(grid_dim)
                 .then(|| Self::new_unchecked(index))
         }
 
-        pub(super) fn new_unchecked(index: TileIndex) -> Self {
+        pub(super) fn new_unchecked(index: GridIndex) -> Self {
             Self(index)
         }
 
-        pub(in crate::world) fn get(self) -> TileIndex {
+        pub(in crate::world) fn get(self) -> GridIndex {
             self.0
         }
 
         pub(in crate::world) fn adjacent(
             self,
-            dir: RelativeTileDir,
-            tile_dim: TileDim,
+            dir: RelativeGridDir,
+            grid_dim: WorldDim,
         ) -> Option<Self> {
-            let TileIndex { row, column } = self.0;
+            let GridIndex { row, column } = self.0;
 
             let adjacent = match dir {
-                RelativeTileDir::TopLeft => TileIndex {
+                RelativeGridDir::TopLeft => GridIndex {
                     row: row.checked_sub(1)?,
                     column: column.checked_sub(1)?,
                 },
-                RelativeTileDir::Left => TileIndex {
+                RelativeGridDir::Left => GridIndex {
                     row,
                     column: column.checked_sub(1)?,
                 },
-                RelativeTileDir::Right => TileIndex {
+                RelativeGridDir::Right => GridIndex {
                     row,
                     column: column + 1,
                 },
-                RelativeTileDir::TopRight => TileIndex {
+                RelativeGridDir::TopRight => GridIndex {
                     row: row.checked_sub(1)?,
                     column: column + 1,
                 },
-                RelativeTileDir::Top => TileIndex {
+                RelativeGridDir::Top => GridIndex {
                     row: row.checked_sub(1)?,
                     column,
                 },
-                RelativeTileDir::BottomLeft => TileIndex {
+                RelativeGridDir::BottomLeft => GridIndex {
                     row: row + 1,
                     column: column.checked_sub(1)?,
                 },
 
-                RelativeTileDir::Bottom => TileIndex {
+                RelativeGridDir::Bottom => GridIndex {
                     row: row + 1,
                     column,
                 },
-                RelativeTileDir::BottomRight => TileIndex {
+                RelativeGridDir::BottomRight => GridIndex {
                     row: row + 1,
                     column: column + 1,
                 },
             };
 
-            Self::new_opt(adjacent, tile_dim)
+            Self::new_opt(adjacent, grid_dim)
         }
     }
 }
 
 #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
-pub struct TileIndex {
+pub struct GridIndex {
     pub row: usize,
     pub column: usize,
 }
 
-impl Display for TileIndex {
+impl Display for GridIndex {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let Self { row, column } = self;
         write!(f, "({row}, {column})")
     }
 }
 
-impl TileIndex {
-    pub fn contained_in(self, tile_dim: TileDim) -> bool {
-        tile_dim.contains(self)
+impl GridIndex {
+    pub fn contained_in(self, grid_dim: WorldDim) -> bool {
+        grid_dim.contains(self)
     }
 
-    pub(in crate::world) fn validate(self, tile_dim: TileDim) -> Result<ValidatedTileIndex> {
-        ValidatedTileIndex::new(self, tile_dim)
+    pub(in crate::world) fn validate(self, grid_dim: WorldDim) -> Result<ValidatedGridIndex> {
+        ValidatedGridIndex::new(self, grid_dim)
     }
 
     pub fn is_at_top_edge(self) -> bool {
@@ -133,16 +129,17 @@ impl TileIndex {
     }
 }
 
-/// How many tiles/sudoku grids are in the world
+/// Dimensions of a `CellWorld`.
+/// Can represent either cells or grids.
 #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct TileDim {
+pub struct WorldDim {
     pub row_count: NonZeroUsize,
     pub column_count: NonZeroUsize,
 }
 
-impl Display for TileDim {
+impl Display for WorldDim {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let Self {
             row_count,
@@ -152,13 +149,21 @@ impl Display for TileDim {
     }
 }
 
-impl TileDim {
-    pub fn contains(self, index: TileIndex) -> bool {
-        let TileDim {
+impl WorldDim {
+    pub fn new(row_count: usize, column_count: usize) -> Result<Self> {
+        Ok(Self {
+            row_count: NonZeroUsize::new(row_count).context("row_count must be non-zero")?,
+            column_count: NonZeroUsize::new(column_count)
+                .context("column_count must be non-zero")?,
+        })
+    }
+
+    pub fn contains(self, index: GridIndex) -> bool {
+        let WorldDim {
             row_count,
             column_count,
         } = self;
-        let TileIndex { row, column } = index;
+        let GridIndex { row, column } = index;
 
         (0..row_count.get()).contains(&row) && (0..column_count.get()).contains(&column)
     }
@@ -167,20 +172,20 @@ impl TileDim {
         self.row_count.get() * self.column_count.get()
     }
 
-    pub fn all_indexes(self) -> impl Iterator<Item = TileIndex> {
+    pub fn all_indexes(self) -> impl Iterator<Item = GridIndex> {
         (0..self.row_count.get()).flat_map(move |row| {
-            (0..self.column_count.get()).map(move |column| TileIndex { row, column })
+            (0..self.column_count.get()).map(move |column| GridIndex { row, column })
         })
     }
 
     pub(in crate::world) fn all_validated_indexes(
         self,
-    ) -> impl Iterator<Item = ValidatedTileIndex> {
-        self.all_indexes().map(ValidatedTileIndex::new_unchecked)
+    ) -> impl Iterator<Item = ValidatedGridIndex> {
+        self.all_indexes().map(ValidatedGridIndex::new_unchecked)
     }
 
-    pub fn tile_count(self) -> usize {
-        let TileDim {
+    pub fn grid_count(self) -> usize {
+        let WorldDim {
             row_count,
             column_count,
         } = self;
@@ -192,7 +197,7 @@ impl TileDim {
 #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub enum RelativeTileDir {
+pub enum RelativeGridDir {
     TopLeft,
     Top,
     TopRight,
@@ -203,9 +208,9 @@ pub enum RelativeTileDir {
     BottomRight,
 }
 
-impl RelativeTileDir {
+impl RelativeGridDir {
     pub fn all() -> impl Iterator<Item = Self> {
-        use RelativeTileDir::*;
+        use RelativeGridDir::*;
 
         [
             TopLeft,
