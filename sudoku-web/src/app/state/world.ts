@@ -1,27 +1,12 @@
-import { atom, selector } from "recoil";
+import { DefaultValue, atom, selector, selectorFamily } from "recoil";
 import type { IsEqual } from "type-fest";
 import { z } from "zod";
-import { assert } from "../../typeUtils";
-import type { CellWorldDimensions, DynamicCells, TileIndex } from "../../types";
-import { localStorageEffect } from "./localStorageEffect";
+import { assert, type CreateSerializableParam } from "../../typeUtils";
+import type { CellWorldDimensions, DynamicCells, DynamicPosition, TileDim, TileIndex } from "../../types";
+import { type Game, gameState } from "./gameMode";
 import { remoteWasmCellWorldState } from "./worker";
-
-type FeatureFlags = {
-    experimentWorld: boolean;
-};
-
-export const featureFlagsState = atom<FeatureFlags>({
-    key: "FeatureFlags",
-    default: selector({
-        key: "DefaultFeatureFlags",
-        get: () => {
-            const params = new URLSearchParams(window.location.search);
-            return {
-                experimentWorld: params.has("world"),
-            };
-        },
-    }),
-});
+import { sudokuSideLengthState } from "./sudoku";
+import _ from "lodash";
 
 export type WorldView = z.infer<typeof worldViewSchema>;
 export const worldViewSchema = z.enum(["sudoku", "map"]);
@@ -38,26 +23,19 @@ export const tileIndexSchema = z.object({
 });
 assert<IsEqual<z.infer<typeof tileIndexSchema>, TileIndex>>();
 
-export type GameMode = z.infer<typeof gameModeSchema>;
-export const gameModeSchema = z.discriminatedUnion("mode", [
-    z.object({
-        mode: z.literal("sudoku"),
-    }),
-    z.object({
-        mode: z.literal("world"),
-        // TODO: another discriminated union
-        //  currentTileIndex is only needed when view is "sudoku"
-        view: worldViewSchema,
-        currentTileIndex: tileIndexSchema,
-    }),
-]);
+export type GameModeWorld = z.infer<typeof gameModeWorldSchema>;
+export const gameModeWorldSchema = z.object({
+    mode: z.literal("world"),
+    view: worldViewSchema,
+    selectedGridIndex: tileIndexSchema,
+});
 
-export const gameModeState = atom<GameMode>({
-    key: "GameMode",
-    default: {
-        mode: "sudoku",
+export const showWorldMapState = selector<boolean>({
+    key: "showWorldMap",
+    get: ({ get }) => {
+        const game = get(gameState);
+        return game.mode === "world" && game.view === "map";
     },
-    effects: [localStorageEffect(gameModeSchema)],
 });
 
 export const allWorldCellsState = atom<DynamicCells>({
@@ -71,13 +49,99 @@ export const allWorldCellsState = atom<DynamicCells>({
     }),
 });
 
-export const cellWorldDimensionsState = atom<CellWorldDimensions>({
+export const worldCellSizeState = atom<number>({
+    key: "WorldCellSize",
+    default: 100,
+});
+
+export const cellWorldDimensionsState = selector<CellWorldDimensions>({
     key: "CellWorldDimensions",
-    default: selector({
-        key: "DefaultCellWorldDimensions",
-        get: async ({ get }) => {
-            const remoteWasmCellWorld = get(remoteWasmCellWorldState);
-            return await remoteWasmCellWorld.dimensions();
+    get: async ({ get }) => {
+        const remoteWasmCellWorld = get(remoteWasmCellWorldState);
+        return await remoteWasmCellWorld.dimensions();
+    },
+});
+
+export const tileDimState = selector<TileDim>({
+    key: "tileDim",
+    get: ({ get }) => get(cellWorldDimensionsState).tileDim,
+});
+export const cellDimState = selector<TileDim>({
+    key: "cellDim",
+    get: ({ get }) => get(cellWorldDimensionsState).cellDim,
+});
+export const overlapState = selector<number>({
+    key: "overlap",
+    get: ({ get }) => get(cellWorldDimensionsState).overlap,
+});
+
+export const gridStrideState = selector<number>({
+    key: "gridStride",
+    get: ({ get }) => get(sudokuSideLengthState) - get(overlapState),
+});
+
+function assertGameModeWorld(gameMode: Game): GameModeWorld {
+    if (gameMode.mode !== "world") {
+        throw new Error(`Expected game mode 'world', instead got: ${gameMode.mode}`);
+    }
+    return gameMode;
+}
+
+export const selectedGridIndexState = selector<TileIndex>({
+    key: "SelectedGridIndex",
+    get: ({ get }) => {
+        const gameModeWorld = assertGameModeWorld(get(gameState));
+        return gameModeWorld.selectedGridIndex;
+    },
+    set: ({ set }, newGridIndex) => {
+        set(gameState, (prevGameMode) => {
+            const gameModeWorld = assertGameModeWorld(prevGameMode);
+
+            return {
+                ...gameModeWorld,
+                selectedGridIndex: newGridIndex instanceof DefaultValue ? { row: 0, column: 0 } : newGridIndex,
+            };
+        });
+    },
+});
+
+export const selectedGridRowIndexState = selector<number>({
+    key: "selectedGridRowIndex",
+    get: ({ get }) => get(selectedGridIndexState).row,
+});
+export const selectedGridColumnIndexState = selector<number>({
+    key: "selectedGridColumnIndex",
+    get: ({ get }) => get(selectedGridIndexState).column,
+});
+export const selectedGridBaseCellRowIndexState = selector<number>({
+    key: "selectedGridBaseCellRowIndex",
+    get: ({ get }) => get(selectedGridRowIndexState) * get(gridStrideState),
+});
+export const selectedGridBaseCellColumnIndexState = selector<number>({
+    key: "selectedGridBaseCellColumnIndex",
+    get: ({ get }) => get(selectedGridColumnIndexState) * get(gridStrideState),
+});
+
+export const isCellInSelectedGridState = selectorFamily<boolean, CreateSerializableParam<DynamicPosition>>({
+    key: "isCellInSelectedGrid",
+    get:
+        (cellWorldPosition) =>
+        ({ get }) => {
+            const { row: cellRowIndex, column: cellColumnIndex } = cellWorldPosition;
+            const gridSideLength = get(sudokuSideLengthState);
+            const selectedGridBaseCellRowIndex = get(selectedGridBaseCellRowIndexState);
+            const selectedGridBaseCellColumnIndex = get(selectedGridBaseCellColumnIndexState);
+
+            const isCellInSelectedGrid =
+                _.inRange(cellRowIndex, selectedGridBaseCellRowIndex, selectedGridBaseCellRowIndex + gridSideLength) &&
+                _.inRange(
+                    cellColumnIndex,
+                    selectedGridBaseCellColumnIndex,
+                    selectedGridBaseCellColumnIndex + gridSideLength,
+                );
+            return isCellInSelectedGrid;
         },
-    }),
+    cachePolicy_UNSTABLE: {
+        eviction: "most-recent",
+    },
 });

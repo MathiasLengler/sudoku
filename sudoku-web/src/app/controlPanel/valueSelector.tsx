@@ -1,7 +1,7 @@
 import type * as React from "react";
 import { valueToString } from "../utils/sudoku";
 import ButtonBase from "@mui/material/ButtonBase";
-import classnames from "classnames";
+import classNames from "classnames";
 import { useHandleValue } from "../actions/sudokuActions";
 import { selector, selectorFamily, useRecoilValue } from "recoil";
 import { inputState } from "../state/input";
@@ -16,6 +16,9 @@ const isSelectedState = selectorFamily<boolean, number>({
             const input = get(inputState);
             return input.stickyMode && input.selectedValue === value;
         },
+    cachePolicy_UNSTABLE: {
+        eviction: "most-recent",
+    },
 });
 
 type SelectorValueProps = {
@@ -27,8 +30,8 @@ const ValueButton: React.FunctionComponent<SelectorValueProps> = ({ value }: Sel
 
     const isSelected = useRecoilValue(isSelectedState(value));
 
-    const buttonClassNames = classnames("selectorValue", {
-        "selectorValue--selected": isSelected,
+    const buttonClassNames = classNames("selector-value", {
+        "selector-value--selected": isSelected,
     });
 
     return (
@@ -39,7 +42,7 @@ const ValueButton: React.FunctionComponent<SelectorValueProps> = ({ value }: Sel
                 await handleValue(value);
             }}
         >
-            <span className="selectorValueText">{valueToString(value)}</span>
+            <span className="selector-value-text">{valueToString(value)}</span>
         </ButtonBase>
     );
 };

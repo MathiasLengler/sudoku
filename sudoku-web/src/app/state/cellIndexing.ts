@@ -17,6 +17,9 @@ export const cellAtIndexState = selectorFamily<TransportCell, number>({
             }
             return selectedCells;
         },
+    cachePolicy_UNSTABLE: {
+        eviction: "most-recent",
+    },
 });
 export const cellAtGridPositionState = selectorFamily<TransportCell, CreateSerializableParam<DynamicPosition>>({
     key: "CellAtGridPosition",
@@ -26,6 +29,9 @@ export const cellAtGridPositionState = selectorFamily<TransportCell, CreateSeria
             const sideLength = get(sudokuSideLengthState);
             return get(cellAtIndexState(positionToIndex({ gridPosition, sideLength })));
         },
+    cachePolicy_UNSTABLE: {
+        eviction: "most-recent",
+    },
 });
 
 export const selectedBlockPositionState = selector<DynamicPosition | undefined>({
@@ -36,5 +42,8 @@ export const selectedBlockPositionState = selector<DynamicPosition | undefined>(
             const base = get(sudokuBaseState);
             return cellPositionToBlockPosition(selectedPos, base);
         }
+    },
+    cachePolicy_UNSTABLE: {
+        eviction: "most-recent",
     },
 });

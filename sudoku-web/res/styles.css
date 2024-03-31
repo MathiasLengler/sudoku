@@ -170,6 +170,7 @@ Shoot for the moon: transition between single and world view.
     gap: var(--block-gutter);
 }
 
+/* sudoku view */
 .block .cell {
     --cell-size: calc(var(--block-row-height));
 }
@@ -213,7 +214,7 @@ Shoot for the moon: transition between single and world view.
     color: var(--cell-value-color-incorrect-value);
 }
 
-.cellValue {
+.cell-value {
     line-height: 1;
     text-align: center;
     font-size: var(--cell-content-size);
@@ -306,7 +307,7 @@ Shoot for the moon: transition between single and world view.
     }
 }
 
-.selectorValue {
+.selector-value {
     display: grid;
     place-items: center;
 
@@ -318,12 +319,79 @@ Shoot for the moon: transition between single and world view.
     min-height: 0;
 }
 
-.selectorValue--selected {
+.selector-value--selected {
     background-color: var(--cell-bg-color-selected) !important;
 }
 
-.selectorValueText {
+.selector-value-text {
     color: var(--cell-value-color-fixed);
     line-height: 1;
     font-size: calc(var(--selector-row-height) * 0.9);
+}
+
+.world-map {
+    display: flex;
+    flex-direction: column;
+    height: 1;
+}
+
+.world-map-table {
+    overflow: auto;
+    display: block;
+    border-collapse: collapse;
+    border-width: 0;
+
+    --world-map-td-cell-border: var(--cell-border-size) solid var(--cell-border-color);
+    --world-map-td-block-border: var(--block-border-size) solid var(--block-border-color);
+    --world-map-td-grid-border: 4px solid var(--block-border-color);
+    --world-map-td-selected-grid-border: 4px solid var(--cell-value-color-user);
+}
+
+.world-map-table td {
+    padding: 0;
+    border: var(--world-map-td-cell-border);
+}
+
+.world-map-table td.block-border-top {
+    border-top: var(--world-map-td-block-border);
+}
+.world-map-table td.block-border-right {
+    border-right: var(--world-map-td-block-border);
+}
+.world-map-table td.block-border-bottom {
+    border-bottom: var(--world-map-td-block-border);
+}
+.world-map-table td.block-border-left {
+    border-left: var(--world-map-td-block-border);
+}
+
+.world-map-table td.grid-border-top {
+    border-top: var(--world-map-td-grid-border);
+}
+.world-map-table td.grid-border-right {
+    border-right: var(--world-map-td-grid-border);
+}
+.world-map-table td.grid-border-bottom {
+    border-bottom: var(--world-map-td-grid-border);
+}
+.world-map-table td.grid-border-left {
+    border-left: var(--world-map-td-grid-border);
+}
+
+.world-map-table td.selected-grid-border-top {
+    border-top: var(--world-map-td-selected-grid-border);
+}
+.world-map-table td.selected-grid-border-right {
+    border-right: var(--world-map-td-selected-grid-border);
+}
+.world-map-table td.selected-grid-border-bottom {
+    border-bottom: var(--world-map-td-selected-grid-border);
+}
+.world-map-table td.selected-grid-border-left {
+    border-left: var(--world-map-td-selected-grid-border);
+}
+
+.world-map-table .cell {
+    width: var(--cell-size);
+    height: var(--cell-size);
 }

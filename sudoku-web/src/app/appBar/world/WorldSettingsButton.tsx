@@ -1,14 +1,12 @@
 import LanguageIcon from "@mui/icons-material/Language";
 import assertNever from "assert-never";
 import { useRecoilState } from "recoil";
-import { useChangeTile } from "../../actions/worldActions";
 import MyIconButton from "../../components/MyIconButton";
 import { MyMenu } from "../../components/MyMenu";
-import { gameModeState } from "../../state/world";
+import { gameState } from "../../state/gameMode";
 
 export function WorldSettingsButton() {
-    const [gameMode, setGameMode] = useRecoilState(gameModeState);
-    const changeTile = useChangeTile();
+    const [gameMode, setGameMode] = useRecoilState(gameState);
 
     return (
         <MyMenu
@@ -22,7 +20,7 @@ export function WorldSettingsButton() {
                                 return {
                                     mode: "world",
                                     view: "sudoku",
-                                    currentTileIndex: { row: 0, column: 0 },
+                                    selectedGridIndex: { row: 0, column: 0 },
                                 };
                             } else if (gameMode.mode === "world") {
                                 return {
@@ -44,22 +42,6 @@ export function WorldSettingsButton() {
                                       view: gameMode.view === "sudoku" ? "map" : "sudoku",
                                   });
                               },
-                          },
-                          {
-                              label: "Tile ←",
-                              onClick: async () => await changeTile("left"),
-                          },
-                          {
-                              label: "Tile →",
-                              onClick: async () => await changeTile("right"),
-                          },
-                          {
-                              label: "Tile ↑",
-                              onClick: async () => await changeTile("top"),
-                          },
-                          {
-                              label: "Tile ↓",
-                              onClick: async () => await changeTile("bottom"),
                           },
                       ]
                     : []),

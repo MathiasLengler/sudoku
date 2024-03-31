@@ -23,6 +23,9 @@ const containsSelectedPosState = selectorFamily<boolean, CreateSerializableParam
             const selectedBlockPosition = get(selectedBlockPositionState);
             return !!selectedBlockPosition && isEqual(blockPosition, selectedBlockPosition);
         },
+    cachePolicy_UNSTABLE: {
+        eviction: "most-recent",
+    },
 });
 export const Block = ({ blockIndex, cells }: BlockProps) => {
     const base = useRecoilValue(sudokuBaseState);

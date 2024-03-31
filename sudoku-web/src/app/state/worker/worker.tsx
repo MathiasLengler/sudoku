@@ -66,8 +66,9 @@ async function init() {
     wasmInit();
 
     // `wasm_bindgen_rayon`
-    console.debug("Initialize wasm-bindgen-rayon");
-    await initThreadPool(navigator.hardwareConcurrency);
+    const hardwareConcurrency = navigator.hardwareConcurrency;
+    console.debug(`Initialize wasm-bindgen-rayon with ${hardwareConcurrency} threads`);
+    await initThreadPool(hardwareConcurrency);
 
     console.debug("Worker initialized");
 }

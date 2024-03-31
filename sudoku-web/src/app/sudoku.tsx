@@ -9,7 +9,7 @@ import { WorldMap } from "./components/world/WorldMap";
 import { ControlPanel } from "./controlPanel/controlPanel";
 import { Grid } from "./grid/grid";
 import { sudokuBaseState, sudokuSideLengthState } from "./state/sudoku";
-import { gameModeState } from "./state/world";
+import { showWorldMapState } from "./state/world";
 import { SudokuEffects } from "./sudokuEffects";
 import { useKeyboardInput } from "./useKeyboardInput";
 
@@ -35,13 +35,11 @@ const SudokuGame = () => {
 };
 
 const SudokuContent = () => {
-    const gameMode = useRecoilValue(gameModeState);
+    const showWorldMap = useRecoilValue(showWorldMapState);
     return (
         <div className="app-content">
             <ThemeErrorBoundary>
-                <Suspense fallback={<FullScreenSpinner />}>
-                    {gameMode.mode === "world" && gameMode.view === "map" ? <WorldMap /> : <SudokuGame />}
-                </Suspense>
+                <Suspense fallback={<FullScreenSpinner />}>{showWorldMap ? <WorldMap /> : <SudokuGame />}</Suspense>
             </ThemeErrorBoundary>
         </div>
     );

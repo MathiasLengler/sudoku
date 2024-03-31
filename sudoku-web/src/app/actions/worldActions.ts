@@ -1,8 +1,8 @@
 import { Snapshot, useRecoilCallback } from "recoil";
-import type { RelativeTileDir } from "../../types";
+import type { TileIndex } from "../../types";
 import { remoteWasmCellWorldState, type RemoteWasmCellWorld } from "../state/worker";
 
-async function getWasmCellWorldProxy(snapshot: Snapshot): Promise<RemoteWasmCellWorld> {
+async function getRemoteWasmCellWorld(snapshot: Snapshot): Promise<RemoteWasmCellWorld> {
     return await snapshot.getPromise(remoteWasmCellWorldState);
 }
 
@@ -38,13 +38,17 @@ async function getWasmCellWorldProxy(snapshot: Snapshot): Promise<RemoteWasmCell
 //
 // Ok(())
 
-export function useChangeTile() {
+export function useSetWorldTileAsSingle() {
     return useRecoilCallback(
         ({ snapshot, set: _set }) =>
-            async (dir: RelativeTileDir) => {
-                console.log("changeTile", dir);
-                const wasmCellWorldProxy = await getWasmCellWorldProxy(snapshot);
-                console.log(wasmCellWorldProxy);
+            async (tileIndex: TileIndex) => {
+                console.log("changeTile", tileIndex);
+                const remoteWasmCellWorldProxy = await getRemoteWasmCellWorld(snapshot);
+                console.log(remoteWasmCellWorldProxy);
+
+                const newGrid = await remoteWasmCellWorldProxy.toGridAt(tileIndex);
+
+                console.log("newGrid", newGrid);
                 // await wasmCellWorldProxy.???;
                 // await updateSudoku({ set, wasmSudokuProxy });
             },
