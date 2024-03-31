@@ -163,6 +163,10 @@ impl TileDim {
         (0..row_count.get()).contains(&row) && (0..column_count.get()).contains(&column)
     }
 
+    pub fn all_indexes_count(self) -> usize {
+        self.row_count.get() * self.column_count.get()
+    }
+
     pub fn all_indexes(self) -> impl Iterator<Item = TileIndex> {
         (0..self.row_count.get()).flat_map(move |row| {
             (0..self.column_count.get()).map(move |column| TileIndex { row, column })

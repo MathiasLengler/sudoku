@@ -1,5 +1,5 @@
 use anyhow::bail;
-use log::trace;
+use log::{info, trace};
 use ndarray::{s, Array2, ArrayViewMut2, Axis, Dim, SliceInfo, SliceInfoElem};
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -118,6 +118,13 @@ impl<Base: SudokuBase> DynamicCellWorldActions for CellWorld<Base> {
 
         while let Some(solver) = solver_stack.last_mut() {
             if let Some(solution) = solver.next() {
+                info!(
+                    "CellWorld::generate_solved: solver {}/{} found solution",
+                    solver_stack.len(),
+                    tile_indexes.len()
+                );
+                trace!("Solution found: {solution}");
+
                 let tile_index = tile_indexes[solver_stack.len() - 1];
 
                 self.set_grid_at_validated(&solution, tile_index);
@@ -194,7 +201,7 @@ impl<Base: SudokuBase> DynamicCellWorldActions for CellWorld<Base> {
                 middle_axis_range.contains(&row) && middle_axis_range.contains(&column)
             });
 
-        for tile_index in self.all_validated_tile_indexes() {
+        for (progress_index, tile_index) in (0..).zip(self.all_validated_tile_indexes()) {
             let grid = self.to_grid_at_validated(tile_index);
 
             let pruned_grid = Generator::with_settings(GeneratorSettings {
@@ -216,6 +223,12 @@ impl<Base: SudokuBase> DynamicCellWorldActions for CellWorld<Base> {
                 seed: Some(rng.gen()),
             })
             .generate()?;
+
+            info!(
+                "CellWorld::prune: pruned grid #{}/{}",
+                progress_index,
+                self.tile_dim.all_indexes_count()
+            );
 
             self.set_grid_at_validated(&pruned_grid, tile_index);
         }

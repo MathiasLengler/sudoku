@@ -74,8 +74,8 @@ impl WasmCellWorld {
     pub fn new() -> Self {
         let mut world = CellWorld::<Base3>::new(
             TileDim {
-                row_count: 3.try_into().unwrap(),
-                column_count: 4.try_into().unwrap(),
+                row_count: 100.try_into().unwrap(),
+                column_count: 100.try_into().unwrap(),
             },
             1,
         );

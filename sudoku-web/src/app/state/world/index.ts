@@ -1,12 +1,20 @@
 import { DefaultValue, atom, selector, selectorFamily } from "recoil";
 import type { IsEqual } from "type-fest";
 import { z } from "zod";
-import { assert, type CreateSerializableParam } from "../../typeUtils";
-import type { CellWorldDimensions, DynamicCells, DynamicPosition, TileDim, TileIndex } from "../../types";
-import { type Game, gameState } from "./gameMode";
-import { remoteWasmCellWorldState } from "./worker";
-import { sudokuSideLengthState } from "./sudoku";
+import { assert, type CreateSerializableParam } from "../../../typeUtils";
+import type {
+    CellWorldDimensions,
+    DynamicCell,
+    DynamicCells,
+    DynamicPosition,
+    TileDim,
+    TileIndex,
+} from "../../../types";
+import { type Game, gameState } from "../gameMode";
+import { remoteWasmCellWorldState } from "../worker";
+import { sudokuSideLengthState } from "../sudoku";
 import _ from "lodash";
+import { validateCellWorldPosition } from "../../utils/world";
 
 export type WorldView = z.infer<typeof worldViewSchema>;
 export const worldViewSchema = z.enum(["sudoku", "map"]);
@@ -144,4 +152,18 @@ export const isCellInSelectedGridState = selectorFamily<boolean, CreateSerializa
     cachePolicy_UNSTABLE: {
         eviction: "most-recent",
     },
+});
+
+export const worldCellState = selectorFamily<DynamicCell, CreateSerializableParam<DynamicPosition>>({
+    key: "worldCell",
+    get:
+        (cellWorldPosition) =>
+        ({ get }) => {
+            const cellDim = get(cellDimState);
+
+            validateCellWorldPosition({ cellWorldPosition, cellDim });
+
+            const allWorldCells = get(allWorldCellsState);
+            return allWorldCells[cellWorldPosition.row * cellDim.columnCount + cellWorldPosition.column]!;
+        },
 });

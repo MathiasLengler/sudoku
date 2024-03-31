@@ -333,6 +333,10 @@ Shoot for the moon: transition between single and world view.
     display: flex;
     flex-direction: column;
     height: 100%;
+    --world-map-td-cell-border: var(--cell-border-size) solid var(--cell-border-color);
+    --world-map-td-block-border: var(--block-border-size) solid var(--block-border-color);
+    --world-map-td-grid-border: 4px solid var(--block-border-color);
+    --world-map-td-selected-grid-border: 4px solid var(--cell-value-color-user);
 }
 
 .world-map-table {
@@ -340,54 +344,49 @@ Shoot for the moon: transition between single and world view.
     overflow: auto;
     border-collapse: collapse;
     border-width: 0;
-
-    --world-map-td-cell-border: var(--cell-border-size) solid var(--cell-border-color);
-    --world-map-td-block-border: var(--block-border-size) solid var(--block-border-color);
-    --world-map-td-grid-border: 4px solid var(--block-border-color);
-    --world-map-td-selected-grid-border: 4px solid var(--cell-value-color-user);
 }
 
-.world-map-table td {
+.world-map-cell {
     padding: 0;
     border: var(--world-map-td-cell-border);
 }
 
-.world-map-table td.block-border-top {
+.block-border-top {
     border-top: var(--world-map-td-block-border);
 }
-.world-map-table td.block-border-right {
+.block-border-right {
     border-right: var(--world-map-td-block-border);
 }
-.world-map-table td.block-border-bottom {
+.block-border-bottom {
     border-bottom: var(--world-map-td-block-border);
 }
-.world-map-table td.block-border-left {
+.block-border-left {
     border-left: var(--world-map-td-block-border);
 }
 
-.world-map-table td.grid-border-top {
+.grid-border-top {
     border-top: var(--world-map-td-grid-border);
 }
-.world-map-table td.grid-border-right {
+.grid-border-right {
     border-right: var(--world-map-td-grid-border);
 }
-.world-map-table td.grid-border-bottom {
+.grid-border-bottom {
     border-bottom: var(--world-map-td-grid-border);
 }
-.world-map-table td.grid-border-left {
+.grid-border-left {
     border-left: var(--world-map-td-grid-border);
 }
 
-.world-map-table td.selected-grid-border-top {
+.selected-grid-border-top {
     border-top: var(--world-map-td-selected-grid-border);
 }
-.world-map-table td.selected-grid-border-right {
+.selected-grid-border-right {
     border-right: var(--world-map-td-selected-grid-border);
 }
-.world-map-table td.selected-grid-border-bottom {
+.selected-grid-border-bottom {
     border-bottom: var(--world-map-td-selected-grid-border);
 }
-.world-map-table td.selected-grid-border-left {
+.selected-grid-border-left {
     border-left: var(--world-map-td-selected-grid-border);
 }
 

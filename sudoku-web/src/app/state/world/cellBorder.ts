@@ -3,9 +3,9 @@ import _ from "lodash";
 import { selectorFamily } from "recoil";
 import type { CreateSerializableParam } from "../../../typeUtils";
 import type { DynamicPosition } from "../../../types";
-import { getAxisBorders, validateCellIndexForDim } from "../../utils/world";
+import { getAxisBorders, validateCellWorldPosition } from "../../utils/world";
 import { sudokuBaseState, sudokuSideLengthState } from "../sudoku";
-import { cellDimState, cellWorldDimensionsState, selectedGridIndexState } from "../world";
+import { cellDimState, cellWorldDimensionsState, selectedGridIndexState } from ".";
 
 export const worldCellBorderClassesState = selectorFamily<string, CreateSerializableParam<DynamicPosition>>({
     key: "worldCellBorder",
@@ -19,7 +19,7 @@ export const worldCellBorderClassesState = selectorFamily<string, CreateSerializ
             const { row: selectedGridRowIndex, column: selectedGridColumnIndex } = get(selectedGridIndexState);
             const { row: cellRowIndex, column: cellColumnIndex } = cellWorldPosition;
 
-            validateCellIndexForDim({ cellIndex: cellWorldPosition, cellDim });
+            validateCellWorldPosition({ cellWorldPosition: cellWorldPosition, cellDim });
 
             const gridStride = gridSideLength - overlap;
             const selectedGridBaseCellRowIndex = selectedGridRowIndex * gridStride;

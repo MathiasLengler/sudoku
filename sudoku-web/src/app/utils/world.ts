@@ -1,18 +1,19 @@
 import _ from "lodash";
 import type { DynamicPosition, TileDim } from "../../types";
 
-export function validateCellIndexForDim({
-    cellIndex: { row: cellRowIndex, column: cellColumnIndex },
-    cellIndex,
+// TODO: rename rest of `cellIndex` to `cellWorldPosition`
+export function validateCellWorldPosition({
+    cellWorldPosition: { row: cellRowIndex, column: cellColumnIndex },
+    cellWorldPosition,
     cellDim: { rowCount: cellRowCount, columnCount: cellColumnCount },
     cellDim,
 }: {
-    cellIndex: DynamicPosition;
+    cellWorldPosition: DynamicPosition;
     cellDim: TileDim;
 }) {
     if (!(_.inRange(cellRowIndex, 0, cellRowCount) && _.inRange(cellColumnIndex, 0, cellColumnCount))) {
         throw new Error(
-            `cellIndex out of bounds: ${JSON.stringify(cellIndex)} for cellDim: ${JSON.stringify(cellDim)}`,
+            `cellWorldPosition out of bounds: ${JSON.stringify(cellWorldPosition)} for cellDim: ${JSON.stringify(cellDim)}`,
         );
     }
 }
