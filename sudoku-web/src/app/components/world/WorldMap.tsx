@@ -1,6 +1,5 @@
 import { Button, Slider } from "@mui/material";
 import Box from "@mui/material/Box";
-import classNames from "classnames";
 import type * as CSS from "csstype";
 import _ from "lodash";
 import React, { useDeferredValue } from "react";
