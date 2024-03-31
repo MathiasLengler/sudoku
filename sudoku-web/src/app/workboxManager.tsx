@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Alert, Snackbar } from "@mui/material";
 
-const SW_ENABLED = "serviceWorker" in navigator && (process.env.NODE_ENV === "production" || !!process.env.DEBUG_SW);
+const SW_ENABLED = "serviceWorker" in navigator && process.env.SW_ENABLED;
 
 export function WorkboxManager() {
     const [showUpdateNotification, setShowUpdateNotification] = useState(false);
@@ -41,7 +41,10 @@ export function WorkboxManager() {
         }
 
         if (SW_ENABLED) {
+            console.info("Service Worker enabled");
             initWorkbox().catch((err) => console.error("Unexpected error while initializing Workbox:", err));
+        } else {
+            console.debug("Service Worker disabled");
         }
     }, []);
 
