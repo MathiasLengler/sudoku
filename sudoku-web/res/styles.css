@@ -332,12 +332,12 @@ Shoot for the moon: transition between single and world view.
 .world-map {
     display: flex;
     flex-direction: column;
-    height: 1;
+    height: 100%;
 }
 
 .world-map-table {
-    overflow: auto;
     display: block;
+    overflow: auto;
     border-collapse: collapse;
     border-width: 0;
 
