@@ -1,3 +1,7 @@
+// TODO: rename tile to grid
+//  using grid and tile while referring to the same thing is confusing
+//  we use grid everywhere, keep it consistent
+
 use std::{
     fmt::{self, Display, Formatter},
     num::NonZeroUsize,

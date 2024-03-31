@@ -22,9 +22,7 @@ type WorldCellProps = {
     worldCell: DynamicCell;
 };
 
-// TODO: naming: grid vs tile
-
-export const WorldCellMemo = React.memo(function WorldCell({ rowIndex, columnIndex, worldCell }: WorldCellProps) {
+const WorldCellMemo = React.memo(function WorldCell({ rowIndex, columnIndex, worldCell }: WorldCellProps) {
     console.log("WorldCell", rowIndex, columnIndex);
 
     const cellWorldPosition: DynamicPosition = {
@@ -61,7 +59,7 @@ export const WorldCellMemo = React.memo(function WorldCell({ rowIndex, columnInd
     );
 });
 
-export const WorldMapTableMemo = React.memo(function WorldMapTable() {
+const WorldMapTableMemo = React.memo(function WorldMapTable() {
     const allWorldCells = useRecoilValue(allWorldCellsState);
     const cellWorldDimensions = useRecoilValue(cellWorldDimensionsState);
 
