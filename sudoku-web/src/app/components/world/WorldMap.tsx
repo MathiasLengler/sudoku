@@ -1,6 +1,6 @@
 import { Button, Slider } from "@mui/material";
 import type * as CSS from "csstype";
-import React, { useDeferredValue } from "react";
+import React, { useDeferredValue, useEffect } from "react";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeGrid as Grid } from "react-window";
 import { useRecoilState, useRecoilValue, useResetRecoilState, useSetRecoilState } from "recoil";
@@ -14,6 +14,10 @@ import {
     worldCellState,
 } from "../../state/world";
 import { worldCellBorderClassesState } from "../../state/world/cellBorder";
+
+import { WasmSudoku, WasmCellWorld as _WasmCellWorld } from "../../../../../sudoku-wasm/pkg";
+import { isWorkerReadyState } from "../../state/worker";
+import { init } from "../../state/worker/bg/init";
 
 type WorldCellVirtualizedProps = {
     rowIndex: number;
@@ -92,6 +96,8 @@ const WorldMapVirtualized = () => {
 
 // TODO: change grid
 export const WorldMap = () => {
+    useRecoilValue(isWorkerReadyState);
+
     const base = useRecoilValue(sudokuBaseState);
     const sideLength = useRecoilValue(sudokuSideLengthState);
     const setSelectedGridIndex = useSetRecoilState(selectedGridIndexState);
@@ -102,6 +108,18 @@ export const WorldMap = () => {
         "--side-length": sideLength,
         "--base": base,
     };
+
+    useEffect(() => {
+        const run = async () => {
+            await init(1);
+            const testInstance = new WasmSudoku();
+            console.log({ testInstance });
+
+            // TODO: expose static indexing helpers
+        };
+
+        run().catch(console.error);
+    }, []);
 
     return (
         <div className="world-map" style={cssVariables}>

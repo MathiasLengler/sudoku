@@ -1,5 +1,5 @@
 import { atom, selector } from "recoil";
-import type { WorkerApi } from "./worker";
+import type { WorkerApi } from "./bg/worker";
 import * as Comlink from "comlink";
 import { loadCells } from "../cellsPersistence";
 import { spawnWorker } from "./spawn";
@@ -24,6 +24,15 @@ export const remoteWorkerApiState = selector<RemoteWorkerApi>({
         await remoteWorkerApi.init();
         console.debug("Worker initialized");
         return remoteWorkerApi;
+    },
+});
+
+export const isWorkerReadyState = selector<boolean>({
+    key: "IsWorkerReady",
+    get: ({ get }) => {
+        // remoteWorkerApiState initializes worker before returning
+        const _remoteWorkerApi = get(remoteWorkerApiState);
+        return true;
     },
 });
 

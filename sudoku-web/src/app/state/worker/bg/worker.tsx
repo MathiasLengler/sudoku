@@ -1,7 +1,8 @@
 import * as Comlink from "comlink";
-import wbgInit, { WasmSudoku, WasmCellWorld, init as wasmInit, initThreadPool } from "../../../../../sudoku-wasm/pkg";
+import { WasmCellWorld, WasmSudoku } from "../../../../../../sudoku-wasm/pkg";
 
-import { WORKER_BOOT_UP_MESSAGE } from "../../../constants";
+import { WORKER_BOOT_UP_MESSAGE } from "../../../../constants";
+import { init } from "./init";
 
 if (process.env.NODE_ENV !== "production") {
     self.addEventListener("message", (ev) => {
@@ -36,7 +37,7 @@ markClassAsProxy(WasmCellWorld);
 
 // Use declaration merging (Module Augmentation) to reflect this modification.
 // This corrects the inferred type of `Comlink.Remote`
-declare module "../../../../../sudoku-wasm/pkg" {
+declare module "../../../../../../sudoku-wasm/pkg" {
     // Declaration merging of classes only works with `interface`
     /* eslint-disable @typescript-eslint/consistent-type-definitions */
     interface WasmSudoku {
@@ -55,20 +56,3 @@ declare module "../../../../../sudoku-wasm/pkg" {
 postMessage(WORKER_BOOT_UP_MESSAGE);
 
 Comlink.expose(workerApi);
-
-async function init() {
-    // wasm-bindgen with `--target web` requires manual initialization of the module
-    console.debug("Initialize wasm-bindgen");
-    await wbgInit();
-
-    // Our own init function (`console_error_panic_hook` and `console_log`)
-    console.debug("Initialize sudoku-wasm");
-    wasmInit();
-
-    // `wasm_bindgen_rayon`
-    const hardwareConcurrency = navigator.hardwareConcurrency;
-    console.debug(`Initialize wasm-bindgen-rayon with ${hardwareConcurrency} threads`);
-    await initThreadPool(hardwareConcurrency);
-
-    console.debug("Worker initialized");
-}
