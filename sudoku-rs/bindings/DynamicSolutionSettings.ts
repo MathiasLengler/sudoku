@@ -2,4 +2,4 @@
 import type { DynamicCell } from "./DynamicCell";
 import type { DynamicGrid } from "./DynamicGrid";
 
-export interface DynamicSolutionSettings { valuesGrid: DynamicGrid<DynamicCell>, }
+export type DynamicSolutionSettings = { valuesGrid: DynamicGrid<DynamicCell>, };

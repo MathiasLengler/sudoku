@@ -115,7 +115,7 @@ export const WorldMap = () => {
             const testInstance = new WasmSudoku();
             console.log({ testInstance });
 
-            // TODO: expose static indexing helpers
+            // TODO: expose and use static indexing helpers
         };
 
         run().catch(console.error);

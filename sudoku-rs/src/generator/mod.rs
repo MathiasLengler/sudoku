@@ -47,6 +47,7 @@ pub enum PruningTarget {
     MinClueCount(u16),
 }
 
+// TODO: rename behaviour (UK) to behavior (US)
 #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -291,11 +292,11 @@ mod dynamic_settings {
     #[serde(rename_all = "camelCase")]
     pub struct DynamicGeneratorSettings {
         pub base: u8,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[ts(optional = nullable)]
         pub prune: Option<DynamicPruningSettings>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[ts(optional = nullable)]
         pub solution: Option<DynamicSolutionSettings>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[ts(optional = nullable)]
         pub seed: Option<u64>,
     }
 

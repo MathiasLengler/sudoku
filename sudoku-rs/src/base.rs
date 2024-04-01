@@ -174,7 +174,7 @@ mod block_index_to_top_left_cell_index {
 ///
 /// # Safety
 /// This crate makes assumptions about the correct implementation of this trait.
-/// An incorrect implementation could result in undefined behaviour.
+/// An incorrect implementation could result in undefined behavior.
 pub unsafe trait SudokuBase
 where
     Self: Ord + Hash + Clone + Copy + Debug + Default + Send + Sync + 'static + private::Sealed,
@@ -504,31 +504,34 @@ mod enum_impl {
 
         use super::*;
 
-        impl ts_rs::TS for BaseEnum {
-            const EXPORT_TO: Option<&'static str> = Some("bindings/BaseEnum.ts");
-            fn decl() -> String {
-                format!("type BaseEnum = {};", Self::inline())
-            }
+        impl ::ts_rs::TS for BaseEnum {
+            type WithoutGenerics = Self;
+
             fn name() -> String {
                 "BaseEnum".to_owned()
+            }
+            fn decl_concrete() -> String {
+                format!("type {} = {};", Self::name(), Self::inline())
+            }
+            fn decl() -> String {
+                let inline = Self::inline();
+                format!("type {} = {inline};", Self::name())
             }
             fn inline() -> String {
                 BaseEnum::all().map(Self::into_u8).join(" | ")
             }
-            fn dependencies() -> Vec<ts_rs::Dependency>
-            where
-                Self: 'static,
-            {
-                vec![]
+            fn inline_flattened() -> String {
+                panic!("{} cannot be flattened", Self::name())
             }
-            fn transparent() -> bool {
-                false
+            fn output_path() -> Option<&'static std::path::Path> {
+                Some(std::path::Path::new("BaseEnum.ts"))
             }
         }
+
         #[cfg(test)]
         #[test]
         fn export_bindings_baseenum() {
-            <BaseEnum as ts_rs::TS>::export().expect("could not export type");
+            <BaseEnum as ::ts_rs::TS>::export_all().expect("could not export type");
         }
     }
 
