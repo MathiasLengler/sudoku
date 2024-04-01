@@ -306,70 +306,119 @@ body,
     height: 100%;
 }
 
-.world-map-table {
-    display: block;
-    overflow: auto;
-    border-collapse: collapse;
-    border-width: 0;
-}
-
 .world-map-grid-auto-sizer-container {
     flex: 1 1 auto;
 }
 
-.world-map-table,
 .world-map-grid {
-    --world-map-border-style: solid;
-    --world-map-td-cell-border: var(--cell-border-size) var(--world-map-border-style) var(--cell-border-color);
-    --world-map-td-block-border: var(--block-border-size) var(--world-map-border-style) var(--block-border-color);
-    --world-map-td-grid-border: 20px var(--world-map-border-style) var(--block-border-color);
-    --world-map-td-selected-grid-border: 20px var(--world-map-border-style) var(--cell-value-color-user);
+    --world-map-cell-border-width: var(--cell-border-size);
+    --world-map-block-border-width: var(--block-border-size);
+    --world-map-grid-border-width: 20px;
+    --world-map-selected-grid-border-width: 40px;
+    --world-map-cell-border-color: var(--cell-border-color);
+    --world-map-block-border-color: var(--block-border-color);
+    --world-map-grid-border-color: var(--block-border-color);
+    --world-map-selected-grid-border-color: var(--cell-value-color-user);
 }
 .world-map-cell {
-    padding: 0;
-    border: var(--world-map-td-cell-border);
+    /* --cell-border-width-top: var(--world-map-cell-border-width);
+    --cell-border-width-right: var(--world-map-cell-border-width);
+    --cell-border-width-bottom: var(--world-map-cell-border-width);
+    --cell-border-width-left: var(--world-map-cell-border-width);
+    --cell-border-color-top: var(--world-map-cell-border-color);
+    --cell-border-color-right: var(--world-map-cell-border-color);
+    --cell-border-color-bottom: var(--world-map-cell-border-color);
+    --cell-border-color-left: var(--world-map-cell-border-color); */
+
+    padding-top: var(
+        --cell-selected-grid-border-width-top,
+        var(--cell-grid-border-width-top, var(--cell-block-border-width-top, var(--world-map-cell-border-width)))
+    );
+    padding-right: var(
+        --cell-selected-grid-border-width-right,
+        var(--cell-grid-border-width-right, var(--cell-block-border-width-right, var(--world-map-cell-border-width)))
+    );
+    padding-bottom: var(
+        --cell-selected-grid-border-width-bottom,
+        var(--cell-grid-border-width-bottom, var(--cell-block-border-width-bottom, var(--world-map-cell-border-width)))
+    );
+    padding-left: var(
+        --cell-selected-grid-border-width-left,
+        var(--cell-grid-border-width-left, var(--cell-block-border-width-left, var(--world-map-cell-border-width)))
+    );
+
+    /* Box shadows stack, e.g. first in list is drawn above the rest */
+    box-shadow:
+        /* selected grid */
+        inset 0 var(--cell-selected-grid-border-width-top, 0px) 0 0 var(--world-map-selected-grid-border-color),
+        inset calc(-1 * var(--cell-selected-grid-border-width-right, 0px)) 0 0 0
+            var(--world-map-selected-grid-border-color),
+        inset 0 calc(-1 * var(--cell-selected-grid-border-width-bottom, 0px)) 0 0
+            var(--world-map-selected-grid-border-color),
+        inset var(--cell-selected-grid-border-width-left, 0px) 0 0 0 var(--world-map-selected-grid-border-color),
+        /* grid */ inset 0 var(--cell-grid-border-width-top, 0px) 0 0 var(--world-map-grid-border-color),
+        inset calc(-1 * var(--cell-grid-border-width-right, 0px)) 0 0 0 var(--world-map-grid-border-color),
+        inset 0 calc(-1 * var(--cell-grid-border-width-bottom, 0px)) 0 0 var(--world-map-grid-border-color),
+        inset var(--cell-grid-border-width-left, 0px) 0 0 0 var(--world-map-grid-border-color),
+        /* block */ inset 0 var(--cell-block-border-width-top, 0px) 0 0 var(--world-map-block-border-color),
+        inset calc(-1 * var(--cell-block-border-width-right, 0px)) 0 0 0 var(--world-map-block-border-color),
+        inset 0 calc(-1 * var(--cell-block-border-width-bottom, 0px)) 0 0 var(--world-map-block-border-color),
+        inset var(--cell-block-border-width-left, 0px) 0 0 0 var(--world-map-block-border-color),
+        /* cell */ inset 0 0 0 var(--world-map-cell-border-width) var(--world-map-cell-border-color);
+
+    container-type: size;
+    container-name: world-map-cell;
+    display: grid;
+    resize: both;
+}
+
+.world-map-cell .cell {
+    width: 100%;
+    margin: auto;
+}
+
+@container world-map-cell (aspect-ratio > 1) {
+    .world-map-cell .cell {
+        width: auto;
+        height: 100%;
+    }
 }
 
 .block-border-top {
-    border-top: var(--world-map-td-block-border);
+    --cell-block-border-width-top: var(--world-map-block-border-width);
 }
 .block-border-right {
-    border-right: var(--world-map-td-block-border);
+    --cell-block-border-width-right: var(--world-map-block-border-width);
 }
 .block-border-bottom {
-    border-bottom: var(--world-map-td-block-border);
+    --cell-block-border-width-bottom: var(--world-map-block-border-width);
 }
 .block-border-left {
-    border-left: var(--world-map-td-block-border);
+    --cell-block-border-width-left: var(--world-map-block-border-width);
 }
 
 .grid-border-top {
-    border-top: var(--world-map-td-grid-border);
+    --cell-grid-border-width-top: var(--world-map-grid-border-width);
 }
 .grid-border-right {
-    border-right: var(--world-map-td-grid-border);
+    --cell-grid-border-width-right: var(--world-map-grid-border-width);
 }
 .grid-border-bottom {
-    border-bottom: var(--world-map-td-grid-border);
+    --cell-grid-border-width-bottom: var(--world-map-grid-border-width);
 }
 .grid-border-left {
-    border-left: var(--world-map-td-grid-border);
+    --cell-grid-border-width-left: var(--world-map-grid-border-width);
 }
 
 .selected-grid-border-top {
-    border-top: var(--world-map-td-selected-grid-border);
+    --cell-selected-grid-border-width-top: var(--world-map-selected-grid-border-width);
 }
 .selected-grid-border-right {
-    border-right: var(--world-map-td-selected-grid-border);
+    --cell-selected-grid-border-width-right: var(--world-map-selected-grid-border-width);
 }
 .selected-grid-border-bottom {
-    border-bottom: var(--world-map-td-selected-grid-border);
+    --cell-selected-grid-border-width-bottom: var(--world-map-selected-grid-border-width);
 }
 .selected-grid-border-left {
-    border-left: var(--world-map-td-selected-grid-border);
-}
-
-.world-map-table .cell {
-    width: var(--cell-size);
-    height: var(--cell-size);
+    --cell-selected-grid-border-width-left: var(--world-map-selected-grid-border-width);
 }
