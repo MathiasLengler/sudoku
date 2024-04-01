@@ -97,13 +97,15 @@ impl WasmCellWorld {
 
     // DynamicGrid interop
     #[wasm_bindgen(js_name = toGridAt)]
-    pub fn to_grid_at(&self, grid_index: IGridIndex) -> Result<IDynamicGrid> {
-        export_dynamic_grid(self.world.to_grid_at(import_grid_index(grid_index)?)?)
+    pub fn to_grid_at(&self, grid_index: IWorldPosition) -> Result<IDynamicGrid> {
+        export_dynamic_grid(self.world.to_grid_at(import_world_position(grid_index)?)?)
     }
     #[wasm_bindgen(js_name = setGridAt)]
-    pub fn set_grid_at(&mut self, grid: IDynamicGrid, grid_index: IGridIndex) -> Result<()> {
-        self.world
-            .set_grid_at(import_dynamic_grid(grid)?, import_grid_index(grid_index)?)?;
+    pub fn set_grid_at(&mut self, grid: IDynamicGrid, grid_index: IWorldPosition) -> Result<()> {
+        self.world.set_grid_at(
+            import_dynamic_grid(grid)?,
+            import_world_position(grid_index)?,
+        )?;
         Ok(())
     }
 
