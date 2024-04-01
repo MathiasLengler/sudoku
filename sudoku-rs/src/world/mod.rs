@@ -10,8 +10,8 @@ use tabled::settings::{Padding, Style};
 #[cfg(feature = "wasm")]
 use ts_rs::TS;
 
-pub use grid_index::*;
 use overlap_segment_filter::*;
+pub use world_position::*;
 
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
@@ -33,7 +33,7 @@ use self::dynamic::DynamicCellWorldActions;
 
 mod overlap_segment_filter;
 
-mod grid_index;
+mod world_position;
 
 pub mod dynamic;
 
@@ -75,7 +75,6 @@ pub struct WorldGenerationResult {
 #[serde(rename_all = "camelCase")]
 pub struct CellWorldDimensions {
     pub grid_dim: WorldDim,
-    // FIXME: better name or separate type
     pub cell_dim: WorldDim,
     pub overlap: u8,
 }
@@ -110,7 +109,7 @@ impl<Base: SudokuBase> DynamicCellWorldActions for CellWorld<Base> {
         let mut rng = new_crate_rng_with_seed(seed);
 
         solver_stack.push(
-            backtracking::Solver::builder(self.to_grid_at(GridIndex::default())?)
+            backtracking::Solver::builder(self.to_grid_at(WorldPosition::default())?)
                 .rng(new_crate_rng_from_rng(&mut rng))
                 .availability_filter(None)
                 .build(),
@@ -237,11 +236,15 @@ impl<Base: SudokuBase> DynamicCellWorldActions for CellWorld<Base> {
     }
 
     // DynamicGrid interop
-    fn to_grid_at(&self, grid_index: GridIndex) -> Result<DynamicGrid<DynamicCell>> {
+    fn to_grid_at(&self, grid_index: WorldPosition) -> Result<DynamicGrid<DynamicCell>> {
         Ok(self.to_grid_at(grid_index)?.into())
     }
 
-    fn set_grid_at(&mut self, grid: DynamicGrid<DynamicCell>, grid_index: GridIndex) -> Result<()> {
+    fn set_grid_at(
+        &mut self,
+        grid: DynamicGrid<DynamicCell>,
+        grid_index: WorldPosition,
+    ) -> Result<()> {
         self.set_grid_at(&grid.try_into()?, grid_index)?;
         Ok(())
     }
@@ -277,7 +280,7 @@ impl<Base: SudokuBase> DynamicCellWorldActions for CellWorld<Base> {
 
 /// Grid interop
 impl<Base: SudokuBase> CellWorld<Base> {
-    pub fn to_grid_at(&self, grid_index: GridIndex) -> Result<Grid<Base>> {
+    pub fn to_grid_at(&self, grid_index: WorldPosition) -> Result<Grid<Base>> {
         Ok(self.to_grid_at_validated(grid_index.validate(self.grid_dim)?))
     }
 
@@ -289,7 +292,7 @@ impl<Base: SudokuBase> CellWorld<Base> {
         grid_cells_array_view.try_into().unwrap()
     }
 
-    pub fn set_grid_at(&mut self, grid: &Grid<Base>, grid_index: GridIndex) -> Result<()> {
+    pub fn set_grid_at(&mut self, grid: &Grid<Base>, grid_index: WorldPosition) -> Result<()> {
         self.set_grid_at_validated(grid, grid_index.validate(self.grid_dim)?);
         Ok(())
     }
@@ -328,7 +331,7 @@ impl<Base: SudokuBase> CellWorld<Base> {
             .map(move |grid_index| self.to_grid_at_validated(grid_index))
     }
 
-    pub fn all_grid_indexes(&self) -> impl Iterator<Item = GridIndex> {
+    pub fn all_grid_indexes(&self) -> impl Iterator<Item = WorldPosition> {
         self.grid_dim.all_indexes()
     }
 
@@ -556,7 +559,9 @@ mod tests {
 
             let mut cell_world = cell_world.clone();
 
-            let grid_index = GridIndex { row: 1, column: 1 }.validate(grid_dim).unwrap();
+            let grid_index = WorldPosition { row: 1, column: 1 }
+                .validate(grid_dim)
+                .unwrap();
             cell_world.delete_grid_overlap_segments(grid_index, overlap_segment_filter);
 
             dbg!(&expected_deleted_positions);

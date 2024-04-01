@@ -1,5 +1,5 @@
 import { Snapshot, useRecoilCallback } from "recoil";
-import type { GridIndex } from "../../types";
+import type { WorldPosition } from "../../types";
 import { remoteWasmCellWorldState, type RemoteWasmCellWorld } from "../state/worker";
 
 async function getRemoteWasmCellWorld(snapshot: Snapshot): Promise<RemoteWasmCellWorld> {
@@ -41,12 +41,12 @@ async function getRemoteWasmCellWorld(snapshot: Snapshot): Promise<RemoteWasmCel
 export function useSetWorldGridAsSingle() {
     return useRecoilCallback(
         ({ snapshot, set: _set }) =>
-            async (GridIndex: GridIndex) => {
-                console.log("changeGrid", GridIndex);
+            async (world_index_grid: WorldPosition) => {
+                console.log("changeGrid", world_index_grid);
                 const remoteWasmCellWorldProxy = await getRemoteWasmCellWorld(snapshot);
                 console.log(remoteWasmCellWorldProxy);
 
-                const newGrid = await remoteWasmCellWorldProxy.toGridAt(GridIndex);
+                const newGrid = await remoteWasmCellWorldProxy.toGridAt(world_index_grid);
 
                 console.log("newGrid", newGrid);
                 // await wasmCellWorldProxy.???;

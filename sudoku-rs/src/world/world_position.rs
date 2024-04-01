@@ -23,10 +23,10 @@ mod validated {
     #[derive(
         Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize,
     )]
-    pub(in crate::world) struct ValidatedGridIndex(GridIndex);
+    pub(in crate::world) struct ValidatedGridIndex(WorldPosition);
 
     impl ValidatedGridIndex {
-        pub(in crate::world) fn new(index: GridIndex, grid_dim: WorldDim) -> Result<Self> {
+        pub(in crate::world) fn new(index: WorldPosition, grid_dim: WorldDim) -> Result<Self> {
             ensure!(
                 index.contained_in(grid_dim),
                 "{index:?} out of bounds for {grid_dim:?}"
@@ -35,17 +35,17 @@ mod validated {
             Ok(Self::new_unchecked(index))
         }
 
-        pub(super) fn new_opt(index: GridIndex, grid_dim: WorldDim) -> Option<Self> {
+        pub(super) fn new_opt(index: WorldPosition, grid_dim: WorldDim) -> Option<Self> {
             index
                 .contained_in(grid_dim)
                 .then(|| Self::new_unchecked(index))
         }
 
-        pub(super) fn new_unchecked(index: GridIndex) -> Self {
+        pub(super) fn new_unchecked(index: WorldPosition) -> Self {
             Self(index)
         }
 
-        pub(in crate::world) fn get(self) -> GridIndex {
+        pub(in crate::world) fn get(self) -> WorldPosition {
             self.0
         }
 
@@ -54,39 +54,39 @@ mod validated {
             dir: RelativeGridDir,
             grid_dim: WorldDim,
         ) -> Option<Self> {
-            let GridIndex { row, column } = self.0;
+            let WorldPosition { row, column } = self.0;
 
             let adjacent = match dir {
-                RelativeGridDir::TopLeft => GridIndex {
+                RelativeGridDir::TopLeft => WorldPosition {
                     row: row.checked_sub(1)?,
                     column: column.checked_sub(1)?,
                 },
-                RelativeGridDir::Left => GridIndex {
+                RelativeGridDir::Left => WorldPosition {
                     row,
                     column: column.checked_sub(1)?,
                 },
-                RelativeGridDir::Right => GridIndex {
+                RelativeGridDir::Right => WorldPosition {
                     row,
                     column: column + 1,
                 },
-                RelativeGridDir::TopRight => GridIndex {
+                RelativeGridDir::TopRight => WorldPosition {
                     row: row.checked_sub(1)?,
                     column: column + 1,
                 },
-                RelativeGridDir::Top => GridIndex {
+                RelativeGridDir::Top => WorldPosition {
                     row: row.checked_sub(1)?,
                     column,
                 },
-                RelativeGridDir::BottomLeft => GridIndex {
+                RelativeGridDir::BottomLeft => WorldPosition {
                     row: row + 1,
                     column: column.checked_sub(1)?,
                 },
 
-                RelativeGridDir::Bottom => GridIndex {
+                RelativeGridDir::Bottom => WorldPosition {
                     row: row + 1,
                     column,
                 },
-                RelativeGridDir::BottomRight => GridIndex {
+                RelativeGridDir::BottomRight => WorldPosition {
                     row: row + 1,
                     column: column + 1,
                 },
@@ -99,19 +99,19 @@ mod validated {
 
 #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
-pub struct GridIndex {
+pub struct WorldPosition {
     pub row: usize,
     pub column: usize,
 }
 
-impl Display for GridIndex {
+impl Display for WorldPosition {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let Self { row, column } = self;
         write!(f, "({row}, {column})")
     }
 }
 
-impl GridIndex {
+impl WorldPosition {
     pub fn contained_in(self, grid_dim: WorldDim) -> bool {
         grid_dim.contains(self)
     }
@@ -158,12 +158,12 @@ impl WorldDim {
         })
     }
 
-    pub fn contains(self, index: GridIndex) -> bool {
+    pub fn contains(self, index: WorldPosition) -> bool {
         let WorldDim {
             row_count,
             column_count,
         } = self;
-        let GridIndex { row, column } = index;
+        let WorldPosition { row, column } = index;
 
         (0..row_count.get()).contains(&row) && (0..column_count.get()).contains(&column)
     }
@@ -172,9 +172,9 @@ impl WorldDim {
         self.row_count.get() * self.column_count.get()
     }
 
-    pub fn all_indexes(self) -> impl Iterator<Item = GridIndex> {
+    pub fn all_indexes(self) -> impl Iterator<Item = WorldPosition> {
         (0..self.row_count.get()).flat_map(move |row| {
-            (0..self.column_count.get()).map(move |column| GridIndex { row, column })
+            (0..self.column_count.get()).map(move |column| WorldPosition { row, column })
         })
     }
 

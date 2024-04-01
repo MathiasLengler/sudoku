@@ -22,7 +22,7 @@ use sudoku::{
         strategies::StrategyEnum,
     },
     transport::{TransportCell, TransportSudoku},
-    world::{CellWorldDimensions, GridIndex, RelativeGridDir, WorldDim, WorldGenerationResult},
+    world::{CellWorldDimensions, RelativeGridDir, WorldDim, WorldGenerationResult, WorldPosition},
     DynamicTryStrategiesReturn,
 };
 use wasm_bindgen::prelude::*;
@@ -87,15 +87,15 @@ import type {
     PruningTarget,
     RelativeGridDir,
     StrategyEnum,
-    WorldDim,
-    GridIndex,
     TransportAction,
     TransportCell,
     TransportDeduction,
     TransportDeductions,
     TransportReason,
     TransportSudoku,
-    WorldGenerationResult
+    WorldDim,
+    WorldGenerationResult,
+    WorldPosition
 } from "../../sudoku-rs/bindings";
 "#;
 serde_wasm_bindgen_interop! {
@@ -119,15 +119,15 @@ serde_wasm_bindgen_interop! {
     PruningTarget,
     RelativeGridDir,
     StrategyEnum,
-    WorldDim,
-    GridIndex,
     TransportAction,
     TransportCell,
     TransportDeduction,
     TransportDeductions,
     TransportReason,
     TransportSudoku,
-    WorldGenerationResult
+    WorldDim,
+    WorldGenerationResult,
+    WorldPosition
 }
 
 // Serde-compatbile aliases
