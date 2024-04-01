@@ -313,8 +313,8 @@ body,
 .world-map-grid {
     --world-map-cell-border-width: var(--cell-border-size);
     --world-map-block-border-width: var(--block-border-size);
-    --world-map-grid-border-width: 20px;
-    --world-map-selected-grid-border-width: 40px;
+    --world-map-grid-border-width: 4px;
+    --world-map-selected-grid-border-width: 4px;
     --world-map-cell-border-color: var(--cell-border-color);
     --world-map-block-border-color: var(--block-border-color);
     --world-map-grid-border-color: var(--block-border-color);
