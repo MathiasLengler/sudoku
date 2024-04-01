@@ -1,7 +1,6 @@
 import _ from "lodash";
 import type { DynamicPosition, WorldDim } from "../../types";
 
-// TODO: rename rest of `cellIndex` to `cellWorldPosition`
 export function validateCellWorldPosition({
     cellWorldPosition: { row: cellRowIndex, column: cellColumnIndex },
     cellWorldPosition,

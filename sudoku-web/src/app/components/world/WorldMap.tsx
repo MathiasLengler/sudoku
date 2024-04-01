@@ -90,11 +90,11 @@ type WorldCellVirtualizedProps = {
     style: React.CSSProperties;
 };
 
-// TODO: memo: https://react-window.vercel.app/#/examples/list/memoized-list-items
-
-function WorldCellVirtualized({ rowIndex, columnIndex, style }: WorldCellVirtualizedProps) {
-    console.debug("WorldCellVirtualized", rowIndex, columnIndex);
-
+const WorldCellVirtualized = React.memo(function WorldCellVirtualized({
+    rowIndex,
+    columnIndex,
+    style,
+}: WorldCellVirtualizedProps) {
     const cellWorldPosition: DynamicPosition = {
         row: rowIndex,
         column: columnIndex,
@@ -106,7 +106,7 @@ function WorldCellVirtualized({ rowIndex, columnIndex, style }: WorldCellVirtual
 
     return (
         <div
-            className={`world-map-cell cell ${worldCellBorderClasses}`}
+            className={`world-map-cell ${worldCellBorderClasses}`}
             style={style}
             // sx={{
             //     width: "var(--cell-size)",
@@ -120,25 +120,28 @@ function WorldCellVirtualized({ rowIndex, columnIndex, style }: WorldCellVirtual
                 });
             }}
         >
-            {/* <Code wrap>{debug}</Code> */}
-            {worldCell.kind === "value" ? (
-                <CellValue value={worldCell.value} />
-            ) : (
-                <Candidates candidates={worldCell.candidates} gridPosition={{ column: 0, row: 0 }} />
-            )}
+            <div className="cell">
+                {/* <Code wrap>{debug}</Code> */}
+                {worldCell.kind === "value" ? (
+                    <CellValue value={worldCell.value} />
+                ) : (
+                    <Candidates candidates={worldCell.candidates} gridPosition={{ column: 0, row: 0 }} />
+                )}
+            </div>
         </div>
     );
-}
+});
 
 const WorldMapVirtualized = () => {
     const cellWorldDimensions = useRecoilValue(cellWorldDimensionsState);
-    const worldCellSize = useRecoilValue(worldCellSizeState);
+    const worldCellSize = useDeferredValue(useRecoilValue(worldCellSizeState));
 
     return (
-        <div style={{ flex: "1 1 auto" }}>
-            <AutoSizer>
+        <div className="world-map-grid-auto-sizer-container">
+            <AutoSizer className="world-map-grid-auto-sizer">
                 {({ height, width }) => (
                     <Grid
+                        className="world-map-grid"
                         columnCount={cellWorldDimensions.cellDim.columnCount}
                         columnWidth={worldCellSize}
                         height={height}
@@ -166,12 +169,9 @@ export const WorldMap = () => {
 
     const [isVirtual, setIsVirtual] = useState(true);
 
-    const cellSizeCss = `${useDeferredValue(cellSize)}px`;
-
     const cssVariables: CSS.Properties = {
         "--side-length": sideLength,
         "--base": base,
-        "--cell-size": cellSizeCss,
     };
 
     return (

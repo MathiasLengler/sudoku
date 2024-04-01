@@ -35,13 +35,8 @@ export const Block = ({ blockIndex, cells }: BlockProps) => {
 
     const containsSelectedPos = useRecoilValue(containsSelectedPosState(blockPosition));
 
-    const style: CSS.Properties = {
-        "--block-column": blockPosition.column,
-        "--block-row": blockPosition.row,
-    };
-
     return (
-        <div className="block" style={style}>
+        <div className="block">
             {cells.map((cell, blockCellIndex) => {
                 let isSelected: boolean;
                 let isGuide: boolean;

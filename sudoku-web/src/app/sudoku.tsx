@@ -1,12 +1,13 @@
 import type * as CSS from "csstype";
 import { Suspense } from "react";
-import { useResizeDetector } from "react-resize-detector";
+import { useResizeDetector } from "./vendored/react-resize-detector";
 import { useRecoilValue } from "recoil";
 import SudokuAppBar from "./appBar/sudokuAppBar";
 import { ThemeErrorBoundary } from "./components/ErrorFallback";
 import { FullScreenSpinner } from "./components/FullScreenSpinner";
 import { WorldMap } from "./components/world/WorldMap";
-import { ControlPanel } from "./controlPanel/controlPanel";
+import { Toolbar } from "./controlPanel/toolbar";
+import { ValueSelector } from "./controlPanel/valueSelector";
 import { Grid } from "./grid/grid";
 import { sudokuBaseState, sudokuSideLengthState } from "./state/sudoku";
 import { showWorldMapState } from "./state/world";
@@ -18,7 +19,17 @@ const SudokuGame = () => {
     const sideLength = useRecoilValue(sudokuSideLengthState);
 
     // Responsive Grid
-    const { width: gridWidth, height: gridHeight, ref: gridRef } = useResizeDetector<HTMLDivElement>({});
+    const {
+        width: gridWidth,
+        height: gridHeight,
+        ref: gridRef,
+    } = useResizeDetector<HTMLDivElement>({
+        observerOptions: {
+            box: "border-box",
+        },
+    });
+
+    console.log({ gridWidth, gridHeight });
 
     const cssVariables: CSS.Properties = {
         "--side-length": sideLength,
@@ -29,13 +40,15 @@ const SudokuGame = () => {
     return (
         <div className="sudoku-game" style={cssVariables}>
             <Grid gridRef={gridRef} />
-            <ControlPanel />
+            <Toolbar />
+            <ValueSelector />
         </div>
     );
 };
 
 const SudokuContent = () => {
     const showWorldMap = useRecoilValue(showWorldMapState);
+
     return (
         <div className="app-content">
             <ThemeErrorBoundary>
