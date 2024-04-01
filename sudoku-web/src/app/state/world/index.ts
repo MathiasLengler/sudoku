@@ -25,17 +25,24 @@ const usizeSchema = z
     .int()
     // wasm32 (bits)
     .max(Math.pow(2, 32) - 1);
-export const WorldPositionSchema = z.object({
+export const worldPositionSchema = z.object({
     row: usizeSchema,
     column: usizeSchema,
 });
-assert<IsEqual<z.infer<typeof WorldPositionSchema>, WorldPosition>>();
+assert<IsEqual<z.infer<typeof worldPositionSchema>, WorldPosition>>();
+
+// TODO: somehow link these branded types with wasm-bindgen
+export type CellWorldPosition = z.infer<typeof cellWorldPositionSchema>;
+export const cellWorldPositionSchema = worldPositionSchema.brand("CellWorldPosition");
+
+export type GridWorldPosition = z.infer<typeof gridWorldPositionSchema>;
+export const gridWorldPositionSchema = worldPositionSchema.brand("GridWorldPosition");
 
 export type GameModeWorld = z.infer<typeof gameModeWorldSchema>;
 export const gameModeWorldSchema = z.object({
     mode: z.literal("world"),
     view: worldViewSchema,
-    selectedGridIndex: WorldPositionSchema,
+    selectedGridIndex: worldPositionSchema,
 });
 
 export const showWorldMapState = selector<boolean>({
