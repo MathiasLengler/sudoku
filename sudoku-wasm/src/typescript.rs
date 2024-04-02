@@ -109,7 +109,6 @@ serde_wasm_bindgen_interop! {
     DynamicPruningOrder,
     DynamicPruningSettings,
     DynamicSolutionSettings,
-    DynamicTryStrategiesReturn,
     DynamicValue,
     GeneratorProgress,
     GridFormatEnum,
@@ -133,17 +132,21 @@ serde_wasm_bindgen_interop! {
 // Serde-compatbile aliases
 pub type StrategyEnums = Vec<StrategyEnum>;
 pub type DynamicCells = Vec<DynamicCell>;
+// Workaround for ts-rs import bug
+pub type DynamicTryStrategiesReturnAlias = DynamicTryStrategiesReturn;
 
 // Must be keept in sync with aliases above
 #[wasm_bindgen(typescript_custom_section)]
 const SERDE_ALIASES: &'static str = r#"
 export type StrategyEnums = StrategyEnum[];
 export type DynamicCells = DynamicCell[];
+export type DynamicTryStrategiesReturnAlias = [StrategyEnum, TransportDeductions] | null;
 "#;
 
 serde_wasm_bindgen_interop! {
     StrategyEnums,
-    DynamicCells
+    DynamicCells,
+    DynamicTryStrategiesReturnAlias
 }
 
 // non-serde types - custom conversion functions

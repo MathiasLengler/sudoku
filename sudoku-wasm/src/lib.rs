@@ -277,12 +277,12 @@ impl WasmSudoku {
     pub fn try_strategies(
         &mut self,
         strategies: IStrategyEnums,
-    ) -> Result<IDynamicTryStrategiesReturn> {
+    ) -> Result<IDynamicTryStrategiesReturnAlias> {
         let dynamic_try_strategies_return = self
             .sudoku
             .try_strategies(import_strategy_enums(strategies)?)?;
 
-        export_dynamic_try_strategies_return(dynamic_try_strategies_return)
+        export_dynamic_try_strategies_return_alias(dynamic_try_strategies_return)
     }
 
     #[wasm_bindgen(js_name = applyDeductions)]
