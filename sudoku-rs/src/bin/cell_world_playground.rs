@@ -1,7 +1,7 @@
 use sudoku::base::consts::*;
 use sudoku::error::Result;
 use sudoku::world::dynamic::DynamicCellWorldActions;
-use sudoku::world::{CellWorld, WorldDim, WorldGridDim};
+use sudoku::world::{CellWorld, WorldGridDim};
 
 fn main() -> Result<()> {
     let grid_dim = WorldGridDim::new(3, 3)?;
