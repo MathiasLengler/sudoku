@@ -4,7 +4,6 @@ use ndarray::{s, Array2, ArrayViewMut2, Axis, Dim, SliceInfo, SliceInfoElem};
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
-use std::num::NonZeroUsize;
 use tabled::builder::Builder;
 use tabled::settings::{Padding, Style};
 #[cfg(feature = "wasm")]
@@ -88,11 +87,8 @@ impl<Base: SudokuBase> CellWorld<Base> {
         assert!(overlap <= Base::BASE);
 
         Self {
+            cells: Array2::default(grid_dim.to_cell_dim::<Base>(overlap).as_cells_shape()),
             grid_dim,
-            cells: Array2::default((
-                Self::grid_axis_count_to_cell_axis_count(grid_dim.row_count, overlap),
-                Self::grid_axis_count_to_cell_axis_count(grid_dim.column_count, overlap),
-            )),
             overlap,
         }
     }
@@ -389,12 +385,6 @@ impl<Base: SudokuBase> CellWorld<Base> {
             .fill(denied_corner_candidates);
 
         Some(denylist)
-    }
-
-    fn grid_axis_count_to_cell_axis_count(grid_axis_count: NonZeroUsize, overlap: u8) -> usize {
-        let grid_axis_count = grid_axis_count.get();
-        grid_axis_count * usize::from(Base::SIDE_LENGTH)
-            - (grid_axis_count - 1) * usize::from(overlap)
     }
 
     fn grid_cells_slice_info(
