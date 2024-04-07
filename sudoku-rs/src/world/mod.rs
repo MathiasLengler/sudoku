@@ -1,6 +1,6 @@
 use anyhow::bail;
 use log::{info, trace};
-use ndarray::{s, Array2, ArrayViewMut2, Axis, Dim, SliceInfo, SliceInfoElem};
+use ndarray::{s, Array2, ArrayView2, ArrayViewMut2, Axis, Dim, SliceInfo, SliceInfoElem};
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
@@ -279,9 +279,7 @@ impl<Base: SudokuBase> CellWorld<Base> {
     }
 
     fn to_grid_at_validated(&self, grid_position: ValidatedWorldGridPosition) -> Grid<Base> {
-        let grid_cells_array_view = self
-            .cells
-            .slice(Self::grid_cells_slice_info(grid_position, self.overlap));
+        let grid_cells_array_view = self.grid_cells(grid_position);
 
         grid_cells_array_view.try_into().unwrap()
     }
@@ -319,9 +317,7 @@ impl<Base: SudokuBase> CellWorld<Base> {
         grid: &Grid<Base>,
         grid_position: ValidatedWorldGridPosition,
     ) {
-        let world_grid_cells = self
-            .cells
-            .slice_mut(Self::grid_cells_slice_info(grid_position, self.overlap));
+        let world_grid_cells = self.grid_cells_mut(grid_position);
         grid.cells_view().assign_to(world_grid_cells);
     }
 }
@@ -344,16 +340,32 @@ impl<Base: SudokuBase> CellWorld<Base> {
 
 /// Internal helpers
 impl<Base: SudokuBase> CellWorld<Base> {
+    fn grid_cells(&self, grid_position: ValidatedWorldGridPosition) -> ArrayView2<Cell<Base>> {
+        self.cells
+            .slice(Self::grid_cells_slice_info(grid_position, self.overlap))
+    }
+    fn grid_cells_mut(
+        &mut self,
+        grid_position: ValidatedWorldGridPosition,
+    ) -> ArrayViewMut2<Cell<Base>> {
+        self.cells
+            .slice_mut(Self::grid_cells_slice_info(grid_position, self.overlap))
+    }
+
+    fn grid_cells_slice_info(
+        grid_position: ValidatedWorldGridPosition,
+        overlap: u8,
+    ) -> GridCellsSliceInfo {
+        grid_position.grid_cells_slice_info::<Base>(overlap)
+    }
+
     fn direct_denylist_from_top_right_grid(
         &self,
         grid_position: ValidatedWorldGridPosition,
     ) -> Option<DeniedCandidatesGrid<Base>> {
         let top_right_grid_position = grid_position.adjacent(TopRight, self.grid_dim)?;
 
-        let top_right_grid_cells = self.cells.slice(Self::grid_cells_slice_info(
-            top_right_grid_position,
-            self.overlap,
-        ));
+        let top_right_grid_cells = self.grid_cells(top_right_grid_position);
 
         let overlap_isize = isize::from(self.overlap);
 
@@ -381,13 +393,6 @@ impl<Base: SudokuBase> CellWorld<Base> {
             .fill(denied_corner_candidates);
 
         Some(denylist)
-    }
-
-    fn grid_cells_slice_info(
-        grid_position: ValidatedWorldGridPosition,
-        overlap: u8,
-    ) -> GridCellsSliceInfo {
-        grid_position.grid_cells_slice_info::<Base>(overlap)
     }
 
     fn split_cells_into_overlap_segments_single_axis(
@@ -433,12 +438,11 @@ impl<Base: SudokuBase> CellWorld<Base> {
         grid_position: ValidatedWorldGridPosition,
         overlap_segment_filter: OverlapSegmentFilter,
     ) {
-        let grid_cells = self
-            .cells
-            .slice_mut(Self::grid_cells_slice_info(grid_position, self.overlap));
+        let overlap = self.overlap;
+        let grid_cells = self.grid_cells_mut(grid_position);
 
         let grid_cells_overlap_segments =
-            Self::split_cells_into_overlap_segments(grid_cells, self.overlap);
+            Self::split_cells_into_overlap_segments(grid_cells, overlap);
 
         for mut overlap_segment in
             grid_cells_overlap_segments.into_iter_filtered(overlap_segment_filter)
