@@ -91,13 +91,11 @@ export const worldGridDimSchema = worldDimSchema.brand("WorldGridDim");
 
 export const gridDimState = selector<WorldGridDim>({
     key: "gridDim",
-    // FIXME: remove parse when cellWorldDimensions exports the correct type
-    get: ({ get }) => worldGridDimSchema.parse(get(cellWorldDimensionsState).gridDim),
+    get: ({ get }) => get(cellWorldDimensionsState).gridDim,
 });
 export const cellDimState = selector<WorldCellDim>({
     key: "cellDim",
-    // FIXME: remove parse when cellWorldDimensions exports the correct type
-    get: ({ get }) => worldCellDimSchema.parse(get(cellWorldDimensionsState).cellDim),
+    get: ({ get }) => get(cellWorldDimensionsState).cellDim,
 });
 export const overlapState = selector<number>({
     key: "overlap",

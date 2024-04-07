@@ -30,7 +30,6 @@ where
 {
 }
 
-// TODO: add type marker to distinguish between cell and grid positions
 #[cfg_attr(feature = "wasm", derive(TS), ts(export), ts(concrete(T = CellMarker)))]
 #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
 pub struct WorldPosition<T: WorldObject> {

@@ -74,8 +74,9 @@ pub struct WorldGenerationResult {
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CellWorldDimensions {
-    // FIXME: export branded type
+    #[ts(type = "import('../../sudoku-web/src/app/state/world').WorldGridDim")]
     pub grid_dim: WorldGridDim,
+    #[ts(type = "import('../../sudoku-web/src/app/state/world').WorldCellDim")]
     pub cell_dim: WorldCellDim,
     pub overlap: u8,
 }
