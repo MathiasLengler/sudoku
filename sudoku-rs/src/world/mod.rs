@@ -1,6 +1,6 @@
 use anyhow::bail;
 use log::{info, trace};
-use ndarray::{s, Array2, ArrayView2, ArrayViewMut2, Axis, Dim, SliceInfo, SliceInfoElem};
+use ndarray::{s, Array2, ArrayView2, ArrayViewMut2, Axis};
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
@@ -8,7 +8,6 @@ use tabled::builder::Builder;
 use tabled::settings::{Padding, Style};
 
 pub use indexing::*;
-pub use overlap_segment::*;
 
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
@@ -28,8 +27,6 @@ use crate::world::RelativeDir::TopRight;
 
 use self::dynamic::DynamicCellWorldActions;
 
-mod overlap_segment;
-
 mod indexing;
 
 pub mod dynamic;
@@ -39,6 +36,9 @@ pub mod dynamic;
 pub struct CellWorld<Base: SudokuBase> {
     grid_dim: WorldGridDim,
     cells: Array2<Cell<Base>>,
+    // TODO: introduce wrapper for valided overlap "GridOverlap<Base>"
+    //  analog `BlockCoordinate`, but instead of : `block_coordinate < Base::BASE`
+    //  `overlap <= Base::BASE`
     overlap: u8,
 }
 
@@ -187,7 +187,7 @@ impl<Base: SudokuBase> DynamicCellWorldActions for CellWorld<Base> {
 
         // FIXME: how do we prevent pruning of fixed values in the overlap while exposing pruning settings?
         //  *should* we prevent that? this could result in subgrids without a unique solution,
-        //  as long as its neighbours are unsolved.
+        //  as long as its neighbors are unsolved.
 
         let (middle_positions, _overlap_positions): (Vec<_>, Vec<_>) = Position::<Base>::all()
             .partition(|pos| {
@@ -408,6 +408,7 @@ impl<Base: SudokuBase> CellWorld<Base> {
         [first, middle, last]
     }
 
+    // TODO: convert into OverlapSegments impl
     fn split_cells_into_overlap_segments(
         grid_cells: ArrayViewMut2<Cell<Base>>,
         overlap: u8,

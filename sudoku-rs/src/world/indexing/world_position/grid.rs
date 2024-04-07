@@ -20,13 +20,24 @@ impl WorldGridPosition {
         grid_axis_index: usize,
         overlap: u8,
     ) -> usize {
-        grid_axis_index * Self::stride::<Base>(overlap)
+        grid_axis_index * Self::stride_usize::<Base>(overlap)
     }
 
     /// The cell distance between the start of grids in the world.
-    pub fn stride<Base: SudokuBase>(overlap: u8) -> usize {
-        debug_assert!(overlap <= Base::BASE);
+    pub(crate) fn stride<Base: SudokuBase>(overlap: u8) -> u8 {
+        debug_assert!(
+            overlap <= Base::BASE,
+            "overlap {overlap} must be less than or equal to the base {}",
+            Base::BASE
+        );
 
-        usize::from(Base::SIDE_LENGTH) - usize::from(overlap)
+        let grid_stride = Base::SIDE_LENGTH - overlap;
+        debug_assert!(grid_stride > 0, "grid_stride must be positive");
+
+        grid_stride
+    }
+
+    pub(crate) fn stride_usize<Base: SudokuBase>(overlap: u8) -> usize {
+        usize::from(Self::stride::<Base>(overlap))
     }
 }
