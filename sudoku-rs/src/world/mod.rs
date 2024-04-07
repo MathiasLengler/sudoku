@@ -342,8 +342,6 @@ impl<Base: SudokuBase> CellWorld<Base> {
     }
 }
 
-type GridCellsSliceInfo = SliceInfo<[SliceInfoElem; 2], Dim<[usize; 2]>, Dim<[usize; 2]>>;
-
 /// Internal helpers
 impl<Base: SudokuBase> CellWorld<Base> {
     fn direct_denylist_from_top_right_grid(
@@ -389,20 +387,7 @@ impl<Base: SudokuBase> CellWorld<Base> {
         grid_position: ValidatedWorldGridPosition,
         overlap: u8,
     ) -> GridCellsSliceInfo {
-        let WorldCellPosition {
-            row: top_left_cell_row_i,
-            column: top_left_cell_col_i,
-            ..
-        } = grid_position
-            .get()
-            .to_top_left_cell_position::<Base>(overlap);
-
-        let side_length_usize = usize::from(Base::SIDE_LENGTH);
-
-        s![
-            top_left_cell_row_i..(top_left_cell_row_i + side_length_usize),
-            top_left_cell_col_i..(top_left_cell_col_i + side_length_usize),
-        ]
+        grid_position.grid_cells_slice_info::<Base>(overlap)
     }
 
     fn split_cells_into_overlap_segments_single_axis(
