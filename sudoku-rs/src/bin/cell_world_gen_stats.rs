@@ -5,6 +5,7 @@ use sudoku::base::consts::*;
 use sudoku::base::SudokuBase;
 use sudoku::error::Result;
 use sudoku::world::dynamic::DynamicCellWorldActions;
+use sudoku::world::WorldGridDim;
 use sudoku::world::{CellWorld, WorldDim};
 
 fn main() -> Result<()> {
@@ -21,10 +22,7 @@ fn main() -> Result<()> {
                 (100, 100)
             ]
             .into_iter()
-            .map(|(row_count, column_count)| WorldDim {
-                row_count: row_count.try_into().unwrap(),
-                column_count: column_count.try_into().unwrap()
-            })
+            .map(|(row_count, column_count)| WorldGridDim::new(row_count, column_count).unwrap())
         ) {
             let grid_count = u64::try_from(grid_dim.grid_count()).unwrap();
             let target_grid_count = 1_000_000;

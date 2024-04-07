@@ -22,7 +22,10 @@ use sudoku::{
         strategies::StrategyEnum,
     },
     transport::{TransportCell, TransportSudoku},
-    world::{CellWorldDimensions, RelativeGridDir, WorldDim, WorldGenerationResult, WorldPosition},
+    world::{
+        CellWorldDimensions, RelativeDir, WorldCellDim, WorldCellPosition, WorldGenerationResult,
+        WorldGridDim, WorldGridPosition,
+    },
     DynamicTryStrategiesReturn,
 };
 use wasm_bindgen::prelude::*;
@@ -116,7 +119,7 @@ serde_wasm_bindgen_interop! {
     PositionedTransportReason,
     PruningGroupBehaviour,
     PruningTarget,
-    RelativeGridDir,
+    RelativeDir,
     StrategyEnum,
     TransportAction,
     TransportCell,
@@ -124,9 +127,7 @@ serde_wasm_bindgen_interop! {
     TransportDeductions,
     TransportReason,
     TransportSudoku,
-    WorldDim,
-    WorldGenerationResult,
-    WorldPosition
+    WorldGenerationResult
 }
 
 // Serde-compatbile aliases
@@ -141,12 +142,22 @@ const SERDE_ALIASES: &'static str = r#"
 export type StrategyEnums = StrategyEnum[];
 export type DynamicCells = DynamicCell[];
 export type DynamicTryStrategiesReturnAlias = [StrategyEnum, TransportDeductions] | null;
+import type {
+    WorldCellDim,
+    WorldCellPosition,
+    WorldGridDim,
+    WorldGridPosition,
+} from "../../sudoku-web/src/app/state/world";
 "#;
 
 serde_wasm_bindgen_interop! {
-    StrategyEnums,
     DynamicCells,
-    DynamicTryStrategiesReturnAlias
+    DynamicTryStrategiesReturnAlias,
+    StrategyEnums,
+    WorldCellDim,
+    WorldCellPosition,
+    WorldGridDim,
+    WorldGridPosition
 }
 
 // non-serde types - custom conversion functions

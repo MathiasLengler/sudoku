@@ -5,7 +5,9 @@ use crate::cell::dynamic::DynamicCell;
 use crate::error::Result;
 use crate::grid::dynamic::DynamicGrid;
 
-use super::{CellWorld, CellWorldDimensions, WorldDim, WorldGenerationResult, WorldPosition};
+use super::{
+    CellWorld, CellWorldDimensions, WorldGenerationResult, WorldGridDim, WorldGridPosition,
+};
 
 #[enum_dispatch]
 pub trait DynamicCellWorldActions {
@@ -14,11 +16,11 @@ pub trait DynamicCellWorldActions {
     fn prune(&mut self, seed: Option<u64>) -> Result<()>;
 
     // DynamicGrid interop
-    fn to_grid_at(&self, grid_index: WorldPosition) -> Result<DynamicGrid<DynamicCell>>;
+    fn to_grid_at(&self, grid_position: WorldGridPosition) -> Result<DynamicGrid<DynamicCell>>;
     fn set_grid_at(
         &mut self,
         grid: DynamicGrid<DynamicCell>,
-        grid_index: WorldPosition,
+        grid_position: WorldGridPosition,
     ) -> Result<()>;
 
     // Queries
@@ -38,7 +40,7 @@ pub enum DynamicCellWorld {
 }
 
 impl DynamicCellWorld {
-    pub fn new(base: BaseEnum, grid_dim: WorldDim, overlap: u8) -> Self {
+    pub fn new(base: BaseEnum, grid_dim: WorldGridDim, overlap: u8) -> Self {
         match base {
             BaseEnum::Base2 => Self::Base2(CellWorld::<Base2>::new(grid_dim, overlap)),
             BaseEnum::Base3 => Self::Base3(CellWorld::<Base3>::new(grid_dim, overlap)),

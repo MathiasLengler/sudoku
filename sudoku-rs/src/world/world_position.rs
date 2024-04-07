@@ -1,5 +1,7 @@
 use std::{
-    fmt::{self, Display, Formatter},
+    fmt::{self, Debug, Display, Formatter},
+    hash::Hash,
+    marker::PhantomData,
     num::NonZeroUsize,
 };
 
@@ -8,116 +10,64 @@ use anyhow::{ensure, Context};
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "wasm")]
 use ts_rs::TS;
-pub(in crate::world) use validated::ValidatedGridIndex;
+// TODO: use for cell indexing of CellWorld
+#[allow(unused_imports)]
+pub(in crate::world) use validated::ValidatedWorldCellPosition;
+pub(in crate::world) use validated::ValidatedWorldGridPosition;
+pub(in crate::world) use validated::ValidatedWorldPosition;
 
-mod validated {
-    use super::*;
+#[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub struct CellMarker;
+impl WorldObject for CellMarker {}
 
-    /// A grid index that has been validated to be within bounds for some `WorldDim`.
-    ///
-    /// In contrast to `SudokuBase`-bounded types, this can't be relied on.
-    /// It only works for indexing into a cells `Array2` created with the same `WorldDim`, but this is not enfored by the type system.
-    ///
-    /// The intended usage is inside `CellWorld`, to differentiate between use-provided (untrusted) and internally computed indexes.
-    /// Since we don't provide a way to mutate the size of the world, this works in practice.
-    #[derive(
-        Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize,
-    )]
-    pub(in crate::world) struct ValidatedGridIndex(WorldPosition);
+#[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub struct GridMarker;
+impl WorldObject for GridMarker {}
 
-    impl ValidatedGridIndex {
-        pub(in crate::world) fn new(index: WorldPosition, grid_dim: WorldDim) -> Result<Self> {
-            ensure!(
-                index.contained_in(grid_dim),
-                "{index:?} out of bounds for {grid_dim:?}"
-            );
-
-            Ok(Self::new_unchecked(index))
-        }
-
-        pub(super) fn new_opt(index: WorldPosition, grid_dim: WorldDim) -> Option<Self> {
-            index
-                .contained_in(grid_dim)
-                .then(|| Self::new_unchecked(index))
-        }
-
-        pub(super) fn new_unchecked(index: WorldPosition) -> Self {
-            Self(index)
-        }
-
-        pub(in crate::world) fn get(self) -> WorldPosition {
-            self.0
-        }
-
-        pub(in crate::world) fn adjacent(
-            self,
-            dir: RelativeGridDir,
-            grid_dim: WorldDim,
-        ) -> Option<Self> {
-            let WorldPosition { row, column } = self.0;
-
-            let adjacent = match dir {
-                RelativeGridDir::TopLeft => WorldPosition {
-                    row: row.checked_sub(1)?,
-                    column: column.checked_sub(1)?,
-                },
-                RelativeGridDir::Left => WorldPosition {
-                    row,
-                    column: column.checked_sub(1)?,
-                },
-                RelativeGridDir::Right => WorldPosition {
-                    row,
-                    column: column + 1,
-                },
-                RelativeGridDir::TopRight => WorldPosition {
-                    row: row.checked_sub(1)?,
-                    column: column + 1,
-                },
-                RelativeGridDir::Top => WorldPosition {
-                    row: row.checked_sub(1)?,
-                    column,
-                },
-                RelativeGridDir::BottomLeft => WorldPosition {
-                    row: row + 1,
-                    column: column.checked_sub(1)?,
-                },
-
-                RelativeGridDir::Bottom => WorldPosition {
-                    row: row + 1,
-                    column,
-                },
-                RelativeGridDir::BottomRight => WorldPosition {
-                    row: row + 1,
-                    column: column + 1,
-                },
-            };
-
-            Self::new_opt(adjacent, grid_dim)
-        }
-    }
+pub trait WorldObject
+where
+    Self: Ord + Hash + Clone + Copy + Debug + Default + Send + Sync + 'static,
+{
 }
 
-#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+// TODO: add type marker to distinguish between cell and grid positions
+#[cfg_attr(feature = "wasm", derive(TS), ts(export), ts(concrete(T = CellMarker)))]
 #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
-pub struct WorldPosition {
+pub struct WorldPosition<T: WorldObject> {
     pub row: usize,
     pub column: usize,
+    #[ts(skip)]
+    object: PhantomData<T>,
 }
 
-impl Display for WorldPosition {
+pub type WorldCellPosition = WorldPosition<CellMarker>;
+pub type WorldGridPosition = WorldPosition<GridMarker>;
+
+impl<T: WorldObject> Display for WorldPosition<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let Self { row, column } = self;
+        let Self { row, column, .. } = self;
         write!(f, "({row}, {column})")
     }
 }
 
-impl WorldPosition {
-    pub fn contained_in(self, grid_dim: WorldDim) -> bool {
+impl<T: WorldObject> WorldPosition<T> {
+    pub fn new(row: usize, column: usize) -> Self {
+        Self {
+            row,
+            column,
+            object: PhantomData,
+        }
+    }
+
+    pub fn contained_in(self, grid_dim: WorldDim<T>) -> bool {
         grid_dim.contains(self)
     }
 
-    pub(in crate::world) fn validate(self, grid_dim: WorldDim) -> Result<ValidatedGridIndex> {
-        ValidatedGridIndex::new(self, grid_dim)
+    pub(in crate::world) fn validate(
+        self,
+        grid_dim: WorldDim<T>,
+    ) -> Result<ValidatedWorldPosition<T>> {
+        ValidatedWorldPosition::new(self, grid_dim)
     }
 
     pub fn is_at_top_edge(self) -> bool {
@@ -129,41 +79,122 @@ impl WorldPosition {
     }
 }
 
-/// Dimensions of a `CellWorld`.
-/// Can represent either cells or grids.
-#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct WorldDim {
-    pub row_count: NonZeroUsize,
-    pub column_count: NonZeroUsize,
+mod validated {
+    use super::*;
+
+    /// A world position that has been validated to be within bounds for some `WorldDim`.
+    ///
+    /// In contrast to `SudokuBase`-bounded types, this can't be relied on by unsafe code.
+    ///
+    /// The position is validated against a provided `WorldDim` when created, but could in principle be used with any `WorldDim`.
+    /// The intended usage is inside `CellWorld`,
+    /// in order to differentiate between use-provided (untrusted) and internally computed positions.
+    /// Since we don't provide a way to mutate the size of the world *and* the type does not escape a world instance because of its visibility,
+    /// this hopefully works in practice.
+    #[derive(
+        Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize,
+    )]
+    pub(in crate::world) struct ValidatedWorldPosition<T: WorldObject>(WorldPosition<T>);
+
+    #[allow(dead_code)]
+    pub(in crate::world) type ValidatedWorldCellPosition = ValidatedWorldPosition<CellMarker>;
+    pub(in crate::world) type ValidatedWorldGridPosition = ValidatedWorldPosition<GridMarker>;
+
+    impl<T: WorldObject> ValidatedWorldPosition<T> {
+        pub(in crate::world) fn new(
+            index: WorldPosition<T>,
+            grid_dim: WorldDim<T>,
+        ) -> Result<Self> {
+            ensure!(
+                index.contained_in(grid_dim),
+                "{index:?} out of bounds for {grid_dim:?}"
+            );
+
+            Ok(Self::new_unchecked(index))
+        }
+
+        pub(super) fn new_opt(index: WorldPosition<T>, grid_dim: WorldDim<T>) -> Option<Self> {
+            index
+                .contained_in(grid_dim)
+                .then(|| Self::new_unchecked(index))
+        }
+
+        pub(super) fn new_unchecked(index: WorldPosition<T>) -> Self {
+            Self(index)
+        }
+
+        pub(in crate::world) fn get(self) -> WorldPosition<T> {
+            self.0
+        }
+
+        pub(in crate::world) fn adjacent(
+            self,
+            dir: RelativeDir,
+            grid_dim: WorldDim<T>,
+        ) -> Option<Self> {
+            let WorldPosition { row, column, .. } = self.0;
+
+            let adjacent: WorldPosition<T> = match dir {
+                RelativeDir::TopLeft => {
+                    WorldPosition::new(row.checked_sub(1)?, column.checked_sub(1)?)
+                }
+                RelativeDir::Left => WorldPosition::new(row, column.checked_sub(1)?),
+                RelativeDir::Right => WorldPosition::new(row, column + 1),
+                RelativeDir::TopRight => WorldPosition::new(row.checked_sub(1)?, column + 1),
+                RelativeDir::Top => WorldPosition::new(row.checked_sub(1)?, column),
+                RelativeDir::BottomLeft => WorldPosition::new(row + 1, column.checked_sub(1)?),
+                RelativeDir::Bottom => WorldPosition::new(row + 1, column),
+                RelativeDir::BottomRight => WorldPosition::new(row + 1, column + 1),
+            };
+
+            Self::new_opt(adjacent, grid_dim)
+        }
+    }
 }
 
-impl Display for WorldDim {
+/// Dimensions of a `CellWorld`.
+/// Can represent either cells or grids.
+#[cfg_attr(feature = "wasm", derive(TS), ts(export), ts(concrete(T = CellMarker)))]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorldDim<T: WorldObject> {
+    pub row_count: NonZeroUsize,
+    pub column_count: NonZeroUsize,
+    #[ts(skip)]
+    object: PhantomData<T>,
+}
+
+impl<T: WorldObject> Display for WorldDim<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let Self {
             row_count,
             column_count,
+            ..
         } = self;
         write!(f, "({row_count}, {column_count})")
     }
 }
 
-impl WorldDim {
+pub type WorldCellDim = WorldDim<CellMarker>;
+pub type WorldGridDim = WorldDim<GridMarker>;
+
+impl<T: WorldObject> WorldDim<T> {
     pub fn new(row_count: usize, column_count: usize) -> Result<Self> {
         Ok(Self {
             row_count: NonZeroUsize::new(row_count).context("row_count must be non-zero")?,
             column_count: NonZeroUsize::new(column_count)
                 .context("column_count must be non-zero")?,
+            object: PhantomData,
         })
     }
 
-    pub fn contains(self, index: WorldPosition) -> bool {
+    pub fn contains(self, position: WorldPosition<T>) -> bool {
         let WorldDim {
             row_count,
             column_count,
+            ..
         } = self;
-        let WorldPosition { row, column } = index;
+        let WorldPosition { row, column, .. } = position;
 
         (0..row_count.get()).contains(&row) && (0..column_count.get()).contains(&column)
     }
@@ -172,32 +203,47 @@ impl WorldDim {
         self.row_count.get() * self.column_count.get()
     }
 
-    pub fn all_indexes(self) -> impl Iterator<Item = WorldPosition> {
+    pub fn all_indexes(self) -> impl Iterator<Item = WorldPosition<T>> {
         (0..self.row_count.get()).flat_map(move |row| {
-            (0..self.column_count.get()).map(move |column| WorldPosition { row, column })
+            (0..self.column_count.get()).map(move |column| WorldPosition::new(row, column))
         })
     }
 
     pub(in crate::world) fn all_validated_indexes(
         self,
-    ) -> impl Iterator<Item = ValidatedGridIndex> {
-        self.all_indexes().map(ValidatedGridIndex::new_unchecked)
+    ) -> impl Iterator<Item = ValidatedWorldPosition<T>> {
+        self.all_indexes()
+            .map(ValidatedWorldPosition::new_unchecked)
     }
 
-    pub fn grid_count(self) -> usize {
+    pub fn object_count(self) -> usize {
         let WorldDim {
             row_count,
             column_count,
+            ..
         } = self;
 
         row_count.get() * column_count.get()
     }
 }
 
+// TODO: conversions
+impl WorldCellDim {
+    pub fn cell_count(self) -> usize {
+        self.object_count()
+    }
+}
+
+impl WorldGridDim {
+    pub fn grid_count(self) -> usize {
+        self.object_count()
+    }
+}
+
 #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub enum RelativeGridDir {
+pub enum RelativeDir {
     TopLeft,
     Top,
     TopRight,
@@ -208,9 +254,9 @@ pub enum RelativeGridDir {
     BottomRight,
 }
 
-impl RelativeGridDir {
+impl RelativeDir {
     pub fn all() -> impl Iterator<Item = Self> {
-        use RelativeGridDir::*;
+        use RelativeDir::*;
 
         [
             TopLeft,

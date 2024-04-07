@@ -18,7 +18,7 @@ export type * from "./PositionedTransportAction";
 export type * from "./PositionedTransportReason";
 export type * from "./PruningGroupBehaviour";
 export type * from "./PruningTarget";
-export type * from "./RelativeGridDir";
+export type * from "./RelativeDir";
 export type * from "./StrategyEnum";
 export type * from "./TransportAction";
 export type * from "./TransportCell";

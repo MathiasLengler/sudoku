@@ -32,11 +32,11 @@ export const worldPositionSchema = z.object({
 assert<IsEqual<z.infer<typeof worldPositionSchema>, WorldPosition>>();
 
 // TODO: somehow link these branded types with wasm-bindgen
-export type CellWorldPosition = z.infer<typeof cellWorldPositionSchema>;
-export const cellWorldPositionSchema = worldPositionSchema.brand("CellWorldPosition");
+export type WorldCellPosition = z.infer<typeof worldCellPositionSchema>;
+export const worldCellPositionSchema = worldPositionSchema.brand("WorldCellPosition");
 
-export type GridWorldPosition = z.infer<typeof gridWorldPositionSchema>;
-export const gridWorldPositionSchema = worldPositionSchema.brand("GridWorldPosition");
+export type WorldGridPosition = z.infer<typeof worldGridPositionSchema>;
+export const worldGridPositionSchema = worldPositionSchema.brand("WorldGridPosition");
 
 export type GameModeWorld = z.infer<typeof gameModeWorldSchema>;
 export const gameModeWorldSchema = z.object({
@@ -77,13 +77,27 @@ export const cellWorldDimensionsState = selector<CellWorldDimensions>({
     },
 });
 
-export const gridDimState = selector<WorldDim>({
-    key: "gridDim",
-    get: ({ get }) => get(cellWorldDimensionsState).gridDim,
+export const worldDimSchema = z.object({
+    rowCount: usizeSchema,
+    columnCount: usizeSchema,
 });
-export const cellDimState = selector<WorldDim>({
+assert<IsEqual<z.infer<typeof worldDimSchema>, WorldDim>>();
+
+export type WorldCellDim = z.infer<typeof worldCellDimSchema>;
+export const worldCellDimSchema = worldDimSchema.brand("WorldCellDim");
+
+export type WorldGridDim = z.infer<typeof worldGridDimSchema>;
+export const worldGridDimSchema = worldDimSchema.brand("WorldGridDim");
+
+export const gridDimState = selector<WorldGridDim>({
+    key: "gridDim",
+    // FIXME: remove parse when cellWorldDimensions exports the correct type
+    get: ({ get }) => worldGridDimSchema.parse(get(cellWorldDimensionsState).gridDim),
+});
+export const cellDimState = selector<WorldCellDim>({
     key: "cellDim",
-    get: ({ get }) => get(cellWorldDimensionsState).cellDim,
+    // FIXME: remove parse when cellWorldDimensions exports the correct type
+    get: ({ get }) => worldCellDimSchema.parse(get(cellWorldDimensionsState).cellDim),
 });
 export const overlapState = selector<number>({
     key: "overlap",

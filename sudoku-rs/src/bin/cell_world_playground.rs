@@ -1,13 +1,10 @@
 use sudoku::base::consts::*;
 use sudoku::error::Result;
 use sudoku::world::dynamic::DynamicCellWorldActions;
-use sudoku::world::{CellWorld, WorldDim};
+use sudoku::world::{CellWorld, WorldDim, WorldGridDim};
 
 fn main() -> Result<()> {
-    let grid_dim = WorldDim {
-        row_count: 3.try_into().unwrap(),
-        column_count: 3.try_into().unwrap(),
-    };
+    let grid_dim = WorldGridDim::new(3, 3)?;
     let seed = 1;
     let overlap = 1;
 
@@ -21,9 +18,9 @@ fn main() -> Result<()> {
     world.prune(Some(seed))?;
     println!("pruned world:\n{world}");
 
-    for grid_index in world.all_grid_indexes() {
-        let grid = world.to_grid_at(grid_index)?;
-        println!("{grid_index:?}:\n{grid}\n",);
+    for grid_position in world.all_grid_positions() {
+        let grid = world.to_grid_at(grid_position)?;
+        println!("{grid_position:?}:\n{grid}\n",);
     }
 
     assert!(world.is_directly_consistent());

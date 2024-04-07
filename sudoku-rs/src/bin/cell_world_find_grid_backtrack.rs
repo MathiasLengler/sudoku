@@ -4,13 +4,10 @@ use rayon::prelude::*;
 use sudoku::base::consts::*;
 use sudoku::error::Result;
 use sudoku::world::dynamic::DynamicCellWorldActions;
-use sudoku::world::{CellWorld, WorldDim};
+use sudoku::world::{CellWorld, WorldDim, WorldGridDim};
 
 fn main() -> Result<()> {
-    let grid_dim = WorldDim {
-        row_count: 100.try_into().unwrap(),
-        column_count: 100.try_into().unwrap(),
-    };
+    let grid_dim = WorldGridDim::new(100, 100).unwrap();
 
     let overlap = 3;
 

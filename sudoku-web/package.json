@@ -11,6 +11,7 @@
         "dev": "webpack serve --mode development",
         "dev:profiling": "webpack serve --mode production --env reactProfiling=true",
         "build": "webpack --mode production",
+        "build:dev": "webpack --mode development",
         "build:debugSW": "webpack --mode development --env debugSW=true",
         "build:analyze": "webpack --mode production --env bundleAnalyzer=true",
         "lint": "npm run lint:tsc && npm run lint:eslint && npm run lint:prettier",
