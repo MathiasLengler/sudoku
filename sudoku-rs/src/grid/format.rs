@@ -6,8 +6,6 @@ use anyhow::{bail, ensure, format_err};
 use enum_dispatch::enum_dispatch;
 use serde::de::Visitor;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-#[cfg(feature = "wasm")]
-use ts_rs::TS;
 
 pub use binary_candidates_line::*;
 pub use binary_fixed_candidates_line::*;
@@ -68,7 +66,7 @@ pub trait GridFormat: Debug + Copy + Clone + Eq + Sized {
     }
 }
 
-#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
 #[enum_dispatch]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum GridFormatEnum {

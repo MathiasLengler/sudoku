@@ -4,8 +4,6 @@ use log::debug;
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
-#[cfg(feature = "wasm")]
-use ts_rs::TS;
 
 pub use dynamic_settings::*;
 
@@ -36,7 +34,7 @@ Ideas:
 //  since checking for an ambiguous solution is way faster (early abort) than proofing a unique solution.
 //  The near minimal sudoku can then be minimized as usual.
 
-#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
 #[derive(Debug, Copy, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum PruningTarget {
@@ -48,7 +46,7 @@ pub enum PruningTarget {
 }
 
 // TODO: rename behaviour (UK) to behavior (US)
-#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum PruningGroupBehaviour {
@@ -199,7 +197,7 @@ mod dynamic_settings {
 
     use super::*;
 
-    #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+    #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
     #[derive(Debug, Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub enum DynamicPruningOrder {
@@ -236,7 +234,7 @@ mod dynamic_settings {
         }
     }
 
-    #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+    #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
     #[derive(Debug, Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct DynamicPruningSettings {
@@ -269,7 +267,7 @@ mod dynamic_settings {
         }
     }
 
-    #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+    #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
     #[derive(Debug, Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct DynamicSolutionSettings {
@@ -287,7 +285,7 @@ mod dynamic_settings {
         }
     }
 
-    #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+    #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
     #[derive(Debug, Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct DynamicGeneratorSettings {
@@ -335,7 +333,7 @@ pub struct Generator<Base: SudokuBase> {
     settings: GeneratorSettings<Base>,
 }
 
-#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GeneratorProgress {

@@ -1,6 +1,4 @@
 use serde::{Deserialize, Serialize};
-#[cfg(feature = "wasm")]
-use ts_rs::TS;
 
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
@@ -9,7 +7,7 @@ use crate::position::DynamicPosition;
 use crate::sudoku::DynamicSudoku;
 use crate::sudoku::Sudoku;
 
-#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransportSudoku {
@@ -70,7 +68,7 @@ impl From<&DynamicSudoku> for TransportSudoku {
     }
 }
 
-#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransportCell {

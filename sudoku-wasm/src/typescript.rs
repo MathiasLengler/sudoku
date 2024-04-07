@@ -66,7 +66,7 @@ macro_rules! serde_wasm_bindgen_interop {
 }
 
 // All ts-rs annotated types:
-//  #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+//  #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
 #[wasm_bindgen(typescript_custom_section)]
 const IMPORT_TS_RS_BINDINGS: &'static str = r#"
 import type {

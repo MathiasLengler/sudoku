@@ -6,8 +6,6 @@ use anyhow::format_err;
 use enum_dispatch::enum_dispatch;
 use serde::de::Visitor;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-#[cfg(feature = "wasm")]
-use ts_rs::TS;
 
 pub use backtracking::Backtracking;
 pub use group_intersection::{
@@ -50,7 +48,7 @@ pub trait Strategy: Debug + Copy + Clone + Eq + Sized {
         Ok(deductions)
     }
 }
-#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
 #[enum_dispatch]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u8)]

@@ -6,11 +6,9 @@ use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use tabled::builder::Builder;
 use tabled::settings::{Padding, Style};
-#[cfg(feature = "wasm")]
-use ts_rs::TS;
 
-use overlap_segment_filter::*;
-pub use world_position::*;
+pub use indexing::*;
+pub use overlap_segment::*;
 
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
@@ -30,9 +28,9 @@ use crate::world::RelativeDir::TopRight;
 
 use self::dynamic::DynamicCellWorldActions;
 
-mod overlap_segment_filter;
+mod overlap_segment;
 
-mod world_position;
+mod indexing;
 
 pub mod dynamic;
 
@@ -62,14 +60,14 @@ impl<Base: SudokuBase> Display for CellWorld<Base> {
     }
 }
 
-#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WorldGenerationResult {
     pub backtrack_count: u32,
 }
 
-#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CellWorldDimensions {
@@ -225,7 +223,7 @@ impl<Base: SudokuBase> DynamicCellWorldActions for CellWorld<Base> {
             info!(
                 "CellWorld::prune: pruned grid #{}/{}",
                 progress_index,
-                self.grid_dim.all_indexes_count()
+                self.grid_dim.all_positions_count()
             );
 
             self.set_grid_at_validated(&pruned_grid, grid_position);
@@ -336,11 +334,11 @@ impl<Base: SudokuBase> CellWorld<Base> {
     }
 
     pub fn all_grid_positions(&self) -> impl Iterator<Item = WorldGridPosition> {
-        self.grid_dim.all_indexes()
+        self.grid_dim.all_positions()
     }
 
     fn all_validated_grid_positions(&self) -> impl Iterator<Item = ValidatedWorldGridPosition> {
-        self.grid_dim.all_validated_indexes()
+        self.grid_dim.all_validated_positions()
     }
 }
 
@@ -391,10 +389,13 @@ impl<Base: SudokuBase> CellWorld<Base> {
         grid_position: ValidatedWorldGridPosition,
         overlap: u8,
     ) -> GridCellsSliceInfo {
-        let grid_position = grid_position.get();
-        let grid_stride = usize::from(Base::SIDE_LENGTH - overlap);
-        let top_left_cell_row_i = grid_position.row * grid_stride;
-        let top_left_cell_col_i = grid_position.column * grid_stride;
+        let WorldCellPosition {
+            row: top_left_cell_row_i,
+            column: top_left_cell_col_i,
+            ..
+        } = grid_position
+            .get()
+            .to_top_left_cell_position::<Base>(overlap);
 
         let side_length_usize = usize::from(Base::SIDE_LENGTH);
 
@@ -417,24 +418,19 @@ impl<Base: SudokuBase> CellWorld<Base> {
         [first, middle, last]
     }
 
-    fn delete_grid_overlap_segments(
-        &mut self,
-        grid_position: ValidatedWorldGridPosition,
-        overlap_segment_filter: OverlapSegmentFilter,
-    ) {
-        let grid_cells = self
-            .cells
-            .slice_mut(Self::grid_cells_slice_info(grid_position, self.overlap));
-
+    fn split_cells_into_overlap_segments(
+        grid_cells: ArrayViewMut2<Cell<Base>>,
+        overlap: u8,
+    ) -> OverlapSegments<ArrayViewMut2<Cell<Base>>> {
         let row_bands =
-            Self::split_cells_into_overlap_segments_single_axis(grid_cells, Axis(0), self.overlap);
+            Self::split_cells_into_overlap_segments_single_axis(grid_cells, Axis(0), overlap);
 
         let [[top_left, top, top_right], [left, middle, right], [bottom_left, bottom, bottom_right]] =
             row_bands.map(|row_band| {
-                Self::split_cells_into_overlap_segments_single_axis(row_band, Axis(1), self.overlap)
+                Self::split_cells_into_overlap_segments_single_axis(row_band, Axis(1), overlap)
             });
 
-        for (index, mut overlap_segment) in (0..).zip([
+        OverlapSegments {
             top_left,
             top,
             top_right,
@@ -444,10 +440,25 @@ impl<Base: SudokuBase> CellWorld<Base> {
             bottom_left,
             bottom,
             bottom_right,
-        ]) {
-            if overlap_segment_filter.contains_index(index) {
-                overlap_segment.fill(Cell::new());
-            }
+        }
+    }
+
+    fn delete_grid_overlap_segments(
+        &mut self,
+        grid_position: ValidatedWorldGridPosition,
+        overlap_segment_filter: OverlapSegmentFilter,
+    ) {
+        let grid_cells = self
+            .cells
+            .slice_mut(Self::grid_cells_slice_info(grid_position, self.overlap));
+
+        let grid_cells_overlap_segments =
+            Self::split_cells_into_overlap_segments(grid_cells, self.overlap);
+
+        for mut overlap_segment in
+            grid_cells_overlap_segments.into_iter_filtered(overlap_segment_filter)
+        {
+            overlap_segment.fill(Cell::new());
         }
     }
 }

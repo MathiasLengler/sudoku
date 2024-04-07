@@ -110,7 +110,7 @@ impl DynamicSudoku {
 }
 
 // FIXME: ts-rs seems to have a regression: the imports of the tuple are missing
-// #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+// #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DynamicTryStrategiesReturn(pub Option<(StrategyEnum, TransportDeductions)>);
 
