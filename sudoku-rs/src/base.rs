@@ -822,7 +822,7 @@ mod tests {
     }
 
     #[test]
-    fn test_mod_block_to_top_left_pos() {
+    fn test_block_index_to_top_left_cell_index() {
         fn generate_block_to_top_left_cell_index(base: u8) -> Vec<u16> {
             use num::Integer;
 
