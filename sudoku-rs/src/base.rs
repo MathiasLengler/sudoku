@@ -742,7 +742,7 @@ mod tests {
     }
 
     #[test]
-    fn test_cell_index_to_block_index() {
+    fn test_cell_index_to_block_index_generator() {
         fn generate_cell_index_to_block_index(base: u8) -> Vec<u8> {
             use std::iter::repeat;
             let base_usize = usize::from(base);
@@ -774,6 +774,24 @@ mod tests {
             cell_index_to_block_index::BASE_5,
             generate_cell_index_to_block_index(5).as_slice()
         );
+    }
+
+    #[test]
+    fn test_cell_index_to_block_index_invariants() {
+        fn assert_invariants<Base: SudokuBase>(cell_index_to_block_index: &[u8]) {
+            assert_eq!(
+                cell_index_to_block_index.len(),
+                usize::from(Base::CELL_COUNT)
+            );
+            for &block_index in cell_index_to_block_index {
+                assert!(block_index < Base::SIDE_LENGTH);
+            }
+        }
+
+        assert_invariants::<Base2>(cell_index_to_block_index::BASE_2);
+        assert_invariants::<Base3>(cell_index_to_block_index::BASE_3);
+        assert_invariants::<Base4>(cell_index_to_block_index::BASE_4);
+        assert_invariants::<Base5>(cell_index_to_block_index::BASE_5);
     }
 
     #[test]
