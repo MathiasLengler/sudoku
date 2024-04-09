@@ -54,9 +54,26 @@ impl Quadrant {
         }
     }
 
+    pub fn to_axis_orderings(self) -> (AxisOrdering, AxisOrdering) {
+        use Quadrant::*;
+
+        match self {
+            TopLeft => (AxisOrdering::Less, AxisOrdering::Less),
+            TopRight => (AxisOrdering::Less, AxisOrdering::Greater),
+            BottomLeft => (AxisOrdering::Greater, AxisOrdering::Less),
+            BottomRight => (AxisOrdering::Greater, AxisOrdering::Greater),
+        }
+    }
+
     pub fn all() -> impl Iterator<Item = Self> {
         use Quadrant::*;
 
         [TopLeft, TopRight, BottomLeft, BottomRight].into_iter()
     }
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum AxisOrdering {
+    Less,
+    Greater,
 }
