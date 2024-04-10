@@ -77,3 +77,11 @@ pub enum AxisOrdering {
     Less,
     Greater,
 }
+
+impl AxisOrdering {
+    pub fn all() -> impl Iterator<Item = Self> {
+        use AxisOrdering::*;
+
+        [Less, Greater].into_iter()
+    }
+}

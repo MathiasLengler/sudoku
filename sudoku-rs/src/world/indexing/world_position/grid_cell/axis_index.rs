@@ -9,7 +9,7 @@ use crate::{
 };
 
 /// The axis index (row or column) of a cell inside a specific grid in the world.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub(in crate::world::indexing) struct WorldGridCellAxisIndex<Base: SudokuBase> {
     /// The axis index of the grid in the world.
     world_grid_axis_index: usize,
@@ -86,10 +86,18 @@ impl<Base: SudokuBase> WorldGridCellAxisIndex<Base> {
 
     /// Normalize `self` to the nearest grid axis index.
     ///
+    /// # Behaviour
+    ///
     /// If the index is outside of an overlap, returns `self` unchanged.
+    ///
     /// If the index is inside an overlap, returns the same index but from the "perspective" of the nearest grid axis index.
+    ///
     /// If the overlap is even *and* if the index is exactly in the middle of the overlap,
     /// `tie_break` is used to determine the nearst grid axis index.
+    ///
+    /// # Use-case
+    /// Click on a cell in the world map to select the grid.
+    /// Tie break is determined by the clicked cell quadrant.
     pub(in crate::world::indexing) fn normalize_to_nearest_world_grid_axis_index(
         self,
         world_grid_axis_count: NonZeroUsize,
@@ -213,6 +221,19 @@ mod tests {
 
     use crate::base::consts::*;
 
+    fn expected_tuples_to_world_grid_cell_axis_indexes<Base: SudokuBase>(
+        expected: impl IntoIterator<Item = (usize, u8)>,
+    ) -> impl Iterator<Item = WorldGridCellAxisIndex<Base>> {
+        expected
+            .into_iter()
+            .map(
+                |(world_grid_axis_index, cell_axis_index)| WorldGridCellAxisIndex {
+                    world_grid_axis_index,
+                    cell_axis_index: Coordinate::new(cell_axis_index).unwrap(),
+                },
+            )
+    }
+
     mod public {
         use super::*;
 
@@ -254,47 +275,46 @@ mod tests {
         mod overlap_neighbor {
             use super::*;
 
-            mod self_inverse {
+            mod invariant {
                 use super::*;
-                fn test_self_inverse<Base: SudokuBase>(overlap: u8) {
-                    let world_grid_axis_count = 3.try_into().unwrap();
+                fn assert_invariants<Base: SudokuBase>() {
+                    // TODO: WorldOverlap::all
+                    for overlap in 0..=Base::BASE {
+                        let world_grid_axis_count = 3.try_into().unwrap();
 
-                    for world_grid_cell_axis_index in
-                        WorldGridCellAxisIndex::<Base>::all(world_grid_axis_count)
-                    {
-                        let neighbor = world_grid_cell_axis_index
-                            .overlap_neighbor(world_grid_axis_count, overlap);
-                        if let Some((neighbor, order_neighbor)) = neighbor {
-                            let (inverse_neighbor, order_inverse_neighbor) = neighbor
-                                .overlap_neighbor(world_grid_axis_count, overlap)
-                                .unwrap();
+                        for world_grid_cell_axis_index in
+                            WorldGridCellAxisIndex::<Base>::all(world_grid_axis_count)
+                        {
+                            // invariant: self inverse
+                            let neighbor = world_grid_cell_axis_index
+                                .overlap_neighbor(world_grid_axis_count, overlap);
+                            if let Some((neighbor, order_neighbor)) = neighbor {
+                                let (inverse_neighbor, order_inverse_neighbor) = neighbor
+                                    .overlap_neighbor(world_grid_axis_count, overlap)
+                                    .unwrap();
 
-                            assert_eq!(world_grid_cell_axis_index, inverse_neighbor);
-                            assert_ne!(order_neighbor, order_inverse_neighbor);
+                                assert_eq!(world_grid_cell_axis_index, inverse_neighbor);
+                                assert_ne!(order_neighbor, order_inverse_neighbor);
+                            }
                         }
                     }
                 }
 
                 #[test]
                 fn base2() {
-                    test_self_inverse::<Base2>(0);
-                    test_self_inverse::<Base2>(1);
-                    test_self_inverse::<Base2>(2);
+                    assert_invariants::<Base2>();
                 }
                 #[test]
                 fn base3() {
-                    test_self_inverse::<Base3>(0);
-                    test_self_inverse::<Base3>(1);
-                    test_self_inverse::<Base3>(2);
-                    test_self_inverse::<Base3>(3);
+                    assert_invariants::<Base3>();
                 }
                 #[test]
                 fn base4() {
-                    test_self_inverse::<Base4>(0);
-                    test_self_inverse::<Base4>(1);
-                    test_self_inverse::<Base4>(2);
-                    test_self_inverse::<Base4>(3);
-                    test_self_inverse::<Base4>(4);
+                    assert_invariants::<Base4>();
+                }
+                #[test]
+                fn base5() {
+                    assert_invariants::<Base5>();
                 }
             }
 
@@ -320,7 +340,7 @@ mod tests {
                 let overlap = 1;
 
                 let expected_results: Vec<Option<(WorldGridCellAxisIndex<Base>, AxisOrdering)>> = vec![
-                    // Grid 0
+                    // grid 0
                     None,
                     None,
                     None,
@@ -331,7 +351,7 @@ mod tests {
                         },
                         AxisOrdering::Greater,
                     )),
-                    // Grid 1
+                    // grid 1
                     Some((
                         WorldGridCellAxisIndex {
                             world_grid_axis_index: 0,
@@ -348,7 +368,7 @@ mod tests {
                         },
                         AxisOrdering::Greater,
                     )),
-                    // Grid 2
+                    // grid 2
                     Some((
                         WorldGridCellAxisIndex {
                             world_grid_axis_index: 1,
@@ -457,7 +477,384 @@ mod tests {
         }
 
         mod normalize_to_nearest_world_grid_axis_index {
-            // TODO: test
+            use super::*;
+
+            mod invariants {
+                use itertools::Itertools;
+
+                use super::*;
+
+                fn assert_invariants<Base: SudokuBase>() {
+                    // TODO: WorldOverlap::all
+                    for overlap in 0..=Base::BASE {
+                        let world_grid_axis_count = 3.try_into().unwrap();
+
+                        for tie_break in AxisOrdering::all() {
+                            for world_grid_cell_axis_index in
+                                WorldGridCellAxisIndex::<Base>::all(world_grid_axis_count)
+                            {
+                                let world_grid_cell_axis_index_normalized =
+                                    world_grid_cell_axis_index
+                                        .normalize_to_nearest_world_grid_axis_index(
+                                            world_grid_axis_count,
+                                            overlap,
+                                            tie_break,
+                                        );
+
+                                // invariant: overlap 0 maps to itself
+                                if overlap == 0 {
+                                    assert_eq!(
+                                        world_grid_cell_axis_index_normalized,
+                                        world_grid_cell_axis_index
+                                    );
+                                }
+
+                                // invariant: non potential overlap region maps to itself
+                                if !WorldGridCellAxisIndex::<Base>::is_cell_axis_index_in_potential_overlap_region(
+                                    world_grid_cell_axis_index.cell_axis_index,
+                                    overlap,
+                                ) {
+                                    assert_eq!(
+                                        world_grid_cell_axis_index_normalized,
+                                        world_grid_cell_axis_index,
+                                    );
+                                }
+
+                                // invariant: a normalized position maps to itself
+                                assert_eq!(
+                                    world_grid_cell_axis_index_normalized
+                                        .normalize_to_nearest_world_grid_axis_index(
+                                            world_grid_axis_count,
+                                            overlap,
+                                            tie_break,
+                                        ),
+                                    world_grid_cell_axis_index_normalized
+                                );
+                            }
+
+                            // invariant: number of distinct normalized results
+                            let grid_stride_usize =
+                                WorldGridPosition::stride_usize::<Base>(overlap);
+                            assert_eq!(
+                                WorldGridCellAxisIndex::<Base>::all(world_grid_axis_count)
+                                    .map(|world_grid_cell_axis_index| {
+                                        world_grid_cell_axis_index
+                                            .normalize_to_nearest_world_grid_axis_index(
+                                                world_grid_axis_count,
+                                                overlap,
+                                                tie_break,
+                                            )
+                                    })
+                                    .unique()
+                                    .count(),
+                                grid_stride_usize * world_grid_axis_count.get()
+                                    + usize::from(overlap)
+                            );
+
+                            // invariant: the overlap region shared by two subsequent grids results in the same normalized result
+                            for (in_potential_overlap_region, world_grid_cell_axis_indexes) in &WorldGridCellAxisIndex::<Base>::all(world_grid_axis_count).group_by(|world_grid_cell_axis_index| {
+                                WorldGridCellAxisIndex::<Base>::is_cell_axis_index_in_potential_overlap_region(
+                                    world_grid_cell_axis_index.cell_axis_index,
+                                    overlap,
+                                )
+                            }) {
+                                if !in_potential_overlap_region {
+                                    continue;
+                                }
+                                let world_grid_cell_axis_indexes = world_grid_cell_axis_indexes.map(|world_grid_cell_axis_index| {
+                                    world_grid_cell_axis_index
+                                        .normalize_to_nearest_world_grid_axis_index(
+                                            world_grid_axis_count,
+                                            overlap,
+                                            tie_break,
+                                        )
+                                }).collect_vec();
+                                if world_grid_cell_axis_indexes.len() == usize::from(overlap) * 2 {
+                                    let (first_grid_end_overlap, second_grid_start_overlap) = world_grid_cell_axis_indexes.split_at(overlap.into());
+                                    assert_eq!(first_grid_end_overlap, second_grid_start_overlap);
+                                }
+                            }
+                        }
+
+                        // invariant: if overlap is even, tie_break does not change the result
+                        if overlap.is_even() {
+                            for world_grid_cell_axis_index in
+                                WorldGridCellAxisIndex::<Base>::all(world_grid_axis_count)
+                            {
+                                assert_eq!(
+                                    world_grid_cell_axis_index
+                                        .normalize_to_nearest_world_grid_axis_index(
+                                            world_grid_axis_count,
+                                            overlap,
+                                            AxisOrdering::Less,
+                                        ),
+                                    world_grid_cell_axis_index
+                                        .normalize_to_nearest_world_grid_axis_index(
+                                            world_grid_axis_count,
+                                            overlap,
+                                            AxisOrdering::Greater,
+                                        )
+                                );
+                            }
+                        }
+                    }
+                }
+
+                #[test]
+                fn base2() {
+                    assert_invariants::<Base2>();
+                }
+                #[test]
+                fn base3() {
+                    assert_invariants::<Base3>();
+                }
+                #[test]
+                fn base4() {
+                    assert_invariants::<Base4>();
+                }
+                #[test]
+                fn base5() {
+                    assert_invariants::<Base5>();
+                }
+            }
+
+            fn assert_normalize_to_nearest_world_grid_axis_index<Base: SudokuBase>(
+                overlap: u8,
+                tie_break: AxisOrdering,
+                expected: impl IntoIterator<Item = (usize, u8)>,
+            ) {
+                let world_grid_axis_count = 3.try_into().unwrap();
+
+                itertools::assert_equal(
+                    WorldGridCellAxisIndex::<Base>::all(world_grid_axis_count).map(
+                        |world_grid_cell_axis_index| {
+                            world_grid_cell_axis_index.normalize_to_nearest_world_grid_axis_index(
+                                world_grid_axis_count,
+                                overlap,
+                                tie_break,
+                            )
+                        },
+                    ),
+                    expected_tuples_to_world_grid_cell_axis_indexes(expected),
+                );
+            }
+
+            #[test]
+            fn test_base2_overlap_1() {
+                type Base = Base2;
+                let overlap = 1;
+
+                assert_normalize_to_nearest_world_grid_axis_index::<Base>(
+                    overlap,
+                    AxisOrdering::Less,
+                    vec![
+                        // grid 0
+                        (0, 0),
+                        (0, 1),
+                        (0, 2),
+                        (0, 3),
+                        // grid 1
+                        (0, 3),
+                        (1, 1),
+                        (1, 2),
+                        (1, 3),
+                        // grid 2
+                        (1, 3),
+                        (2, 1),
+                        (2, 2),
+                        (2, 3),
+                    ],
+                );
+
+                assert_normalize_to_nearest_world_grid_axis_index::<Base>(
+                    overlap,
+                    AxisOrdering::Greater,
+                    vec![
+                        // grid 0
+                        (0, 0),
+                        (0, 1),
+                        (0, 2),
+                        (1, 0),
+                        // grid 1
+                        (1, 0),
+                        (1, 1),
+                        (1, 2),
+                        (2, 0),
+                        // grid 2
+                        (2, 0),
+                        (2, 1),
+                        (2, 2),
+                        (2, 3),
+                    ],
+                );
+            }
+
+            #[test]
+            fn test_base2_overlap_2() {
+                type Base = Base2;
+                let overlap = 2;
+
+                let expected = vec![
+                    // grid 0
+                    (0, 0),
+                    (0, 1),
+                    (0, 2),
+                    (1, 1),
+                    // grid 1
+                    (0, 2),
+                    (1, 1),
+                    (1, 2),
+                    (2, 1),
+                    // grid 2
+                    (1, 2),
+                    (2, 1),
+                    (2, 2),
+                    (2, 3),
+                ];
+
+                assert_normalize_to_nearest_world_grid_axis_index::<Base>(
+                    overlap,
+                    AxisOrdering::Less,
+                    expected.clone(),
+                );
+
+                assert_normalize_to_nearest_world_grid_axis_index::<Base>(
+                    overlap,
+                    AxisOrdering::Greater,
+                    expected,
+                );
+            }
+
+            #[test]
+            fn test_base3_overlap_2() {
+                type Base = Base3;
+                let overlap = 2;
+
+                let expected = vec![
+                    // grid 0
+                    (0, 0),
+                    (0, 1),
+                    (0, 2),
+                    (0, 3),
+                    (0, 4),
+                    (0, 5),
+                    (0, 6),
+                    (0, 7),
+                    (1, 1),
+                    // grid 1
+                    (0, 7),
+                    (1, 1),
+                    (1, 2),
+                    (1, 3),
+                    (1, 4),
+                    (1, 5),
+                    (1, 6),
+                    (1, 7),
+                    (2, 1),
+                    // grid 2
+                    (1, 7),
+                    (2, 1),
+                    (2, 2),
+                    (2, 3),
+                    (2, 4),
+                    (2, 5),
+                    (2, 6),
+                    (2, 7),
+                    (2, 8),
+                ];
+
+                assert_normalize_to_nearest_world_grid_axis_index::<Base>(
+                    overlap,
+                    AxisOrdering::Less,
+                    expected.clone(),
+                );
+
+                assert_normalize_to_nearest_world_grid_axis_index::<Base>(
+                    overlap,
+                    AxisOrdering::Greater,
+                    expected,
+                );
+            }
+
+            #[test]
+            fn test_base3_overlap_3() {
+                type Base = Base3;
+                let overlap = 3;
+
+                assert_normalize_to_nearest_world_grid_axis_index::<Base>(
+                    overlap,
+                    AxisOrdering::Less,
+                    vec![
+                        // grid 0
+                        (0, 0),
+                        (0, 1),
+                        (0, 2),
+                        (0, 3),
+                        (0, 4),
+                        (0, 5),
+                        (0, 6),
+                        (0, 7),
+                        (1, 2),
+                        // grid 1
+                        (0, 6),
+                        (0, 7),
+                        (1, 2),
+                        (1, 3),
+                        (1, 4),
+                        (1, 5),
+                        (1, 6),
+                        (1, 7),
+                        (2, 2),
+                        // grid 2
+                        (1, 6),
+                        (1, 7),
+                        (2, 2),
+                        (2, 3),
+                        (2, 4),
+                        (2, 5),
+                        (2, 6),
+                        (2, 7),
+                        (2, 8),
+                    ],
+                );
+
+                assert_normalize_to_nearest_world_grid_axis_index::<Base>(
+                    overlap,
+                    AxisOrdering::Greater,
+                    vec![
+                        // grid 0
+                        (0, 0),
+                        (0, 1),
+                        (0, 2),
+                        (0, 3),
+                        (0, 4),
+                        (0, 5),
+                        (0, 6),
+                        (1, 1),
+                        (1, 2),
+                        // grid 1
+                        (0, 6),
+                        (1, 1),
+                        (1, 2),
+                        (1, 3),
+                        (1, 4),
+                        (1, 5),
+                        (1, 6),
+                        (2, 1),
+                        (2, 2),
+                        // grid 2
+                        (1, 6),
+                        (2, 1),
+                        (2, 2),
+                        (2, 3),
+                        (2, 4),
+                        (2, 5),
+                        (2, 6),
+                        (2, 7),
+                        (2, 8),
+                    ],
+                );
+            }
         }
     }
     mod internal {
@@ -562,7 +959,7 @@ mod tests {
         mod is_cell_axis_index_in_potential_overlap_region {
             use super::*;
 
-            fn test_is_cell_axis_index_in_potential_overlap_region<Base: SudokuBase>(
+            fn assert_is_cell_axis_index_in_potential_overlap_region<Base: SudokuBase>(
                 overlap: u8,
                 expected: impl IntoIterator<Item = bool>,
             ) {
@@ -582,7 +979,7 @@ mod tests {
                 type Base = Base2;
                 let overlap = 0;
 
-                test_is_cell_axis_index_in_potential_overlap_region::<Base>(
+                assert_is_cell_axis_index_in_potential_overlap_region::<Base>(
                     overlap,
                     vec![false, false, false, false],
                 );
@@ -593,7 +990,7 @@ mod tests {
                 type Base = Base2;
                 let overlap = 1;
 
-                test_is_cell_axis_index_in_potential_overlap_region::<Base>(
+                assert_is_cell_axis_index_in_potential_overlap_region::<Base>(
                     overlap,
                     vec![true, false, false, true],
                 );
@@ -603,7 +1000,7 @@ mod tests {
                 type Base = Base2;
                 let overlap = 2;
 
-                test_is_cell_axis_index_in_potential_overlap_region::<Base>(
+                assert_is_cell_axis_index_in_potential_overlap_region::<Base>(
                     overlap,
                     vec![true, true, true, true],
                 );
@@ -613,7 +1010,7 @@ mod tests {
                 type Base = Base3;
                 let overlap = 2;
 
-                test_is_cell_axis_index_in_potential_overlap_region::<Base>(
+                assert_is_cell_axis_index_in_potential_overlap_region::<Base>(
                     overlap,
                     vec![true, true, false, false, false, false, false, true, true],
                 );
@@ -628,27 +1025,23 @@ mod tests {
 
             itertools::assert_equal(
                 WorldGridCellAxisIndex::<Base>::all(world_grid_axis_count),
-                vec![
+                expected_tuples_to_world_grid_cell_axis_indexes(vec![
+                    // grid 0
                     (0, 0),
                     (0, 1),
                     (0, 2),
                     (0, 3),
+                    // grid 1
                     (1, 0),
                     (1, 1),
                     (1, 2),
                     (1, 3),
+                    // grid 2
                     (2, 0),
                     (2, 1),
                     (2, 2),
                     (2, 3),
-                ]
-                .into_iter()
-                .map(
-                    |(world_grid_axis_index, cell_axis_index)| WorldGridCellAxisIndex {
-                        world_grid_axis_index,
-                        cell_axis_index: Coordinate::new(cell_axis_index).unwrap(),
-                    },
-                ),
+                ]),
             );
         }
     }
