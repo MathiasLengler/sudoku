@@ -6,7 +6,7 @@ use sudoku::world::{CellWorld, WorldGridDim};
 fn main() -> Result<()> {
     let grid_dim = WorldGridDim::new(3, 3)?;
     let seed = 1;
-    let overlap = 1;
+    let overlap = 1.try_into().unwrap();
 
     let mut world = CellWorld::<Base3>::new(grid_dim, overlap);
     let world_generation_result = world.generate_solved(Some(seed));

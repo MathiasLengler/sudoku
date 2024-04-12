@@ -72,7 +72,8 @@ impl From<DynamicCellWorld> for WasmCellWorld {
 impl WasmCellWorld {
     #[wasm_bindgen(constructor)]
     pub fn new() -> Self {
-        let mut world = CellWorld::<Base3>::new(WorldGridDim::new(2, 3).unwrap(), 1);
+        let mut world =
+            CellWorld::<Base3>::new(WorldGridDim::new(2, 3).unwrap(), 1.try_into().unwrap());
 
         let seed = Some(1);
         world.generate_solved(seed).unwrap();

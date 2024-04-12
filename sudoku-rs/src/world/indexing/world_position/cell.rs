@@ -4,7 +4,8 @@ use crate::{
     base::SudokuBase,
     position::Position,
     world::{
-        AxisOrdering, CellMarker, Quadrant, WorldGridCellPosition, WorldGridDim, WorldGridPosition,
+        AxisOrdering, CellMarker, GridOverlap, Quadrant, WorldGridCellPosition, WorldGridDim,
+        WorldGridPosition,
     },
 };
 
@@ -20,10 +21,8 @@ impl WorldCellPosition {
     pub fn to_grid_cell_positions<Base: SudokuBase>(
         self,
         grid_dim: WorldGridDim,
-        overlap: u8,
+        overlap: GridOverlap<Base>,
     ) -> WorldCellPositionToGridCellPositions<Base> {
-        // TODO: implement
-
         let world_grid_cell_row_indexes = Self::cell_axis_index_to_world_grid_cell_axis_indexes::<
             Base,
         >(self.row, grid_dim.row_count, overlap);
@@ -78,7 +77,7 @@ impl WorldCellPosition {
     fn cell_axis_index_to_world_grid_cell_axis_indexes<Base: SudokuBase>(
         world_cell_axis_index: usize,
         world_grid_axis_count: NonZeroUsize,
-        overlap: u8,
+        overlap: GridOverlap<Base>,
     ) -> CellAxisIndexToGridCellAxisIndexes<Base> {
         let world_grid_cell_axis_index = WorldGridCellAxisIndex::<Base>::from_world_cell_axis_index(
             world_cell_axis_index,

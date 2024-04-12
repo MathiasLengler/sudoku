@@ -6,12 +6,13 @@ use sudoku::base::SudokuBase;
 use sudoku::error::Result;
 use sudoku::world::dynamic::DynamicCellWorldActions;
 use sudoku::world::CellWorld;
+use sudoku::world::GridOverlap;
 use sudoku::world::WorldGridDim;
 
 fn main() -> Result<()> {
     fn gen_worlds_stats<Base: SudokuBase>() {
         for (overlap, grid_dim) in iproduct!(
-            1..=Base::BASE,
+            GridOverlap::<Base>::all_non_zero(),
             vec![
                 (2, 2),
                 (3, 3),

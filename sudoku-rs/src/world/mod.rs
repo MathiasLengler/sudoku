@@ -36,10 +36,7 @@ pub mod dynamic;
 pub struct CellWorld<Base: SudokuBase> {
     grid_dim: WorldGridDim,
     cells: Array2<Cell<Base>>,
-    // TODO: introduce wrapper for valided overlap "GridOverlap<Base>"
-    //  analog `BlockCoordinate`, but instead of : `block_coordinate < Base::BASE`
-    //  `overlap <= Base::BASE`
-    overlap: u8,
+    overlap: GridOverlap<Base>,
 }
 
 impl<Base: SudokuBase> Display for CellWorld<Base> {
@@ -80,10 +77,7 @@ pub struct CellWorldDimensions {
 
 /// Constructors
 impl<Base: SudokuBase> CellWorld<Base> {
-    pub fn new(grid_dim: WorldGridDim, overlap: u8) -> Self {
-        // Various indexing patterns break down for larger overlaps.
-        assert!(overlap <= Base::BASE);
-
+    pub fn new(grid_dim: WorldGridDim, overlap: GridOverlap<Base>) -> Self {
         Self {
             cells: Array2::default(grid_dim.to_cell_dim::<Base>(overlap).as_cells_shape()),
             grid_dim,
@@ -193,7 +187,8 @@ impl<Base: SudokuBase> DynamicCellWorldActions for CellWorld<Base> {
             .partition(|pos| {
                 let (row, column) = pos.to_row_and_column();
                 let (row, column) = (row.get(), column.get());
-                let middle_axis_range = self.overlap..(Base::SIDE_LENGTH - self.overlap);
+                let middle_axis_range =
+                    self.overlap.get()..(Base::SIDE_LENGTH - self.overlap.get());
                 middle_axis_range.contains(&row) && middle_axis_range.contains(&column)
             });
 
@@ -251,7 +246,7 @@ impl<Base: SudokuBase> DynamicCellWorldActions for CellWorld<Base> {
         CellWorldDimensions {
             grid_dim: self.grid_dim,
             cell_dim: WorldCellDim::new(self.cells.nrows(), self.cells.ncols()).unwrap(),
-            overlap: self.overlap,
+            overlap: self.overlap.get(),
         }
     }
 
@@ -354,7 +349,7 @@ impl<Base: SudokuBase> CellWorld<Base> {
 
     fn grid_cells_slice_info(
         grid_position: ValidatedWorldGridPosition,
-        overlap: u8,
+        overlap: GridOverlap<Base>,
     ) -> GridCellsSliceInfo {
         grid_position.grid_cells_slice_info::<Base>(overlap)
     }
@@ -367,7 +362,7 @@ impl<Base: SudokuBase> CellWorld<Base> {
 
         let top_right_grid_cells = self.grid_cells(top_right_grid_position);
 
-        let overlap_isize = isize::from(self.overlap);
+        let overlap_isize = self.overlap.get_isize();
 
         let top_right_constraining_corner_cells = top_right_grid_cells.slice(s![
             // bottom overlap row band
@@ -398,9 +393,9 @@ impl<Base: SudokuBase> CellWorld<Base> {
     fn split_cells_into_overlap_segments_single_axis(
         grid_cells: ArrayViewMut2<Cell<Base>>,
         axis: Axis,
-        overlap: u8,
+        overlap: GridOverlap<Base>,
     ) -> [ArrayViewMut2<Cell<Base>>; 3] {
-        let overlap = usize::from(overlap);
+        let overlap = overlap.get_usize();
 
         let (first, rest) = grid_cells.split_at(axis, overlap);
         let (middle, last) = rest.split_at(axis, usize::from(Base::SIDE_LENGTH) - (overlap * 2));
@@ -411,7 +406,7 @@ impl<Base: SudokuBase> CellWorld<Base> {
     // TODO: convert into OverlapSegments impl
     fn split_cells_into_overlap_segments(
         grid_cells: ArrayViewMut2<Cell<Base>>,
-        overlap: u8,
+        overlap: GridOverlap<Base>,
     ) -> OverlapSegments<ArrayViewMut2<Cell<Base>>> {
         let row_bands =
             Self::split_cells_into_overlap_segments_single_axis(grid_cells, Axis(0), overlap);
@@ -464,7 +459,7 @@ mod tests {
     fn test_prune_is_directly_consistent() {
         let grid_dim = WorldGridDim::new(3, 3).unwrap();
         let seed = 1;
-        let overlap = 1;
+        let overlap = 1.try_into().unwrap();
 
         let mut world = CellWorld::<Base2>::new(grid_dim, overlap);
         world.generate_solved(Some(seed)).unwrap();
@@ -476,7 +471,7 @@ mod tests {
     #[test]
     fn test_delete_grid_overlap_segments() {
         let grid_dim = WorldGridDim::new(3, 3).unwrap();
-        let mut cell_world = CellWorld::<Base2>::new(grid_dim, 1);
+        let mut cell_world = CellWorld::<Base2>::new(grid_dim, 1.try_into().unwrap());
         cell_world
             .cells
             .fill(Cell::with_value(1.try_into().unwrap(), false));

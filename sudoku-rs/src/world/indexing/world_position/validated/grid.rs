@@ -2,7 +2,7 @@ use ndarray::{s, Dim, SliceInfo, SliceInfoElem};
 
 use crate::{
     base::SudokuBase,
-    world::{GridMarker, WorldCellPosition},
+    world::{GridMarker, GridOverlap, WorldCellPosition},
 };
 
 use super::ValidatedWorldPosition;
@@ -15,7 +15,7 @@ pub(in crate::world) type GridCellsSliceInfo =
 impl ValidatedWorldGridPosition {
     pub(in crate::world) fn grid_cells_slice_info<Base: SudokuBase>(
         self,
-        overlap: u8,
+        overlap: GridOverlap<Base>,
     ) -> GridCellsSliceInfo {
         let WorldCellPosition {
             row: top_left_cell_row,

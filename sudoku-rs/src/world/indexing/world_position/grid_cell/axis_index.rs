@@ -5,7 +5,7 @@ use num::Integer;
 use crate::{
     base::SudokuBase,
     position::Coordinate,
-    world::{AxisOrdering, WorldGridPosition},
+    world::{AxisOrdering, GridOverlap},
 };
 
 /// The axis index (row or column) of a cell inside a specific grid in the world.
@@ -23,9 +23,9 @@ impl<Base: SudokuBase> WorldGridCellAxisIndex<Base> {
     pub(in crate::world::indexing) fn from_world_cell_axis_index(
         world_cell_axis_index: usize,
         world_grid_axis_count: NonZeroUsize,
-        overlap: u8,
+        overlap: GridOverlap<Base>,
     ) -> Self {
-        let grid_stride_usize = WorldGridPosition::stride_usize::<Base>(overlap);
+        let grid_stride_usize = overlap.grid_stride_usize();
 
         let mut this = Self {
             world_grid_axis_index: world_cell_axis_index / grid_stride_usize,
@@ -58,12 +58,12 @@ impl<Base: SudokuBase> WorldGridCellAxisIndex<Base> {
     pub(in crate::world::indexing) fn overlap_neighbor(
         self,
         world_grid_axis_count: NonZeroUsize,
-        overlap: u8,
+        overlap: GridOverlap<Base>,
     ) -> Option<(Self, AxisOrdering)> {
-        let grid_stride = WorldGridPosition::stride::<Base>(overlap);
+        let grid_stride = overlap.grid_stride();
         let cell_axis_index = self.cell_axis_index.get();
 
-        let neighbor_ordering = if cell_axis_index < overlap {
+        let neighbor_ordering = if cell_axis_index < overlap.get() {
             // inside potential start overlap => neighbor before
             Some(AxisOrdering::Less)
         } else if cell_axis_index >= grid_stride {
@@ -101,13 +101,13 @@ impl<Base: SudokuBase> WorldGridCellAxisIndex<Base> {
     pub(in crate::world::indexing) fn normalize_to_nearest_world_grid_axis_index(
         self,
         world_grid_axis_count: NonZeroUsize,
-        overlap: u8,
+        overlap: GridOverlap<Base>,
         tie_break: AxisOrdering,
     ) -> Self {
-        let grid_stride = WorldGridPosition::stride::<Base>(overlap);
+        let grid_stride = overlap.grid_stride();
         let cell_axis_index = self.cell_axis_index.get();
-        let is_even_overlap = overlap.is_even();
-        let half_overlap_round_down = overlap / 2;
+        let is_even_overlap = overlap.get().is_even();
+        let half_overlap_round_down = overlap.get() / 2;
 
         let start_overlap_upper_bound_to_before = if is_even_overlap {
             half_overlap_round_down
@@ -153,7 +153,7 @@ impl<Base: SudokuBase> WorldGridCellAxisIndex<Base> {
         self,
         neighbor_ordering: AxisOrdering,
         world_grid_axis_count: NonZeroUsize,
-        overlap: u8,
+        overlap: GridOverlap<Base>,
     ) -> Option<Self> {
         debug_assert!(Self::is_cell_axis_index_in_potential_overlap_region(
             self.cell_axis_index,
@@ -164,7 +164,7 @@ impl<Base: SudokuBase> WorldGridCellAxisIndex<Base> {
             world_grid_axis_index,
             cell_axis_index,
         } = self;
-        let grid_stride = WorldGridPosition::stride::<Base>(overlap);
+        let grid_stride = overlap.grid_stride();
         let cell_axis_index = cell_axis_index.get();
 
         match neighbor_ordering {
@@ -197,11 +197,11 @@ impl<Base: SudokuBase> WorldGridCellAxisIndex<Base> {
 
     fn is_cell_axis_index_in_potential_overlap_region(
         cell_axis_index: Coordinate<Base>,
-        overlap: u8,
+        overlap: GridOverlap<Base>,
     ) -> bool {
-        let grid_stride = WorldGridPosition::stride::<Base>(overlap);
+        let grid_stride = overlap.grid_stride();
 
-        !(overlap..grid_stride).contains(&cell_axis_index.get())
+        !(overlap.get()..grid_stride).contains(&cell_axis_index.get())
     }
 
     #[cfg(test)]
@@ -241,7 +241,7 @@ mod tests {
         fn test_from_world_cell_axis_index() {
             type Base = Base2;
             let world_grid_axis_count = 3.try_into().unwrap();
-            let overlap = 2;
+            let overlap = 2.try_into().unwrap();
             let world_cell_axis_count = 8;
 
             itertools::assert_equal(
@@ -278,8 +278,7 @@ mod tests {
             mod invariant {
                 use super::*;
                 fn assert_invariants<Base: SudokuBase>() {
-                    // TODO: WorldOverlap::all
-                    for overlap in 0..=Base::BASE {
+                    for overlap in GridOverlap::<Base>::all() {
                         let world_grid_axis_count = 3.try_into().unwrap();
 
                         for world_grid_cell_axis_index in
@@ -322,7 +321,7 @@ mod tests {
             fn test_base2_overlap_0() {
                 type Base = Base2;
                 let world_grid_axis_count = 3.try_into().unwrap();
-                let overlap = 0;
+                let overlap = 0.try_into().unwrap();
 
                 for world_grid_cell_axis_index in
                     WorldGridCellAxisIndex::<Base>::all(world_grid_axis_count)
@@ -337,7 +336,7 @@ mod tests {
             fn test_base2_overlap_1() {
                 type Base = Base2;
                 let world_grid_axis_count = 3.try_into().unwrap();
-                let overlap = 1;
+                let overlap = 1.try_into().unwrap();
 
                 let expected_results: Vec<Option<(WorldGridCellAxisIndex<Base>, AxisOrdering)>> = vec![
                     // grid 0
@@ -396,7 +395,7 @@ mod tests {
             fn test_base2_overlap_2() {
                 type Base = Base2;
                 let world_grid_axis_count = 3.try_into().unwrap();
-                let overlap = 2;
+                let overlap = 2.try_into().unwrap();
 
                 let expected_results: Vec<Option<(WorldGridCellAxisIndex<Base>, AxisOrdering)>> = vec![
                     // Grid 0
@@ -485,8 +484,7 @@ mod tests {
                 use super::*;
 
                 fn assert_invariants<Base: SudokuBase>() {
-                    // TODO: WorldOverlap::all
-                    for overlap in 0..=Base::BASE {
+                    for overlap in GridOverlap::<Base>::all() {
                         let world_grid_axis_count = 3.try_into().unwrap();
 
                         for tie_break in AxisOrdering::all() {
@@ -502,7 +500,7 @@ mod tests {
                                         );
 
                                 // invariant: overlap 0 maps to itself
-                                if overlap == 0 {
+                                if overlap.get() == 0 {
                                     assert_eq!(
                                         world_grid_cell_axis_index_normalized,
                                         world_grid_cell_axis_index
@@ -533,8 +531,6 @@ mod tests {
                             }
 
                             // invariant: number of distinct normalized results
-                            let grid_stride_usize =
-                                WorldGridPosition::stride_usize::<Base>(overlap);
                             assert_eq!(
                                 WorldGridCellAxisIndex::<Base>::all(world_grid_axis_count)
                                     .map(|world_grid_cell_axis_index| {
@@ -547,8 +543,8 @@ mod tests {
                                     })
                                     .unique()
                                     .count(),
-                                grid_stride_usize * world_grid_axis_count.get()
-                                    + usize::from(overlap)
+                                overlap.grid_stride_usize() * world_grid_axis_count.get()
+                                    + overlap.get_usize()
                             );
 
                             // invariant: the overlap region shared by two subsequent grids results in the same normalized result
@@ -569,15 +565,15 @@ mod tests {
                                             tie_break,
                                         )
                                 }).collect_vec();
-                                if world_grid_cell_axis_indexes.len() == usize::from(overlap) * 2 {
-                                    let (first_grid_end_overlap, second_grid_start_overlap) = world_grid_cell_axis_indexes.split_at(overlap.into());
+                                if world_grid_cell_axis_indexes.len() == overlap.get_usize() * 2 {
+                                    let (first_grid_end_overlap, second_grid_start_overlap) = world_grid_cell_axis_indexes.split_at(overlap.get_usize());
                                     assert_eq!(first_grid_end_overlap, second_grid_start_overlap);
                                 }
                             }
                         }
 
                         // invariant: if overlap is even, tie_break does not change the result
-                        if overlap.is_even() {
+                        if overlap.get().is_even() {
                             for world_grid_cell_axis_index in
                                 WorldGridCellAxisIndex::<Base>::all(world_grid_axis_count)
                             {
@@ -619,7 +615,7 @@ mod tests {
             }
 
             fn assert_normalize_to_nearest_world_grid_axis_index<Base: SudokuBase>(
-                overlap: u8,
+                overlap: GridOverlap<Base>,
                 tie_break: AxisOrdering,
                 expected: impl IntoIterator<Item = (usize, u8)>,
             ) {
@@ -642,7 +638,7 @@ mod tests {
             #[test]
             fn test_base2_overlap_1() {
                 type Base = Base2;
-                let overlap = 1;
+                let overlap = 1.try_into().unwrap();
 
                 assert_normalize_to_nearest_world_grid_axis_index::<Base>(
                     overlap,
@@ -692,7 +688,7 @@ mod tests {
             #[test]
             fn test_base2_overlap_2() {
                 type Base = Base2;
-                let overlap = 2;
+                let overlap = 2.try_into().unwrap();
 
                 let expected = vec![
                     // grid 0
@@ -728,7 +724,7 @@ mod tests {
             #[test]
             fn test_base3_overlap_2() {
                 type Base = Base3;
-                let overlap = 2;
+                let overlap = 2.try_into().unwrap();
 
                 let expected = vec![
                     // grid 0
@@ -779,7 +775,7 @@ mod tests {
             #[test]
             fn test_base3_overlap_3() {
                 type Base = Base3;
-                let overlap = 3;
+                let overlap = 3.try_into().unwrap();
 
                 assert_normalize_to_nearest_world_grid_axis_index::<Base>(
                     overlap,
@@ -865,7 +861,7 @@ mod tests {
             #[test]
             fn test_base2_overlap_1() {
                 type Base = Base2;
-                let overlap = 1;
+                let overlap = 1.try_into().unwrap();
                 let world_grid_axis_count = 3.try_into().unwrap();
 
                 assert_eq!(
@@ -960,7 +956,7 @@ mod tests {
             use super::*;
 
             fn assert_is_cell_axis_index_in_potential_overlap_region<Base: SudokuBase>(
-                overlap: u8,
+                overlap: GridOverlap<Base>,
                 expected: impl IntoIterator<Item = bool>,
             ) {
                 itertools::assert_equal(
@@ -977,7 +973,7 @@ mod tests {
             #[test]
             fn test_base2_overlap_0() {
                 type Base = Base2;
-                let overlap = 0;
+                let overlap = 0.try_into().unwrap();
 
                 assert_is_cell_axis_index_in_potential_overlap_region::<Base>(
                     overlap,
@@ -988,7 +984,7 @@ mod tests {
             #[test]
             fn test_base2_overlap_1() {
                 type Base = Base2;
-                let overlap = 1;
+                let overlap = 1.try_into().unwrap();
 
                 assert_is_cell_axis_index_in_potential_overlap_region::<Base>(
                     overlap,
@@ -998,7 +994,7 @@ mod tests {
             #[test]
             fn test_base2_overlap_2() {
                 type Base = Base2;
-                let overlap = 2;
+                let overlap = 2.try_into().unwrap();
 
                 assert_is_cell_axis_index_in_potential_overlap_region::<Base>(
                     overlap,
@@ -1008,7 +1004,7 @@ mod tests {
             #[test]
             fn test_base3_overlap_2() {
                 type Base = Base3;
-                let overlap = 2;
+                let overlap = 2.try_into().unwrap();
 
                 assert_is_cell_axis_index_in_potential_overlap_region::<Base>(
                     overlap,

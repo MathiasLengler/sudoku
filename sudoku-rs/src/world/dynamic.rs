@@ -42,10 +42,22 @@ pub enum DynamicCellWorld {
 impl DynamicCellWorld {
     pub fn new(base: BaseEnum, grid_dim: WorldGridDim, overlap: u8) -> Self {
         match base {
-            BaseEnum::Base2 => Self::Base2(CellWorld::<Base2>::new(grid_dim, overlap)),
-            BaseEnum::Base3 => Self::Base3(CellWorld::<Base3>::new(grid_dim, overlap)),
-            BaseEnum::Base4 => Self::Base4(CellWorld::<Base4>::new(grid_dim, overlap)),
-            BaseEnum::Base5 => Self::Base5(CellWorld::<Base5>::new(grid_dim, overlap)),
+            BaseEnum::Base2 => Self::Base2(CellWorld::<Base2>::new(
+                grid_dim,
+                overlap.try_into().unwrap(),
+            )),
+            BaseEnum::Base3 => Self::Base3(CellWorld::<Base3>::new(
+                grid_dim,
+                overlap.try_into().unwrap(),
+            )),
+            BaseEnum::Base4 => Self::Base4(CellWorld::<Base4>::new(
+                grid_dim,
+                overlap.try_into().unwrap(),
+            )),
+            BaseEnum::Base5 => Self::Base5(CellWorld::<Base5>::new(
+                grid_dim,
+                overlap.try_into().unwrap(),
+            )),
         }
     }
 }

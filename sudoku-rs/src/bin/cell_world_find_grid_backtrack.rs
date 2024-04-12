@@ -9,7 +9,7 @@ use sudoku::world::{CellWorld, WorldGridDim};
 fn main() -> Result<()> {
     let grid_dim = WorldGridDim::new(100, 100).unwrap();
 
-    let overlap = 3;
+    let overlap = 3.try_into().unwrap();
 
     let world = (0..1_000_000u32)
         .into_par_iter()

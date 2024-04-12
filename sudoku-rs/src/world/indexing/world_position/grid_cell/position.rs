@@ -1,7 +1,7 @@
 use crate::{
     base::SudokuBase,
     position::Position,
-    world::{WorldCellPosition, WorldGridPosition},
+    world::{GridOverlap, WorldCellPosition, WorldGridPosition},
 };
 
 use super::WorldGridCellAxisIndex;
@@ -37,12 +37,12 @@ impl<Base: SudokuBase> WorldGridCellPosition<Base> {
         self.cell_pos
     }
 
-    pub fn to_world_cell_pos(self, overlap: u8) -> WorldCellPosition {
+    pub fn to_world_cell_pos(self, overlap: GridOverlap<Base>) -> WorldCellPosition {
         let Self {
             world_grid_pos,
             cell_pos,
         } = self;
 
-        world_grid_pos.to_top_left_cell_position::<Base>(overlap) + cell_pos
+        world_grid_pos.to_top_left_cell_position(overlap) + cell_pos
     }
 }
