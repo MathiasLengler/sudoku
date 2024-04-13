@@ -24,9 +24,9 @@ const workerApi: WorkerApi = {
     WasmCellWorld,
 };
 
-type Newable<T> = new (...args: unknown[]) => T;
+type Newable<T, Args extends unknown[]> = new (...args: Args) => T;
 
-function markClassAsProxy<T>(cls: Newable<T>) {
+function markClassAsProxy<T, Args extends unknown[]>(cls: Newable<T, Args>) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     cls.prototype[Comlink.proxyMarker] = true;
 }

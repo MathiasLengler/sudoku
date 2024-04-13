@@ -23,8 +23,8 @@ use sudoku::{
     },
     transport::{TransportCell, TransportSudoku},
     world::{
-        CellWorldDimensions, RelativeDir, WorldCellDim, WorldCellPosition, WorldGenerationResult,
-        WorldGridDim, WorldGridPosition,
+        CellWorldDimensions, DynamicWorldGridCellPosition, Quadrant, RelativeDir, WorldCellDim,
+        WorldCellPosition, WorldGenerationResult, WorldGridDim, WorldGridPosition,
     },
     DynamicTryStrategiesReturn,
 };
@@ -80,15 +80,16 @@ import type {
     DynamicPruningOrder,
     DynamicPruningSettings,
     DynamicSolutionSettings,
-    DynamicTryStrategiesReturn,
     DynamicValue,
+    DynamicWorldGridCellPosition,
     GeneratorProgress,
     GridFormatEnum,
     PositionedTransportAction,
     PositionedTransportReason,
     PruningGroupBehaviour,
     PruningTarget,
-    RelativeGridDir,
+    Quadrant,
+    RelativeDir,
     StrategyEnum,
     TransportAction,
     TransportCell,
@@ -96,9 +97,7 @@ import type {
     TransportDeductions,
     TransportReason,
     TransportSudoku,
-    WorldDim,
-    WorldGenerationResult,
-    WorldPosition
+    WorldGenerationResult
 } from "../../sudoku-rs/bindings";
 "#;
 serde_wasm_bindgen_interop! {
@@ -113,12 +112,14 @@ serde_wasm_bindgen_interop! {
     DynamicPruningSettings,
     DynamicSolutionSettings,
     DynamicValue,
+    DynamicWorldGridCellPosition,
     GeneratorProgress,
     GridFormatEnum,
     PositionedTransportAction,
     PositionedTransportReason,
     PruningGroupBehaviour,
     PruningTarget,
+    Quadrant,
     RelativeDir,
     StrategyEnum,
     TransportAction,

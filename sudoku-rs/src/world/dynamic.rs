@@ -6,7 +6,8 @@ use crate::error::Result;
 use crate::grid::dynamic::DynamicGrid;
 
 use super::{
-    CellWorld, CellWorldDimensions, WorldGenerationResult, WorldGridDim, WorldGridPosition,
+    CellWorld, CellWorldDimensions, DynamicWorldGridCellPosition, Quadrant, WorldCellPosition,
+    WorldGenerationResult, WorldGridDim, WorldGridPosition,
 };
 
 #[enum_dispatch]
@@ -28,6 +29,13 @@ pub trait DynamicCellWorldActions {
     fn is_solved(&self) -> bool;
     fn is_directly_consistent(&self) -> bool;
     fn all_world_cells(&self) -> Vec<DynamicCell>;
+
+    // Indexing helpers
+    fn world_cell_position_to_nearest_world_grid_cell_position(
+        &self,
+        cell_position: WorldCellPosition,
+        tie_break: Quadrant,
+    ) -> Result<DynamicWorldGridCellPosition>;
 }
 
 #[enum_dispatch(DynamicCellWorldActions)]

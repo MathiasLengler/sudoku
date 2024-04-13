@@ -1,6 +1,6 @@
 import { atom, selector } from "recoil";
 import { z } from "zod";
-import type { TransportCell, TransportSudoku } from "../../types";
+import type { BaseEnum, TransportCell, TransportSudoku } from "../../types";
 import { hintState } from "./hint";
 import { remoteWasmSudokuState } from "./worker";
 
@@ -27,7 +27,7 @@ export const sudokuState = atom<TransportSudoku>({
     }),
 });
 
-export const sudokuBaseState = selector<number>({
+export const sudokuBaseState = selector<BaseEnum>({
     key: "Sudoku.base",
     get: ({ get }) => get(sudokuState).base,
 });

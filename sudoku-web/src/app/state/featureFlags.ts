@@ -4,15 +4,12 @@ export type FeatureFlags = {
     experimentWorld: boolean;
 };
 
-export const featureFlagsState = atom<FeatureFlags>({
+export const featureFlagsState = selector<FeatureFlags>({
     key: "FeatureFlags",
-    default: selector({
-        key: "DefaultFeatureFlags",
-        get: () => {
-            const params = new URLSearchParams(window.location.search);
-            return {
-                experimentWorld: params.has("world"),
-            };
-        },
-    }),
+    get: () => {
+        const params = new URLSearchParams(window.location.search);
+        return {
+            experimentWorld: params.has("world"),
+        };
+    },
 });

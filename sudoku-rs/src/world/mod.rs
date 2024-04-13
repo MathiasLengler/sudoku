@@ -245,7 +245,7 @@ impl<Base: SudokuBase> DynamicCellWorldActions for CellWorld<Base> {
     fn dimensions(&self) -> CellWorldDimensions {
         CellWorldDimensions {
             grid_dim: self.grid_dim,
-            cell_dim: WorldCellDim::new(self.cells.nrows(), self.cells.ncols()).unwrap(),
+            cell_dim: self.cell_dim(),
             overlap: self.overlap.get(),
         }
     }
@@ -264,6 +264,20 @@ impl<Base: SudokuBase> DynamicCellWorldActions for CellWorld<Base> {
 
     fn all_world_cells(&self) -> Vec<DynamicCell> {
         self.cells.iter().map(|cell| cell.into()).collect()
+    }
+
+    // Indexing helpers
+    fn world_cell_position_to_nearest_world_grid_cell_position(
+        &self,
+        cell_position: WorldCellPosition,
+        tie_break: Quadrant,
+    ) -> Result<DynamicWorldGridCellPosition> {
+        Ok(self
+            .world_cell_position_to_nearest_world_grid_cell_position(
+                cell_position.validate(self.cell_dim())?,
+                tie_break,
+            )
+            .into())
     }
 }
 
@@ -317,6 +331,21 @@ impl<Base: SudokuBase> CellWorld<Base> {
     }
 }
 
+/// Indexing helpers
+impl<Base: SudokuBase> CellWorld<Base> {
+    fn world_cell_position_to_nearest_world_grid_cell_position(
+        &self,
+        cell_position: ValidatedWorldCellPosition,
+        tie_break: Quadrant,
+    ) -> WorldGridCellPosition<Base> {
+        cell_position.get().to_nearest_world_grid_cell_position(
+            self.grid_dim,
+            self.overlap,
+            tie_break,
+        )
+    }
+}
+
 /// Iterators
 impl<Base: SudokuBase> CellWorld<Base> {
     pub fn all_grids(&self) -> impl Iterator<Item = Grid<Base>> + '_ {
@@ -335,6 +364,10 @@ impl<Base: SudokuBase> CellWorld<Base> {
 
 /// Internal helpers
 impl<Base: SudokuBase> CellWorld<Base> {
+    fn cell_dim(&self) -> WorldCellDim {
+        WorldCellDim::new(self.cells.nrows(), self.cells.ncols()).unwrap()
+    }
+
     fn grid_cells(&self, grid_position: ValidatedWorldGridPosition) -> ArrayView2<Cell<Base>> {
         self.cells
             .slice(Self::grid_cells_slice_info(grid_position, self.overlap))

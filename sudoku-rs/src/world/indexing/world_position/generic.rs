@@ -41,11 +41,8 @@ impl<T: WorldObject> WorldPosition<T> {
         grid_dim.contains(self)
     }
 
-    pub(in crate::world) fn validate(
-        self,
-        grid_dim: WorldDim<T>,
-    ) -> Result<ValidatedWorldPosition<T>> {
-        ValidatedWorldPosition::new(self, grid_dim)
+    pub(in crate::world) fn validate(self, dim: WorldDim<T>) -> Result<ValidatedWorldPosition<T>> {
+        ValidatedWorldPosition::new(self, dim)
     }
 
     pub fn is_at_top_edge(self) -> bool {

@@ -1,6 +1,6 @@
 import { Button, Slider } from "@mui/material";
 import type * as CSS from "csstype";
-import React, { useDeferredValue, useEffect } from "react";
+import React, { useDeferredValue } from "react";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeGrid as Grid } from "react-window";
 import { useRecoilState, useRecoilValue, useResetRecoilState, useSetRecoilState } from "recoil";
@@ -9,15 +9,15 @@ import { Candidates, CellValue } from "../../grid/cell";
 import { sudokuBaseState, sudokuSideLengthState } from "../../state/sudoku";
 import {
     cellWorldDimensionsState,
+    emptyWasmCellWorldState,
     selectedGridIndexState,
+    worldCellPositionSchema,
     worldCellSizeState,
     worldCellState,
 } from "../../state/world";
 import { worldCellBorderClassesState } from "../../state/world/cellBorder";
 
-import { WasmSudoku, WasmCellWorld as _WasmCellWorld } from "../../../../../sudoku-wasm/pkg";
 import { isWorkerReadyState } from "../../state/worker";
-import { init } from "../../state/worker/bg/init";
 
 type WorldCellVirtualizedProps = {
     rowIndex: number;
@@ -43,10 +43,6 @@ const WorldCellVirtualized = React.memo(function WorldCellVirtualized({
         <div
             className={`world-map-cell ${worldCellBorderClasses}`}
             style={style}
-            // sx={{
-            //     width: "var(--cell-size)",
-            //     height: "var(--cell-size)",
-            // }}
             onClick={(e) => {
                 e.currentTarget.scrollIntoView({
                     behavior: "smooth",
@@ -96,30 +92,26 @@ const WorldMapVirtualized = () => {
 
 // TODO: change grid
 export const WorldMap = () => {
-    useRecoilValue(isWorkerReadyState);
+    // useRecoilValue(isWorkerReadyState);
 
     const base = useRecoilValue(sudokuBaseState);
     const sideLength = useRecoilValue(sudokuSideLengthState);
     const setSelectedGridIndex = useSetRecoilState(selectedGridIndexState);
     const resetSelectedGridIndex = useResetRecoilState(selectedGridIndexState);
     const [cellSize, setCellSize] = useRecoilState(worldCellSizeState);
+    const emptyCellWorld = useRecoilValue(emptyWasmCellWorldState);
+
+    console.log(
+        emptyCellWorld.worldCellPositionToNearestWorldGridCellPosition(
+            worldCellPositionSchema.parse({ row: 1, column: 1 }),
+            "topLeft",
+        ),
+    );
 
     const cssVariables: CSS.Properties = {
         "--side-length": sideLength,
         "--base": base,
     };
-
-    useEffect(() => {
-        const run = async () => {
-            await init(1);
-            const testInstance = new WasmSudoku();
-            console.log({ testInstance });
-
-            // TODO: expose and use static indexing helpers
-        };
-
-        run().catch(console.error);
-    }, []);
 
     return (
         <div className="world-map" style={cssVariables}>

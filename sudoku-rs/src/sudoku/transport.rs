@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+use crate::base::BaseEnum;
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
 use crate::grid::Grid;
@@ -13,7 +14,7 @@ use crate::sudoku::Sudoku;
 pub struct TransportSudoku {
     cells: Vec<TransportCell>,
     blocks_indexes: Vec<Vec<u16>>,
-    base: u8,
+    base: BaseEnum,
     side_length: u8,
     cell_count: u16,
     is_solved: bool,
@@ -47,7 +48,7 @@ impl<Base: SudokuBase> From<&Sudoku<Base>> for TransportSudoku {
             blocks_indexes: Grid::<Base>::all_block_positions()
                 .map(|block| block.map(|pos| pos.cell_index()).collect())
                 .collect(),
-            base: Base::BASE,
+            base: Base::ENUM,
             side_length: Base::SIDE_LENGTH,
             cell_count: Base::CELL_COUNT,
             is_solved: grid.is_solved(),

@@ -3,6 +3,7 @@ import type { IsEqual } from "type-fest";
 import { z } from "zod";
 import { assert, type CreateSerializableParam } from "../../../typeUtils";
 import type {
+    BaseEnum,
     CellWorldDimensions,
     DynamicCell,
     DynamicCells,
@@ -11,10 +12,13 @@ import type {
     WorldPosition,
 } from "../../../types";
 import { type Game, gameState } from "../gameMode";
-import { remoteWasmCellWorldState } from "../worker";
-import { sudokuSideLengthState } from "../sudoku";
+import { remoteWasmCellWorldClassState, type RemoteWasmCellWorld } from "../worker";
+import { sudokuBaseState, sudokuSideLengthState } from "../sudoku";
 import _ from "lodash";
 import { validateCellWorldPosition } from "../../utils/world";
+import { fixupComlinkProxy } from "../worker/comlinkProxyWrapper";
+import { WasmCellWorld } from "../../../../../sudoku-wasm/pkg";
+import { init } from "../../state/worker/bg/init";
 
 export type WorldView = z.infer<typeof worldViewSchema>;
 export const worldViewSchema = z.enum(["sudoku", "map"]);
@@ -31,12 +35,23 @@ export const worldPositionSchema = z.object({
 });
 assert<IsEqual<z.infer<typeof worldPositionSchema>, WorldPosition>>();
 
-// TODO: somehow link these branded types with wasm-bindgen
 export type WorldCellPosition = z.infer<typeof worldCellPositionSchema>;
 export const worldCellPositionSchema = worldPositionSchema.brand("WorldCellPosition");
 
 export type WorldGridPosition = z.infer<typeof worldGridPositionSchema>;
 export const worldGridPositionSchema = worldPositionSchema.brand("WorldGridPosition");
+
+export const worldDimSchema = z.object({
+    rowCount: usizeSchema,
+    columnCount: usizeSchema,
+});
+assert<IsEqual<z.infer<typeof worldDimSchema>, WorldDim>>();
+
+export type WorldCellDim = z.infer<typeof worldCellDimSchema>;
+export const worldCellDimSchema = worldDimSchema.brand("WorldCellDim");
+
+export type WorldGridDim = z.infer<typeof worldGridDimSchema>;
+export const worldGridDimSchema = worldDimSchema.brand("WorldGridDim");
 
 export type GameModeWorld = z.infer<typeof gameModeWorldSchema>;
 export const gameModeWorldSchema = z.object({
@@ -53,15 +68,59 @@ export const showWorldMapState = selector<boolean>({
     },
 });
 
-export const allWorldCellsState = atom<DynamicCells>({
+export const requestedGridDimState = atom<WorldGridDim>({
+    key: "requestedGridDimState",
+    default: worldGridDimSchema.parse({ rowCount: 3, columnCount: 3 }),
+});
+
+export const requestedOverlapState = atom<number>({
+    key: "requestedOverlapState",
+    default: 1,
+});
+export const requestedSeedState = atom<bigint>({
+    key: "requestedSeedState",
+    default: 1n,
+});
+
+export const remoteWasmCellWorldState = selector<RemoteWasmCellWorld>({
+    key: "remoteWasmCellWorldState",
+    get: async ({ get }) => {
+        const RemoteWasmCellWorldClass = get(remoteWasmCellWorldClassState);
+        const requestedWorldBase = get(sudokuBaseState);
+        const requestedGridDim = get(requestedGridDimState);
+        const requestedOverlap = get(requestedOverlapState);
+        const requestedSeed = get(requestedSeedState);
+
+        return fixupComlinkProxy(
+            await RemoteWasmCellWorldClass.generate(
+                requestedWorldBase,
+                requestedGridDim,
+                requestedOverlap,
+                requestedSeed,
+            ),
+        );
+    },
+});
+
+export const emptyWasmCellWorldState = selector<WasmCellWorld>({
+    key: "emptyWasmCellWorldState",
+    get: async ({ get }) => {
+        await init(1);
+
+        const requestedWorldBase = get(sudokuBaseState);
+        const requestedGridDim = get(requestedGridDimState);
+        const requestedOverlap = get(requestedOverlapState);
+
+        return new WasmCellWorld(requestedWorldBase, requestedGridDim, requestedOverlap);
+    },
+});
+
+export const allWorldCellsState = selector<DynamicCells>({
     key: "AllWorldCells",
-    default: selector({
-        key: "DefaultAllWorldCells",
-        get: async ({ get }) => {
-            const remoteWasmCellWorld = get(remoteWasmCellWorldState);
-            return await remoteWasmCellWorld.allWorldCells();
-        },
-    }),
+    get: async ({ get }) => {
+        const remoteWasmCellWorld = get(remoteWasmCellWorldState);
+        return await remoteWasmCellWorld.allWorldCells();
+    },
 });
 
 export const worldCellSizeState = atom<number>({
@@ -76,18 +135,6 @@ export const cellWorldDimensionsState = selector<CellWorldDimensions>({
         return await remoteWasmCellWorld.dimensions();
     },
 });
-
-export const worldDimSchema = z.object({
-    rowCount: usizeSchema,
-    columnCount: usizeSchema,
-});
-assert<IsEqual<z.infer<typeof worldDimSchema>, WorldDim>>();
-
-export type WorldCellDim = z.infer<typeof worldCellDimSchema>;
-export const worldCellDimSchema = worldDimSchema.brand("WorldCellDim");
-
-export type WorldGridDim = z.infer<typeof worldGridDimSchema>;
-export const worldGridDimSchema = worldDimSchema.brand("WorldGridDim");
 
 export const gridDimState = selector<WorldGridDim>({
     key: "gridDim",

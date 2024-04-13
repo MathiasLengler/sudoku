@@ -1,6 +1,6 @@
 import { Snapshot, useRecoilCallback } from "recoil";
-import { remoteWasmCellWorldState, type RemoteWasmCellWorld } from "../state/worker";
-import type { WorldGridPosition } from "../state/world";
+import { type RemoteWasmCellWorld } from "../state/worker";
+import { remoteWasmCellWorldState, type WorldGridPosition } from "../state/world";
 
 async function getRemoteWasmCellWorld(snapshot: Snapshot): Promise<RemoteWasmCellWorld> {
     return await snapshot.getPromise(remoteWasmCellWorldState);

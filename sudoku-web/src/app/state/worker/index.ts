@@ -14,6 +14,7 @@ export const workerState = atom<Worker>({
 export type RemoteWorkerApi = Comlink.Remote<WorkerApi>;
 export type RemoteWasmSudoku = Comlink.Remote<WasmSudoku>;
 export type RemoteWasmCellWorld = Comlink.Remote<WasmCellWorld>;
+export type RemoteWasmCellClassWorld = Comlink.Remote<typeof WasmCellWorld>;
 
 export const remoteWorkerApiState = selector<RemoteWorkerApi>({
     key: "RemoteWorkerApi",
@@ -60,18 +61,10 @@ export const remoteWasmSudokuState = selector<RemoteWasmSudoku>({
         return fixupComlinkProxy(await createRemoteWasmSudoku(remoteWorkerApi, cells));
     },
 });
-export const remoteWasmCellWorldState = selector<RemoteWasmCellWorld>({
-    key: "RemoteWasmCellWorld",
-    get: async ({ get }) => {
+export const remoteWasmCellWorldClassState = selector<RemoteWasmCellClassWorld>({
+    key: "RemoteWasmCellWorldClass",
+    get: ({ get }) => {
         const remoteWorkerApi = get(remoteWorkerApiState);
-        return fixupComlinkProxy(await new remoteWorkerApi.WasmCellWorld());
+        return fixupComlinkProxy(remoteWorkerApi.WasmCellWorld);
     },
 });
-
-// export const legacyRemoteWorkerApiState = selector<LegacyRemoteWorkerApi>({
-//     key: "RemoteWorkerApi",
-//     get: async ({ get }) => {
-//         const worker = get(workerState);
-//         return await getRemoteWorkerApi(worker);
-//     },
-// });

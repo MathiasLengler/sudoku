@@ -58,7 +58,10 @@ pub struct WasmCellWorld {
 
 impl Default for WasmCellWorld {
     fn default() -> Self {
-        Self::new()
+        let world =
+            CellWorld::<Base3>::new(WorldGridDim::new(2, 3).unwrap(), 1.try_into().unwrap());
+
+        DynamicCellWorld::from(world).into()
     }
 }
 
@@ -71,15 +74,30 @@ impl From<DynamicCellWorld> for WasmCellWorld {
 #[wasm_bindgen]
 impl WasmCellWorld {
     #[wasm_bindgen(constructor)]
-    pub fn new() -> Self {
-        let mut world =
-            CellWorld::<Base3>::new(WorldGridDim::new(2, 3).unwrap(), 1.try_into().unwrap());
+    pub fn new(base: IBaseEnum, grid_dim: IWorldGridDim, overlap: u8) -> Result<WasmCellWorld> {
+        Ok(DynamicCellWorld::new(
+            import_base_enum(base)?,
+            import_world_grid_dim(grid_dim)?,
+            overlap,
+        )
+        .into())
+    }
 
-        let seed = Some(1);
-        world.generate_solved(seed).unwrap();
-        world.prune(seed).unwrap();
+    #[allow(clippy::should_implement_trait)]
+    pub fn default() -> Self {
+        Default::default()
+    }
 
-        DynamicCellWorld::from(world).into()
+    pub fn generate(
+        base: IBaseEnum,
+        grid_dim: IWorldGridDim,
+        overlap: u8,
+        seed: Option<u64>,
+    ) -> Result<WasmCellWorld> {
+        let mut this = Self::new(base, grid_dim, overlap)?;
+        this.generate_solved(seed).unwrap();
+        this.prune(seed).unwrap();
+        Ok(this)
     }
 
     #[wasm_bindgen(js_name = generateSolved)]
@@ -127,6 +145,22 @@ impl WasmCellWorld {
     pub fn all_world_cells(&self) -> Result<IDynamicCells> {
         export_dynamic_cells(self.world.all_world_cells())
     }
+
+    // Indexing helpers
+    #[wasm_bindgen(js_name = worldCellPositionToNearestWorldGridCellPosition)]
+    pub fn world_cell_position_to_nearest_world_grid_cell_position(
+        &self,
+        cell_position: IWorldCellPosition,
+        tie_break: IQuadrant,
+    ) -> Result<IDynamicWorldGridCellPosition> {
+        export_dynamic_world_grid_cell_position(
+            self.world
+                .world_cell_position_to_nearest_world_grid_cell_position(
+                    import_world_cell_position(cell_position)?,
+                    import_quadrant(tie_break)?,
+                )?,
+        )
+    }
 }
 
 #[wasm_bindgen]
@@ -136,7 +170,9 @@ pub struct WasmSudoku {
 
 impl Default for WasmSudoku {
     fn default() -> Self {
-        Self::new()
+        let grid: Grid<Base3> = sudoku::samples::minimal();
+
+        DynamicSudoku::from(Sudoku::with_grid(grid)).into()
     }
 }
 
@@ -150,9 +186,7 @@ impl From<DynamicSudoku> for WasmSudoku {
 impl WasmSudoku {
     #[wasm_bindgen(constructor)]
     pub fn new() -> Self {
-        let grid: Grid<Base3> = sudoku::samples::minimal();
-
-        DynamicSudoku::from(Sudoku::with_grid(grid)).into()
+        Self::default()
     }
 
     pub fn restore(cells: IDynamicCells) -> Result<WasmSudoku> {
