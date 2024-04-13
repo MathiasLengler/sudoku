@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::{
     base::SudokuBase,
     position::Position,
@@ -15,17 +17,9 @@ pub struct WorldGridCellPosition<Base: SudokuBase> {
     cell_pos: Position<Base>,
 }
 
-impl<Base: SudokuBase> From<(WorldGridCellAxisIndex<Base>, WorldGridCellAxisIndex<Base>)>
-    for WorldGridCellPosition<Base>
-{
-    fn from((row, column): (WorldGridCellAxisIndex<Base>, WorldGridCellAxisIndex<Base>)) -> Self {
-        Self {
-            world_grid_pos: WorldGridPosition::new(
-                row.world_grid_axis_index(),
-                column.world_grid_axis_index(),
-            ),
-            cell_pos: (row.cell_axis_index(), column.cell_axis_index()).into(),
-        }
+impl<Base: SudokuBase> Display for WorldGridCellPosition<Base> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}>{}", self.world_grid_pos, self.cell_pos)
     }
 }
 
@@ -44,5 +38,28 @@ impl<Base: SudokuBase> WorldGridCellPosition<Base> {
         } = self;
 
         world_grid_pos.to_top_left_cell_position(overlap) + cell_pos
+    }
+}
+
+impl<Base: SudokuBase> From<(WorldGridPosition, Position<Base>)> for WorldGridCellPosition<Base> {
+    fn from((world_grid_pos, cell_pos): (WorldGridPosition, Position<Base>)) -> Self {
+        Self {
+            world_grid_pos,
+            cell_pos,
+        }
+    }
+}
+
+impl<Base: SudokuBase> From<(WorldGridCellAxisIndex<Base>, WorldGridCellAxisIndex<Base>)>
+    for WorldGridCellPosition<Base>
+{
+    fn from((row, column): (WorldGridCellAxisIndex<Base>, WorldGridCellAxisIndex<Base>)) -> Self {
+        Self {
+            world_grid_pos: WorldGridPosition::new(
+                row.world_grid_axis_index(),
+                column.world_grid_axis_index(),
+            ),
+            cell_pos: (row.cell_axis_index(), column.cell_axis_index()).into(),
+        }
     }
 }

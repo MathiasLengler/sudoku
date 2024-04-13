@@ -71,3 +71,9 @@ impl<T: WorldObject> WorldPosition<T> {
         })
     }
 }
+
+impl<T: WorldObject> From<(usize, usize)> for WorldPosition<T> {
+    fn from((row, column): (usize, usize)) -> Self {
+        Self::new(row, column)
+    }
+}

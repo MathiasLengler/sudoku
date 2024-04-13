@@ -14,9 +14,40 @@ use super::{WorldGridCellAxisIndex, WorldPosition};
 pub type WorldCellPosition = WorldPosition<CellMarker>;
 
 impl WorldCellPosition {
-    // TODO: nearest_world_grid_position using normalize_to_nearest_world_grid_axis_index
-    //  this should simplify the implementation: less return enums,
-    //  since tie-breakers are handled on an axis level already
+    pub fn to_nearest_world_grid_cell_position<Base: SudokuBase>(
+        self,
+        grid_dim: WorldGridDim,
+        overlap: GridOverlap<Base>,
+        tie_break: Quadrant,
+    ) -> WorldGridCellPosition<Base> {
+        let row_grid_cell_axis_index = WorldGridCellAxisIndex::<Base>::from_world_cell_axis_index(
+            self.row,
+            grid_dim.row_count,
+            overlap,
+        );
+        let column_grid_cell_axis_index =
+            WorldGridCellAxisIndex::<Base>::from_world_cell_axis_index(
+                self.column,
+                grid_dim.column_count,
+                overlap,
+            );
+
+        let (row_tie_break, column_tie_break) = tie_break.to_axis_orderings();
+
+        (
+            row_grid_cell_axis_index.normalize_to_nearest_world_grid_axis_index(
+                grid_dim.row_count,
+                overlap,
+                row_tie_break,
+            ),
+            column_grid_cell_axis_index.normalize_to_nearest_world_grid_axis_index(
+                grid_dim.column_count,
+                overlap,
+                column_tie_break,
+            ),
+        )
+            .into()
+    }
 
     pub fn to_grid_cell_positions<Base: SudokuBase>(
         self,
@@ -123,17 +154,6 @@ pub enum WorldCellPositionToGridCellPositions<Base: SudokuBase> {
     },
 }
 
-impl<Base: SudokuBase> WorldCellPositionToGridCellPositions<Base> {
-    // TODO: delete
-
-    // TODO: nearest grid position
-    //  use case: world map click on cell: which grid to select
-    //  requires clicked cell quadrant for odd overlaps as a tie-breaker
-    pub fn nearest_grid_position(self, cell_quadrant: Quadrant, overlap: u8) -> WorldGridPosition {
-        todo!()
-    }
-}
-
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 enum CellAxisIndexToGridCellAxisIndexes<Base: SudokuBase> {
     Unambiguous(WorldGridCellAxisIndex<Base>),
@@ -143,25 +163,7 @@ enum CellAxisIndexToGridCellAxisIndexes<Base: SudokuBase> {
     },
 }
 
-impl<Base: SudokuBase> CellAxisIndexToGridCellAxisIndexes<Base> {
-    // TODO: delete if other approch works
-    fn nearest_grid_axis_index(self, prefer: AxisOrdering) -> WorldGridCellAxisIndex<Base> {
-        match self {
-            CellAxisIndexToGridCellAxisIndexes::Unambiguous(world_grid_cell_axis_index) => {
-                world_grid_cell_axis_index
-            }
-            CellAxisIndexToGridCellAxisIndexes::Overlap { start, end } => {
-                // FIXME: This seems correct, but isn't. only tie-break on the middle of the overlap.
-                //  this is the wrong abstraction layer, can be computed by axis directly with this enum.
-
-                match prefer {
-                    AxisOrdering::Less => start,
-                    AxisOrdering::Greater => end,
-                }
-            }
-        }
-    }
-}
+impl<Base: SudokuBase> CellAxisIndexToGridCellAxisIndexes<Base> {}
 
 impl<Base: SudokuBase> Add<Position<Base>> for WorldCellPosition {
     type Output = Self;
@@ -173,5 +175,100 @@ impl<Base: SudokuBase> Add<Position<Base>> for WorldCellPosition {
             row + cell_pos.to_row().get_usize(),
             column + cell_pos.to_column().get_usize(),
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::base::consts::*;
+
+    use super::*;
+
+    #[test]
+    fn test_to_nearest_world_grid_cell_position() {
+        type Base = Base3;
+
+        let overlap = GridOverlap::<Base>::new(3).unwrap();
+        let grid_dim = WorldGridDim::new(2, 2).unwrap();
+        let cell_dim = grid_dim.to_cell_dim(overlap);
+
+        let tie_break_independent_test_cases = vec![
+            // World top left: no neighboring grids
+            ((0, 0), ((0, 0), (0, 0))),
+            // Top left grid, inside overlap, but not on the edge
+            ((1, 1), ((0, 0), (1, 1))),
+            // Top left grid, outside overlap
+            ((2, 2), ((0, 0), (2, 2))),
+            // Grid cross intersection, top left overlap
+            ((6, 6), ((0, 0), (6, 6))),
+            // Grid cross intersection, top right overlap
+            ((6, 8), ((0, 1), (6, 2))),
+            // Grid cross intersection, bottom left overlap
+            ((8, 6), ((1, 0), (2, 6))),
+            // Grid cross intersection, bottom left overlap
+            ((8, 8), ((1, 1), (2, 2))),
+            // World bottom right: no neighboring grids
+            ((14, 14), ((1, 1), (8, 8))),
+        ]
+        .into_iter()
+        .flat_map(
+            |(world_cell_pos, (expected_world_grid_position, expected_position))| {
+                Quadrant::all().map(move |tie_break| {
+                    (
+                        (world_cell_pos, tie_break),
+                        (expected_world_grid_position, expected_position),
+                    )
+                })
+            },
+        );
+
+        let test_cases = vec![
+            // World top middle: horziontal neighboring grids
+            (((0, 7), Quadrant::TopLeft), ((0, 0), (0, 7))),
+            (((0, 7), Quadrant::TopRight), ((0, 1), (0, 1))),
+            (((0, 7), Quadrant::BottomLeft), ((0, 0), (0, 7))),
+            (((0, 7), Quadrant::BottomRight), ((0, 1), (0, 1))),
+            // World left middle: horziontal neighboring grids
+            (((7, 0), Quadrant::TopLeft), ((0, 0), (7, 0))),
+            (((7, 0), Quadrant::TopRight), ((0, 0), (7, 0))),
+            (((7, 0), Quadrant::BottomLeft), ((1, 0), (1, 0))),
+            (((7, 0), Quadrant::BottomRight), ((1, 0), (1, 0))),
+            // Grid cross intersection
+            (((7, 7), Quadrant::TopLeft), ((0, 0), (7, 7))),
+            (((7, 7), Quadrant::TopRight), ((0, 1), (7, 1))),
+            (((7, 7), Quadrant::BottomLeft), ((1, 0), (1, 7))),
+            (((7, 7), Quadrant::BottomRight), ((1, 1), (1, 1))),
+        ]
+        .into_iter()
+        .chain(tie_break_independent_test_cases)
+        .map(|(input, expected)| {
+            let (world_cell_pos, tie_break) = input;
+            let (expected_world_grid_position, expected_position) = expected;
+
+            let world_cell_pos = WorldCellPosition::from(world_cell_pos);
+            assert!(world_cell_pos.contained_in(cell_dim));
+
+            let expected_world_grid_cell_position = WorldGridCellPosition::from((
+                WorldGridPosition::from(expected_world_grid_position),
+                Position::try_from(expected_position).unwrap(),
+            ));
+            assert!(expected_world_grid_cell_position
+                .to_world_cell_pos(overlap)
+                .contained_in(cell_dim));
+
+            (
+                (world_cell_pos, tie_break),
+                expected_world_grid_cell_position,
+            )
+        });
+
+        for ((world_cell_pos, tie_break), expected_world_grid_cell_position) in test_cases {
+            let nearest_world_grid_cell_position =
+                world_cell_pos.to_nearest_world_grid_cell_position(grid_dim, overlap, tie_break);
+            assert_eq!(
+                nearest_world_grid_cell_position, expected_world_grid_cell_position,
+                "{nearest_world_grid_cell_position} != {expected_world_grid_cell_position}",
+            );
+        }
     }
 }
