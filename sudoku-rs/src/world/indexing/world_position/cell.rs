@@ -3,10 +3,7 @@ use std::{num::NonZeroUsize, ops::Add};
 use crate::{
     base::SudokuBase,
     position::Position,
-    world::{
-        AxisOrdering, CellMarker, GridOverlap, Quadrant, WorldGridCellPosition, WorldGridDim,
-        WorldGridPosition,
-    },
+    world::{AxisOrdering, CellMarker, GridOverlap, Quadrant, WorldGridCellPosition, WorldGridDim},
 };
 
 use super::{WorldGridCellAxisIndex, WorldPosition};
@@ -163,8 +160,6 @@ enum CellAxisIndexToGridCellAxisIndexes<Base: SudokuBase> {
     },
 }
 
-impl<Base: SudokuBase> CellAxisIndexToGridCellAxisIndexes<Base> {}
-
 impl<Base: SudokuBase> Add<Position<Base>> for WorldCellPosition {
     type Output = Self;
 
@@ -180,7 +175,7 @@ impl<Base: SudokuBase> Add<Position<Base>> for WorldCellPosition {
 
 #[cfg(test)]
 mod tests {
-    use crate::base::consts::*;
+    use crate::{base::consts::*, world::WorldGridPosition};
 
     use super::*;
 

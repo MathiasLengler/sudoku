@@ -6,7 +6,6 @@ use crate::{
     error::Result,
     world::{RelativeDir, WorldDim, WorldObject, WorldPosition},
 };
-use serde::{Deserialize, Serialize};
 
 /// A world position that has been validated to be within bounds for some `WorldDim`.
 ///
@@ -17,7 +16,7 @@ use serde::{Deserialize, Serialize};
 /// in order to differentiate between use-provided (untrusted) and internally computed positions.
 /// Since we don't provide a way to mutate the size of the world *and* the type does not escape a world instance because of its visibility,
 /// this hopefully works in practice.
-#[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
+#[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub(in crate::world) struct ValidatedWorldPosition<T: WorldObject>(WorldPosition<T>);
 
 impl<T: WorldObject> ValidatedWorldPosition<T> {

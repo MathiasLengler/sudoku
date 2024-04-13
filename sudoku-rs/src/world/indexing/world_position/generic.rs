@@ -17,6 +17,7 @@ pub struct WorldPosition<T: WorldObject> {
     pub row: usize,
     pub column: usize,
     #[ts(skip)]
+    #[serde(skip)]
     object: PhantomData<T>,
 }
 
