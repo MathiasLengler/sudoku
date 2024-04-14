@@ -43,9 +43,10 @@ export const CellValue: React.FunctionComponent<CellValueProps> = (props) => {
 type CandidatesProps = {
     candidates: DynamicCellCandidates["candidates"];
     gridPosition: DynamicPosition;
+    showGuide?: boolean;
 };
 
-export const Candidates = ({ candidates, gridPosition }: CandidatesProps) => {
+export const Candidates = ({ candidates, gridPosition, showGuide = true }: CandidatesProps) => {
     const base = useRecoilValue(sudokuBaseState);
     const input = useRecoilValue(inputState);
     const hint = useRecoilValue(hintState);
@@ -60,7 +61,7 @@ export const Candidates = ({ candidates, gridPosition }: CandidatesProps) => {
                     "--candidate-column": column,
                     "--candidate-row": row,
                 };
-                const isGuide = input.stickyMode && input.selectedValue === candidate;
+                const isGuide = showGuide && input.stickyMode && input.selectedValue === candidate;
 
                 // TODO: optimize
                 //  prototype different deductions data structures via selector

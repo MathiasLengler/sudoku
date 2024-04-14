@@ -17,8 +17,6 @@ import {
 } from "../../state/world";
 import { worldCellBorderClassesState } from "../../state/world/cellBorder";
 
-import { isWorkerReadyState } from "../../state/worker";
-
 type WorldCellVirtualizedProps = {
     rowIndex: number;
     columnIndex: number;
@@ -56,7 +54,11 @@ const WorldCellVirtualized = React.memo(function WorldCellVirtualized({
                 {worldCell.kind === "value" ? (
                     <CellValue value={worldCell.value} />
                 ) : (
-                    <Candidates candidates={worldCell.candidates} gridPosition={{ column: 0, row: 0 }} />
+                    <Candidates
+                        candidates={worldCell.candidates}
+                        gridPosition={{ column: 0, row: 0 }}
+                        showGuide={false}
+                    />
                 )}
             </div>
         </div>
