@@ -1,10 +1,10 @@
 import { Button, Slider } from "@mui/material";
 import type * as CSS from "csstype";
-import React, { useDeferredValue } from "react";
+import React, { useDeferredValue, useMemo } from "react";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeGrid as Grid } from "react-window";
-import { useRecoilState, useRecoilValue, useResetRecoilState, useSetRecoilState } from "recoil";
-import type { DynamicPosition } from "../../../types";
+import { useRecoilCallback, useRecoilState, useRecoilValue, useResetRecoilState, useSetRecoilState } from "recoil";
+import type { Quadrant } from "../../../types";
 import { Candidates, CellValue } from "../../grid/cell";
 import { sudokuBaseState, sudokuSideLengthState } from "../../state/sudoku";
 import {
@@ -28,27 +28,68 @@ const WorldCellVirtualized = React.memo(function WorldCellVirtualized({
     columnIndex,
     style,
 }: WorldCellVirtualizedProps) {
-    const cellWorldPosition: DynamicPosition = {
-        row: rowIndex,
-        column: columnIndex,
-    };
+    const cellWorldPosition = useMemo(
+        () =>
+            worldCellPositionSchema.parse({
+                row: rowIndex,
+                column: columnIndex,
+            }),
+        [columnIndex, rowIndex],
+    );
 
     const worldCell = useRecoilValue(worldCellState(cellWorldPosition));
 
     const worldCellBorderClasses = useRecoilValue(worldCellBorderClassesState(cellWorldPosition));
 
-    return (
-        <div
-            className={`world-map-cell ${worldCellBorderClasses}`}
-            style={style}
-            onClick={(e) => {
+    const cellOnClick = useRecoilCallback(
+        ({ snapshot, set }) =>
+            async (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+                // TODO: how do we switch to game mode?
+
                 e.currentTarget.scrollIntoView({
-                    behavior: "smooth",
                     block: "center",
                     inline: "center",
                 });
-            }}
-        >
+
+                const { width, height } = e.currentTarget.getBoundingClientRect();
+                const centerX = width / 2;
+                const centerY = height / 2;
+                const clickX = e.nativeEvent.offsetX;
+                const clickY = e.nativeEvent.offsetY;
+
+                let tieBreak: Quadrant;
+                if (clickX < centerX && clickY < centerY) {
+                    tieBreak = "topLeft";
+                } else if (clickX > centerX && clickY < centerY) {
+                    tieBreak = "topRight";
+                } else if (clickX < centerX && clickY > centerY) {
+                    tieBreak = "bottomLeft";
+                } else if (clickX > centerX && clickY > centerY) {
+                    tieBreak = "bottomRight";
+                } else {
+                    throw new Error("unreachable");
+                }
+
+                const emptyCellWorld = await snapshot.getPromise(emptyWasmCellWorldState);
+
+                const nearestWorldGridCellPosition = emptyCellWorld.worldCellPositionToNearestWorldGridCellPosition(
+                    cellWorldPosition,
+                    tieBreak,
+                );
+                console.log(
+                    "grid",
+                    nearestWorldGridCellPosition.world_grid_pos,
+                    "cell",
+                    nearestWorldGridCellPosition.cell_pos,
+                );
+
+                set(selectedGridIndexState, nearestWorldGridCellPosition.world_grid_pos);
+            },
+        [cellWorldPosition],
+    );
+
+    return (
+        <div className={`world-map-cell ${worldCellBorderClasses}`} style={style} onClick={cellOnClick}>
             <div className="cell">
                 {/* <Code wrap>{debug}</Code> */}
                 {worldCell.kind === "value" ? (
@@ -92,23 +133,12 @@ const WorldMapVirtualized = () => {
     );
 };
 
-// TODO: change grid
 export const WorldMap = () => {
-    // useRecoilValue(isWorkerReadyState);
-
     const base = useRecoilValue(sudokuBaseState);
     const sideLength = useRecoilValue(sudokuSideLengthState);
     const setSelectedGridIndex = useSetRecoilState(selectedGridIndexState);
     const resetSelectedGridIndex = useResetRecoilState(selectedGridIndexState);
     const [cellSize, setCellSize] = useRecoilState(worldCellSizeState);
-    const emptyCellWorld = useRecoilValue(emptyWasmCellWorldState);
-
-    console.log(
-        emptyCellWorld.worldCellPositionToNearestWorldGridCellPosition(
-            worldCellPositionSchema.parse({ row: 1, column: 1 }),
-            "topLeft",
-        ),
-    );
 
     const cssVariables: CSS.Properties = {
         "--side-length": sideLength,

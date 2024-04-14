@@ -311,6 +311,8 @@ body,
 }
 
 .world-map-grid {
+    scroll-behavior: smooth;
+
     --world-map-cell-border-width: var(--cell-border-size);
     --world-map-block-border-width: var(--block-border-size);
     --world-map-grid-border-width: 4px;
@@ -321,15 +323,6 @@ body,
     --world-map-selected-grid-border-color: var(--cell-value-color-user);
 }
 .world-map-cell {
-    /* --cell-border-width-top: var(--world-map-cell-border-width);
-    --cell-border-width-right: var(--world-map-cell-border-width);
-    --cell-border-width-bottom: var(--world-map-cell-border-width);
-    --cell-border-width-left: var(--world-map-cell-border-width);
-    --cell-border-color-top: var(--world-map-cell-border-color);
-    --cell-border-color-right: var(--world-map-cell-border-color);
-    --cell-border-color-bottom: var(--world-map-cell-border-color);
-    --cell-border-color-left: var(--world-map-cell-border-color); */
-
     padding-top: var(
         --cell-selected-grid-border-width-top,
         var(--cell-grid-border-width-top, var(--cell-block-border-width-top, var(--world-map-cell-border-width)))

@@ -220,7 +220,7 @@ export const isCellInSelectedGridState = selectorFamily<boolean, CreateSerializa
     },
 });
 
-export const worldCellState = selectorFamily<DynamicCell, CreateSerializableParam<DynamicPosition>>({
+export const worldCellState = selectorFamily<DynamicCell, WorldCellPosition>({
     key: "worldCell",
     get:
         (cellWorldPosition) =>

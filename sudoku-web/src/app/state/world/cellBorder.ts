@@ -1,13 +1,11 @@
 import classNames from "classnames";
 import _ from "lodash";
 import { selectorFamily } from "recoil";
-import type { CreateSerializableParam } from "../../../typeUtils";
-import type { DynamicPosition } from "../../../types";
+import { cellDimState, cellWorldDimensionsState, selectedGridIndexState, type WorldCellPosition } from ".";
 import { getAxisBorders, validateCellWorldPosition } from "../../utils/world";
 import { sudokuBaseState, sudokuSideLengthState } from "../sudoku";
-import { cellDimState, cellWorldDimensionsState, selectedGridIndexState } from ".";
 
-export const worldCellBorderClassesState = selectorFamily<string, CreateSerializableParam<DynamicPosition>>({
+export const worldCellBorderClassesState = selectorFamily<string, WorldCellPosition>({
     key: "worldCellBorder",
     get:
         (cellWorldPosition) =>
