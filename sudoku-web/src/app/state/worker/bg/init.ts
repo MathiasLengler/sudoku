@@ -1,6 +1,12 @@
 import wbgInit, { initThreadPool, init as wasmInit } from "../../../../../../sudoku-wasm/pkg";
 
+let isInitialized = false;
+
 export async function init(threadCount?: number) {
+    if (isInitialized) {
+        return;
+    }
+
     // wasm-bindgen with `--target web` requires manual initialization of the module
     console.debug("Initialize wasm-bindgen");
     await wbgInit();
@@ -15,4 +21,6 @@ export async function init(threadCount?: number) {
     await initThreadPool(hardwareConcurrency);
 
     console.debug("WASM initialized");
+
+    isInitialized = true;
 }
