@@ -5,7 +5,7 @@ import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeGrid as Grid } from "react-window";
 import { useRecoilCallback, useRecoilState, useRecoilValue, useResetRecoilState, useSetRecoilState } from "recoil";
 import type { Quadrant } from "../../../types";
-import { Candidates, CellValue } from "../../grid/cell";
+import { Candidates, CellValue, cellColorClass } from "../../grid/cell";
 import { sudokuBaseState, sudokuSideLengthState } from "../../state/sudoku";
 import {
     cellWorldDimensionsState,
@@ -18,6 +18,7 @@ import {
 import { worldCellBorderClassesState } from "../../state/world/cellBorder";
 import { usePlaySelectedGrid } from "../../actions/worldActions";
 import _ from "lodash";
+import classNames from "classnames";
 
 type WorldCellVirtualizedProps = {
     rowIndex: number;
@@ -97,9 +98,19 @@ const WorldCellVirtualized = React.memo(function WorldCellVirtualized({
         [cellWorldPosition, playSelectedGrid],
     );
 
+    const cellClassNames = classNames(
+        "cell",
+        cellColorClass(
+            worldCell.kind === "value" && worldCell.fixed,
+            // TODO: incorrectValue for world cell
+            //  currently only calculated based on solved grid
+            false,
+        ),
+    );
+
     return (
         <div className={`world-map-cell ${worldCellBorderClasses}`} style={style} onClick={cellOnClick}>
-            <div className="cell">
+            <div className={cellClassNames}>
                 {/* <Code wrap>{debug}</Code> */}
                 {worldCell.kind === "value" ? (
                     <CellValue value={worldCell.value} />
