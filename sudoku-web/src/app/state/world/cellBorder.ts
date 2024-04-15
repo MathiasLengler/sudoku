@@ -1,7 +1,7 @@
 import classNames from "classnames";
 import _ from "lodash";
 import { selectorFamily } from "recoil";
-import { cellDimState, cellWorldDimensionsState, selectedGridIndexState, type WorldCellPosition } from ".";
+import { cellDimState, cellWorldDimensionsState, selectedGridPositionState, type WorldCellPosition } from ".";
 import { getAxisBorders, validateCellWorldPosition } from "../../utils/world";
 import { sudokuBaseState, sudokuSideLengthState } from "../sudoku";
 
@@ -14,7 +14,7 @@ export const worldCellBorderClassesState = selectorFamily<string, WorldCellPosit
             const gridSideLength = get(sudokuSideLengthState);
             const { overlap, cellDim } = get(cellWorldDimensionsState);
             const { rowCount: cellRowCount, columnCount: cellColumnCount } = get(cellDimState);
-            const { row: selectedGridRowIndex, column: selectedGridColumnIndex } = get(selectedGridIndexState);
+            const { row: selectedGridRowIndex, column: selectedGridColumnIndex } = get(selectedGridPositionState);
             const { row: cellRowIndex, column: cellColumnIndex } = cellWorldPosition;
 
             validateCellWorldPosition({ cellWorldPosition: cellWorldPosition, cellDim });

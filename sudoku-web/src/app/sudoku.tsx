@@ -29,8 +29,6 @@ const SudokuGame = () => {
         },
     });
 
-    console.log({ gridWidth, gridHeight });
-
     const cssVariables: CSS.Properties = {
         "--side-length": sideLength,
         "--base": base,

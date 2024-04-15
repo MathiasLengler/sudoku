@@ -47,6 +47,8 @@ pub trait DynamicSudokuActions {
     fn settings(&self) -> SudokuSettings;
     fn update_settings(&mut self, settings: SudokuSettings);
     fn export(&self, format: &GridFormatEnum) -> String;
+
+    fn to_dynamic_grid(&self) -> DynamicGrid;
 }
 
 /// A game of Sudoku which is able to change the size of the board at runtime.

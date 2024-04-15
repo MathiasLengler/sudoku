@@ -201,11 +201,16 @@ impl WasmSudoku {
         Ok(DynamicSudoku::try_from(dynamic_grid)?.into())
     }
 
-    #[wasm_bindgen(js_name = getSudoku)]
-    pub fn get_sudoku(&self) -> Result<ITransportSudoku> {
+    #[wasm_bindgen(js_name = getTransportSudoku)]
+    pub fn get_transport_sudoku(&self) -> Result<ITransportSudoku> {
         let transport_sudoku = TransportSudoku::from(&self.sudoku);
 
         export_transport_sudoku(transport_sudoku)
+    }
+
+    #[wasm_bindgen(js_name = toDynamicGrid)]
+    pub fn to_dynamic_grid(&self) -> Result<IDynamicGrid> {
+        export_dynamic_grid(self.sudoku.to_dynamic_grid())
     }
 
     #[wasm_bindgen(js_name = setValue)]

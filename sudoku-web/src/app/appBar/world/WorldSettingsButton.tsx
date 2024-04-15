@@ -4,23 +4,28 @@ import { useRecoilState } from "recoil";
 import MyIconButton from "../../components/MyIconButton";
 import { MyMenu } from "../../components/MyMenu";
 import { gameState } from "../../state/gameMode";
+import { DEFAULT_WORLD_GRID_POSITION } from "../../state/world";
+import { usePlaySelectedGrid, useShowWorldMap } from "../../actions/worldActions";
 
 export function WorldSettingsButton() {
-    const [gameMode, setGameMode] = useRecoilState(gameState);
+    const [game, setGame] = useRecoilState(gameState);
+
+    const playSelectedGrid = usePlaySelectedGrid();
+    const showWorldMap = useShowWorldMap();
 
     return (
         <MyMenu
             menuItems={[
                 {
-                    label: `Toggle game mode (${gameMode.mode})`,
+                    label: `Toggle game mode (${game.mode})`,
                     // icon: <OpenInNewIcon />,
                     onClick: () => {
-                        setGameMode((gameMode) => {
+                        setGame((gameMode) => {
                             if (gameMode.mode === "sudoku") {
                                 return {
                                     mode: "world",
                                     view: "sudoku",
-                                    selectedGridIndex: { row: 0, column: 0 },
+                                    selectedGridPosition: DEFAULT_WORLD_GRID_POSITION,
                                 };
                             } else if (gameMode.mode === "world") {
                                 return {
@@ -32,15 +37,18 @@ export function WorldSettingsButton() {
                         });
                     },
                 },
-                ...(gameMode.mode === "world"
+                ...(game.mode === "world"
                     ? [
                           {
-                              label: `Toggle world view (${gameMode.view})`,
-                              onClick: () => {
-                                  setGameMode({
-                                      ...gameMode,
-                                      view: gameMode.view === "sudoku" ? "map" : "sudoku",
-                                  });
+                              label: `Toggle world view (${game.view})`,
+                              onClick: async () => {
+                                  if (game.view === "sudoku") {
+                                      await showWorldMap();
+                                  } else if (game.view === "map") {
+                                      await playSelectedGrid();
+                                  } else {
+                                      assertNever(game.view);
+                                  }
                               },
                           },
                       ]

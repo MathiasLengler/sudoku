@@ -22,7 +22,7 @@ export const sudokuState = atom<TransportSudoku>({
         key: "DefaultSudoku",
         get: async ({ get }) => {
             const remoteWasmSudoku = get(remoteWasmSudokuState);
-            return await remoteWasmSudoku.getSudoku();
+            return await remoteWasmSudoku.getTransportSudoku();
         },
     }),
 });

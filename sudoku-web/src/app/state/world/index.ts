@@ -1,9 +1,10 @@
+import _ from "lodash";
 import { DefaultValue, atom, selector, selectorFamily } from "recoil";
 import type { IsEqual } from "type-fest";
 import { z } from "zod";
+import { WasmCellWorld } from "../../../../../sudoku-wasm/pkg";
 import { assert, type CreateSerializableParam } from "../../../typeUtils";
 import type {
-    BaseEnum,
     CellWorldDimensions,
     DynamicCell,
     DynamicCells,
@@ -11,17 +12,12 @@ import type {
     WorldDim,
     WorldPosition,
 } from "../../../types";
-import { type Game, gameState } from "../gameMode";
-import { remoteWasmCellWorldClassState, type RemoteWasmCellWorld } from "../worker";
-import { sudokuBaseState, sudokuSideLengthState } from "../sudoku";
-import _ from "lodash";
-import { validateCellWorldPosition } from "../../utils/world";
-import { fixupComlinkProxy } from "../worker/comlinkProxyWrapper";
-import { WasmCellWorld } from "../../../../../sudoku-wasm/pkg";
 import { init } from "../../state/worker/bg/init";
-
-export type WorldView = z.infer<typeof worldViewSchema>;
-export const worldViewSchema = z.enum(["sudoku", "map"]);
+import { validateCellWorldPosition } from "../../utils/world";
+import { gameState, type Game } from "../gameMode";
+import { sudokuBaseState, sudokuSideLengthState } from "../sudoku";
+import { remoteWasmCellWorldClassState, type RemoteWasmCellWorld } from "../worker";
+import { fixupComlinkProxy } from "../worker/comlinkProxyWrapper";
 
 const usizeSchema = z
     .number()
@@ -41,6 +37,8 @@ export const worldCellPositionSchema = worldPositionSchema.brand("WorldCellPosit
 export type WorldGridPosition = z.infer<typeof worldGridPositionSchema>;
 export const worldGridPositionSchema = worldPositionSchema.brand("WorldGridPosition");
 
+export const DEFAULT_WORLD_GRID_POSITION = worldGridPositionSchema.parse({ row: 0, column: 0 });
+
 export const worldDimSchema = z.object({
     rowCount: usizeSchema,
     columnCount: usizeSchema,
@@ -53,11 +51,14 @@ export const worldCellDimSchema = worldDimSchema.brand("WorldCellDim");
 export type WorldGridDim = z.infer<typeof worldGridDimSchema>;
 export const worldGridDimSchema = worldDimSchema.brand("WorldGridDim");
 
+export type WorldView = z.infer<typeof worldViewSchema>;
+export const worldViewSchema = z.enum(["sudoku", "map"]);
+
 export type GameModeWorld = z.infer<typeof gameModeWorldSchema>;
 export const gameModeWorldSchema = z.object({
     mode: z.literal("world"),
     view: worldViewSchema,
-    selectedGridIndex: worldPositionSchema,
+    selectedGridPosition: worldGridPositionSchema,
 });
 
 export const showWorldMapState = selector<boolean>({
@@ -115,9 +116,15 @@ export const emptyWasmCellWorldState = selector<WasmCellWorld>({
     },
 });
 
+export const allWorldCellsInvalidateCounterState = atom<number>({
+    key: "allWorldCellsInvalidateCounter",
+    default: 0,
+});
+
 export const allWorldCellsState = selector<DynamicCells>({
     key: "AllWorldCells",
     get: async ({ get }) => {
+        get(allWorldCellsInvalidateCounterState);
         const remoteWasmCellWorld = get(remoteWasmCellWorldState);
         return await remoteWasmCellWorld.allWorldCells();
     },
@@ -154,18 +161,18 @@ export const gridStrideState = selector<number>({
     get: ({ get }) => get(sudokuSideLengthState) - get(overlapState),
 });
 
-function assertGameModeWorld(gameMode: Game): GameModeWorld {
+export function assertGameModeWorld(gameMode: Game): GameModeWorld {
     if (gameMode.mode !== "world") {
         throw new Error(`Expected game mode 'world', instead got: ${gameMode.mode}`);
     }
     return gameMode;
 }
 
-export const selectedGridIndexState = selector<WorldPosition>({
-    key: "SelectedGridIndex",
+export const selectedGridPositionState = selector<WorldGridPosition>({
+    key: "selectedGridPositionState",
     get: ({ get }) => {
         const gameModeWorld = assertGameModeWorld(get(gameState));
-        return gameModeWorld.selectedGridIndex;
+        return gameModeWorld.selectedGridPosition;
     },
     set: ({ set }, newGridIndex) => {
         set(gameState, (prevGameMode) => {
@@ -173,7 +180,7 @@ export const selectedGridIndexState = selector<WorldPosition>({
 
             return {
                 ...gameModeWorld,
-                selectedGridIndex: newGridIndex instanceof DefaultValue ? { row: 0, column: 0 } : newGridIndex,
+                selectedGridPosition: newGridIndex instanceof DefaultValue ? DEFAULT_WORLD_GRID_POSITION : newGridIndex,
             };
         });
     },
@@ -181,11 +188,11 @@ export const selectedGridIndexState = selector<WorldPosition>({
 
 export const selectedGridRowIndexState = selector<number>({
     key: "selectedGridRowIndex",
-    get: ({ get }) => get(selectedGridIndexState).row,
+    get: ({ get }) => get(selectedGridPositionState).row,
 });
 export const selectedGridColumnIndexState = selector<number>({
     key: "selectedGridColumnIndex",
-    get: ({ get }) => get(selectedGridIndexState).column,
+    get: ({ get }) => get(selectedGridPositionState).column,
 });
 export const selectedGridBaseCellRowIndexState = selector<number>({
     key: "selectedGridBaseCellRowIndex",

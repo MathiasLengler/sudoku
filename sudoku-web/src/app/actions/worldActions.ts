@@ -1,30 +1,60 @@
-import { Snapshot, useRecoilCallback } from "recoil";
-import { type RemoteWasmCellWorld } from "../state/worker";
-import { remoteWasmCellWorldState, type WorldGridPosition } from "../state/world";
+import { useRecoilCallback } from "recoil";
+import { gameState } from "../state/gameMode";
+import { remoteWasmSudokuClassState, remoteWasmSudokuState } from "../state/worker";
+import { fixupComlinkProxy } from "../state/worker/comlinkProxyWrapper";
+import {
+    allWorldCellsInvalidateCounterState,
+    assertGameModeWorld,
+    remoteWasmCellWorldState,
+    selectedGridPositionState,
+} from "../state/world";
 
-async function getRemoteWasmCellWorld(snapshot: Snapshot): Promise<RemoteWasmCellWorld> {
-    return await snapshot.getPromise(remoteWasmCellWorldState);
+export function useShowWorldMap() {
+    return useRecoilCallback(({ snapshot, set }) => async () => {
+        const remoteWasmSudoku = await snapshot.getPromise(remoteWasmSudokuState);
+        const remoteWasmCellWorld = await snapshot.getPromise(remoteWasmCellWorldState);
+        const selectedGridPosition = await snapshot.getPromise(selectedGridPositionState);
+
+        const dynamicGrid = await remoteWasmSudoku.toDynamicGrid();
+
+        await remoteWasmCellWorld.setGridAt(dynamicGrid, selectedGridPosition);
+
+        set(allWorldCellsInvalidateCounterState, (prev) => prev + 1);
+
+        set(gameState, (prev) => {
+            return {
+                ...assertGameModeWorld(prev),
+                view: "map" as const,
+            };
+        });
+    });
 }
 
-// TODO: set/get grid at grid index
-//  set grid when opening world
-//  get grid when selecting grid
-
-// TODO: port changeGrid
-
-export function useSetWorldGridAsSingle() {
+export function usePlaySelectedGrid() {
     return useRecoilCallback(
-        ({ snapshot, set: _set }) =>
-            async (world_index_grid: WorldGridPosition) => {
-                console.log("changeGrid", world_index_grid);
-                const remoteWasmCellWorldProxy = await getRemoteWasmCellWorld(snapshot);
-                console.log(remoteWasmCellWorldProxy);
+        ({ snapshot, set }) =>
+            async () => {
+                const remoteWasmCellWorld = await snapshot.getPromise(remoteWasmCellWorldState);
+                const selectedGridPosition = await snapshot.getPromise(selectedGridPositionState);
 
-                const newGrid = await remoteWasmCellWorldProxy.toGridAt(world_index_grid);
+                const newGrid = await remoteWasmCellWorld.toGridAt(selectedGridPosition);
 
-                console.log("newGrid", newGrid);
-                // await wasmCellWorldProxy.???;
-                // await updateSudoku({ set, wasmSudokuProxy });
+                const RemoteWasmSudoku = await snapshot.getPromise(remoteWasmSudokuClassState);
+
+                const newRemoteWasmSudoku = fixupComlinkProxy(await RemoteWasmSudoku.from_dynamic_grid(newGrid));
+                set(remoteWasmSudokuState, newRemoteWasmSudoku);
+
+                // Switch view to sudoku
+                set(gameState, (prev) => {
+                    if (!(prev.mode === "world" && prev.view === "map")) {
+                        console.warn("Unexpected game state", prev);
+                        return prev;
+                    }
+                    return {
+                        ...prev,
+                        view: "sudoku" as const,
+                    };
+                });
             },
         [],
     );

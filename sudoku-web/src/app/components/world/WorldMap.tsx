@@ -10,12 +10,14 @@ import { sudokuBaseState, sudokuSideLengthState } from "../../state/sudoku";
 import {
     cellWorldDimensionsState,
     emptyWasmCellWorldState,
-    selectedGridIndexState,
+    selectedGridPositionState,
     worldCellPositionSchema,
     worldCellSizeState,
     worldCellState,
 } from "../../state/world";
 import { worldCellBorderClassesState } from "../../state/world/cellBorder";
+import { usePlaySelectedGrid } from "../../actions/worldActions";
+import _ from "lodash";
 
 type WorldCellVirtualizedProps = {
     rowIndex: number;
@@ -41,15 +43,12 @@ const WorldCellVirtualized = React.memo(function WorldCellVirtualized({
 
     const worldCellBorderClasses = useRecoilValue(worldCellBorderClassesState(cellWorldPosition));
 
+    const playSelectedGrid = usePlaySelectedGrid();
+
     const cellOnClick = useRecoilCallback(
         ({ snapshot, set }) =>
             async (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
                 // TODO: how do we switch to game mode?
-
-                e.currentTarget.scrollIntoView({
-                    block: "center",
-                    inline: "center",
-                });
 
                 const { width, height } = e.currentTarget.getBoundingClientRect();
                 const centerX = width / 2;
@@ -58,16 +57,17 @@ const WorldCellVirtualized = React.memo(function WorldCellVirtualized({
                 const clickY = e.nativeEvent.offsetY;
 
                 let tieBreak: Quadrant;
-                if (clickX < centerX && clickY < centerY) {
+                if (clickX <= centerX && clickY <= centerY) {
                     tieBreak = "topLeft";
-                } else if (clickX > centerX && clickY < centerY) {
+                } else if (clickX > centerX && clickY <= centerY) {
                     tieBreak = "topRight";
-                } else if (clickX < centerX && clickY > centerY) {
+                } else if (clickX <= centerX && clickY > centerY) {
                     tieBreak = "bottomLeft";
                 } else if (clickX > centerX && clickY > centerY) {
                     tieBreak = "bottomRight";
                 } else {
-                    throw new Error("unreachable");
+                    console.warn("Unexpected click position", { clickX, clickY, width, height });
+                    return;
                 }
 
                 const emptyCellWorld = await snapshot.getPromise(emptyWasmCellWorldState);
@@ -83,9 +83,18 @@ const WorldCellVirtualized = React.memo(function WorldCellVirtualized({
                     nearestWorldGridCellPosition.cell_pos,
                 );
 
-                set(selectedGridIndexState, nearestWorldGridCellPosition.world_grid_pos);
+                set(selectedGridPositionState, (prev) => {
+                    const current = nearestWorldGridCellPosition.world_grid_pos;
+
+                    if (_.isEqual(prev, current)) {
+                        playSelectedGrid().catch(console.error);
+                        return prev;
+                    }
+
+                    return current;
+                });
             },
-        [cellWorldPosition],
+        [cellWorldPosition, playSelectedGrid],
     );
 
     return (
@@ -136,8 +145,8 @@ const WorldMapVirtualized = () => {
 export const WorldMap = () => {
     const base = useRecoilValue(sudokuBaseState);
     const sideLength = useRecoilValue(sudokuSideLengthState);
-    const setSelectedGridIndex = useSetRecoilState(selectedGridIndexState);
-    const resetSelectedGridIndex = useResetRecoilState(selectedGridIndexState);
+    const setSelectedGridIndex = useSetRecoilState(selectedGridPositionState);
+    const resetSelectedGridIndex = useResetRecoilState(selectedGridPositionState);
     const [cellSize, setCellSize] = useRecoilState(worldCellSizeState);
 
     const cssVariables: CSS.Properties = {
@@ -148,8 +157,6 @@ export const WorldMap = () => {
     return (
         <div className="world-map" style={cssVariables}>
             <Slider min={1} max={200} value={cellSize} onChange={(_e, value) => setCellSize(value as number)} />
-            <Button onClick={() => setSelectedGridIndex({ row: 1, column: 2 })}>setSelectedGridIndex</Button>
-            <Button onClick={() => resetSelectedGridIndex()}>resetSelectedGridIndex</Button>
             <WorldMapVirtualized />
         </div>
     );
