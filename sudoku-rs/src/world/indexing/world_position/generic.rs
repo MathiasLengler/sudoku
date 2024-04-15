@@ -10,6 +10,11 @@ use std::{
 
 use super::ValidatedWorldPosition;
 
+// FIMXE: fix TS export
+//  this type only makes sense if it is "branded" by the generic
+//  we could continue to refer to zod branded schemas or
+//  implement that somehow ourself
+
 /// A position of a `WorldObject`.
 #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export), ts(concrete(T = crate::world::CellMarker)))]
 #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]

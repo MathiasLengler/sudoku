@@ -3,12 +3,14 @@ use serde::{Deserialize, Serialize};
 use enum_dispatch::enum_dispatch;
 
 use crate::base::consts::*;
+use crate::base::match_base_enum;
 use crate::base::BaseEnum;
 use crate::cell::dynamic::DynamicCandidates;
 use crate::cell::dynamic::DynamicCell;
 use crate::cell::dynamic::DynamicValue;
 use crate::error::{Error, Result};
 use crate::generator::{DynamicGeneratorSettings, GeneratorProgress};
+use crate::grid::dynamic::DynamicGrid;
 use crate::grid::format::GridFormatEnum;
 use crate::grid::Grid;
 use crate::position::DynamicPosition;
@@ -118,12 +120,10 @@ impl TryFrom<Vec<DynamicCell>> for DynamicSudoku {
     type Error = Error;
 
     fn try_from(views: Vec<DynamicCell>) -> Result<Self> {
-        Ok(match BaseEnum::try_from_cell_count_usize(views.len())? {
-            BaseEnum::Base2 => Self::Base2(Sudoku::<Base2>::with_grid(views.try_into()?)),
-            BaseEnum::Base3 => Self::Base3(Sudoku::<Base3>::with_grid(views.try_into()?)),
-            BaseEnum::Base4 => Self::Base4(Sudoku::<Base4>::with_grid(views.try_into()?)),
-            BaseEnum::Base5 => Self::Base5(Sudoku::<Base5>::with_grid(views.try_into()?)),
-        })
+        Ok(match_base_enum!(
+            BaseEnum::try_from_cell_count_usize(views.len())?,
+            Sudoku::<Base>::with_grid(views.try_into()?).into()
+        ))
     }
 }
 
@@ -131,24 +131,21 @@ impl TryFrom<Vec<Vec<DynamicCell>>> for DynamicSudoku {
     type Error = Error;
 
     fn try_from(blocks: Vec<Vec<DynamicCell>>) -> Result<Self> {
-        let sudoku = match BaseEnum::try_from_cell_count_usize(
-            blocks.iter().map(|block| block.len()).sum(),
-        )? {
-            BaseEnum::Base2 => {
-                Self::Base2(Sudoku::with_grid(Grid::<Base2>::try_from_blocks(blocks)?))
-            }
-            BaseEnum::Base3 => {
-                Self::Base3(Sudoku::with_grid(Grid::<Base3>::try_from_blocks(blocks)?))
-            }
-            BaseEnum::Base4 => {
-                Self::Base4(Sudoku::with_grid(Grid::<Base4>::try_from_blocks(blocks)?))
-            }
-            BaseEnum::Base5 => {
-                Self::Base5(Sudoku::with_grid(Grid::<Base5>::try_from_blocks(blocks)?))
-            }
-        };
+        Ok(match_base_enum!(
+            BaseEnum::try_from_cell_count_usize(blocks.iter().map(|block| block.len()).sum(),)?,
+            Sudoku::with_grid(Grid::<Base>::try_from_blocks(blocks)?).into()
+        ))
+    }
+}
 
-        Ok(sudoku)
+impl TryFrom<DynamicGrid> for DynamicSudoku {
+    type Error = Error;
+
+    fn try_from(dynamic_grid: DynamicGrid) -> Result<Self> {
+        Ok(match_base_enum!(
+            dynamic_grid.base(),
+            Sudoku::<Base>::with_grid(dynamic_grid.try_into()?).into()
+        ))
     }
 }
 

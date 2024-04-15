@@ -189,10 +189,16 @@ impl WasmSudoku {
         Self::default()
     }
 
-    pub fn restore(cells: IDynamicCells) -> Result<WasmSudoku> {
+    pub fn from_dynamic_cells(cells: IDynamicCells) -> Result<WasmSudoku> {
         let cells = import_dynamic_cells(cells)?;
 
         Ok(DynamicSudoku::try_from(cells)?.into())
+    }
+
+    pub fn from_dynamic_grid(dynamic_grid: IDynamicGrid) -> Result<WasmSudoku> {
+        let dynamic_grid = import_dynamic_grid(dynamic_grid)?;
+
+        Ok(DynamicSudoku::try_from(dynamic_grid)?.into())
     }
 
     #[wasm_bindgen(js_name = getSudoku)]
