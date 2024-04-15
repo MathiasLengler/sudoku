@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from "react";
+import React, { Suspense, useCallback, useEffect } from "react";
 import type { DynamicCell, DynamicPosition } from "../types";
 import { saveCells } from "./state/cellsPersistence";
 import { useRecoilValue, useSetRecoilState } from "recoil";
@@ -80,10 +80,10 @@ const SudokuBaseEffect = () => {
 
 export function SudokuEffects() {
     return (
-        <>
+        <Suspense fallback={null}>
             <SaveCellsEffect />
             <SudokuBaseEffect />
             <PointerUpHandler />
-        </>
+        </Suspense>
     );
 }
