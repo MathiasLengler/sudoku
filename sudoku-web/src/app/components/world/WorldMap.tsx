@@ -1,10 +1,13 @@
-import { Button, Slider } from "@mui/material";
+import { Slider } from "@mui/material";
+import classNames from "classnames";
 import type * as CSS from "csstype";
+import _ from "lodash";
 import React, { useDeferredValue, useMemo } from "react";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeGrid as Grid } from "react-window";
-import { useRecoilCallback, useRecoilState, useRecoilValue, useResetRecoilState, useSetRecoilState } from "recoil";
+import { useRecoilCallback, useRecoilState, useRecoilValue } from "recoil";
 import type { Quadrant } from "../../../types";
+import { usePlaySelectedGrid } from "../../actions/worldActions";
 import { Candidates, CellValue, cellColorClass } from "../../grid/cell";
 import { sudokuBaseState, sudokuSideLengthState } from "../../state/sudoku";
 import {
@@ -16,9 +19,6 @@ import {
     worldCellState,
 } from "../../state/world";
 import { worldCellBorderClassesState } from "../../state/world/cellBorder";
-import { usePlaySelectedGrid } from "../../actions/worldActions";
-import _ from "lodash";
-import classNames from "classnames";
 
 type WorldCellVirtualizedProps = {
     rowIndex: number;
@@ -156,8 +156,6 @@ const WorldMapVirtualized = () => {
 export const WorldMap = () => {
     const base = useRecoilValue(sudokuBaseState);
     const sideLength = useRecoilValue(sudokuSideLengthState);
-    const setSelectedGridIndex = useSetRecoilState(selectedGridPositionState);
-    const resetSelectedGridIndex = useResetRecoilState(selectedGridPositionState);
     const [cellSize, setCellSize] = useRecoilState(worldCellSizeState);
 
     const cssVariables: CSS.Properties = {
