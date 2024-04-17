@@ -8,6 +8,7 @@ import {
     remoteWasmCellWorldState,
     selectedGridPositionState,
 } from "../state/world";
+import { updateSudoku } from "./sudokuActions";
 
 export function useShowWorldMap() {
     return useRecoilCallback(({ snapshot, set }) => async () => {
@@ -36,13 +37,17 @@ export function usePlaySelectedGrid() {
             async () => {
                 const remoteWasmCellWorld = await snapshot.getPromise(remoteWasmCellWorldState);
                 const selectedGridPosition = await snapshot.getPromise(selectedGridPositionState);
-
                 const newGrid = await remoteWasmCellWorld.toGridAt(selectedGridPosition);
 
                 const RemoteWasmSudoku = await snapshot.getPromise(remoteWasmSudokuClassState);
 
                 const newRemoteWasmSudoku = fixupComlinkProxy(await RemoteWasmSudoku.from_dynamic_grid(newGrid));
                 set(remoteWasmSudokuState, newRemoteWasmSudoku);
+
+                await updateSudoku({
+                    set,
+                    wasmSudokuProxy: newRemoteWasmSudoku,
+                });
 
                 // Switch view to sudoku
                 set(gameState, (prev) => {

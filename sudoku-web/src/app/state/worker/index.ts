@@ -51,7 +51,7 @@ export async function createRemoteWasmSudoku(
         }
     }
     console.debug("Generating initial sudoku");
-    return await new RemoteWasmSudoku();
+    return await RemoteWasmSudoku.new();
 }
 
 export const remoteWasmSudokuClassState = selector<RemoteWasmSudokuClass>({

@@ -49,8 +49,6 @@ const WorldCellVirtualized = React.memo(function WorldCellVirtualized({
     const cellOnClick = useRecoilCallback(
         ({ snapshot, set }) =>
             async (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-                // TODO: how do we switch to game mode?
-
                 const { width, height } = e.currentTarget.getBoundingClientRect();
                 const centerX = width / 2;
                 const centerY = height / 2;
@@ -76,12 +74,6 @@ const WorldCellVirtualized = React.memo(function WorldCellVirtualized({
                 const nearestWorldGridCellPosition = emptyCellWorld.worldCellPositionToNearestWorldGridCellPosition(
                     cellWorldPosition,
                     tieBreak,
-                );
-                console.log(
-                    "grid",
-                    nearestWorldGridCellPosition.world_grid_pos,
-                    "cell",
-                    nearestWorldGridCellPosition.cell_pos,
                 );
 
                 set(selectedGridPositionState, (prev) => {

@@ -52,14 +52,13 @@ pub fn init() {
 #[allow(dead_code)]
 #[wasm_bindgen]
 pub struct WasmCellWorld {
-    // TODO: expose methods from DynamicCellWorldActions with wasm-bindgen
     world: DynamicCellWorld,
 }
 
 impl Default for WasmCellWorld {
     fn default() -> Self {
         let world =
-            CellWorld::<Base3>::new(WorldGridDim::new(2, 3).unwrap(), 1.try_into().unwrap());
+            CellWorld::<Base3>::new(WorldGridDim::new(3, 3).unwrap(), 1.try_into().unwrap());
 
         DynamicCellWorld::from(world).into()
     }
@@ -73,7 +72,6 @@ impl From<DynamicCellWorld> for WasmCellWorld {
 
 #[wasm_bindgen]
 impl WasmCellWorld {
-    #[wasm_bindgen(constructor)]
     pub fn new(base: IBaseEnum, grid_dim: IWorldGridDim, overlap: u8) -> Result<WasmCellWorld> {
         Ok(DynamicCellWorld::new(
             import_base_enum(base)?,
@@ -184,7 +182,6 @@ impl From<DynamicSudoku> for WasmSudoku {
 
 #[wasm_bindgen]
 impl WasmSudoku {
-    #[wasm_bindgen(constructor)]
     pub fn new() -> Self {
         Self::default()
     }

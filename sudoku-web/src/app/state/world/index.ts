@@ -112,7 +112,7 @@ export const emptyWasmCellWorldState = selector<WasmCellWorld>({
         const requestedGridDim = get(requestedGridDimState);
         const requestedOverlap = get(requestedOverlapState);
 
-        return new WasmCellWorld(requestedWorldBase, requestedGridDim, requestedOverlap);
+        return WasmCellWorld.new(requestedWorldBase, requestedGridDim, requestedOverlap);
     },
 });
 

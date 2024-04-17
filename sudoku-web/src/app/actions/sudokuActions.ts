@@ -72,7 +72,7 @@ async function isInvalidGridPosition({
 }
 
 // Mutation helpers
-async function updateSudoku({
+export async function updateSudoku({
     set,
     wasmSudokuProxy,
 }: Pick<SelectorCallbackInterface, "set"> & { wasmSudokuProxy: RemoteWasmSudoku }) {
