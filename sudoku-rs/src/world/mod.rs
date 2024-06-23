@@ -22,7 +22,7 @@ use crate::grid::Grid;
 use crate::position::Position;
 use crate::rng::{new_crate_rng_from_rng, new_crate_rng_with_seed};
 use crate::solver::backtracking;
-use crate::solver::backtracking::availability_filter::DeniedCandidatesGrid;
+use crate::solver::backtracking::candidates_filter::DeniedCandidatesGrid;
 use crate::world::RelativeDir::TopRight;
 
 use self::dynamic::DynamicCellWorldActions;
@@ -102,7 +102,7 @@ impl<Base: SudokuBase> DynamicCellWorldActions for CellWorld<Base> {
         solver_stack.push(
             backtracking::Solver::builder(self.to_grid_at(WorldPosition::default())?)
                 .rng(new_crate_rng_from_rng(&mut rng))
-                .availability_filter(None)
+                .candidates_filter(Grid::new())
                 .build(),
         );
 
@@ -125,12 +125,14 @@ impl<Base: SudokuBase> DynamicCellWorldActions for CellWorld<Base> {
                 } else {
                     // next grid
                     let next_grid_position = grid_positions[solver_stack.len()];
-                    let denylist = self.direct_denylist_from_top_right_grid(next_grid_position);
+                    let denylist = self
+                        .direct_denylist_from_top_right_grid(next_grid_position)
+                        .unwrap_or_default();
                     let next_grid = self.to_grid_at_validated(next_grid_position);
                     solver_stack.push(
                         backtracking::Solver::builder(next_grid)
                             .rng(new_crate_rng_from_rng(&mut rng))
-                            .availability_filter(denylist)
+                            .candidates_filter(denylist)
                             .build(),
                     );
                 }

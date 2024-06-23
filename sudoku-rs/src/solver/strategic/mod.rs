@@ -8,7 +8,7 @@ use strategies::{Strategy, StrategyScore};
 use crate::base::SudokuBase;
 use crate::error::{Error, Result};
 use crate::grid::Grid;
-use crate::solver::backtracking::AvailabilityFilter;
+use crate::solver::backtracking::CandidatesFilter;
 use crate::solver::strategic::deduction::Deductions;
 use crate::solver::strategic::strategies::StrategyEnum;
 use crate::solver::FallibleSolver;
@@ -60,7 +60,7 @@ mod builder {
     {
         /// Filter the available candidates which the solver can use to find a solution.
         #[must_use]
-        pub fn availability_filter<Filter: AvailabilityFilter<Base>>(
+        pub fn candidates_filter<Filter: CandidatesFilter<Base>>(
             mut self,
             filter: &Filter,
         ) -> Self {
@@ -189,9 +189,9 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> FallibleS
 #[cfg(test)]
 mod tests {
     use crate::base::consts::Base2;
-    use crate::cell::{Candidates, Value};
+    use crate::cell::Value;
     use crate::position::Position;
-    use crate::solver::backtracking::GroupAvailabilityIndex;
+    use crate::solver::backtracking::ForceCandidateAtPosition;
     use crate::solver::test_util::{assert_fallible_solver_single_solution, tests_solver_samples};
 
     use super::*;
@@ -204,7 +204,7 @@ mod tests {
     }
 
     #[test]
-    fn test_availability_filter_denied_candidates_grid() {
+    fn test_candidates_filter_denied_candidates_grid() {
         type Base = Base2;
 
         let grid = {
@@ -249,12 +249,9 @@ mod tests {
         // But, solver with filter for top left cell can solve it.
         let solver = Solver::builder(ambiguous_grid.clone())
             .strategies(StrategyEnum::default_solver_strategies_no_backtracking())
-            .availability_filter(&|available_candidates, index| {
-                if index == GroupAvailabilityIndex::default() {
-                    Candidates::with_single(Value::default())
-                } else {
-                    available_candidates
-                }
+            .candidates_filter(&ForceCandidateAtPosition {
+                pos: Position::top_left(),
+                candidate: Value::default(),
             })
             .build();
         assert_fallible_solver_single_solution(solver, &grid);

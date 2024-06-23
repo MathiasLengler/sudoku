@@ -3,7 +3,7 @@
 use std::fmt::{Debug, Display, Formatter};
 use std::sync::atomic::{AtomicU64, Ordering};
 
-pub use availability_filter::*;
+pub use candidates_filter::*;
 use log::trace;
 
 pub use builder::SolverBuilder;
@@ -17,7 +17,7 @@ use crate::position::Position;
 use crate::rng::CrateRng;
 use crate::solver::InfallibleSolver;
 
-pub(crate) mod availability_filter;
+pub(crate) mod candidates_filter;
 pub(crate) mod group_availability;
 
 #[derive(Debug, Clone)]
@@ -25,7 +25,7 @@ pub struct Solver<
     Base: SudokuBase,
     GridRef: AsRef<Grid<Base>>,
     ICandidates: CandidatesIterator<Base>,
-    Filter: AvailabilityFilter<Base>,
+    Filter: CandidatesFilter<Base>,
 > {
     /// Grid to be solved
     grid: GridRef,
@@ -62,7 +62,7 @@ mod builder {
         Base: SudokuBase,
         GridRef: AsRef<Grid<Base>>,
         ICandidates: CandidatesIterator<Base>,
-        Filter: AvailabilityFilter<Base>,
+        Filter: CandidatesFilter<Base>,
     > {
         grid: GridRef,
         availability: GroupAvailability<Base, Filter>,
@@ -81,7 +81,7 @@ mod builder {
         }
     }
 
-    impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, Filter: AvailabilityFilter<Base>>
+    impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, Filter: CandidatesFilter<Base>>
         SolverBuilder<Base, GridRef, CandidatesAscIter<Base>, Filter>
     {
         // TODO: evaluate rng generic
@@ -110,7 +110,7 @@ mod builder {
         SolverBuilder<Base, GridRef, ICandidates, ()>
     {
         /// Filter the available candidates which the solver can use to find a solution.
-        pub fn availability_filter<Filter: AvailabilityFilter<Base>>(
+        pub fn candidates_filter<Filter: CandidatesFilter<Base>>(
             self,
             filter: Filter,
         ) -> SolverBuilder<Base, GridRef, ICandidates, Filter> {
@@ -132,7 +132,7 @@ mod builder {
             Base: SudokuBase,
             GridRef: AsRef<Grid<Base>>,
             ICandidates: CandidatesIterator<Base>,
-            Filter: AvailabilityFilter<Base>,
+            Filter: CandidatesFilter<Base>,
         > SolverBuilder<Base, GridRef, ICandidates, Filter>
     {
         pub fn build(self) -> Solver<Base, GridRef, ICandidates, Filter> {
@@ -170,7 +170,7 @@ impl<
         Base: SudokuBase,
         GridRef: AsRef<Grid<Base>>,
         ICandidates: CandidatesIterator<Base>,
-        Filter: AvailabilityFilter<Base>,
+        Filter: CandidatesFilter<Base>,
     > Solver<Base, GridRef, ICandidates, Filter>
 {
     fn new_with(
@@ -341,7 +341,7 @@ impl<
         Base: SudokuBase,
         GridRef: AsRef<Grid<Base>>,
         ICandidates: CandidatesIterator<Base>,
-        Filter: AvailabilityFilter<Base>,
+        Filter: CandidatesFilter<Base>,
     > InfallibleSolver<Base> for Solver<Base, GridRef, ICandidates, Filter>
 {
     fn solve(&mut self) -> Option<Grid<Base>> {
@@ -359,7 +359,7 @@ impl<
         Base: SudokuBase,
         GridRef: AsRef<Grid<Base>>,
         ICandidates: CandidatesIterator<Base>,
-        Filter: AvailabilityFilter<Base>,
+        Filter: CandidatesFilter<Base>,
     > Iterator for Solver<Base, GridRef, ICandidates, Filter>
 {
     type Item = Grid<Base>;
@@ -373,7 +373,7 @@ impl<
         Base: SudokuBase,
         GridRef: AsRef<Grid<Base>>,
         ICandidates: CandidatesIterator<Base>,
-        Filter: AvailabilityFilter<Base>,
+        Filter: CandidatesFilter<Base>,
     > Display for Solver<Base, GridRef, ICandidates, Filter>
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -655,7 +655,7 @@ mod tests {
     }
 
     #[test]
-    fn test_availability_filter_denied_candidates_grid() {
+    fn test_candidates_filter_denied_candidates_grid() {
         type Base = Base2;
 
         let grid = Grid::<Base>::new();
@@ -664,7 +664,7 @@ mod tests {
             .into_iter()
             .map(|v| v.try_into().unwrap())
             .collect();
-        let solver = Solver::builder(&grid).availability_filter(denylist).build();
+        let solver = Solver::builder(&grid).candidates_filter(denylist).build();
 
         for solution in solver.clone() {
             assert!(![1, 3].contains(&solution.get(Position::default()).value().unwrap().get()));
@@ -678,7 +678,7 @@ mod tests {
         assert_is_splittable: bool,
     ) {
         let solver = Solver::builder(puzzle)
-            .availability_filter(Grid::new())
+            .candidates_filter(Grid::new())
             .build();
 
         let (left_solver, Some(right_solver)) = solver.split() else {
@@ -713,9 +713,7 @@ mod tests {
         type Base = Base2;
 
         let grid = Grid::<Base>::new();
-        let solver = Solver::builder(grid)
-            .availability_filter(Grid::new())
-            .build();
+        let solver = Solver::builder(grid).candidates_filter(Grid::new()).build();
 
         let (left_solver, Some(right_solver)) = solver.split() else {
             panic!("Solver should be splittable")
@@ -729,9 +727,7 @@ mod tests {
         type Base = Base2;
 
         let grid = Grid::<Base>::new();
-        let solver = Solver::builder(grid)
-            .availability_filter(Grid::new())
-            .build();
+        let solver = Solver::builder(grid).candidates_filter(Grid::new()).build();
 
         let (l, Some(r)) = solver.split() else {
             panic!("Solver should be splittable")
@@ -749,9 +745,7 @@ mod tests {
         type Base = Base2;
 
         let grid = Grid::<Base>::new();
-        let solver = Solver::builder(grid)
-            .availability_filter(Grid::new())
-            .build();
+        let solver = Solver::builder(grid).candidates_filter(Grid::new()).build();
 
         let mut split_solvers = vec![solver];
 
@@ -777,9 +771,7 @@ mod tests {
         use rayon::prelude::*;
 
         let grid = Grid::<Base>::new();
-        let solver = Solver::builder(grid)
-            .availability_filter(Grid::new())
-            .build();
+        let solver = Solver::builder(grid).candidates_filter(Grid::new()).build();
 
         assert_infallible_solution_iter_all_solutions_base_2(
             solver

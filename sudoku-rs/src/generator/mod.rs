@@ -11,6 +11,7 @@ use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::rng::{new_crate_rng_with_seed, CrateRng};
+use crate::solver::backtracking::DisallowedCandidateAtPosition;
 use crate::solver::strategic::strategies::Backtracking;
 use crate::solver::{backtracking, introspective};
 
@@ -350,13 +351,9 @@ impl<Base: SudokuBase> Generator<Base> {
         ) && {
             let mut solver = introspective::Solver::new_with_filter(
                 grid.clone(),
-                |mut available_candidates: Candidates<Base>, index| {
-                    if Position::from(index) == pos {
-                        available_candidates.delete(deleted_value);
-                        available_candidates
-                    } else {
-                        available_candidates
-                    }
+                DisallowedCandidateAtPosition {
+                    pos,
+                    candidate: deleted_value,
                 },
             );
             let has_ambiguous_solution = solver.next().is_some();

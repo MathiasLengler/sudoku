@@ -1,7 +1,7 @@
 use crate::base::SudokuBase;
 use crate::cell::{Candidates, Value};
 use crate::position::{Coordinate, Position};
-use crate::solver::backtracking::availability_filter::AvailabilityFilter;
+use crate::solver::backtracking::candidates_filter::CandidatesFilter;
 use crate::unsafe_utils::{get_unchecked, get_unchecked_mut};
 
 /// A thin indexing wrapper around a `[Candidates<Base>; Base::SIDE_LENGTH]`.
@@ -49,7 +49,7 @@ impl<Base: SudokuBase> IntoIterator for CandidatesGroup<Base> {
 /// - What are the available candidates at a position?
 /// - Where in each group is a specific candidate set?
 #[derive(Debug, Clone, Default)]
-pub(crate) struct GroupAvailability<Base: SudokuBase, Filter: AvailabilityFilter<Base>> {
+pub(crate) struct GroupAvailability<Base: SudokuBase, Filter: CandidatesFilter<Base>> {
     rows: CandidatesGroup<Base>,
     columns: CandidatesGroup<Base>,
     blocks: CandidatesGroup<Base>,
@@ -68,7 +68,7 @@ impl<Base: SudokuBase> GroupAvailability<Base, ()> {
         this
     }
 
-    pub(crate) fn with_filter<Filter: AvailabilityFilter<Base>>(
+    pub(crate) fn with_filter<Filter: CandidatesFilter<Base>>(
         self,
         filter: Filter,
     ) -> GroupAvailability<Base, Filter> {
@@ -88,7 +88,7 @@ impl<Base: SudokuBase> GroupAvailability<Base, ()> {
     }
 }
 
-impl<Base: SudokuBase, Filter: AvailabilityFilter<Base>> GroupAvailability<Base, Filter> {
+impl<Base: SudokuBase, Filter: CandidatesFilter<Base>> GroupAvailability<Base, Filter> {
     fn iter_mut(&mut self) -> impl Iterator<Item = &mut Candidates<Base>> {
         self.rows
             .iter_mut()
@@ -153,7 +153,7 @@ impl<Base: SudokuBase, Filter: AvailabilityFilter<Base>> GroupAvailability<Base,
             .intersection(column_candidates)
             .intersection(block_candidates);
 
-        self.filter.filter(available_candidates, index)
+        available_candidates.without(self.filter.denied_candidates(index.into()))
     }
 }
 

@@ -96,7 +96,7 @@ fn bench_solver_sample_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup
         |b, grid| {
             b.iter(|| {
                 backtracking::Solver::builder(grid)
-                    .availability_filter(Grid::new())
+                    .candidates_filter(Grid::new())
                     .build()
                     .solve()
                     .unwrap()
