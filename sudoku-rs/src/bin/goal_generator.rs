@@ -5,6 +5,7 @@ use sudoku::error::Result;
 use sudoku::generator::goal::GoalGenerator;
 use sudoku::generator::{Generator, PruningSettings};
 use sudoku::solver::strategic::strategies::StrategyEnum;
+
 type Base = Base3;
 
 fn main() -> Result<()> {

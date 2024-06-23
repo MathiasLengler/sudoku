@@ -3,8 +3,7 @@
 use std::fmt::{Debug, Display, Formatter};
 use std::sync::atomic::{AtomicU64, Ordering};
 
-pub use availability_filter::AvailabilityFilter;
-pub use availability_filter::DeniedCandidatesGrid;
+pub use availability_filter::*;
 use log::trace;
 
 pub use builder::SolverBuilder;

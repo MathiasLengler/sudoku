@@ -348,72 +348,18 @@ impl<Base: SudokuBase> Generator<Base> {
                 .is_solvable_with_strategies(prune_settings.strategies.clone())
                 .is_ok_and(|solution| solution.is_some())
         ) && {
-            const USE_INTROSPECTIVE_SOLVER: bool = true;
-
-            let has_ambiguous_solution = if USE_INTROSPECTIVE_SOLVER {
-                // Is actually faster for base 4:
-                //  USE_INTROSPECTIVE_SOLVER false: 17.9s
-                //  USE_INTROSPECTIVE_SOLVER true: 5.53s
-                // TODO: merge with backtracking availability_filter optimization below
-                !grid.has_unique_solution()
-
-                // FIXME: why does this wrongly report a ambiguous solution?
-                // let mut solver = introspective::Solver::new_with_filter(
-                //     grid.clone(),
-                //     |mut available_candidates: Candidates<Base>, index| {
-                //         if Position::from(index) == pos {
-                //             available_candidates.delete(deleted_value);
-                //             available_candidates
-                //         } else {
-                //             available_candidates
-                //         }
-                //     },
-                // );
-                // solver.next().is_some()
-            } else {
-                // TODO: evaluate parallelism higher up in the generation call stack
-                //  parallel solving of a single grid is quite tricky to parallelize efficiently,
-                //  especially for Base <= 3
-                // Idea 1:
-                //  race multiple positions with try_delete_cell_at_pos
-                //   if one succeeds, abort all, delete value and race again
-                //  find required cells breath-first in parallel
-                //   if one cell is required, this cell will still be required if another cell is deleted
-                // Idea 2:
-                //  generate multiple sudokus in parallel:
-                //   - optimize for some metric
-                //     - generate n-thread count, select the "best" by some metric
-                //     - keep generating until some metric is meet
-                //   - generate n-thread count, return the first successful one
-                #[cfg(feature = "parallel_generator")]
-                {
-                    let mut denylist = Grid::new();
-                    denylist[pos] = Candidates::with_single(deleted_value);
-                    let solver = backtracking::Solver::builder(&grid)
-                        .availability_filter(denylist)
-                        .build();
-
-                    solver.has_any_solution()
-                }
-                #[cfg(not(feature = "parallel_generator"))]
-                {
-                    let mut solver = backtracking::Solver::builder(&grid)
-                        .availability_filter(
-                            move |mut available_candidates: Candidates<Base>, index| {
-                                if Position::from(index) == pos {
-                                    available_candidates.delete(deleted_value);
-                                    available_candidates
-                                } else {
-                                    available_candidates
-                                }
-                            },
-                        )
-                        .build();
-
-                    solver.next().is_some()
-                }
-            };
-
+            let mut solver = introspective::Solver::new_with_filter(
+                grid.clone(),
+                |mut available_candidates: Candidates<Base>, index| {
+                    if Position::from(index) == pos {
+                        available_candidates.delete(deleted_value);
+                        available_candidates
+                    } else {
+                        available_candidates
+                    }
+                },
+            );
+            let has_ambiguous_solution = solver.next().is_some();
             !has_ambiguous_solution
         };
 

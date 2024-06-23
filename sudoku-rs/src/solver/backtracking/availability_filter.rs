@@ -1,6 +1,7 @@
 use crate::base::SudokuBase;
-use crate::cell::Candidates;
+use crate::cell::{Candidates, Value};
 use crate::grid::Grid;
+use crate::position::Position;
 use crate::solver::backtracking::GroupAvailabilityIndex;
 
 fn default_apply_to_grid_candidates<Base: SudokuBase>(
@@ -18,6 +19,7 @@ pub type DeniedCandidatesGrid<Base> = Grid<Base, Candidates<Base>>;
 
 // TODO: test implementations
 
+// TODO: rename to CandidatesFilter
 /// A constraint for a sudoku solver.
 /// It limits which candidates are considered for a solution.
 pub trait AvailabilityFilter<Base: SudokuBase> {
@@ -114,4 +116,11 @@ impl<Base: SudokuBase> AvailabilityFilter<Base> for Option<DeniedCandidatesGrid<
             default_apply_to_grid_candidates(denylist, grid);
         }
     }
+}
+
+// TODO: implement `AvailabilityFilter`
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct DisallowedCandidateAtPosition<Base: SudokuBase> {
+    pub position: Position<Base>,
+    pub candidate: Value<Base>,
 }
