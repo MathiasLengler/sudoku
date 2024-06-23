@@ -13,6 +13,9 @@ use super::Strategy;
 //  - https://en.wikipedia.org/wiki/Strongly_connected_component
 //  - https://opensourc.es/blog/sudoku/
 
+// TODO: SAT solver based implementation
+// TODO: produce decuction reasons
+
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct GroupReduction;
 
