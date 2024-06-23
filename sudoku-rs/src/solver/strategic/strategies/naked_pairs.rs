@@ -7,7 +7,7 @@ use crate::grid::Grid;
 use crate::position::Position;
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions, Reason};
 
-use super::Strategy;
+use super::{Strategy, StrategyScore};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct NakedPairs;
@@ -16,7 +16,9 @@ impl Strategy for NakedPairs {
     fn name(self) -> &'static str {
         "NakedPairs"
     }
-
+    fn score(self) -> StrategyScore {
+        5
+    }
     fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
         Grid::<Base>::all_group_positions()
             .flat_map(|group| {

@@ -29,10 +29,16 @@ mod hidden_singles;
 mod naked_pairs;
 mod naked_singles;
 
+pub type StrategyScore = u32;
+
 #[enum_dispatch(StrategyEnum)]
 pub trait Strategy: Debug + Copy + Clone + Eq + Sized {
     /// The name of the strategy.
     fn name(self) -> &'static str;
+
+    /// The score/difficulty of the strategy.
+    /// Higher scores are more difficult.
+    fn score(self) -> StrategyScore;
 
     /// Execute this strategy on the given grid. Returns a list of deductions.
     fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>>;

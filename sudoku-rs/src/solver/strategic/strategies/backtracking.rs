@@ -4,7 +4,7 @@ use crate::grid::Grid;
 use crate::solver::backtracking::Solver;
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions};
 
-use super::Strategy;
+use super::{Strategy, StrategyScore};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct Backtracking;
@@ -13,7 +13,9 @@ impl Strategy for Backtracking {
     fn name(self) -> &'static str {
         "Backtracking"
     }
-
+    fn score(self) -> StrategyScore {
+        1_000
+    }
     fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
         let mut solver = Solver::new(grid);
 

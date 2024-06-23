@@ -77,6 +77,9 @@ required-features = ["parallel"]
 name = "generator"
 required-features = ["log", "parallel", "terminal"]
 [[bin]]
+name = "goal_generator"
+required-features = ["log", "parallel", "terminal"]
+[[bin]]
 name = "generate_histogram"
 required-features = ["parallel", "terminal", "histogram"]
 [[bin]]

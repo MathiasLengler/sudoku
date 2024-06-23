@@ -3,7 +3,7 @@ use crate::error::Result;
 use crate::grid::Grid;
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions};
 
-use super::Strategy;
+use super::{Strategy, StrategyScore};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct NakedSingles;
@@ -12,7 +12,9 @@ impl Strategy for NakedSingles {
     fn name(self) -> &'static str {
         "NakedSingles"
     }
-
+    fn score(self) -> StrategyScore {
+        1
+    }
     fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
         Ok(grid
             .all_candidates_positions()

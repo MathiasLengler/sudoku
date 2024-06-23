@@ -7,7 +7,7 @@ use crate::grid::Grid;
 use crate::position::Position;
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions};
 
-use super::Strategy;
+use super::{Strategy, StrategyScore};
 
 #[derive(Debug, Copy, Clone, Default)]
 struct CandidateStats<Base: SudokuBase> {
@@ -22,7 +22,9 @@ impl Strategy for HiddenSingles {
     fn name(self) -> &'static str {
         "HiddenSingles"
     }
-
+    fn score(self) -> StrategyScore {
+        10
+    }
     fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
         ensure!(
             grid.is_directly_consistent(),

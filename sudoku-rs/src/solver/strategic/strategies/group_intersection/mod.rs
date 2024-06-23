@@ -9,13 +9,17 @@ use crate::solver::backtracking::group_availability::CandidatesGroup;
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions, Reason};
 use crate::solver::strategic::strategies::Strategy;
 
+use super::StrategyScore;
+
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct GroupIntersectionBlockToAxis;
 impl Strategy for GroupIntersectionBlockToAxis {
     fn name(self) -> &'static str {
         "GroupIntersectionBlockToAxis"
     }
-
+    fn score(self) -> StrategyScore {
+        100
+    }
     fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
         GroupIntersection(GroupIntersectionTypeFilter::BlockToAxis).execute(grid)
     }
@@ -27,7 +31,9 @@ impl Strategy for GroupIntersectionAxisToBlock {
     fn name(self) -> &'static str {
         "GroupIntersectionAxisToBlock"
     }
-
+    fn score(self) -> StrategyScore {
+        100
+    }
     fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
         GroupIntersection(GroupIntersectionTypeFilter::AxisToBlock).execute(grid)
     }
@@ -37,6 +43,9 @@ pub struct GroupIntersectionBoth;
 impl Strategy for GroupIntersectionBoth {
     fn name(self) -> &'static str {
         "GroupIntersectionBoth"
+    }
+    fn score(self) -> StrategyScore {
+        100
     }
     fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
         GroupIntersection(GroupIntersectionTypeFilter::Both).execute(grid)
@@ -91,7 +100,9 @@ impl Strategy for GroupIntersection {
     fn name(self) -> &'static str {
         "GroupIntersection"
     }
-
+    fn score(self) -> StrategyScore {
+        100
+    }
     fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
         let group_intersection_type_filter = self.0;
 

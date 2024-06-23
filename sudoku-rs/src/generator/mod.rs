@@ -15,8 +15,8 @@ use crate::solver::strategic::strategies::Backtracking;
 use crate::solver::{backtracking, introspective};
 
 pub use settings::*;
-
-mod goal;
+#[cfg(feature = "parallel")]
+pub mod goal;
 mod settings;
 
 /*

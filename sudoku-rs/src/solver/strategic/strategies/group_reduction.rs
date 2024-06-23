@@ -8,6 +8,7 @@ use crate::grid::Grid;
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions};
 
 use super::Strategy;
+use super::StrategyScore;
 
 // TODO: optimize
 //  - https://en.wikipedia.org/wiki/Strongly_connected_component
@@ -22,6 +23,10 @@ pub struct GroupReduction;
 impl Strategy for GroupReduction {
     fn name(self) -> &'static str {
         "GroupReduction"
+    }
+
+    fn score(self) -> StrategyScore {
+        50
     }
     fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
         Grid::<Base>::all_group_positions()

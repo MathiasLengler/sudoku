@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use log::trace;
 
 pub use builder::SolverBuilder;
-use strategies::Strategy;
+use strategies::{Strategy, StrategyScore};
 
 use crate::base::SudokuBase;
 use crate::error::{Error, Result};
@@ -137,6 +137,26 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> Solver<Ba
             }
         }
         Ok(None)
+    }
+
+    // TODO: return map of strategy -> number of deductions
+    pub fn total_score(&mut self) -> Result<Option<StrategyScore>> {
+        let mut total_score = 0;
+        Ok(loop {
+            if self.grid.as_ref().is_solved() {
+                break Some(total_score);
+            }
+
+            if let Some((strategy, deductions)) = self.try_strategies()? {
+                total_score += strategy.score() * StrategyScore::try_from(deductions.count())?;
+
+                deductions.apply(self.grid.as_mut())?;
+                // Continue with strategy execution
+            } else {
+                // All strategies failed to make progress.
+                break None;
+            }
+        })
     }
 
     pub fn into_grid(self) -> GridMut {
