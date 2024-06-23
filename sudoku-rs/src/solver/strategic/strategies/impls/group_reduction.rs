@@ -6,9 +6,8 @@ use crate::cell::Value;
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions};
-
-use super::Strategy;
-use super::StrategyScore;
+use crate::solver::strategic::strategies::Strategy;
+use crate::solver::strategic::strategies::StrategyScore;
 
 // TODO: optimize
 //  - https://en.wikipedia.org/wiki/Strongly_connected_component

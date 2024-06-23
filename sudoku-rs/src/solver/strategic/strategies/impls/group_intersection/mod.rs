@@ -7,9 +7,7 @@ use crate::grid::Grid;
 use crate::position::{BlockSegment, CellOrder, Coordinate, Position};
 use crate::solver::backtracking::group_availability::CandidatesGroup;
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions, Reason};
-use crate::solver::strategic::strategies::Strategy;
-
-use super::StrategyScore;
+use crate::solver::strategic::strategies::{Strategy, StrategyScore};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct GroupIntersectionBlockToAxis;

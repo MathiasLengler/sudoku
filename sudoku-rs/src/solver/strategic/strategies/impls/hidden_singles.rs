@@ -6,8 +6,7 @@ use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions};
-
-use super::{Strategy, StrategyScore};
+use crate::solver::strategic::strategies::{Strategy, StrategyScore};
 
 #[derive(Debug, Copy, Clone, Default)]
 struct CandidateStats<Base: SudokuBase> {

@@ -1,38 +1,37 @@
 use crate::base::SudokuBase;
 use crate::error::Result;
 use crate::grid::Grid;
-use crate::solver::backtracking::Solver;
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions};
-
-use super::{Strategy, StrategyScore};
+use crate::solver::strategic::strategies::{Strategy, StrategyScore};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub struct Backtracking;
+pub struct NakedSingles;
 
-impl Strategy for Backtracking {
+impl Strategy for NakedSingles {
     fn name(self) -> &'static str {
-        "Backtracking"
+        "NakedSingles"
     }
     fn score(self) -> StrategyScore {
-        1_000
+        1
     }
     fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
-        let mut solver = Solver::new(grid);
+        Ok(grid
+            .all_candidates_positions()
+            .into_iter()
+            .filter_map(|candidate_pos| {
+                let candidates = grid.get(candidate_pos).candidates().unwrap();
 
-        if let Some(solved_grid) = solver.next() {
-            Ok(grid
-                .all_candidates_positions()
-                .into_iter()
-                .map(|pos| {
-                    Deduction::with_action(
-                        pos,
-                        Action::SetValue(solved_grid.get(pos).value().unwrap()),
-                    )
-                })
-                .collect())
-        } else {
-            Ok(Deductions::default())
-        }
+                if candidates.count() == 1 {
+                    let single_candidate = candidates.iter().next().unwrap();
+                    Some(Deduction::with_action(
+                        candidate_pos,
+                        Action::SetValue(single_candidate),
+                    ))
+                } else {
+                    None
+                }
+            })
+            .collect())
     }
 }
 
@@ -45,12 +44,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_backtracking_base_2() {
+    fn test_single_candidate() {
         let mut grid = samples::base_2().first().unwrap().clone();
-        grid.fix_all_values();
         grid.set_all_direct_candidates();
+        grid.fix_all_values();
 
-        let deductions = Backtracking.execute(&grid).unwrap();
+        let deductions = NakedSingles.execute(&grid).unwrap();
 
         let expected_deductions: Deductions<_> = vec![
             ((0, 0), 2),
@@ -73,16 +72,6 @@ mod tests {
 
         assert_deductions_with_grid(&deductions, &expected_deductions, &mut grid);
 
-        assert!(grid.is_solved());
-    }
-    #[test]
-    fn test_backtracking_base_3() {
-        let mut grid = samples::base_3().first().unwrap().clone();
-        grid.fix_all_values();
-        grid.set_all_direct_candidates();
-
-        let deductions = Backtracking.execute(&grid).unwrap();
-        deductions.apply(&mut grid).unwrap();
         assert!(grid.is_solved());
     }
 }
