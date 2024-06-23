@@ -1,6 +1,3 @@
-// TODO: strategic
-//  target difficulty: sum of weighted strategy applications
-
 use anyhow::ensure;
 
 use crate::error::Result;
