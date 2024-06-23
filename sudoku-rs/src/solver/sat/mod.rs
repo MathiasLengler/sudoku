@@ -9,7 +9,7 @@ use log::trace;
 use varisat::{CnfFormula, ExtendFormula, Lit, Solver as SatSolver};
 
 use crate::base::{BaseEnum, SudokuBase};
-use crate::cell::{Candidates, Cell, Value};
+use crate::cell::{Cell, Value};
 use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::position::Position;

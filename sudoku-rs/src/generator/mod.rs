@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 
 use crate::base::SudokuBase;
-use crate::cell::{Candidates, Value};
+use crate::cell::Value;
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
