@@ -19,9 +19,9 @@ rust-version = "1.78"
 version = "0.2.0"
 
 [workspace.dependencies]
-log = { version = "0.4.20" }
-serde = { version = "1.0.194" }
-anyhow = { version = "1.0.79", features = ["backtrace"] }
+log = { version = "0.4.21" }
+serde = { version = "1.0.203" }
+anyhow = { version = "1.0.86", features = ["backtrace"] }
 
 [profile.release-with-debug]
 inherits = "release"

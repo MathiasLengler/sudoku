@@ -112,7 +112,11 @@ mod wasm {
             )
         }
         fn decl_concrete() -> String {
-            format!("type {} = {};", "DynamicGrid", Self::inline())
+            format!(
+                "type {} = {};",
+                "DynamicGrid",
+                <Self as ::ts_rs::TS>::inline()
+            )
         }
         fn decl() -> String {
             #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
@@ -129,16 +133,16 @@ mod wasm {
                     stringify!(T).to_owned()
                 }
                 fn inline() -> String {
-                    panic!("{} cannot be inlined", Self::name())
+                    panic!("{} cannot be inlined", <Self as ::ts_rs::TS>::name())
                 }
                 fn inline_flattened() -> String {
-                    panic!("{} cannot be flattened", Self::name())
+                    panic!("{} cannot be flattened", <Self as ::ts_rs::TS>::name())
                 }
                 fn decl() -> String {
-                    panic!("{} cannot be declared", Self::name())
+                    panic!("{} cannot be declared", <Self as ::ts_rs::TS>::name())
                 }
                 fn decl_concrete() -> String {
-                    panic!("{} cannot be declared", Self::name())
+                    panic!("{} cannot be declared", <Self as ::ts_rs::TS>::name())
                 }
             }
             let inline = <DynamicGrid<T> as ::ts_rs::TS>::inline();
@@ -157,31 +161,26 @@ mod wasm {
             <Vec<T> as ::ts_rs::TS>::name()
         }
         fn inline_flattened() -> String {
-            panic!("{} cannot be flattened", Self::name())
+            panic!("{} cannot be flattened", <Self as ::ts_rs::TS>::name())
         }
-        #[allow(clippy::unused_unit)]
-        fn generics() -> impl ::ts_rs::typelist::TypeList
+        fn visit_generics(v: &mut impl ::ts_rs::TypeVisitor)
         where
             Self: 'static,
         {
-            use ::ts_rs::typelist::TypeList;
-            ().push::<T>().extend(<T as ::ts_rs::TS>::generics())
+            v.visit::<T>();
+            <T as ::ts_rs::TS>::visit_generics(v);
         }
         fn output_path() -> Option<&'static std::path::Path> {
             Some(std::path::Path::new("DynamicGrid.ts"))
         }
-        #[allow(clippy::unused_unit)]
-        fn dependency_types() -> impl ::ts_rs::typelist::TypeList
+        fn visit_dependencies(v: &mut impl ::ts_rs::TypeVisitor)
         where
             Self: 'static,
         {
-            {
-                use ::ts_rs::typelist::TypeList;
-                ().push::<Vec<T>>()
-                    .extend(<Vec<T> as ::ts_rs::TS>::generics())
-                    .push::<DynamicCell>()
-                    .extend(<DynamicCell as ::ts_rs::TS>::generics())
-            }
+            <DynamicCell as ::ts_rs::TS>::visit_generics(v);
+            v.visit::<Vec<T>>();
+            v.visit::<DynamicCell>();
+            <Vec<T> as ::ts_rs::TS>::visit_generics(v);
         }
     }
     #[cfg(test)]
