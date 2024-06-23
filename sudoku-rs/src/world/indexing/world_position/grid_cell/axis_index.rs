@@ -548,7 +548,7 @@ mod tests {
                             );
 
                             // invariant: the overlap region shared by two subsequent grids results in the same normalized result
-                            for (in_potential_overlap_region, world_grid_cell_axis_indexes) in &WorldGridCellAxisIndex::<Base>::all(world_grid_axis_count).group_by(|world_grid_cell_axis_index| {
+                            for (in_potential_overlap_region, world_grid_cell_axis_indexes) in &WorldGridCellAxisIndex::<Base>::all(world_grid_axis_count).chunk_by(|world_grid_cell_axis_index| {
                                 WorldGridCellAxisIndex::<Base>::is_cell_axis_index_in_potential_overlap_region(
                                     world_grid_cell_axis_index.cell_axis_index,
                                     overlap,
