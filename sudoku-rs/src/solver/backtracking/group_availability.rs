@@ -34,7 +34,7 @@ impl<Base: SudokuBase> CandidatesGroup<Base> {
 
 impl<Base: SudokuBase> IntoIterator for CandidatesGroup<Base> {
     type Item = Candidates<Base>;
-    type IntoIter = Base::CandidatesGroupIntoIter;
+    type IntoIter = <Base::CandidatesGroup as IntoIterator>::IntoIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.candidates_group.into_iter()

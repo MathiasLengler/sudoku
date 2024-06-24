@@ -277,11 +277,9 @@ where
         + Clone
         + Debug
         + Default
-        + IntoIterator<Item = Candidates<Self>, IntoIter = Self::CandidatesGroupIntoIter>
+        + IntoIterator<Item = Candidates<Self>, IntoIter: Iterator<Item = Candidates<Self>>>
         + Send
         + Sync;
-
-    type CandidatesGroupIntoIter: Iterator<Item = Candidates<Self>>;
 }
 
 macro_rules! impl_sudoku_base {
@@ -325,7 +323,6 @@ unsafe impl SudokuBase for $type_num {
     type CandidatesIntegralTryFromU32Error = <$type_integral as TryFrom<u32>>::Error;
 
     type CandidatesGroup = [Candidates<Self>; Self::SIDE_LENGTH as usize];
-    type CandidatesGroupIntoIter = std::array::IntoIter<Candidates<Self>, {Self::SIDE_LENGTH as usize}>;
 }
         )+
     };
