@@ -278,6 +278,7 @@ where
         + Debug
         + Default
         + IntoIterator<Item = Candidates<Self>, IntoIter: Iterator<Item = Candidates<Self>>>
+        + TryFrom<Vec<Candidates<Self>>, Error = Vec<Candidates<Self>>>
         + Send
         + Sync;
 }
