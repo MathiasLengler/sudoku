@@ -199,7 +199,8 @@ where
     /// - `16x16`: `4`
     /// - `25x25`: `5`
     const BASE: u8;
-    /// The side length of the complete sudoku. Equals this size of a row or column.
+    /// The side length of the complete sudoku.
+    /// Equals this number of cells in a group, e.g. row, column or block.
     ///
     /// # Safety
     /// - must equal `BASE.pow(2)`
@@ -265,22 +266,25 @@ where
 
     type CandidatesIntegralTryFromU32Error: Into<Error> + Debug;
 
-    /// Data structure for `GroupAvailability`.
+    /// A generic array of `SIDE_LENGTH` elements, e.g. `[T; Self::SIDE_LENGTH]`.
     ///
-    /// Conceptually, a `[Candidates<Self>; Self::SIDE_LENGTH]`.
+    /// This is a workaround for the compiler error:
+    /// > constant expression depends on a generic parameter
     ///
     /// # Safety
     ///
     /// The length of the array must equal `Base::SIDE_LENGTH`.
-    type CandidatesGroup: AsRef<[Candidates<Self>]>
-        + AsMut<[Candidates<Self>]>
+    type Group<T>: AsRef<[T]>
+        + AsMut<[T]>
         + Clone
         + Debug
         + Default
-        + IntoIterator<Item = Candidates<Self>, IntoIter: Iterator<Item = Candidates<Self>>>
-        + TryFrom<Vec<Candidates<Self>>, Error = Vec<Candidates<Self>>>
+        + IntoIterator<Item = T, IntoIter: Iterator<Item = T>>
+        + TryFrom<Vec<T>, Error = Vec<T>>
         + Send
-        + Sync;
+        + Sync
+    where
+        T: Send + Sync + Copy + Clone + Debug + Default;
 }
 
 macro_rules! impl_sudoku_base {
@@ -323,7 +327,7 @@ unsafe impl SudokuBase for $type_num {
 
     type CandidatesIntegralTryFromU32Error = <$type_integral as TryFrom<u32>>::Error;
 
-    type CandidatesGroup = [Candidates<Self>; Self::SIDE_LENGTH as usize];
+    type Group<T: Send + Sync + Copy + Clone + Debug + Default> = [T; Self::SIDE_LENGTH as usize];
 }
         )+
     };
@@ -663,16 +667,10 @@ mod tests {
         // Safety invariant of Base::CandidatesIntegral
         // MAX_VALUE must be representable at the highest bit position.
         assert!(size_of::<Base::CandidatesIntegral>() * 8 >= usize::from(Base::MAX_VALUE));
-        // Safety invariant of Base::CandidatesCells
-        let mut candidates_cells = <Base as SudokuBase>::CandidatesGroup::default();
-        assert_eq!(
-            candidates_cells.as_ref().len(),
-            usize::from(Base::SIDE_LENGTH)
-        );
-        assert_eq!(
-            candidates_cells.as_mut().len(),
-            usize::from(Base::SIDE_LENGTH)
-        );
+        // Safety invariant of Base::Group<T>
+        let mut group = <Base as SudokuBase>::Group::<()>::default();
+        assert_eq!(group.as_ref().len(), usize::from(Base::SIDE_LENGTH));
+        assert_eq!(group.as_mut().len(), usize::from(Base::SIDE_LENGTH));
     }
 
     #[test]
