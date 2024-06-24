@@ -121,6 +121,7 @@ mod tests {
         type TestCase = (Vec<Vec<u8>>, Vec<Vec<u8>>);
 
         let test_cases: Vec<TestCase> = vec![
+            // Naked pair
             (
                 vec![
                     vec![1, 6],
@@ -137,6 +138,7 @@ mod tests {
                     vec![2, 5, 7],
                 ],
             ),
+            // Naked tripple
             (
                 vec![
                     vec![1, 2],
@@ -155,19 +157,24 @@ mod tests {
                     vec![5, 6],
                 ],
             ),
+            // Naked pair
             (
                 vec![vec![1, 2, 3, 4], vec![2, 4], vec![2, 4]],
                 vec![vec![1, 3], vec![2, 4], vec![2, 4]],
             ),
+            // Naked pair
             (
                 vec![vec![1, 3], vec![1, 3, 4]],
                 vec![vec![1, 3], vec![1, 3, 4]],
             ),
+            // Naked single
             (vec![vec![1, 2], vec![2]], vec![vec![1], vec![2]]),
+            // Naked pair
             (
                 vec![vec![3, 4], vec![1, 3, 4], vec![1, 2, 3, 4], vec![3, 4]],
                 vec![vec![3, 4], vec![1], vec![2], vec![3, 4]],
             ),
+            // Naked pair
             (
                 vec![vec![2, 3, 4], vec![2, 3, 4], vec![1, 3], vec![1, 3, 4]],
                 vec![vec![2, 3, 4], vec![2, 3, 4], vec![1, 3], vec![1, 3, 4]],
