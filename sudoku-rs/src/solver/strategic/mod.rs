@@ -141,26 +141,68 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> Solver<Ba
 
     // TODO: return map of strategy -> number of deductions
     pub fn total_score(&mut self) -> Result<Option<StrategyScore>> {
-        let mut total_score = 0;
-        Ok(loop {
-            if self.grid.as_ref().is_solved() {
-                break Some(total_score);
-            }
+        let solve_route_iter = &mut self.solve_route();
+        let total_score = solve_route_iter.try_fold::<_, _, Result<_>>(0, |total_score, res| {
+            let (strategy, deductions) = res?;
+            Ok(total_score + strategy.score() * StrategyScore::try_from(deductions.count())?)
+        })?;
 
-            if let Some((strategy, deductions)) = self.try_strategies()? {
-                total_score += strategy.score() * StrategyScore::try_from(deductions.count())?;
+        Ok(solve_route_iter.is_solved().then_some(total_score))
+    }
 
-                deductions.apply(self.grid.as_mut())?;
-                // Continue with strategy execution
-            } else {
-                // All strategies failed to make progress.
-                break None;
-            }
-        })
+    pub fn solve_route(&mut self) -> SolverPathIter<Base, GridMut> {
+        SolverPathIter {
+            solver: self,
+            is_solved: false,
+        }
     }
 
     pub fn into_grid(self) -> GridMut {
         self.grid
+    }
+}
+
+type SolveStep<Base> = (StrategyEnum, Deductions<Base>);
+
+#[derive(Debug)]
+pub struct SolverPathIter<'a, Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> {
+    solver: &'a mut Solver<Base, GridMut>,
+    is_solved: bool,
+}
+
+impl<'a, Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>>
+    SolverPathIter<'a, Base, GridMut>
+{
+    pub fn is_solved(&self) -> bool {
+        self.is_solved
+    }
+}
+
+impl<'a, Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> Iterator
+    for SolverPathIter<'a, Base, GridMut>
+{
+    type Item = Result<SolveStep<Base>>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.solver.grid.as_ref().is_solved() {
+            self.is_solved = true;
+            None
+        } else {
+            // TODO: simplify this expression
+            //  a combination of `and_then`/`transpose` should be able to do this
+            match self.solver.try_strategies() {
+                Ok(Some((strategy, deductions))) => {
+                    if let Err(err) = deductions.apply(self.solver.grid.as_mut()) {
+                        Some(Err(err))
+                    } else {
+                        Some(Ok((strategy, deductions)))
+                    }
+                }
+                // All strategies failed to make progress.
+                Ok(None) => None,
+                Err(err) => Some(Err(err)),
+            }
+        }
     }
 }
 
@@ -170,19 +212,12 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> FallibleS
     type Error = Error;
 
     fn try_solve(&mut self) -> Result<Option<Grid<Base>>> {
-        Ok(loop {
-            if self.grid.as_ref().is_solved() {
-                break Some(self.grid.as_ref().clone());
-            }
+        let solve_route_iter = &mut self.solve_route();
+        solve_route_iter.try_for_each(|res| res.map(|_| ()))?;
 
-            if let Some((_, deductions)) = self.try_strategies()? {
-                deductions.apply(self.grid.as_mut())?;
-                // Continue with strategy execution
-            } else {
-                // All strategies failed to make progress.
-                break None;
-            }
-        })
+        Ok(solve_route_iter
+            .is_solved()
+            .then(|| self.grid.as_ref().clone()))
     }
 }
 
