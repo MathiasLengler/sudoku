@@ -23,6 +23,7 @@ use crate::unsafe_utils::{get_unchecked, get_unchecked_mut};
 
 pub mod deserialization;
 pub mod format;
+pub mod group;
 
 pub mod dynamic;
 
