@@ -3,9 +3,9 @@ use itertools::izip;
 use crate::base::SudokuBase;
 use crate::cell::Value;
 use crate::error::Result;
+use crate::grid::group::CandidatesGroup;
 use crate::grid::Grid;
 use crate::position::{BlockSegment, CellOrder, Coordinate, Position};
-use crate::solver::backtracking::group_availability::CandidatesGroup;
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions, Reason};
 use crate::solver::strategic::strategies::{Strategy, StrategyScore};
 
