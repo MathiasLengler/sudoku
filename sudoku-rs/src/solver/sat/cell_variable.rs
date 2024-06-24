@@ -3,7 +3,7 @@ use crate::cell::Value;
 use crate::error::{Error, Result};
 use crate::position::{Coordinate, Position};
 use anyhow::bail;
-use num::Integer;
+use num::Integer as _;
 use std::fmt::{Display, Formatter};
 use varisat::Lit;
 

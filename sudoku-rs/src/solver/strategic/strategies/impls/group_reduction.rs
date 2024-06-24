@@ -9,6 +9,8 @@ use crate::solver::strategic::deduction::{Action, Deduction, Deductions};
 use crate::solver::strategic::strategies::Strategy;
 use crate::solver::strategic::strategies::StrategyScore;
 
+mod sat;
+
 // TODO: optimize
 //  - https://en.wikipedia.org/wiki/Strongly_connected_component
 //  - https://opensourc.es/blog/sudoku/
