@@ -12,7 +12,7 @@ use crate::solver::strategic::strategies::StrategyScore;
 // TODO: optimize
 //  - https://en.wikipedia.org/wiki/Strongly_connected_component
 //  - https://opensourc.es/blog/sudoku/
-
+//  This seems to be the bottleneck for the goal generator
 // TODO: SAT solver based implementation
 // TODO: produce decuction reasons
 
