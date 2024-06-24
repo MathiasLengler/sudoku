@@ -265,11 +265,11 @@ mod dynamic_settings {
     #[serde(rename_all = "camelCase")]
     pub struct DynamicGeneratorSettings {
         pub base: u8,
-        #[ts(optional = nullable)]
+        #[cfg_attr(feature = "wasm", ts(optional = nullable))]
         pub prune: Option<DynamicPruningSettings>,
-        #[ts(optional = nullable)]
+        #[cfg_attr(feature = "wasm", ts(optional = nullable))]
         pub solution: Option<DynamicSolutionSettings>,
-        #[ts(optional = nullable)]
+        #[cfg_attr(feature = "wasm", ts(optional = nullable))]
         pub seed: Option<u64>,
     }
 

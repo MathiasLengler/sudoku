@@ -7,7 +7,10 @@ use super::WorldGridCellPosition;
 #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export), ts(concrete(T = crate::world::CellMarker)))]
 #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
 pub struct DynamicWorldGridCellPosition {
-    #[ts(type = "import('../../sudoku-web/src/app/state/world').WorldGridPosition")]
+    #[cfg_attr(
+        feature = "wasm",
+        ts(type = "import('../../sudoku-web/src/app/state/world').WorldGridPosition")
+    )]
     world_grid_pos: WorldGridPosition,
     cell_pos: DynamicPosition,
 }

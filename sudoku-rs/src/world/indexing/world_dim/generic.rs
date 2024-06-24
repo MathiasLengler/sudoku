@@ -20,7 +20,7 @@ use crate::{
 pub struct WorldDim<T: WorldObject> {
     pub row_count: NonZeroUsize,
     pub column_count: NonZeroUsize,
-    #[ts(skip)]
+    #[cfg_attr(feature = "wasm", ts(skip))]
     #[serde(skip)]
     object: PhantomData<T>,
 }
