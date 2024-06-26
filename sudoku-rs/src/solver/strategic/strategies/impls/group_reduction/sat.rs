@@ -6,7 +6,10 @@ use crate::{
 };
 
 use group_cell_variable::GroupCellVariable;
+use varisat::Lit;
 mod group_cell_variable;
+
+type Clause = Vec<Lit>;
 
 // adapter for previous API
 pub(super) fn reduce_candidates_group<Base: SudokuBase>(
