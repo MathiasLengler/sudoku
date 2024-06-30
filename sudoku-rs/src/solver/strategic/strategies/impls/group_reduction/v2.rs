@@ -103,7 +103,7 @@ fn reduce_real_candidates_group<Base: SudokuBase>(
         }
     }
 
-    return candidates_group;
+    candidates_group
 }
 
 #[cfg(test)]
