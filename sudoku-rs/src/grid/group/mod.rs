@@ -35,7 +35,8 @@ impl<Base: SudokuBase> Display for CandidatesGroup<Base> {
 
 impl<Base: SudokuBase> Display for Group<Base, u8> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", "")
+        use itertools::Itertools;
+        write!(f, "{}", self.iter().join(","))
     }
 }
 
@@ -193,6 +194,13 @@ mod tests {
 8:100101011
 "
         );
+    }
+
+    #[test]
+    fn test_display_u8_group() {
+        let u8_group: Group<Base3, u8> = vec![0, 1, 2, 3, 4, 5, 6, 7, 8].try_into().unwrap();
+
+        assert_eq!(format!("{u8_group}"), "0,1,2,3,4,5,6,7,8");
     }
 
     #[test]
