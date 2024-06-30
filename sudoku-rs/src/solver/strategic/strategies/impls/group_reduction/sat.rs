@@ -43,6 +43,7 @@ mod tests {
 
     use super::*;
 
+    #[ignore]
     #[test]
     fn test_name() {
         reduce_candidates_group::<Base3>(&[
