@@ -3,7 +3,7 @@ use itertools::Itertools;
 use crate::{
     base::SudokuBase,
     cell::{Candidates, Value},
-    grid::group::{CandidatesGroup, Group},
+    grid::group::CandidatesGroup,
 };
 
 // adapter for previous API
@@ -42,12 +42,13 @@ fn reduce_real_candidates_group<Base: SudokuBase>(
 ) -> CandidatesGroup<Base> {
     print_debug_candidate_matrix(candidates_group.clone());
 
+    // TODO: calculcate number cells per Value
+    //  could be usefull to pre-filter candidates to be considered
+    candidates_group.transpose();
+
     let candidates_count_per_index = candidates_group
         .clone()
         .map(|candidates| candidates.count());
-
-    // TODO: calculcate number cells per Value
-    //  could be usefull to pre-filter candidates to be considered
 
     for set_size in 1..Base::SIDE_LENGTH {
         for potenital_set in candidates_count_per_index

@@ -13,7 +13,7 @@ pub(crate) type CandidatesGroup<Base> = Group<Base, Candidates<Base>>;
 /// Wrapper around `Base::Group<T>`, e.g. `[T; Base::SIDE_LENGTH]`.
 ///
 /// Provides efficient indexing using `Coordinate<Base>` and better conversion errors.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub(crate) struct Group<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default> {
     group: Base::Group<T>,
 }
@@ -87,6 +87,23 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default> Group<Ba
     }
 }
 
+impl<Base: SudokuBase> CandidatesGroup<Base> {
+    #[must_use]
+    pub(crate) fn transpose(&self) -> CandidatesGroup<Base> {
+        let mut transposed = Self::default();
+
+        self.iter_enumerate().for_each(|(coordinate, candidates)| {
+            candidates.iter().for_each(|candidate| {
+                transposed
+                    .get_mut(candidate.into())
+                    .insert(coordinate.into());
+            });
+        });
+
+        transposed
+    }
+}
+
 impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default> IntoIterator
     for Group<Base, T>
 {
@@ -113,5 +130,26 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default> TryFrom<
                 )
             })?,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::base::consts::Base3;
+
+    use super::*;
+
+    #[test]
+    fn test_transpose() {
+        let mut candidates_group = CandidatesGroup::<Base3>::default();
+        *candidates_group.get_mut(Coordinate::default()) = Candidates::all();
+
+        let transposed = candidates_group.transpose();
+
+        transposed
+            .iter()
+            .for_each(|candidates| assert_eq!(candidates.to_single(), Some(Value::default())));
+
+        assert_eq!(candidates_group, transposed.transpose());
     }
 }
