@@ -1,6 +1,6 @@
 use crate::{
     base::SudokuBase,
-    cell::Candidates,
+    cell::{Candidates, Value},
     error::{Error, Result},
     position::Coordinate,
     unsafe_utils::{get_unchecked, get_unchecked_mut},
@@ -35,8 +35,55 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default> Group<Ba
         unsafe { get_unchecked_mut(self.group.as_mut(), coordinate.get_usize()) }
     }
 
+    pub(crate) fn map<F, U>(self, f: F) -> Group<Base, U>
+    where
+        F: FnMut(T) -> U,
+        U: Send + Sync + Copy + Clone + Debug + Default,
+    {
+        Group {
+            group: self
+                .group
+                .into_iter()
+                .map(f)
+                .collect::<Vec<_>>()
+                .try_into()
+                .unwrap(),
+        }
+    }
+
+    pub(crate) fn iter(&self) -> impl Iterator<Item = T> + '_ {
+        self.group.as_ref().iter().copied()
+    }
+
     pub(crate) fn iter_mut(&mut self) -> impl Iterator<Item = &mut T> {
         self.group.as_mut().iter_mut()
+    }
+
+    pub(crate) fn iter_enumerate(&self) -> impl Iterator<Item = (Coordinate<Base>, T)> + '_ {
+        //TODO: evaluate zip_eq
+        Coordinate::all().zip(self.iter())
+    }
+
+    pub(crate) fn iter_mut_enumerate(
+        &mut self,
+    ) -> impl Iterator<Item = (Coordinate<Base>, &mut T)> {
+        //TODO: evaluate zip_eq
+        Coordinate::all().zip(self.iter_mut())
+    }
+
+    pub(crate) fn iter_filter_mask(&self, mask: Candidates<Base>) -> impl Iterator<Item = T> + '_ {
+        self.iter_enumerate()
+            .filter(move |(coordinate, _t)| mask.has(Value::from(*coordinate)))
+            .map(|(_coordinate, t)| t)
+    }
+
+    pub(crate) fn iter_mut_filter_mask(
+        &mut self,
+        mask: Candidates<Base>,
+    ) -> impl Iterator<Item = &mut T> {
+        self.iter_mut_enumerate()
+            .filter(move |(coordinate, _t)| mask.has(Value::from(*coordinate)))
+            .map(|(_coordinate, t)| t)
     }
 }
 
