@@ -42,10 +42,10 @@ fn reduce_real_candidates_group<Base: SudokuBase>(
 
     // TODO: calculcate number cells per Value
     //  could be usefull to pre-filter candidates to be considered
-    let candidate_positions = candidates_group.transpose();
+    // let candidate_positions = candidates_group.transpose();
 
-    let position_count_per_candidate = candidate_positions.map(|positions| positions.count());
-    trace!("position_count_per_candidate: {position_count_per_candidate}");
+    // let position_count_per_candidate = candidate_positions.map(|positions| positions.count());
+    // trace!("position_count_per_candidate: {position_count_per_candidate}");
 
     let candidates_count_per_index = candidates_group
         .clone()
@@ -57,14 +57,19 @@ fn reduce_real_candidates_group<Base: SudokuBase>(
             .filter(|&(_i, candidates_count)| candidates_count <= set_size)
             .map(|(i, _candidates_count)| i)
             // TODO: sort?
+            //  idea: find the most likely locked set first
+            // TODO: optimize
+            //  this allocates many small vecs, just to be directly collected into Candidates.
+            //  Re-implement without allocations unsing Candidates
+            //  Collect filtered coordinates into Candidates.
+            //  How to efficiently generate bit combinations of size k for the set bits in Candidates?
+            //  Should be an already solved bit twiddling problem.
             .combinations(set_size.into())
         {
             let locked_set_indexes = potenital_set
                 .into_iter()
                 .map(Value::from)
                 .collect::<Candidates<_>>();
-
-            let outside_set_indexes = locked_set_indexes.invert();
 
             let locked_candidates = candidates_group
                 .iter_filter_mask(locked_set_indexes)
@@ -82,6 +87,8 @@ fn reduce_real_candidates_group<Base: SudokuBase>(
                     .join(","),
             );
 
+            let outside_set_indexes = locked_set_indexes.invert();
+
             let removed_candidates_by_set = candidates_group
                 .iter_filter_mask(outside_set_indexes)
                 // Which candidates would be removed?
@@ -93,7 +100,7 @@ fn reduce_real_candidates_group<Base: SudokuBase>(
                 continue;
             }
 
-            trace!("Valid set, removing candidates");
+            trace!("Valid set, removing candidates {removed_candidates_by_set} from indexes {outside_set_indexes}");
             candidates_group
                 .iter_mut_filter_mask(outside_set_indexes)
                 .for_each(|candidates| *candidates = candidates.without(removed_candidates_by_set));
