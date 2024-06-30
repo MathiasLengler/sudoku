@@ -1,4 +1,5 @@
 use itertools::Itertools;
+use log::trace;
 
 use crate::{
     base::SudokuBase,
@@ -7,7 +8,7 @@ use crate::{
 };
 
 // adapter for previous API
-pub(super) fn reduce_candidates_group<Base: SudokuBase>(
+pub fn reduce_candidates_group<Base: SudokuBase>(
     candidates_group: &[Candidates<Base>],
 ) -> Vec<Candidates<Base>> {
     let taken_candidates = candidates_group
@@ -19,9 +20,6 @@ pub(super) fn reduce_candidates_group<Base: SudokuBase>(
     let mut candidates_group_vec = Vec::with_capacity(Base::SIDE_LENGTH.into());
     candidates_group_vec.extend(missing_candidates.into_iter().map(Candidates::with_single));
     candidates_group_vec.extend(candidates_group);
-
-    dbg!(candidates_group.iter().join(","));
-    dbg!(candidates_group_vec.iter().join(","));
 
     let candidates_group = candidates_group_vec
         .try_into()
@@ -40,14 +38,14 @@ pub(super) fn reduce_candidates_group<Base: SudokuBase>(
 fn reduce_real_candidates_group<Base: SudokuBase>(
     mut candidates_group: CandidatesGroup<Base>,
 ) -> CandidatesGroup<Base> {
-    println!("{candidates_group}");
+    trace!("Searching for locked set in: {candidates_group}");
 
     // TODO: calculcate number cells per Value
     //  could be usefull to pre-filter candidates to be considered
     let candidate_positions = candidates_group.transpose();
 
     let position_count_per_candidate = candidate_positions.map(|positions| positions.count());
-    println!("{position_count_per_candidate}");
+    trace!("position_count_per_candidate: {position_count_per_candidate}");
 
     let candidates_count_per_index = candidates_group
         .clone()
@@ -76,7 +74,7 @@ fn reduce_real_candidates_group<Base: SudokuBase>(
                 continue;
             }
 
-            println!(
+            trace!(
                 "Potential set: size={set_size}; coordinates={}; candidates={}",
                 locked_set_indexes.iter().join(","),
                 candidates_group
@@ -91,11 +89,11 @@ fn reduce_real_candidates_group<Base: SudokuBase>(
                 .fold(Candidates::new(), |acc, candidates| acc.union(candidates));
 
             if removed_candidates_by_set.is_empty() {
-                println!("Not a valid locked set since it removes no candidates.");
+                trace!("Not a valid locked set since it removes no candidates.");
                 continue;
             }
 
-            println!("Valid set, removing candidates");
+            trace!("Valid set, removing candidates");
             candidates_group
                 .iter_mut_filter_mask(outside_set_indexes)
                 .for_each(|candidates| *candidates = candidates.without(removed_candidates_by_set));
@@ -111,7 +109,6 @@ mod tests {
     use super::*;
     use crate::base::consts::*;
     use crate::cell::Candidates;
-    use crate::error::Result;
 
     #[test]
     fn test_reduce_candidates_group() {

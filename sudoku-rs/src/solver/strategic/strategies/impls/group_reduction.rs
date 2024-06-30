@@ -10,7 +10,7 @@ use crate::solver::strategic::strategies::Strategy;
 use crate::solver::strategic::strategies::StrategyScore;
 
 mod sat;
-mod v2;
+pub mod v2;
 
 // TODO: optimize
 //  - https://en.wikipedia.org/wiki/Strongly_connected_component

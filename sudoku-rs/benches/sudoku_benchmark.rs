@@ -21,7 +21,9 @@ use sudoku::position::Position;
 use sudoku::rng::{new_crate_rng_from_rng, new_crate_rng_with_seed};
 use sudoku::samples::{base_2, base_3, base_4, base_5};
 use sudoku::solver::sat;
-use sudoku::solver::strategic::strategies::{GroupIntersectionBoth, GroupReduction, Strategy};
+use sudoku::solver::strategic::strategies::{
+    group_reduction, GroupIntersectionBoth, GroupReduction, Strategy,
+};
 use sudoku::solver::{backtracking, introspective, strategic, FallibleSolver, InfallibleSolver};
 
 fn cast_grid<Base: SudokuBase>(any_grid: Box<dyn Any>) -> Grid<Base> {
@@ -358,6 +360,14 @@ fn bench_strategy_group(strategy_group: &mut BenchmarkGroup<WallTime>) {
         BenchmarkId::new("GroupReduction/reduce_candidates_group", "basic"),
         &candidates_group,
         |b, candidates_group| b.iter(|| GroupReduction::reduce_candidates_group(candidates_group)),
+    );
+
+    strategy_group.bench_with_input(
+        BenchmarkId::new("GroupReduction/v2/reduce_candidates_group", "basic"),
+        &candidates_group,
+        |b, candidates_group| {
+            b.iter(|| group_reduction::v2::reduce_candidates_group(candidates_group))
+        },
     );
 
     let grid: Grid<Base3> = "s00905cgdg2103pgc00h03r0ccd85cmcpcece0c0b0g1do036s9sec11c48222g1482c8c0ho421og8o9o1ogc410209sgoi22054gi0o011i6gkiq116q814s0s4ca48kao4s6o4s1003g10610410s0qg081210c".parse().unwrap();
