@@ -40,7 +40,7 @@ pub(super) fn reduce_candidates_group<Base: SudokuBase>(
 fn reduce_real_candidates_group<Base: SudokuBase>(
     mut candidates_group: CandidatesGroup<Base>,
 ) -> CandidatesGroup<Base> {
-    print_debug_candidate_matrix(candidates_group.clone());
+    println!("{candidates_group}");
 
     // TODO: calculcate number cells per Value
     //  could be usefull to pre-filter candidates to be considered

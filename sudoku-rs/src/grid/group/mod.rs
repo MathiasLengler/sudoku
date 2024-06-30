@@ -20,10 +20,10 @@ pub(crate) struct Group<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug 
 
 impl<Base: SudokuBase> Display for CandidatesGroup<Base> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for candidates in self.iter() {
+        for (coordinate, candidates) in self.iter_enumerate() {
             writeln!(
                 f,
-                "{:0width$b}",
+                "{coordinate}:{:0width$b}",
                 candidates.integral(),
                 width = usize::from(Base::MAX_VALUE)
             )?;
@@ -179,6 +179,20 @@ mod tests {
         .unwrap()
         .try_into()
         .unwrap();
+
+        assert_eq!(
+            format!("{candidates_group}"),
+            r"0:000001011
+1:000001110
+2:000000101
+3:000001001
+4:100110010
+5:101100100
+6:011101000
+7:000011110
+8:100101011
+"
+        );
     }
 
     #[test]
