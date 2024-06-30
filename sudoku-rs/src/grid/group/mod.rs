@@ -6,7 +6,7 @@ use crate::{
     unsafe_utils::{get_unchecked, get_unchecked_mut},
 };
 use anyhow::anyhow;
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 
 pub(crate) type CandidatesGroup<Base> = Group<Base, Candidates<Base>>;
 
@@ -16,6 +16,27 @@ pub(crate) type CandidatesGroup<Base> = Group<Base, Candidates<Base>>;
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub(crate) struct Group<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default> {
     group: Base::Group<T>,
+}
+
+impl<Base: SudokuBase> Display for CandidatesGroup<Base> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for candidates in self.iter() {
+            writeln!(
+                f,
+                "{:0width$b}",
+                candidates.integral(),
+                width = usize::from(Base::MAX_VALUE)
+            )?;
+        }
+
+        Ok(())
+    }
+}
+
+impl<Base: SudokuBase> Display for Group<Base, u8> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", "")
+    }
 }
 
 impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default> Group<Base, T> {
@@ -138,6 +159,27 @@ mod tests {
     use crate::base::consts::Base3;
 
     use super::*;
+
+    #[test]
+    fn test_display_candidates_group() {
+        let candidates_group: CandidatesGroup<Base3> = vec![
+            vec![1, 2, 4],
+            vec![2, 3, 4],
+            vec![1, 3],
+            vec![1, 4],
+            vec![2, 5, 6, 9],
+            vec![6, 3, 7, 9],
+            vec![4, 6, 7, 8],
+            vec![2, 3, 4, 5],
+            vec![1, 2, 4, 6, 9],
+        ]
+        .into_iter()
+        .map(Candidates::<Base3>::try_from)
+        .collect::<Result<Vec<_>>>()
+        .unwrap()
+        .try_into()
+        .unwrap();
+    }
 
     #[test]
     fn test_transpose() {

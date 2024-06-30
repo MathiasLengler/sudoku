@@ -44,7 +44,10 @@ fn reduce_real_candidates_group<Base: SudokuBase>(
 
     // TODO: calculcate number cells per Value
     //  could be usefull to pre-filter candidates to be considered
-    candidates_group.transpose();
+    let candidate_positions = candidates_group.transpose();
+
+    let position_count_per_candidate = candidate_positions.map(|positions| positions.count());
+    println!("{position_count_per_candidate}");
 
     let candidates_count_per_index = candidates_group
         .clone()
@@ -103,43 +106,12 @@ fn reduce_real_candidates_group<Base: SudokuBase>(
     return candidates_group;
 }
 
-fn print_debug_candidate_matrix<Base: SudokuBase>(candidates_group: CandidatesGroup<Base>) {
-    for candidates in candidates_group {
-        println!("{:09b}", candidates.integral())
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::base::consts::*;
     use crate::cell::Candidates;
     use crate::error::Result;
-    use crate::solver::strategic::strategies::test_util::assert_deductions_with_grid;
-    use crate::solver::strategic::strategies::GroupReduction;
-
-    #[test]
-    fn test_print_debug_candidate_matrix() {
-        print_debug_candidate_matrix::<Base3>(
-            vec![
-                vec![1, 2, 4],
-                vec![2, 3, 4],
-                vec![1, 3],
-                vec![1, 4],
-                vec![2, 5, 6, 9],
-                vec![6, 3, 7, 9],
-                vec![4, 6, 7, 8],
-                vec![2, 3, 4, 5],
-                vec![1, 2, 4, 6, 9],
-            ]
-            .into_iter()
-            .map(Candidates::try_from)
-            .collect::<Result<Vec<_>>>()
-            .unwrap()
-            .try_into()
-            .unwrap(),
-        );
-    }
 
     #[test]
     fn test_reduce_candidates_group() {
