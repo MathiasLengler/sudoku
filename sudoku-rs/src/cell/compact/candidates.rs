@@ -3,6 +3,7 @@ use std::fmt::{Binary, Display, Formatter};
 use std::mem::size_of;
 
 use anyhow::ensure;
+use itertools::Itertools;
 use num::traits::{CheckedShl, WrappingSub};
 use num::{One, PrimInt, Zero};
 use serde::ser::SerializeSeq;
@@ -253,6 +254,14 @@ impl<Base: SudokuBase> Candidates<Base> {
     #[must_use]
     pub fn invert(self) -> Self {
         Self::with_integral_unchecked(self.bits ^ Self::all_candidates_mask())
+    }
+
+    /// Returns an iterator over all possible combinations of `k` candidates, which are set in this `Candidates`.
+    pub fn combinations(self, k: Value<Base>) -> impl Iterator<Item = Self> {
+        // TODO: replace with efficient implementation
+        self.iter()
+            .combinations(k.get().into())
+            .map(|combination| combination.into())
     }
 }
 
@@ -606,7 +615,7 @@ mod tests {
     }
 
     mod getters {
-        use std::collections::BTreeSet;
+        use std::{collections::BTreeSet, iter};
 
         use super::*;
 
@@ -825,6 +834,81 @@ mod tests {
             let candidates_34 = Candidates::<Base2>::with_integral(0b1100);
             assert_eq!(candidates_12.invert(), candidates_34);
             assert_eq!(candidates_34.invert(), candidates_12);
+        }
+
+        #[test]
+        fn test_combinations() {
+            fn assert_set_equals<Base: SudokuBase>(
+                a: impl IntoIterator<Item = Candidates<Base>>,
+                b: impl IntoIterator<Item = Candidates<Base>>,
+            ) {
+                let a: BTreeSet<_> = a.into_iter().collect();
+                let b: BTreeSet<_> = b.into_iter().collect();
+                assert_eq!(a, b);
+            }
+
+            fn combinations_itertools<Base: SudokuBase>(
+                candidates: Candidates<Base>,
+                k: Value<Base>,
+            ) -> impl Iterator<Item = Candidates<Base>> {
+                candidates
+                    .iter()
+                    .combinations(k.get().into())
+                    .map(|combination| combination.into())
+            }
+
+            let empty: Candidates<Base2> = Candidates::new();
+            let one: Candidates<Base2> = Candidates::with_single(1.try_into().unwrap());
+            let one_two_three: Candidates<Base2> = vec![1, 2, 3].try_into().unwrap();
+            let all: Candidates<Base2> = Candidates::all();
+            let all_base3: Candidates<Base3> = Candidates::all();
+
+            for k in Value::all() {
+                // empty candidates never produce any combinations
+                itertools::assert_equal(empty.combinations(k), iter::empty());
+
+                if k.get() == 1 {
+                    // a single candidate only produces a single combination if k == 1
+                    itertools::assert_equal(one.combinations(k), iter::once(one));
+                } else {
+                    // a single candidate never produces any combinations if k > 1
+                    itertools::assert_equal(one.combinations(k), iter::empty());
+                }
+            }
+
+            assert_set_equals(
+                all.combinations(1.try_into().unwrap()),
+                all.iter().map(Candidates::with_single),
+            );
+
+            assert_set_equals(
+                one_two_three.combinations(2.try_into().unwrap()),
+                vec![
+                    vec![1, 2].try_into().unwrap(),
+                    vec![1, 3].try_into().unwrap(),
+                    vec![2, 3].try_into().unwrap(),
+                ],
+            );
+            assert_set_equals(
+                one_two_three.combinations(3.try_into().unwrap()),
+                iter::once(one_two_three),
+            );
+
+            for k in Value::all() {
+                assert_set_equals(empty.combinations(k), combinations_itertools(empty, k));
+                assert_set_equals(one.combinations(k), combinations_itertools(one, k));
+                assert_set_equals(
+                    one_two_three.combinations(k),
+                    combinations_itertools(one_two_three, k),
+                );
+                assert_set_equals(all.combinations(k), combinations_itertools(all, k));
+            }
+            for k in Value::all() {
+                assert_set_equals(
+                    all_base3.combinations(k),
+                    combinations_itertools(all_base3, k),
+                );
+            }
         }
     }
 

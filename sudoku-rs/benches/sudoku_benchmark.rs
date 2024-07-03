@@ -439,6 +439,31 @@ fn bench_candidates_group(candidates_group: &mut BenchmarkGroup<WallTime>) {
             BatchSize::SmallInput,
         );
     });
+
+    candidates_group.bench_function(BenchmarkId::new("combinations", "Base=3 single k=1"), |b| {
+        b.iter_batched(
+            || {
+                (
+                    Candidates::<Base3>::with_integral(0b000_010_000),
+                    1.try_into().unwrap(),
+                )
+            },
+            |(candidates, k)| consume_iter(candidates.combinations(k)),
+            BatchSize::SmallInput,
+        );
+    });
+    for k in Value::<Base3>::all() {
+        candidates_group.bench_function(
+            BenchmarkId::new("combinations", format!("Base=3 all k={k}")),
+            |b| {
+                b.iter_batched(
+                    || (Candidates::<Base3>::all(), k),
+                    |(candidates, k)| consume_iter(candidates.combinations(k)),
+                    BatchSize::SmallInput,
+                );
+            },
+        );
+    }
 }
 
 fn bench_position_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup<WallTime>) {
