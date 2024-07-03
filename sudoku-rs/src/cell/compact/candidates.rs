@@ -159,8 +159,24 @@ impl<Base: SudokuBase> Candidates<Base> {
     }
 
     fn trailing_zeros(&self) -> u8 {
+        debug_assert!(!self.is_empty());
         // unwrap optimizes away
         self.bits.trailing_zeros().try_into().unwrap()
+    }
+
+    /// Logical leading zeros, e.g. only with respect to `all_candidates_mask`.
+    ///
+    /// Who many candidates exist after the last set candidate?
+    fn leading_zeros(&self) -> u8 {
+        debug_assert!(!self.is_empty());
+
+        // TODO: dedup with block_segmentation
+        let size_bits: u8 = (size_of::<Base::CandidatesIntegral>() * 8)
+            .try_into()
+            .unwrap();
+
+        // unwrap optimizes away
+        u8::try_from(self.bits.leading_zeros()).unwrap() - (size_bits - Base::MAX_VALUE - 1)
     }
 
     // Reference: https://lemire.me/blog/2018/02/21/iterating-over-set-bits-quickly/
@@ -173,6 +189,20 @@ impl<Base: SudokuBase> Candidates<Base> {
             // Safety: the largest bit position is `Base::MAX_VALUE - 1`
             // At least one bit is set, therefore `candidate` remains in-bounds.
             let coordinate = unsafe { Coordinate::new_unchecked(candidate) };
+
+            Some(Self::export(coordinate))
+        }
+    }
+
+    // TODO: test
+    pub fn last(&self) -> Option<Value<Base>> {
+        if self.is_empty() {
+            None
+        } else {
+            // Safety: the largest bit position is `Base::MAX_VALUE - 1`
+            // At least one bit is set, therefore `candidate` remains in-bounds.
+            let coordinate =
+                unsafe { Coordinate::new_unchecked(Base::MAX_VALUE - self.leading_zeros()) };
 
             Some(Self::export(coordinate))
         }
@@ -698,6 +728,19 @@ mod tests {
             assert_eq!(one.first(), Some(1.try_into().unwrap()));
             assert_eq!(four.first(), Some(4.try_into().unwrap()));
             assert_eq!(all.first(), Some(1.try_into().unwrap()));
+        }
+
+        #[test]
+        fn test_last() {
+            let empty: Candidates<Base2> = Candidates::new();
+            let one: Candidates<Base2> = Candidates::with_single(1.try_into().unwrap());
+            let four: Candidates<Base2> = Candidates::with_single(4.try_into().unwrap());
+            let all: Candidates<Base2> = Candidates::all();
+
+            assert!(empty.last().is_none());
+            assert_eq!(one.last(), Some(1.try_into().unwrap()));
+            assert_eq!(four.last(), Some(4.try_into().unwrap()));
+            assert_eq!(all.last(), Some(4.try_into().unwrap()));
         }
 
         fn assert_block_segmentation<Base: SudokuBase>(
