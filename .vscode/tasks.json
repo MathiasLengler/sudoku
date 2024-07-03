@@ -1,0 +1,21 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "npm",
+      "script": "lint:tsc",
+      "path": "sudoku-web",
+      "problemMatcher": ["$tsc"],
+      "label": "npm: lint:tsc - sudoku-web",
+      "detail": "tsc"
+    },
+    {
+      "type": "npm",
+      "script": "lint:eslint",
+      "path": "sudoku-web",
+      "problemMatcher": ["$eslint-stylish"],
+      "label": "npm: lint:eslint - sudoku-web",
+      "detail": "eslint src/** webpack.config.ts"
+    }
+  ]
+}
