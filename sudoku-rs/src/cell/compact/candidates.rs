@@ -19,6 +19,7 @@ use crate::error::{Error, Result};
 use crate::position::{BlockCoordinate, Coordinate};
 
 mod iter;
+mod iter_combinations;
 
 // FIXME: replace all usages of `&self` with `self`
 //  `Candidates` is Copy and smaller than or equal to a 32-bit pointer
@@ -286,7 +287,7 @@ impl<Base: SudokuBase> Candidates<Base> {
         Self::with_integral_unchecked(self.bits ^ Self::all_candidates_mask())
     }
 
-    /// Returns an iterator over all possible combinations of `k` candidates, which are set in this `Candidates`.
+    /// Returns an iterator over all combinations of `k` candidates contained in this `Candidates`.
     pub fn combinations(self, k: Value<Base>) -> impl Iterator<Item = Self> {
         // TODO: replace with efficient implementation
         // self.iter()
