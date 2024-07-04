@@ -289,9 +289,28 @@ impl<Base: SudokuBase> Candidates<Base> {
     /// Returns an iterator over all possible combinations of `k` candidates, which are set in this `Candidates`.
     pub fn combinations(self, k: Value<Base>) -> impl Iterator<Item = Self> {
         // TODO: replace with efficient implementation
-        self.iter()
-            .combinations(k.get().into())
-            .map(|combination| combination.into())
+        // self.iter()
+        // .combinations(k.get().into())
+        // .map(|combination| combination.into())
+
+        let mut combinations = Vec::new();
+        let n = self.count();
+        let k = k.get();
+
+        if k <= n {
+            let mut combination = Self::new();
+            for candidate in Value::all().take(k.into()) {
+                combination.insert(candidate);
+            }
+
+            combinations.push(combination);
+            loop {
+                let last = combination.last().unwrap();
+                combination.delete(last);
+            }
+        }
+
+        combinations.into_iter()
     }
 }
 
@@ -952,6 +971,14 @@ mod tests {
                     combinations_itertools(all_base3, k),
                 );
             }
+        }
+
+        #[test]
+        fn test_combinations_debug() {
+            dbg!(Candidates::<Base3>::all()
+                .combinations(3.try_into().unwrap())
+                .map(|candidates| candidates.to_vec_u8())
+                .collect::<Vec<_>>());
         }
     }
 
