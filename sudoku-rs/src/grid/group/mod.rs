@@ -116,9 +116,7 @@ impl<Base: SudokuBase> CandidatesGroup<Base> {
 
         self.iter_enumerate().for_each(|(coordinate, candidates)| {
             candidates.iter().for_each(|candidate| {
-                transposed
-                    .get_mut(candidate.into())
-                    .insert(coordinate.into());
+                transposed.get_mut(candidate.into()).insert(coordinate);
             });
         });
 

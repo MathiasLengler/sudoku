@@ -117,7 +117,7 @@ impl<Base: SudokuBase> Candidates<Base> {
         self.debug_assert();
     }
 
-    pub fn set(&mut self, candidate: Value<Base>, enabled: bool) {
+    pub fn set(&mut self, candidate: impl Into<Coordinate<Base>>, enabled: bool) {
         let candidate_mask = Self::import(candidate);
 
         if enabled {
@@ -129,18 +129,18 @@ impl<Base: SudokuBase> Candidates<Base> {
         self.debug_assert();
     }
 
-    pub fn insert(&mut self, candidate: Value<Base>) {
+    pub fn insert(&mut self, candidate: impl Into<Coordinate<Base>>) {
         self.set(candidate, true);
     }
 
-    pub fn delete(&mut self, candidate: Value<Base>) {
+    pub fn delete(&mut self, candidate: impl Into<Coordinate<Base>>) {
         self.set(candidate, false);
     }
 }
 
 /// Getters
 impl<Base: SudokuBase> Candidates<Base> {
-    pub fn has(&self, candidate: Value<Base>) -> bool {
+    pub fn has(&self, candidate: impl Into<Coordinate<Base>>) -> bool {
         let candidate_mask = Self::import(candidate);
 
         !(self.bits & candidate_mask).is_zero()
@@ -399,7 +399,7 @@ impl<Base: SudokuBase> TryFrom<Vec<u8>> for Candidates<Base> {
         let mut this = Self::default();
 
         for candidate in candidates {
-            this.set(candidate.try_into()?, true);
+            this.set(Value::try_from(candidate)?, true);
         }
 
         this.debug_assert();
@@ -603,8 +603,8 @@ mod tests {
         #[test]
         fn test_set() {
             let mut candidates = Candidates::<Base2>::new();
-            let value1 = 1.try_into().unwrap();
-            let value2 = 2.try_into().unwrap();
+            let value1 = Value::try_from(1).unwrap();
+            let value2 = Value::try_from(2).unwrap();
             candidates.set(value1, false);
             assert_eq!(candidates.to_vec_u8(), Vec::<u8>::new());
             candidates.set(value1, true);
@@ -622,8 +622,8 @@ mod tests {
         #[test]
         fn test_insert() {
             let mut candidates = Candidates::<Base2>::new();
-            let value1 = 1.try_into().unwrap();
-            let value2 = 2.try_into().unwrap();
+            let value1 = Value::try_from(1).unwrap();
+            let value2 = Value::try_from(2).unwrap();
             candidates.insert(value1);
             assert_eq!(candidates.to_vec_u8(), vec![1]);
             candidates.insert(value2);
@@ -635,8 +635,8 @@ mod tests {
         #[test]
         fn test_delete() {
             let mut candidates = Candidates::<Base2>::all();
-            let value1 = 1.try_into().unwrap();
-            let value2 = 2.try_into().unwrap();
+            let value1 = Value::try_from(1).unwrap();
+            let value2 = Value::try_from(2).unwrap();
             candidates.delete(value2);
             assert_eq!(candidates.to_vec_u8(), vec![1, 3, 4]);
             candidates.delete(value1);
@@ -654,10 +654,10 @@ mod tests {
         #[test]
         fn test_has() {
             let candidates: Candidates<Base2> = vec![1, 3].try_into().unwrap();
-            let value1 = 1.try_into().unwrap();
-            let value2 = 2.try_into().unwrap();
-            let value3 = 3.try_into().unwrap();
-            let value4 = 4.try_into().unwrap();
+            let value1 = Value::try_from(1).unwrap();
+            let value2 = Value::try_from(2).unwrap();
+            let value3 = Value::try_from(3).unwrap();
+            let value4 = Value::try_from(4).unwrap();
             assert!(candidates.has(value1));
             assert!(!candidates.has(value2));
             assert!(candidates.has(value3));
@@ -671,17 +671,17 @@ mod tests {
             let mut candidates = Candidates::<Base>::new();
             assert_eq!(candidates.integral(), 0);
             assert_eq!(candidates.to_vec_u8(), Vec::<u8>::new());
-            candidates.set(1.try_into().unwrap(), true);
+            candidates.set(Value::try_from(1).unwrap(), true);
             assert_eq!(candidates.integral(), 1);
             assert_eq!(candidates.to_vec_u8(), vec![1]);
-            candidates.set(2.try_into().unwrap(), true);
+            candidates.set(Value::try_from(2).unwrap(), true);
             assert_eq!(candidates.integral(), 3);
             assert_eq!(candidates.to_vec_u8(), vec![1, 2]);
             let mut candidates = Candidates::<Base>::new();
-            candidates.set(25.try_into().unwrap(), true);
+            candidates.set(Value::try_from(25).unwrap(), true);
             assert_eq!(candidates.to_vec_u8(), vec![25]);
             assert_eq!(candidates.integral(), 1 << 24);
-            candidates.set(10.try_into().unwrap(), true);
+            candidates.set(Value::try_from(10).unwrap(), true);
             assert_eq!(candidates.to_vec_u8(), vec![10, 25]);
             assert_eq!(candidates.integral(), 1 << 24 | 1 << 9);
         }

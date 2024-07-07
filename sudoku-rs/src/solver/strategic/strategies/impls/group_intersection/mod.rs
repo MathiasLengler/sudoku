@@ -146,12 +146,12 @@ impl<Base: SudokuBase> GroupCandidateIndexes<Base> {
                     let group_candidate_indexes =
                         &mut candidate_to_group_candidate_indexes[usize::from(candidate.get() - 1)];
 
-                    let row_index = pos.to_column().into();
+                    let row_index = pos.to_column();
                     group_candidate_indexes
                         .rows
                         .get_mut(pos.to_row())
                         .insert(row_index);
-                    let column_index = pos.to_row().into();
+                    let column_index = pos.to_row();
                     group_candidate_indexes
                         .columns
                         .get_mut(pos.to_column())
@@ -163,11 +163,11 @@ impl<Base: SudokuBase> GroupCandidateIndexes<Base> {
                     group_candidate_indexes
                         .row_major_blocks
                         .get_mut(block)
-                        .insert(row_major_block_index.into());
+                        .insert(row_major_block_index);
                     group_candidate_indexes
                         .column_major_blocks
                         .get_mut(block)
-                        .insert(column_major_block_index.into());
+                        .insert(column_major_block_index);
                 }
             }
         }
