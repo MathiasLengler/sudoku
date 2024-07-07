@@ -572,6 +572,7 @@ mod tests {
     use itertools::chain;
 
     use crate::base::consts::*;
+    use crate::cell::Value;
     use crate::rng::new_crate_rng_with_seed;
     use crate::solver::test_util::{
         assert_infallible_solution_iter_all_solutions_base_2,
@@ -662,7 +663,7 @@ mod tests {
         let mut denylist = Grid::new();
         denylist[Position::default()] = vec![1, 3]
             .into_iter()
-            .map(|v| v.try_into().unwrap())
+            .map(|v| Value::try_from(v).unwrap())
             .collect();
         let solver = Solver::builder(&grid).candidates_filter(denylist).build();
 

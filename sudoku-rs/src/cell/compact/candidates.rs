@@ -344,8 +344,8 @@ impl<Base: SudokuBase> Candidates<Base> {
     }
 }
 
-impl<Base: SudokuBase> FromIterator<Value<Base>> for Candidates<Base> {
-    fn from_iter<T: IntoIterator<Item = Value<Base>>>(candidates: T) -> Self {
+impl<Base: SudokuBase, C: Into<Coordinate<Base>>> FromIterator<C> for Candidates<Base> {
+    fn from_iter<T: IntoIterator<Item = C>>(candidates: T) -> Self {
         let mut this = Self::default();
 
         for candidate in candidates {

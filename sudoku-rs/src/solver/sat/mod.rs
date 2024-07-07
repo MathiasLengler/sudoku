@@ -439,7 +439,7 @@ mod tests {
         let mut denylist = Grid::new();
         denylist[Position::top_left()] = vec![1, 3]
             .into_iter()
-            .map(|v| v.try_into().unwrap())
+            .map(|v| Value::try_from(v).unwrap())
             .collect();
         let solver = Solver::new_with_candidates_filter(&grid, &denylist).unwrap();
 
