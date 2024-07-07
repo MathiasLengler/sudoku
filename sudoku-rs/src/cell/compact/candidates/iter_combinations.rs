@@ -29,9 +29,8 @@ pub fn debug_asm(i: &mut CandidatesCombinationsIter<Base3>) -> Option<Candidates
 #[derive(Debug, Clone)]
 struct FirstCandidatesCombinationsIter<Base: SudokuBase> {
     current: Candidates<Base>,
-    n: Value<Base>,
-    // TODO: fold into Option<Value<Base>> and benchmark
-    is_finished: bool,
+    // `None` if iterator is finished.
+    n: Option<Value<Base>>,
 }
 
 impl<Base: SudokuBase> FirstCandidatesCombinationsIter<Base> {
@@ -43,8 +42,7 @@ impl<Base: SudokuBase> FirstCandidatesCombinationsIter<Base> {
         } else {
             Self {
                 current: Candidates::with_integral_unchecked((one << k.get()) - one),
-                n,
-                is_finished: false,
+                n: Some(n),
             }
         }
     }
@@ -52,8 +50,7 @@ impl<Base: SudokuBase> FirstCandidatesCombinationsIter<Base> {
     fn new_empty() -> Self {
         Self {
             current: Candidates::new(),
-            n: Value::default(),
-            is_finished: true,
+            n: None,
         }
     }
 }
@@ -62,19 +59,16 @@ impl<Base: SudokuBase> Iterator for FirstCandidatesCombinationsIter<Base> {
     type Item = Candidates<Base>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.is_finished {
-            return None;
-        }
+        let n = self.n?;
         let current = self.current;
-        // println!("{current}");
         let next = next_permutation(current.integral())?;
 
-        if (next & (Base::CandidatesIntegral::ONE << self.n.get())).is_zero() {
+        if (next & (Base::CandidatesIntegral::ONE << n.get())).is_zero() {
             let next = Candidates::with_integral_unchecked(next);
             self.current = next;
             Some(current)
         } else {
-            self.is_finished = true;
+            self.n = None;
             Some(current)
         }
     }
