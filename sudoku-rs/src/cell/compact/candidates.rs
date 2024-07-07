@@ -184,7 +184,7 @@ impl<Base: SudokuBase> Candidates<Base> {
     }
 
     // Reference: https://lemire.me/blog/2018/02/21/iterating-over-set-bits-quickly/
-    pub fn first(&self) -> Option<Value<Base>> {
+    pub fn first<C: From<Coordinate<Base>>>(&self) -> Option<C> {
         if self.is_empty() {
             None
         } else {
@@ -198,8 +198,7 @@ impl<Base: SudokuBase> Candidates<Base> {
         }
     }
 
-    // TODO: test
-    pub fn last(&self) -> Option<Value<Base>> {
+    pub fn last<C: From<Coordinate<Base>>>(&self) -> Option<C> {
         if self.is_empty() {
             None
         } else {
@@ -312,7 +311,7 @@ impl<Base: SudokuBase> Candidates<Base> {
         Base::CandidatesIntegral::ONE << candidate.into().get()
     }
 
-    fn export(candidate: Coordinate<Base>) -> Value<Base> {
+    fn export<C: From<Coordinate<Base>>>(candidate: Coordinate<Base>) -> C {
         candidate.into()
     }
 }
@@ -726,10 +725,10 @@ mod tests {
             let four: Candidates<Base2> = Candidates::with_single(4.try_into().unwrap());
             let all: Candidates<Base2> = Candidates::all();
 
-            assert!(empty.first().is_none());
-            assert_eq!(one.first(), Some(1.try_into().unwrap()));
-            assert_eq!(four.first(), Some(4.try_into().unwrap()));
-            assert_eq!(all.first(), Some(1.try_into().unwrap()));
+            assert!(empty.first::<Value<_>>().is_none());
+            assert_eq!(one.first(), Some(Value::try_from(1).unwrap()));
+            assert_eq!(four.first(), Some(Value::try_from(4).unwrap()));
+            assert_eq!(all.first(), Some(Value::try_from(1).unwrap()));
         }
 
         #[test]
@@ -739,10 +738,10 @@ mod tests {
             let four: Candidates<Base2> = Candidates::with_single(4.try_into().unwrap());
             let all: Candidates<Base2> = Candidates::all();
 
-            assert!(empty.last().is_none());
-            assert_eq!(one.last(), Some(1.try_into().unwrap()));
-            assert_eq!(four.last(), Some(4.try_into().unwrap()));
-            assert_eq!(all.last(), Some(4.try_into().unwrap()));
+            assert!(empty.last::<Value<_>>().is_none());
+            assert_eq!(one.last(), Some(Value::try_from(1).unwrap()));
+            assert_eq!(four.last(), Some(Value::try_from(4).unwrap()));
+            assert_eq!(all.last(), Some(Value::try_from(4).unwrap()));
         }
 
         fn assert_block_segmentation<Base: SudokuBase>(
