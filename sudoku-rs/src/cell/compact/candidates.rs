@@ -143,7 +143,7 @@ impl<Base: SudokuBase> Candidates<Base> {
         !(self.bits & Base::CandidatesIntegral::one() << imported_candidate).is_zero()
     }
 
-    pub fn integral(&self) -> Base::CandidatesIntegral {
+    pub fn integral(self) -> Base::CandidatesIntegral {
         self.bits
     }
 
@@ -290,28 +290,9 @@ impl<Base: SudokuBase> Candidates<Base> {
     /// Returns an iterator over all combinations of `k` candidates contained in this `Candidates`.
     pub fn combinations(self, k: Value<Base>) -> impl Iterator<Item = Self> {
         // TODO: replace with efficient implementation
-        // self.iter()
-        // .combinations(k.get().into())
-        // .map(|combination| combination.into())
-
-        let mut combinations = Vec::new();
-        let n = self.count();
-        let k = k.get();
-
-        if k <= n {
-            let mut combination = Self::new();
-            for candidate in Value::all().take(k.into()) {
-                combination.insert(candidate);
-            }
-
-            combinations.push(combination);
-            loop {
-                let last = combination.last().unwrap();
-                combination.delete(last);
-            }
-        }
-
-        combinations.into_iter()
+        self.iter()
+            .combinations(k.get().into())
+            .map(|combination| combination.into())
     }
 }
 

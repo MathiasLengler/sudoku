@@ -3,8 +3,8 @@ use std::hash::Hash;
 use std::ops::{BitAndAssign, BitOrAssign, BitXorAssign, Shl};
 
 use num::traits::{
-    CheckedShl, CheckedShr, Unsigned, WrappingAdd, WrappingMul, WrappingShl, WrappingShr,
-    WrappingSub,
+    CheckedShl, CheckedShr, ConstOne, ConstZero, Unsigned, WrappingAdd, WrappingMul, WrappingNeg,
+    WrappingShl, WrappingShr, WrappingSub,
 };
 use num::PrimInt;
 
@@ -256,15 +256,16 @@ where
         + WrappingShl
         + WrappingShr
         + WrappingSub
+        + WrappingNeg
+        + ConstOne
+        + ConstZero
         + BitXorAssign
         + BitOrAssign
         + BitAndAssign
         + Shl<u8, Output = Self::CandidatesIntegral>
         // Conversions
         + Into<u32>
-        + TryFrom<u32, Error = Self::CandidatesIntegralTryFromU32Error>;
-
-    type CandidatesIntegralTryFromU32Error: Into<Error> + Debug;
+        + TryFrom<u32, Error: Into<Error> + Debug>;
 
     /// A generic array of `SIDE_LENGTH` elements, e.g. `[T; Self::SIDE_LENGTH]`.
     ///
@@ -324,8 +325,6 @@ unsafe impl SudokuBase for $type_num {
     }
 
     type CandidatesIntegral = $type_integral;
-
-    type CandidatesIntegralTryFromU32Error = <$type_integral as TryFrom<u32>>::Error;
 
     type Group<T: Send + Sync + Copy + Clone + Debug + Default> = [T; Self::SIDE_LENGTH as usize];
 }
