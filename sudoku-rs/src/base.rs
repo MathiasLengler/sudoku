@@ -12,7 +12,6 @@ use consts::*;
 pub(crate) use enum_impl::match_base_enum;
 pub use enum_impl::BaseEnum;
 
-use crate::cell::Candidates;
 use crate::error::{Error, Result};
 use crate::position::Coordinate;
 use crate::position::Position;
