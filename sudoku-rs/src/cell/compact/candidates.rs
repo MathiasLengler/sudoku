@@ -3,7 +3,7 @@ use std::fmt::{Binary, Display, Formatter};
 use std::mem::size_of;
 
 use anyhow::ensure;
-use itertools::Itertools;
+use iter_combinations::CandidatesCombinationsIter;
 use num::traits::{CheckedShl, WrappingSub};
 use num::{One, PrimInt, Zero};
 use serde::ser::SerializeSeq;
@@ -289,10 +289,7 @@ impl<Base: SudokuBase> Candidates<Base> {
 
     /// Returns an iterator over all combinations of `k` candidates contained in this `Candidates`.
     pub fn combinations(self, k: Value<Base>) -> impl Iterator<Item = Self> {
-        // TODO: replace with efficient implementation
-        self.iter()
-            .combinations(k.get().into())
-            .map(|combination| combination.into())
+        CandidatesCombinationsIter::new(k, self)
     }
 }
 
@@ -895,6 +892,8 @@ mod tests {
                 candidates: Candidates<Base>,
                 k: Value<Base>,
             ) -> impl Iterator<Item = Candidates<Base>> {
+                use itertools::Itertools;
+
                 candidates
                     .iter()
                     .combinations(k.get().into())

@@ -1,26 +1,11 @@
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
 use crate::cell::Value;
-use num::traits::{CheckedShl, ConstOne, WrappingAdd, WrappingNeg, WrappingShr, WrappingSub};
-use num::{One, PrimInt, Unsigned, Zero};
+use num::traits::{ConstOne, WrappingAdd, WrappingNeg, WrappingShr, WrappingSub};
+use num::{PrimInt, Zero};
 
 // Reference: https://graphics.stanford.edu/%7Eseander/bithacks.html#NextBitPermutation
-#[allow(clippy::many_single_char_names)]
-fn next_permutation_u8(v: u8) -> Option<u8> {
-    let t = v | (v.wrapping_sub(1));
-
-    let a = !t;
-    let b = a.wrapping_neg();
-    let c = a & b;
-    let d = c.wrapping_sub(1);
-    let e = v.trailing_zeros();
-    let f = e + 1;
-    let g = d.wrapping_shr(f);
-    let h = t.checked_add(1)?;
-    Some(h | g)
-}
-
-fn next_permutation_num<
+fn next_permutation<
     T: PrimInt + WrappingAdd + WrappingSub + WrappingNeg + WrappingShr + ConstOne,
 >(
     v: T,
@@ -49,17 +34,21 @@ impl<Base: SudokuBase> FirstCandidatesCombinationsIter<Base> {
     fn new(k: Value<Base>, n: Value<Base>) -> Self {
         let one = Base::CandidatesIntegral::ONE;
         if k > n {
-            Self {
-                current: Candidates::new(),
-                n,
-                is_finished: true,
-            }
+            Self::new_empty()
         } else {
             Self {
                 current: Candidates::with_integral((one << k.get()) - one),
                 n,
                 is_finished: false,
             }
+        }
+    }
+
+    fn new_empty() -> Self {
+        Self {
+            current: Candidates::new(),
+            n: Value::default(),
+            is_finished: true,
         }
     }
 }
@@ -73,7 +62,7 @@ impl<Base: SudokuBase> Iterator for FirstCandidatesCombinationsIter<Base> {
         }
         let current = self.current;
         // println!("{current}");
-        let next = next_permutation_num(current.integral())?;
+        let next = next_permutation(current.integral())?;
 
         if (next & Base::CandidatesIntegral::ONE << (self.n.get())).is_zero() {
             let next = Candidates::with_integral(next);
@@ -88,15 +77,24 @@ impl<Base: SudokuBase> Iterator for FirstCandidatesCombinationsIter<Base> {
 
 /// An iterator over all combinations of `k` candidates contained in a given `Candidates`.
 #[derive(Debug, Clone)]
-pub struct CandidatesCombinationsIter<Base: SudokuBase> {
+pub(super) struct CandidatesCombinationsIter<Base: SudokuBase> {
     candidates: Candidates<Base>,
-    k: Value<Base>,
-    current_combination: Candidates<Base>,
+    iter_first: FirstCandidatesCombinationsIter<Base>,
 }
 
 impl<Base: SudokuBase> CandidatesCombinationsIter<Base> {
-    pub fn new(candidates: Candidates<Base>, k: Value<Base>) -> Self {
-        todo!()
+    pub(super) fn new(k: Value<Base>, candidates: Candidates<Base>) -> Self {
+        let Some(n) = Value::new(candidates.count()).unwrap() else {
+            return Self {
+                candidates,
+                iter_first: FirstCandidatesCombinationsIter::new_empty(),
+            };
+        };
+
+        Self {
+            candidates,
+            iter_first: FirstCandidatesCombinationsIter::new(k, n),
+        }
     }
 }
 
@@ -104,7 +102,18 @@ impl<Base: SudokuBase> Iterator for CandidatesCombinationsIter<Base> {
     type Item = Candidates<Base>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        todo!()
+        let next_first = self.iter_first.next()?;
+
+        Some(
+            self.candidates
+                .iter()
+                .enumerate()
+                .filter(|(i, _candidate)| {
+                    next_first.has(Value::new(u8::try_from(*i).unwrap() + 1).unwrap().unwrap())
+                })
+                .map(|(_i, candidate)| candidate)
+                .collect(),
+        )
     }
 }
 
@@ -132,14 +141,10 @@ mod tests {
         ];
 
         itertools::assert_equal(
-            (0..=u8::MAX).map(next_permutation_u8),
+            (0..=u8::MAX).map(next_permutation),
             expected
                 .into_iter()
                 .map(|i| if i == 0 { None } else { Some(i) }),
-        );
-        itertools::assert_equal(
-            (0..=u8::MAX).map(next_permutation_u8),
-            (0..=u8::MAX).map(next_permutation_num),
         );
     }
 
@@ -206,27 +211,5 @@ mod tests {
                 ],
             );
         }
-    }
-
-    // #[test]
-    // fn test_debug() {
-    //     for v in 0..=u8::MAX {
-    //         // let t = v | (v.wrapping_sub(1));
-    //         // let res = (t.wrapping_add(1))
-    //         //     | (((!t & (-(!t as i8)) as u8).wrapping_sub(1))
-    //         //         .wrapping_shr((v.trailing_zeros() + 1)));
-
-    //         let res = next_permutation_u8(v);
-    //         let res2: u8 = next_permutation_num(v);
-    //         // assert!(res == res2);
-
-    //         println!("({v},{v:08b}) = ({res},{res:08b})");
-    //     }
-    // }
-
-    #[test]
-    fn test_debug_2() {
-        let res = next_permutation_u8(192);
-        dbg!(res);
     }
 }
