@@ -109,21 +109,21 @@ impl<Base: SudokuBase> Candidates<Base> {
 
 /// Mutations
 impl<Base: SudokuBase> Candidates<Base> {
-    pub fn toggle(&mut self, candidate: Value<Base>) {
-        let imported_candidate = Self::import(candidate);
+    pub fn toggle(&mut self, candidate: impl Into<Coordinate<Base>>) {
+        let candidate_mask = Self::import(candidate);
 
-        self.bits ^= Base::CandidatesIntegral::one() << imported_candidate;
+        self.bits ^= candidate_mask;
 
         self.debug_assert();
     }
 
     pub fn set(&mut self, candidate: Value<Base>, enabled: bool) {
-        let imported_candidate = Self::import(candidate);
+        let candidate_mask = Self::import(candidate);
 
         if enabled {
-            self.bits |= Base::CandidatesIntegral::one() << imported_candidate;
+            self.bits |= candidate_mask;
         } else {
-            self.bits &= !(Base::CandidatesIntegral::one() << imported_candidate);
+            self.bits &= !candidate_mask;
         }
 
         self.debug_assert();
@@ -141,9 +141,9 @@ impl<Base: SudokuBase> Candidates<Base> {
 /// Getters
 impl<Base: SudokuBase> Candidates<Base> {
     pub fn has(&self, candidate: Value<Base>) -> bool {
-        let imported_candidate = Self::import(candidate);
+        let candidate_mask = Self::import(candidate);
 
-        !(self.bits & Base::CandidatesIntegral::one() << imported_candidate).is_zero()
+        !(self.bits & candidate_mask).is_zero()
     }
 
     pub fn integral(self) -> Base::CandidatesIntegral {
@@ -307,8 +307,9 @@ impl<Base: SudokuBase> Candidates<Base> {
             .wrapping_sub(&one)
     }
 
-    fn import(candidate: Value<Base>) -> u8 {
-        candidate.get() - 1
+    /// Convert a single candidate (`Value` or `Coordinate`) into a bit mask.
+    fn import(candidate: impl Into<Coordinate<Base>>) -> Base::CandidatesIntegral {
+        Base::CandidatesIntegral::one() << candidate.into().get()
     }
 
     fn export(candidate: Coordinate<Base>) -> Value<Base> {
@@ -587,8 +588,8 @@ mod tests {
         #[test]
         fn test_toggle() {
             let mut candidates = Candidates::<Base2>::new();
-            let value1 = 1.try_into().unwrap();
-            let value2 = 2.try_into().unwrap();
+            let value1 = Value::try_from(1).unwrap();
+            let value2 = Value::try_from(2).unwrap();
             candidates.toggle(value1);
             assert_eq!(candidates.to_vec_u8(), vec![1]);
             candidates.toggle(value2);
