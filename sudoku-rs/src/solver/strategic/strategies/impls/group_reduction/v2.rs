@@ -51,26 +51,17 @@ fn reduce_real_candidates_group<Base: SudokuBase>(
         .clone()
         .map(|candidates| candidates.count());
 
-    for set_size in 1..Base::SIDE_LENGTH {
-        for potenital_set in candidates_count_per_index
+    for set_size_value in Value::all() {
+        let set_size = set_size_value.get();
+        for locked_set_indexes in candidates_count_per_index
             .iter_enumerate()
             .filter(|&(_i, candidates_count)| candidates_count <= set_size)
             .map(|(i, _candidates_count)| i)
+            .collect::<Candidates<_>>()
             // TODO: sort?
             //  idea: find the most likely locked set first
-            // TODO: optimize
-            //  this allocates many small vecs, just to be directly collected into Candidates.
-            //  Re-implement without allocations unsing Candidates
-            //  Collect filtered coordinates into Candidates.
-            //  How to efficiently generate bit combinations of size k for the set bits in Candidates?
-            //  Should be an already solved bit twiddling problem.
-            .combinations(set_size.into())
+            .combinations(set_size_value)
         {
-            let locked_set_indexes = potenital_set
-                .into_iter()
-                .map(Value::from)
-                .collect::<Candidates<_>>();
-
             let locked_candidates = candidates_group
                 .iter_filter_mask(locked_set_indexes)
                 .fold(Candidates::new(), |acc, candidates| acc.union(candidates));
