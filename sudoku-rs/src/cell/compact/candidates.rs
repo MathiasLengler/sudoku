@@ -4,8 +4,8 @@ use std::mem::size_of;
 
 use anyhow::ensure;
 use iter_combinations::CandidatesCombinationsIter;
-use num::traits::{CheckedShl, WrappingSub};
-use num::{One, PrimInt, Zero};
+use num::traits::{CheckedShl, ConstOne, ConstZero, WrappingSub};
+use num::{PrimInt, Zero};
 use serde::ser::SerializeSeq;
 use serde::{Serialize, Serializer};
 
@@ -44,7 +44,7 @@ impl<Base: SudokuBase> Default for Candidates<Base> {
 /// Constructors
 impl<Base: SudokuBase> Candidates<Base> {
     pub fn new() -> Self {
-        Self::with_integral_unchecked(Base::CandidatesIntegral::zero())
+        Self::with_integral_unchecked(Base::CandidatesIntegral::ZERO)
     }
 
     fn with_integral_unchecked(bits: Base::CandidatesIntegral) -> Self {
@@ -72,7 +72,7 @@ impl<Base: SudokuBase> Candidates<Base> {
 
     pub fn block_segmentation_mask(segment_index: BlockCoordinate<Base>) -> Self {
         let base = Base::BASE;
-        let one = Base::CandidatesIntegral::one();
+        let one = Base::CandidatesIntegral::ONE;
 
         let first_segment_mask = (one << base) - one;
 
@@ -300,8 +300,8 @@ impl<Base: SudokuBase> Candidates<Base> {
 impl<Base: SudokuBase> Candidates<Base> {
     // TODO: benchmark/view assembly; should evaluate to a constant for a specific base
     fn all_candidates_mask() -> Base::CandidatesIntegral {
-        let zero = Base::CandidatesIntegral::zero();
-        let one = Base::CandidatesIntegral::one();
+        let zero = Base::CandidatesIntegral::ZERO;
+        let one = Base::CandidatesIntegral::ONE;
         one.checked_shl(u32::from(Base::MAX_VALUE))
             .unwrap_or(zero)
             .wrapping_sub(&one)
@@ -309,7 +309,7 @@ impl<Base: SudokuBase> Candidates<Base> {
 
     /// Convert a single candidate (`Value` or `Coordinate`) into a bit mask.
     fn import(candidate: impl Into<Coordinate<Base>>) -> Base::CandidatesIntegral {
-        Base::CandidatesIntegral::one() << candidate.into().get()
+        Base::CandidatesIntegral::ONE << candidate.into().get()
     }
 
     fn export(candidate: Coordinate<Base>) -> Value<Base> {
@@ -764,7 +764,7 @@ mod tests {
                 .collect();
 
             for non_segmented_integral in num::range(
-                Base::CandidatesIntegral::zero(),
+                Base::CandidatesIntegral::ZERO,
                 Candidates::<Base>::all_candidates_mask(),
             )
             .filter(|integral| !segmented_integrals.contains(integral))
