@@ -53,7 +53,7 @@ mod test_util {
     ) {
         assert_eq!(
             deductions, expected_deductions,
-            "{deductions}\n!=\n{expected_deductions}"
+            "\n{deductions}\n!=\n{expected_deductions}"
         );
     }
 

@@ -16,7 +16,6 @@ pub mod v2;
 //  - https://en.wikipedia.org/wiki/Strongly_connected_component
 //  - https://opensourc.es/blog/sudoku/
 //  This seems to be the bottleneck for the goal generator
-// TODO: SAT solver based implementation
 // TODO: produce decuction reasons
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -41,7 +40,7 @@ impl Strategy for GroupReduction {
                     })
                     .unzip();
 
-                let reduced_candidates_group = Self::reduce_candidates_group(&candidates_group);
+                let reduced_candidates_group = v2::reduce_candidates_group(&candidates_group);
 
                 let mut deduction = Deduction::new();
 

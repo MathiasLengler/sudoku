@@ -25,7 +25,7 @@ pub fn reduce_candidates_group<Base: SudokuBase>(
         .try_into()
         .expect("Candidates group to be well formed");
 
-    reduce_real_candidates_group::<Base>(candidates_group)
+    reduce_complete_candidates_group::<Base>(candidates_group)
         .into_iter()
         .filter(|candidates| {
             !candidates
@@ -35,7 +35,19 @@ pub fn reduce_candidates_group<Base: SudokuBase>(
         .collect()
 }
 
-fn reduce_real_candidates_group<Base: SudokuBase>(
+fn iter_alternating<T>(mut i: impl DoubleEndedIterator<Item = T>) -> impl Iterator<Item = T> {
+    let mut front = true;
+    std::iter::from_fn(move || {
+        if front {
+            front = !front;
+            i.next()
+        } else {
+            i.next_back()
+        }
+    })
+}
+
+fn reduce_complete_candidates_group<Base: SudokuBase>(
     mut candidates_group: CandidatesGroup<Base>,
 ) -> CandidatesGroup<Base> {
     trace!("Searching for locked set in: {candidates_group}");
@@ -51,7 +63,13 @@ fn reduce_real_candidates_group<Base: SudokuBase>(
         .clone()
         .map(|candidates| candidates.count());
 
-    for set_size_value in Value::all() {
+    // Search order:
+    // - Naked single
+    // - Hidden single
+    // - Naked pair
+    // - Hidden pair
+    // - ...
+    for set_size_value in iter_alternating(Value::all()) {
         let set_size = set_size_value.get();
         for locked_set_indexes in candidates_count_per_index
             .iter_enumerate()
@@ -107,10 +125,13 @@ mod tests {
     use super::*;
     use crate::base::consts::*;
     use crate::cell::Candidates;
+    use crate::test_util::init_test_logger;
 
     #[test]
     fn test_reduce_candidates_group() {
         type TestCase = (Vec<Vec<u8>>, Vec<Vec<u8>>);
+
+        init_test_logger();
 
         let test_cases: Vec<TestCase> = vec![
             // Naked single
@@ -139,7 +160,7 @@ mod tests {
                     vec![1, 3],
                     vec![2, 3],
                     vec![1, 2, 3, 4, 5, 6],
-                    vec![1, 3, 4],
+                    vec![1, 3, 4, 5],
                     vec![2, 3, 4, 5, 6],
                 ],
                 vec![
@@ -147,7 +168,7 @@ mod tests {
                     vec![1, 3],
                     vec![2, 3],
                     vec![4, 5, 6],
-                    vec![4],
+                    vec![4, 5],
                     vec![4, 5, 6],
                 ],
             ),
@@ -160,8 +181,8 @@ mod tests {
             (vec![vec![1, 2], vec![2]], vec![vec![1], vec![2]]),
             // Naked pair
             (
-                vec![vec![3, 4], vec![1, 3, 4], vec![1, 2, 3, 4], vec![3, 4]],
-                vec![vec![3, 4], vec![1], vec![1, 2], vec![3, 4]],
+                vec![vec![3, 4], vec![1, 2, 3, 4], vec![1, 2, 3, 4], vec![3, 4]],
+                vec![vec![3, 4], vec![1, 2], vec![1, 2], vec![3, 4]],
             ),
             // Naked single
             (
@@ -329,8 +350,11 @@ mod tests {
             ),
         ];
 
-        for (candidates_group_data, expected_reduced_candidate_group_data) in test_cases {
+        for (i, (candidates_group_data, expected_reduced_candidate_group_data)) in
+            test_cases.into_iter().enumerate()
+        {
             let candidates_group: Vec<Candidates<Base3>> = candidates_group_data
+                .clone()
                 .into_iter()
                 .map(|candidates_data| candidates_data.try_into().unwrap())
                 .collect();
@@ -343,8 +367,8 @@ mod tests {
                 .collect();
 
             assert_eq!(
-                reduced_candidates_group_data,
-                expected_reduced_candidate_group_data
+                reduced_candidates_group_data, expected_reduced_candidate_group_data,
+                "input #{i}: {candidates_group_data:?}"
             );
         }
     }
