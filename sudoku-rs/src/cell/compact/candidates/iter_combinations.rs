@@ -182,7 +182,7 @@ mod tests {
                 3.try_into().unwrap(),
                 3.try_into().unwrap(),
             );
-            itertools::assert_equal(iter, vec![vec![1, 2, 3].try_into().unwrap()]);
+            itertools::assert_equal(iter, iter::once(vec![1, 2, 3].try_into().unwrap()));
 
             let iter = FirstCandidatesCombinationsIter::<Base2>::new(
                 4.try_into().unwrap(),
@@ -190,7 +190,6 @@ mod tests {
             );
             itertools::assert_equal(iter, iter::empty());
 
-            dbg!("FOO");
             let iter = FirstCandidatesCombinationsIter::<Base2>::new(
                 2.try_into().unwrap(),
                 4.try_into().unwrap(),
