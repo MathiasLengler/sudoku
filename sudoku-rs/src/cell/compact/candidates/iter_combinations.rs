@@ -106,7 +106,12 @@ impl<Base: SudokuBase> Iterator for CandidatesCombinationsIter<Base> {
         Some(
             (1u8..)
                 .zip(self.candidates.iter())
-                .filter(|&(i, _candidate)| next_first.has(unsafe { Value::new_unchecked(i) }))
+                .filter(|&(i, _candidate)| {
+                    // Safety: `Candidates` contains a maximum of `Base::MAX_VALUE` candidates.
+                    // `i` starts from 1, therefore `1..=(Base::MAX_VALUE)` holds.
+                    let value = unsafe { Value::new_unchecked(i) };
+                    next_first.has(value)
+                })
                 .map(|(_i, candidate)| candidate)
                 .collect(),
         )
