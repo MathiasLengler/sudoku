@@ -22,6 +22,11 @@ use crate::solver::strategic::deduction::{Action, Reason};
 pub struct Deduction<Base: SudokuBase> {
     pub actions: PositionMap<Base, Action<Base>>,
     pub reasons: PositionMap<Base, Reason<Base>>,
+    // TODO: cost for this deduction
+    //  we currently only support cost per Strategy.
+    //  Different deductions produced by a strategy could vary in difficulty, e.g.:
+    //  - GroupReduction/LockedCandidates: naked vs hidden, set size
+    //  - Chain-based strategies: length of chain
 }
 
 impl<Base: SudokuBase> TryFrom<TransportDeduction> for Deduction<Base> {

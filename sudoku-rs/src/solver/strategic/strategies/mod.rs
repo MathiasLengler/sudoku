@@ -26,6 +26,9 @@ pub trait Strategy: Debug + Copy + Clone + Eq + Sized {
     /// Higher scores are more difficult.
     fn score(self) -> StrategyScore;
 
+    // TODO: optimize with param: enable reasons
+    //  reasons are only needed for debugging and hinting, not for strategic generation.
+
     /// Execute this strategy on the given grid. Returns a list of deductions.
     fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>>;
 

@@ -19,6 +19,7 @@ pub enum Reason<Base: SudokuBase> {
     /// Highlighted with a green background in the UI.
     Candidates(Candidates<Base>),
     // TODO: add Reason::Cell for group highlighting
+    //  alternative: reference Group by Coordinate and Group type (row, column, block)
 }
 
 impl<Base: SudokuBase> TryFrom<TransportReason> for Reason<Base> {
