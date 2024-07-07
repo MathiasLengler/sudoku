@@ -40,6 +40,7 @@ fn next_permutation_num<
 struct FirstCandidatesCombinationsIter<Base: SudokuBase> {
     current: Candidates<Base>,
     n: Value<Base>,
+    // TODO: fold into Option<Value<Base>> and benchmark
     is_finished: bool,
 }
 
