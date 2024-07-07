@@ -20,10 +20,6 @@ use crate::unsafe_utils::get_unchecked;
 
 pub mod consts {
     // Aliases
-    pub use Base2 as Size4x4;
-    pub use Base3 as Size9x9;
-    pub use Base4 as Size16x16;
-    pub use Base5 as Size25x25;
     pub use Base5 as BaseMax;
 
     use crate::base::SudokuBase;
