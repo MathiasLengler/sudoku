@@ -18,6 +18,9 @@ use crate::cell::{Cell, CellState};
 use crate::error::{Error, Result};
 use crate::position::{BlockCoordinate, Coordinate};
 
+// TODO: remove after bench
+pub use iter_combinations::debug_asm;
+
 mod iter;
 mod iter_combinations;
 

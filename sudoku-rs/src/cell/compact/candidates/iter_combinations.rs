@@ -1,3 +1,4 @@
+use crate::base::consts::Base3;
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
 use crate::cell::Value;
@@ -21,6 +22,10 @@ fn next_permutation<
     )
 }
 
+pub fn debug_asm(i: &mut CandidatesCombinationsIter<Base3>) -> Option<Candidates<Base3>> {
+    i.next()
+}
+
 #[derive(Debug, Clone)]
 struct FirstCandidatesCombinationsIter<Base: SudokuBase> {
     current: Candidates<Base>,
@@ -37,7 +42,7 @@ impl<Base: SudokuBase> FirstCandidatesCombinationsIter<Base> {
             Self::new_empty()
         } else {
             Self {
-                current: Candidates::with_integral((one << k.get()) - one),
+                current: Candidates::with_integral_unchecked((one << k.get()) - one),
                 n,
                 is_finished: false,
             }
@@ -64,8 +69,8 @@ impl<Base: SudokuBase> Iterator for FirstCandidatesCombinationsIter<Base> {
         // println!("{current}");
         let next = next_permutation(current.integral())?;
 
-        if (next & Base::CandidatesIntegral::ONE << (self.n.get())).is_zero() {
-            let next = Candidates::with_integral(next);
+        if (next & (Base::CandidatesIntegral::ONE << self.n.get())).is_zero() {
+            let next = Candidates::with_integral_unchecked(next);
             self.current = next;
             Some(current)
         } else {
@@ -105,12 +110,9 @@ impl<Base: SudokuBase> Iterator for CandidatesCombinationsIter<Base> {
         let next_first = self.iter_first.next()?;
 
         Some(
-            self.candidates
-                .iter()
-                .enumerate()
-                .filter(|(i, _candidate)| {
-                    next_first.has(Value::new(u8::try_from(*i).unwrap() + 1).unwrap().unwrap())
-                })
+            (1u8..)
+                .zip(self.candidates.iter())
+                .filter(|&(i, _candidate)| next_first.has(unsafe { Value::new_unchecked(i) }))
                 .map(|(_i, candidate)| candidate)
                 .collect(),
         )
