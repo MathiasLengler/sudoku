@@ -95,7 +95,7 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default> Group<Ba
 
     pub(crate) fn iter_filter_mask(&self, mask: Candidates<Base>) -> impl Iterator<Item = T> + '_ {
         self.iter_enumerate()
-            .filter(move |(coordinate, _t)| mask.has(Value::from(*coordinate)))
+            .filter(move |(coordinate, _t)| mask.has(*coordinate))
             .map(|(_coordinate, t)| t)
     }
 

@@ -344,31 +344,45 @@ fn bench_grid_group<Base: SudokuBase>(grid_group: &mut BenchmarkGroup<WallTime>)
 }
 
 fn bench_strategy_group(strategy_group: &mut BenchmarkGroup<WallTime>) {
-    let candidates_group: Vec<Candidates<Base3>> = vec![
-        vec![1, 2],
-        vec![1, 3],
-        vec![2, 3],
-        vec![1, 2, 3, 4, 5, 6],
-        vec![1, 3, 4],
-        vec![2, 3, 4, 5, 6],
-    ]
-    .into_iter()
-    .map(|candidates_data| candidates_data.try_into().unwrap())
-    .collect();
+    for (group_reduction_param_name, candidates_group) in [
+        (
+            "basic",
+            vec![
+                vec![1, 2],
+                vec![1, 3],
+                vec![2, 3],
+                vec![1, 2, 3, 4, 5, 6],
+                vec![1, 3, 4],
+                vec![2, 3, 4, 5, 6],
+            ]
+            .into_iter()
+            .map(|candidates_data| candidates_data.try_into().unwrap())
+            .collect::<Vec<Candidates<Base3>>>(),
+        ),
+        ("all", vec![Candidates::all(); Base3::SIDE_LENGTH.into()]),
+    ] {
+        strategy_group.bench_with_input(
+            BenchmarkId::new(
+                "GroupReduction/reduce_candidates_group",
+                group_reduction_param_name,
+            ),
+            &candidates_group,
+            |b, candidates_group| {
+                b.iter(|| GroupReduction::reduce_candidates_group(candidates_group))
+            },
+        );
 
-    strategy_group.bench_with_input(
-        BenchmarkId::new("GroupReduction/reduce_candidates_group", "basic"),
-        &candidates_group,
-        |b, candidates_group| b.iter(|| GroupReduction::reduce_candidates_group(candidates_group)),
-    );
-
-    strategy_group.bench_with_input(
-        BenchmarkId::new("GroupReduction/v2/reduce_candidates_group", "basic"),
-        &candidates_group,
-        |b, candidates_group| {
-            b.iter(|| group_reduction::v2::reduce_candidates_group(candidates_group))
-        },
-    );
+        strategy_group.bench_with_input(
+            BenchmarkId::new(
+                "GroupReduction/v2/reduce_candidates_group",
+                group_reduction_param_name,
+            ),
+            &candidates_group,
+            |b, candidates_group| {
+                b.iter(|| group_reduction::v2::reduce_candidates_group(candidates_group))
+            },
+        );
+    }
 
     let grid: Grid<Base3> = "s00905cgdg2103pgc00h03r0ccd85cmcpcece0c0b0g1do036s9sec11c48222g1482c8c0ho421og8o9o1ogc410209sgoi22054gi0o011i6gkiq116q814s0s4ca48kao4s6o4s1003g10610410s0qg081210c".parse().unwrap();
     strategy_group.bench_with_input(
