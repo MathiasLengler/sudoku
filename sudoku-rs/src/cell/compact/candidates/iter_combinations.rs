@@ -76,7 +76,7 @@ impl<Base: SudokuBase> Iterator for FirstCandidatesCombinationsIter<Base> {
 
 /// An iterator over all combinations of `k` candidates contained in a given `Candidates`.
 #[derive(Debug, Clone)]
-pub(super) struct CandidatesCombinationsIter<Base: SudokuBase> {
+pub struct CandidatesCombinationsIter<Base: SudokuBase> {
     candidates: Candidates<Base>,
     iter_first: FirstCandidatesCombinationsIter<Base>,
 }

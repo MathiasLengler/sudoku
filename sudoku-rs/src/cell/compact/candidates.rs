@@ -290,7 +290,7 @@ impl<Base: SudokuBase> Candidates<Base> {
     }
 
     /// Returns an iterator over all combinations of `k` candidates contained in this `Candidates`.
-    pub fn combinations(self, k: Value<Base>) -> impl Iterator<Item = Self> {
+    pub fn combinations(self, k: Value<Base>) -> CandidatesCombinationsIter<Base> {
         CandidatesCombinationsIter::new(k, self)
     }
 }
