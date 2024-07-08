@@ -443,24 +443,12 @@ mod tests {
 
         let expected_deductions: Deductions<_> = vec![
             vec![
-                // Hidden pair 2,4 and hidden single 6 in block 1,0
-                ((3, 2), vec![5, 6]),
-                ((4, 2), vec![3, 6, 7]),
-                ((4, 0), vec![9]),
-            ],
-            vec![
-                // Hidden pair 2,4 in column 2
+                // Hidden pair 2,4 in block 1,0 and column 2
                 ((3, 2), vec![5, 6]),
                 ((4, 2), vec![3, 6, 7]),
             ],
             vec![
-                // Hidden pair 3,7 and hidden single 1 in block 1,2
-                ((4, 6), vec![6, 9]),
-                ((5, 6), vec![1, 5, 9]),
-                ((5, 8), vec![9]),
-            ],
-            vec![
-                // Hidden pair 3,7 in column 6
+                // Hidden pair 3,7 in block 1,2 and column 6
                 ((4, 6), vec![6, 9]),
                 ((5, 6), vec![1, 5, 9]),
             ],
