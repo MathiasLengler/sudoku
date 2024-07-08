@@ -39,7 +39,12 @@ impl Strategy for GroupReduction {
                     })
                     .unzip();
 
-                let reduced_candidates_group = v2::reduce_candidates_group(&candidates_group);
+                // TODO: v1 vs v2 has no clear-cut performance winner
+                //  For small candidates groups, v1 is faster, up to 10x (Strategies/GroupReduction/execute/sample_grid_hidden_pairs)
+                //  For large candidates groups, v2 is way faster, up to 6ms vs 220ns / 20_000x speed-up (Strategies/GroupReduction/v2/reduce_candidates_group/all)
+                // Either optimize v2 to be faster or at least comparable to v1 in all cases.
+                // Or use introspective implementation, which switches between the two implementation based on a heuristic.
+                let reduced_candidates_group = Self::reduce_candidates_group_v2(&candidates_group);
 
                 let mut deduction = Deduction::new();
 
@@ -67,7 +72,15 @@ impl Strategy for GroupReduction {
 }
 
 impl GroupReduction {
-    pub fn reduce_candidates_group<Base: SudokuBase>(
+    pub fn reduce_candidates_group_v2<Base: SudokuBase>(
+        candidates_group: &[Candidates<Base>],
+    ) -> Vec<Candidates<Base>> {
+        v2::reduce_candidates_group(candidates_group)
+    }
+}
+
+impl GroupReduction {
+    pub fn reduce_candidates_group_v1<Base: SudokuBase>(
         candidates_group: &[Candidates<Base>],
     ) -> Vec<Candidates<Base>> {
         let mut values = Vec::with_capacity(candidates_group.len());
@@ -353,7 +366,7 @@ mod tests {
                 .collect();
 
             let reduced_candidates_group =
-                GroupReduction::reduce_candidates_group(&candidates_group);
+                GroupReduction::reduce_candidates_group_v1(&candidates_group);
 
             let reduced_candidates_group_data: Vec<_> = reduced_candidates_group
                 .into_iter()

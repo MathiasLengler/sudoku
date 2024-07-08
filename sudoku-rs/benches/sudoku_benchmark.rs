@@ -368,7 +368,7 @@ fn bench_strategy_group(strategy_group: &mut BenchmarkGroup<WallTime>) {
             ),
             &candidates_group,
             |b, candidates_group| {
-                b.iter(|| GroupReduction::reduce_candidates_group(candidates_group))
+                b.iter(|| GroupReduction::reduce_candidates_group_v1(candidates_group))
             },
         );
 
@@ -384,9 +384,19 @@ fn bench_strategy_group(strategy_group: &mut BenchmarkGroup<WallTime>) {
         );
     }
 
+    let grid: Grid<Base3> =
+        "4105300hg281j209i2j081381ag614j20h410hh80318412181h00581033k4109g130342gi0k86s811103m8i4igh0l85805210hla81g20550g12181500h0309090h50120654i0i081032181g10h09054111"
+            .parse()
+            .unwrap();
+    strategy_group.bench_with_input(
+        BenchmarkId::new("GroupReduction/execute", "sample_grid_hidden_pairs"),
+        &grid,
+        |b, grid| b.iter(|| GroupReduction.execute(grid).unwrap()),
+    );
+
     let grid: Grid<Base3> = "s00905cgdg2103pgc00h03r0ccd85cmcpcece0c0b0g1do036s9sec11c48222g1482c8c0ho421og8o9o1ogc410209sgoi22054gi0o011i6gkiq116q814s0s4ca48kao4s6o4s1003g10610410s0qg081210c".parse().unwrap();
     strategy_group.bench_with_input(
-        BenchmarkId::new("GroupIntersection/execute", "basic"),
+        BenchmarkId::new("GroupIntersection/execute", "sample_grid_pointing_pairs_2"),
         &grid,
         |b, grid| b.iter(|| GroupIntersectionBoth.execute(grid).unwrap()),
     );
