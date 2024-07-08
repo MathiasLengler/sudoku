@@ -264,8 +264,8 @@ impl<Base: SudokuBase> Candidates<Base> {
         self.bits.count_ones().try_into().unwrap()
     }
 
-    pub fn iter(&self) -> CandidatesAscIter<Base> {
-        (*self).into()
+    pub fn iter(self) -> CandidatesAscIter<Base> {
+        self.into_iter()
     }
 
     pub fn to_vec_u8(&self) -> Vec<u8> {
@@ -367,6 +367,7 @@ impl<Base: SudokuBase> IntoIterator for Candidates<Base> {
     }
 }
 
+#[allow(clippy::into_iter_without_iter)]
 impl<Base: SudokuBase> IntoIterator for &'_ Candidates<Base> {
     type Item = Value<Base>;
     type IntoIter = CandidatesAscIter<Base>;

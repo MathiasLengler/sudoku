@@ -536,27 +536,29 @@ impl<Base: SudokuBase> Grid<Base> {
 /// Cell iterators
 ///
 /// TODO: unify/expand iterator API:
-///  Use-cases:
-///  Iterator Item:
-///  - Position
-///  - &Cell
-///  - &mut Cell
-///  - Positioned<&Cell>
-///  - Positioned<&mut Cell>
-///  What is iterated:
-///  - Position iterators
-///    - all
-///    - row i
-///    - all rows
-///    - column i
-///    - all columns
-///    - block i
-///    - all blocks
-///  - all groups (chained: all rows, all columns, all blocks)
-///  - filtered cell state
-///    - `all_value_positions`
-///    - `all_unfixed_value_positions`
-///    - `all_candidates_positions`
+///
+/// Use-cases:
+/// Iterator Item:
+/// - Position
+/// - &Cell
+/// - &mut Cell
+/// - Positioned<&Cell>
+/// - Positioned<&mut Cell>
+///
+/// What is iterated:
+/// - Position iterators
+///   - all
+///   - row i
+///   - all rows
+///   - column i
+///   - all columns
+///   - block i
+///   - all blocks
+/// - all groups (chained: all rows, all columns, all blocks)
+/// - filtered cell state
+///   - `all_value_positions`
+///   - `all_unfixed_value_positions`
+///   - `all_candidates_positions`
 impl<Base: SudokuBase, T> Grid<Base, T> {
     fn positions_to_cells(
         &self,
