@@ -8,13 +8,13 @@ use crate::{
 use anyhow::anyhow;
 use std::fmt::{Debug, Display};
 
-pub(crate) type CandidatesGroup<Base> = Group<Base, Candidates<Base>>;
+pub type CandidatesGroup<Base> = Group<Base, Candidates<Base>>;
 
 /// Wrapper around `Base::Group<T>`, e.g. `[T; Base::SIDE_LENGTH]`.
 ///
 /// Provides efficient indexing using `Coordinate<Base>` and better conversion errors.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub(crate) struct Group<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default> {
+pub struct Group<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default> {
     group: Base::Group<T>,
 }
 
@@ -41,7 +41,7 @@ impl<Base: SudokuBase> Display for Group<Base, u8> {
 }
 
 impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default> Group<Base, T> {
-    pub(crate) fn get(&self, coordinate: Coordinate<Base>) -> T {
+    pub fn get(&self, coordinate: Coordinate<Base>) -> T {
         // Safety:
         // - Coordinate::<Base>::get_usize: `coordinate < Base::SIDE_LENGTH`
         // - Base::Group<T>: array length equals `Base::SIDE_LENGTH`
@@ -49,7 +49,7 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default> Group<Ba
         *unsafe { get_unchecked(self.group.as_ref(), coordinate.get_usize()) }
     }
 
-    pub(crate) fn get_mut(&mut self, coordinate: Coordinate<Base>) -> &mut T {
+    pub fn get_mut(&mut self, coordinate: Coordinate<Base>) -> &mut T {
         // Safety:
         // - Coordinate::<Base>::get_usize: `coordinate < Base::SIDE_LENGTH`
         // - Base::Group<T>: array length equals `Base::SIDE_LENGTH`
@@ -57,7 +57,7 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default> Group<Ba
         unsafe { get_unchecked_mut(self.group.as_mut(), coordinate.get_usize()) }
     }
 
-    pub(crate) fn map<F, U>(self, f: F) -> Group<Base, U>
+    pub fn map<F, U>(self, f: F) -> Group<Base, U>
     where
         F: FnMut(T) -> U,
         U: Send + Sync + Copy + Clone + Debug + Default,
@@ -73,36 +73,31 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default> Group<Ba
         }
     }
 
-    pub(crate) fn iter(&self) -> impl Iterator<Item = T> + '_ {
+    pub fn iter(&self) -> impl Iterator<Item = T> + '_ {
         self.group.as_ref().iter().copied()
     }
 
-    pub(crate) fn iter_mut(&mut self) -> impl Iterator<Item = &mut T> {
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut T> {
         self.group.as_mut().iter_mut()
     }
 
-    pub(crate) fn iter_enumerate(&self) -> impl Iterator<Item = (Coordinate<Base>, T)> + '_ {
+    pub fn iter_enumerate(&self) -> impl Iterator<Item = (Coordinate<Base>, T)> + '_ {
         //TODO: evaluate zip_eq
         Coordinate::all().zip(self.iter())
     }
 
-    pub(crate) fn iter_mut_enumerate(
-        &mut self,
-    ) -> impl Iterator<Item = (Coordinate<Base>, &mut T)> {
+    pub fn iter_mut_enumerate(&mut self) -> impl Iterator<Item = (Coordinate<Base>, &mut T)> {
         //TODO: evaluate zip_eq
         Coordinate::all().zip(self.iter_mut())
     }
 
-    pub(crate) fn iter_filter_mask(&self, mask: Candidates<Base>) -> impl Iterator<Item = T> + '_ {
+    pub fn iter_filter_mask(&self, mask: Candidates<Base>) -> impl Iterator<Item = T> + '_ {
         self.iter_enumerate()
             .filter(move |(coordinate, _t)| mask.has(*coordinate))
             .map(|(_coordinate, t)| t)
     }
 
-    pub(crate) fn iter_mut_filter_mask(
-        &mut self,
-        mask: Candidates<Base>,
-    ) -> impl Iterator<Item = &mut T> {
+    pub fn iter_mut_filter_mask(&mut self, mask: Candidates<Base>) -> impl Iterator<Item = &mut T> {
         self.iter_mut_enumerate()
             .filter(move |(coordinate, _t)| mask.has(Value::from(*coordinate)))
             .map(|(_coordinate, t)| t)
@@ -111,7 +106,7 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default> Group<Ba
 
 impl<Base: SudokuBase> CandidatesGroup<Base> {
     #[must_use]
-    pub(crate) fn transpose(&self) -> CandidatesGroup<Base> {
+    pub fn transpose(&self) -> CandidatesGroup<Base> {
         let mut transposed = Self::default();
 
         self.iter_enumerate().for_each(|(coordinate, candidates)| {
