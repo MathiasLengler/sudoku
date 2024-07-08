@@ -639,7 +639,8 @@ impl<Base: SudokuBase, T> Grid<Base, T> {
         Position::all_blocks()
     }
 
-    pub fn all_group_positions() -> impl Iterator<Item = impl Iterator<Item = Position<Base>>> {
+    pub fn all_group_positions(
+    ) -> impl Iterator<Item = impl Iterator<Item = Position<Base>> + Clone> {
         Position::all_groups()
     }
 }
