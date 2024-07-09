@@ -163,7 +163,7 @@ fn bench_solver_sample_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup
 fn bench_solver_tdoku_group(solver_tdoku_group: &mut BenchmarkGroup<WallTime>) {
     type Base = Base3;
 
-    let tdoku_datasets_dir = Path::new("./tests/res/tdoku/");
+    let tdoku_datasets_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("./tests/res/tdoku/");
 
     let tdoku_datasets = vec![
         "puzzles0_kaggle",
