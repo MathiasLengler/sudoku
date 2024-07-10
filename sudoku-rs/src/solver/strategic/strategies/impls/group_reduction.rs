@@ -127,6 +127,7 @@ impl GroupReduction {
 mod tests {
     use crate::base::consts::*;
     use crate::solver::strategic::strategies::test_util::assert_deductions_with_grid;
+    use crate::test_util::init_test_logger;
 
     use super::*;
 
@@ -445,6 +446,8 @@ mod tests {
     /// `https://www.sudokuwiki.org/sudoku.htm?bd=720408030080000047401076802810739000000851000000264080209680413340000008168943275`
     #[test]
     fn test_hidden_pairs() {
+        init_test_logger();
+
         let mut grid: Grid<Base3> =
             "720408030080000047401076802810739000000851000000264080209680413340000008168943275"
                 .parse()
@@ -464,6 +467,12 @@ mod tests {
                 // Hidden pair 3,7 in block 1,2 and column 6
                 ((4, 6), vec![6, 9]),
                 ((5, 6), vec![1, 5, 9]),
+            ],
+            vec![
+                // Naked quad 3,5,7,9 in block 1,0
+                ((3, 2), vec![5]),
+                ((4, 0), vec![9]),
+                ((4, 2), vec![3, 7]),
             ],
         ]
         .into_iter()

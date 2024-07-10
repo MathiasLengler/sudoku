@@ -41,6 +41,13 @@ impl<Base: SudokuBase> Display for Group<Base, u8> {
     }
 }
 
+impl<Base: SudokuBase> Display for Group<Base, u32> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use itertools::Itertools;
+        write!(f, "{}", self.iter().join(","))
+    }
+}
+
 impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash>
     Group<Base, T>
 {

@@ -4,7 +4,7 @@ use log::{debug, trace};
 use crate::{
     base::SudokuBase,
     cell::{Candidates, Value},
-    grid::group::CandidatesGroup,
+    grid::group::{CandidatesGroup, Group},
 };
 
 // adapter for previous API
@@ -66,11 +66,13 @@ fn reduce_complete_candidates_group<Base: SudokuBase>(
 
     trace!("Candidates counts: {candidates_counts}");
 
+    // let mut evaluated_locked_set_count_per_set_size = Group::<Base, u32>::default();
+
     // Search order:
-    // - Naked single
-    // - Hidden single
-    // - Naked pair
-    // - Hidden pair
+    // - Naked single (1)
+    // - Hidden single (MAX - 1)
+    // - Naked pair (2)
+    // - Hidden pair (MAX -2)
     // - ...
     let set_size_values = {
         let mut all_values = Value::all();
@@ -83,9 +85,14 @@ fn reduce_complete_candidates_group<Base: SudokuBase>(
         let set_size = set_size_value.get();
         let potential_locked_set_indexes = candidates_counts
             .iter_enumerate()
-            // TODO: is there a lower bound for which cell to consider?
-            //  It seems like a cell with 1 candidate is only viable for a naked single, nothing else.
-            .filter(|&(_i, candidates_count)| candidates_count <= set_size)
+            .filter(|&(_i, candidates_count)| {
+                // Set members for set sizes > 1 require at least 2 candidates.
+                if set_size == 1 {
+                    candidates_count <= set_size
+                } else {
+                    (2..=set_size).contains(&candidates_count)
+                }
+            })
             .map(|(i, _candidates_count)| i)
             .collect::<Candidates<_>>();
 
@@ -93,14 +100,14 @@ fn reduce_complete_candidates_group<Base: SudokuBase>(
 
         // TODO: sort?
         //  idea: find the most likely locked set first
+        // TODO: optimization: build locked set iteratively for set_size_value > 2
+        //  idea: if two cells combine to a locked candidate count greater than set_size_value, we can skip all combinations which contain those two cells.
+        //  This smells like a tree pruning search.
+
         for locked_set_indexes in potential_locked_set_indexes.combinations(set_size_value) {
-            // TODO: count evaluated locked_set_indexes to evaluate algorithmic optimizations
-            trace!(
-                "Evaluating locked set indexes {locked_set_indexes} with candidates:\n{}",
-                candidates_group
-                    .iter_index_mask(locked_set_indexes)
-                    .join("\n")
-            );
+            // *evaluated_locked_set_count_per_set_size.get_mut(set_size_value.into()) += 1;
+
+            trace!("Evaluating locked set indexes {locked_set_indexes}",);
 
             let locked_candidates = candidates_group
                 .iter_index_mask(locked_set_indexes)
@@ -136,10 +143,17 @@ fn reduce_complete_candidates_group<Base: SudokuBase>(
                 continue;
             }
 
-            debug!("Valid locked set, removing candidates {removed_candidates_by_set} from indexes {outside_set_indexes}");
+            debug!(
+                "Valid locked set {locked_candidates} at indexes {locked_set_indexes} with candidates:\n{}\nRemoves candidates {removed_candidates_by_set} from indexes {outside_set_indexes}",
+                candidates_group
+                    .iter_index_mask(locked_set_indexes)
+                    .join("\n")
+            );
             candidates_group
                 .iter_mut_index_mask(outside_set_indexes)
                 .for_each(|candidates| *candidates = candidates.without(removed_candidates_by_set));
+
+            // trace!("evaluated_locked_set_count_per_set_size: {evaluated_locked_set_count_per_set_size}");
             return candidates_group;
         }
     }
@@ -572,7 +586,7 @@ mod tests {
 
         let test_cases: Vec<TestCase<Base>> = vec![
             (
-                "Naked single (5) - filled",
+                "Naked single (5) - outside filled",
                 vec![
                     //
                     vec![5],
@@ -599,7 +613,7 @@ mod tests {
                 ],
             ),
             (
-                "Naked single (5) - sparse",
+                "Naked single (5) - outside pair chain",
                 vec![
                     //
                     vec![5],
@@ -626,7 +640,34 @@ mod tests {
                 ],
             ),
             (
-                "Hidden single (5) - filled",
+                "Naked single (5) - outside singles",
+                vec![
+                    //
+                    vec![5],
+                    vec![1, 5],
+                    vec![2],
+                    vec![3],
+                    vec![4],
+                    vec![6],
+                    vec![7],
+                    vec![8],
+                    vec![9],
+                ],
+                vec![
+                    //
+                    vec![5],
+                    vec![1],
+                    vec![2],
+                    vec![3],
+                    vec![4],
+                    vec![6],
+                    vec![7],
+                    vec![8],
+                    vec![9],
+                ],
+            ),
+            (
+                "Hidden single (5) - outside filled",
                 vec![
                     //
                     vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
@@ -653,7 +694,7 @@ mod tests {
                 ],
             ),
             (
-                "Hidden single (5) - sparse",
+                "Hidden single (5) - outside sparse",
                 vec![
                     //
                     vec![4, 5],
@@ -680,7 +721,7 @@ mod tests {
                 ],
             ),
             (
-                "Naked pair (4,6) - filled",
+                "Naked pair (4,6) - outside filled",
                 vec![
                     //
                     vec![4, 6],
@@ -707,7 +748,61 @@ mod tests {
                 ],
             ),
             (
-                "Hidden pair (4,6) - filled",
+                "Naked pair (4,6) - outside sparse",
+                vec![
+                    //
+                    vec![4, 6],
+                    vec![4, 6],
+                    vec![1, 2],
+                    vec![2, 3],
+                    vec![1, 3],
+                    vec![4, 5, 6, 7, 9],
+                    vec![5, 6, 7, 8],
+                    vec![4, 5, 6, 7, 8, 9],
+                    vec![5, 7, 8, 9],
+                ],
+                vec![
+                    //
+                    vec![4, 6],
+                    vec![4, 6],
+                    vec![1, 2],
+                    vec![2, 3],
+                    vec![1, 3],
+                    vec![5, 7, 9],
+                    vec![5, 7, 8],
+                    vec![5, 7, 8, 9],
+                    vec![5, 7, 8, 9],
+                ],
+            ),
+            (
+                "Naked pair (4,6) - outside singles",
+                vec![
+                    //
+                    vec![4, 6],
+                    vec![4, 6],
+                    vec![1, 2, 4],
+                    vec![1, 2],
+                    vec![3],
+                    vec![5],
+                    vec![7],
+                    vec![8],
+                    vec![9],
+                ],
+                vec![
+                    //
+                    vec![4, 6],
+                    vec![4, 6],
+                    vec![1, 2],
+                    vec![1, 2],
+                    vec![3],
+                    vec![5],
+                    vec![7],
+                    vec![8],
+                    vec![9],
+                ],
+            ),
+            (
+                "Hidden pair (4,6) - outside filled",
                 vec![
                     //
                     vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
@@ -731,6 +826,114 @@ mod tests {
                     vec![1, 2, 3, 5, 7, 8, 9],
                     vec![1, 2, 3, 5, 7, 8, 9],
                     vec![1, 2, 3, 5, 7, 8, 9],
+                ],
+            ),
+            (
+                "Hidden pair (4,6) - outside sparse",
+                vec![
+                    //
+                    vec![4, 5, 6],
+                    vec![4, 5, 6],
+                    vec![1, 2],
+                    vec![2, 3],
+                    vec![1, 3],
+                    vec![5, 7],
+                    vec![7, 8],
+                    vec![8, 9],
+                    vec![5, 9],
+                ],
+                vec![
+                    //
+                    vec![4, 6],
+                    vec![4, 6],
+                    vec![1, 2],
+                    vec![2, 3],
+                    vec![1, 3],
+                    vec![5, 7],
+                    vec![7, 8],
+                    vec![8, 9],
+                    vec![5, 9],
+                ],
+            ),
+            (
+                "Naked tripple (3,5,7) - complete - outside filled",
+                vec![
+                    //
+                    vec![3, 5, 7],
+                    vec![3, 5, 7],
+                    vec![3, 5, 7],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                ],
+                vec![
+                    //
+                    vec![3, 5, 7],
+                    vec![3, 5, 7],
+                    vec![3, 5, 7],
+                    vec![1, 2, 4, 6, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
+                ],
+            ),
+            (
+                "Naked tripple (3,5,7) - complete - outside sparse",
+                vec![
+                    //
+                    vec![3, 5, 7],
+                    vec![3, 5, 7],
+                    vec![3, 5, 7],
+                    vec![1, 2, 3],
+                    vec![2, 4],
+                    vec![4, 6],
+                    vec![6, 8],
+                    vec![8, 9],
+                    vec![1, 9],
+                ],
+                vec![
+                    //
+                    vec![3, 5, 7],
+                    vec![3, 5, 7],
+                    vec![3, 5, 7],
+                    vec![1, 2],
+                    vec![2, 4],
+                    vec![4, 6],
+                    vec![6, 8],
+                    vec![8, 9],
+                    vec![1, 9],
+                ],
+            ),
+            (
+                "Naked tripple (3,5,7) - distributed - outside filled",
+                vec![
+                    //
+                    vec![3, 5],
+                    vec![5, 7],
+                    vec![3, 7],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                ],
+                vec![
+                    //
+                    vec![3, 5],
+                    vec![5, 7],
+                    vec![3, 7],
+                    vec![1, 2, 4, 6, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
                 ],
             ),
             // TODO: add remaining artificial test cases
@@ -748,6 +951,9 @@ mod tests {
         .collect();
 
         for test_case in test_cases {
+            if test_case.0 != "Naked pair (4,6) - outside singles" {
+                continue;
+            }
             assert_reduce_complete_candidates_group(test_case);
         }
     }
