@@ -272,15 +272,19 @@ where
     /// The length of the array must equal `Base::SIDE_LENGTH`.
     type Group<T>: AsRef<[T]>
         + AsMut<[T]>
+        + Send
+        + Sync
         + Clone
         + Debug
         + Default
-        + IntoIterator<Item = T, IntoIter: Iterator<Item = T>>
-        + TryFrom<Vec<T>, Error = Vec<T>>
-        + Send
-        + Sync
+        + Ord
+        + Hash
+        + IntoIterator<
+            Item = T,
+            IntoIter: ExactSizeIterator<Item = T> + DoubleEndedIterator<Item = T>,
+        > + TryFrom<Vec<T>, Error = Vec<T>>
     where
-        T: Send + Sync + Copy + Clone + Debug + Default;
+        T: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash;
 }
 
 macro_rules! impl_sudoku_base {
@@ -321,7 +325,7 @@ unsafe impl SudokuBase for $type_num {
 
     type CandidatesIntegral = $type_integral;
 
-    type Group<T: Send + Sync + Copy + Clone + Debug + Default> = [T; Self::SIDE_LENGTH as usize];
+    type Group<T: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash> = [T; Self::SIDE_LENGTH as usize];
 }
         )+
     };

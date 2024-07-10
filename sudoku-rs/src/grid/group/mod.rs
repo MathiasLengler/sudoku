@@ -7,14 +7,15 @@ use crate::{
 };
 use anyhow::anyhow;
 use std::fmt::{Debug, Display};
+use std::hash::Hash;
 
 pub type CandidatesGroup<Base> = Group<Base, Candidates<Base>>;
 
 /// Wrapper around `Base::Group<T>`, e.g. `[T; Base::SIDE_LENGTH]`.
 ///
 /// Provides efficient indexing using `Coordinate<Base>` and better conversion errors.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct Group<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default> {
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Group<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash> {
     group: Base::Group<T>,
 }
 
@@ -40,7 +41,9 @@ impl<Base: SudokuBase> Display for Group<Base, u8> {
     }
 }
 
-impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default> Group<Base, T> {
+impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash>
+    Group<Base, T>
+{
     pub fn get(&self, coordinate: Coordinate<Base>) -> T {
         // Safety:
         // - Coordinate::<Base>::get_usize: `coordinate < Base::SIDE_LENGTH`
@@ -57,10 +60,18 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default> Group<Ba
         unsafe { get_unchecked_mut(self.group.as_mut(), coordinate.get_usize()) }
     }
 
+    pub fn as_slice(&self) -> &[T] {
+        self.group.as_ref()
+    }
+
+    pub fn as_mut_slice(&mut self) -> &mut [T] {
+        self.group.as_mut()
+    }
+
     pub fn map<F, U>(self, f: F) -> Group<Base, U>
     where
         F: FnMut(T) -> U,
-        U: Send + Sync + Copy + Clone + Debug + Default,
+        U: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash,
     {
         Group {
             group: self
@@ -71,6 +82,12 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default> Group<Ba
                 .try_into()
                 .unwrap(),
         }
+    }
+
+    #[must_use]
+    pub fn reverse(mut self) -> Self {
+        self.as_mut_slice().reverse();
+        self
     }
 
     pub fn iter(&self) -> impl Iterator<Item = T> + '_ {
@@ -91,15 +108,18 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default> Group<Ba
         Coordinate::all().zip(self.iter_mut())
     }
 
-    pub fn iter_filter_mask(&self, mask: Candidates<Base>) -> impl Iterator<Item = T> + '_ {
+    pub fn iter_index_mask(&self, index_mask: Candidates<Base>) -> impl Iterator<Item = T> + '_ {
         self.iter_enumerate()
-            .filter(move |(coordinate, _t)| mask.has(*coordinate))
+            .filter(move |(coordinate, _t)| index_mask.has(*coordinate))
             .map(|(_coordinate, t)| t)
     }
 
-    pub fn iter_mut_filter_mask(&mut self, mask: Candidates<Base>) -> impl Iterator<Item = &mut T> {
+    pub fn iter_mut_index_mask(
+        &mut self,
+        index_mask: Candidates<Base>,
+    ) -> impl Iterator<Item = &mut T> {
         self.iter_mut_enumerate()
-            .filter(move |(coordinate, _t)| mask.has(Value::from(*coordinate)))
+            .filter(move |(coordinate, _t)| index_mask.has(Value::from(*coordinate)))
             .map(|(_coordinate, t)| t)
     }
 }
@@ -119,7 +139,7 @@ impl<Base: SudokuBase> CandidatesGroup<Base> {
     }
 }
 
-impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default> IntoIterator
+impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash> IntoIterator
     for Group<Base, T>
 {
     type Item = T;
@@ -130,7 +150,7 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default> IntoIter
     }
 }
 
-impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default> TryFrom<Vec<T>>
+impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash> TryFrom<Vec<T>>
     for Group<Base, T>
 {
     type Error = Error;
