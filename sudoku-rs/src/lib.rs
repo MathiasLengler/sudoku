@@ -38,7 +38,7 @@ mod test_util {
     pub(crate) fn init_test_logger() {
         use env_logger::Env;
 
-        let _ = env_logger::Builder::from_env(Env::default().default_filter_or("trace"))
+        let _ = env_logger::Builder::from_env(Env::default().default_filter_or("debug"))
             .is_test(true)
             .try_init();
     }
