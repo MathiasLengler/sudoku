@@ -168,14 +168,8 @@ mod tests {
     use super::*;
     use crate::base::consts::*;
     use crate::cell::Candidates;
+    use crate::solver::strategic::strategies::GroupReduction;
     use crate::test_util::init_test_logger;
-
-    // TODO: test against v1
-    //  v2 bails early on the first locked set, v1 finds all posible chained locked set deductions in a single pass.
-    //  If we apply v2 until no progress is made, it should be comparable.
-    // TODO: exhaustive test for base2
-    //  (2^4)^4=65536 cases
-    //  calculate statistics for number of evaluated sets
 
     #[test]
     fn test_reduce_candidates_group() {
@@ -956,5 +950,50 @@ mod tests {
             }
             assert_reduce_complete_candidates_group(test_case);
         }
+    }
+
+    #[test]
+    fn test_reduce_complete_candidates_group_vs_v1() {
+        // v2 only applies a single deduction. To be comparable with v1, we need to apply it recursively.
+        fn v2_recusive<Base: SudokuBase>(
+            candidates_group: &CandidatesGroup<Base>,
+        ) -> CandidatesGroup<Base> {
+            let reduced = reduce_complete_candidates_group(candidates_group.clone());
+            if &reduced == candidates_group {
+                return reduced;
+            }
+            v2_recusive(&reduced)
+        }
+
+        type Base = Base2;
+
+        let mut i = 0;
+
+        for input in std::iter::repeat(Candidates::<Base>::iter_all_lexicographical())
+            .take(4)
+            .multi_cartesian_product()
+            .map(|candidates_group| CandidatesGroup::<Base>::try_from(candidates_group).unwrap())
+        {
+            if input.iter().any(|candidates| candidates.is_empty()) {
+                continue;
+            }
+            let reduced_v1 = CandidatesGroup::<Base>::try_from(
+                GroupReduction::reduce_candidates_group_v1(input.as_slice()),
+            )
+            .unwrap();
+            if reduced_v1.iter().any(|candidates| candidates.is_empty()) {
+                continue;
+            }
+
+            let reduced_v2 = v2_recusive(&input);
+
+            assert_eq!(
+                reduced_v1, reduced_v2,
+                "\nInput:\n{input}V1:\n{reduced_v1}!= V2:\n{reduced_v2}"
+            );
+
+            i += 1;
+        }
+        dbg!(i);
     }
 }

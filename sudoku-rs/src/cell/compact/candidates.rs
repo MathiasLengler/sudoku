@@ -79,6 +79,15 @@ impl<Base: SudokuBase> Candidates<Base> {
 
         Self::with_integral_unchecked(first_segment_mask << (segment_index.get() * base))
     }
+
+    pub fn iter_all_lexicographical() -> impl Iterator<Item = Self> + Clone {
+        num::range_step_inclusive(
+            Base::CandidatesIntegral::ZERO,
+            Self::all_candidates_mask(),
+            Base::CandidatesIntegral::ONE,
+        )
+        .map(Self::with_integral_unchecked)
+    }
 }
 
 /// Set constructors
@@ -545,6 +554,14 @@ mod tests {
             assert_eq!(
                 Candidates::<Base>::with_integral(all).to_vec_u8(),
                 (1..=25).collect::<Vec<_>>()
+            );
+        }
+
+        #[test]
+        fn test_iter_all_lexicographical() {
+            itertools::assert_equal(
+                Candidates::<Base2>::iter_all_lexicographical(),
+                (0..16).map(Candidates::with_integral),
             );
         }
 

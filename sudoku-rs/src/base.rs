@@ -1,10 +1,10 @@
 use std::fmt::{Binary, Debug, Display};
 use std::hash::Hash;
-use std::ops::{BitAndAssign, BitOrAssign, BitXorAssign, Shl};
+use std::ops::{BitAndAssign, BitOrAssign, BitXorAssign, RangeInclusive, Shl};
 
 use num::traits::{
-    CheckedShl, CheckedShr, ConstOne, ConstZero, Unsigned, WrappingAdd, WrappingMul, WrappingNeg,
-    WrappingShl, WrappingShr, WrappingSub,
+    CheckedShl, CheckedShr, ConstOne, ConstZero, NumAssignOps, Unsigned, WrappingAdd, WrappingMul,
+    WrappingNeg, WrappingShl, WrappingShr, WrappingSub,
 };
 use num::PrimInt;
 
@@ -243,6 +243,7 @@ where
         + Sync
         // Generic bit twiddling
         + PrimInt
+        + NumAssignOps
         + CheckedShl
         + CheckedShr
         + Unsigned

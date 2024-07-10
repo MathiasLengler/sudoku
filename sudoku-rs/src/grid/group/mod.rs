@@ -51,6 +51,10 @@ impl<Base: SudokuBase> Display for Group<Base, u32> {
 impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash>
     Group<Base, T>
 {
+    pub fn new(group: Base::Group<T>) -> Self {
+        Self { group }
+    }
+
     pub fn get(&self, coordinate: Coordinate<Base>) -> T {
         // Safety:
         // - Coordinate::<Base>::get_usize: `coordinate < Base::SIDE_LENGTH`

@@ -8,6 +8,11 @@ use crate::cell::Value;
 use crate::error::{Error, Result};
 use crate::position::BlockCoordinate;
 
+// TODO: Group "Pointers"
+//  struct Row(Coordinate<Base>)
+//  struct Column(Coordinate<Base>)
+//  struct Box(Coordinate<Base>)
+
 /// A coordinate/index in a sudoku grid.
 ///
 /// Can represent three different dimensions:
