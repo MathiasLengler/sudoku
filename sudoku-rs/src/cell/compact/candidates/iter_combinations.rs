@@ -55,6 +55,7 @@ impl<Base: SudokuBase> FirstCandidatesCombinationsIter<Base> {
     }
 }
 
+// TODO: implement ExactSizeIterator (n choose k)
 impl<Base: SudokuBase> Iterator for FirstCandidatesCombinationsIter<Base> {
     type Item = Candidates<Base>;
 
