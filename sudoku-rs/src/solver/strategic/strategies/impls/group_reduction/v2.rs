@@ -1,5 +1,5 @@
 use itertools::Itertools;
-use log::trace;
+use log::{debug, trace};
 
 use crate::{
     base::SudokuBase,
@@ -38,30 +38,33 @@ pub fn reduce_candidates_group<Base: SudokuBase>(
 fn iter_alternating<T>(mut i: impl DoubleEndedIterator<Item = T>) -> impl Iterator<Item = T> {
     let mut front = true;
     std::iter::from_fn(move || {
-        if front {
-            front = !front;
-            i.next()
-        } else {
-            i.next_back()
-        }
+        let res = if front { i.next() } else { i.next_back() };
+        front = !front;
+        res
     })
 }
 
+// TODO: change API: return deduction
 fn reduce_complete_candidates_group<Base: SudokuBase>(
     mut candidates_group: CandidatesGroup<Base>,
 ) -> CandidatesGroup<Base> {
-    trace!("Searching for locked set in: {candidates_group}");
+    debug!("Searching for locked set in:\n{candidates_group}");
 
     // TODO: calculcate number cells per Value
     //  could be usefull to pre-filter candidates to be considered
+    //  Example: Base3 Hidden single (5) - sparse
+    //  It should be obvious that candidate 5 is only contained in one cell.
+    //  Does this generalize for larger sets?
     // let candidate_positions = candidates_group.transpose();
 
     // let position_count_per_candidate = candidate_positions.map(|positions| positions.count());
     // trace!("position_count_per_candidate: {position_count_per_candidate}");
 
-    let candidates_count_per_index = candidates_group
+    let candidates_counts = candidates_group
         .clone()
         .map(|candidates| candidates.count());
+
+    trace!("Candidates counts: {candidates_counts}");
 
     // Search order:
     // - Naked single
@@ -69,37 +72,61 @@ fn reduce_complete_candidates_group<Base: SudokuBase>(
     // - Naked pair
     // - Hidden pair
     // - ...
-    for set_size_value in iter_alternating(Value::all()) {
+    let set_size_values = {
+        let mut all_values = Value::all();
+        all_values.next_back();
+        iter_alternating(all_values)
+    };
+    for set_size_value in set_size_values {
+        trace!("Locked set size: {set_size_value}");
+
         let set_size = set_size_value.get();
-        for locked_set_indexes in candidates_count_per_index
+        let potential_locked_set_indexes = candidates_counts
             .iter_enumerate()
+            // TODO: is there a lower bound for which cell to consider?
+            //  It seems like a cell with 1 candidate is only viable for a naked single, nothing else.
             .filter(|&(_i, candidates_count)| candidates_count <= set_size)
             .map(|(i, _candidates_count)| i)
-            .collect::<Candidates<_>>()
-            // TODO: sort?
-            //  idea: find the most likely locked set first
-            .combinations(set_size_value)
-        {
+            .collect::<Candidates<_>>();
+
+        trace!("Potential locked set indexes: {potential_locked_set_indexes}");
+
+        // TODO: sort?
+        //  idea: find the most likely locked set first
+        for locked_set_indexes in potential_locked_set_indexes.combinations(set_size_value) {
+            // TODO: count evaluated locked_set_indexes to evaluate algorithmic optimizations
+            trace!(
+                "Evaluating locked set indexes {locked_set_indexes} with candidates:\n{}",
+                candidates_group
+                    .iter_index_mask(locked_set_indexes)
+                    .join("\n")
+            );
+
             let locked_candidates = candidates_group
-                .iter_filter_mask(locked_set_indexes)
+                .iter_index_mask(locked_set_indexes)
                 .fold(Candidates::new(), |acc, candidates| acc.union(candidates));
 
-            if locked_candidates.count() > set_size {
+            trace!("Locked candidates: {locked_candidates}");
+
+            let locked_candidates_count = locked_candidates.count();
+            if locked_candidates_count > set_size {
+                trace!("Not a valid locked set, locked candidates count {locked_candidates_count} > set size {set_size_value}");
                 continue;
             }
 
-            trace!(
-                "Potential set: size={set_size}; coordinates={}; candidates={}",
-                locked_set_indexes.iter().join(","),
-                candidates_group
-                    .iter_filter_mask(locked_set_indexes)
-                    .join(","),
-            );
+            trace!("Potential locked set, locked candidates count {locked_candidates_count} <= set size {set_size_value}");
 
             let outside_set_indexes = locked_set_indexes.invert();
 
+            trace!(
+                "Outside locked set indexes {outside_set_indexes} with candidates:\n{}",
+                candidates_group
+                    .iter_index_mask(outside_set_indexes)
+                    .join("\n")
+            );
+
             let removed_candidates_by_set = candidates_group
-                .iter_filter_mask(outside_set_indexes)
+                .iter_index_mask(outside_set_indexes)
                 // Which candidates would be removed?
                 .map(|not_set_candidates| not_set_candidates.intersection(locked_candidates))
                 .fold(Candidates::new(), |acc, candidates| acc.union(candidates));
@@ -109,9 +136,9 @@ fn reduce_complete_candidates_group<Base: SudokuBase>(
                 continue;
             }
 
-            trace!("Valid set, removing candidates {removed_candidates_by_set} from indexes {outside_set_indexes}");
+            debug!("Valid locked set, removing candidates {removed_candidates_by_set} from indexes {outside_set_indexes}");
             candidates_group
-                .iter_mut_filter_mask(outside_set_indexes)
+                .iter_mut_index_mask(outside_set_indexes)
                 .for_each(|candidates| *candidates = candidates.without(removed_candidates_by_set));
             return candidates_group;
         }
@@ -122,10 +149,19 @@ fn reduce_complete_candidates_group<Base: SudokuBase>(
 
 #[cfg(test)]
 mod tests {
+    use log::info;
+
     use super::*;
     use crate::base::consts::*;
     use crate::cell::Candidates;
     use crate::test_util::init_test_logger;
+
+    // TODO: test against v1
+    //  v2 bails early on the first locked set, v1 finds all posible chained locked set deductions in a single pass.
+    //  If we apply v2 until no progress is made, it should be comparable.
+    // TODO: exhaustive test for base2
+    //  (2^4)^4=65536 cases
+    //  calculate statistics for number of evaluated sets
 
     #[test]
     fn test_reduce_candidates_group() {
@@ -370,6 +406,349 @@ mod tests {
                 reduced_candidates_group_data, expected_reduced_candidate_group_data,
                 "input #{i}: {candidates_group_data:?}"
             );
+        }
+    }
+
+    type TestCase<Base> = (&'static str, CandidatesGroup<Base>, CandidatesGroup<Base>);
+
+    fn candidates_group_from_test_data<Base: SudokuBase>(
+        candidates_group_data: Vec<Vec<u8>>,
+    ) -> CandidatesGroup<Base> {
+        CandidatesGroup::try_from(
+            candidates_group_data
+                .into_iter()
+                .map(|candidates| Candidates::try_from(candidates).unwrap())
+                .collect::<Vec<_>>(),
+        )
+        .unwrap()
+    }
+
+    fn assert_reduce_complete_candidates_group<Base: SudokuBase>(
+        (base_test_case_name, input, expected_output): TestCase<Base>,
+    ) {
+        assert_reduce_complete_candidates_group_single(
+            base_test_case_name,
+            &input,
+            &expected_output,
+        );
+        assert_reduce_complete_candidates_group_single(
+            &format!("{base_test_case_name} - reversed"),
+            &input.clone().reverse(),
+            &expected_output.clone().reverse(),
+        );
+        // TODO: shuffle candidate positions
+        // TODO: re-label candidates
+    }
+
+    fn assert_reduce_complete_candidates_group_single<Base: SudokuBase>(
+        test_case_name: &str,
+        input: &CandidatesGroup<Base>,
+        expected_output: &CandidatesGroup<Base>,
+    ) {
+        info!("Test case: {test_case_name}");
+
+        let actual_output = reduce_complete_candidates_group(input.clone());
+
+        assert_eq!(
+            &actual_output, expected_output,
+            "Test case {test_case_name}:\n{actual_output}!=\n{expected_output}"
+        );
+    }
+
+    #[test]
+    fn test_reduce_complete_candidates_group_base_2() {
+        type Base = Base2;
+
+        init_test_logger();
+
+        let test_cases: Vec<TestCase<Base>> = vec![
+            (
+                "Naked single (2) - filled",
+                vec![
+                    //
+                    vec![2],
+                    vec![1, 2, 3, 4],
+                    vec![1, 2, 3, 4],
+                    vec![1, 2, 3, 4],
+                ],
+                vec![
+                    //
+                    vec![2],
+                    vec![1, 3, 4],
+                    vec![1, 3, 4],
+                    vec![1, 3, 4],
+                ],
+            ),
+            (
+                "Naked single (2) - sparse",
+                vec![
+                    //
+                    vec![2],
+                    vec![1, 2],
+                    vec![2, 3],
+                    vec![3, 4],
+                ],
+                vec![
+                    //
+                    vec![2],
+                    vec![1],
+                    vec![3],
+                    vec![3, 4],
+                ],
+            ),
+            (
+                "Hidden single (2) - filled",
+                vec![
+                    //
+                    vec![1, 2, 3, 4],
+                    vec![1, 3, 4],
+                    vec![1, 3, 4],
+                    vec![1, 3, 4],
+                ],
+                vec![
+                    //
+                    vec![2],
+                    vec![1, 3, 4],
+                    vec![1, 3, 4],
+                    vec![1, 3, 4],
+                ],
+            ),
+            (
+                "Hidden single (2) - sparse",
+                vec![
+                    //
+                    vec![2, 3],
+                    vec![1, 3],
+                    vec![3, 4],
+                    vec![1, 4],
+                ],
+                vec![
+                    //
+                    vec![2],
+                    vec![1, 3],
+                    vec![3, 4],
+                    vec![1, 4],
+                ],
+            ),
+            (
+                "Naked pair (2,4) - filled",
+                vec![
+                    //
+                    vec![2, 4],
+                    vec![2, 4],
+                    vec![1, 2, 3, 4],
+                    vec![1, 2, 3, 4],
+                ],
+                vec![
+                    //
+                    vec![2, 4],
+                    vec![2, 4],
+                    vec![1, 3],
+                    vec![1, 3],
+                ],
+            ),
+            // TODO: add real-world cases
+        ]
+        .into_iter()
+        .map(|(test_case_name, input, expected_output)| {
+            (
+                test_case_name,
+                candidates_group_from_test_data(input),
+                candidates_group_from_test_data(expected_output),
+            )
+        })
+        .collect();
+
+        for test_case in test_cases {
+            assert_reduce_complete_candidates_group(test_case);
+        }
+    }
+
+    #[test]
+    fn test_reduce_complete_candidates_group_base_3() {
+        type Base = Base3;
+
+        init_test_logger();
+
+        let test_cases: Vec<TestCase<Base>> = vec![
+            (
+                "Naked single (5) - filled",
+                vec![
+                    //
+                    vec![5],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                ],
+                vec![
+                    //
+                    vec![5],
+                    vec![1, 2, 3, 4, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 6, 7, 8, 9],
+                ],
+            ),
+            (
+                "Naked single (5) - sparse",
+                vec![
+                    //
+                    vec![5],
+                    vec![1, 2],
+                    vec![1, 3],
+                    vec![2, 3],
+                    vec![4, 5],
+                    vec![5, 6],
+                    vec![7, 8],
+                    vec![8, 9],
+                    vec![7, 9],
+                ],
+                vec![
+                    //
+                    vec![5],
+                    vec![1, 2],
+                    vec![1, 3],
+                    vec![2, 3],
+                    vec![4],
+                    vec![6],
+                    vec![7, 8],
+                    vec![8, 9],
+                    vec![7, 9],
+                ],
+            ),
+            (
+                "Hidden single (5) - filled",
+                vec![
+                    //
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 6, 7, 8, 9],
+                ],
+                vec![
+                    //
+                    vec![5],
+                    vec![1, 2, 3, 4, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 6, 7, 8, 9],
+                ],
+            ),
+            (
+                "Hidden single (5) - sparse",
+                vec![
+                    //
+                    vec![4, 5],
+                    vec![1, 2],
+                    vec![1, 3],
+                    vec![2, 3],
+                    vec![4, 6],
+                    vec![4, 6],
+                    vec![7, 8],
+                    vec![8, 9],
+                    vec![7, 9],
+                ],
+                vec![
+                    //
+                    vec![5],
+                    vec![1, 2],
+                    vec![1, 3],
+                    vec![2, 3],
+                    vec![4, 6],
+                    vec![4, 6],
+                    vec![7, 8],
+                    vec![8, 9],
+                    vec![7, 9],
+                ],
+            ),
+            (
+                "Naked pair (4,6) - filled",
+                vec![
+                    //
+                    vec![4, 6],
+                    vec![4, 6],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                ],
+                vec![
+                    //
+                    vec![4, 6],
+                    vec![4, 6],
+                    vec![1, 2, 3, 5, 7, 8, 9],
+                    vec![1, 2, 3, 5, 7, 8, 9],
+                    vec![1, 2, 3, 5, 7, 8, 9],
+                    vec![1, 2, 3, 5, 7, 8, 9],
+                    vec![1, 2, 3, 5, 7, 8, 9],
+                    vec![1, 2, 3, 5, 7, 8, 9],
+                    vec![1, 2, 3, 5, 7, 8, 9],
+                ],
+            ),
+            (
+                "Hidden pair (4,6) - filled",
+                vec![
+                    //
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 5, 7, 8, 9],
+                    vec![1, 2, 3, 5, 7, 8, 9],
+                    vec![1, 2, 3, 5, 7, 8, 9],
+                    vec![1, 2, 3, 5, 7, 8, 9],
+                    vec![1, 2, 3, 5, 7, 8, 9],
+                    vec![1, 2, 3, 5, 7, 8, 9],
+                    vec![1, 2, 3, 5, 7, 8, 9],
+                ],
+                vec![
+                    //
+                    vec![4, 6],
+                    vec![4, 6],
+                    vec![1, 2, 3, 5, 7, 8, 9],
+                    vec![1, 2, 3, 5, 7, 8, 9],
+                    vec![1, 2, 3, 5, 7, 8, 9],
+                    vec![1, 2, 3, 5, 7, 8, 9],
+                    vec![1, 2, 3, 5, 7, 8, 9],
+                    vec![1, 2, 3, 5, 7, 8, 9],
+                    vec![1, 2, 3, 5, 7, 8, 9],
+                ],
+            ),
+            // TODO: add remaining artificial test cases
+            //  remaining sets + filled/sparse
+            // TODO: add real-world test cases
+        ]
+        .into_iter()
+        .map(|(test_case_name, input, expected_output)| {
+            (
+                test_case_name,
+                candidates_group_from_test_data(input),
+                candidates_group_from_test_data(expected_output),
+            )
+        })
+        .collect();
+
+        for test_case in test_cases {
+            assert_reduce_complete_candidates_group(test_case);
         }
     }
 }
