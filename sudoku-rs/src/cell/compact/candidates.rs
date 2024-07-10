@@ -4,6 +4,7 @@ use std::mem::size_of;
 
 use anyhow::ensure;
 use iter_combinations::CandidatesCombinationsIter;
+use itertools::Itertools;
 use num::traits::{CheckedShl, ConstOne, ConstZero, WrappingSub};
 use num::{PrimInt, Zero};
 use serde::ser::SerializeSeq;
@@ -419,15 +420,15 @@ impl<Base: SudokuBase> TryFrom<DynamicCandidates> for Candidates<Base> {
 impl<Base: SudokuBase> Display for Candidates<Base> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         if f.alternate() {
-            write!(f, "{:?}", self.to_vec_value())
+            write!(f, "{}", self.to_vec_value().into_iter().join(","))
         } else {
             write!(
                 f,
-                "{:?}",
+                "{}",
                 self.to_vec_value()
                     .into_iter()
                     .map(|value| value.to_string())
-                    .collect::<String>()
+                    .join(",")
             )
         }
     }
