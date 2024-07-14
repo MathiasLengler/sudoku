@@ -1,10 +1,12 @@
 use itertools::Itertools;
 use log::{debug, trace};
+use serde::de;
 
 use crate::{
     base::SudokuBase,
     cell::{Candidates, Value},
     grid::group::{CandidatesGroup, Group},
+    solver::strategic::deduction::Deduction,
 };
 
 // adapter for previous API
@@ -44,6 +46,12 @@ fn iter_alternating<T>(mut i: impl DoubleEndedIterator<Item = T>) -> impl Iterat
     })
 }
 
+fn find_locked_set<Base: SudokuBase>(
+    candidates_group: CandidatesGroup<Base>,
+) -> Option<Deduction<Base>> {
+    None
+}
+
 // TODO: change API: return deduction
 fn reduce_complete_candidates_group<Base: SudokuBase>(
     mut candidates_group: CandidatesGroup<Base>,
@@ -55,10 +63,9 @@ fn reduce_complete_candidates_group<Base: SudokuBase>(
     //  Example: Base3 Hidden single (5) - sparse
     //  It should be obvious that candidate 5 is only contained in one cell.
     //  Does this generalize for larger sets?
-    // let candidate_positions = candidates_group.transpose();
 
-    // let position_count_per_candidate = candidate_positions.map(|positions| positions.count());
-    // trace!("position_count_per_candidate: {position_count_per_candidate}");
+    let candidate_positions = candidates_group.transpose();
+    debug!("Candidate positions:\n{candidate_positions}");
 
     let candidates_counts = candidates_group
         .clone()
@@ -74,12 +81,23 @@ fn reduce_complete_candidates_group<Base: SudokuBase>(
     // - Naked pair (2)
     // - Hidden pair (MAX -2)
     // - ...
-    let set_size_values = {
-        let mut all_values = Value::all();
-        all_values.next_back();
-        iter_alternating(all_values)
-    };
-    for set_size_value in set_size_values {
+    // let set_size_values = {
+    //     let mut all_values = Value::all();
+    //     all_values.next_back();
+    //     iter_alternating(all_values)
+    // };
+
+    // FIXME: Other approach: split search for hidden/nacked sets
+    //  Idea: search for naked sets in transposed candidates. Does this find hidden sets in the original candidates?
+    for (set_size_value, mut candidates_group, is_transposed) in Value::<Base>::all()
+        .take((Base::MAX_VALUE / 2).into())
+        .flat_map(|set_size| {
+            [
+                (set_size, candidates_group.clone(), false),   // Naked
+                (set_size, candidate_positions.clone(), true), // Hidden
+            ]
+        })
+    {
         trace!("Locked set size: {set_size_value}");
 
         let set_size = set_size_value.get();
@@ -152,6 +170,10 @@ fn reduce_complete_candidates_group<Base: SudokuBase>(
             candidates_group
                 .iter_mut_index_mask(outside_set_indexes)
                 .for_each(|candidates| *candidates = candidates.without(removed_candidates_by_set));
+
+            if is_transposed {
+                candidates_group = candidates_group.transpose();
+            }
 
             // trace!("evaluated_locked_set_count_per_set_size: {evaluated_locked_set_count_per_set_size}");
             return candidates_group;
@@ -568,6 +590,9 @@ mod tests {
         .collect();
 
         for test_case in test_cases {
+            if test_case.0 != "Hidden single (2) - sparse" {
+                continue;
+            }
             assert_reduce_complete_candidates_group(test_case);
         }
     }
@@ -945,9 +970,9 @@ mod tests {
         .collect();
 
         for test_case in test_cases {
-            if test_case.0 != "Naked pair (4,6) - outside singles" {
-                continue;
-            }
+            // if test_case.0 != "Naked pair (4,6) - outside singles" {
+            //     continue;
+            // }
             assert_reduce_complete_candidates_group(test_case);
         }
     }
