@@ -88,7 +88,7 @@ fn reduce_complete_candidates_group<Base: SudokuBase>(
             .filter(|&(_i, candidates_count)| {
                 // Set members for set sizes > 1 require at least 2 candidates.
                 if set_size == 1 {
-                    candidates_count <= set_size
+                    candidates_count == 1
                 } else {
                     (2..=set_size).contains(&candidates_count)
                 }
