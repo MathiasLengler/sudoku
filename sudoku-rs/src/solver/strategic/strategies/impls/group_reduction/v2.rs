@@ -1329,6 +1329,33 @@ mod tests {
                     vec![1, 9],
                 ],
             ),
+            (
+                "Sample 'Three Hidden Pairs': Hidden pair 2,4 in block 1,0",
+                vec![
+                    //
+                    vec![8],
+                    vec![1],
+                    vec![2, 4, 5, 6],
+                    vec![6, 9],
+                    vec![3, 7, 9],
+                    vec![2, 3, 4, 6, 7],
+                    vec![5, 9],
+                    vec![3, 5, 7, 9],
+                    vec![3, 5, 7],
+                ],
+                vec![
+                    //
+                    vec![8],
+                    vec![1],
+                    vec![2, 4],
+                    vec![6, 9],
+                    vec![3, 7, 9],
+                    vec![2, 4],
+                    vec![5, 9],
+                    vec![3, 5, 7, 9],
+                    vec![3, 5, 7],
+                ],
+            ),
         ]
         // TODO: add real-world test cases
         .into_iter()

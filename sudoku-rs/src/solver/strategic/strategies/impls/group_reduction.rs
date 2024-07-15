@@ -468,12 +468,6 @@ mod tests {
                 ((4, 6), vec![6, 9]),
                 ((5, 6), vec![1, 5, 9]),
             ],
-            vec![
-                // Naked quad 3,5,7,9 in block 1,0
-                ((3, 2), vec![5]),
-                ((4, 0), vec![9]),
-                ((4, 2), vec![3, 7]),
-            ],
         ]
         .into_iter()
         .map(|positioned_candidates| {
