@@ -955,6 +955,33 @@ mod tests {
                     vec![1, 2, 4, 6, 8, 9],
                 ],
             ),
+            (
+                "Naked tripple (3,5,7) - distributed - outside sparse",
+                vec![
+                    //
+                    vec![3, 5],
+                    vec![5, 7],
+                    vec![3, 7],
+                    vec![1, 2, 3],
+                    vec![2, 4],
+                    vec![4, 6],
+                    vec![6, 8],
+                    vec![8, 9],
+                    vec![1, 9],
+                ],
+                vec![
+                    //
+                    vec![3, 5],
+                    vec![5, 7],
+                    vec![3, 7],
+                    vec![1, 2],
+                    vec![2, 4],
+                    vec![4, 6],
+                    vec![6, 8],
+                    vec![8, 9],
+                    vec![1, 9],
+                ],
+            ),
             // TODO: add remaining artificial test cases
             //  remaining sets + filled/sparse
             // TODO: add real-world test cases
