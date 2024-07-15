@@ -982,10 +982,118 @@ mod tests {
                     vec![1, 9],
                 ],
             ),
-            // TODO: add remaining artificial test cases
-            //  remaining sets + filled/sparse
-            // TODO: add real-world test cases
+            (
+                "Hidden tripple (3,5,7) - complete - outside filled",
+                vec![
+                    //
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
+                ],
+                vec![
+                    //
+                    vec![3, 5, 7],
+                    vec![3, 5, 7],
+                    vec![3, 5, 7],
+                    vec![1, 2, 4, 6, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
+                ],
+            ),
+            (
+                "Hidden tripple (3,5,7) - complete - outside sparse",
+                vec![
+                    //
+                    vec![1, 3, 5, 7],
+                    vec![3, 5, 7],
+                    vec![3, 5, 7],
+                    vec![1, 2],
+                    vec![2, 4],
+                    vec![4, 6],
+                    vec![6, 8],
+                    vec![8, 9],
+                    vec![1, 9],
+                ],
+                vec![
+                    //
+                    vec![3, 5, 7],
+                    vec![3, 5, 7],
+                    vec![3, 5, 7],
+                    vec![1, 2],
+                    vec![2, 4],
+                    vec![4, 6],
+                    vec![6, 8],
+                    vec![8, 9],
+                    vec![1, 9],
+                ],
+            ),
+            (
+                "Hidden tripple (3,5,7) - distributed - outside filled",
+                vec![
+                    //
+                    vec![1, 2, 3, 4, 5, 6, 8, 9],
+                    vec![1, 2, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 6, 7, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
+                ],
+                vec![
+                    //
+                    vec![3, 5],
+                    vec![5, 7],
+                    vec![3, 7],
+                    vec![1, 2, 4, 6, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
+                    vec![1, 2, 4, 6, 8, 9],
+                ],
+            ),
+            (
+                "Hidden tripple (3,5,7) - distributed - outside sparse",
+                vec![
+                    //
+                    vec![1, 3, 5],
+                    vec![5, 7],
+                    vec![3, 7],
+                    vec![1, 2],
+                    vec![2, 4],
+                    vec![4, 6],
+                    vec![6, 8],
+                    vec![8, 9],
+                    vec![1, 9],
+                ],
+                vec![
+                    //
+                    vec![3, 5],
+                    vec![5, 7],
+                    vec![3, 7],
+                    vec![1, 2],
+                    vec![2, 4],
+                    vec![4, 6],
+                    vec![6, 8],
+                    vec![8, 9],
+                    vec![1, 9],
+                ],
+            ),
         ]
+        // TODO: add remaining artificial test cases
+        //  remaining sets + filled/sparse
+        // TODO: add real-world test cases
         .into_iter()
         .map(|(test_case_name, input, expected_output)| {
             (
