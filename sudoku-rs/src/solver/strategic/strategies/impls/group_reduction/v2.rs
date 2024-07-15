@@ -58,22 +58,25 @@ fn reduce_complete_candidates_group<Base: SudokuBase>(
 ) -> CandidatesGroup<Base> {
     debug!("Searching for locked set in:\n{candidates_group}");
 
+    let candidates_counts = candidates_group
+        .clone()
+        .map(|candidates| candidates.count());
+    trace!("Candidates counts: {candidates_counts}");
+
     // TODO: calculcate number cells per Value
     //  could be usefull to pre-filter candidates to be considered
     //  Example: Base3 Hidden single (5) - sparse
     //  It should be obvious that candidate 5 is only contained in one cell.
     //  Does this generalize for larger sets?
-
     let candidate_positions = candidates_group.transpose();
     debug!("Candidate positions:\n{candidate_positions}");
 
-    let candidates_counts = candidates_group
+    let candidates_position_counts = candidate_positions
         .clone()
         .map(|candidates| candidates.count());
+    trace!("Candidates position counts: {candidates_position_counts}");
 
-    trace!("Candidates counts: {candidates_counts}");
-
-    // let mut evaluated_locked_set_count_per_set_size = Group::<Base, u32>::default();
+    let mut evaluated_locked_set_count_per_set_size = Group::<Base, u32>::default();
 
     // Search order:
     // - Naked single (1)
@@ -89,16 +92,30 @@ fn reduce_complete_candidates_group<Base: SudokuBase>(
 
     // FIXME: Other approach: split search for hidden/nacked sets
     //  Idea: search for naked sets in transposed candidates. Does this find hidden sets in the original candidates?
-    for (set_size_value, mut candidates_group, is_transposed) in Value::<Base>::all()
+    for (set_size_value, candidates_group, candidates_counts, is_transposed) in Value::<Base>::all()
         .take((Base::MAX_VALUE / 2).into())
         .flat_map(|set_size| {
             [
-                (set_size, candidates_group.clone(), false),   // Naked
-                (set_size, candidate_positions.clone(), true), // Hidden
+                (set_size, &candidates_group, &candidates_counts, false), // Naked
+                (
+                    set_size,
+                    &candidate_positions,
+                    &candidates_position_counts,
+                    true,
+                ), // Hidden
             ]
         })
+        .filter(
+            |(set_size_value, _candidates_group, _candidates_counts, is_transposed)| {
+                !(Base::BASE % 2 == 0 // Base is even
+                    && *is_transposed
+                    && set_size_value.get() == Base::MAX_VALUE / 2)
+            },
+        )
     {
-        trace!("Locked set size: {set_size_value}");
+        trace!(
+            "Locked set size {set_size_value}, transposed: {is_transposed}:\n{candidates_group}"
+        );
 
         let set_size = set_size_value.get();
         let potential_locked_set_indexes = candidates_counts
@@ -123,9 +140,15 @@ fn reduce_complete_candidates_group<Base: SudokuBase>(
         //  This smells like a tree pruning search.
 
         for locked_set_indexes in potential_locked_set_indexes.combinations(set_size_value) {
-            // *evaluated_locked_set_count_per_set_size.get_mut(set_size_value.into()) += 1;
+            *evaluated_locked_set_count_per_set_size.get_mut(if is_transposed {
+                (Value::<Base>::max().get() - set_size_value.get())
+                    .try_into()
+                    .unwrap()
+            } else {
+                set_size_value.into()
+            }) += 1;
 
-            trace!("Evaluating locked set indexes {locked_set_indexes}",);
+            trace!("Evaluating locked set indexes {locked_set_indexes}");
 
             let locked_candidates = candidates_group
                 .iter_index_mask(locked_set_indexes)
@@ -167,6 +190,7 @@ fn reduce_complete_candidates_group<Base: SudokuBase>(
                     .iter_index_mask(locked_set_indexes)
                     .join("\n")
             );
+            let mut candidates_group = candidates_group.clone();
             candidates_group
                 .iter_mut_index_mask(outside_set_indexes)
                 .for_each(|candidates| *candidates = candidates.without(removed_candidates_by_set));
@@ -175,11 +199,12 @@ fn reduce_complete_candidates_group<Base: SudokuBase>(
                 candidates_group = candidates_group.transpose();
             }
 
-            // trace!("evaluated_locked_set_count_per_set_size: {evaluated_locked_set_count_per_set_size}");
+            trace!("evaluated_locked_set_count_per_set_size: {evaluated_locked_set_count_per_set_size}");
             return candidates_group;
         }
     }
 
+    debug!("No locked set found");
     candidates_group
 }
 
@@ -590,9 +615,6 @@ mod tests {
         .collect();
 
         for test_case in test_cases {
-            if test_case.0 != "Hidden single (2) - sparse" {
-                continue;
-            }
             assert_reduce_complete_candidates_group(test_case);
         }
     }
@@ -852,7 +874,7 @@ mod tests {
                 vec![
                     //
                     vec![4, 5, 6],
-                    vec![4, 5, 6],
+                    vec![4, 6],
                     vec![1, 2],
                     vec![2, 3],
                     vec![1, 3],
