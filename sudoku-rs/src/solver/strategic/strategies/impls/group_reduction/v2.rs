@@ -113,6 +113,7 @@ fn reduce_complete_candidates_group<Base: SudokuBase>(
             },
         )
     {
+        // TODO: clean up logging for transposed/hidden sets
         trace!(
             "Locked set size {set_size_value}, transposed: {is_transposed}:\n{candidates_group}"
         );
@@ -1202,6 +1203,114 @@ mod tests {
                     vec![6, 8],
                     vec![2, 8],
                     vec![1, 3, 4],
+                    vec![3, 5],
+                    vec![5, 7],
+                    vec![7, 9],
+                    vec![1, 9],
+                ],
+                vec![
+                    //
+                    vec![2, 4],
+                    vec![4, 6],
+                    vec![6, 8],
+                    vec![2, 8],
+                    vec![1, 3],
+                    vec![3, 5],
+                    vec![5, 7],
+                    vec![7, 9],
+                    vec![1, 9],
+                ],
+            ),
+            (
+                "Hidden quad (2,4,6,8) - complete - outside filled",
+                vec![
+                    //
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    vec![1, 3, 5, 7, 9],
+                    vec![1, 3, 5, 7, 9],
+                    vec![1, 3, 5, 7, 9],
+                    vec![1, 3, 5, 7, 9],
+                    vec![1, 3, 5, 7, 9],
+                ],
+                vec![
+                    //
+                    vec![2, 4, 6, 8],
+                    vec![2, 4, 6, 8],
+                    vec![2, 4, 6, 8],
+                    vec![2, 4, 6, 8],
+                    vec![1, 3, 5, 7, 9],
+                    vec![1, 3, 5, 7, 9],
+                    vec![1, 3, 5, 7, 9],
+                    vec![1, 3, 5, 7, 9],
+                    vec![1, 3, 5, 7, 9],
+                ],
+            ),
+            (
+                "Hidden quad (2,4,6,8) - complete - outside sparse",
+                vec![
+                    //
+                    vec![1, 2, 4, 6, 8],
+                    vec![2, 4, 6, 8],
+                    vec![2, 4, 6, 8],
+                    vec![2, 4, 6, 8],
+                    vec![1, 3],
+                    vec![3, 5],
+                    vec![5, 7],
+                    vec![7, 9],
+                    vec![1, 9],
+                ],
+                vec![
+                    //
+                    vec![2, 4, 6, 8],
+                    vec![2, 4, 6, 8],
+                    vec![2, 4, 6, 8],
+                    vec![2, 4, 6, 8],
+                    vec![1, 3],
+                    vec![3, 5],
+                    vec![5, 7],
+                    vec![7, 9],
+                    vec![1, 9],
+                ],
+            ),
+            (
+                "Hidden quad (2,4,6,8) - distributed - outside filled",
+                vec![
+                    //
+                    vec![1, 2, 3, 4, 5, 7, 9],
+                    vec![1, 3, 4, 5, 6, 7, 9],
+                    vec![1, 3, 5, 6, 7, 8, 9],
+                    vec![1, 2, 3, 5, 7, 8, 9],
+                    vec![1, 3, 5, 7, 9],
+                    vec![1, 3, 5, 7, 9],
+                    vec![1, 3, 5, 7, 9],
+                    vec![1, 3, 5, 7, 9],
+                    vec![1, 3, 5, 7, 9],
+                ],
+                vec![
+                    //
+                    vec![2, 4],
+                    vec![4, 6],
+                    vec![6, 8],
+                    vec![2, 8],
+                    vec![1, 3, 5, 7, 9],
+                    vec![1, 3, 5, 7, 9],
+                    vec![1, 3, 5, 7, 9],
+                    vec![1, 3, 5, 7, 9],
+                    vec![1, 3, 5, 7, 9],
+                ],
+            ),
+            (
+                "Hidden quad (2,4,6,8) - distributed - outside sparse",
+                vec![
+                    //
+                    vec![1, 2, 4],
+                    vec![4, 6],
+                    vec![6, 8],
+                    vec![2, 8],
+                    vec![1, 3],
                     vec![3, 5],
                     vec![5, 7],
                     vec![7, 9],
