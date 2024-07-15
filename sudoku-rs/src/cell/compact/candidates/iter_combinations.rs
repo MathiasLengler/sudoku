@@ -158,7 +158,7 @@ mod tests {
         use super::*;
 
         #[test]
-        fn test_iter() {
+        fn test_first_candidates_combinations_iter() {
             let iter = FirstCandidatesCombinationsIter::<Base2>::new(
                 1.try_into().unwrap(),
                 3.try_into().unwrap(),
@@ -210,6 +210,38 @@ mod tests {
                     vec![1, 4].try_into().unwrap(),
                     vec![2, 4].try_into().unwrap(),
                     vec![3, 4].try_into().unwrap(),
+                ],
+            );
+            let iter = FirstCandidatesCombinationsIter::<Base2>::new(
+                3.try_into().unwrap(),
+                4.try_into().unwrap(),
+            );
+            itertools::assert_equal(
+                iter,
+                vec![
+                    vec![1, 2, 3].try_into().unwrap(),
+                    vec![1, 2, 4].try_into().unwrap(),
+                    vec![1, 3, 4].try_into().unwrap(),
+                    vec![2, 3, 4].try_into().unwrap(),
+                ],
+            );
+            let iter = FirstCandidatesCombinationsIter::<Base3>::new(
+                3.try_into().unwrap(),
+                5.try_into().unwrap(),
+            );
+            itertools::assert_equal(
+                iter,
+                vec![
+                    vec![1, 2, 3].try_into().unwrap(),
+                    vec![1, 2, 4].try_into().unwrap(),
+                    vec![1, 3, 4].try_into().unwrap(),
+                    vec![2, 3, 4].try_into().unwrap(),
+                    vec![1, 2, 5].try_into().unwrap(),
+                    vec![1, 3, 5].try_into().unwrap(),
+                    vec![2, 3, 5].try_into().unwrap(),
+                    vec![1, 4, 5].try_into().unwrap(),
+                    vec![2, 4, 5].try_into().unwrap(),
+                    vec![3, 4, 5].try_into().unwrap(),
                 ],
             );
         }

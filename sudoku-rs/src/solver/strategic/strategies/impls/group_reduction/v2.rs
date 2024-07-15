@@ -1330,8 +1330,6 @@ mod tests {
                 ],
             ),
         ]
-        // TODO: add remaining artificial test cases
-        //  remaining sets + filled/sparse
         // TODO: add real-world test cases
         .into_iter()
         .map(|(test_case_name, input, expected_output)| {
