@@ -138,7 +138,7 @@ fn reduce_complete_candidates_group<Base: SudokuBase>(
         // TODO: optimization: build locked set iteratively for set_size_value > 2
         //  idea: if two cells combine to a locked candidate count greater than set_size_value, we can skip all combinations which contain those two cells.
         //  This smells like a tree pruning search.
-
+        //  additional criteria: only consider a candidates index if it has some overlap with the current locked set
         for locked_set_indexes in potential_locked_set_indexes.combinations(set_size_value) {
             *evaluated_locked_set_count_per_set_size.get_mut(if is_transposed {
                 (Value::<Base>::max().get() - set_size_value.get())
