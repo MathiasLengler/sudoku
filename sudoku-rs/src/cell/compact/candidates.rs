@@ -1,6 +1,7 @@
 use std::fmt;
 use std::fmt::{Binary, Display, Formatter};
 use std::mem::size_of;
+use std::ops::RangeBounds;
 
 use anyhow::ensure;
 use iter_combinations::CandidatesCombinationsIter;
@@ -61,6 +62,7 @@ impl<Base: SudokuBase> Candidates<Base> {
         this
     }
 
+    // TODO: refactor arg `candidate: impl Into<Coordinate<Base>>`
     pub fn with_single(candidate: Value<Base>) -> Self {
         let mut this = Self::new();
         this.set(candidate, true);
@@ -69,6 +71,41 @@ impl<Base: SudokuBase> Candidates<Base> {
 
     pub fn all() -> Self {
         Self::with_integral_unchecked(Self::all_candidates_mask())
+    }
+
+    pub fn with_range<C: Into<Coordinate<Base>> + Copy>(
+        candidate_range: impl RangeBounds<C>,
+    ) -> Self {
+        use std::ops::Bound;
+
+        let start_bound: Bound<Coordinate<Base>> = candidate_range.start_bound().map(|&c| c.into());
+        let end_bound: Bound<Coordinate<Base>> = candidate_range.end_bound().map(|&c| c.into());
+
+        let excluded_mask = match start_bound {
+            // TODO: add Coordinate::{inc|dec}() -> Option<Coordinate>
+            Bound::Included(start) if start == Coordinate::default() => {
+                Base::CandidatesIntegral::ZERO
+            }
+            Bound::Included(start) => Self::all_less_than_or_equal_candidates_mask(
+                // Safety: the previous match arm checks for zero. Therefore, the expression remains in-bounds and doesn't underflow.
+                unsafe { Coordinate::new_unchecked(start.get() - 1) },
+            ),
+            Bound::Excluded(start) => Self::all_less_than_or_equal_candidates_mask(start),
+            Bound::Unbounded => Base::CandidatesIntegral::ZERO,
+        };
+
+        let included_mask = match end_bound {
+            Bound::Included(end) => Self::all_less_than_or_equal_candidates_mask(end),
+            Bound::Excluded(end) if end == Coordinate::default() => Base::CandidatesIntegral::ZERO,
+            Bound::Excluded(end) => Self::all_less_than_or_equal_candidates_mask(
+                // Safety: the previous match arm checks for zero. Therefore, the expression remains in-bounds and doesn't underflow.
+                unsafe { Coordinate::new_unchecked(end.get() - 1) },
+            ),
+            Bound::Unbounded => Self::all_candidates_mask(),
+        };
+
+        Self::with_integral_unchecked(included_mask)
+            .without(Self::with_integral_unchecked(excluded_mask))
     }
 
     pub fn block_segmentation_mask(segment_index: BlockCoordinate<Base>) -> Self {
@@ -136,6 +173,20 @@ impl<Base: SudokuBase> Candidates<Base> {
             self.bits &= !candidate_mask;
         }
 
+        self.debug_assert();
+    }
+
+    pub fn set_range<C: Into<Coordinate<Base>> + Copy>(
+        &mut self,
+        candidate_range: impl RangeBounds<C>,
+        enabled: bool,
+    ) {
+        let range_candidates = Self::with_range(candidate_range);
+        if enabled {
+            *self = self.union(range_candidates);
+        } else {
+            *self = self.without(range_candidates);
+        }
         self.debug_assert();
     }
 
@@ -309,9 +360,14 @@ impl<Base: SudokuBase> Candidates<Base> {
 impl<Base: SudokuBase> Candidates<Base> {
     // TODO: benchmark/view assembly; should evaluate to a constant for a specific base
     fn all_candidates_mask() -> Base::CandidatesIntegral {
+        Self::all_less_than_or_equal_candidates_mask(Coordinate::max())
+    }
+    fn all_less_than_or_equal_candidates_mask(
+        candidate: Coordinate<Base>,
+    ) -> Base::CandidatesIntegral {
         let zero = Base::CandidatesIntegral::ZERO;
         let one = Base::CandidatesIntegral::ONE;
-        one.checked_shl(u32::from(Base::MAX_VALUE))
+        one.checked_shl(u32::from(candidate.get() + 1))
             .unwrap_or(zero)
             .wrapping_sub(&one)
     }
@@ -519,6 +575,70 @@ mod tests {
                 Candidates::<Base5>::all().to_vec_u8(),
                 (1..=25).collect::<Vec<u8>>()
             );
+        }
+
+        #[test]
+        fn test_with_range() {
+            use std::fmt::Debug;
+            use std::ops::{Bound, RangeBounds};
+
+            fn assert_range_eq<Base: SudokuBase>(
+                range: impl RangeBounds<Value<Base>> + Clone + Debug,
+            ) {
+                let candidates = Candidates::with_range(range.clone());
+                assert!(candidates
+                    .into_iter()
+                    .all(|candidate| range.contains(&candidate)));
+                let inverted_candidates = candidates.invert();
+                assert!(inverted_candidates
+                    .into_iter()
+                    .all(|candidate| !range.contains(&candidate)));
+            }
+
+            fn all_bounds<Base: SudokuBase>() -> impl Iterator<Item = Bound<Value<Base>>> + Clone {
+                Value::all()
+                    .map(Bound::Included)
+                    .chain(Value::all().map(Bound::Excluded))
+                    .chain(std::iter::once(Bound::Unbounded))
+            }
+
+            // Sample tests
+            assert_eq!(
+                Candidates::<Base2>::with_range::<Value<_>>(..),
+                Candidates::all()
+            );
+            assert_eq!(
+                Candidates::<Base2>::with_range::<Value<_>>(Value::default()..),
+                Candidates::all()
+            );
+            assert_eq!(
+                Candidates::<Base2>::with_range::<Value<_>>(..=Value::max()),
+                Candidates::all()
+            );
+            assert_eq!(
+                Candidates::<Base2>::with_range::<Value<_>>(Value::default()..=Value::max()),
+                Candidates::all()
+            );
+            assert_eq!(
+                Candidates::<Base2>::with_range::<Value<_>>(..=Value::default()),
+                Candidates::with_single(Value::default())
+            );
+            assert_eq!(
+                Candidates::<Base2>::with_range::<Value<_>>(Value::default()..=Value::default()),
+                Candidates::with_single(Value::default())
+            );
+            assert_eq!(
+                Candidates::<Base2>::with_range::<Value<_>>(Value::default()..Value::try_from(2).unwrap()),
+                Candidates::with_single(Value::default())
+            );
+
+            // Exhasitve tests for base 2 and 3
+            for range in all_bounds::<Base2>().cartesian_product(all_bounds()) {
+                assert_range_eq(range);
+            }
+            for range in all_bounds::<Base3>().cartesian_product(all_bounds()) {
+                assert_range_eq(range);
+            }
         }
 
         #[test]
