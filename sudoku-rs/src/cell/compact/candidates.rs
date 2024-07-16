@@ -628,7 +628,9 @@ mod tests {
                 Candidates::with_single(Value::default())
             );
             assert_eq!(
-                Candidates::<Base2>::with_range::<Value<_>>(Value::default()..Value::try_from(2).unwrap()),
+                Candidates::<Base2>::with_range::<Value<_>>(
+                    Value::default()..Value::try_from(2).unwrap()
+                ),
                 Candidates::with_single(Value::default())
             );
 
@@ -755,6 +757,31 @@ mod tests {
             assert_eq!(candidates.to_vec_u8(), vec![2]);
             candidates.set(value2, false);
             assert_eq!(candidates.to_vec_u8(), Vec::<u8>::new());
+        }
+
+        #[test]
+        fn test_set_range() {
+            let mut candidates = Candidates::<Base2>::new();
+            let value2 = Value::try_from(2).unwrap();
+            let all = ..;
+            let first_half = ..=value2;
+            let second_half = value2..;
+
+            let candidates_empty = Candidates::new();
+            let candidates_first_half = vec![1, 2].try_into().unwrap();
+            let candidates_second_half = vec![3, 4].try_into().unwrap();
+            let candidates_all = Candidates::all();
+
+            candidates.set_range::<Value<_>>(all, false);
+            assert_eq!(candidates, candidates_empty);
+            candidates.set_range(first_half, true);
+            assert_eq!(candidates, candidates_first_half);
+            candidates.set_range(second_half.clone(), true);
+            assert_eq!(candidates, candidates_all);
+            candidates.set_range(first_half, false);
+            assert_eq!(candidates, candidates_second_half);
+            candidates.set_range(second_half, false);
+            assert_eq!(candidates, candidates_empty);
         }
 
         #[test]
