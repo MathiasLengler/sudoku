@@ -4,7 +4,7 @@ use serde::de;
 
 use crate::{
     base::SudokuBase,
-    cell::{Candidates, Value},
+    cell::{Candidates, CandidatesAscIter, Value},
     grid::group::{CandidatesGroup, Group},
     solver::strategic::deduction::Deduction,
 };
@@ -52,9 +52,39 @@ fn find_locked_set<Base: SudokuBase>(
     None
 }
 
+fn walk_locked_sets<Base: SudokuBase, F: FnMut(Candidates<Base>)>(
+    set_size_value: Value<Base>,
+    candidates_group: &CandidatesGroup<Base>,
+    potential_locked_set_indexes: Candidates<Base>,
+    mut current_locked_set_indexes: Candidates<Base>,
+    mut f: &mut F,
+) {
+    for candidate in potential_locked_set_indexes
+        .without(current_locked_set_indexes)
+        .into_iter()
+        .skip(current_locked_set_indexes.count().into())
+        // .take((set_size_value.get() - current_locked_set_indexes.count()).into())
+    {
+        current_locked_set_indexes.insert(candidate);
+        if set_size_value.get() == current_locked_set_indexes.count() {
+            f(current_locked_set_indexes);
+        } else {
+            walk_locked_sets(
+                set_size_value,
+                candidates_group,
+                potential_locked_set_indexes,
+                current_locked_set_indexes,
+                f,
+            );
+        }
+        current_locked_set_indexes.delete(candidate);
+    }
+    //
+}
+
 // TODO: change API: return deduction
 fn reduce_complete_candidates_group<Base: SudokuBase>(
-    mut candidates_group: CandidatesGroup<Base>,
+    candidates_group: CandidatesGroup<Base>,
 ) -> CandidatesGroup<Base> {
     debug!("Searching for locked set in:\n{candidates_group}");
 
@@ -63,11 +93,6 @@ fn reduce_complete_candidates_group<Base: SudokuBase>(
         .map(|candidates| candidates.count());
     trace!("Candidates counts: {candidates_counts}");
 
-    // TODO: calculcate number cells per Value
-    //  could be usefull to pre-filter candidates to be considered
-    //  Example: Base3 Hidden single (5) - sparse
-    //  It should be obvious that candidate 5 is only contained in one cell.
-    //  Does this generalize for larger sets?
     let candidate_positions = candidates_group.transpose();
     debug!("Candidate positions:\n{candidate_positions}");
 
@@ -1419,5 +1444,16 @@ mod tests {
             i += 1;
         }
         dbg!(i);
+    }
+
+    #[test]
+    fn test_walk_locked_sets() {
+        walk_locked_sets::<Base2, _>(
+            2.try_into().unwrap(),
+            &Default::default(),
+            Candidates::all(),
+            Candidates::new(),
+            &mut |candidates| println!("{candidates}"),
+        );
     }
 }
