@@ -21,7 +21,7 @@ use crate::error::{Error, Result};
 use crate::position::{BlockCoordinate, Coordinate};
 
 // TODO: remove after bench
-pub use iter_combinations::debug_asm;
+// pub use iter_combinations::debug_asm;
 
 mod iter;
 mod iter_combinations;
@@ -356,6 +356,16 @@ impl<Base: SudokuBase> Candidates<Base> {
     }
 }
 
+use crate::base::consts::Base3;
+
+pub fn debug_asm(candidate: Coordinate<Base3>) -> <Base3 as SudokuBase>::CandidatesIntegral {
+    Candidates::all_less_than_or_equal_candidates_mask(candidate)
+}
+
+// pub fn debug_asm() -> Candidates<Base3> {
+//     Candidates::all()
+// }
+
 /// Internal helpers
 impl<Base: SudokuBase> Candidates<Base> {
     // TODO: benchmark/view assembly; should evaluate to a constant for a specific base
@@ -367,8 +377,9 @@ impl<Base: SudokuBase> Candidates<Base> {
     ) -> Base::CandidatesIntegral {
         let zero = Base::CandidatesIntegral::ZERO;
         let one = Base::CandidatesIntegral::ONE;
-        one.checked_shl(u32::from(candidate.get() + 1))
-            .unwrap_or(zero)
+        // TODO: optimize for bases where CandidatesIntegral has additional capacity
+        //  e.g. use unsigned_shl and no warpping sub
+        one.unsigned_shl(u32::from(candidate.get() + 1))
             .wrapping_sub(&one)
     }
 
