@@ -364,7 +364,7 @@ mod enum_impl {
                 3 => BaseEnum::Base3,
                 4 => BaseEnum::Base4,
                 5 => BaseEnum::Base5,
-                _unexpected_base => unreachable!(),
+                _unexpected_base => panic!("Unexpected base"),
             }
         }
 
