@@ -235,13 +235,9 @@ impl<Base: SudokuBase> Candidates<Base> {
     fn leading_zeros(&self) -> u8 {
         debug_assert!(!self.is_empty());
 
-        // TODO: dedup with block_segmentation
-        let size_bits: u8 = (size_of::<Base::CandidatesIntegral>() * 8)
-            .try_into()
-            .unwrap();
-
         // unwrap optimizes away
-        u8::try_from(self.bits.leading_zeros()).unwrap() - (size_bits - Base::MAX_VALUE - 1)
+        u8::try_from(self.bits.leading_zeros()).unwrap()
+            - (const { Self::storage_bit_count() - Base::MAX_VALUE - 1 })
     }
 
     // Reference: https://lemire.me/blog/2018/02/21/iterating-over-set-bits-quickly/
@@ -283,12 +279,9 @@ impl<Base: SudokuBase> Candidates<Base> {
     pub fn block_segmentation(self) -> Option<BlockCoordinate<Base>> {
         let base = Base::BASE;
 
-        let size_bits: u8 = (size_of::<Base::CandidatesIntegral>() * 8)
-            .try_into()
-            .unwrap();
         let storage_leading_zeros: u8 = self.bits.leading_zeros().try_into().unwrap();
         // Check if empty
-        if storage_leading_zeros == size_bits {
+        if storage_leading_zeros == Self::storage_bit_count() {
             return None;
         }
         let all_leading_zeros: u8 = Self::all_candidates_mask()
@@ -356,9 +349,9 @@ impl<Base: SudokuBase> Candidates<Base> {
     }
 }
 
-use crate::base::consts::Base3;
+use crate::base::consts::*;
 
-pub fn debug_asm(candidate: Coordinate<Base3>) -> <Base3 as SudokuBase>::CandidatesIntegral {
+pub fn debug_asm(candidate: Coordinate<Base4>) -> <Base4 as SudokuBase>::CandidatesIntegral {
     Candidates::all_less_than_or_equal_candidates_mask(candidate)
 }
 
@@ -377,10 +370,30 @@ impl<Base: SudokuBase> Candidates<Base> {
     ) -> Base::CandidatesIntegral {
         let zero = Base::CandidatesIntegral::ZERO;
         let one = Base::CandidatesIntegral::ONE;
-        // TODO: optimize for bases where CandidatesIntegral has additional capacity
-        //  e.g. use unsigned_shl and no warpping sub
-        one.unsigned_shl(u32::from(candidate.get() + 1))
-            .wrapping_sub(&one)
+        // Pedantic micro-optimization:
+        // We only require explicit overflow handling for base4,
+        // where MAX_VALUE matches the storage bit count *exactly*.
+        // For other bases we can make use of the unsed higher bits and execute unchecked shifts/subtraction.
+        // This results in a "huge" difference of
+        // Base4: 8 x86 ASM instructions, including CMP and CMOVB
+        // Else: 4 x86 ASM instructions, no comparisons or condidional move.
+        if Base::MAX_VALUE == Self::storage_bit_count() {
+            one.checked_shl(u32::from(candidate.get() + 1))
+                .unwrap_or(zero)
+                .wrapping_sub(&one)
+        } else {
+            one.unsigned_shl(u32::from(candidate.get() + 1)) - one
+        }
+    }
+    // const TryInto is unstable
+    #[allow(clippy::cast_possible_truncation)]
+    const fn storage_bit_count() -> u8 {
+        let storage_bit_count_usize = size_of::<Base::CandidatesIntegral>() * 8;
+        assert!(
+            storage_bit_count_usize <= u8::MAX as usize,
+            "Unexpected overflow of storage_bit_count_usize"
+        );
+        storage_bit_count_usize as u8
     }
 
     /// Convert a single candidate (`Value` or `Coordinate`) into a bit mask.
@@ -1159,6 +1172,59 @@ mod tests {
                 all_candidates_mask,
                 0b0000_0001_1111_1111_1111_1111_1111_1111
             );
+        }
+
+        macro_rules! for_all_bases {
+            ($using_base:expr) => {
+                use $crate::base::consts::*;
+
+                {
+                    type Base = Base2;
+                    $using_base
+                }
+                {
+                    type Base = Base3;
+                    $using_base
+                }
+                {
+                    type Base = Base4;
+                    $using_base
+                }
+                {
+                    type Base = Base5;
+                    $using_base
+                }
+            };
+        }
+
+        #[test]
+        fn test_all_less_than_or_equal_candidates_mask() {
+            fn assert_all_less_than_or_equal_candidates_mask<Base: SudokuBase>(
+                candidate: Coordinate<Base>,
+            ) {
+                let value = Value::from(candidate);
+                let candidates = Candidates::<Base>::with_integral(
+                    Candidates::<Base>::all_less_than_or_equal_candidates_mask(candidate),
+                );
+                assert_eq!(
+                    candidates.to_vec_u8(),
+                    (1..=value.get()).collect::<Vec<_>>()
+                );
+            }
+
+            for_all_bases! {
+                for candidate in Coordinate::<Base>::all() {
+                    assert_all_less_than_or_equal_candidates_mask(candidate);
+                }
+            }
+        }
+
+        #[test]
+        fn test_storage_bit_count() {
+            assert_eq!(Candidates::<Base2>::storage_bit_count(), 8);
+            assert_eq!(Candidates::<Base3>::storage_bit_count(), 16);
+            assert_eq!(Candidates::<Base4>::storage_bit_count(), 16);
+            assert_eq!(Candidates::<Base5>::storage_bit_count(), 32);
         }
     }
 }
