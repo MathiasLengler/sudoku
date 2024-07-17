@@ -349,19 +349,8 @@ impl<Base: SudokuBase> Candidates<Base> {
     }
 }
 
-use crate::base::consts::*;
-
-pub fn debug_asm(candidate: Coordinate<Base4>) -> <Base4 as SudokuBase>::CandidatesIntegral {
-    Candidates::all_less_than_or_equal_candidates_mask(candidate)
-}
-
-// pub fn debug_asm() -> Candidates<Base3> {
-//     Candidates::all()
-// }
-
 /// Internal helpers
 impl<Base: SudokuBase> Candidates<Base> {
-    // TODO: benchmark/view assembly; should evaluate to a constant for a specific base
     fn all_candidates_mask() -> Base::CandidatesIntegral {
         Self::all_less_than_or_equal_candidates_mask(Coordinate::max())
     }
