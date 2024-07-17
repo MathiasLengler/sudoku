@@ -182,7 +182,6 @@ where
     /// - `Base::DYNAMIC_BASE.into_u8() == Base::BASE`
     const ENUM: BaseEnum;
 
-    // TODO: evaluate `as` casting of constants
     /// The side length of a sudoku block. Must be non-zero.
     ///
     /// # Safety
