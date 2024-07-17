@@ -1146,6 +1146,8 @@ mod tests {
     }
 
     mod internal_helpers {
+        use crate::test_util::for_all_bases;
+
         use super::*;
 
         #[test]
@@ -1161,29 +1163,6 @@ mod tests {
                 all_candidates_mask,
                 0b0000_0001_1111_1111_1111_1111_1111_1111
             );
-        }
-
-        macro_rules! for_all_bases {
-            ($using_base:expr) => {
-                use $crate::base::consts::*;
-
-                {
-                    type Base = Base2;
-                    $using_base
-                }
-                {
-                    type Base = Base3;
-                    $using_base
-                }
-                {
-                    type Base = Base4;
-                    $using_base
-                }
-                {
-                    type Base = Base5;
-                    $using_base
-                }
-            };
         }
 
         #[test]
