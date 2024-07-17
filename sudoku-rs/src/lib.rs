@@ -16,8 +16,6 @@
 #![allow(clippy::must_use_candidate)]
 // warn a subset of lints in clippy::restriction
 #![warn(clippy::assertions_on_result_states)]
-// TODO: enable for 1.73.0
-// #![warn(clippy::cfg_not_test)]
 #![warn(clippy::clone_on_ref_ptr)]
 #![warn(clippy::deref_by_slicing)]
 #![warn(clippy::empty_enum_variants_with_brackets)]
