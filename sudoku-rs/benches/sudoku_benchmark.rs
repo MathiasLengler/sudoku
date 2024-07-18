@@ -22,7 +22,7 @@ use sudoku::rng::{new_crate_rng_from_rng, new_crate_rng_with_seed};
 use sudoku::samples::{base_2, base_3, base_4, base_5};
 use sudoku::solver::sat;
 use sudoku::solver::strategic::strategies::{
-    group_reduction, GroupIntersectionBoth, GroupReduction, Strategy,
+    GroupIntersectionBoth, GroupReduction, Strategy, StrategyEnum,
 };
 use sudoku::solver::{backtracking, introspective, strategic, FallibleSolver, InfallibleSolver};
 
@@ -42,20 +42,25 @@ fn sample_grid<Base: SudokuBase>() -> Grid<Base> {
 fn bench_generator_group<Base: SudokuBase>(generator_group: &mut BenchmarkGroup<WallTime>) {
     let base = Base::BASE;
 
-    for prune_settings in [
-        Some(PruningSettings::<Base> {
-            target: PruningTarget::Minimal,
-            ..Default::default()
-        }),
-        None,
+    for (prune_name, prune_settings) in [
+        (
+            "Backtracking Minimal",
+            Some(PruningSettings::<Base> {
+                target: PruningTarget::Minimal,
+                ..Default::default()
+            }),
+        ),
+        (
+            "NoBacktracking Minimal",
+            Some(PruningSettings::<Base> {
+                target: PruningTarget::Minimal,
+                strategies: StrategyEnum::default_solver_strategies_no_backtracking(),
+                ..Default::default()
+            }),
+        ),
+        ("None", None),
     ] {
-        let parameter_string = format!(
-            "Base={} Target={:?}",
-            base,
-            prune_settings
-                .as_ref()
-                .map(|prune_settings| prune_settings.target)
-        );
+        let parameter_string = format!("Base={} Target={:?}", base, prune_name);
 
         generator_group.bench_with_input(
             BenchmarkId::new("generate", parameter_string),
@@ -368,18 +373,7 @@ fn bench_strategy_group(strategy_group: &mut BenchmarkGroup<WallTime>) {
             ),
             &candidates_group,
             |b, candidates_group| {
-                b.iter(|| GroupReduction::reduce_candidates_group_v1(candidates_group))
-            },
-        );
-
-        strategy_group.bench_with_input(
-            BenchmarkId::new(
-                "GroupReduction/v2/reduce_candidates_group",
-                group_reduction_param_name,
-            ),
-            &candidates_group,
-            |b, candidates_group| {
-                b.iter(|| group_reduction::v2::reduce_candidates_group(candidates_group))
+                b.iter(|| GroupReduction::reduce_candidates_group_v2(candidates_group))
             },
         );
     }
