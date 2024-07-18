@@ -96,6 +96,15 @@ impl<Base: SudokuBase> CellState<Base> {
             _ => None,
         }
     }
+    // TODO: test
+    pub(super) fn to_candidates(&self) -> Candidates<Base> {
+        match *self {
+            CellState::Value(value) | CellState::FixedValue(value) => {
+                Candidates::with_single(value)
+            }
+            CellState::Candidates(candidates) => candidates,
+        }
+    }
 
     pub(super) fn delete(&mut self) {
         self.assert_unfixed();
