@@ -42,6 +42,7 @@ impl Strategy for GroupReduction {
                     .unwrap();
 
                 // FIXME: does not compile
+                //  Grid could provide Group<Base, T> iteration/indexing directly.
                 let candidates_group = CandidatesGroup::<Base>::new(group);
 
                 // let (positions, candidates_group): (Vec<_>, Vec<_>) = group
