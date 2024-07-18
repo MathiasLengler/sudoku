@@ -4,7 +4,9 @@ use crate::base::SudokuBase;
 use crate::cell::Candidates;
 use crate::cell::Value;
 use crate::error::Result;
+use crate::grid::group::CandidatesGroup;
 use crate::grid::Grid;
+use crate::position::Coordinate;
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions};
 use crate::solver::strategic::strategies::Strategy;
 use crate::solver::strategic::strategies::StrategyScore;
@@ -30,32 +32,44 @@ impl Strategy for GroupReduction {
     }
     fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
         Grid::<Base>::all_group_positions()
-            .map(|group| {
-                let (positions, candidates_group): (Vec<_>, Vec<_>) = group
-                    .filter_map(|pos| {
-                        grid.get(pos)
-                            .candidates()
-                            .map(|candidates| (pos, candidates))
-                    })
-                    .unzip();
+            .map(|mut group| {
+                let group = group
+                    .map(|pos| grid[pos].to_candidates())
+                    .next_chunk()
+                    .unwrap();
+
+                // FIXME: does not compile
+                let candidates_group = CandidatesGroup::<Base>::new(group);
+
+                // let (positions, candidates_group): (Vec<_>, Vec<_>) = group
+                //     .filter_map(|pos| {
+                //         grid.get(pos)
+                //             .candidates()
+                //             .map(|candidates| (pos, candidates))
+                //     })
+                //     .unzip();
 
                 // TODO: v1 vs v2 has no clear-cut performance winner
                 //  For small candidates groups, v1 is faster, up to 10x (Strategies/GroupReduction/execute/sample_grid_hidden_pairs)
                 //  For large candidates groups, v2 is way faster, up to 6ms vs 220ns / 20_000x speed-up (Strategies/GroupReduction/v2/reduce_candidates_group/all)
                 // Either optimize v2 to be faster or at least comparable to v1 in all cases.
                 // Or use introspective implementation, which switches between the two implementation based on a heuristic.
-                let reduced_candidates_group = Self::reduce_candidates_group_v2(&candidates_group);
+                let reduced_candidates_group =
+                    v2::reduce_complete_candidates_group(candidates_group);
 
                 let mut deduction = Deduction::new();
 
-                for (position, candidates, reduced_candidates) in
-                    izip!(positions, candidates_group, reduced_candidates_group)
-                {
+                for (coordinate, candidates, reduced_candidates) in izip!(
+                    Coordinate::all(),
+                    candidates_group,
+                    reduced_candidates_group
+                ) {
                     if candidates != reduced_candidates {
-                        deduction.actions.insert(
-                            position,
-                            Action::DeleteCandidates(candidates.without(reduced_candidates)),
-                        )?;
+                        todo!();
+                        // deduction.actions.insert(
+                        //     position,
+                        //     Action::DeleteCandidates(candidates.without(reduced_candidates)),
+                        // )?;
                     }
                 }
 

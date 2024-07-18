@@ -83,7 +83,7 @@ fn walk_locked_sets<Base: SudokuBase, F: FnMut(Candidates<Base>)>(
 }
 
 // TODO: change API: return deduction
-fn reduce_complete_candidates_group<Base: SudokuBase>(
+pub(super) fn reduce_complete_candidates_group<Base: SudokuBase>(
     candidates_group: CandidatesGroup<Base>,
 ) -> CandidatesGroup<Base> {
     const ENABLE_STATS: bool = false;
