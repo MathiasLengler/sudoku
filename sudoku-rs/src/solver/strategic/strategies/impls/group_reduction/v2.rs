@@ -63,7 +63,7 @@ fn walk_locked_sets<Base: SudokuBase, F: FnMut(Candidates<Base>)>(
         .without(current_locked_set_indexes)
         .into_iter()
         .skip(current_locked_set_indexes.count().into())
-        // .take((set_size_value.get() - current_locked_set_indexes.count()).into())
+    // .take((set_size_value.get() - current_locked_set_indexes.count()).into())
     {
         current_locked_set_indexes.insert(candidate);
         if set_size_value.get() == current_locked_set_indexes.count() {
