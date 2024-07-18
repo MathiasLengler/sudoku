@@ -86,6 +86,7 @@ fn walk_locked_sets<Base: SudokuBase, F: FnMut(Candidates<Base>)>(
 fn reduce_complete_candidates_group<Base: SudokuBase>(
     candidates_group: CandidatesGroup<Base>,
 ) -> CandidatesGroup<Base> {
+    const ENABLE_STATS: bool = false;
     debug!("Searching for locked set in:\n{candidates_group}");
 
     let candidates_counts = candidates_group
@@ -166,13 +167,15 @@ fn reduce_complete_candidates_group<Base: SudokuBase>(
         //  This smells like a tree pruning search.
         //  additional criteria: only consider a candidates index if it has some overlap with the current locked set
         for locked_set_indexes in potential_locked_set_indexes.combinations(set_size_value) {
-            *evaluated_locked_set_count_per_set_size.get_mut(if is_transposed {
-                (Value::<Base>::max().get() - set_size_value.get())
-                    .try_into()
-                    .unwrap()
-            } else {
-                set_size_value.into()
-            }) += 1;
+            if ENABLE_STATS {
+                *evaluated_locked_set_count_per_set_size.get_mut(if is_transposed {
+                    (Value::<Base>::max().get() - set_size_value.get())
+                        .try_into()
+                        .unwrap()
+                } else {
+                    set_size_value.into()
+                }) += 1;
+            }
 
             trace!("Evaluating locked set indexes {locked_set_indexes}");
 
