@@ -35,6 +35,8 @@ impl Strategy for HiddenSingles {
                 // TODO: evaluate better data structure
                 //  - stack allocated
                 //  - Value<Base> API, less conversions
+                // => Group<Base, T>
+                // This allocation is now noticable in the profile.
                 let mut candidate_histogram =
                     vec![CandidateStats::default(); Base::MAX_VALUE.into()];
 
