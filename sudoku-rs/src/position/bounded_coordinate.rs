@@ -8,10 +8,36 @@ use crate::cell::Value;
 use crate::error::{Error, Result};
 use crate::position::BlockCoordinate;
 
+// TODO: better wording
+//  0..Base::SIDE_LENGTH can represent:
+//  - a pointer to a specific group
+//  - for a given group, the pointer to a cell inside the group.
+// Ideas:
+//  GroupIndex
+//   is index refering to:
+//    the index of the group inside the grid
+//    the index of a cell inside the group
+//  GroupPointer
+//  SideLength
+// Motivation for the current "Coordinate":
+// From a x/y perspective, it is the coordinate for (row/column), e.g. the coordinates of the 2D grid.
+// This is a special case of (Row(Coordinate<Base>))
+
 // TODO: Group "Pointers"
 //  struct Row(Coordinate<Base>)
 //  struct Column(Coordinate<Base>)
 //  struct Box(Coordinate<Base>)
+
+struct RowCoordinate<Base: SudokuBase>(Coordinate<Base>);
+struct ColumnCoordinate<Base: SudokuBase>(Coordinate<Base>);
+struct BoxCoordinate<Base: SudokuBase>(Coordinate<Base>);
+
+// Could be used for indicating the current group in all_group_positions
+enum GroupCoordinate<Base: SudokuBase> {
+    Row(RowCoordinate<Base>),
+    Column(ColumnCoordinate<Base>),
+    Box(BoxCoordinate<Base>),
+}
 
 /// A coordinate/index in a sudoku grid.
 ///
