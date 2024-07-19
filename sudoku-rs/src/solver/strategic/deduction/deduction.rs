@@ -12,6 +12,9 @@ use crate::solver::strategic::deduction::transport::{
 };
 use crate::solver::strategic::deduction::{Action, Reason};
 
+// TODO: make generic over the position/index type.
+//  use-case: reporting Deduction for a single group.
+
 /// A single, self-contained result of a strategy.
 /// Consists of actions to be taken on a Sudoku grid, as well as the reasons why.
 /// # Examples
