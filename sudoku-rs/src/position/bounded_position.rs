@@ -10,7 +10,6 @@ use crate::error::{Error, Result};
 use crate::position::Coordinate;
 use crate::position::DynamicPosition;
 
-// TODO: use for all non-public APIs
 /// The position of a cell in a grid of known size.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Default)]
 pub struct Position<Base: SudokuBase> {
