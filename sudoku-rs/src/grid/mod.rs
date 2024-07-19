@@ -37,6 +37,7 @@ pub struct Grid<Base: SudokuBase, T = Cell<Base>> {
     ///
     /// # Safety invariants
     /// - `cells.len() == Base::CELL_COUNT`
+    /// - `cells.dim() == (Base::SIDE_LENGTH, Base::SIDE_LENGTH)`
     /// - `cells.is_standard_layout()`
     cells: Array2<T>,
     _base: PhantomData<Base>,
@@ -97,6 +98,8 @@ impl<Base: SudokuBase, T> Grid<Base, T> {
 impl<Base: SudokuBase, T> Grid<Base, T> {
     fn validate_cells(cells: &Array2<T>) -> Result<()> {
         ensure!(cells.len() == usize::from(Base::CELL_COUNT));
+        let side_length = usize::from(Base::SIDE_LENGTH);
+        ensure!(cells.dim() == (side_length, side_length));
         ensure!(cells.is_standard_layout());
 
         Ok(())
