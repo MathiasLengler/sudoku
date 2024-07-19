@@ -5,6 +5,7 @@ use crate::cell::Candidates;
 use crate::cell::Value;
 use crate::error::Result;
 use crate::grid::group::CandidatesGroup;
+use crate::grid::group::DebugAssertTrustedGroupSizeIter;
 use crate::grid::Grid;
 use crate::position::Coordinate;
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions};
@@ -43,6 +44,8 @@ impl Strategy for GroupReduction {
 
                 // FIXME: optimize conversion of group iters to Group<T> (TrustedGroupSizeIter)
                 //  Grid could provide Group<Base, T> iteration/indexing directly.
+
+                // DebugAssertTrustedGroupSizeIter::new(group);
                 let candidates_group: CandidatesGroup<Base> = group
                     .clone()
                     .map(|pos| grid[pos].to_candidates())

@@ -10,6 +10,9 @@ use std::fmt::{Debug, Display};
 use std::hash::Hash;
 
 pub type CandidatesGroup<Base> = Group<Base, Candidates<Base>>;
+pub use iter::*;
+
+mod iter;
 
 /// Wrapper around `Base::Group<T>`, e.g. `[T; Base::SIDE_LENGTH]`.
 ///
@@ -53,6 +56,13 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + H
 {
     pub fn new(group: Base::Group<T>) -> Self {
         Self { group }
+    }
+
+    pub fn from_trusted_iter(iter: impl TrustedGroupSizeIter<Base, Item = T>) -> Self {
+        Self {
+            // TODO: optimize based on the safety contract of `TrustedGroupSizeIter`.
+            group: iter.collect::<Vec<_>>().try_into().unwrap(),
+        }
     }
 
     pub fn get(&self, coordinate: Coordinate<Base>) -> T {
