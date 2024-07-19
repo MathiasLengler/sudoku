@@ -1,10 +1,9 @@
 use itertools::Itertools;
 use log::{debug, trace};
-use serde::de;
 
 use crate::{
     base::SudokuBase,
-    cell::{Candidates, CandidatesAscIter, Value},
+    cell::{Candidates, Value},
     grid::group::{CandidatesGroup, Group},
     solver::strategic::deduction::Deduction,
 };
@@ -27,7 +26,7 @@ pub fn reduce_candidates_group<Base: SudokuBase>(
         .try_into()
         .expect("Candidates group to be well formed");
 
-    reduce_complete_candidates_group::<Base>(candidates_group)
+    reduce_complete_candidates_group::<Base>(&candidates_group)
         .into_iter()
         .filter(|candidates| {
             !candidates
@@ -83,8 +82,10 @@ fn walk_locked_sets<Base: SudokuBase, F: FnMut(Candidates<Base>)>(
 }
 
 // TODO: change API: return deduction
+// => Deduction are currently hard-coded for Position.
+// since this has only knowledge about a single group, it can't refer to grid positions, only group coordinates/indexes.
 pub(super) fn reduce_complete_candidates_group<Base: SudokuBase>(
-    candidates_group: CandidatesGroup<Base>,
+    candidates_group: &CandidatesGroup<Base>,
 ) -> CandidatesGroup<Base> {
     const ENABLE_STATS: bool = false;
     debug!("Searching for locked set in:\n{candidates_group}");
@@ -122,7 +123,7 @@ pub(super) fn reduce_complete_candidates_group<Base: SudokuBase>(
         .take((Base::MAX_VALUE / 2).into())
         .flat_map(|set_size| {
             [
-                (set_size, &candidates_group, &candidates_counts, false), // Naked
+                (set_size, candidates_group, &candidates_counts, false), // Naked
                 (
                     set_size,
                     &candidate_positions,
@@ -234,7 +235,7 @@ pub(super) fn reduce_complete_candidates_group<Base: SudokuBase>(
     }
 
     debug!("No locked set found");
-    candidates_group
+    candidates_group.clone()
 }
 
 #[cfg(test)]
@@ -531,7 +532,7 @@ mod tests {
     ) {
         info!("Test case: {test_case_name}");
 
-        let actual_output = reduce_complete_candidates_group(input.clone());
+        let actual_output = reduce_complete_candidates_group(input);
 
         assert_eq!(
             &actual_output, expected_output,
@@ -1410,7 +1411,7 @@ mod tests {
         fn v2_recusive<Base: SudokuBase>(
             candidates_group: &CandidatesGroup<Base>,
         ) -> CandidatesGroup<Base> {
-            let reduced = reduce_complete_candidates_group(candidates_group.clone());
+            let reduced = reduce_complete_candidates_group(candidates_group);
             if &reduced == candidates_group {
                 return reduced;
             }

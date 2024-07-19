@@ -1,4 +1,4 @@
-#![feature(iter_next_chunk)]
+// #![feature(iter_next_chunk)]
 // rustc lints
 #![warn(missing_debug_implementations)]
 #![warn(unreachable_pub)]

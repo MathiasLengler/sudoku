@@ -35,15 +35,20 @@ impl Strategy for GroupReduction {
     }
     fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
         Grid::<Base>::all_group_positions()
-            .map(|mut group| {
-                let group = group
-                    .map(|pos| grid[pos].to_candidates())
-                    .next_chunk()
-                    .unwrap();
+            .map(|group| {
+                // let group = group
+                //     .map(|pos| grid[pos].to_candidates())
+                //     .next_chunk()
+                //     .unwrap();
 
-                // FIXME: does not compile
+                // FIXME: optimize conversion of group iters to Group<T> (TrustedGroupSizeIter)
                 //  Grid could provide Group<Base, T> iteration/indexing directly.
-                let candidates_group = CandidatesGroup::<Base>::new(group);
+                let candidates_group: CandidatesGroup<Base> = group
+                    .clone()
+                    .map(|pos| grid[pos].to_candidates())
+                    .collect::<Vec<_>>()
+                    .try_into()
+                    .unwrap();
 
                 // let (positions, candidates_group): (Vec<_>, Vec<_>) = group
                 //     .filter_map(|pos| {
@@ -59,21 +64,18 @@ impl Strategy for GroupReduction {
                 // Either optimize v2 to be faster or at least comparable to v1 in all cases.
                 // Or use introspective implementation, which switches between the two implementation based on a heuristic.
                 let reduced_candidates_group =
-                    v2::reduce_complete_candidates_group(candidates_group);
+                    v2::reduce_complete_candidates_group(&candidates_group);
 
                 let mut deduction = Deduction::new();
 
-                for (coordinate, candidates, reduced_candidates) in izip!(
-                    Coordinate::all(),
-                    candidates_group,
-                    reduced_candidates_group
-                ) {
+                for (position, candidates, reduced_candidates) in
+                    izip!(group, candidates_group, reduced_candidates_group)
+                {
                     if candidates != reduced_candidates {
-                        todo!();
-                        // deduction.actions.insert(
-                        //     position,
-                        //     Action::DeleteCandidates(candidates.without(reduced_candidates)),
-                        // )?;
+                        deduction.actions.insert(
+                            position,
+                            Action::DeleteCandidates(candidates.without(reduced_candidates)),
+                        )?;
                     }
                 }
 
