@@ -79,13 +79,14 @@ impl Strategy for HiddenSingles {
 
 #[cfg(test)]
 mod tests {
+    use crate::base::consts::*;
     use crate::samples;
     use crate::solver::strategic::strategies::test_util::assert_deductions_with_grid;
 
     use super::*;
 
     #[test]
-    fn test_hidden_singles() {
+    fn test_hidden_singles_base2() {
         let mut grid = samples::base_2().into_iter().nth(1).unwrap();
 
         grid.set_all_direct_candidates();
@@ -99,6 +100,36 @@ mod tests {
             ((1, 2), 2),
             ((2, 3), 4),
             ((3, 0), 4),
+        ]
+        .into_iter()
+        .map(|(pos, value)| {
+            Deduction::with_action(
+                pos.try_into().unwrap(),
+                Action::SetValue(Value::try_from(value).unwrap()),
+            )
+        })
+        .collect();
+
+        assert_deductions_with_grid(&deductions, &expected_deductions, &mut grid);
+    }
+
+    #[test]
+    fn test_hidden_singles_base3() {
+        let mut grid: Grid<Base3> =
+            "000000300000071500002400018000009040094618230610700000430897600008140000009000000"
+                .parse()
+                .unwrap();
+        grid.set_all_direct_candidates();
+        grid.fix_all_values();
+
+        let deductions = HiddenSingles.execute(&grid).unwrap();
+
+        let expected_deductions: Deductions<_> = vec![
+            //
+            ((0, 4), 8),
+            ((3, 8), 6),
+            ((5, 5), 4),
+            ((8, 6), 4),
         ]
         .into_iter()
         .map(|(pos, value)| {
