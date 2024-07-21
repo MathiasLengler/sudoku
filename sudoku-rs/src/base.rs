@@ -1,6 +1,6 @@
 use std::fmt::{Binary, Debug, Display};
 use std::hash::Hash;
-use std::ops::{BitAndAssign, BitOrAssign, BitXorAssign, RangeInclusive, Shl};
+use std::ops::{BitAndAssign, BitOrAssign, BitXorAssign, Shl};
 
 use num::traits::{
     CheckedShl, CheckedShr, ConstOne, ConstZero, NumAssignOps, Unsigned, WrappingAdd, WrappingMul,

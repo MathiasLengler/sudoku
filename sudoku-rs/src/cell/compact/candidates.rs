@@ -304,11 +304,7 @@ impl<Base: SudokuBase> Candidates<Base> {
         // because `logic_leading_zeros` is less than `Base::SIDE_LENGTH` for non-empty Candidates.
         let end_coordinate = unsafe { Coordinate::<Base>::new_unchecked(end) };
         let end_coordinate = BlockCoordinate::round_down(end_coordinate);
-        if start_block_coordinate == end_coordinate {
-            Some(start_block_coordinate)
-        } else {
-            None
-        }
+        (start_block_coordinate == end_coordinate).then_some(start_block_coordinate)
     }
 
     pub fn count(&self) -> u8 {
@@ -319,11 +315,11 @@ impl<Base: SudokuBase> Candidates<Base> {
         self.into_iter()
     }
 
-    pub fn to_vec_u8(&self) -> Vec<u8> {
+    pub fn to_vec_u8(self) -> Vec<u8> {
         self.iter().map(|value| value.get()).collect()
     }
 
-    pub fn to_vec_value(&self) -> Vec<Value<Base>> {
+    pub fn to_vec_value(self) -> Vec<Value<Base>> {
         self.iter().collect()
     }
 
