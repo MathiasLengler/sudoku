@@ -77,6 +77,18 @@ mod cell_index_to_block_index {
     //! - `array.len() == Base::CELL_COUNT`
     use super::*;
 
+    // TODO: evaluate const fn to generate lookup tables
+    const fn const_generate_cell_index_to_block_index<const N: usize>() -> [usize; N] {
+        // TODO: update impl
+        let mut out = [0; N];
+        let mut i = 0;
+        while i < N {
+            out[i] = 2 * i;
+            i += 1;
+        }
+        out
+    }
+
     pub(super) static BASE_2: &[u8; base_to_cell_count(2) as usize] = &[
         0, 0, 1, 1, //
         0, 0, 1, 1, //
