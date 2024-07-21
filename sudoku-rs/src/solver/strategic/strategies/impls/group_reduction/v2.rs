@@ -56,7 +56,7 @@ fn walk_locked_sets<Base: SudokuBase, F: FnMut(Candidates<Base>)>(
     candidates_group: &CandidatesGroup<Base>,
     potential_locked_set_indexes: Candidates<Base>,
     mut current_locked_set_indexes: Candidates<Base>,
-    mut f: &mut F,
+    f: &mut F,
 ) {
     for candidate in potential_locked_set_indexes
         .without(current_locked_set_indexes)

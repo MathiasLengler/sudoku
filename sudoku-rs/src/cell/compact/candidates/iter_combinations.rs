@@ -1,4 +1,3 @@
-use crate::base::consts::Base3;
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
 use crate::cell::Value;

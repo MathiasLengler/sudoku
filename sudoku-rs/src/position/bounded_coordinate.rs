@@ -253,7 +253,7 @@ mod tests {
         // Base 2
         assert_eq!(Coordinate::<Base2>::new(0).unwrap().coordinate, 0);
         assert_eq!(Coordinate::<Base2>::new(3).unwrap().coordinate, 3);
-        assert!(Coordinate::<Base2>::new(4).is_err());
+        Coordinate::<Base2>::new(4).unwrap_err();
     }
 
     #[test]

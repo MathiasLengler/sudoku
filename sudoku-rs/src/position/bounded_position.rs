@@ -208,9 +208,9 @@ impl<Base: SudokuBase> Position<Base> {
     }
 }
 
-use crate::base::consts::{Base2, Base3};
+use crate::base::consts::Base2;
 
-use super::test_utils::{consume_iter, consume_nested_iter};
+use super::test_utils::consume_iter;
 
 pub fn debug_asm() {
     // consume_iter(Position::<Base2>::row(Coordinate::default()));
@@ -375,7 +375,7 @@ mod tests {
         fn test_new() {
             assert_eq!(Position::<Base2>::new(0).unwrap().cell_index, 0);
             assert_eq!(Position::<Base2>::new(15).unwrap().cell_index, 15);
-            assert!(Position::<Base2>::new(16).is_err());
+            Position::<Base2>::new(16).unwrap_err();
         }
     }
 

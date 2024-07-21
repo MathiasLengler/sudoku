@@ -162,7 +162,7 @@ mod tests {
         assert_eq!(value.map(|value| value.get()), Some(9));
 
         let value = Value::<Base3>::new(10);
-        assert!(value.is_err());
+        value.unwrap_err();
 
         Ok(())
     }
@@ -170,13 +170,13 @@ mod tests {
     #[test]
     fn test_try_from() -> Result<()> {
         let value = Value::<Base3>::try_from(0);
-        assert!(value.is_err());
+        value.unwrap_err();
 
         let value = Value::<Base3>::try_from(9)?;
         assert_eq!(value.get(), 9);
 
         let value = Value::<Base3>::try_from(10);
-        assert!(value.is_err());
+        value.unwrap_err();
 
         Ok(())
     }

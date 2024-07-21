@@ -719,10 +719,10 @@ mod tests {
             assert_eq!(candidates.to_vec_u8(), Vec::<u8>::new());
 
             let candidates = Candidates::<Base3>::try_from(vec![0]);
-            assert!(candidates.is_err());
+            candidates.unwrap_err();
 
             let candidates = Candidates::<Base3>::try_from(vec![10]);
-            assert!(candidates.is_err());
+            candidates.unwrap_err();
 
             Ok(())
         }

@@ -1,4 +1,3 @@
-use anyhow::ensure;
 
 use crate::base::SudokuBase;
 use crate::error::Result;
