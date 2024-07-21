@@ -25,12 +25,6 @@ impl Strategy for HiddenSingles {
         10
     }
     fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
-        // TODO: move to solver
-        ensure!(
-            grid.is_directly_consistent(),
-            "HiddenSingles requires a directly consistent grid"
-        );
-
         Ok(Grid::<Base>::all_group_positions()
             .flat_map(|group_positions| {
                 let mut candidate_histogram = Group::<Base, CandidateStats<Base>>::default();

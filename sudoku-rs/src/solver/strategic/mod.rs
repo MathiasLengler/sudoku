@@ -1,5 +1,6 @@
 use std::marker::PhantomData;
 
+use anyhow::ensure;
 use log::trace;
 
 pub use builder::SolverBuilder;
@@ -121,6 +122,10 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> Solver<Ba
 
     /// Tries executing strategies until one strategy is able to make at least one deduction.
     pub fn try_strategies(&self) -> Result<Option<(StrategyEnum, Deductions<Base>)>> {
+        ensure!(
+            self.grid.as_ref().is_directly_consistent(),
+            "Grid is inconsistent"
+        );
         for strategy in &self.strategies {
             trace!("Executing strategy: {strategy:?}");
 
