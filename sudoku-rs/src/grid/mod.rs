@@ -33,6 +33,10 @@ pub mod dynamic;
 /// Other cell types are supported, but with less functionality.
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub struct Grid<Base: SudokuBase, T = Cell<Base>> {
+    // TODO: evaluate nalgebra as storage backend
+    //  it seems to have better support for fixed sized matrixes.
+    //  This could be helpful for extracting Groups as Base::Group<T>, e.g. fixed sized arrays.
+    //  ndarray supports arbitry dimensionality, we only require 2D.
     /// The cells of this grid.
     ///
     /// # Safety invariants
