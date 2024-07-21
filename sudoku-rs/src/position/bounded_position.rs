@@ -7,7 +7,6 @@ use serde::{Serialize, Serializer};
 
 use crate::base::SudokuBase;
 use crate::error::{Error, Result};
-use crate::grid::group::{DebugAssertTrustedGroupSizeIter, TrustedGroupSizeIter};
 use crate::position::Coordinate;
 use crate::position::DynamicPosition;
 
@@ -237,25 +236,13 @@ impl<Base: SudokuBase> Position<Base> {
         Self::all_columns().flatten()
     }
 
-    // TODO: per regression testing: TrustedGroupSizeIter
-    pub fn row(row: Coordinate<Base>) -> impl TrustedGroupSizeIter<Base, Item = Self> {
+    pub fn row(row: Coordinate<Base>) -> impl Iterator<Item = Self> {
         let first_cell_index = row.get_u16() * u16::from(Base::SIDE_LENGTH);
-        let iter =
-            (first_cell_index..first_cell_index + u16::from(Base::SIDE_LENGTH)).map(|cell_index|
+        (first_cell_index..first_cell_index + u16::from(Base::SIDE_LENGTH)).map(|cell_index|
             // Safety: `cell_index` remains in-bounds
-            unsafe { Self::new_unchecked(cell_index) });
-        // Safety: a row contains exactly `Base::SIDE_LENGTH` cells.
-        unsafe { DebugAssertTrustedGroupSizeIter::new(iter) }
+            unsafe { Self::new_unchecked(cell_index) })
     }
 
-    // FIXME: perf regression ~10x caused by TrustedGroupSizeIter/DebugAssertTrustedGroupSizeIter
-    //  try unstable TrustedLen => does not fix the issue
-    //  maybe not enough because of TrustedRandomAccess and other std tricks.
-    //  are the Position micro-benchmarks indicative of end-to-end perf? (Solver, Generator, etc.)
-    // Different approach:
-    //  pre-allocate/compute all position iterators and return slice/slice iterators
-    //  Con: gets unwieldy quickly for base 5 with 625 total cells
-    //  625 * u16 = 1250 bytes per group type
     pub fn all_rows() -> impl Iterator<Item = impl Iterator<Item = Self>> {
         Coordinate::all().map(Self::row)
     }
