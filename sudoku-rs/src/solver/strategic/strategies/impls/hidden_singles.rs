@@ -68,6 +68,7 @@ impl Strategy for HiddenSingles {
 #[cfg(test)]
 mod tests {
     use crate::base::consts::*;
+    use crate::cell::Value;
     use crate::samples;
     use crate::solver::strategic::strategies::test_util::assert_deductions_with_grid;
 
