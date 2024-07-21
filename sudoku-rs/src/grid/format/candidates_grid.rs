@@ -326,14 +326,10 @@ impl GridFormat for CandidatesGridPlain {
                         && last_fragments.iter().all(|s| s.trim().is_empty())
                     {
                         let middle_fragment_trimmed = middle_fragment.trim();
-                        if middle_fragment_trimmed.len() == 1
+                        (middle_fragment_trimmed.len() == 1
                             && middle_fragment.find(middle_fragment_trimmed).unwrap()
-                                == cell_width / 2
-                        {
-                            Some(middle_fragment_trimmed.chars().next().unwrap())
-                        } else {
-                            None
-                        }
+                                == cell_width / 2)
+                            .then(|| middle_fragment_trimmed.chars().next().unwrap())
                     } else {
                         None
                     }

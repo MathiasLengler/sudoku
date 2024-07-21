@@ -53,15 +53,13 @@ impl<Base: SudokuBase> Position<Base> {
         let block_top_left = Base::block_to_top_left_pos(block);
         let (block_top_left_row, block_top_left_column) = block_top_left.to_row_and_column();
         let (block_row, block_column) = row_major_index.to_block_row_and_column();
-        // Safety: the top-left cell in a block has a `Base::BASE -1` cells to the left and bottom of it.
-        // Therefore, the indexes remain in-bounds.
-        unsafe {
-            (
-                Coordinate::new_unchecked(block_top_left_row.get() + block_row.get()),
-                Coordinate::new_unchecked(block_top_left_column.get() + block_column.get()),
-            )
-        }
-        .into()
+        (
+            // Safety: the top-left cell in a block has a `Base::BASE - 1` cells to the right of it
+            unsafe { Coordinate::new_unchecked(block_top_left_row.get() + block_row.get()) },
+            // Safety: the top-left cell in a block has a `Base::BASE - 1` cells to the bottom of it
+            unsafe { Coordinate::new_unchecked(block_top_left_column.get() + block_column.get()) },
+        )
+            .into()
     }
 
     pub fn with_block_and_column_major_index(
@@ -70,15 +68,13 @@ impl<Base: SudokuBase> Position<Base> {
         let block_top_left = Base::block_to_top_left_pos(block);
         let (block_top_left_row, block_top_left_column) = block_top_left.to_row_and_column();
         let (block_column, block_row) = column_major_index.to_block_row_and_column();
-        // Safety: the top-left cell in a block has a `Base::BASE -1` cells to the left and bottom of it.
-        // Therefore, the indexes remain in-bounds.
-        unsafe {
-            (
-                Coordinate::new_unchecked(block_top_left_row.get() + block_row.get()),
-                Coordinate::new_unchecked(block_top_left_column.get() + block_column.get()),
-            )
-        }
-        .into()
+        (
+            // Safety: the top-left cell in a block has a `Base::BASE - 1` cells to the right of it.
+            unsafe { Coordinate::new_unchecked(block_top_left_row.get() + block_row.get()) },
+            // Safety: the top-left cell in a block has a `Base::BASE - 1` cells to the bottom of it.
+            unsafe { Coordinate::new_unchecked(block_top_left_column.get() + block_column.get()) },
+        )
+            .into()
     }
 
     // TODO: other corners
@@ -206,19 +202,6 @@ impl<Base: SudokuBase> Position<Base> {
 
         (block, row_major_block_index, column_major_block_index)
     }
-}
-
-use crate::base::consts::Base2;
-
-use super::test_utils::consume_iter;
-
-pub fn debug_asm() {
-    // consume_iter(Position::<Base2>::row(Coordinate::default()));
-    consume_iter(
-        [0, 1, 2, 3]
-            .into_iter()
-            .map(|i| unsafe { Position::<Base2>::new_unchecked(i) }),
-    );
 }
 
 // TODO: optimize

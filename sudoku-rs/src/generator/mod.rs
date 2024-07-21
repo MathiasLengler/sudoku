@@ -376,7 +376,7 @@ impl<Base: SudokuBase> Generator<Base> {
     }
 
     fn get_solution_values_grid(&self) -> Result<&Grid<Base>> {
-        let Some(SolutionSettings { values_grid, .. }) = &self.settings.solution else {
+        let Some(SolutionSettings { values_grid }) = &self.settings.solution else {
             bail!("'PruningOrder::SolutionUnfixedValues' requires 'settings.solution.values_grid' to be defined")
         };
         Ok(values_grid)
@@ -415,7 +415,7 @@ impl<Base: SudokuBase> Generator<Base> {
     ) -> Result<Vec<Position<Base>>> {
         Ok(match &prune_settings.order {
             PruningOrder::Random => {
-                let prunable_positions = if let Some(SolutionSettings { values_grid, .. }) =
+                let prunable_positions = if let Some(SolutionSettings { values_grid }) =
                     &self.settings.solution
                 {
                     let mut all_unfixed_value_positions = values_grid.all_unfixed_value_positions();
