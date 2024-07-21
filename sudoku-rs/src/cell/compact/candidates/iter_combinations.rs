@@ -22,10 +22,6 @@ fn next_permutation<
     )
 }
 
-pub fn debug_asm(i: &mut CandidatesCombinationsIter<Base3>) -> Option<Candidates<Base3>> {
-    i.next()
-}
-
 #[derive(Debug, Clone)]
 struct FirstCandidatesCombinationsIter<Base: SudokuBase> {
     current: Candidates<Base>,
