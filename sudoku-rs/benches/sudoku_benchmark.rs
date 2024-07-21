@@ -22,7 +22,7 @@ use sudoku::rng::{new_crate_rng_from_rng, new_crate_rng_with_seed};
 use sudoku::samples::{base_2, base_3, base_4, base_5};
 use sudoku::solver::sat;
 use sudoku::solver::strategic::strategies::{
-    GroupIntersectionBoth, GroupReduction, Strategy, StrategyEnum,
+    GroupIntersectionBoth, GroupReduction, HiddenSingles, Strategy, StrategyEnum,
 };
 use sudoku::solver::{backtracking, introspective, strategic, FallibleSolver, InfallibleSolver};
 
@@ -378,14 +378,16 @@ fn bench_strategy_group(strategy_group: &mut BenchmarkGroup<WallTime>) {
         );
     }
 
-    let grid: Grid<Base3> =
+    let mut grid: Grid<Base3> =
         "000000300000071500002400018000009040094618230610700000430897600008140000009000000"
             .parse()
             .unwrap();
+    grid.set_all_direct_candidates();
+    grid.fix_all_values();
     strategy_group.bench_with_input(
         BenchmarkId::new("HiddenSingles/execute", "sample_grid_hidden_singles"),
         &grid,
-        |b, grid| b.iter(|| GroupReduction.execute(grid).unwrap()),
+        |b, grid| b.iter(|| HiddenSingles.execute(grid).unwrap()),
     );
 
     let grid: Grid<Base3> =

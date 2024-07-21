@@ -130,6 +130,10 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + H
         Coordinate::all().zip(self.iter_mut())
     }
 
+    pub fn into_iter_enumerate(self) -> impl Iterator<Item = (Coordinate<Base>, T)> {
+        Coordinate::all().zip(self.into_iter())
+    }
+
     pub fn iter_index_mask(&self, index_mask: Candidates<Base>) -> impl Iterator<Item = T> + '_ {
         self.iter_enumerate()
             .filter(move |(coordinate, _t)| index_mask.has(*coordinate))

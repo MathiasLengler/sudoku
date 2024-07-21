@@ -1,20 +1,20 @@
 use anyhow::ensure;
 
 use crate::base::SudokuBase;
-use crate::cell::Value;
 use crate::error::Result;
+use crate::grid::group::Group;
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions};
 use crate::solver::strategic::strategies::{Strategy, StrategyScore};
 
-#[derive(Debug, Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 struct CandidateStats<Base: SudokuBase> {
     count: u8,
     last_pos: Option<Position<Base>>,
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct HiddenSingles;
 
 impl Strategy for HiddenSingles {
@@ -25,6 +25,7 @@ impl Strategy for HiddenSingles {
         10
     }
     fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
+        // TODO: move to solver
         ensure!(
             grid.is_directly_consistent(),
             "HiddenSingles requires a directly consistent grid"
@@ -32,46 +33,33 @@ impl Strategy for HiddenSingles {
 
         Ok(Grid::<Base>::all_group_positions()
             .flat_map(|group_positions| {
-                // TODO: evaluate better data structure
-                //  - stack allocated
-                //  - Value<Base> API, less conversions
-                // => Group<Base, T>
-                // This allocation is now noticable in the profile.
-                let mut candidate_histogram =
-                    vec![CandidateStats::default(); Base::MAX_VALUE.into()];
+                let mut candidate_histogram = Group::<Base, CandidateStats<Base>>::default();
 
                 for group_position in group_positions {
                     if let Some(candidates) = grid.get(group_position).candidates() {
                         for candidate in candidates {
-                            let candidate = candidate.get() - 1;
-
-                            let candidate_index = usize::from(candidate);
-
-                            candidate_histogram[candidate_index].count += 1;
-                            candidate_histogram[candidate_index].last_pos = Some(group_position);
+                            let bucket = candidate_histogram.get_mut(candidate.into());
+                            bucket.count += 1;
+                            bucket.last_pos = Some(group_position);
                         }
                     }
                 }
 
-                candidate_histogram.into_iter().enumerate().filter_map(
-                    |(candidate_value, stats)| {
+                candidate_histogram
+                    .into_iter_enumerate()
+                    .filter_map(|(coordinate, stats)| {
                         if stats.count == 1 {
                             // This candidate is unique in this group.
                             let pos = stats.last_pos.unwrap();
 
-                            let candidate_value =
-                                Value::<Base>::try_from(u8::try_from(candidate_value + 1).unwrap())
-                                    .unwrap();
-
                             Some(Deduction::with_action(
                                 pos,
-                                Action::SetValue(candidate_value),
+                                Action::SetValue(coordinate.into()),
                             ))
                         } else {
                             None
                         }
-                    },
-                )
+                    })
             })
             .collect())
     }
