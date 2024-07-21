@@ -209,6 +209,19 @@ impl<Base: SudokuBase> Position<Base> {
     }
 }
 
+use crate::base::consts::{Base2, Base3};
+
+use super::test_utils::{consume_iter, consume_nested_iter};
+
+pub fn debug_asm() {
+    // consume_iter(Position::<Base2>::row(Coordinate::default()));
+    consume_iter(
+        [0, 1, 2, 3]
+            .into_iter()
+            .map(|i| unsafe { Position::<Base2>::new_unchecked(i) }),
+    );
+}
+
 // TODO: optimize
 /// Iterators
 impl<Base: SudokuBase> Position<Base> {
@@ -236,14 +249,14 @@ impl<Base: SudokuBase> Position<Base> {
     }
 
     // FIXME: perf regression ~10x caused by TrustedGroupSizeIter/DebugAssertTrustedGroupSizeIter
-    //  try unstable TrustedLen
+    //  try unstable TrustedLen => does not fix the issue
     //  maybe not enough because of TrustedRandomAccess and other std tricks.
     //  are the Position micro-benchmarks indicative of end-to-end perf? (Solver, Generator, etc.)
     // Different approach:
     //  pre-allocate/compute all position iterators and return slice/slice iterators
     //  Con: gets unwieldy quickly for base 5 with 625 total cells
     //  625 * u16 = 1250 bytes per group type
-    pub fn all_rows() -> impl Iterator<Item = impl TrustedGroupSizeIter<Base, Item = Self>> {
+    pub fn all_rows() -> impl Iterator<Item = impl Iterator<Item = Self>> {
         Coordinate::all().map(Self::row)
     }
 

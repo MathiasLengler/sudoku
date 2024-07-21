@@ -1,4 +1,8 @@
-use std::{fmt::Debug, iter::FusedIterator, marker::PhantomData};
+use std::{
+    fmt::Debug,
+    iter::{FusedIterator, TrustedLen},
+    marker::PhantomData,
+};
 
 use crate::base::SudokuBase;
 
@@ -10,7 +14,7 @@ use crate::base::SudokuBase;
 ///
 /// The iterator must produce exactly `Base::SIDE_LENGTH` items.
 pub unsafe trait TrustedGroupSizeIter<Base: SudokuBase>:
-    ExactSizeIterator + FusedIterator + Iterator
+    ExactSizeIterator + TrustedLen + FusedIterator + Iterator
 {
 }
 
@@ -79,6 +83,10 @@ impl<Base: SudokuBase, I: ExactSizeIterator + FusedIterator + Debug> Iterator
 
         next
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len(), Some(self.len()))
+    }
 }
 
 impl<Base: SudokuBase, I: ExactSizeIterator + FusedIterator + Debug> ExactSizeIterator
@@ -87,6 +95,11 @@ impl<Base: SudokuBase, I: ExactSizeIterator + FusedIterator + Debug> ExactSizeIt
     fn len(&self) -> usize {
         Base::SIDE_LENGTH.into()
     }
+}
+
+unsafe impl<Base: SudokuBase, I: ExactSizeIterator + FusedIterator + Debug> TrustedLen
+    for DebugAssertTrustedGroupSizeIter<Base, I>
+{
 }
 
 impl<Base: SudokuBase, I: ExactSizeIterator + FusedIterator + Debug> FusedIterator

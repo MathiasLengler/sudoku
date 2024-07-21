@@ -10,7 +10,7 @@
 pub use bounded_block_coordinate::BlockCoordinate;
 pub use bounded_block_segment::{BlockSegment, CellOrder};
 pub use bounded_coordinate::Coordinate;
-pub use bounded_position::Position;
+pub use bounded_position::{debug_asm, Position};
 pub use dynamic::DynamicPosition;
 pub use position_map::{Merge, PositionMap};
 
