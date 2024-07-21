@@ -77,82 +77,53 @@ mod cell_index_to_block_index {
     //! - `array.len() == Base::CELL_COUNT`
     use super::*;
 
-    // TODO: evaluate const fn to generate lookup tables
-    const fn const_generate_cell_index_to_block_index<const N: usize>() -> [usize; N] {
-        // TODO: update impl
-        let mut out = [0; N];
-        let mut i = 0;
-        while i < N {
-            out[i] = 2 * i;
+    const fn assert_u16(value: usize) -> u16 {
+        assert!(value <= u16::MAX as usize, "Value exceeds u16::MAX");
+        #[allow(clippy::cast_possible_truncation)]
+        {
+            value as u16
+        }
+    }
+
+    const fn assert_u8(value: u16) -> u8 {
+        assert!(value <= u8::MAX as u16, "Value exceeds u8::MAX");
+        #[allow(clippy::cast_possible_truncation)]
+        {
+            value as u8
+        }
+    }
+
+    const fn const_generate_cell_index_to_block_index<const BASE: u8, const CELL_COUNT: usize>(
+    ) -> [u8; CELL_COUNT] {
+        assert!(
+            base_to_cell_count(BASE) as usize == CELL_COUNT,
+            "Invalid CELL_COUNT for BASE"
+        );
+        let cell_count = assert_u16(CELL_COUNT);
+        let base_u16 = BASE as u16;
+
+        let mut out = [0u8; CELL_COUNT];
+
+        let mut i: u16 = 0;
+        while i < cell_count {
+            let starting_block_index = assert_u8(base_u16 * (i / (base_u16 * base_u16 * base_u16)));
+            let block_row_offset = assert_u8((i / base_u16) % base_u16);
+            out[i as usize] = starting_block_index + block_row_offset;
+
             i += 1;
         }
+
         out
     }
 
-    pub(super) static BASE_2: &[u8; base_to_cell_count(2) as usize] = &[
-        0, 0, 1, 1, //
-        0, 0, 1, 1, //
-        2, 2, 3, 3, //
-        2, 2, 3, 3, //
-    ];
-    pub(super) static BASE_3: &[u8; base_to_cell_count(3) as usize] = &[
-        0, 0, 0, 1, 1, 1, 2, 2, 2, //
-        0, 0, 0, 1, 1, 1, 2, 2, 2, //
-        0, 0, 0, 1, 1, 1, 2, 2, 2, //
-        3, 3, 3, 4, 4, 4, 5, 5, 5, //
-        3, 3, 3, 4, 4, 4, 5, 5, 5, //
-        3, 3, 3, 4, 4, 4, 5, 5, 5, //
-        6, 6, 6, 7, 7, 7, 8, 8, 8, //
-        6, 6, 6, 7, 7, 7, 8, 8, 8, //
-        6, 6, 6, 7, 7, 7, 8, 8, 8, //
-    ];
-    #[rustfmt::skip]
-    pub(super) static BASE_4: &[u8; base_to_cell_count(4) as usize] = &[
-         0,  0,  0,  0,  1,  1,  1,  1,  2,  2,  2,  2,  3,  3,  3,  3,
-         0,  0,  0,  0,  1,  1,  1,  1,  2,  2,  2,  2,  3,  3,  3,  3,
-         0,  0,  0,  0,  1,  1,  1,  1,  2,  2,  2,  2,  3,  3,  3,  3,
-         0,  0,  0,  0,  1,  1,  1,  1,  2,  2,  2,  2,  3,  3,  3,  3, 
-         4,  4,  4,  4,  5,  5,  5,  5,  6,  6,  6,  6,  7,  7,  7,  7,
-         4,  4,  4,  4,  5,  5,  5,  5,  6,  6,  6,  6,  7,  7,  7,  7,
-         4,  4,  4,  4,  5,  5,  5,  5,  6,  6,  6,  6,  7,  7,  7,  7,
-         4,  4,  4,  4,  5,  5,  5,  5,  6,  6,  6,  6,  7,  7,  7,  7, 
-         8,  8,  8,  8,  9,  9,  9,  9, 10, 10, 10, 10, 11, 11, 11, 11,
-         8,  8,  8,  8,  9,  9,  9,  9, 10, 10, 10, 10, 11, 11, 11, 11,
-         8,  8,  8,  8,  9,  9,  9,  9, 10, 10, 10, 10, 11, 11, 11, 11,
-         8,  8,  8,  8,  9,  9,  9,  9, 10, 10, 10, 10, 11, 11, 11, 11,
-        12, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 14, 15, 15, 15, 15,
-        12, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 14, 15, 15, 15, 15,
-        12, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 14, 15, 15, 15, 15,
-        12, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 14, 15, 15, 15, 15,
-    ];
-    #[rustfmt::skip]
-    pub(super) static BASE_5: &[u8; base_to_cell_count(5) as usize] = &[
-         0,  0,  0,  0,  0,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  3,  3,  3,  3,  3,  4,  4,  4,  4,  4,
-         0,  0,  0,  0,  0,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  3,  3,  3,  3,  3,  4,  4,  4,  4,  4,
-         0,  0,  0,  0,  0,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  3,  3,  3,  3,  3,  4,  4,  4,  4,  4,
-         0,  0,  0,  0,  0,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  3,  3,  3,  3,  3,  4,  4,  4,  4,  4,
-         0,  0,  0,  0,  0,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  3,  3,  3,  3,  3,  4,  4,  4,  4,  4,
-         5,  5,  5,  5,  5,  6,  6,  6,  6,  6,  7,  7,  7,  7,  7,  8,  8,  8,  8,  8,  9,  9,  9,  9,  9,
-         5,  5,  5,  5,  5,  6,  6,  6,  6,  6,  7,  7,  7,  7,  7,  8,  8,  8,  8,  8,  9,  9,  9,  9,  9,
-         5,  5,  5,  5,  5,  6,  6,  6,  6,  6,  7,  7,  7,  7,  7,  8,  8,  8,  8,  8,  9,  9,  9,  9,  9,
-         5,  5,  5,  5,  5,  6,  6,  6,  6,  6,  7,  7,  7,  7,  7,  8,  8,  8,  8,  8,  9,  9,  9,  9,  9,
-         5,  5,  5,  5,  5,  6,  6,  6,  6,  6,  7,  7,  7,  7,  7,  8,  8,  8,  8,  8,  9,  9,  9,  9,  9,
-        10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 13, 13, 13, 13, 13, 14, 14, 14, 14, 14,
-        10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 13, 13, 13, 13, 13, 14, 14, 14, 14, 14,
-        10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 13, 13, 13, 13, 13, 14, 14, 14, 14, 14,
-        10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 13, 13, 13, 13, 13, 14, 14, 14, 14, 14,
-        10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 13, 13, 13, 13, 13, 14, 14, 14, 14, 14,
-        15, 15, 15, 15, 15, 16, 16, 16, 16, 16, 17, 17, 17, 17, 17, 18, 18, 18, 18, 18, 19, 19, 19, 19, 19,
-        15, 15, 15, 15, 15, 16, 16, 16, 16, 16, 17, 17, 17, 17, 17, 18, 18, 18, 18, 18, 19, 19, 19, 19, 19,
-        15, 15, 15, 15, 15, 16, 16, 16, 16, 16, 17, 17, 17, 17, 17, 18, 18, 18, 18, 18, 19, 19, 19, 19, 19,
-        15, 15, 15, 15, 15, 16, 16, 16, 16, 16, 17, 17, 17, 17, 17, 18, 18, 18, 18, 18, 19, 19, 19, 19, 19,
-        15, 15, 15, 15, 15, 16, 16, 16, 16, 16, 17, 17, 17, 17, 17, 18, 18, 18, 18, 18, 19, 19, 19, 19, 19,
-        20, 20, 20, 20, 20, 21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 23, 23, 23, 23, 23, 24, 24, 24, 24, 24,
-        20, 20, 20, 20, 20, 21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 23, 23, 23, 23, 23, 24, 24, 24, 24, 24,
-        20, 20, 20, 20, 20, 21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 23, 23, 23, 23, 23, 24, 24, 24, 24, 24,
-        20, 20, 20, 20, 20, 21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 23, 23, 23, 23, 23, 24, 24, 24, 24, 24,
-        20, 20, 20, 20, 20, 21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 23, 23, 23, 23, 23, 24, 24, 24, 24, 24
-    ];
+    pub(super) static BASE_2: &[u8; base_to_cell_count(2) as usize] =
+        &const_generate_cell_index_to_block_index::<2, { base_to_cell_count(2) as usize }>();
+    pub(super) static BASE_3: &[u8; base_to_cell_count(3) as usize] =
+        &const_generate_cell_index_to_block_index::<3, { base_to_cell_count(3) as usize }>();
+    pub(super) static BASE_4: &[u8; base_to_cell_count(4) as usize] =
+        &const_generate_cell_index_to_block_index::<4, { base_to_cell_count(4) as usize }>();
+    pub(super) static BASE_5: &[u8; base_to_cell_count(5) as usize] =
+        &const_generate_cell_index_to_block_index::<5, { base_to_cell_count(5) as usize }>();
 }
 
 mod block_index_to_top_left_cell_index {
