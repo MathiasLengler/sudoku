@@ -19,6 +19,7 @@ mod bounded_block_segment;
 mod bounded_coordinate;
 mod bounded_position;
 mod dynamic;
+mod group;
 mod position_map;
 
 // Used by benchmarking harness
