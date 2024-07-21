@@ -379,6 +379,16 @@ fn bench_strategy_group(strategy_group: &mut BenchmarkGroup<WallTime>) {
     }
 
     let grid: Grid<Base3> =
+        "000000300000071500002400018000009040094618230610700000430897600008140000009000000"
+            .parse()
+            .unwrap();
+    strategy_group.bench_with_input(
+        BenchmarkId::new("HiddenSingles/execute", "sample_grid_hidden_singles"),
+        &grid,
+        |b, grid| b.iter(|| GroupReduction.execute(grid).unwrap()),
+    );
+
+    let grid: Grid<Base3> =
         "4105300hg281j209i2j081381ag614j20h410hh80318412181h00581033k4109g130342gi0k86s811103m8i4igh0l85805210hla81g20550g12181500h0309090h50120654i0i081032181g10h09054111"
             .parse()
             .unwrap();
