@@ -1,4 +1,3 @@
-
 use crate::base::SudokuBase;
 use crate::error::Result;
 use crate::grid::group::Group;

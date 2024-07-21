@@ -21,6 +21,8 @@ use sudoku::position::Position;
 use sudoku::rng::{new_crate_rng_from_rng, new_crate_rng_with_seed};
 use sudoku::samples::{base_2, base_3, base_4, base_5};
 use sudoku::solver::sat;
+use sudoku::solver::strategic::strategies::group_reduction::v2::reduce_complete_candidates_group;
+use sudoku::solver::strategic::strategies::group_reduction::v2::test_utils::locked_set_test_cases_base_3;
 use sudoku::solver::strategic::strategies::{
     GroupIntersectionBoth, GroupReduction, HiddenSingles, Strategy, StrategyEnum,
 };
@@ -349,32 +351,14 @@ fn bench_grid_group<Base: SudokuBase>(grid_group: &mut BenchmarkGroup<WallTime>)
 }
 
 fn bench_strategy_group(strategy_group: &mut BenchmarkGroup<WallTime>) {
-    for (group_reduction_param_name, candidates_group) in [
-        (
-            "basic",
-            vec![
-                vec![1, 2],
-                vec![1, 3],
-                vec![2, 3],
-                vec![1, 2, 3, 4, 5, 6],
-                vec![1, 3, 4],
-                vec![2, 3, 4, 5, 6],
-            ]
-            .into_iter()
-            .map(|candidates_data| candidates_data.try_into().unwrap())
-            .collect::<Vec<Candidates<Base3>>>(),
-        ),
-        ("all", vec![Candidates::all(); Base3::SIDE_LENGTH.into()]),
-    ] {
+    for (group_reduction_param_name, candidates_group, _) in locked_set_test_cases_base_3() {
         strategy_group.bench_with_input(
             BenchmarkId::new(
                 "GroupReduction/reduce_candidates_group",
                 group_reduction_param_name,
             ),
             &candidates_group,
-            |b, candidates_group| {
-                b.iter(|| GroupReduction::reduce_candidates_group_v2(candidates_group))
-            },
+            |b, candidates_group| b.iter(|| reduce_complete_candidates_group(candidates_group)),
         );
     }
 

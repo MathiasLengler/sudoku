@@ -92,14 +92,6 @@ impl Strategy for GroupReduction {
 }
 
 impl GroupReduction {
-    pub fn reduce_candidates_group_v2<Base: SudokuBase>(
-        candidates_group: &[Candidates<Base>],
-    ) -> Vec<Candidates<Base>> {
-        v2::reduce_candidates_group(candidates_group)
-    }
-}
-
-impl GroupReduction {
     pub fn reduce_candidates_group_v1<Base: SudokuBase>(
         candidates_group: &[Candidates<Base>],
     ) -> Vec<Candidates<Base>> {
