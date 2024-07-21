@@ -1,5 +1,5 @@
 // #![feature(iter_next_chunk)]
-#![feature(trusted_len)]
+// #![feature(trusted_len)]
 // rustc lints
 #![warn(missing_debug_implementations)]
 #![warn(unreachable_pub)]
