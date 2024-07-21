@@ -21,10 +21,10 @@ use sudoku::position::Position;
 use sudoku::rng::{new_crate_rng_from_rng, new_crate_rng_with_seed};
 use sudoku::samples::{base_2, base_3, base_4, base_5};
 use sudoku::solver::sat;
-use sudoku::solver::strategic::strategies::group_reduction::v2::reduce_complete_candidates_group;
-use sudoku::solver::strategic::strategies::group_reduction::v2::test_utils::locked_set_test_cases_base_3;
+use sudoku::solver::strategic::strategies::locked_sets::v2::find_locked_set;
+use sudoku::solver::strategic::strategies::locked_sets::v2::test_utils::locked_set_test_cases_base_3;
 use sudoku::solver::strategic::strategies::{
-    GroupIntersectionBoth, GroupReduction, HiddenSingles, Strategy, StrategyEnum,
+    GroupIntersectionBoth, HiddenSingles, LockedSets, Strategy, StrategyEnum,
 };
 use sudoku::solver::{backtracking, introspective, strategic, FallibleSolver, InfallibleSolver};
 
@@ -351,17 +351,6 @@ fn bench_grid_group<Base: SudokuBase>(grid_group: &mut BenchmarkGroup<WallTime>)
 }
 
 fn bench_strategy_group(strategy_group: &mut BenchmarkGroup<WallTime>) {
-    for (group_reduction_param_name, candidates_group, _) in locked_set_test_cases_base_3() {
-        strategy_group.bench_with_input(
-            BenchmarkId::new(
-                "GroupReduction/reduce_candidates_group",
-                group_reduction_param_name,
-            ),
-            &candidates_group,
-            |b, candidates_group| b.iter(|| reduce_complete_candidates_group(candidates_group)),
-        );
-    }
-
     let mut grid: Grid<Base3> =
         "000000300000071500002400018000009040094618230610700000430897600008140000009000000"
             .parse()
@@ -374,14 +363,22 @@ fn bench_strategy_group(strategy_group: &mut BenchmarkGroup<WallTime>) {
         |b, grid| b.iter(|| HiddenSingles.execute(grid).unwrap()),
     );
 
+    for (locked_sets_param_name, candidates_group, _) in locked_set_test_cases_base_3() {
+        strategy_group.bench_with_input(
+            BenchmarkId::new("LockedSets/find_locked_set", locked_sets_param_name),
+            &candidates_group,
+            |b, candidates_group| b.iter(|| find_locked_set(candidates_group)),
+        );
+    }
+
     let grid: Grid<Base3> =
         "4105300hg281j209i2j081381ag614j20h410hh80318412181h00581033k4109g130342gi0k86s811103m8i4igh0l85805210hla81g20550g12181500h0309090h50120654i0i081032181g10h09054111"
             .parse()
             .unwrap();
     strategy_group.bench_with_input(
-        BenchmarkId::new("GroupReduction/execute", "sample_grid_hidden_pairs"),
+        BenchmarkId::new("LockedSets/execute", "sample_grid_hidden_pairs"),
         &grid,
-        |b, grid| b.iter(|| GroupReduction.execute(grid).unwrap()),
+        |b, grid| b.iter(|| LockedSets.execute(grid).unwrap()),
     );
 
     let grid: Grid<Base3> = "s00905cgdg2103pgc00h03r0ccd85cmcpcece0c0b0g1do036s9sec11c48222g1482c8c0ho421og8o9o1ogc410209sgoi22054gi0o011i6gkiq116q814s0s4ca48kao4s6o4s1003g10610410s0qg081210c".parse().unwrap();

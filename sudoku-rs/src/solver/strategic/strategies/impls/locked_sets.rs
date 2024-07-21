@@ -22,11 +22,11 @@ pub mod v2;
 //  set size
 //  naked/hidden
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub struct GroupReduction;
+pub struct LockedSets;
 
-impl Strategy for GroupReduction {
+impl Strategy for LockedSets {
     fn name(self) -> &'static str {
-        "GroupReduction"
+        "LockedSets"
     }
 
     fn score(self) -> StrategyScore {
@@ -59,12 +59,11 @@ impl Strategy for GroupReduction {
                 //     .unzip();
 
                 // TODO: v1 vs v2 has no clear-cut performance winner
-                //  For small candidates groups, v1 is faster, up to 10x (Strategies/GroupReduction/execute/sample_grid_hidden_pairs)
-                //  For large candidates groups, v2 is way faster, up to 6ms vs 220ns / 20_000x speed-up (Strategies/GroupReduction/v2/reduce_candidates_group/all)
+                //  For small candidates groups, v1 is faster, up to 10x (Strategies/LockedSets/execute/sample_grid_hidden_pairs)
+                //  For large candidates groups, v2 is way faster, up to 6ms vs 220ns / 20_000x speed-up (Strategies/LockedSets/v2/find_locked_set/all)
                 // Either optimize v2 to be faster or at least comparable to v1 in all cases.
                 // Or use introspective implementation, which switches between the two implementation based on a heuristic.
-                let reduced_candidates_group =
-                    v2::reduce_complete_candidates_group(&candidates_group);
+                let reduced_candidates_group = v2::find_locked_set(&candidates_group);
 
                 let mut deduction = Deduction::new();
 
@@ -91,8 +90,8 @@ impl Strategy for GroupReduction {
     }
 }
 
-impl GroupReduction {
-    pub fn reduce_candidates_group_v1<Base: SudokuBase>(
+impl LockedSets {
+    pub fn find_locked_set_v1<Base: SudokuBase>(
         candidates_group: &[Candidates<Base>],
     ) -> Vec<Candidates<Base>> {
         let mut values = Vec::with_capacity(candidates_group.len());
@@ -144,7 +143,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_reduce_candidates_group() {
+    fn test_find_locked_set() {
         type TestCase = (Vec<Vec<u8>>, Vec<Vec<u8>>);
 
         let test_cases: Vec<TestCase> = vec![
@@ -378,8 +377,7 @@ mod tests {
                 .map(|candidates_data| candidates_data.try_into().unwrap())
                 .collect();
 
-            let reduced_candidates_group =
-                GroupReduction::reduce_candidates_group_v1(&candidates_group);
+            let reduced_candidates_group = LockedSets::find_locked_set_v1(&candidates_group);
 
             let reduced_candidates_group_data: Vec<_> = reduced_candidates_group
                 .into_iter()
@@ -406,7 +404,7 @@ mod tests {
 
         grid.set_all_direct_candidates();
 
-        let deductions = GroupReduction.execute(&grid).unwrap();
+        let deductions = LockedSets.execute(&grid).unwrap();
 
         let expected_deductions: Deductions<_> = vec![
             vec![
@@ -467,7 +465,7 @@ mod tests {
 
         grid.set_all_direct_candidates();
 
-        let deductions = GroupReduction.execute(&grid).unwrap();
+        let deductions = LockedSets.execute(&grid).unwrap();
 
         let expected_deductions: Deductions<_> = vec![
             vec![

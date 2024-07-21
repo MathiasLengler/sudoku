@@ -16,7 +16,7 @@ use crate::{
 //     candidates_group: CandidatesGroup<Base>,
 // ) -> Option<GroupDeduction<Base>>
 
-pub fn reduce_complete_candidates_group<Base: SudokuBase>(
+pub fn find_locked_set<Base: SudokuBase>(
     candidates_group: &CandidatesGroup<Base>,
 ) -> CandidatesGroup<Base> {
     const ENABLE_STATS: bool = false;
@@ -1029,18 +1029,14 @@ mod tests {
     use super::*;
     use crate::base::consts::*;
     use crate::cell::Candidates;
-    use crate::solver::strategic::strategies::GroupReduction;
+    use crate::solver::strategic::strategies::LockedSets;
     use crate::test_util::init_test_logger;
 
-    fn assert_reduce_complete_candidates_group<Base: SudokuBase>(
+    fn assert_find_locked_set<Base: SudokuBase>(
         (base_test_case_name, input, expected_output): TestCase<Base>,
     ) {
-        assert_reduce_complete_candidates_group_single(
-            base_test_case_name,
-            &input,
-            &expected_output,
-        );
-        assert_reduce_complete_candidates_group_single(
+        assert_find_locked_set_single(base_test_case_name, &input, &expected_output);
+        assert_find_locked_set_single(
             &format!("{base_test_case_name} - reversed"),
             &input.clone().reverse(),
             &expected_output.clone().reverse(),
@@ -1049,14 +1045,14 @@ mod tests {
         // TODO: re-label candidates
     }
 
-    fn assert_reduce_complete_candidates_group_single<Base: SudokuBase>(
+    fn assert_find_locked_set_single<Base: SudokuBase>(
         test_case_name: &str,
         input: &CandidatesGroup<Base>,
         expected_output: &CandidatesGroup<Base>,
     ) {
         info!("Test case: {test_case_name}");
 
-        let actual_output = reduce_complete_candidates_group(input);
+        let actual_output = find_locked_set(input);
 
         assert_eq!(
             &actual_output, expected_output,
@@ -1065,30 +1061,30 @@ mod tests {
     }
 
     #[test]
-    fn test_reduce_complete_candidates_group_base_2() {
+    fn test_find_locked_set_base_2() {
         init_test_logger();
 
         for test_case in test_utils::locked_set_test_cases_base_2() {
-            assert_reduce_complete_candidates_group(test_case);
+            assert_find_locked_set(test_case);
         }
     }
 
     #[test]
-    fn test_reduce_complete_candidates_group_base_3() {
+    fn test_find_locked_set_base_3() {
         init_test_logger();
 
         for test_case in test_utils::locked_set_test_cases_base_3() {
-            assert_reduce_complete_candidates_group(test_case);
+            assert_find_locked_set(test_case);
         }
     }
 
     #[test]
-    fn test_reduce_complete_candidates_group_vs_v1() {
+    fn test_find_locked_set_vs_v1() {
         // v2 only applies a single deduction. To be comparable with v1, we need to apply it recursively.
         fn v2_recusive<Base: SudokuBase>(
             candidates_group: &CandidatesGroup<Base>,
         ) -> CandidatesGroup<Base> {
-            let reduced = reduce_complete_candidates_group(candidates_group);
+            let reduced = find_locked_set(candidates_group);
             if &reduced == candidates_group {
                 return reduced;
             }
@@ -1107,10 +1103,9 @@ mod tests {
             if input.iter().any(|candidates| candidates.is_empty()) {
                 continue;
             }
-            let reduced_v1 = CandidatesGroup::<Base>::try_from(
-                GroupReduction::reduce_candidates_group_v1(input.as_slice()),
-            )
-            .unwrap();
+            let reduced_v1 =
+                CandidatesGroup::<Base>::try_from(LockedSets::find_locked_set_v1(input.as_slice()))
+                    .unwrap();
             if reduced_v1.iter().any(|candidates| candidates.is_empty()) {
                 continue;
             }

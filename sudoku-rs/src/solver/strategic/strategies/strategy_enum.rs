@@ -18,7 +18,7 @@ pub enum StrategyEnum {
     NakedSingles,
     HiddenSingles,
     NakedPairs,
-    GroupReduction,
+    LockedSets,
     GroupIntersectionBlockToAxis,
     GroupIntersectionAxisToBlock,
     GroupIntersectionBoth,
@@ -31,7 +31,7 @@ impl StrategyEnum {
             NakedSingles.into(),
             HiddenSingles.into(),
             NakedPairs.into(),
-            GroupReduction.into(),
+            LockedSets.into(),
             GroupIntersectionBlockToAxis.into(),
             GroupIntersectionAxisToBlock.into(),
             GroupIntersectionBoth.into(),
@@ -44,7 +44,7 @@ impl StrategyEnum {
             NakedSingles.into(),
             HiddenSingles.into(),
             NakedPairs.into(),
-            GroupReduction.into(),
+            LockedSets.into(),
             GroupIntersectionBoth.into(),
             Backtracking.into(),
         ]
@@ -55,7 +55,7 @@ impl StrategyEnum {
             NakedSingles.into(),
             HiddenSingles.into(),
             NakedPairs.into(),
-            GroupReduction.into(),
+            LockedSets.into(),
             GroupIntersectionBoth.into(),
         ]
     }
@@ -68,7 +68,7 @@ impl StrategyEnum {
             NakedPairs.into(),
             // FIXME: Slow for empty groups
             //  also slow for base 3, but impact is worse for larger bases
-            // GroupReduction.into(),
+            // LockedSets.into(),
             GroupIntersectionBoth.into(),
         ]
     }

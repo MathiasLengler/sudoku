@@ -28,7 +28,7 @@ pub struct Deduction<Base: SudokuBase> {
     // TODO: cost for this deduction
     //  we currently only support cost per Strategy.
     //  Different deductions produced by a strategy could vary in difficulty, e.g.:
-    //  - GroupReduction/LockedCandidates: naked vs hidden, set size
+    //  - LockedSets/LockedCandidates: naked vs hidden, set size
     //  - Chain-based strategies: length of chain
 }
 

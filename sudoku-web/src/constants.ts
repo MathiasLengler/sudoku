@@ -10,7 +10,7 @@ export const strategyEnumSchema = z.enum([
     "NakedSingles",
     "HiddenSingles",
     "NakedPairs",
-    "GroupReduction",
+    "LockedSets",
     "GroupIntersectionBlockToAxis",
     "GroupIntersectionAxisToBlock",
     "GroupIntersectionBoth",
