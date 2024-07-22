@@ -1,11 +1,14 @@
 use std::fmt;
-use std::fmt::{Debug, Display, Formatter};
+use std::fmt::{Display, Formatter};
 use std::marker::PhantomData;
 use std::ops::{Index, IndexMut};
 use std::str::FromStr;
 
 use anyhow::ensure;
-use nalgebra::{ArrayStorage, Const, Matrix, Owned, SMatrix, VecStorage};
+use nalgebra::allocator::Allocator;
+use nalgebra::{
+    ArrayStorage, Const, DefaultAllocator, DimName, Matrix, OMatrix, Owned, SMatrix, U25, U9,
+};
 use ndarray::{Array2, ArrayView2, ArrayViewMut2};
 
 use crate::base::SudokuBase;
@@ -28,22 +31,91 @@ pub mod group;
 
 pub mod dynamic;
 
-pub type CellsMatrix<T, const SIDE_LENGTH_USIZE: usize> = Matrix<
-    T,
-    Const<SIDE_LENGTH_USIZE>,
-    Const<SIDE_LENGTH_USIZE>,
-    ArrayStorage<T, SIDE_LENGTH_USIZE, SIDE_LENGTH_USIZE>,
->;
+pub type CellsMatrix<T, SideLength: DimName> = OMatrix<T, SideLength, SideLength>;
+
+// https://stackoverflow.com/a/69386814
+trait Bound {
+    fn bound();
+}
+
+trait Trait {
+    type Type;
+}
+
+trait BoundedTypeHelper: Trait<Type = Self::BoundedType> {
+    type BoundedType: Bound;
+}
+
+impl<T> BoundedTypeHelper for T
+where
+    T: Trait,
+    Self::Type: Bound,
+{
+    type BoundedType = Self::Type;
+}
+
+trait UserTrait: BoundedTypeHelper {}
+
+fn fizz<T: UserTrait>() {
+    T::Type::bound();
+}
+
+// ---
+
+struct Foo;
+
+trait MinBase {
+    type SideLengthDim: DimName
+    where
+        DefaultAllocator: Allocator<Self::SideLengthDim, Self::SideLengthDim>;
+}
+
+impl<T: DimName> MinBase for T
+where
+    DefaultAllocator: Allocator<T, T>,
+{
+    type SideLengthDim = T;
+}
+
+#[cfg(test)]
+mod tests_debug {
+    use super::*;
+
+    #[test]
+    fn test_matrix() {
+        fn assert_trait_dim<SideLength: DimName>(t: CellsMatrix<u8, SideLength>)
+        where
+            DefaultAllocator: Allocator<SideLength, SideLength>,
+        {
+            dbg!(t);
+        }
+        fn assert_trait_base_min<Base: MinBase>(t: CellsMatrix<u8, Base::SideLengthDim>)
+        // where
+        //     DefaultAllocator: Allocator<Base::SideLengthDim, Base::SideLengthDim>,
+        {
+            dbg!(t);
+        }
+
+        assert_trait_base_min::<Foo>(Matrix::default());
+
+        // fn assert_trait_base<Base: SudokuBase>(t: CellsMatrix<u8, Base::SideLengthDim>)
+        // where
+        //     DefaultAllocator: Allocator<Base::SideLengthDim, Base::SideLengthDim>,
+        // {
+        //     dbg!(t);
+        // }
+
+        let m: CellsMatrix<u8, U25> = Matrix::default();
+        assert_trait_dim(m);
+    }
+}
 
 /// A square grid of cells with side length `Base::SIDE_LENGTH`.
 ///
 /// By default, the cell type `T` is `Cell<Base>`.
 /// Other cell types are supported, but with less functionality.
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
-pub struct Grid<Base: SudokuBase, T: Clone + Debug + PartialEq + Eq = Cell<Base>>
-where
-    [(); Base::SIDE_LENGTH_USIZE]:,
-{
+pub struct Grid<Base: SudokuBase, T = Cell<Base>> {
     // TODO: evaluate nalgebra as storage backend
     //  it seems to have better support for fixed sized matrixes.
     //  This could be helpful for extracting Groups as Base::Group<T>, e.g. fixed sized arrays.
@@ -54,23 +126,23 @@ where
     /// - `cells.len() == Base::CELL_COUNT`
     /// - `cells.dim() == (Base::SIDE_LENGTH, Base::SIDE_LENGTH)`
     /// - `cells.is_standard_layout()`
-    cells: CellsMatrix<T, { Base::SIDE_LENGTH_USIZE }>,
+    cells: Array2<T>,
     _base: PhantomData<Base>,
 }
 
-impl<Base: SudokuBase, T: Clone + Debug + PartialEq + Eq> AsRef<Grid<Base, T>> for Grid<Base, T> {
+impl<Base: SudokuBase, T> AsRef<Grid<Base, T>> for Grid<Base, T> {
     fn as_ref(&self) -> &Grid<Base, T> {
         self
     }
 }
 
-impl<Base: SudokuBase, T: Clone + Debug + PartialEq + Eq> AsMut<Grid<Base, T>> for Grid<Base, T> {
+impl<Base: SudokuBase, T> AsMut<Grid<Base, T>> for Grid<Base, T> {
     fn as_mut(&mut self) -> &mut Grid<Base, T> {
         self
     }
 }
 
-impl<Base: SudokuBase, T: Clone + Debug + PartialEq + Eq> Index<Position<Base>> for Grid<Base, T> {
+impl<Base: SudokuBase, T> Index<Position<Base>> for Grid<Base, T> {
     type Output = T;
 
     fn index(&self, pos: Position<Base>) -> &Self::Output {
@@ -78,16 +150,14 @@ impl<Base: SudokuBase, T: Clone + Debug + PartialEq + Eq> Index<Position<Base>> 
     }
 }
 
-impl<Base: SudokuBase, T: Clone + Debug + PartialEq + Eq> IndexMut<Position<Base>>
-    for Grid<Base, T>
-{
+impl<Base: SudokuBase, T> IndexMut<Position<Base>> for Grid<Base, T> {
     fn index_mut(&mut self, pos: Position<Base>) -> &mut Self::Output {
         self.get_mut(pos)
     }
 }
 
 /// Indexing
-impl<Base: SudokuBase, T: Clone + Debug + PartialEq + Eq> Grid<Base, T> {
+impl<Base: SudokuBase, T> Grid<Base, T> {
     // TODO: evaluate `cells: Box<[Cell<Base>; Base::CELL_COUNT]>`
     //  requires new associated type in `Base`, but could reduce the amount of unsafe code for slice conversions.
     fn cells_slice(&self) -> &[T] {
@@ -112,7 +182,7 @@ impl<Base: SudokuBase, T: Clone + Debug + PartialEq + Eq> Grid<Base, T> {
 }
 
 /// Validation
-impl<Base: SudokuBase, T: Clone + Debug + PartialEq + Eq> Grid<Base, T> {
+impl<Base: SudokuBase, T> Grid<Base, T> {
     fn validate_cells(cells: &Array2<T>) -> Result<()> {
         ensure!(cells.len() == usize::from(Base::CELL_COUNT));
         let side_length = usize::from(Base::SIDE_LENGTH);
@@ -159,7 +229,7 @@ impl<Base: SudokuBase, T: Clone + Debug + PartialEq + Eq> Grid<Base, T> {
 }
 
 /// internal ndarray views for cells
-impl<Base: SudokuBase, T: Clone + Debug + PartialEq + Eq> Grid<Base, T> {
+impl<Base: SudokuBase, T> Grid<Base, T> {
     pub(crate) fn cells_view(&self) -> ArrayView2<T> {
         self.cells.view()
     }
@@ -450,7 +520,7 @@ impl<Base: SudokuBase, T: Default + Clone> Grid<Base, T> {
 }
 
 /// Public Grid API
-impl<Base: SudokuBase, T: Clone + Debug + PartialEq + Eq> Grid<Base, T> {
+impl<Base: SudokuBase, T> Grid<Base, T> {
     pub fn with(cells: Vec<T>) -> Result<Self> {
         let cell_count = usize::from(Base::CELL_COUNT);
 
@@ -497,7 +567,7 @@ impl<Base: SudokuBase> Grid<Base> {
         Ok(grid)
     }
 }
-impl<Base: SudokuBase, T: Clone + Debug + PartialEq + Eq> Grid<Base, T> {
+impl<Base: SudokuBase, T> Grid<Base, T> {
     pub fn get(&self, pos: Position<Base>) -> &T {
         // Debug validation
         pos.debug_assert();
@@ -579,7 +649,7 @@ impl<Base: SudokuBase> Grid<Base> {
 ///   - `all_value_positions`
 ///   - `all_unfixed_value_positions`
 ///   - `all_candidates_positions`
-impl<Base: SudokuBase, T: Clone + Debug + PartialEq + Eq> Grid<Base, T> {
+impl<Base: SudokuBase, T> Grid<Base, T> {
     fn positions_to_cells(
         &self,
         positions: impl Iterator<Item = Position<Base>>,
@@ -632,7 +702,7 @@ impl<Base: SudokuBase, T: Clone + Debug + PartialEq + Eq> Grid<Base, T> {
 }
 
 /// Position iterators
-impl<Base: SudokuBase, T: Clone + Debug + PartialEq + Eq> Grid<Base, T> {
+impl<Base: SudokuBase, T> Grid<Base, T> {
     pub fn all_positions() -> impl Iterator<Item = Position<Base>> {
         Position::all()
     }
@@ -696,7 +766,7 @@ impl<Base: SudokuBase> Grid<Base> {
 }
 
 /// Neighbor iterators
-impl<Base: SudokuBase, T: Clone + Debug + PartialEq + Eq> Grid<Base, T> {
+impl<Base: SudokuBase, T> Grid<Base, T> {
     // TODO: test
     fn neighbor_positions_with_duplicates(
         pos: Position<Base>,

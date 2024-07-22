@@ -2,6 +2,11 @@ use std::fmt::{Binary, Debug, Display};
 use std::hash::Hash;
 use std::ops::{BitAndAssign, BitOrAssign, BitXorAssign, Shl};
 
+use nalgebra::allocator::Allocator;
+use nalgebra::{
+    ArrayStorage, Const, DefaultAllocator, DimName, Matrix, OMatrix, Owned, U16, U25, U4, U9,
+};
+
 use num::traits::{
     CheckedShl, CheckedShr, ConstOne, ConstZero, NumAssignOps, Unsigned, WrappingAdd, WrappingMul,
     WrappingNeg, WrappingShl, WrappingShr, WrappingSub,
@@ -13,6 +18,7 @@ pub(crate) use enum_impl::match_base_enum;
 pub use enum_impl::BaseEnum;
 
 use crate::error::{Error, Result};
+use crate::grid::CellsMatrix;
 use crate::position::Coordinate;
 use crate::position::Position;
 use crate::unsafe_utils::get_unchecked;
@@ -183,8 +189,10 @@ where
     /// - must equal `BASE.pow(2)`
     /// - must equal `MAX_VALUE`
     const SIDE_LENGTH: u8;
-    const SIDE_LENGTH_USIZE: usize;
+    // const SIDE_LENGTH_USIZE: usize;
     type SideLengthDim: nalgebra::DimName;
+    // where
+    //     DefaultAllocator: Allocator<Self::SideLengthDim, Self::SideLengthDim>;
 
     /// The max value a value can be set to.
     ///
@@ -216,7 +224,7 @@ where
     /// # Safety
     ///
     /// `MAX_VALUE` must be representable at the highest bit position,
-    /// e.g. the size of the unsigned primitive must be equal to or greater than `MAX_VALUE`.
+    /// e.g. the bit size of the unsigned primitive must be equal to or greater than `MAX_VALUE`.
     type CandidatesIntegral: Copy
         + Clone
         + Debug
@@ -271,18 +279,20 @@ where
         > + TryFrom<Vec<T>, Error = Vec<T>>
     where
         T: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash;
+
+    // type CellMatrix: As
 }
 
 macro_rules! impl_sudoku_base {
-    ($($type_num:ty,$base_u8:expr,$type_integral:ty,$CELL_INDEX_TO_BLOCK_INDEX:expr,$BLOCK_INDEX_TO_TOP_LEFT_CELL_INDEX:expr;)+) => {
+    ($($type_num:ty, $base_u8:expr, $side_length_dim:ty, $type_integral:ty, $CELL_INDEX_TO_BLOCK_INDEX:expr, $BLOCK_INDEX_TO_TOP_LEFT_CELL_INDEX:expr;)+) => {
         $(
 // Safety: this private macro is only instantiated below and the correctness of the generated impls is tested.
 unsafe impl SudokuBase for $type_num {
     const ENUM: BaseEnum = BaseEnum::assert_from_base_u8($base_u8);
     const BASE: u8 = $base_u8;
     const SIDE_LENGTH: u8 = base_to_side_length(Self::BASE);
-    const SIDE_LENGTH_USIZE: usize = Self::SIDE_LENGTH as usize;
-    type SideLengthDim = nalgebra::Const<{Self::SIDE_LENGTH_USIZE}>;
+    // const SIDE_LENGTH_USIZE: usize = Self::SIDE_LENGTH as usize;
+    type SideLengthDim = $side_length_dim;
     const MAX_VALUE: u8 = base_to_max_value(Self::BASE);
     const CELL_COUNT: u16 = base_to_cell_count(Self::BASE);
     const BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS: usize = Self::ENUM.binary_fixed_candidates_line_cell_chars();
@@ -321,10 +331,10 @@ unsafe impl SudokuBase for $type_num {
 
 // Implement `SudokuBase` for all base structs
 impl_sudoku_base!(
-    Base2, 2, u8, cell_index_to_block_index::BASE_2, block_index_to_top_left_cell_index::BASE_2;
-    Base3, 3, u16, cell_index_to_block_index::BASE_3, block_index_to_top_left_cell_index::BASE_3;
-    Base4, 4, u16, cell_index_to_block_index::BASE_4, block_index_to_top_left_cell_index::BASE_4;
-    Base5, 5, u32, cell_index_to_block_index::BASE_5, block_index_to_top_left_cell_index::BASE_5;
+    Base2, 2, U4, u8, cell_index_to_block_index::BASE_2, block_index_to_top_left_cell_index::BASE_2;
+    Base3, 3, U9, u16, cell_index_to_block_index::BASE_3, block_index_to_top_left_cell_index::BASE_3;
+    Base4, 4, U16, u16, cell_index_to_block_index::BASE_4, block_index_to_top_left_cell_index::BASE_4;
+    Base5, 5, U25, u32, cell_index_to_block_index::BASE_5, block_index_to_top_left_cell_index::BASE_5;
 );
 
 mod enum_impl {
