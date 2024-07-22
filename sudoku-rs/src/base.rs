@@ -183,6 +183,9 @@ where
     /// - must equal `BASE.pow(2)`
     /// - must equal `MAX_VALUE`
     const SIDE_LENGTH: u8;
+    const SIDE_LENGTH_USIZE: usize;
+    type SideLengthDim: nalgebra::DimName;
+
     /// The max value a value can be set to.
     ///
     /// # Safety
@@ -278,6 +281,8 @@ unsafe impl SudokuBase for $type_num {
     const ENUM: BaseEnum = BaseEnum::assert_from_base_u8($base_u8);
     const BASE: u8 = $base_u8;
     const SIDE_LENGTH: u8 = base_to_side_length(Self::BASE);
+    const SIDE_LENGTH_USIZE: usize = Self::SIDE_LENGTH as usize;
+    type SideLengthDim = nalgebra::Const<{Self::SIDE_LENGTH_USIZE}>;
     const MAX_VALUE: u8 = base_to_max_value(Self::BASE);
     const CELL_COUNT: u16 = base_to_cell_count(Self::BASE);
     const BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS: usize = Self::ENUM.binary_fixed_candidates_line_cell_chars();
