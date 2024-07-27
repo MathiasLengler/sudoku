@@ -6,8 +6,11 @@ use crate::{
     unsafe_utils::{get_unchecked, get_unchecked_mut},
 };
 use anyhow::anyhow;
-use std::fmt::{Debug, Display};
 use std::hash::Hash;
+use std::{
+    fmt::{Debug, Display},
+    mem::MaybeUninit,
+};
 
 pub type CandidatesGroup<Base> = Group<Base, Candidates<Base>>;
 // pub use iter::*;
@@ -65,6 +68,25 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + H
     //         group: iter.collect::<Vec<_>>().try_into().unwrap(),
     //     }
     // }
+
+    pub fn from_iter_checked(iter: impl IntoIterator<Item = T>) -> Self {
+        // let mut buf = [const { MaybeUninit::<u8>::uninit() }; 32];
+
+        fn inner<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash>(
+            iter: impl Iterator<Item = T>,
+        ) -> Group<Base, T> {
+            let iter = iter.into_iter();
+            let mut this = Group::default();
+            itertools::Itertools::zip_eq(this.iter_mut(), iter).for_each(
+                |(group_item, iter_item)| {
+                    *group_item = iter_item;
+                },
+            );
+            this
+        }
+
+        inner(iter.into_iter())
+    }
 
     pub fn get(&self, coordinate: Coordinate<Base>) -> T {
         // Safety:
@@ -198,7 +220,7 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + H
 
 #[cfg(test)]
 mod tests {
-    use crate::base::consts::Base3;
+    use crate::base::consts::*;
 
     use super::*;
 
@@ -242,6 +264,19 @@ mod tests {
         let u8_group: Group<Base3, u8> = vec![0, 1, 2, 3, 4, 5, 6, 7, 8].try_into().unwrap();
 
         assert_eq!(format!("{u8_group}"), "0,1,2,3,4,5,6,7,8");
+    }
+
+    #[test]
+    fn test_from_iter_checked() {
+        let group_data = vec![1, 2, 3, 4];
+        let group = Group::<Base2, u8>::from_iter_checked(group_data.clone());
+        itertools::assert_equal(group, group_data);
+    }
+
+    #[should_panic(expected = "itertools: .zip_eq() reached end of one iterator before the other")]
+    #[test]
+    fn test_from_iter_checked_panic() {
+        Group::<Base2, u8>::from_iter_checked(vec![]);
     }
 
     #[test]

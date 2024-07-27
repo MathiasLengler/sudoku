@@ -521,6 +521,17 @@ fn bench_group_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup<WallTim
 
     let coordinate = Coordinate::default();
 
+    solver_group.bench_function(
+        BenchmarkId::new("from_iter_checked", &parameter_string),
+        |b| {
+            b.iter_batched(
+                || Candidates::iter_all_lexicographical().take(Base::SIDE_LENGTH.into()),
+                |iter| CandidatesGroup::<Base>::from_iter_checked(iter),
+                BatchSize::SmallInput,
+            );
+        },
+    );
+
     solver_group.bench_function(BenchmarkId::new("get", &parameter_string), |b| {
         b.iter(|| group.get(black_box(coordinate)));
     });
