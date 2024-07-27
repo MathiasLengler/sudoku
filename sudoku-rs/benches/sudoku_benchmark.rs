@@ -555,6 +555,13 @@ fn bench_group_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup<WallTim
             b.iter(|| consume_iter(group.iter_index_mask(black_box(mask))));
         },
     );
+    solver_group.bench_function(BenchmarkId::new("transpose", &parameter_string), |b| {
+        b.iter_batched(
+            || group.clone(),
+            |group| group.transpose(),
+            BatchSize::SmallInput,
+        );
+    });
 }
 
 fn criterion_benchmark(c: &mut Criterion) {
