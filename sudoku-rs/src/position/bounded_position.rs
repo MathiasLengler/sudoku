@@ -668,6 +668,7 @@ mod tests {
             consume_nested_iter(Position::<Base5>::all_columns());
             consume_iter(Position::<Base5>::block(Coordinate::max()));
             consume_nested_iter(Position::<Base5>::all_blocks());
+            consume_nested_iter(Position::<Base5>::all_groups());
         }
     }
 }
