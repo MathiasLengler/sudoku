@@ -264,7 +264,7 @@ where
         + Hash
         + IntoIterator<
             Item = T,
-            IntoIter: ExactSizeIterator<Item = T> + DoubleEndedIterator<Item = T>,
+            IntoIter: ExactSizeIterator<Item = T> + DoubleEndedIterator<Item = T> + Clone,
         > + TryFrom<Vec<T>, Error = Vec<T>>
     where
         T: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash;

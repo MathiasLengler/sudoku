@@ -7,6 +7,7 @@ use serde::{Serialize, Serializer};
 
 use crate::base::SudokuBase;
 use crate::error::{Error, Result};
+use crate::grid::group::Group;
 use crate::position::Coordinate;
 use crate::position::DynamicPosition;
 
@@ -296,13 +297,17 @@ impl<Base: SudokuBase> Position<Base> {
         Coordinate::all().map(Base::block_to_top_left_pos)
     }
 
-    // TODO: optimize
-    //  collect into `[Position: SIDE_LENGTH]`?
     pub fn all_groups() -> impl Iterator<Item = impl Iterator<Item = Self> + Clone> {
         Self::all_rows()
-            .map(|rows| rows.collect::<Vec<_>>().into_iter())
-            .chain(Self::all_columns().map(|columns| columns.collect::<Vec<_>>().into_iter()))
-            .chain(Self::all_blocks().map(|blocks| blocks.collect::<Vec<_>>().into_iter()))
+            .map(|rows| Group::<Base, _>::from_iter_checked(rows).into_iter())
+            .chain(
+                Self::all_columns()
+                    .map(|columns| Group::<Base, _>::from_iter_checked(columns).into_iter()),
+            )
+            .chain(
+                Self::all_blocks()
+                    .map(|blocks| Group::<Base, _>::from_iter_checked(blocks).into_iter()),
+            )
     }
 }
 
@@ -622,6 +627,36 @@ mod tests {
                     .into_iter()
                     .map(|pos| pos.try_into().unwrap()),
             );
+        }
+
+        #[test]
+        fn test_all_groups() {
+            Position::<Base2>::all_groups()
+                .zip_eq(vec![
+                    // Rows
+                    vec![(0, 0), (0, 1), (0, 2), (0, 3)],
+                    vec![(1, 0), (1, 1), (1, 2), (1, 3)],
+                    vec![(2, 0), (2, 1), (2, 2), (2, 3)],
+                    vec![(3, 0), (3, 1), (3, 2), (3, 3)],
+                    // Columns
+                    vec![(0, 0), (1, 0), (2, 0), (3, 0)],
+                    vec![(0, 1), (1, 1), (2, 1), (3, 1)],
+                    vec![(0, 2), (1, 2), (2, 2), (3, 2)],
+                    vec![(0, 3), (1, 3), (2, 3), (3, 3)],
+                    // Blocks
+                    vec![(0, 0), (0, 1), (1, 0), (1, 1)],
+                    vec![(0, 2), (0, 3), (1, 2), (1, 3)],
+                    vec![(2, 0), (2, 1), (3, 0), (3, 1)],
+                    vec![(2, 2), (2, 3), (3, 2), (3, 3)],
+                ])
+                .for_each(|(actual_group, expected_group)| {
+                    itertools::assert_equal(
+                        actual_group,
+                        expected_group
+                            .into_iter()
+                            .map(|pos| pos.try_into().unwrap()),
+                    );
+                });
         }
 
         #[test]

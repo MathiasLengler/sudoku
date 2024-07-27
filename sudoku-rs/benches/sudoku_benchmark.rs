@@ -507,6 +507,10 @@ fn bench_position_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup<Wall
         BenchmarkId::new("iter/all_blocks", &parameter_string),
         |b| b.iter(|| consume_nested_iter(Position::<Base>::all_blocks())),
     );
+    solver_group.bench_function(
+        BenchmarkId::new("iter/all_groups", &parameter_string),
+        |b| b.iter(|| consume_nested_iter(Position::<Base>::all_groups())),
+    );
 }
 
 fn bench_group_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup<WallTime>) {
