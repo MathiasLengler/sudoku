@@ -146,7 +146,7 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + H
         index_mask: Candidates<Base>,
     ) -> impl Iterator<Item = &mut T> {
         self.iter_mut_enumerate()
-            .filter(move |(coordinate, _t)| index_mask.has(Value::from(*coordinate)))
+            .filter(move |(coordinate, _t)| index_mask.has(*coordinate))
             .map(|(_coordinate, t)| t)
     }
 }
