@@ -63,9 +63,7 @@ impl<Base: SudokuBase> Display for Group<Base, u32> {
     }
 }
 
-impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash>
-    Group<Base, T>
-{
+impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug> Group<Base, T> {
     pub fn new(group: Base::Group<T>) -> Self {
         Self { group }
     }
@@ -78,18 +76,23 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + H
     // }
 
     pub fn from_iter_checked(iter: impl IntoIterator<Item = T>) -> Self {
-        fn inner<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash>(
+        fn inner<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug>(
             iter: impl Iterator<Item = T>,
         ) -> Group<Base, T> {
             // TODO: use Base::group_uninit
+            // => bench: +100% slower, but why?
             let iter = iter.into_iter();
-            let mut this = Group::default();
-            itertools::Itertools::zip_eq(this.iter_mut(), iter).for_each(
+
+            let mut this_maybe_uninit = Group::<Base, MaybeUninit<T>>::new(Base::group_uninit());
+
+            itertools::Itertools::zip_eq(this_maybe_uninit.iter_mut(), iter).for_each(
                 |(group_item, iter_item)| {
-                    *group_item = iter_item;
+                    group_item.write(iter_item);
                 },
             );
-            this
+            // Safety: we initilized all elements.
+            let group = unsafe { Base::group_assume_init(this_maybe_uninit.group) };
+            Group::new(group)
         }
 
         inner(iter.into_iter())
@@ -189,9 +192,7 @@ impl<Base: SudokuBase> CandidatesGroup<Base> {
     }
 }
 
-impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash> IntoIterator
-    for Group<Base, T>
-{
+impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug> IntoIterator for Group<Base, T> {
     type Item = T;
     type IntoIter = <Base::Group<T> as IntoIterator>::IntoIter;
 
@@ -200,9 +201,7 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + H
     }
 }
 
-impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash> TryFrom<Vec<T>>
-    for Group<Base, T>
-{
+impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug> TryFrom<Vec<T>> for Group<Base, T> {
     type Error = Error;
 
     fn try_from(vec: Vec<T>) -> Result<Self> {

@@ -1,5 +1,6 @@
 // #![feature(iter_next_chunk)]
 // #![feature(trusted_len)]
+#![feature(maybe_uninit_array_assume_init)]
 // rustc lints
 #![warn(missing_debug_implementations)]
 #![warn(unreachable_pub)]

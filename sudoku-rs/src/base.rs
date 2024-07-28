@@ -269,6 +269,9 @@ where
 
     fn group_default<T: Send + Sync + Copy + Clone + Debug + Default>() -> Self::Group<T>;
     fn group_uninit<T: Send + Sync + Copy + Clone + Debug>() -> Self::Group<MaybeUninit<T>>;
+    unsafe fn group_assume_init<T: Send + Sync + Copy + Clone + Debug>(
+        group: Self::Group<MaybeUninit<T>>,
+    ) -> Self::Group<T>;
     fn group_map<T: Send + Sync + Copy + Clone + Debug, U: Send + Sync + Copy + Clone + Debug>(
         group: Self::Group<T>,
         f: impl FnMut(T) -> U,
@@ -319,7 +322,14 @@ unsafe impl SudokuBase for $type_num {
         [Default::default(); Self::SIDE_LENGTH as usize]
     }
     fn group_uninit<T: Send + Sync + Copy + Clone + Debug>() -> Self::Group<MaybeUninit<T>> {
-        [const { MaybeUninit::uninit() }; Self::SIDE_LENGTH as usize]
+        [MaybeUninit::uninit(); Self::SIDE_LENGTH as usize]
+    }
+    unsafe fn group_assume_init<T: Send + Sync + Copy + Clone + Debug>(
+        group: Self::Group<MaybeUninit<T>>,
+    ) -> Self::Group<T> {
+        unsafe {
+            MaybeUninit::array_assume_init(group)
+        }
     }
     fn group_map<T: Send + Sync + Copy + Clone + Debug, U: Send + Sync + Copy + Clone + Debug>(
         group: Self::Group<T>,
