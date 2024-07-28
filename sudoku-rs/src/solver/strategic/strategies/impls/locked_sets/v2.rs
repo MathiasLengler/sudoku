@@ -1034,7 +1034,9 @@ mod tests {
 
     fn assert_find_locked_set<Base: SudokuBase>(
         (base_test_case_name, input, expected_output): TestCase<Base>,
-    ) {
+    ) where
+        Base::Group<Candidates<Base>>: PartialEq,
+    {
         assert_find_locked_set_single(base_test_case_name, &input, &expected_output);
         assert_find_locked_set_single(
             &format!("{base_test_case_name} - reversed"),
@@ -1049,7 +1051,9 @@ mod tests {
         test_case_name: &str,
         input: &CandidatesGroup<Base>,
         expected_output: &CandidatesGroup<Base>,
-    ) {
+    ) where
+        Base::Group<Candidates<Base>>: PartialEq,
+    {
         info!("Test case: {test_case_name}");
 
         let actual_output = find_locked_set(input);
@@ -1083,7 +1087,10 @@ mod tests {
         // v2 only applies a single deduction. To be comparable with v1, we need to apply it recursively.
         fn v2_recusive<Base: SudokuBase>(
             candidates_group: &CandidatesGroup<Base>,
-        ) -> CandidatesGroup<Base> {
+        ) -> CandidatesGroup<Base>
+        where
+            Base::Group<Candidates<Base>>: PartialEq,
+        {
             let reduced = find_locked_set(candidates_group);
             if &reduced == candidates_group {
                 return reduced;

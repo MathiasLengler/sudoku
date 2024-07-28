@@ -1,5 +1,6 @@
 use std::fmt::{Binary, Debug, Display};
 use std::hash::Hash;
+use std::mem::MaybeUninit;
 use std::ops::{BitAndAssign, BitOrAssign, BitXorAssign, Shl};
 
 use num::traits::{
@@ -259,15 +260,19 @@ where
         + Sync
         + Clone
         + Debug
-        + Default
-        + Ord
-        + Hash
         + IntoIterator<
             Item = T,
             IntoIter: ExactSizeIterator<Item = T> + DoubleEndedIterator<Item = T> + Clone,
         > + TryFrom<Vec<T>, Error = Vec<T>>
     where
-        T: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash;
+        T: Send + Sync + Copy + Clone + Debug;
+
+    fn group_default<T: Send + Sync + Copy + Clone + Debug + Default>() -> Self::Group<T>;
+    fn group_uninit<T: Send + Sync + Copy + Clone + Debug>() -> Self::Group<MaybeUninit<T>>;
+    fn group_map<T: Send + Sync + Copy + Clone + Debug, U: Send + Sync + Copy + Clone + Debug>(
+        group: Self::Group<T>,
+        f: impl FnMut(T) -> U,
+    ) -> Self::Group<U>;
 }
 
 macro_rules! impl_sudoku_base {
@@ -308,7 +313,20 @@ unsafe impl SudokuBase for $type_num {
 
     type CandidatesIntegral = $type_integral;
 
-    type Group<T: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash> = [T; Self::SIDE_LENGTH as usize];
+    type Group<T: Send + Sync + Copy + Clone + Debug> = [T; Self::SIDE_LENGTH as usize];
+
+    fn group_default<T: Send + Sync + Copy + Clone + Debug + Default>() -> Self::Group<T> {
+        [Default::default(); Self::SIDE_LENGTH as usize]
+    }
+    fn group_uninit<T: Send + Sync + Copy + Clone + Debug>() -> Self::Group<MaybeUninit<T>> {
+        [const { MaybeUninit::uninit() }; Self::SIDE_LENGTH as usize]
+    }
+    fn group_map<T: Send + Sync + Copy + Clone + Debug, U: Send + Sync + Copy + Clone + Debug>(
+        group: Self::Group<T>,
+        f: impl FnMut(T) -> U,
+    ) -> Self::Group<U> {
+        group.map(f)
+    }
 }
         )+
     };
@@ -649,7 +667,7 @@ mod tests {
         // MAX_VALUE must be representable at the highest bit position.
         assert!(size_of::<Base::CandidatesIntegral>() * 8 >= usize::from(Base::MAX_VALUE));
         // Safety invariant of Base::Group<T>
-        let mut group = <Base as SudokuBase>::Group::<()>::default();
+        let mut group = Base::group_default::<()>();
         assert_eq!(group.as_ref().len(), usize::from(Base::SIDE_LENGTH));
         assert_eq!(group.as_mut().len(), usize::from(Base::SIDE_LENGTH));
     }

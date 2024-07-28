@@ -539,6 +539,13 @@ fn bench_group_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup<WallTim
     solver_group.bench_function(BenchmarkId::new("get", &parameter_string), |b| {
         b.iter(|| group.get(black_box(coordinate)));
     });
+    solver_group.bench_function(BenchmarkId::new("map", &parameter_string), |b| {
+        b.iter_batched(
+            || group.clone(),
+            |group| group.map(|c| c.count()),
+            BatchSize::SmallInput,
+        );
+    });
     solver_group.bench_function(BenchmarkId::new("reverse", &parameter_string), |b| {
         b.iter_batched(
             || group.clone(),

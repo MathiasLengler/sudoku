@@ -21,9 +21,17 @@ pub type CandidatesGroup<Base> = Group<Base, Candidates<Base>>;
 /// Wrapper around `Base::Group<T>`, e.g. `[T; Base::SIDE_LENGTH]`.
 ///
 /// Provides efficient indexing using `Coordinate<Base>` and better conversion errors.
-#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Group<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash> {
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Group<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug> {
     group: Base::Group<T>,
+}
+
+impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default> Default for Group<Base, T> {
+    fn default() -> Self {
+        Self {
+            group: Base::group_default(),
+        }
+    }
 }
 
 impl<Base: SudokuBase> Display for CandidatesGroup<Base> {
@@ -70,11 +78,10 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + H
     // }
 
     pub fn from_iter_checked(iter: impl IntoIterator<Item = T>) -> Self {
-        // let mut buf = [const { MaybeUninit::<u8>::uninit() }; 32];
-
         fn inner<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash>(
             iter: impl Iterator<Item = T>,
         ) -> Group<Base, T> {
+            // TODO: use Base::group_uninit
             let iter = iter.into_iter();
             let mut this = Group::default();
             itertools::Itertools::zip_eq(this.iter_mut(), iter).for_each(
@@ -117,15 +124,8 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + H
         F: FnMut(T) -> U,
         U: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash,
     {
-        // TODO: bench/optimize
         Group {
-            group: self
-                .group
-                .into_iter()
-                .map(f)
-                .collect::<Vec<_>>()
-                .try_into()
-                .unwrap(),
+            group: Base::group_map(self.group, f),
         }
     }
 
@@ -277,6 +277,38 @@ mod tests {
     #[test]
     fn test_from_iter_checked_panic() {
         Group::<Base2, u8>::from_iter_checked(vec![]);
+    }
+
+    #[test]
+    fn test_get() {
+        let group_data = vec![1, 2, 3, 4];
+        let group: Group<Base2, u8> = group_data.clone().try_into().unwrap();
+
+        assert_eq!(
+            Coordinate::all()
+                .map(|coordinate| group.get(coordinate))
+                .collect::<Vec<_>>(),
+            group_data
+        );
+    }
+
+    #[test]
+    fn test_get_mut() {
+        let group_data = vec![1, 2, 3, 4];
+        let mut group: Group<Base2, u8> = group_data.clone().try_into().unwrap();
+        *group.get_mut(Coordinate::default()) = 5;
+        itertools::assert_equal(group.iter(), vec![5, 2, 3, 4]);
+        *group.get_mut(Coordinate::max()) = 6;
+        itertools::assert_equal(group.iter(), vec![5, 2, 3, 6]);
+    }
+
+    #[test]
+    fn test_map() {
+        let group: CandidatesGroup<Base2> =
+            Group::from_iter_checked(Candidates::iter_all_lexicographical().take(4));
+
+        let group_counts = group.map(|candidates| candidates.count());
+        itertools::assert_equal(group_counts.iter(), vec![0, 1, 1, 2]);
     }
 
     #[test]
