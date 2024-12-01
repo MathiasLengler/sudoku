@@ -1,22 +1,15 @@
 use crate::{
     base::SudokuBase,
-    cell::{Candidates, Value},
+    cell::Candidates,
     error::{Error, Result},
     position::Coordinate,
     unsafe_utils::{get_unchecked, get_unchecked_mut},
 };
 use anyhow::anyhow;
+use std::fmt::{Debug, Display};
 use std::hash::Hash;
-use std::{
-    fmt::{Debug, Display},
-    mem::MaybeUninit,
-};
 
 pub type CandidatesGroup<Base> = Group<Base, Candidates<Base>>;
-// pub use iter::*;
-
-// FIXME: either optimize or remove
-// mod iter;
 
 /// Wrapper around `Base::Group<T>`, e.g. `[T; Base::SIDE_LENGTH]`.
 ///
@@ -220,7 +213,7 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + H
 
 #[cfg(test)]
 mod tests {
-    use crate::base::consts::*;
+    use crate::{base::consts::*, cell::Value};
 
     use super::*;
 
