@@ -314,7 +314,7 @@ impl WasmSudoku {
     }
 
     pub fn export(&self, format: IGridFormatEnum) -> Result<String> {
-        Ok(self.sudoku.export(&import_grid_format_enum(format)?))
+        Ok(self.sudoku.export(import_grid_format_enum(format)?))
     }
 
     #[wasm_bindgen(js_name = tryStrategies)]

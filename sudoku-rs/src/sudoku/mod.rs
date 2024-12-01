@@ -79,14 +79,14 @@ impl<Base: SudokuBase> Sudoku<Base> {
         &self.grid
     }
 
-    pub fn solved_grid(&self) -> &Option<Grid<Base>> {
-        &self.solved_grid
+    pub fn solved_grid(&self) -> Option<&Grid<Base>> {
+        self.solved_grid.as_ref()
     }
 }
 
 // base-specific implementations for `DynamicSudokuActions`
 impl<Base: SudokuBase> Sudoku<Base> {
-    pub fn set_value(&mut self, pos: Position<Base>, value: Value<Base>) -> Result<()> {
+    pub fn set_value(&mut self, pos: Position<Base>, value: Value<Base>) {
         self.push_history();
 
         self.grid.get_mut(pos).set_value(value);
@@ -94,11 +94,9 @@ impl<Base: SudokuBase> Sudoku<Base> {
         if self.settings.update_candidates {
             self.grid.update_direct_candidates_for_new_value(pos, value);
         }
-
-        Ok(())
     }
 
-    pub fn set_or_toggle_value(&mut self, pos: Position<Base>, value: Value<Base>) -> Result<()> {
+    pub fn set_or_toggle_value(&mut self, pos: Position<Base>, value: Value<Base>) {
         self.push_history();
 
         let set_value = self.grid.get_mut(pos).set_or_toggle_value(value);
@@ -106,50 +104,34 @@ impl<Base: SudokuBase> Sudoku<Base> {
         if self.settings.update_candidates && set_value {
             self.grid.update_direct_candidates_for_new_value(pos, value);
         }
-
-        Ok(())
     }
 
-    pub fn set_candidates(
-        &mut self,
-        pos: Position<Base>,
-        candidates: Candidates<Base>,
-    ) -> Result<()> {
+    pub fn set_candidates(&mut self, pos: Position<Base>, candidates: Candidates<Base>) {
         self.push_history();
 
         self.grid.get_mut(pos).set_candidates(candidates);
-
-        Ok(())
     }
 
-    pub fn toggle_candidate(&mut self, pos: Position<Base>, candidate: Value<Base>) -> Result<()> {
+    pub fn toggle_candidate(&mut self, pos: Position<Base>, candidate: Value<Base>) {
         self.push_history();
 
         self.grid.get_mut(pos).toggle_candidate(candidate);
-
-        Ok(())
     }
-    pub fn set_candidate(&mut self, pos: Position<Base>, candidate: Value<Base>) -> Result<()> {
+    pub fn set_candidate(&mut self, pos: Position<Base>, candidate: Value<Base>) {
         self.push_history();
 
         self.grid.get_mut(pos).set_candidate(candidate);
-
-        Ok(())
     }
-    pub fn delete_candidate(&mut self, pos: Position<Base>, candidate: Value<Base>) -> Result<()> {
+    pub fn delete_candidate(&mut self, pos: Position<Base>, candidate: Value<Base>) {
         self.push_history();
 
         self.grid.get_mut(pos).delete_candidate(candidate);
-
-        Ok(())
     }
 
-    pub fn delete(&mut self, pos: Position<Base>) -> Result<()> {
+    pub fn delete(&mut self, pos: Position<Base>) {
         self.push_history();
 
         self.grid.get_mut(pos).delete();
-
-        Ok(())
     }
 
     pub fn try_strategies(
@@ -183,14 +165,18 @@ impl<Base: SudokuBase> DynamicSudokuActions for Sudoku<Base> {
         let pos = pos.try_into()?;
         let value = value.try_into()?;
 
-        self.set_value(pos, value)
+        self.set_value(pos, value);
+
+        Ok(())
     }
 
     fn set_or_toggle_value(&mut self, pos: DynamicPosition, value: DynamicValue) -> Result<()> {
         let pos = pos.try_into()?;
         let value = value.try_into()?;
 
-        self.set_or_toggle_value(pos, value)
+        self.set_or_toggle_value(pos, value);
+
+        Ok(())
     }
 
     fn set_candidates(
@@ -201,32 +187,42 @@ impl<Base: SudokuBase> DynamicSudokuActions for Sudoku<Base> {
         let pos = pos.try_into()?;
         let candidates = candidates.try_into()?;
 
-        self.set_candidates(pos, candidates)
+        self.set_candidates(pos, candidates);
+
+        Ok(())
     }
 
     fn toggle_candidate(&mut self, pos: DynamicPosition, candidate: DynamicValue) -> Result<()> {
         let pos = pos.try_into()?;
         let candidate = candidate.try_into()?;
 
-        self.toggle_candidate(pos, candidate)
+        self.toggle_candidate(pos, candidate);
+
+        Ok(())
     }
     fn set_candidate(&mut self, pos: DynamicPosition, candidate: DynamicValue) -> Result<()> {
         let pos = pos.try_into()?;
         let candidate = candidate.try_into()?;
 
-        self.set_candidate(pos, candidate)
+        self.set_candidate(pos, candidate);
+
+        Ok(())
     }
     fn delete_candidate(&mut self, pos: DynamicPosition, candidate: DynamicValue) -> Result<()> {
         let pos = pos.try_into()?;
         let candidate = candidate.try_into()?;
 
-        self.delete_candidate(pos, candidate)
+        self.delete_candidate(pos, candidate);
+
+        Ok(())
     }
 
     fn delete(&mut self, pos: DynamicPosition) -> Result<()> {
         let pos = pos.try_into()?;
 
-        self.delete(pos)
+        self.delete(pos);
+
+        Ok(())
     }
 
     fn try_strategies(
@@ -273,7 +269,7 @@ impl<Base: SudokuBase> DynamicSudokuActions for Sudoku<Base> {
         self.history.set_limit(self.settings.history_limit);
     }
 
-    fn export(&self, format: &GridFormatEnum) -> String {
+    fn export(&self, format: GridFormatEnum) -> String {
         format.render(&self.grid)
     }
 

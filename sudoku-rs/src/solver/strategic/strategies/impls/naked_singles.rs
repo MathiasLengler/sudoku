@@ -21,15 +21,10 @@ impl Strategy for NakedSingles {
             .filter_map(|candidate_pos| {
                 let candidates = grid.get(candidate_pos).candidates().unwrap();
 
-                if candidates.count() == 1 {
+                (candidates.count() == 1).then(|| {
                     let single_candidate = candidates.iter().next().unwrap();
-                    Some(Deduction::with_action(
-                        candidate_pos,
-                        Action::SetValue(single_candidate),
-                    ))
-                } else {
-                    None
-                }
+                    Deduction::with_action(candidate_pos, Action::SetValue(single_candidate))
+                })
             })
             .collect())
     }

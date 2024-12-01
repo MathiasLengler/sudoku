@@ -140,7 +140,7 @@ impl<'de> Deserialize<'de> for GridFormatEnum {
     {
         struct GridFormatVisitor;
 
-        impl<'de> Visitor<'de> for GridFormatVisitor {
+        impl Visitor<'_> for GridFormatVisitor {
             type Value = GridFormatEnum;
 
             fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {

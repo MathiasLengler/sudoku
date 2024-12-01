@@ -46,7 +46,7 @@ pub trait DynamicSudokuActions {
     fn redo(&mut self);
     fn settings(&self) -> SudokuSettings;
     fn update_settings(&mut self, settings: SudokuSettings);
-    fn export(&self, format: &GridFormatEnum) -> String;
+    fn export(&self, format: GridFormatEnum) -> String;
 
     fn to_dynamic_grid(&self) -> DynamicGrid;
 }

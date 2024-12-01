@@ -28,15 +28,9 @@ pub struct OverlapSegments<T> {
 
 impl<T> OverlapSegments<T> {
     pub fn into_iter_filtered(self, filter: OverlapSegmentFilter) -> impl Iterator<Item = T> {
-        self.into_iter().zip(filter).filter_map(
-            |(segment, is_contained)| {
-                if is_contained {
-                    Some(segment)
-                } else {
-                    None
-                }
-            },
-        )
+        self.into_iter()
+            .zip(filter)
+            .filter_map(|(segment, is_contained)| is_contained.then_some(segment))
     }
 }
 

@@ -175,16 +175,16 @@ pub struct SolverPathIter<'a, Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsR
     is_solved: bool,
 }
 
-impl<'a, Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>>
-    SolverPathIter<'a, Base, GridMut>
+impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>>
+    SolverPathIter<'_, Base, GridMut>
 {
     pub fn is_solved(&self) -> bool {
         self.is_solved
     }
 }
 
-impl<'a, Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> Iterator
-    for SolverPathIter<'a, Base, GridMut>
+impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> Iterator
+    for SolverPathIter<'_, Base, GridMut>
 {
     type Item = Result<SolveStep<Base>>;
 

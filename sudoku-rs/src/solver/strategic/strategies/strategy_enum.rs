@@ -99,7 +99,7 @@ impl<'de> Deserialize<'de> for StrategyEnum {
     {
         struct StrategyVisitor;
 
-        impl<'de> Visitor<'de> for StrategyVisitor {
+        impl Visitor<'_> for StrategyVisitor {
             type Value = StrategyEnum;
 
             fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {

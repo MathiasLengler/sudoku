@@ -39,18 +39,12 @@ impl Strategy for HiddenSingles {
 
                 candidate_histogram
                     .into_iter_enumerate()
-                    .filter_map(|(coordinate, stats)| {
-                        if stats.count == 1 {
-                            // This candidate is unique in this group.
-                            let pos = stats.last_pos.unwrap();
+                    .filter(|&(_coordinate, stats)| (stats.count == 1))
+                    .map(|(coordinate, stats)| {
+                        // This candidate is unique in this group.
+                        let pos = stats.last_pos.unwrap();
 
-                            Some(Deduction::with_action(
-                                pos,
-                                Action::SetValue(coordinate.into()),
-                            ))
-                        } else {
-                            None
-                        }
+                        Deduction::with_action(pos, Action::SetValue(coordinate.into()))
                     })
             })
             .collect())

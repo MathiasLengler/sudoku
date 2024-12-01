@@ -51,7 +51,7 @@ impl<Base: SudokuBase> Debug for Solver<Base> {
 
 /// Public API
 impl<Base: SudokuBase> Solver<Base> {
-    pub fn new<GridRef: AsRef<Grid<Base>>>(grid: GridRef) -> Result<Self> {
+    pub fn new<GridRef: AsRef<Grid<Base>>>(grid: GridRef) -> Self {
         Self::new_with_candidates_filter(grid, &())
     }
 
@@ -61,13 +61,13 @@ impl<Base: SudokuBase> Solver<Base> {
     >(
         grid: GridRef,
         filter: &Filter,
-    ) -> Result<Self> {
+    ) -> Self {
         let sat_solver = Self::init_sat_solver_for_grid(grid.as_ref(), filter);
 
-        Ok(Self {
+        Self {
             sat_solver,
             _base: PhantomData,
-        })
+        }
     }
 
     // Helpers for sat comparison
@@ -401,7 +401,7 @@ mod tests {
             tests_solver_samples! {
                 init_test_logger(),
                 |grid| {
-                    let solver = Solver::new(&grid).unwrap();
+                    let solver = Solver::new(&grid);
                     assert_fallible_solver_single_solution(solver, &grid);
                 }
             }
@@ -412,7 +412,7 @@ mod tests {
 
             tests_solver_samples! {
                 |grid| {
-                    let solver = Solver::new(&grid).unwrap();
+                    let solver = Solver::new(&grid);
                     assert_infallible_solution_iter_single_solution(
                         assert_fallible_solution_iter_as_infallible(solver.into_iter()), &grid
                     );
@@ -424,7 +424,7 @@ mod tests {
     #[test]
     fn test_iter_all_solutions() {
         let grid = Grid::<Base2>::new();
-        let solver = Solver::new(&grid).unwrap();
+        let solver = Solver::new(&grid);
 
         assert_infallible_solution_iter_all_solutions_base_2(
             assert_fallible_solution_iter_as_infallible(solver.into_iter()),
@@ -441,7 +441,7 @@ mod tests {
             .into_iter()
             .map(|v| Value::try_from(v).unwrap())
             .collect();
-        let solver = Solver::new_with_candidates_filter(&grid, &denylist).unwrap();
+        let solver = Solver::new_with_candidates_filter(&grid, &denylist);
 
         for solution in solver.clone() {
             assert!(![1, 3].contains(

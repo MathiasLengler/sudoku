@@ -157,15 +157,7 @@ fn bench_solver_sample_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup
     solver_group.bench_with_input(
         BenchmarkId::new("sat", &parameter_string),
         &grid,
-        |b, grid| {
-            b.iter(|| {
-                sat::Solver::new(grid)
-                    .unwrap()
-                    .try_solve()
-                    .unwrap()
-                    .unwrap()
-            })
-        },
+        |b, grid| b.iter(|| sat::Solver::new(grid).try_solve().unwrap().unwrap()),
     );
 }
 
@@ -227,11 +219,7 @@ fn bench_solver_tdoku_group(solver_tdoku_group: &mut BenchmarkGroup<WallTime>) {
             |b, grids| {
                 b.iter(|| {
                     for grid in grids {
-                        sat::Solver::new(grid)
-                            .unwrap()
-                            .try_solve()
-                            .unwrap()
-                            .unwrap();
+                        sat::Solver::new(grid).try_solve().unwrap().unwrap();
                     }
                 })
             },

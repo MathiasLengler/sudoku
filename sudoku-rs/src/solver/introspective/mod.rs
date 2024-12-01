@@ -44,9 +44,7 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, Filter: CandidatesFilter<Base
             // For base >= 4, sat solver is faster
             BaseEnum::Base4 | BaseEnum::Base5 => Self {
                 solver_impl: SolverImpl::Sat(
-                    sat::Solver::new_with_candidates_filter(grid, &filter)
-                        .unwrap()
-                        .into_iter(),
+                    sat::Solver::new_with_candidates_filter(grid, &filter).into_iter(),
                 ),
             },
         }

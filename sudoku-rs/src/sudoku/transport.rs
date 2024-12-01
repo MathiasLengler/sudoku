@@ -34,7 +34,7 @@ impl<Base: SudokuBase> From<&Sudoku<Base>> for TransportSudoku {
                     let incorrect_value = if cell.has_value() {
                         solved_grid
                             .as_ref()
-                            .map_or(false, |solved_grid| solved_grid.get(pos) != cell)
+                            .is_some_and(|solved_grid| solved_grid.get(pos) != cell)
                     } else {
                         false
                     };
