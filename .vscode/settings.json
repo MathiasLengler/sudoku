@@ -2,6 +2,7 @@
   "cSpell.words": [
     "bindgen",
     "bubblewrap",
+    "clippy",
     "comlink",
     "consts",
     "csstype",
@@ -14,7 +15,10 @@
     "tanstack",
     "usize"
   ],
-  "cSpell.enableFiletypes": ["!json", "!rust"],
+  "cSpell.enabledFileTypes": {
+    "json": false,
+    "rust": false
+  },
   "eslint.workingDirectories": ["sudoku-web"],
   "typescript.tsdk": "./sudoku-web/node_modules/typescript/lib"
 }
