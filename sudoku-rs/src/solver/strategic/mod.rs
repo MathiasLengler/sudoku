@@ -120,6 +120,29 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> Solver<Ba
         }
     }
 
+    pub fn try_all_strategies(&self) -> Result<Vec<(StrategyEnum, Deductions<Base>)>> {
+        ensure!(
+            self.grid.as_ref().is_directly_consistent(),
+            "Grid is inconsistent"
+        );
+        let mut all_deductions = vec![];
+        for strategy in &self.strategies {
+            trace!("Executing strategy: {strategy:?}");
+
+            let deductions = Strategy::execute(*strategy, self.grid.as_ref())?;
+
+            if !deductions.is_empty() {
+                trace!(
+                    "{strategy:?} made progress:\n{deductions}\n{}",
+                    self.grid.as_ref()
+                );
+
+                all_deductions.push((*strategy, deductions));
+            }
+        }
+        Ok(all_deductions)
+    }
+
     /// Tries executing strategies until one strategy is able to make at least one deduction.
     pub fn try_strategies(&self) -> Result<Option<(StrategyEnum, Deductions<Base>)>> {
         ensure!(
@@ -133,8 +156,7 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> Solver<Ba
 
             if !deductions.is_empty() {
                 trace!(
-                    "{strategy:?} made progress:\n{}\n{}",
-                    deductions,
+                    "{strategy:?} made progress:\n{deductions}\n{}",
                     self.grid.as_ref()
                 );
 
@@ -286,7 +308,7 @@ mod tests {
         );
         assert!(solver.try_solve().unwrap().is_none());
 
-        // But, solver with filter for top left cell can solve it.
+        // But solver with filter for top left cell can solve it.
         let solver = Solver::builder(ambiguous_grid.clone())
             .strategies(StrategyEnum::default_solver_strategies_no_backtracking())
             .candidates_filter(&ForceCandidateAtPosition {
@@ -295,5 +317,22 @@ mod tests {
             })
             .build();
         assert_fallible_solver_single_solution(solver, &grid);
+    }
+
+    #[test]
+    fn test_try_all_strategies() {
+        let grid = crate::samples::base_2().into_iter().next().unwrap();
+        let solver = Solver::new(grid.clone());
+        let all_deductions = solver.try_all_strategies().unwrap();
+        for (strategy, deductions) in all_deductions {
+            println!("{strategy}:\n{deductions}");
+        }
+
+        // For each strategy and deduction:
+        //  clone grid
+        //  apply deduction
+        //  add new grid to graph as node
+        //  add edge from previous grid to new grid
+        //  recurse, unitl all strategies are exhausted
     }
 }

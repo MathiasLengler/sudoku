@@ -1,6 +1,6 @@
 use super::{impls::*, Strategy};
-use std::fmt;
 use std::fmt::Debug;
+use std::fmt::{self, Display};
 use std::str::FromStr;
 
 use anyhow::format_err;
@@ -23,6 +23,12 @@ pub enum StrategyEnum {
     GroupIntersectionAxisToBlock,
     GroupIntersectionBoth,
     Backtracking,
+}
+
+impl Display for StrategyEnum {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.name())
+    }
 }
 
 impl StrategyEnum {
