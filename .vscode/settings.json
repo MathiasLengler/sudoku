@@ -20,5 +20,8 @@
     "rust": false
   },
   "eslint.workingDirectories": ["sudoku-web"],
-  "typescript.tsdk": "./sudoku-web/node_modules/typescript/lib"
+  "typescript.tsdk": "./sudoku-web/node_modules/typescript/lib",
+  "rust-analyzer.server.extraEnv": {
+    "RUSTUP_TOOLCHAIN": "nightly-2024-11-30"
+  }
 }
