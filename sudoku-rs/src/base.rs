@@ -125,6 +125,33 @@ mod cell_index_to_block_index {
         &const_generate_cell_index_to_block_index::<4, { base_to_cell_count(4) as usize }>();
     pub(super) static BASE_5: &[u8; base_to_cell_count(5) as usize] =
         &const_generate_cell_index_to_block_index::<5, { base_to_cell_count(5) as usize }>();
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn test_assert_u8() {
+            assert_eq!(assert_u8(u16::from(u8::MAX)), u8::MAX);
+        }
+
+        #[test]
+        #[should_panic(expected = "Value exceeds u8::MAX")]
+        fn test_assert_u8_panic() {
+            assert_u8(u16::from(u8::MAX) + 1);
+        }
+
+        #[test]
+        fn test_assert_u16() {
+            assert_eq!(assert_u16(usize::from(u16::MAX)), u16::MAX);
+        }
+
+        #[test]
+        #[should_panic(expected = "Value exceeds u16::MAX")]
+        fn test_assert_u16_panic() {
+            assert_u16(usize::from(u16::MAX) + 1);
+        }
+    }
 }
 
 mod block_index_to_top_left_cell_index {
