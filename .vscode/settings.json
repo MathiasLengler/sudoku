@@ -15,10 +15,6 @@
     "tanstack",
     "usize"
   ],
-  "cSpell.enabledFileTypes": {
-    "json": false,
-    "rust": false
-  },
   "eslint.workingDirectories": ["sudoku-web"],
   "typescript.tsdk": "./sudoku-web/node_modules/typescript/lib",
   "rust-analyzer.server.extraEnv": {
