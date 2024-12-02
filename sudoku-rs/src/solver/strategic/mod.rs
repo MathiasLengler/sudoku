@@ -28,15 +28,13 @@ mod builder {
     use super::*;
 
     #[derive(Debug)]
-    pub struct SolverBuilder<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> {
+    pub struct SolverBuilder<Base: SudokuBase, GridMut: AsRef<Grid<Base>>> {
         grid: GridMut,
         strategies: Vec<StrategyEnum>,
         _base: PhantomData<Base>,
     }
 
-    impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>>
-        SolverBuilder<Base, GridMut>
-    {
+    impl<Base: SudokuBase, GridMut: AsRef<Grid<Base>>> SolverBuilder<Base, GridMut> {
         pub fn new(grid: GridMut) -> Self {
             Self {
                 grid,
@@ -44,11 +42,7 @@ mod builder {
                 _base: PhantomData,
             }
         }
-    }
 
-    impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>>
-        SolverBuilder<Base, GridMut>
-    {
         #[must_use]
         pub fn strategies(mut self, strategies: Vec<StrategyEnum>) -> Self {
             self.strategies = strategies;
@@ -68,11 +62,7 @@ mod builder {
             filter.apply_to_grid_candidates(self.grid.as_mut());
             self
         }
-    }
 
-    impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>>
-        SolverBuilder<Base, GridMut>
-    {
         pub fn build(self) -> Solver<Base, GridMut> {
             let SolverBuilder {
                 grid,
@@ -92,7 +82,7 @@ mod builder {
 }
 
 #[derive(Debug, Clone)]
-pub struct Solver<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> {
+pub struct Solver<Base: SudokuBase, GridMut: AsRef<Grid<Base>>> {
     grid: GridMut,
     // TODO: generic: AsRef: IntoIterator<DynamicStrategy>
     //  `Generator::try_delete_cell_at_pos` would not need to clone its strategies
@@ -100,13 +90,10 @@ pub struct Solver<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base
     _base: PhantomData<Base>,
 }
 
+/// Methods requiring mutable access to the grid.
 impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> Solver<Base, GridMut> {
     pub fn new(grid: GridMut) -> Self {
         Self::builder(grid).build()
-    }
-
-    pub fn builder(grid: GridMut) -> SolverBuilder<Base, GridMut> {
-        SolverBuilder::new(grid)
     }
 
     pub fn new_with_strategies(mut grid: GridMut, strategies: Vec<StrategyEnum>) -> Self {
@@ -118,6 +105,31 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> Solver<Ba
             strategies,
             _base: PhantomData,
         }
+    }
+
+    // TODO: return map of strategy -> number of deductions
+    pub fn total_score(&mut self) -> Result<Option<StrategyScore>> {
+        let solve_route_iter = &mut self.solve_route();
+        let total_score = solve_route_iter.try_fold::<_, _, Result<_>>(0, |total_score, res| {
+            let (strategy, deductions) = res?;
+            Ok(total_score + strategy.score() * StrategyScore::try_from(deductions.count())?)
+        })?;
+
+        Ok(solve_route_iter.is_solved().then_some(total_score))
+    }
+
+    pub fn solve_route(&mut self) -> SolverPathIter<Base, GridMut> {
+        SolverPathIter {
+            solver: self,
+            is_solved: false,
+        }
+    }
+}
+
+/// Methods requiring only immutable access to the grid.
+impl<Base: SudokuBase, GridMut: AsRef<Grid<Base>>> Solver<Base, GridMut> {
+    pub fn builder(grid: GridMut) -> SolverBuilder<Base, GridMut> {
+        SolverBuilder::new(grid)
     }
 
     pub fn try_all_strategies(&self) -> Result<Vec<(StrategyEnum, Deductions<Base>)>> {
@@ -166,30 +178,12 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> Solver<Ba
         Ok(None)
     }
 
-    // TODO: return map of strategy -> number of deductions
-    pub fn total_score(&mut self) -> Result<Option<StrategyScore>> {
-        let solve_route_iter = &mut self.solve_route();
-        let total_score = solve_route_iter.try_fold::<_, _, Result<_>>(0, |total_score, res| {
-            let (strategy, deductions) = res?;
-            Ok(total_score + strategy.score() * StrategyScore::try_from(deductions.count())?)
-        })?;
-
-        Ok(solve_route_iter.is_solved().then_some(total_score))
-    }
-
-    pub fn solve_route(&mut self) -> SolverPathIter<Base, GridMut> {
-        SolverPathIter {
-            solver: self,
-            is_solved: false,
-        }
-    }
-
     pub fn into_grid(self) -> GridMut {
         self.grid
     }
 }
 
-type SolveStep<Base> = (StrategyEnum, Deductions<Base>);
+pub type SolveStep<Base> = (StrategyEnum, Deductions<Base>);
 
 #[derive(Debug)]
 pub struct SolverPathIter<'a, Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> {
@@ -317,22 +311,5 @@ mod tests {
             })
             .build();
         assert_fallible_solver_single_solution(solver, &grid);
-    }
-
-    #[test]
-    fn test_try_all_strategies() {
-        let grid = crate::samples::base_2().into_iter().next().unwrap();
-        let solver = Solver::new(grid.clone());
-        let all_deductions = solver.try_all_strategies().unwrap();
-        for (strategy, deductions) in all_deductions {
-            println!("{strategy}:\n{deductions}");
-        }
-
-        // For each strategy and deduction:
-        //  clone grid
-        //  apply deduction
-        //  add new grid to graph as node
-        //  add edge from previous grid to new grid
-        //  recurse, unitl all strategies are exhausted
     }
 }

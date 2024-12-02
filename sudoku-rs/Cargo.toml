@@ -43,6 +43,7 @@ rayon = { version = "1.10.0", optional = true }
 ts-rs = { version = "9.0.0", optional = true }
 hdrhistogram = { version = "7.5.4", optional = true }
 env_logger = { version = "0.11.3", optional = true }
+petgraph = { version = "0.6.5", optional = true }
 
 [dev-dependencies]
 serde_json = "1.0.117"
@@ -58,6 +59,7 @@ parallel = ["rayon", "indicatif/rayon"]
 wasm = ["getrandom/js", "ts-rs"]
 solver_debug_print = ["terminal"]
 histogram = ["hdrhistogram"]
+graph = ["petgraph"]
 
 [[bench]]
 name = "sudoku_benchmark"
@@ -90,3 +92,6 @@ required-features = ["parallel"]
 [[bin]]
 name = "tdoku_benchmark"
 required-features = ["terminal"]
+[[bin]]
+name = "solve_graph"
+required-features = ["graph"]
