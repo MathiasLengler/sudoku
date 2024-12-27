@@ -3,7 +3,6 @@ import react from "@vitejs/plugin-react-swc";
 import wasm from "vite-plugin-wasm";
 
 // TODO: migrate remaining webpack config
-// TODO: replace custom workbox integration with vite-pwa-org
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({

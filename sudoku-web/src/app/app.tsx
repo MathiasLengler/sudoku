@@ -37,7 +37,7 @@ export const App = () => {
                                 <Suspense fallback={<FullScreenSpinner />}>
                                     <Sudoku />
                                 </Suspense>
-                                {/* <WorkboxManager /> */}
+                                <WorkboxManager />
                             </MySnackbarProvider>
                         </ThemeErrorBoundary>
                     </MyTheme>

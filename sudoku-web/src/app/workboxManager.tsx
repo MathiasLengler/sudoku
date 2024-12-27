@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Alert, Snackbar } from "@mui/material";
 
+// TODO: replace custom workbox integration with vite-pwa-org
+
 const SW_ENABLED = "serviceWorker" in navigator && import.meta.env.VITE_SW_ENABLED === "true";
 
 export function WorkboxManager() {
