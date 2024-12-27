@@ -39,7 +39,6 @@ function ThemeFallback({ error, resetErrorBoundary, inline }: FallbackProps & { 
     const message = errorToMessageSchema.parse(error);
 
     return (
-        // <Box sx={{ display: "grid", height: 1, gap: 1, placeItems: "center", alignContent: "center" }}>
         <Stack
             direction={inline ? "row" : "column"}
             width={1}
@@ -53,7 +52,6 @@ function ThemeFallback({ error, resetErrorBoundary, inline }: FallbackProps & { 
                 Try again
             </Button>
         </Stack>
-        // </Box>
     );
 }
 

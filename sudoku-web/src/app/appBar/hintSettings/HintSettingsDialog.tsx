@@ -129,6 +129,5 @@ export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
                 </LoadingButton>
             </DialogActions>
         </>
-        // </form>
     );
 }

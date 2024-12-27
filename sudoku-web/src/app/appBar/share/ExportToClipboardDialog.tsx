@@ -107,6 +107,5 @@ export function ExportToClipboardDialog({ onClose }: ExportToClipboardDialogProp
                 </LoadingButton>
             </DialogActions>
         </>
-        // </form>
     );
 }
