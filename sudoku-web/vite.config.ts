@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import wasm from "vite-plugin-wasm";
+import { optimizeLodashImports } from "@optimize-lodash/rollup-plugin";
 
 // TODO: migrate remaining webpack config
 
@@ -27,12 +28,13 @@ export default defineConfig(({ mode }) => ({
     worker: {
         format: "es",
     },
-    plugins: [react(), wasm()],
-    ...(mode === "profile" && {
-        resolve: {
-            alias: {
+    plugins: [react(), wasm(), optimizeLodashImports()],
+    resolve: {
+        alias: {
+            lodash: "lodash-es",
+            ...(mode === "profile" && {
                 "react-dom/client": "react-dom/profiling",
-            },
+            }),
         },
-    }),
+    },
 }));

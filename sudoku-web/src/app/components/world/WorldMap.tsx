@@ -1,14 +1,14 @@
 import { Slider } from "@mui/material";
 import classNames from "classnames";
 import type * as CSS from "csstype";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import React, { useDeferredValue, useMemo } from "react";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeGrid as Grid } from "react-window";
 import { useRecoilCallback, useRecoilState, useRecoilValue } from "recoil";
 import type { Quadrant } from "../../../types";
 import { usePlaySelectedGrid } from "../../actions/worldActions";
-import { Candidates, CellValue, cellColorClass } from "../../grid/cell";
+import { Candidates, CellValue } from "../../grid/cell";
 import { sudokuBaseState, sudokuSideLengthState } from "../../state/sudoku";
 import {
     cellWorldDimensionsState,
@@ -19,6 +19,7 @@ import {
     worldCellState,
 } from "../../state/world";
 import { worldCellBorderClassesState } from "../../state/world/cellBorder";
+import { cellColorClass } from "../../utils/sudoku";
 
 type WorldCellVirtualizedProps = {
     rowIndex: number;

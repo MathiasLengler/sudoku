@@ -7,7 +7,7 @@ import reactRefresh from "eslint-plugin-react-refresh";
 
 export default tseslint.config(
     {
-        ignores: ["*.js", "*.mjs"],
+        ignores: ["*.js", "*.mjs", "dist"],
     },
     eslint.configs.recommended,
     ...tseslint.configs.recommendedTypeChecked,
@@ -76,6 +76,23 @@ export default tseslint.config(
                 "error",
                 {
                     ignore: ["sx"],
+                },
+            ],
+            "no-restricted-imports": [
+                "error",
+                {
+                    paths: [
+                        {
+                            name: "lodash",
+                        },
+                    ],
+                },
+            ],
+            "no-restricted-syntax": [
+                "error",
+                {
+                    selector: 'ImportDeclaration[source.value="lodash-es"] ImportDefaultSpecifier',
+                    message: `Instead use: import * as _ from "lodash-es";`,
                 },
             ],
         },

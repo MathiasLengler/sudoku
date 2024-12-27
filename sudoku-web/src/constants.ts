@@ -2,7 +2,7 @@ import type { GridFormatEnum, StrategyEnum } from "./types";
 import { z } from "zod";
 import type { IsEqual } from "type-fest";
 import { assert } from "./typeUtils";
-import { sortBy } from "lodash";
+import * as _ from "lodash-es";
 
 export const WORKER_BOOT_UP_MESSAGE = "Worker loaded";
 
@@ -21,7 +21,7 @@ export type SelectedStrategies = z.infer<typeof selectedStrategiesSchema>;
 export const selectedStrategiesSchema = strategyEnumSchema
     .array()
     .min(1)
-    .transform((strategies) => sortBy(strategies, (strategy) => strategyEnumSchema.options.indexOf(strategy)));
+    .transform((strategies) => _.sortBy(strategies, (strategy) => strategyEnumSchema.options.indexOf(strategy)));
 
 assert<IsEqual<z.infer<typeof strategyEnumSchema>, StrategyEnum>>();
 export const ALL_STRATEGIES = strategyEnumSchema.options;

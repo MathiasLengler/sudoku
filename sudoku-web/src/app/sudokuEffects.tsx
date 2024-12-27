@@ -5,7 +5,7 @@ import { useRecoilValue, useSetRecoilState } from "recoil";
 import { sudokuBaseState, sudokuCellsState } from "./state/sudoku";
 import { inputState } from "./state/input";
 import { baseToSideLength } from "./utils/sudoku";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import { useEndStickyChain } from "./actions/inputActions";
 
 function SaveCellsEffect() {

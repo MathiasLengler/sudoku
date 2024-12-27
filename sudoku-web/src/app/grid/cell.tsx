@@ -1,7 +1,7 @@
 import type * as React from "react";
 import type * as CSS from "csstype";
 import classNames from "classnames";
-import { indexToPosition, valueToString } from "../utils/sudoku";
+import { cellColorClass, indexToPosition, valueToString } from "../utils/sudoku";
 import type { DynamicCellCandidates, DynamicCellValue, DynamicPosition, TransportCell } from "../../types";
 import { inputState } from "../state/input";
 import { sudokuBaseState } from "../state/sudoku";
@@ -17,17 +17,6 @@ function cellBackgroundClass(isSelected: boolean, isGuide: boolean) {
     }
     if (isGuide) {
         return "cell--guide";
-    }
-}
-
-export function cellColorClass(fixed: boolean, incorrectValue: boolean) {
-    if (fixed) {
-        return "cell--fixed";
-    }
-    if (incorrectValue) {
-        return "cell--incorrect-value";
-    } else {
-        return "cell--user";
     }
 }
 

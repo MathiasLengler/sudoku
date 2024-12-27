@@ -6,7 +6,7 @@ import { useHandleValue } from "../actions/sudokuActions";
 import { selector, selectorFamily, useRecoilValue } from "recoil";
 import { inputState } from "../state/input";
 import { sudokuSideLengthState } from "../state/sudoku";
-import _ from "lodash";
+import * as _ from "lodash-es";
 
 const isSelectedState = selectorFamily<boolean, number>({
     key: "ValueButton.isSelected",

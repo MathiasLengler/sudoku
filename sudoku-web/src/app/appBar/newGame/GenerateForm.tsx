@@ -12,7 +12,7 @@ import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import { LoadingButton } from "@mui/lab";
 import { useRecoilState } from "recoil";
 import { zodResolver } from "@hookform/resolvers/zod";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import {
     BASE_MARKS,
     BASE_MAX,

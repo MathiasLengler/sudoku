@@ -1,4 +1,4 @@
-import _ from "lodash";
+import * as _ from "lodash-es";
 import { DefaultValue, atom, selector, selectorFamily } from "recoil";
 import type { IsEqual } from "type-fest";
 import { z } from "zod";

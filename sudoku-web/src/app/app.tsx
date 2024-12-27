@@ -1,14 +1,13 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Suspense } from "react";
 import { RecoilRoot } from "recoil";
+import { MySnackbarProvider } from "./MySnackbarProvider";
 import { RecoilDebug } from "./RecoilDebug";
 import { BasicErrorBoundary, ThemeErrorBoundary } from "./components/ErrorFallback";
 import { FullScreenSpinner } from "./components/FullScreenSpinner";
 import { Sudoku } from "./sudoku";
 import { MyTheme } from "./theme/myTheme";
 import { WorkboxManager } from "./workboxManager";
-import { Paper } from "@mui/material";
-import { MySnackbarProvider } from "./MySnackbarProvider";
 
 const queryClient = new QueryClient({
     defaultOptions: {

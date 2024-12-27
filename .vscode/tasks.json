@@ -20,7 +20,6 @@
         "fileLocation": ["relative", "${workspaceFolder}/sudoku-web"]
       },
       "label": "npm: lint:tsc:watch - sudoku-web",
-      "detail": "tsc -b --watch",
       "isBackground": true
     },
     {
@@ -28,8 +27,7 @@
       "script": "lint:eslint",
       "path": "sudoku-web",
       "problemMatcher": ["$eslint-stylish"],
-      "label": "npm: lint:eslint - sudoku-web",
-      "detail": "eslint src/** webpack.config.ts"
+      "label": "npm: lint:eslint - sudoku-web"
     }
   ]
 }

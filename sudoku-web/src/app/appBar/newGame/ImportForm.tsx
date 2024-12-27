@@ -65,8 +65,8 @@ function SupportedFormats() {
     );
 }
 
-export type ImportFormValues = z.infer<typeof importFormValuesSchema>;
-export const importFormValuesSchema = z.object({
+type ImportFormValues = z.infer<typeof importFormValuesSchema>;
+const importFormValuesSchema = z.object({
     input: z.string().min(1),
     setAllDirectCandidates: z.boolean(),
 });

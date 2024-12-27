@@ -1,6 +1,6 @@
 import assertNever from "assert-never";
 import * as Comlink from "comlink";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import type { SelectorCallbackInterface, Snapshot } from "recoil";
 import { useRecoilCallback } from "recoil";
 import type {
