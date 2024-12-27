@@ -10,12 +10,13 @@ import { HintSettingsButton } from "./hintSettings/HintSettingsButton";
 import { NewGameButton } from "./newGame/NewGameButton";
 import { ShareMenu } from "./share/ShareMenu";
 import { WorldSettingsButton } from "./world/WorldSettingsButton";
+import { Box } from "@mui/material";
 
 export default function SudokuAppBar() {
     const { experimentWorld } = useRecoilValue(featureFlagsState);
 
     return (
-        <div sx={{ flexGrow: 1 }} className="app-bar">
+        <Box sx={{ flexGrow: 1 }} className="app-bar">
             <AppBar position="static" variant="outlined" color="default" elevation={0}>
                 <Toolbar>
                     <ThemeErrorBoundary inline>
@@ -31,6 +32,6 @@ export default function SudokuAppBar() {
                     </ThemeErrorBoundary>
                 </Toolbar>
             </AppBar>
-        </div>
+        </Box>
     );
 }

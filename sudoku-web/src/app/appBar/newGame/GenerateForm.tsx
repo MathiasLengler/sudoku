@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import { SliderElement, SwitchElement, TextFieldElement, useForm } from "react-hook-form-mui";
-import { DialogContent, FormGroup, LinearProgress, Typography } from "@mui/material";
+import { Box, DialogContent, FormGroup, LinearProgress, Typography } from "@mui/material";
 import { Stack } from "@mui/material";
 
 import { baseToCellCount } from "../../utils/sudoku";
@@ -45,11 +45,11 @@ function GenerateProgress({ progress, cellCount }: GenerateProgressProps) {
     const value = (pruningPositionIndex / pruningPositionCount) * 100;
 
     return (
-        <div sx={{ display: "flex", alignItems: "center", pt: 2, flexDirection: "column" }}>
-            <div sx={{ width: 1, pb: 1 }}>
+        <Box sx={{ display: "flex", alignItems: "center", pt: 2, flexDirection: "column" }}>
+            <Box sx={{ width: 1, pb: 1 }}>
                 <LinearProgress variant="determinate" value={value} />
-            </div>
-            <div sx={{ minWidth: 35 }}>
+            </Box>
+            <Box sx={{ minWidth: 35 }}>
                 <Typography
                     variant="body2"
                     sx={{
@@ -58,8 +58,8 @@ function GenerateProgress({ progress, cellCount }: GenerateProgressProps) {
                 >{`Cell ${pruningPositionIndex}/${pruningPositionCount} - deleted ${deletedCount}, remaining ${
                     cellCount - deletedCount
                 }`}</Typography>
-            </div>
-        </div>
+            </Box>
+        </Box>
     );
 }
 

@@ -1,4 +1,4 @@
-import { useTheme } from "@mui/material-pigment-css";
+import { useTheme } from "@mui/material/styles";
 import Dialog from "@mui/material/Dialog";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import type { ReactNode } from "react";
