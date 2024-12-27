@@ -1,7 +1,6 @@
 import CssBaseline from "@mui/material/CssBaseline";
 import DefaultPropsProvider from "@mui/material/DefaultPropsProvider";
 import type { ReactNode } from "react";
-import "./styles";
 
 type MyThemeProps = {
     children: ReactNode;
