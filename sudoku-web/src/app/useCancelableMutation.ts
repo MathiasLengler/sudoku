@@ -22,7 +22,11 @@ export function useCancelableMutation<Variables, Progress>(
                 signal.addEventListener(
                     "abort",
                     () => {
-                        reject(signal.reason);
+                        reject(
+                            signal.reason instanceof Error
+                                ? signal.reason
+                                : new Error("Unexpected abort reason", { cause: signal.reason }),
+                        );
                     },
                     { once: true },
                 );
