@@ -10,10 +10,14 @@
     },
     "scripts": {
         "dev": "vite",
-        "build": "tsc -b && vite build",
+        "dev:profile": "vite --mode profile",
+        "build": "vite build",
+        "build:dev": "vite build --mode development",
+        "build:debug-sw": "vite build --mode debug-sw",
+        "build:visualize": "vite-bundle-visualizer",
         "lint": "npm run lint:tsc && npm run lint:eslint && npm run lint:prettier",
         "lint:tsc": "tsc -b",
-        "lint:tsc:watch": "tsc -b --watch",
+        "lint:tsc:watch": "npm run lint:tsc -- --watch",
         "lint:eslint": "eslint . --max-warnings 0",
         "lint:eslint:fix": "eslint . --fix",
         "lint:prettier": "prettier --check .",
@@ -76,7 +80,8 @@
         "type-fest": "^4.31.0",
         "typescript": "^5.7.2",
         "typescript-eslint": "^8.18.2",
-        "vite": "^6.0.6"
+        "vite": "^6.0.6",
+        "vite-plugin-wasm": "^3.4.1"
     },
     "overrides": {
         "react": "^19.0.0",

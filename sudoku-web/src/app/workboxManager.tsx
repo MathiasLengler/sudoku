@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Alert, Snackbar } from "@mui/material";
 
-const SW_ENABLED = "serviceWorker" in navigator && process.env.SW_ENABLED;
+const SW_ENABLED = "serviceWorker" in navigator && import.meta.env.VITE_SW_ENABLED === "true";
 
 export function WorkboxManager() {
     const [showUpdateNotification, setShowUpdateNotification] = useState(false);

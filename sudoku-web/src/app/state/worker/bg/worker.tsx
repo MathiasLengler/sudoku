@@ -4,7 +4,7 @@ import { WasmCellWorld, WasmSudoku } from "../../../../../../sudoku-wasm/pkg";
 import { WORKER_BOOT_UP_MESSAGE } from "../../../../constants";
 import { init } from "./init";
 
-if (process.env.NODE_ENV !== "production") {
+if (import.meta.env.DEV) {
     self.addEventListener("message", (ev) => {
         console.debug("Worker message RX:", ev.data);
     });

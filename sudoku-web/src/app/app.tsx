@@ -28,7 +28,7 @@ export const App = () => {
     return (
         <BasicErrorBoundary>
             <RecoilRoot>
-                {process.env.NODE_ENV !== "production" && <RecoilDebug />}
+                {import.meta.env.DEV && <RecoilDebug />}
                 <QueryClientProvider client={queryClient}>
                     <MyTheme>
                         <ThemeErrorBoundary>
