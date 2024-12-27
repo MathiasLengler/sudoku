@@ -24,9 +24,6 @@ export default defineConfig(({ mode }) => ({
             "Cross-Origin-Opener-Policy": "same-origin",
         },
     },
-    worker: {
-        format: "es",
-    },
     plugins: [react(), wasm()],
     ...(mode === "profile" && {
         resolve: {
