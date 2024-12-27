@@ -1,16 +1,15 @@
 [package]
 name = "sudoku-wasm"
 
-# Wait for issure to be resolved: https://github.com/rustwasm/wasm-pack/issues/1180
 authors.workspace = true
 categories.workspace = true
-description = "Touch optimized sudoku built with Rust/WASM/TypeScript/React."
+description.workspace = true
 edition.workspace = true
-homepage = "https://sudoku.lengler.dev"
+homepage.workspace = true
 keywords.workspace = true
-license = "MIT"
+license.workspace = true
 publish.workspace = true
-repository = "https://github.com/MathiasLengler/sudoku"
+repository.workspace = true
 rust-version.workspace = true
 version.workspace = true
 
@@ -18,7 +17,10 @@ version.workspace = true
 crate-type = ["cdylib"]
 
 [dependencies]
-log = { workspace = true, features = ["max_level_debug", "release_max_level_debug"] }
+log = { workspace = true, features = [
+    "max_level_debug",
+    "release_max_level_debug",
+] }
 serde = { workspace = true }
 anyhow = { workspace = true }
 console_error_panic_hook = { version = "0.1.7", optional = true }
@@ -34,7 +36,7 @@ default-features = false
 features = [
     "wasm",
     # TODO: re-enable
-#    "parallel"
+    #    "parallel"
 ]
 
 [dev-dependencies]
@@ -42,13 +44,7 @@ wasm-bindgen-test = "0.3.42"
 
 [dependencies.web-sys]
 version = "0.3.69"
-features = [
-    "Document",
-    "Element",
-    "HtmlElement",
-    "Node",
-    "Window",
-]
+features = ["Document", "Element", "HtmlElement", "Node", "Window"]
 
 [target.'cfg(target_family="wasm")'.dependencies]
 wasm-bindgen-rayon = "1.2.1"
