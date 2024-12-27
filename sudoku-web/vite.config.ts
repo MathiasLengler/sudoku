@@ -5,6 +5,7 @@ import react from "@vitejs/plugin-react-swc";
 import wasm from "vite-plugin-wasm";
 
 // TODO: migrate remaining webpack config
+// TODO: replace custom workbox integration with vite-pwa-org
 
 const fontFamily = ['"Roboto Flex Variable"', '"Roboto"', '"Helvetica"', '"Arial"', "sans-serif"].join(",");
 const fontFamilyMonospace = ['"Inconsolata"', "monospace"].join(",");
