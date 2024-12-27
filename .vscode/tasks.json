@@ -5,9 +5,23 @@
       "type": "npm",
       "script": "lint:tsc",
       "path": "sudoku-web",
-      "problemMatcher": ["$tsc"],
-      "label": "npm: lint:tsc - sudoku-web",
-      "detail": "tsc"
+      "problemMatcher": {
+        "base": "$tsc",
+        "fileLocation": ["relative", "${workspaceFolder}/sudoku-web"]
+      },
+      "label": "npm: lint:tsc - sudoku-web"
+    },
+    {
+      "type": "npm",
+      "script": "lint:tsc:watch",
+      "path": "sudoku-web",
+      "problemMatcher": {
+        "base": "$tsc-watch",
+        "fileLocation": ["relative", "${workspaceFolder}/sudoku-web"]
+      },
+      "label": "npm: lint:tsc:watch - sudoku-web",
+      "detail": "tsc -b --watch",
+      "isBackground": true
     },
     {
       "type": "npm",
