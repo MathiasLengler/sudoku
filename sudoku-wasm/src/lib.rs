@@ -46,7 +46,7 @@ pub fn init() {
         });
     }
 
-    trace!("WASM initialized");
+    trace!("sudoku-wasm initialized");
 }
 
 #[allow(dead_code)]
