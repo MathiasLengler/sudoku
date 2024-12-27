@@ -456,7 +456,7 @@ impl<Base: SudokuBase, T> Grid<Base, T> {
     }
 
     pub fn into_cells(self) -> Vec<T> {
-        self.cells.into_raw_vec()
+        self.cells.into_raw_vec_and_offset().0
     }
 }
 
