@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Suspense } from "react";
 import { RecoilRoot } from "recoil";
-import { MySnackbarProvider } from "./MySnackbarProvider";
+import { MyNotificationsProvider } from "./MyNotificationsProvider";
 import { RecoilDebug } from "./RecoilDebug";
 import { BasicErrorBoundary, ThemeErrorBoundary } from "./components/ErrorFallback";
 import { FullScreenSpinner } from "./components/FullScreenSpinner";
@@ -32,12 +32,12 @@ export const App = () => {
                 <QueryClientProvider client={queryClient}>
                     <MyTheme>
                         <ThemeErrorBoundary>
-                            <MySnackbarProvider>
+                            <MyNotificationsProvider>
                                 <Suspense fallback={<FullScreenSpinner />}>
                                     <Sudoku />
                                 </Suspense>
                                 <WorkboxManager />
-                            </MySnackbarProvider>
+                            </MyNotificationsProvider>
                         </ThemeErrorBoundary>
                     </MyTheme>
                 </QueryClientProvider>

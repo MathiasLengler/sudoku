@@ -1,4 +1,4 @@
-import type { OnRefChangeType } from "react-resize-detector/build/types/types";
+import type { OnRefChangeType } from "react-resize-detector";
 import { useRecoilValue } from "recoil";
 import { sudokuBlocksIndexesState, sudokuCellsState } from "../state/sudoku";
 import { Block } from "./block";

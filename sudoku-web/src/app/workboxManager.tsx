@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Snackbar } from "@mui/material";
 
 const SW_ENABLED = "serviceWorker" in navigator && process.env.SW_ENABLED;
