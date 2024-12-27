@@ -24,16 +24,14 @@ const workerApi: WorkerApi = {
     WasmCellWorld,
 };
 
-type Newable<T, Args extends unknown[]> = new (...args: Args) => T;
-
-function markClassAsProxy<T, Args extends unknown[]>(cls: Newable<T, Args>) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    cls.prototype[Comlink.proxyMarker] = true;
+// The type of `obj` ensures that only module-augmented classed can be patched with the marker.
+function markObjectAsComlinkProxy(obj: { prototype: { [Comlink.proxyMarker]: true } }) {
+    obj.prototype[Comlink.proxyMarker] = true;
 }
 
 // Ensure wasm-bindgen class instances are proxied instead of serialized
-markClassAsProxy(WasmSudoku);
-markClassAsProxy(WasmCellWorld);
+markObjectAsComlinkProxy(WasmSudoku);
+markObjectAsComlinkProxy(WasmCellWorld);
 
 // Use declaration merging (Module Augmentation) to reflect this modification.
 // This corrects the inferred type of `Comlink.Remote`
