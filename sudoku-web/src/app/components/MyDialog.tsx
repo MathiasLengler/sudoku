@@ -1,8 +1,7 @@
-import type * as React from "react";
-import type { ReactNode } from "react";
+import { useTheme } from "@mui/material-pigment-css";
 import Dialog from "@mui/material/Dialog";
 import useMediaQuery from "@mui/material/useMediaQuery";
-import { useTheme } from "@mui/material/styles";
+import type { ReactNode } from "react";
 
 type MyDialogProps = {
     open: boolean;
