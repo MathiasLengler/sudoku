@@ -1,7 +1,8 @@
 // Required for module augmentation
-/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/consistent-type-definitions */
+/* eslint-disable @typescript-eslint/consistent-type-definitions */
 
 import type { Theme, SxProps } from "@mui/material/styles";
+import {} from "@mui/material/themeCssVarsAugmentation";
 
 // Pigment CSS is themed using a @mui theme
 declare module "@mui/material-pigment-css" {
@@ -13,10 +14,10 @@ declare module "@mui/material-pigment-css" {
 // Any JSX element can have sx prop
 declare global {
     namespace React {
-        interface HTMLAttributes<T> {
+        interface HTMLAttributes {
             sx?: SxProps<Theme>;
         }
-        interface SVGProps<T> {
+        interface SVGProps {
             sx?: SxProps<Theme>;
         }
     }

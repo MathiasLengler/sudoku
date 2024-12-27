@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
-import { createTheme } from "@mui/material";
-import { pigment, type PigmentOptions } from "@pigment-css/vite-plugin";
 import react from "@vitejs/plugin-react-swc";
+import { createTheme } from "@mui/material/styles";
+import { pigment, type PigmentOptions } from "@pigment-css/vite-plugin";
 import wasm from "vite-plugin-wasm";
 
 // TODO: migrate remaining webpack config
@@ -12,6 +12,7 @@ const fontFamilyMonospace = ['"Inconsolata"', "monospace"].join(",");
 
 const pigmentConfig: PigmentOptions = {
     transformLibraries: ["@mui/material"],
+    displayName: true,
     // TODO: migrate custom theme in here
     theme: createTheme({
         cssVariables: true,

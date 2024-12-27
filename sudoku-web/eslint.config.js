@@ -60,11 +60,22 @@ export default tseslint.config(
                 },
             ],
             "@typescript-eslint/consistent-type-definitions": ["warn", "type"],
-            "@typescript-eslint/unbound-method": ["warn", { ignoreStatic: true }],
+            "@typescript-eslint/unbound-method": [
+                "warn",
+                {
+                    ignoreStatic: true,
+                },
+            ],
             "react-hooks/exhaustive-deps": [
                 "warn",
                 {
                     additionalHooks: "(useRecoilCallback|useRecoilTransaction_UNSTABLE)",
+                },
+            ],
+            "react/no-unknown-property": [
+                "error",
+                {
+                    ignore: ["sx"],
                 },
             ],
         },

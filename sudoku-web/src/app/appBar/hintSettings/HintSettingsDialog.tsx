@@ -1,7 +1,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import SaveIcon from "@mui/icons-material/Save";
 import { LoadingButton } from "@mui/lab";
-import { Box, Button, DialogActions, DialogContent, DialogTitle, Stack } from "@mui/material";
+import { Button, DialogActions, DialogContent, DialogTitle } from "@mui/material";
+import { Stack } from "@mui/material";
 import { RadioButtonGroup, SliderElement, SwitchElement, useForm } from "react-hook-form-mui";
 import { useRecoilState } from "recoil";
 import { Fieldset } from "../../components/Fieldset";
@@ -80,7 +81,7 @@ export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
                                 name="doLoop"
                                 label="Loop until strategies make no further progress"
                             />
-                            <Box sx={{ mx: 2 }}>
+                            <div sx={{ mx: 2 }}>
                                 <SliderElement
                                     control={control}
                                     name="loopDelayIndex"
@@ -99,7 +100,7 @@ export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
                                     getAriaLabel={() => "Delay"}
                                     getAriaValueText={(loopDelayMs) => formatDurationMs(loopDelayMs)}
                                 />
-                            </Box>
+                            </div>
                         </Fieldset>
                         <Fieldset label="Deductions">
                             <SwitchElement

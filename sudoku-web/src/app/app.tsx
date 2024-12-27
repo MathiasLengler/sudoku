@@ -8,6 +8,7 @@ import { FullScreenSpinner } from "./components/FullScreenSpinner";
 import { Sudoku } from "./sudoku";
 import { MyTheme } from "./theme/myTheme";
 import { WorkboxManager } from "./workboxManager";
+import { Paper } from "@mui/material";
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -31,14 +32,16 @@ export const App = () => {
                 {import.meta.env.DEV && <RecoilDebug />}
                 <QueryClientProvider client={queryClient}>
                     <MyTheme>
-                        <ThemeErrorBoundary>
-                            <MyNotificationsProvider>
-                                <Suspense fallback={<FullScreenSpinner />}>
-                                    <Sudoku />
-                                </Suspense>
-                                <WorkboxManager />
-                            </MyNotificationsProvider>
-                        </ThemeErrorBoundary>
+                        {/* <ThemeErrorBoundary> */}
+                        <MyNotificationsProvider>
+                            <Suspense fallback={<FullScreenSpinner />}>
+                                <div>Hello Sudoku</div>
+                                {/* <Sudoku /> */}
+                                <Paper>Hello Paper</Paper>
+                            </Suspense>
+                            {/* <WorkboxManager /> */}
+                        </MyNotificationsProvider>
+                        {/* </ThemeErrorBoundary> */}
                     </MyTheme>
                 </QueryClientProvider>
             </RecoilRoot>

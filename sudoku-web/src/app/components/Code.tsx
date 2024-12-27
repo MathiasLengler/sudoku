@@ -21,4 +21,4 @@ export const Code: React.FunctionComponent<CodeProps> = ({ children, wrap = fals
             {children}
         </Typography>)
     );
-};
+};

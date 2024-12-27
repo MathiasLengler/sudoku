@@ -1,4 +1,6 @@
+// FIXME: wrong import of Stack
 import { Alert, Button, Stack } from "@mui/material";
+
 import type { ReactNode } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { z } from "zod";
@@ -39,19 +41,20 @@ function ThemeFallback({ error, resetErrorBoundary, inline }: FallbackProps & { 
     const message = errorToMessageSchema.parse(error);
 
     return (
-        <Stack
+        (<Stack
             direction={inline ? "row" : "column"}
-            width={1}
-            height={1}
             spacing={2}
-            justifyContent="center"
-            alignItems="center"
-        >
+            sx={{
+                width: 1,
+                height: 1,
+                justifyContent: "center",
+                alignItems: "center"
+            }}>
             <Alert severity="error">Unexpected error: {message}</Alert>
             <Button onClick={resetErrorBoundary} variant="contained">
                 Try again
             </Button>
-        </Stack>
+        </Stack>)
     );
 }
 

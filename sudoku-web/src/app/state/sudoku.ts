@@ -1,3 +1,5 @@
+// TODO: migrate to jotai
+// Recoil is not compatible with react 19: https://github.com/facebookexperimental/Recoil/issues/2318
 import { atom, selector } from "recoil";
 import { z } from "zod";
 import type { BaseEnum, TransportCell, TransportSudoku } from "../../types";
