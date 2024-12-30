@@ -106,7 +106,8 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                     <form
                         id="generate-form"
                         onSubmit={handleSubmit(async (formValues) => {
-                            const { base, minGivens, setAllDirectCandidates, strategies, seed, useSeed } = formValues;
+                            const { base, minGivens, setAllDirectCandidates, strategies, seed, useSeed, parallel } =
+                                formValues;
 
                             try {
                                 await generate({
@@ -122,6 +123,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                                     },
                                     solution: undefined,
                                     seed: useSeed && !_.isUndefined(seed) ? BigInt(seed) : undefined,
+                                    parallel,
                                 });
                             } catch (err) {
                                 if (!(err instanceof DOMException && err.name === "AbortError")) {
@@ -201,6 +203,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                                     />
                                 </FormGroup>
                             </Fieldset>
+                            <SwitchElement control={control} name="parallel" label="Parallel" />
                             <GenerateProgress progress={progress} cellCount={cellCount} />
                         </Stack>
                     </form>

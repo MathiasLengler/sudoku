@@ -1,4 +1,5 @@
 use anyhow::ensure;
+use log::info;
 
 use crate::error::Result;
 use crate::grid::Grid;
@@ -28,18 +29,20 @@ impl<Base: SudokuBase> GoalGenerator<Base> {
     pub fn generate_for_total_strategy_score(
         &self,
         iterations: u64,
-    ) -> Result<(StrategyScore, Grid<Base>)> {
-        use indicatif::{ParallelProgressIterator, ProgressBar, ProgressStyle};
+    ) -> (StrategyScore, Grid<Base>) {
+        // use indicatif::{ParallelProgressIterator, ProgressBar, ProgressStyle};
         use rayon::prelude::*;
 
-        let pb = ProgressBar::new(iterations).with_style(ProgressStyle::default_bar().template(
-            "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] ({pos}/{len}, ETA {eta}, {per_sec})",
-        )?);
+        // let pb = ProgressBar::new(iterations).with_style(ProgressStyle::default_bar().template(
+        //     "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] ({pos}/{len}, ETA {eta}, {per_sec})",
+        // )?);
 
         let (total_score, grid) = (0..iterations)
             .into_par_iter()
-            .progress_with(pb)
-            .map(|_| -> Result<_> {
+            // .progress_with(pb)
+            .map(|i| -> Result<_> {
+                info!("Iteration {}", i);
+
                 let grid = self.generator.generate()?;
 
                 let total_score = strategic::SolverBuilder::new(grid.clone())
@@ -61,6 +64,6 @@ impl<Base: SudokuBase> GoalGenerator<Base> {
             .unwrap()
             .unwrap();
 
-        Ok((total_score, grid))
+        (total_score, grid)
     }
 }

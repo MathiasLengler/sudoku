@@ -2,11 +2,13 @@ use std::fmt::{self, Display, Formatter};
 
 pub use dynamic::{DynamicSudoku, DynamicSudokuActions, DynamicTryStrategiesReturn};
 use history::History;
+use log::info;
 
 use crate::base::SudokuBase;
 use crate::cell::dynamic::{DynamicCandidates, DynamicValue};
 use crate::cell::{Candidates, Value};
 use crate::error::Result;
+use crate::generator::goal::GoalGenerator;
 use crate::generator::{Generator, GeneratorProgress, GeneratorSettings};
 use crate::grid::dynamic::DynamicGrid;
 use crate::grid::format::GridFormat;
@@ -67,8 +69,16 @@ impl<Base: SudokuBase> Sudoku<Base> {
         settings: Settings,
         on_progress: impl FnMut(GeneratorProgress) -> Result<()>,
     ) -> Result<Self> {
-        let grid =
-            Generator::with_settings(generator_settings).generate_with_progress(on_progress)?;
+        info!("generator_settings {:#?}", generator_settings);
+
+        let grid = if generator_settings.parallel {
+            let goal_generator = GoalGenerator::new(Generator::with_settings(generator_settings))?;
+            let (total_score, grid) = goal_generator.generate_for_total_strategy_score(10_000);
+            info!("total_score {total_score}");
+            grid
+        } else {
+            Generator::with_settings(generator_settings).generate_with_progress(on_progress)?
+        };
 
         Ok(Self::with_grid_and_settings(grid, settings))
     }

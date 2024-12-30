@@ -20,7 +20,7 @@ fn main() -> Result<()> {
         ..Default::default()
     }))?;
 
-    let (total_score, grid) = generator.generate_for_total_strategy_score(10_000)?;
+    let (total_score, grid) = generator.generate_for_total_strategy_score(10_000);
 
     println!("Total score: {}\n{grid}", total_score);
 

@@ -58,6 +58,7 @@ export const generateFormValuesSchema = z.object({
                 }
             }
         }),
+    parallel: z.boolean().default(false),
 });
 export const GENERATE_FORM_DEFAULT_VALUES = {
     base: 3,
@@ -66,6 +67,7 @@ export const GENERATE_FORM_DEFAULT_VALUES = {
     setAllDirectCandidates: true,
     useSeed: false,
     seed: "0",
+    parallel: false,
 } satisfies GenerateFormValues;
 export const generateFormValuesState = atom<GenerateFormValues>({
     key: "GenerateFormValues",

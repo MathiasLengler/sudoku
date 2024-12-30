@@ -220,6 +220,7 @@ impl<Base: SudokuBase> DynamicCellWorldActions for CellWorld<Base> {
                 }),
                 solution: Some(SolutionSettings { values_grid: grid }),
                 seed: Some(rng.gen()),
+                ..Default::default()
             })
             .generate()?;
 

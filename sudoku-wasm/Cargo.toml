@@ -36,7 +36,7 @@ default-features = false
 features = [
     "wasm",
     # TODO: re-enable
-    #    "parallel"
+    "parallel",
 ]
 
 [dev-dependencies]
