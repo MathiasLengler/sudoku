@@ -36,12 +36,25 @@ pub enum GridMetric {
     BacktrackingStepCount,
     /// The number of givens in the grid.
     GridGivens,
+    // Use normalized metrics instead of standard deviation? (0-1, gini coefficient etc.)
     /// The standard deviation of the givens value counts in the grid.
     /// E.g. how evenly distributed the givens values are.
     /// Example:
     /// 3 givens for each number => 1
     /// Only 2s and 3s => >>1
     GridGivensValueCountDeviation,
+}
+
+#[derive(Debug)]
+pub enum GoalOptimization {
+    Minimize,
+    Maximize,
+}
+
+#[derive(Debug)]
+pub struct Goal {
+    metric: GridMetric,
+    optimize: GoalOptimization,
 }
 
 impl GridMetric {
