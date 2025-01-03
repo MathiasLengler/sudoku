@@ -8,6 +8,48 @@ use crate::{base::SudokuBase, solver::strategic::strategies::StrategyScore};
 
 use super::Generator;
 
+pub type GoalScore = u32;
+
+/// A metric used to evaluate the difficulty of a grid.
+#[derive(Debug, Clone, Copy)]
+pub enum GridMetric {
+    // Based on `strategic::SolverPathIter` - a single solve path determined by the solver.
+    /// Weighted sum of all strategy scores used to solve the grid. `Strategy::score() * Number of deductions made by the strategy`
+    StrategyTotalScore,
+    /// How often each strategy was executed, successful or not, to solve the grid.
+    StrategyExecutionCount,
+    /// How often each strategy was successfully executed to solve the grid.
+    StrategyApplicationCount,
+    /// Number of deductions used to solve the grid.
+    StrategyDeductionCount,
+    /// The average number of strategies available to make progress.
+    StrategyOptionsAverage,
+
+    // Based on the PoC bin `solve_graph` - a graph of all possible solve paths.
+    /// The average [branching factor](https://en.wikipedia.org/wiki/Branching_factor) of the strategy solve graph.
+    /// In other words: the average number of strategies available to make progress.
+    /// E.g. the average number of available stratgies to make progress.
+    SolveGraphAverageBranchingFactor,
+    /// The number of steps taken by `sat::Solver` to solve the grid.
+    SatStepCount,
+    /// The number of steps taken by `backtracking::Solver` to solve the grid.
+    BacktrackingStepCount,
+    /// The number of givens in the grid.
+    GridGivens,
+    /// The standard deviation of the givens value counts in the grid.
+    /// E.g. how evenly distributed the givens values are.
+    /// Example:
+    /// 3 givens for each number => 1
+    /// Only 2s and 3s => >>1
+    GridGivensValueCountDeviation,
+}
+
+impl GridMetric {
+    pub fn evaluate<Base: SudokuBase>(self, _grid: &Grid<Base>) -> StrategyScore {
+        todo!()
+    }
+}
+
 #[derive(Debug)]
 pub struct GoalGenerator<Base: SudokuBase> {
     generator: Generator<Base>,
