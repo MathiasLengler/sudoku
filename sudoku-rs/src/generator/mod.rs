@@ -17,7 +17,7 @@ use crate::solver::{backtracking, introspective};
 
 pub use settings::*;
 #[cfg(feature = "parallel")]
-pub mod goal;
+pub mod multi_shot;
 mod settings;
 
 /*

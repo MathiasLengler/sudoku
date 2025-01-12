@@ -2,7 +2,7 @@ use env_logger::Env;
 
 use sudoku::base::consts::*;
 use sudoku::error::Result;
-use sudoku::generator::goal::GoalGenerator;
+use sudoku::generator::multi_shot::MultiShotGenerator;
 use sudoku::generator::{Generator, PruningSettings};
 use sudoku::solver::strategic::strategies::StrategyEnum;
 
@@ -15,7 +15,7 @@ fn main() -> Result<()> {
     .format_indent(Some(0))
     .init();
 
-    let generator = GoalGenerator::<Base>::new(Generator::with_pruning(PruningSettings {
+    let generator = MultiShotGenerator::<Base>::new(Generator::with_pruning(PruningSettings {
         strategies: StrategyEnum::default_solver_strategies_no_backtracking(),
         ..Default::default()
     }))?;

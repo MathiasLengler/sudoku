@@ -65,12 +65,13 @@ impl GridMetric {
     }
 }
 
+/// A generator that generates multiple grids and selects one based on a Goal metric.
 #[derive(Debug)]
-pub struct GoalGenerator<Base: SudokuBase> {
+pub struct MultiShotGenerator<Base: SudokuBase> {
     generator: Generator<Base>,
 }
 
-impl<Base: SudokuBase> GoalGenerator<Base> {
+impl<Base: SudokuBase> MultiShotGenerator<Base> {
     pub fn new(generator: Generator<Base>) -> Result<Self> {
         ensure!(
             generator.settings.prune.is_some(),

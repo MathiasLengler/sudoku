@@ -8,7 +8,7 @@ use crate::base::SudokuBase;
 use crate::cell::dynamic::{DynamicCandidates, DynamicValue};
 use crate::cell::{Candidates, Value};
 use crate::error::Result;
-use crate::generator::goal::GoalGenerator;
+use crate::generator::multi_shot::MultiShotGenerator;
 use crate::generator::{Generator, GeneratorProgress, GeneratorSettings};
 use crate::grid::dynamic::DynamicGrid;
 use crate::grid::format::GridFormat;
@@ -72,7 +72,8 @@ impl<Base: SudokuBase> Sudoku<Base> {
         info!("generator_settings {:#?}", generator_settings);
 
         let grid = if generator_settings.parallel {
-            let goal_generator = GoalGenerator::new(Generator::with_settings(generator_settings))?;
+            let goal_generator =
+                MultiShotGenerator::new(Generator::with_settings(generator_settings))?;
             let (total_score, grid) = goal_generator.generate_for_total_strategy_score(100);
             info!("total_score {total_score}");
             grid
