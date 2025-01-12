@@ -35,7 +35,7 @@ Ideas:
 //  since checking for an ambiguous solution is way faster (early abort) than proofing a unique solution.
 //  The near minimal sudoku can then be minimized as usual.
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Generator<Base: SudokuBase> {
     settings: GeneratorSettings<Base>,
 }

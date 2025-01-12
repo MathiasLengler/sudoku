@@ -1,5 +1,7 @@
+use std::sync::atomic::{AtomicUsize, Ordering};
+
 use anyhow::ensure;
-use log::info;
+use log::*;
 
 use crate::error::Result;
 use crate::grid::Grid;
@@ -74,10 +76,6 @@ impl<Base: SudokuBase> GoalGenerator<Base> {
             generator.settings.prune.is_some(),
             "GoalGenerator requires pruning settings"
         );
-        ensure!(
-            generator.settings.seed.is_none(),
-            "GoalGenerator does not support seeding"
-        );
         Ok(Self { generator })
     }
 
@@ -88,6 +86,8 @@ impl<Base: SudokuBase> GoalGenerator<Base> {
         // use indicatif::{ParallelProgressIterator, ProgressBar, ProgressStyle};
         use rayon::prelude::*;
 
+        let progress_counter = AtomicUsize::new(0);
+
         // let pb = ProgressBar::new(iterations).with_style(ProgressStyle::default_bar().template(
         //     "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] ({pos}/{len}, ETA {eta}, {per_sec})",
         // )?);
@@ -96,9 +96,15 @@ impl<Base: SudokuBase> GoalGenerator<Base> {
             .into_par_iter()
             // .progress_with(pb)
             .map(|i| -> Result<_> {
-                info!("Iteration {}", i);
+                debug!("Generate iteration {i}");
 
-                let grid = self.generator.generate()?;
+                let grid = if let Some(seed) = self.generator.settings.seed {
+                    let mut new_generator = self.generator.clone();
+                    new_generator.settings.seed = Some(seed + i);
+                    new_generator.generate()?
+                } else {
+                    self.generator.generate()?
+                };
 
                 let total_score = strategic::SolverBuilder::new(grid.clone())
                     .strategies(
@@ -114,6 +120,13 @@ impl<Base: SudokuBase> GoalGenerator<Base> {
                     .total_score()?
                     .unwrap();
                 Ok((total_score, grid))
+            })
+            .inspect(|_| {
+                progress_counter.fetch_add(1, Ordering::SeqCst);
+                info!(
+                    "Generate progress {}/{iterations}",
+                    progress_counter.load(Ordering::SeqCst)
+                );
             })
             .max_by_key(|res| res.as_ref().map_or(0, |(total_score, _)| *total_score))
             .unwrap()

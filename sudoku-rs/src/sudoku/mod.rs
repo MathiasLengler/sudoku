@@ -73,7 +73,7 @@ impl<Base: SudokuBase> Sudoku<Base> {
 
         let grid = if generator_settings.parallel {
             let goal_generator = GoalGenerator::new(Generator::with_settings(generator_settings))?;
-            let (total_score, grid) = goal_generator.generate_for_total_strategy_score(10_000);
+            let (total_score, grid) = goal_generator.generate_for_total_strategy_score(100);
             info!("total_score {total_score}");
             grid
         } else {
