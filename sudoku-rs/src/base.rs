@@ -1,10 +1,10 @@
 use std::fmt::{Binary, Debug, Display};
 use std::hash::Hash;
-use std::ops::{BitAndAssign, BitOrAssign, BitXorAssign, Shl};
+use std::ops::{BitAndAssign, BitOrAssign, BitXorAssign, RangeInclusive, Shl};
 
 use num::traits::{
-    CheckedShl, CheckedShr, Unsigned, WrappingAdd, WrappingMul, WrappingShl, WrappingShr,
-    WrappingSub,
+    CheckedShl, CheckedShr, ConstOne, ConstZero, NumAssignOps, Unsigned, WrappingAdd, WrappingMul,
+    WrappingNeg, WrappingShl, WrappingShr, WrappingSub,
 };
 use num::PrimInt;
 
@@ -12,7 +12,6 @@ use consts::*;
 pub(crate) use enum_impl::match_base_enum;
 pub use enum_impl::BaseEnum;
 
-use crate::cell::Candidates;
 use crate::error::{Error, Result};
 use crate::position::Coordinate;
 use crate::position::Position;
@@ -20,10 +19,6 @@ use crate::unsafe_utils::get_unchecked;
 
 pub mod consts {
     // Aliases
-    pub use Base2 as Size4x4;
-    pub use Base3 as Size9x9;
-    pub use Base4 as Size16x16;
-    pub use Base5 as Size25x25;
     pub use Base5 as BaseMax;
 
     use crate::base::SudokuBase;
@@ -174,7 +169,7 @@ mod block_index_to_top_left_cell_index {
 ///
 /// # Safety
 /// This crate makes assumptions about the correct implementation of this trait.
-/// An incorrect implementation could result in undefined behaviour.
+/// An incorrect implementation could result in undefined behavior.
 pub unsafe trait SudokuBase
 where
     Self: Ord + Hash + Clone + Copy + Debug + Default + Send + Sync + 'static + private::Sealed,
@@ -199,7 +194,8 @@ where
     /// - `16x16`: `4`
     /// - `25x25`: `5`
     const BASE: u8;
-    /// The side length of the complete sudoku. Equals this size of a row or column.
+    /// The side length of the complete sudoku.
+    /// Equals this number of cells in a group, e.g. row, column or block.
     ///
     /// # Safety
     /// - must equal `BASE.pow(2)`
@@ -247,6 +243,7 @@ where
         + Sync
         // Generic bit twiddling
         + PrimInt
+        + NumAssignOps
         + CheckedShl
         + CheckedShr
         + Unsigned
@@ -255,33 +252,40 @@ where
         + WrappingShl
         + WrappingShr
         + WrappingSub
+        + WrappingNeg
+        + ConstOne
+        + ConstZero
         + BitXorAssign
         + BitOrAssign
         + BitAndAssign
         + Shl<u8, Output = Self::CandidatesIntegral>
         // Conversions
         + Into<u32>
-        + TryFrom<u32, Error = Self::CandidatesIntegralTryFromU32Error>;
+        + TryFrom<u32, Error: Into<Error> + Debug>;
 
-    type CandidatesIntegralTryFromU32Error: Into<Error> + Debug;
-
-    /// Data structure for `GroupAvailability`.
+    /// A generic array of `SIDE_LENGTH` elements, e.g. `[T; Self::SIDE_LENGTH]`.
     ///
-    /// Conceptually, a `[Candidates<Self>; Self::SIDE_LENGTH]`.
+    /// This is a workaround for the compiler error:
+    /// > constant expression depends on a generic parameter
     ///
     /// # Safety
     ///
     /// The length of the array must equal `Base::SIDE_LENGTH`.
-    type CandidatesGroup: AsRef<[Candidates<Self>]>
-        + AsMut<[Candidates<Self>]>
+    type Group<T>: AsRef<[T]>
+        + AsMut<[T]>
+        + Send
+        + Sync
         + Clone
         + Debug
         + Default
-        + IntoIterator<Item = Candidates<Self>, IntoIter = Self::CandidatesGroupIntoIter>
-        + Send
-        + Sync;
-
-    type CandidatesGroupIntoIter: Iterator<Item = Candidates<Self>>;
+        + Ord
+        + Hash
+        + IntoIterator<
+            Item = T,
+            IntoIter: ExactSizeIterator<Item = T> + DoubleEndedIterator<Item = T>,
+        > + TryFrom<Vec<T>, Error = Vec<T>>
+    where
+        T: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash;
 }
 
 macro_rules! impl_sudoku_base {
@@ -322,10 +326,7 @@ unsafe impl SudokuBase for $type_num {
 
     type CandidatesIntegral = $type_integral;
 
-    type CandidatesIntegralTryFromU32Error = <$type_integral as TryFrom<u32>>::Error;
-
-    type CandidatesGroup = [Candidates<Self>; Self::SIDE_LENGTH as usize];
-    type CandidatesGroupIntoIter = std::array::IntoIter<Candidates<Self>, {Self::SIDE_LENGTH as usize}>;
+    type Group<T: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash> = [T; Self::SIDE_LENGTH as usize];
 }
         )+
     };
@@ -504,31 +505,34 @@ mod enum_impl {
 
         use super::*;
 
-        impl ts_rs::TS for BaseEnum {
-            const EXPORT_TO: Option<&'static str> = Some("bindings/BaseEnum.ts");
-            fn decl() -> String {
-                format!("type BaseEnum = {};", Self::inline())
-            }
+        impl ::ts_rs::TS for BaseEnum {
+            type WithoutGenerics = Self;
+
             fn name() -> String {
                 "BaseEnum".to_owned()
+            }
+            fn decl_concrete() -> String {
+                format!("type {} = {};", Self::name(), Self::inline())
+            }
+            fn decl() -> String {
+                let inline = Self::inline();
+                format!("type {} = {inline};", Self::name())
             }
             fn inline() -> String {
                 BaseEnum::all().map(Self::into_u8).join(" | ")
             }
-            fn dependencies() -> Vec<ts_rs::Dependency>
-            where
-                Self: 'static,
-            {
-                vec![]
+            fn inline_flattened() -> String {
+                panic!("{} cannot be flattened", Self::name())
             }
-            fn transparent() -> bool {
-                false
+            fn output_path() -> Option<&'static std::path::Path> {
+                Some(std::path::Path::new("BaseEnum.ts"))
             }
         }
+
         #[cfg(test)]
         #[test]
         fn export_bindings_baseenum() {
-            <BaseEnum as ts_rs::TS>::export().expect("could not export type");
+            <BaseEnum as ::ts_rs::TS>::export_all().expect("could not export type");
         }
     }
 
@@ -662,16 +666,10 @@ mod tests {
         // Safety invariant of Base::CandidatesIntegral
         // MAX_VALUE must be representable at the highest bit position.
         assert!(size_of::<Base::CandidatesIntegral>() * 8 >= usize::from(Base::MAX_VALUE));
-        // Safety invariant of Base::CandidatesCells
-        let mut candidates_cells = <Base as SudokuBase>::CandidatesGroup::default();
-        assert_eq!(
-            candidates_cells.as_ref().len(),
-            usize::from(Base::SIDE_LENGTH)
-        );
-        assert_eq!(
-            candidates_cells.as_mut().len(),
-            usize::from(Base::SIDE_LENGTH)
-        );
+        // Safety invariant of Base::Group<T>
+        let mut group = <Base as SudokuBase>::Group::<()>::default();
+        assert_eq!(group.as_ref().len(), usize::from(Base::SIDE_LENGTH));
+        assert_eq!(group.as_mut().len(), usize::from(Base::SIDE_LENGTH));
     }
 
     #[test]
@@ -739,7 +737,7 @@ mod tests {
     }
 
     #[test]
-    fn test_cell_index_to_block_index() {
+    fn test_cell_index_to_block_index_generator() {
         fn generate_cell_index_to_block_index(base: u8) -> Vec<u8> {
             use std::iter::repeat;
             let base_usize = usize::from(base);
@@ -774,6 +772,24 @@ mod tests {
     }
 
     #[test]
+    fn test_cell_index_to_block_index_invariants() {
+        fn assert_invariants<Base: SudokuBase>(cell_index_to_block_index: &[u8]) {
+            assert_eq!(
+                cell_index_to_block_index.len(),
+                usize::from(Base::CELL_COUNT)
+            );
+            for &block_index in cell_index_to_block_index {
+                assert!(block_index < Base::SIDE_LENGTH);
+            }
+        }
+
+        assert_invariants::<Base2>(cell_index_to_block_index::BASE_2);
+        assert_invariants::<Base3>(cell_index_to_block_index::BASE_3);
+        assert_invariants::<Base4>(cell_index_to_block_index::BASE_4);
+        assert_invariants::<Base5>(cell_index_to_block_index::BASE_5);
+    }
+
+    #[test]
     fn test_pos_to_block() {
         let base2: Vec<_> = Position::<Base2>::all()
             .map(SudokuBase::pos_to_block)
@@ -801,7 +817,7 @@ mod tests {
     }
 
     #[test]
-    fn test_mod_block_to_top_left_pos() {
+    fn test_block_index_to_top_left_cell_index() {
         fn generate_block_to_top_left_cell_index(base: u8) -> Vec<u16> {
             use num::Integer;
 

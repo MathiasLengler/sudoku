@@ -32,7 +32,7 @@ export function MyMenu({ children, menuItems }: MyMenuProps) {
     return (
         <>
             {children({ onMenuOpen })}
-            <Menu keepMounted open={!!menuAnchorEl} anchorEl={menuAnchorEl} onClose={makeHandleMenuClose()}>
+            <Menu open={!!menuAnchorEl} anchorEl={menuAnchorEl} onClose={makeHandleMenuClose()}>
                 {menuItems.map((menuItem, i) => (
                     <MenuItem key={i} onClick={makeHandleMenuClose(menuItem.onClick)} disabled={menuItem.disabled}>
                         {menuItem.icon && <ListItemIcon>{menuItem.icon}</ListItemIcon>}

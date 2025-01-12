@@ -23,6 +23,7 @@ use crate::unsafe_utils::{get_unchecked, get_unchecked_mut};
 
 pub mod deserialization;
 pub mod format;
+pub mod group;
 
 pub mod dynamic;
 
@@ -254,7 +255,8 @@ impl<Base: SudokuBase> Grid<Base> {
                     0 => "row",
                     1 => "column",
                     2 => "block",
-                    _ => "??",
+                    unexpected_group_type =>
+                        panic!("Unexpected goup type: {unexpected_group_type}"),
                 },
                 group_i % Base::SIDE_LENGTH
             );
@@ -534,27 +536,29 @@ impl<Base: SudokuBase> Grid<Base> {
 /// Cell iterators
 ///
 /// TODO: unify/expand iterator API:
-///  Use-cases:
-///  Iterator Item:
-///  - Position
-///  - &Cell
-///  - &mut Cell
-///  - Positioned<&Cell>
-///  - Positioned<&mut Cell>
-///  What is iterated:
-///  - Position iterators
-///    - all
-///    - row i
-///    - all rows
-///    - column i
-///    - all columns
-///    - block i
-///    - all blocks
-///  - all groups (chained: all rows, all columns, all blocks)
-///  - filtered cell state
-///    - `all_value_positions`
-///    - `all_unfixed_value_positions`
-///    - `all_candidates_positions`
+///
+/// Use-cases:
+/// Iterator Item:
+/// - Position
+/// - &Cell
+/// - &mut Cell
+/// - Positioned<&Cell>
+/// - Positioned<&mut Cell>
+///
+/// What is iterated:
+/// - Position iterators
+///   - all
+///   - row i
+///   - all rows
+///   - column i
+///   - all columns
+///   - block i
+///   - all blocks
+/// - all groups (chained: all rows, all columns, all blocks)
+/// - filtered cell state
+///   - `all_value_positions`
+///   - `all_unfixed_value_positions`
+///   - `all_candidates_positions`
 impl<Base: SudokuBase, T> Grid<Base, T> {
     fn positions_to_cells(
         &self,
@@ -637,7 +641,8 @@ impl<Base: SudokuBase, T> Grid<Base, T> {
         Position::all_blocks()
     }
 
-    pub fn all_group_positions() -> impl Iterator<Item = impl Iterator<Item = Position<Base>>> {
+    pub fn all_group_positions(
+    ) -> impl Iterator<Item = impl Iterator<Item = Position<Base>> + Clone> {
         Position::all_groups()
     }
 }

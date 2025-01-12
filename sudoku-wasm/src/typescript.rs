@@ -22,7 +22,10 @@ use sudoku::{
         strategies::StrategyEnum,
     },
     transport::{TransportCell, TransportSudoku},
-    world::{CellWorldDimensions, RelativeTileDir, TileDim, TileIndex, WorldGenerationResult},
+    world::{
+        CellWorldDimensions, DynamicWorldGridCellPosition, Quadrant, RelativeDir, WorldCellDim,
+        WorldCellPosition, WorldGenerationResult, WorldGridDim, WorldGridPosition,
+    },
     DynamicTryStrategiesReturn,
 };
 use wasm_bindgen::prelude::*;
@@ -63,7 +66,7 @@ macro_rules! serde_wasm_bindgen_interop {
 }
 
 // All ts-rs annotated types:
-//  #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+//  #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
 #[wasm_bindgen(typescript_custom_section)]
 const IMPORT_TS_RS_BINDINGS: &'static str = r#"
 import type {
@@ -77,18 +80,17 @@ import type {
     DynamicPruningOrder,
     DynamicPruningSettings,
     DynamicSolutionSettings,
-    DynamicTryStrategiesReturn,
     DynamicValue,
+    DynamicWorldGridCellPosition,
     GeneratorProgress,
     GridFormatEnum,
     PositionedTransportAction,
     PositionedTransportReason,
     PruningGroupBehaviour,
     PruningTarget,
-    RelativeTileDir,
+    Quadrant,
+    RelativeDir,
     StrategyEnum,
-    TileDim,
-    TileIndex,
     TransportAction,
     TransportCell,
     TransportDeduction,
@@ -109,18 +111,17 @@ serde_wasm_bindgen_interop! {
     DynamicPruningOrder,
     DynamicPruningSettings,
     DynamicSolutionSettings,
-    DynamicTryStrategiesReturn,
     DynamicValue,
+    DynamicWorldGridCellPosition,
     GeneratorProgress,
     GridFormatEnum,
     PositionedTransportAction,
     PositionedTransportReason,
     PruningGroupBehaviour,
     PruningTarget,
-    RelativeTileDir,
+    Quadrant,
+    RelativeDir,
     StrategyEnum,
-    TileDim,
-    TileIndex,
     TransportAction,
     TransportCell,
     TransportDeduction,
@@ -133,17 +134,31 @@ serde_wasm_bindgen_interop! {
 // Serde-compatbile aliases
 pub type StrategyEnums = Vec<StrategyEnum>;
 pub type DynamicCells = Vec<DynamicCell>;
+// Workaround for ts-rs import bug
+pub type DynamicTryStrategiesReturnAlias = DynamicTryStrategiesReturn;
 
 // Must be keept in sync with aliases above
 #[wasm_bindgen(typescript_custom_section)]
 const SERDE_ALIASES: &'static str = r#"
 export type StrategyEnums = StrategyEnum[];
 export type DynamicCells = DynamicCell[];
+export type DynamicTryStrategiesReturnAlias = [StrategyEnum, TransportDeductions] | null;
+import type {
+    WorldCellDim,
+    WorldCellPosition,
+    WorldGridDim,
+    WorldGridPosition,
+} from "../../sudoku-web/src/app/state/world";
 "#;
 
 serde_wasm_bindgen_interop! {
+    DynamicCells,
+    DynamicTryStrategiesReturnAlias,
     StrategyEnums,
-    DynamicCells
+    WorldCellDim,
+    WorldCellPosition,
+    WorldGridDim,
+    WorldGridPosition
 }
 
 // non-serde types - custom conversion functions

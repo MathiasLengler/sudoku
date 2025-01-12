@@ -8,6 +8,7 @@ use crate::cell::dynamic::{DynamicCandidates, DynamicValue};
 use crate::cell::{Candidates, Value};
 use crate::error::Result;
 use crate::generator::{Generator, GeneratorProgress, GeneratorSettings};
+use crate::grid::dynamic::DynamicGrid;
 use crate::grid::format::GridFormat;
 use crate::grid::format::GridFormatEnum;
 use crate::grid::Grid;
@@ -274,6 +275,10 @@ impl<Base: SudokuBase> DynamicSudokuActions for Sudoku<Base> {
 
     fn export(&self, format: &GridFormatEnum) -> String {
         format.render(&self.grid)
+    }
+
+    fn to_dynamic_grid(&self) -> DynamicGrid {
+        self.grid.clone().into()
     }
 }
 

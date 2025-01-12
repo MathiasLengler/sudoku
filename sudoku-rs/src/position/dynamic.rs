@@ -2,14 +2,12 @@ use std::fmt::{self, Display};
 use std::ops::{Div, Mul};
 
 use serde::{Deserialize, Serialize};
-#[cfg(feature = "wasm")]
-use ts_rs::TS;
 
 use crate::base::SudokuBase;
 use crate::position::Position;
 
 /// The position of a cell in a grid of unknown size.
-#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
 #[derive(
     Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize, Default,
 )]

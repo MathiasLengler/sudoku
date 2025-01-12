@@ -3,8 +3,10 @@ use std::fmt::{Binary, Display, Formatter};
 use std::mem::size_of;
 
 use anyhow::ensure;
-use num::traits::{CheckedShl, WrappingSub};
-use num::{One, PrimInt, Zero};
+use iter_combinations::CandidatesCombinationsIter;
+use itertools::Itertools;
+use num::traits::{CheckedShl, ConstOne, ConstZero, WrappingSub};
+use num::{PrimInt, Zero};
 use serde::ser::SerializeSeq;
 use serde::{Serialize, Serializer};
 
@@ -17,7 +19,11 @@ use crate::cell::{Cell, CellState};
 use crate::error::{Error, Result};
 use crate::position::{BlockCoordinate, Coordinate};
 
+// TODO: remove after bench
+pub use iter_combinations::debug_asm;
+
 mod iter;
+mod iter_combinations;
 
 // FIXME: replace all usages of `&self` with `self`
 //  `Candidates` is Copy and smaller than or equal to a 32-bit pointer
@@ -39,7 +45,7 @@ impl<Base: SudokuBase> Default for Candidates<Base> {
 /// Constructors
 impl<Base: SudokuBase> Candidates<Base> {
     pub fn new() -> Self {
-        Self::with_integral_unchecked(Base::CandidatesIntegral::zero())
+        Self::with_integral_unchecked(Base::CandidatesIntegral::ZERO)
     }
 
     fn with_integral_unchecked(bits: Base::CandidatesIntegral) -> Self {
@@ -67,11 +73,20 @@ impl<Base: SudokuBase> Candidates<Base> {
 
     pub fn block_segmentation_mask(segment_index: BlockCoordinate<Base>) -> Self {
         let base = Base::BASE;
-        let one = Base::CandidatesIntegral::one();
+        let one = Base::CandidatesIntegral::ONE;
 
         let first_segment_mask = (one << base) - one;
 
         Self::with_integral_unchecked(first_segment_mask << (segment_index.get() * base))
+    }
+
+    pub fn iter_all_lexicographical() -> impl Iterator<Item = Self> + Clone {
+        num::range_step_inclusive(
+            Base::CandidatesIntegral::ZERO,
+            Self::all_candidates_mask(),
+            Base::CandidatesIntegral::ONE,
+        )
+        .map(Self::with_integral_unchecked)
     }
 }
 
@@ -104,44 +119,44 @@ impl<Base: SudokuBase> Candidates<Base> {
 
 /// Mutations
 impl<Base: SudokuBase> Candidates<Base> {
-    pub fn toggle(&mut self, candidate: Value<Base>) {
-        let imported_candidate = Self::import(candidate);
+    pub fn toggle(&mut self, candidate: impl Into<Coordinate<Base>>) {
+        let candidate_mask = Self::import(candidate);
 
-        self.bits ^= Base::CandidatesIntegral::one() << imported_candidate;
+        self.bits ^= candidate_mask;
 
         self.debug_assert();
     }
 
-    pub fn set(&mut self, candidate: Value<Base>, enabled: bool) {
-        let imported_candidate = Self::import(candidate);
+    pub fn set(&mut self, candidate: impl Into<Coordinate<Base>>, enabled: bool) {
+        let candidate_mask = Self::import(candidate);
 
         if enabled {
-            self.bits |= Base::CandidatesIntegral::one() << imported_candidate;
+            self.bits |= candidate_mask;
         } else {
-            self.bits &= !(Base::CandidatesIntegral::one() << imported_candidate);
+            self.bits &= !candidate_mask;
         }
 
         self.debug_assert();
     }
 
-    pub fn insert(&mut self, candidate: Value<Base>) {
+    pub fn insert(&mut self, candidate: impl Into<Coordinate<Base>>) {
         self.set(candidate, true);
     }
 
-    pub fn delete(&mut self, candidate: Value<Base>) {
+    pub fn delete(&mut self, candidate: impl Into<Coordinate<Base>>) {
         self.set(candidate, false);
     }
 }
 
 /// Getters
 impl<Base: SudokuBase> Candidates<Base> {
-    pub fn has(&self, candidate: Value<Base>) -> bool {
-        let imported_candidate = Self::import(candidate);
+    pub fn has(&self, candidate: impl Into<Coordinate<Base>>) -> bool {
+        let candidate_mask = Self::import(candidate);
 
-        !(self.bits & Base::CandidatesIntegral::one() << imported_candidate).is_zero()
+        !(self.bits & candidate_mask).is_zero()
     }
 
-    pub fn integral(&self) -> Base::CandidatesIntegral {
+    pub fn integral(self) -> Base::CandidatesIntegral {
         self.bits
     }
 
@@ -158,12 +173,28 @@ impl<Base: SudokuBase> Candidates<Base> {
     }
 
     fn trailing_zeros(&self) -> u8 {
+        debug_assert!(!self.is_empty());
         // unwrap optimizes away
         self.bits.trailing_zeros().try_into().unwrap()
     }
 
+    /// Logical leading zeros, e.g. only with respect to `all_candidates_mask`.
+    ///
+    /// Who many candidates exist after the last set candidate?
+    fn leading_zeros(&self) -> u8 {
+        debug_assert!(!self.is_empty());
+
+        // TODO: dedup with block_segmentation
+        let size_bits: u8 = (size_of::<Base::CandidatesIntegral>() * 8)
+            .try_into()
+            .unwrap();
+
+        // unwrap optimizes away
+        u8::try_from(self.bits.leading_zeros()).unwrap() - (size_bits - Base::MAX_VALUE - 1)
+    }
+
     // Reference: https://lemire.me/blog/2018/02/21/iterating-over-set-bits-quickly/
-    pub fn first(&self) -> Option<Value<Base>> {
+    pub fn first<C: From<Coordinate<Base>>>(&self) -> Option<C> {
         if self.is_empty() {
             None
         } else {
@@ -172,6 +203,19 @@ impl<Base: SudokuBase> Candidates<Base> {
             // Safety: the largest bit position is `Base::MAX_VALUE - 1`
             // At least one bit is set, therefore `candidate` remains in-bounds.
             let coordinate = unsafe { Coordinate::new_unchecked(candidate) };
+
+            Some(Self::export(coordinate))
+        }
+    }
+
+    pub fn last<C: From<Coordinate<Base>>>(&self) -> Option<C> {
+        if self.is_empty() {
+            None
+        } else {
+            // Safety: the largest bit position is `Base::MAX_VALUE - 1`
+            // At least one bit is set, therefore `candidate` remains in-bounds.
+            let coordinate =
+                unsafe { Coordinate::new_unchecked(Base::MAX_VALUE - self.leading_zeros()) };
 
             Some(Self::export(coordinate))
         }
@@ -230,8 +274,8 @@ impl<Base: SudokuBase> Candidates<Base> {
         self.bits.count_ones().try_into().unwrap()
     }
 
-    pub fn iter(&self) -> CandidatesAscIter<Base> {
-        (*self).into()
+    pub fn iter(self) -> CandidatesAscIter<Base> {
+        self.into_iter()
     }
 
     pub fn to_vec_u8(&self) -> Vec<u8> {
@@ -254,24 +298,30 @@ impl<Base: SudokuBase> Candidates<Base> {
     pub fn invert(self) -> Self {
         Self::with_integral_unchecked(self.bits ^ Self::all_candidates_mask())
     }
+
+    /// Returns an iterator over all combinations of `k` candidates contained in this `Candidates`.
+    pub fn combinations(self, k: Value<Base>) -> CandidatesCombinationsIter<Base> {
+        CandidatesCombinationsIter::new(k, self)
+    }
 }
 
 /// Internal helpers
 impl<Base: SudokuBase> Candidates<Base> {
     // TODO: benchmark/view assembly; should evaluate to a constant for a specific base
     fn all_candidates_mask() -> Base::CandidatesIntegral {
-        let zero = Base::CandidatesIntegral::zero();
-        let one = Base::CandidatesIntegral::one();
+        let zero = Base::CandidatesIntegral::ZERO;
+        let one = Base::CandidatesIntegral::ONE;
         one.checked_shl(u32::from(Base::MAX_VALUE))
             .unwrap_or(zero)
             .wrapping_sub(&one)
     }
 
-    fn import(candidate: Value<Base>) -> u8 {
-        candidate.get() - 1
+    /// Convert a single candidate (`Value` or `Coordinate`) into a bit mask.
+    fn import(candidate: impl Into<Coordinate<Base>>) -> Base::CandidatesIntegral {
+        Base::CandidatesIntegral::ONE << candidate.into().get()
     }
 
-    fn export(candidate: Coordinate<Base>) -> Value<Base> {
+    fn export<C: From<Coordinate<Base>>>(candidate: Coordinate<Base>) -> C {
         candidate.into()
     }
 }
@@ -304,8 +354,8 @@ impl<Base: SudokuBase> Candidates<Base> {
     }
 }
 
-impl<Base: SudokuBase> FromIterator<Value<Base>> for Candidates<Base> {
-    fn from_iter<T: IntoIterator<Item = Value<Base>>>(candidates: T) -> Self {
+impl<Base: SudokuBase, C: Into<Coordinate<Base>>> FromIterator<C> for Candidates<Base> {
+    fn from_iter<T: IntoIterator<Item = C>>(candidates: T) -> Self {
         let mut this = Self::default();
 
         for candidate in candidates {
@@ -327,6 +377,7 @@ impl<Base: SudokuBase> IntoIterator for Candidates<Base> {
     }
 }
 
+#[allow(clippy::into_iter_without_iter)]
 impl<Base: SudokuBase> IntoIterator for &'_ Candidates<Base> {
     type Item = Value<Base>;
     type IntoIter = CandidatesAscIter<Base>;
@@ -358,7 +409,7 @@ impl<Base: SudokuBase> TryFrom<Vec<u8>> for Candidates<Base> {
         let mut this = Self::default();
 
         for candidate in candidates {
-            this.set(candidate.try_into()?, true);
+            this.set(Value::try_from(candidate)?, true);
         }
 
         this.debug_assert();
@@ -378,15 +429,15 @@ impl<Base: SudokuBase> TryFrom<DynamicCandidates> for Candidates<Base> {
 impl<Base: SudokuBase> Display for Candidates<Base> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         if f.alternate() {
-            write!(f, "{:?}", self.to_vec_value())
+            write!(f, "{}", self.to_vec_value().into_iter().join(","))
         } else {
             write!(
                 f,
-                "{:?}",
+                "{}",
                 self.to_vec_value()
                     .into_iter()
                     .map(|value| value.to_string())
-                    .collect::<String>()
+                    .join(",")
             )
         }
     }
@@ -507,6 +558,14 @@ mod tests {
         }
 
         #[test]
+        fn test_iter_all_lexicographical() {
+            itertools::assert_equal(
+                Candidates::<Base2>::iter_all_lexicographical(),
+                (0..16).map(Candidates::with_integral),
+            );
+        }
+
+        #[test]
         fn test_set_constructors() {
             let a: Candidates<Base2> = vec![1, 2].try_into().unwrap();
             let b: Candidates<Base2> = vec![2, 3].try_into().unwrap();
@@ -547,8 +606,8 @@ mod tests {
         #[test]
         fn test_toggle() {
             let mut candidates = Candidates::<Base2>::new();
-            let value1 = 1.try_into().unwrap();
-            let value2 = 2.try_into().unwrap();
+            let value1 = Value::try_from(1).unwrap();
+            let value2 = Value::try_from(2).unwrap();
             candidates.toggle(value1);
             assert_eq!(candidates.to_vec_u8(), vec![1]);
             candidates.toggle(value2);
@@ -562,8 +621,8 @@ mod tests {
         #[test]
         fn test_set() {
             let mut candidates = Candidates::<Base2>::new();
-            let value1 = 1.try_into().unwrap();
-            let value2 = 2.try_into().unwrap();
+            let value1 = Value::try_from(1).unwrap();
+            let value2 = Value::try_from(2).unwrap();
             candidates.set(value1, false);
             assert_eq!(candidates.to_vec_u8(), Vec::<u8>::new());
             candidates.set(value1, true);
@@ -581,8 +640,8 @@ mod tests {
         #[test]
         fn test_insert() {
             let mut candidates = Candidates::<Base2>::new();
-            let value1 = 1.try_into().unwrap();
-            let value2 = 2.try_into().unwrap();
+            let value1 = Value::try_from(1).unwrap();
+            let value2 = Value::try_from(2).unwrap();
             candidates.insert(value1);
             assert_eq!(candidates.to_vec_u8(), vec![1]);
             candidates.insert(value2);
@@ -594,8 +653,8 @@ mod tests {
         #[test]
         fn test_delete() {
             let mut candidates = Candidates::<Base2>::all();
-            let value1 = 1.try_into().unwrap();
-            let value2 = 2.try_into().unwrap();
+            let value1 = Value::try_from(1).unwrap();
+            let value2 = Value::try_from(2).unwrap();
             candidates.delete(value2);
             assert_eq!(candidates.to_vec_u8(), vec![1, 3, 4]);
             candidates.delete(value1);
@@ -606,17 +665,17 @@ mod tests {
     }
 
     mod getters {
-        use std::collections::BTreeSet;
+        use std::{collections::BTreeSet, iter};
 
         use super::*;
 
         #[test]
         fn test_has() {
             let candidates: Candidates<Base2> = vec![1, 3].try_into().unwrap();
-            let value1 = 1.try_into().unwrap();
-            let value2 = 2.try_into().unwrap();
-            let value3 = 3.try_into().unwrap();
-            let value4 = 4.try_into().unwrap();
+            let value1 = Value::try_from(1).unwrap();
+            let value2 = Value::try_from(2).unwrap();
+            let value3 = Value::try_from(3).unwrap();
+            let value4 = Value::try_from(4).unwrap();
             assert!(candidates.has(value1));
             assert!(!candidates.has(value2));
             assert!(candidates.has(value3));
@@ -630,17 +689,17 @@ mod tests {
             let mut candidates = Candidates::<Base>::new();
             assert_eq!(candidates.integral(), 0);
             assert_eq!(candidates.to_vec_u8(), Vec::<u8>::new());
-            candidates.set(1.try_into().unwrap(), true);
+            candidates.set(Value::try_from(1).unwrap(), true);
             assert_eq!(candidates.integral(), 1);
             assert_eq!(candidates.to_vec_u8(), vec![1]);
-            candidates.set(2.try_into().unwrap(), true);
+            candidates.set(Value::try_from(2).unwrap(), true);
             assert_eq!(candidates.integral(), 3);
             assert_eq!(candidates.to_vec_u8(), vec![1, 2]);
             let mut candidates = Candidates::<Base>::new();
-            candidates.set(25.try_into().unwrap(), true);
+            candidates.set(Value::try_from(25).unwrap(), true);
             assert_eq!(candidates.to_vec_u8(), vec![25]);
             assert_eq!(candidates.integral(), 1 << 24);
-            candidates.set(10.try_into().unwrap(), true);
+            candidates.set(Value::try_from(10).unwrap(), true);
             assert_eq!(candidates.to_vec_u8(), vec![10, 25]);
             assert_eq!(candidates.integral(), 1 << 24 | 1 << 9);
         }
@@ -685,10 +744,23 @@ mod tests {
             let four: Candidates<Base2> = Candidates::with_single(4.try_into().unwrap());
             let all: Candidates<Base2> = Candidates::all();
 
-            assert!(empty.first().is_none());
-            assert_eq!(one.first(), Some(1.try_into().unwrap()));
-            assert_eq!(four.first(), Some(4.try_into().unwrap()));
-            assert_eq!(all.first(), Some(1.try_into().unwrap()));
+            assert!(empty.first::<Value<_>>().is_none());
+            assert_eq!(one.first(), Some(Value::try_from(1).unwrap()));
+            assert_eq!(four.first(), Some(Value::try_from(4).unwrap()));
+            assert_eq!(all.first(), Some(Value::try_from(1).unwrap()));
+        }
+
+        #[test]
+        fn test_last() {
+            let empty: Candidates<Base2> = Candidates::new();
+            let one: Candidates<Base2> = Candidates::with_single(1.try_into().unwrap());
+            let four: Candidates<Base2> = Candidates::with_single(4.try_into().unwrap());
+            let all: Candidates<Base2> = Candidates::all();
+
+            assert!(empty.last::<Value<_>>().is_none());
+            assert_eq!(one.last(), Some(Value::try_from(1).unwrap()));
+            assert_eq!(four.last(), Some(Value::try_from(4).unwrap()));
+            assert_eq!(all.last(), Some(Value::try_from(4).unwrap()));
         }
 
         fn assert_block_segmentation<Base: SudokuBase>(
@@ -710,7 +782,7 @@ mod tests {
                 .collect();
 
             for non_segmented_integral in num::range(
-                Base::CandidatesIntegral::zero(),
+                Base::CandidatesIntegral::ZERO,
                 Candidates::<Base>::all_candidates_mask(),
             )
             .filter(|integral| !segmented_integrals.contains(integral))
@@ -825,6 +897,91 @@ mod tests {
             let candidates_34 = Candidates::<Base2>::with_integral(0b1100);
             assert_eq!(candidates_12.invert(), candidates_34);
             assert_eq!(candidates_34.invert(), candidates_12);
+        }
+
+        #[test]
+        fn test_combinations() {
+            fn assert_set_equals<Base: SudokuBase>(
+                a: impl IntoIterator<Item = Candidates<Base>>,
+                b: impl IntoIterator<Item = Candidates<Base>>,
+            ) {
+                let a: BTreeSet<_> = a.into_iter().collect();
+                let b: BTreeSet<_> = b.into_iter().collect();
+                assert_eq!(a, b);
+            }
+
+            fn combinations_itertools<Base: SudokuBase>(
+                candidates: Candidates<Base>,
+                k: Value<Base>,
+            ) -> impl Iterator<Item = Candidates<Base>> {
+                use itertools::Itertools;
+
+                candidates
+                    .iter()
+                    .combinations(k.get().into())
+                    .map(|combination| combination.into())
+            }
+
+            let empty: Candidates<Base2> = Candidates::new();
+            let one: Candidates<Base2> = Candidates::with_single(1.try_into().unwrap());
+            let one_two_three: Candidates<Base2> = vec![1, 2, 3].try_into().unwrap();
+            let all: Candidates<Base2> = Candidates::all();
+            let all_base3: Candidates<Base3> = Candidates::all();
+
+            for k in Value::all() {
+                // empty candidates never produce any combinations
+                itertools::assert_equal(empty.combinations(k), iter::empty());
+
+                if k.get() == 1 {
+                    // a single candidate only produces a single combination if k == 1
+                    itertools::assert_equal(one.combinations(k), iter::once(one));
+                } else {
+                    // a single candidate never produces any combinations if k > 1
+                    itertools::assert_equal(one.combinations(k), iter::empty());
+                }
+            }
+
+            assert_set_equals(
+                all.combinations(1.try_into().unwrap()),
+                all.iter().map(Candidates::with_single),
+            );
+
+            assert_set_equals(
+                one_two_three.combinations(2.try_into().unwrap()),
+                vec![
+                    vec![1, 2].try_into().unwrap(),
+                    vec![1, 3].try_into().unwrap(),
+                    vec![2, 3].try_into().unwrap(),
+                ],
+            );
+            assert_set_equals(
+                one_two_three.combinations(3.try_into().unwrap()),
+                iter::once(one_two_three),
+            );
+
+            for k in Value::all() {
+                assert_set_equals(empty.combinations(k), combinations_itertools(empty, k));
+                assert_set_equals(one.combinations(k), combinations_itertools(one, k));
+                assert_set_equals(
+                    one_two_three.combinations(k),
+                    combinations_itertools(one_two_three, k),
+                );
+                assert_set_equals(all.combinations(k), combinations_itertools(all, k));
+            }
+            for k in Value::all() {
+                assert_set_equals(
+                    all_base3.combinations(k),
+                    combinations_itertools(all_base3, k),
+                );
+            }
+        }
+
+        #[test]
+        fn test_combinations_debug() {
+            dbg!(Candidates::<Base3>::all()
+                .combinations(3.try_into().unwrap())
+                .map(|candidates| candidates.to_vec_u8())
+                .collect::<Vec<_>>());
         }
     }
 

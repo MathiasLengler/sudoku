@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect } from "react";
+import React, { Suspense, useCallback, useEffect } from "react";
 import type { DynamicCell, DynamicPosition } from "../types";
 import { saveCells } from "./state/cellsPersistence";
 import { useRecoilValue, useSetRecoilState } from "recoil";
 import { sudokuBaseState, sudokuCellsState } from "./state/sudoku";
 import { inputState } from "./state/input";
-import { baseToSideLength } from "./utils";
+import { baseToSideLength } from "./utils/sudoku";
 import _ from "lodash";
 import { useEndStickyChain } from "./actions/inputActions";
 
@@ -80,10 +80,10 @@ const SudokuBaseEffect = () => {
 
 export function SudokuEffects() {
     return (
-        <>
+        <Suspense fallback={null}>
             <SaveCellsEffect />
             <SudokuBaseEffect />
             <PointerUpHandler />
-        </>
+        </Suspense>
     );
 }

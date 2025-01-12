@@ -3,8 +3,6 @@ import { ALL_STRATEGIES } from "../../../constants";
 import { CheckboxButtonGroup } from "react-hook-form-mui";
 import type { Control, FieldValues, Path } from "react-hook-form";
 
-// FIXME: order of strategies gets shuffled
-
 type SelectStrategiesProps<T extends FieldValues> = {
     control: Control<T>;
     name: Path<T>;

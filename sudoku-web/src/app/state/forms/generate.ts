@@ -1,10 +1,10 @@
 import { z } from "zod";
 import range from "lodash/range";
-import { baseToSideLength } from "../../utils";
+import { baseToSideLength } from "../../utils/sudoku";
 import { atom } from "recoil";
 import { localStorageEffect } from "../localStorageEffect";
 import type { ZodBigInt } from "zod";
-import { strategyEnumSchema } from "../../../constants";
+import { selectedStrategiesSchema } from "../../../constants";
 
 export const BASE_MIN = 2;
 export const BASE_MAX = 5;
@@ -42,7 +42,7 @@ export type GenerateFormValues = z.infer<typeof generateFormValuesSchema>;
 export const generateFormValuesSchema = z.object({
     base: z.number().int().min(BASE_MIN).max(BASE_MAX),
     minGivens: z.number().int().min(0),
-    strategies: strategyEnumSchema.array().min(1),
+    strategies: selectedStrategiesSchema,
     setAllDirectCandidates: z.boolean(),
     useSeed: z.boolean(),
     seed: z

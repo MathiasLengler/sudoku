@@ -3,12 +3,12 @@ use std::marker::PhantomData;
 use log::trace;
 
 pub use builder::SolverBuilder;
-use strategies::Strategy;
+use strategies::{Strategy, StrategyScore};
 
 use crate::base::SudokuBase;
 use crate::error::{Error, Result};
 use crate::grid::Grid;
-use crate::solver::backtracking::AvailabilityFilter;
+use crate::solver::backtracking::CandidatesFilter;
 use crate::solver::strategic::deduction::Deductions;
 use crate::solver::strategic::strategies::StrategyEnum;
 use crate::solver::FallibleSolver;
@@ -60,7 +60,7 @@ mod builder {
     {
         /// Filter the available candidates which the solver can use to find a solution.
         #[must_use]
-        pub fn availability_filter<Filter: AvailabilityFilter<Base>>(
+        pub fn candidates_filter<Filter: CandidatesFilter<Base>>(
             mut self,
             filter: &Filter,
         ) -> Self {
@@ -139,8 +139,70 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> Solver<Ba
         Ok(None)
     }
 
+    // TODO: return map of strategy -> number of deductions
+    pub fn total_score(&mut self) -> Result<Option<StrategyScore>> {
+        let solve_route_iter = &mut self.solve_route();
+        let total_score = solve_route_iter.try_fold::<_, _, Result<_>>(0, |total_score, res| {
+            let (strategy, deductions) = res?;
+            Ok(total_score + strategy.score() * StrategyScore::try_from(deductions.count())?)
+        })?;
+
+        Ok(solve_route_iter.is_solved().then_some(total_score))
+    }
+
+    pub fn solve_route(&mut self) -> SolverPathIter<Base, GridMut> {
+        SolverPathIter {
+            solver: self,
+            is_solved: false,
+        }
+    }
+
     pub fn into_grid(self) -> GridMut {
         self.grid
+    }
+}
+
+type SolveStep<Base> = (StrategyEnum, Deductions<Base>);
+
+#[derive(Debug)]
+pub struct SolverPathIter<'a, Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> {
+    solver: &'a mut Solver<Base, GridMut>,
+    is_solved: bool,
+}
+
+impl<'a, Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>>
+    SolverPathIter<'a, Base, GridMut>
+{
+    pub fn is_solved(&self) -> bool {
+        self.is_solved
+    }
+}
+
+impl<'a, Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> Iterator
+    for SolverPathIter<'a, Base, GridMut>
+{
+    type Item = Result<SolveStep<Base>>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.solver.grid.as_ref().is_solved() {
+            self.is_solved = true;
+            None
+        } else {
+            // TODO: simplify this expression
+            //  a combination of `and_then`/`transpose` should be able to do this
+            match self.solver.try_strategies() {
+                Ok(Some((strategy, deductions))) => {
+                    if let Err(err) = deductions.apply(self.solver.grid.as_mut()) {
+                        Some(Err(err))
+                    } else {
+                        Some(Ok((strategy, deductions)))
+                    }
+                }
+                // All strategies failed to make progress.
+                Ok(None) => None,
+                Err(err) => Some(Err(err)),
+            }
+        }
     }
 }
 
@@ -150,28 +212,21 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> FallibleS
     type Error = Error;
 
     fn try_solve(&mut self) -> Result<Option<Grid<Base>>> {
-        Ok(loop {
-            if self.grid.as_ref().is_solved() {
-                break Some(self.grid.as_ref().clone());
-            }
+        let solve_route_iter = &mut self.solve_route();
+        solve_route_iter.try_for_each(|res| res.map(|_| ()))?;
 
-            if let Some((_, deductions)) = self.try_strategies()? {
-                deductions.apply(self.grid.as_mut())?;
-                // Continue with strategy execution
-            } else {
-                // All strategies failed to make progress.
-                break None;
-            }
-        })
+        Ok(solve_route_iter
+            .is_solved()
+            .then(|| self.grid.as_ref().clone()))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::base::consts::Base2;
-    use crate::cell::{Candidates, Value};
+    use crate::cell::Value;
     use crate::position::Position;
-    use crate::solver::backtracking::GroupAvailabilityIndex;
+    use crate::solver::backtracking::ForceCandidateAtPosition;
     use crate::solver::test_util::{assert_fallible_solver_single_solution, tests_solver_samples};
 
     use super::*;
@@ -184,7 +239,7 @@ mod tests {
     }
 
     #[test]
-    fn test_availability_filter_denied_candidates_grid() {
+    fn test_candidates_filter_denied_candidates_grid() {
         type Base = Base2;
 
         let grid = {
@@ -229,12 +284,9 @@ mod tests {
         // But, solver with filter for top left cell can solve it.
         let solver = Solver::builder(ambiguous_grid.clone())
             .strategies(StrategyEnum::default_solver_strategies_no_backtracking())
-            .availability_filter(&|available_candidates, index| {
-                if index == GroupAvailabilityIndex::default() {
-                    Candidates::with_single(Value::default())
-                } else {
-                    available_candidates
-                }
+            .candidates_filter(&ForceCandidateAtPosition {
+                pos: Position::top_left(),
+                candidate: Value::default(),
             })
             .build();
         assert_fallible_solver_single_solution(solver, &grid);

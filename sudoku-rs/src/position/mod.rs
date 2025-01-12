@@ -3,6 +3,10 @@
 //  also useful for Grid iterators
 //  could simply be an alias for a tuple `(Position<Base>, T)`
 
+// TODO: rename module to `grid_position`?
+
+// TODO: can we reduce the boilerplate for bounded types via an external crate?
+
 pub use bounded_block_coordinate::BlockCoordinate;
 pub use bounded_block_segment::{BlockSegment, CellOrder};
 pub use bounded_coordinate::Coordinate;

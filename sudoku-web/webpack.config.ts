@@ -21,11 +21,11 @@ export default async (
     const debugSW = !!env.debugSW;
 
     const isDevelopment = mode === "development";
-    let isProduction = mode === "production";
+    const isProduction = mode === "production";
     if (!isDevelopment && !isProduction) {
-        console.warn(`Unexpected mode: ${mode}`);
-        isProduction = true;
+        throw new Error(`Unexpected mode: ${mode}`);
     }
+    const swEnabled = (isProduction && !reactProfiling) || debugSW;
 
     const devtool = isProduction ? "source-map" : "eval-source-map";
 
@@ -98,12 +98,12 @@ export default async (
                 // extraArgs: "--reference-types",
             }),
             // PWA
-            ((isProduction && !reactProfiling) || debugSW) &&
+            swEnabled &&
                 new WorkboxPlugin.GenerateSW({
                     maximumFileSizeToCacheInBytes: Math.pow(10, 8),
                 }),
             new webpack.DefinePlugin({
-                "process.env.DEBUG_SW": debugSW,
+                "process.env.SW_ENABLED": swEnabled,
             }),
             new CopyPlugin({ patterns: ["res/public"] }),
             bundleAnalyzer && new (await import("webpack-bundle-analyzer")).BundleAnalyzerPlugin(),
@@ -130,6 +130,16 @@ export default async (
                             // Applies the react-refresh Babel plugin on non-production modes only
                             ...(!isProduction && { plugins: ["react-refresh/babel"] }),
                         },
+                    },
+                },
+                {
+                    test: /\.m?js/,
+                    type: "javascript/auto",
+                },
+                {
+                    test: /\.m?js/,
+                    resolve: {
+                        fullySpecified: false,
                     },
                 },
                 {

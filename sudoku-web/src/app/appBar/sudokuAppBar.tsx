@@ -10,7 +10,7 @@ import { ThemeErrorBoundary } from "../components/ErrorFallback";
 import { FullScreenSpinner } from "../components/FullScreenSpinner";
 import { Suspense } from "react";
 import { useRecoilValue } from "recoil";
-import { featureFlagsState } from "../state/world";
+import { featureFlagsState } from "../state/featureFlags";
 
 export default function SudokuAppBar() {
     const { experimentWorld } = useRecoilValue(featureFlagsState);

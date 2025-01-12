@@ -9,11 +9,11 @@ use log::trace;
 use varisat::{CnfFormula, ExtendFormula, Lit, Solver as SatSolver};
 
 use crate::base::{BaseEnum, SudokuBase};
-use crate::cell::{Candidates, Cell, Value};
+use crate::cell::{Cell, Value};
 use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::position::Position;
-use crate::solver::backtracking::AvailabilityFilter;
+use crate::solver::backtracking::CandidatesFilter;
 use crate::solver::sat::cell_variable::CellVariable;
 use crate::solver::FallibleSolver;
 
@@ -52,12 +52,12 @@ impl<Base: SudokuBase> Debug for Solver<Base> {
 /// Public API
 impl<Base: SudokuBase> Solver<Base> {
     pub fn new<GridRef: AsRef<Grid<Base>>>(grid: GridRef) -> Result<Self> {
-        Self::new_with_availability_filter(grid, &())
+        Self::new_with_candidates_filter(grid, &())
     }
 
-    pub fn new_with_availability_filter<
+    pub fn new_with_candidates_filter<
         GridRef: AsRef<Grid<Base>>,
-        Filter: AvailabilityFilter<Base>,
+        Filter: CandidatesFilter<Base>,
     >(
         grid: GridRef,
         filter: &Filter,
@@ -95,7 +95,7 @@ impl<Base: SudokuBase> Solver<Base> {
 
 /// Helpers
 impl<Base: SudokuBase> Solver<Base> {
-    fn init_sat_solver_for_grid<Filter: AvailabilityFilter<Base>>(
+    fn init_sat_solver_for_grid<Filter: CandidatesFilter<Base>>(
         grid: &Grid<Base>,
         filter: &Filter,
     ) -> SatSolver<'static> {
@@ -118,32 +118,20 @@ impl<Base: SudokuBase> Solver<Base> {
             .collect();
 
         // Add filter assumptions
-        if !Filter::IS_NOOP {
-            let all_candidates = Candidates::<Base>::all();
-
-            assumptions.extend(
-                Position::<Base>::all()
-                    .filter_map(|pos| {
-                        let remaining_candidates = filter.filter(all_candidates, pos.into());
-                        if remaining_candidates == all_candidates {
-                            None
-                        } else {
-                            Some((pos, remaining_candidates))
-                        }
-                    })
-                    .flat_map(|(pos, remaining_candidates)| {
-                        let denied_candidates = all_candidates.without(remaining_candidates);
-                        denied_candidates.into_iter().map(move |denied_value| {
-                            // Remove denied value via a negative assignment
-                            Lit::from(CellVariable {
-                                pos,
-                                value: denied_value,
-                                is_true: false,
-                            })
+        assumptions.extend(
+            filter
+                .all_denied_candidates()
+                .flat_map(|(pos, denied_candidates)| {
+                    denied_candidates.into_iter().map(move |denied_value| {
+                        // Remove denied value via a negative assignment
+                        Lit::from(CellVariable {
+                            pos,
+                            value: denied_value,
+                            is_true: false,
                         })
-                    }),
-            );
-        }
+                    })
+                }),
+        );
 
         sat_solver.assume(&assumptions);
 
@@ -444,16 +432,16 @@ mod tests {
     }
 
     #[test]
-    fn test_availability_filter_denied_candidates_grid() {
+    fn test_candidates_filter_denied_candidates_grid() {
         type Base = Base2;
 
         let grid = Grid::<Base>::new();
         let mut denylist = Grid::new();
         denylist[Position::top_left()] = vec![1, 3]
             .into_iter()
-            .map(|v| v.try_into().unwrap())
+            .map(|v| Value::try_from(v).unwrap())
             .collect();
-        let solver = Solver::new_with_availability_filter(&grid, &denylist).unwrap();
+        let solver = Solver::new_with_candidates_filter(&grid, &denylist).unwrap();
 
         for solution in solver.clone() {
             assert!(![1, 3].contains(

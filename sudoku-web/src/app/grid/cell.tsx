@@ -1,7 +1,7 @@
 import type * as React from "react";
 import type * as CSS from "csstype";
-import classnames from "classnames";
-import { indexToPosition, valueToString } from "../utils";
+import classNames from "classnames";
+import { indexToPosition, valueToString } from "../utils/sudoku";
 import type { DynamicCellCandidates, DynamicCellValue, DynamicPosition, TransportCell } from "../../types";
 import { inputState } from "../state/input";
 import { sudokuBaseState } from "../state/sudoku";
@@ -37,19 +37,16 @@ type CellValueProps = {
 
 export const CellValue: React.FunctionComponent<CellValueProps> = (props) => {
     const { value } = props;
-    return (
-        <div className="cellValue">
-            <span className="cellValueText">{valueToString(value)}</span>
-        </div>
-    );
+    return <div className="cell-value">{valueToString(value)}</div>;
 };
 
 type CandidatesProps = {
     candidates: DynamicCellCandidates["candidates"];
     gridPosition: DynamicPosition;
+    showGuide?: boolean;
 };
 
-export const Candidates = ({ candidates, gridPosition }: CandidatesProps) => {
+export const Candidates = ({ candidates, gridPosition, showGuide = true }: CandidatesProps) => {
     const base = useRecoilValue(sudokuBaseState);
     const input = useRecoilValue(inputState);
     const hint = useRecoilValue(hintState);
@@ -64,7 +61,7 @@ export const Candidates = ({ candidates, gridPosition }: CandidatesProps) => {
                     "--candidate-column": column,
                     "--candidate-row": row,
                 };
-                const isGuide = input.stickyMode && input.selectedValue === candidate;
+                const isGuide = showGuide && input.stickyMode && input.selectedValue === candidate;
 
                 // TODO: optimize
                 //  prototype different deductions data structures via selector
@@ -84,7 +81,7 @@ export const Candidates = ({ candidates, gridPosition }: CandidatesProps) => {
 
                 return (
                     <div
-                        className={classnames("candidate", {
+                        className={classNames("candidate", {
                             "candidate--guide": isGuide,
                             "candidate--deduction-reason": isDeductionReason,
                             "candidate--deduction-delete": isDeductionDelete,
@@ -111,7 +108,7 @@ export const Cell = (props: CellProps) => {
 
     const { position: gridPosition } = cell;
 
-    const cellClassNames = classnames(
+    const cellClassNames = classNames(
         "cell",
         cellBackgroundClass(isSelected, isGuide),
         cellColorClass(cell.kind === "value" && cell.fixed, cell.incorrectValue),

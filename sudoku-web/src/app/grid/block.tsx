@@ -2,8 +2,7 @@ import type { DynamicPosition, TransportCell } from "../../types";
 import { selectorFamily, useRecoilValue } from "recoil";
 import { sudokuBaseState } from "../state/sudoku";
 import { inputState } from "../state/input";
-import { indexToPosition } from "../utils";
-import type * as CSS from "csstype";
+import { indexToPosition } from "../utils/sudoku";
 import isEqual from "lodash/isEqual";
 import { Cell } from "./cell";
 import * as React from "react";
@@ -23,6 +22,9 @@ const containsSelectedPosState = selectorFamily<boolean, CreateSerializableParam
             const selectedBlockPosition = get(selectedBlockPositionState);
             return !!selectedBlockPosition && isEqual(blockPosition, selectedBlockPosition);
         },
+    cachePolicy_UNSTABLE: {
+        eviction: "most-recent",
+    },
 });
 export const Block = ({ blockIndex, cells }: BlockProps) => {
     const base = useRecoilValue(sudokuBaseState);
@@ -32,13 +34,8 @@ export const Block = ({ blockIndex, cells }: BlockProps) => {
 
     const containsSelectedPos = useRecoilValue(containsSelectedPosState(blockPosition));
 
-    const style: CSS.Properties = {
-        "--block-column": blockPosition.column,
-        "--block-row": blockPosition.row,
-    };
-
     return (
-        <div className="block" style={style}>
+        <div className="block">
             {cells.map((cell, blockCellIndex) => {
                 let isSelected: boolean;
                 let isGuide: boolean;

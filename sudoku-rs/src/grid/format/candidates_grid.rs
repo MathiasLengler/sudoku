@@ -227,7 +227,7 @@ impl GridFormat for CandidatesGridPlain {
         for (is_horizontal_separator, lines_with_cell_data) in &input
             .lines()
             .map(|line| line.trim_matches(OUTER_BORDER_CHARS))
-            .group_by(|line| {
+            .chunk_by(|line| {
                 line.is_empty()
                     || line.chars().all(|char| {
                         OUTER_BORDER_CHARS.contains(&char) || INNER_BORDER_CHARS.contains(&char)

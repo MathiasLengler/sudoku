@@ -21,7 +21,9 @@ use sudoku::position::Position;
 use sudoku::rng::{new_crate_rng_from_rng, new_crate_rng_with_seed};
 use sudoku::samples::{base_2, base_3, base_4, base_5};
 use sudoku::solver::sat;
-use sudoku::solver::strategic::strategies::{GroupIntersectionBoth, GroupReduction, Strategy};
+use sudoku::solver::strategic::strategies::{
+    group_reduction, GroupIntersectionBoth, GroupReduction, Strategy,
+};
 use sudoku::solver::{backtracking, introspective, strategic, FallibleSolver, InfallibleSolver};
 
 fn cast_grid<Base: SudokuBase>(any_grid: Box<dyn Any>) -> Grid<Base> {
@@ -96,7 +98,7 @@ fn bench_solver_sample_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup
         |b, grid| {
             b.iter(|| {
                 backtracking::Solver::builder(grid)
-                    .availability_filter(Grid::new())
+                    .candidates_filter(Grid::new())
                     .build()
                     .solve()
                     .unwrap()
@@ -161,7 +163,7 @@ fn bench_solver_sample_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup
 fn bench_solver_tdoku_group(solver_tdoku_group: &mut BenchmarkGroup<WallTime>) {
     type Base = Base3;
 
-    let tdoku_datasets_dir = Path::new("./tests/res/tdoku/");
+    let tdoku_datasets_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("./tests/res/tdoku/");
 
     let tdoku_datasets = vec![
         "puzzles0_kaggle",
@@ -342,27 +344,59 @@ fn bench_grid_group<Base: SudokuBase>(grid_group: &mut BenchmarkGroup<WallTime>)
 }
 
 fn bench_strategy_group(strategy_group: &mut BenchmarkGroup<WallTime>) {
-    let candidates_group: Vec<Candidates<Base3>> = vec![
-        vec![1, 2],
-        vec![1, 3],
-        vec![2, 3],
-        vec![1, 2, 3, 4, 5, 6],
-        vec![1, 3, 4],
-        vec![2, 3, 4, 5, 6],
-    ]
-    .into_iter()
-    .map(|candidates_data| candidates_data.try_into().unwrap())
-    .collect();
+    for (group_reduction_param_name, candidates_group) in [
+        (
+            "basic",
+            vec![
+                vec![1, 2],
+                vec![1, 3],
+                vec![2, 3],
+                vec![1, 2, 3, 4, 5, 6],
+                vec![1, 3, 4],
+                vec![2, 3, 4, 5, 6],
+            ]
+            .into_iter()
+            .map(|candidates_data| candidates_data.try_into().unwrap())
+            .collect::<Vec<Candidates<Base3>>>(),
+        ),
+        ("all", vec![Candidates::all(); Base3::SIDE_LENGTH.into()]),
+    ] {
+        strategy_group.bench_with_input(
+            BenchmarkId::new(
+                "GroupReduction/reduce_candidates_group",
+                group_reduction_param_name,
+            ),
+            &candidates_group,
+            |b, candidates_group| {
+                b.iter(|| GroupReduction::reduce_candidates_group_v1(candidates_group))
+            },
+        );
 
+        strategy_group.bench_with_input(
+            BenchmarkId::new(
+                "GroupReduction/v2/reduce_candidates_group",
+                group_reduction_param_name,
+            ),
+            &candidates_group,
+            |b, candidates_group| {
+                b.iter(|| group_reduction::v2::reduce_candidates_group(candidates_group))
+            },
+        );
+    }
+
+    let grid: Grid<Base3> =
+        "4105300hg281j209i2j081381ag614j20h410hh80318412181h00581033k4109g130342gi0k86s811103m8i4igh0l85805210hla81g20550g12181500h0309090h50120654i0i081032181g10h09054111"
+            .parse()
+            .unwrap();
     strategy_group.bench_with_input(
-        BenchmarkId::new("GroupReduction/reduce_candidates_group", "basic"),
-        &candidates_group,
-        |b, candidates_group| b.iter(|| GroupReduction::reduce_candidates_group(candidates_group)),
+        BenchmarkId::new("GroupReduction/execute", "sample_grid_hidden_pairs"),
+        &grid,
+        |b, grid| b.iter(|| GroupReduction.execute(grid).unwrap()),
     );
 
     let grid: Grid<Base3> = "s00905cgdg2103pgc00h03r0ccd85cmcpcece0c0b0g1do036s9sec11c48222g1482c8c0ho421og8o9o1ogc410209sgoi22054gi0o011i6gkiq116q814s0s4ca48kao4s6o4s1003g10610410s0qg081210c".parse().unwrap();
     strategy_group.bench_with_input(
-        BenchmarkId::new("GroupIntersection/execute", "basic"),
+        BenchmarkId::new("GroupIntersection/execute", "sample_grid_pointing_pairs_2"),
         &grid,
         |b, grid| b.iter(|| GroupIntersectionBoth.execute(grid).unwrap()),
     );
@@ -429,6 +463,31 @@ fn bench_candidates_group(candidates_group: &mut BenchmarkGroup<WallTime>) {
             BatchSize::SmallInput,
         );
     });
+
+    candidates_group.bench_function(BenchmarkId::new("combinations", "Base=3 single k=1"), |b| {
+        b.iter_batched(
+            || {
+                (
+                    Candidates::<Base3>::with_integral(0b000_010_000),
+                    1.try_into().unwrap(),
+                )
+            },
+            |(candidates, k)| consume_iter(candidates.combinations(k)),
+            BatchSize::SmallInput,
+        );
+    });
+    for k in Value::<Base3>::all() {
+        candidates_group.bench_function(
+            BenchmarkId::new("combinations", format!("Base=3 all k={k}")),
+            |b| {
+                b.iter_batched(
+                    || (Candidates::<Base3>::all(), k),
+                    |(candidates, k)| consume_iter(candidates.combinations(k)),
+                    BatchSize::SmallInput,
+                );
+            },
+        );
+    }
 }
 
 fn bench_position_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup<WallTime>) {

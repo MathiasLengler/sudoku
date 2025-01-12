@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
-#[cfg(feature = "wasm")]
-use ts_rs::TS;
 
+use crate::base::BaseEnum;
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
 use crate::grid::Grid;
@@ -9,13 +8,13 @@ use crate::position::DynamicPosition;
 use crate::sudoku::DynamicSudoku;
 use crate::sudoku::Sudoku;
 
-#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransportSudoku {
     cells: Vec<TransportCell>,
     blocks_indexes: Vec<Vec<u16>>,
-    base: u8,
+    base: BaseEnum,
     side_length: u8,
     cell_count: u16,
     is_solved: bool,
@@ -49,7 +48,7 @@ impl<Base: SudokuBase> From<&Sudoku<Base>> for TransportSudoku {
             blocks_indexes: Grid::<Base>::all_block_positions()
                 .map(|block| block.map(|pos| pos.cell_index()).collect())
                 .collect(),
-            base: Base::BASE,
+            base: Base::ENUM,
             side_length: Base::SIDE_LENGTH,
             cell_count: Base::CELL_COUNT,
             is_solved: grid.is_solved(),
@@ -70,7 +69,7 @@ impl From<&DynamicSudoku> for TransportSudoku {
     }
 }
 
-#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransportCell {

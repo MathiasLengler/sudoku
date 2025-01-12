@@ -1,0 +1,20 @@
+{
+  "cSpell.words": [
+    "bindgen",
+    "bubblewrap",
+    "comlink",
+    "consts",
+    "csstype",
+    "esnext",
+    "hookform",
+    "indicatif",
+    "notistack",
+    "recoilize",
+    "sudoku",
+    "tanstack",
+    "usize"
+  ],
+  "cSpell.enableFiletypes": ["!json", "!rust"],
+  "eslint.workingDirectories": ["sudoku-web"],
+  "typescript.tsdk": "./sudoku-web/node_modules/typescript/lib"
+}
