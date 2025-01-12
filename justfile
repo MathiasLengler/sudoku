@@ -18,4 +18,4 @@ pack-prod: (_pack "--release")
 
 [working-directory: 'sudoku-wasm']
 _pack wasm-pack-args:
-    wasm-pack build --target web {{wasm-pack-args}} . -- -Z build-std=panic_abort,std
+    wasm-pack build --target web --reference-types --weak-refs {{wasm-pack-args}} . -- -Z build-std=panic_abort,std
