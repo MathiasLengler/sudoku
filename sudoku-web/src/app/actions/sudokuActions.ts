@@ -337,6 +337,7 @@ export function useGenerate() {
             ) => {
                 const wasmSudokuProxy = await getRemoteWasmSudoku(snapshot);
 
+                console.time("generate");
                 try {
                     await Promise.race([abortPromise, wasmSudokuProxy.generate(settings, Comlink.proxy(onProgress))]);
                 } catch (err) {
@@ -353,6 +354,8 @@ export function useGenerate() {
 
                     console.info("Generation aborted.");
                     throw err;
+                } finally {
+                    console.timeEnd("generate");
                 }
 
                 await updateSudoku({ set, wasmSudokuProxy });
