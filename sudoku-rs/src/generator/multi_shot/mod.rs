@@ -1,3 +1,4 @@
+use rayon::prelude::*;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use anyhow::ensure;
@@ -6,11 +7,12 @@ use log::*;
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::solver::strategic;
+use crate::solver::strategic::strategies::StrategyEnum;
 use crate::{base::SudokuBase, solver::strategic::strategies::StrategyScore};
 
-use super::Generator;
+use super::{Generator, GeneratorSettings};
 
-pub type GoalScore = u32;
+pub type EvaluatedGridMetric = u32;
 
 /// A metric used to evaluate the difficulty of a grid.
 #[derive(Debug, Clone, Copy)]
@@ -53,81 +55,141 @@ pub enum GoalOptimization {
     Maximize,
 }
 
+type IterationsCounter = u32;
+
 #[derive(Debug)]
-pub struct Goal {
-    metric: GridMetric,
-    optimize: GoalOptimization,
+pub struct MultiShotGeneratorSettings<Base: SudokuBase> {
+    pub generator_settings: GeneratorSettings<Base>,
+    pub iterations: IterationsCounter,
+    pub metric: GridMetric,
+    pub optimize: GoalOptimization,
+    pub parallel: bool,
 }
 
 impl GridMetric {
-    pub fn evaluate<Base: SudokuBase>(self, _grid: &Grid<Base>) -> StrategyScore {
-        todo!()
+    pub fn evaluate<Base: SudokuBase>(
+        self,
+        grid: &Grid<Base>,
+        strategies: Vec<StrategyEnum>,
+    ) -> Result<EvaluatedGridMetric> {
+        Ok(match self {
+            GridMetric::StrategyTotalScore => {
+                let total_score = strategic::SolverBuilder::new(grid.clone())
+                    .strategies(strategies)
+                    .build()
+                    .total_score()?
+                    .unwrap();
+                total_score
+            }
+            GridMetric::StrategyExecutionCount => todo!(),
+            GridMetric::StrategyApplicationCount => todo!(),
+            GridMetric::StrategyDeductionCount => todo!(),
+            GridMetric::StrategyOptionsAverage => todo!(),
+            GridMetric::SolveGraphAverageBranchingFactor => todo!(),
+            GridMetric::SatStepCount => todo!(),
+            GridMetric::BacktrackingStepCount => todo!(),
+            GridMetric::GridGivens => todo!(),
+            GridMetric::GridGivensValueCountDeviation => todo!(),
+        })
     }
 }
 
 /// A generator that generates multiple grids and selects one based on a Goal metric.
 #[derive(Debug)]
 pub struct MultiShotGenerator<Base: SudokuBase> {
-    generator: Generator<Base>,
+    settings: MultiShotGeneratorSettings<Base>,
 }
 
 impl<Base: SudokuBase> MultiShotGenerator<Base> {
-    pub fn new(generator: Generator<Base>) -> Result<Self> {
+    pub fn new(settings: MultiShotGeneratorSettings<Base>) -> Result<Self> {
         ensure!(
-            generator.settings.prune.is_some(),
+            settings.generator_settings.prune.is_some(),
             "GoalGenerator requires pruning settings"
         );
-        Ok(Self { generator })
+        Ok(Self { settings })
     }
 
-    pub fn generate_for_total_strategy_score(
-        &self,
-        iterations: u64,
-    ) -> (StrategyScore, Grid<Base>) {
-        // use indicatif::{ParallelProgressIterator, ProgressBar, ProgressStyle};
-        use rayon::prelude::*;
+    fn iterations_iter(&self) -> impl Iterator<Item = IterationsCounter> {
+        0..self.settings.iterations
+    }
 
+    fn iter_progress_log<'a, IterItem>(
+        &'a self,
+        iter: impl Iterator<Item = IterItem> + 'a,
+    ) -> impl Iterator<Item = IterItem> + 'a {
+        let mut progress_counter = 0usize;
+
+        iter.inspect(move |_| {
+            progress_counter += 1;
+            info!(
+                "Sequential generate progress {}/{}",
+                progress_counter, self.settings.iterations
+            );
+        })
+    }
+
+    fn iterations_par_iter(&self) -> impl IndexedParallelIterator<Item = IterationsCounter> {
+        (0..self.settings.iterations).into_par_iter()
+    }
+
+    #[cfg(feature = "terminal")]
+    fn iterations_par_iter_progress_bar(
+        &self,
+    ) -> impl IndexedParallelIterator<Item = IterationsCounter> {
+        use indicatif::{ParallelProgressIterator, ProgressStyle};
+
+        self.iterations_par_iter().progress_with_style(ProgressStyle::default_bar().template(
+            "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] ({pos}/{len}, ETA {eta}, {per_sec})",
+        ).expect("Progress bar template to be valid"))
+    }
+
+    fn par_iter_progress_log<'a, ParIterItem: Send>(
+        &'a self,
+        par_iter: impl IndexedParallelIterator<Item = ParIterItem> + 'a,
+    ) -> impl IndexedParallelIterator<Item = ParIterItem> + 'a {
         let progress_counter = AtomicUsize::new(0);
 
-        // let pb = ProgressBar::new(iterations).with_style(ProgressStyle::default_bar().template(
-        //     "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] ({pos}/{len}, ETA {eta}, {per_sec})",
-        // )?);
+        par_iter.inspect(move |_| {
+            progress_counter.fetch_add(1, Ordering::SeqCst);
+            info!(
+                "Parallel generate progress {}/{}",
+                progress_counter.load(Ordering::SeqCst),
+                self.settings.iterations
+            );
+        })
+    }
 
-        let (total_score, grid) = (0..iterations)
-            .into_par_iter()
-            // .progress_with(pb)
-            .map(|i| -> Result<_> {
-                debug!("Generate iteration {i}");
+    fn generate_single(&self, i: IterationsCounter) -> Result<Grid<Base>> {
+        debug!("Generate iteration {i}");
 
-                let grid = if let Some(seed) = self.generator.settings.seed {
-                    let mut new_generator = self.generator.clone();
-                    new_generator.settings.seed = Some(seed + i);
-                    new_generator.generate()?
-                } else {
-                    self.generator.generate()?
-                };
-
-                let total_score = strategic::SolverBuilder::new(grid.clone())
-                    .strategies(
-                        self.generator
-                            .settings
-                            .prune
-                            .as_ref()
-                            .unwrap()
-                            .strategies
-                            .clone(),
-                    )
-                    .build()
-                    .total_score()?
-                    .unwrap();
-                Ok((total_score, grid))
+        Ok(if let Some(seed) = self.settings.generator_settings.seed {
+            Generator::with_settings(GeneratorSettings {
+                seed: Some(seed + u64::from(i)),
+                ..self.settings.generator_settings.clone()
             })
-            .inspect(|_| {
-                progress_counter.fetch_add(1, Ordering::SeqCst);
-                info!(
-                    "Generate progress {}/{iterations}",
-                    progress_counter.load(Ordering::SeqCst)
-                );
+            .generate()?
+        } else {
+            Generator::with_settings(self.settings.generator_settings.clone()).generate()?
+        })
+    }
+
+    pub fn generate_for_total_strategy_score(&self) -> (StrategyScore, Grid<Base>) {
+        let (total_score, grid) = self
+            .iterations_par_iter()
+            .map(|i| self.generate_single(i))
+            .map(|grid_res| -> Result<_> {
+                let grid = grid_res?;
+                let evaluated_grid_metric = self.settings.metric.evaluate(
+                    &grid,
+                    self.settings
+                        .generator_settings
+                        .prune
+                        .as_ref()
+                        .unwrap()
+                        .strategies
+                        .clone(),
+                )?;
+                Ok((evaluated_grid_metric, grid))
             })
             .max_by_key(|res| res.as_ref().map_or(0, |(total_score, _)| *total_score))
             .unwrap()
