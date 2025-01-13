@@ -133,6 +133,12 @@ export default async (
                     },
                 },
                 {
+                    test: /\.m?js$/,
+                    resolve: {
+                        fullySpecified: false,
+                    },
+                },
+                {
                     test: /\.css$/,
                     use: [{ loader: "style-loader" }, { loader: "css-loader" }],
                 },
