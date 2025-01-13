@@ -1,5 +1,8 @@
 import wbgInit, { initThreadPool, init as wasmInit } from "../../../../../../sudoku-wasm/pkg";
 
+// Based on benchmarking: more threads don't improve performance of parallel grid generation.
+const MAX_THREADS = 4;
+
 let isInitialized = false;
 
 export async function init(threadCount?: number) {
@@ -16,7 +19,7 @@ export async function init(threadCount?: number) {
     wasmInit();
 
     // `wasm_bindgen_rayon`
-    const hardwareConcurrency = threadCount ?? navigator.hardwareConcurrency;
+    const hardwareConcurrency = threadCount ?? Math.min(navigator.hardwareConcurrency, MAX_THREADS);
     console.debug(`Initialize wasm-bindgen-rayon with ${hardwareConcurrency} threads`);
     await initThreadPool(hardwareConcurrency);
 
