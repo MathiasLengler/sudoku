@@ -81,6 +81,7 @@
         "typescript-eslint": "^8.18.2",
         "vite": "^6.0.6",
         "vite-bundle-visualizer": "^1.2.1",
+        "vite-plugin-pwa": "^0.21.1",
         "vite-plugin-wasm": "^3.4.1"
     }
 }

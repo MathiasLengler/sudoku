@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import wasm from "vite-plugin-wasm";
 import { optimizeLodashImports } from "@optimize-lodash/rollup-plugin";
+import { VitePWA } from "vite-plugin-pwa";
 
 // TODO: migrate remaining webpack config
 
@@ -42,7 +43,20 @@ export default defineConfig(({ mode }) => ({
     worker: {
         format: "es",
     },
-    plugins: [react(), wasm(), optimizeLodashImports()],
+    plugins: [
+        react(),
+        wasm(),
+        optimizeLodashImports(),
+        VitePWA({
+            registerType: "autoUpdate",
+            devOptions: {
+                enabled: true,
+            },
+            manifest: {
+                // TODO
+            },
+        }),
+    ],
     resolve: {
         alias: {
             lodash: "lodash-es",
