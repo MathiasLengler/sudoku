@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+/// <reference types="vite-plugin-pwa/react" />
 
 // Required for module augmentation
 /* eslint-disable @typescript-eslint/consistent-type-definitions */

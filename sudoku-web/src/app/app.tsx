@@ -7,6 +7,7 @@ import { BasicErrorBoundary, ThemeErrorBoundary } from "./components/ErrorFallba
 import { FullScreenSpinner } from "./components/FullScreenSpinner";
 import { Sudoku } from "./sudoku";
 import { MyTheme } from "./theme/myTheme";
+import { SwManager } from "./SwManager";
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -35,6 +36,7 @@ export const App = () => {
                                 <Suspense fallback={<FullScreenSpinner />}>
                                     <Sudoku />
                                 </Suspense>
+                                <SwManager />
                             </MySnackbarProvider>
                         </ThemeErrorBoundary>
                     </MyTheme>
