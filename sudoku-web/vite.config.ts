@@ -62,6 +62,9 @@ export default defineConfig(({ mode }) => ({
                 theme_color: "#121212",
                 background_color: "#121212",
             },
+            workbox: {
+                globPatterns: ["**/*.{js,wasm,css,html,png,svg,ico}"],
+            },
             pwaAssets: {
                 preset: {
                     ...minimal2023Preset,
@@ -79,6 +82,7 @@ export default defineConfig(({ mode }) => ({
                     },
                 },
                 image: "public/icon_dark.png",
+                injectThemeColor: false,
             },
         }),
     ],
