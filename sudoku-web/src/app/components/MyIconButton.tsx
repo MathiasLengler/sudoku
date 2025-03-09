@@ -1,4 +1,3 @@
-import React from "react";
 import type { MouseEvent, ReactNode } from "react";
 import { Badge, SvgIcon } from "@mui/material";
 import IconButton from "@mui/material/IconButton";

@@ -1,4 +1,3 @@
-import React from "react";
 import { ALL_STRATEGIES } from "../../../constants";
 import { CheckboxButtonGroup } from "react-hook-form-mui";
 import type { Control, FieldValues, Path } from "react-hook-form";

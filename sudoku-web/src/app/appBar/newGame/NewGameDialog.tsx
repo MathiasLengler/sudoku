@@ -1,10 +1,10 @@
-import React from "react";
 import { GenerateForm } from "./GenerateForm";
 import { DialogTitle } from "@mui/material";
 import Tab from "@mui/material/Tab";
 import TabContext from "@mui/lab/TabContext";
 import TabList from "@mui/lab/TabList";
 import { ImportForm } from "./ImportForm";
+import { useState } from "react";
 
 type NewGameTabsProps = {
     onClose: () => void;
@@ -12,7 +12,7 @@ type NewGameTabsProps = {
 
 export type NewGameTabValue = "generate-form" | "import-form";
 export const NewGameDialog = ({ onClose }: NewGameTabsProps) => {
-    const [tabValue, setTabValue] = React.useState<NewGameTabValue>("generate-form");
+    const [tabValue, setTabValue] = useState<NewGameTabValue>("generate-form");
 
     return (
         <TabContext value={tabValue}>

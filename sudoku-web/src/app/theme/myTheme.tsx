@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import React from "react";
+import { useMemo, type ReactNode } from "react";
+
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { createTheme, StyledEngineProvider, ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -37,7 +37,7 @@ const fontFamilyMonospace = ['"Inconsolata"', "monospace"].join(",");
 export const MyTheme = ({ children }: MyThemeProps) => {
     const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
 
-    const theme = React.useMemo(() => {
+    const theme = useMemo(() => {
         return createTheme({
             palette: {
                 primary: {

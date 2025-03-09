@@ -1,5 +1,5 @@
-import type { MouseEventHandler } from "react";
-import React from "react";
+import { useState, type MouseEventHandler } from "react";
+
 import { ListItemIcon, ListItemText, Menu } from "@mui/material";
 import MenuItem from "@mui/material/MenuItem";
 
@@ -14,7 +14,7 @@ type MyMenuProps = {
 };
 
 export function MyMenu({ children, menuItems }: MyMenuProps) {
-    const [menuAnchorEl, setMenuAnchorEl] = React.useState<null | HTMLElement>(null);
+    const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
 
     const makeHandleMenuClose = (action?: () => Promise<void> | void) => async () => {
         setMenuAnchorEl(null);
