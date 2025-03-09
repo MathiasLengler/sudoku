@@ -239,7 +239,10 @@ body,
     --selector-gutter: var(--cell-border-size);
     --selector-no-of-gutters: calc(var(--side-length) - 1);
     --selector-row-height: calc(
-        ((var(--selector-width) - var(--block-border-size)) - (var(--selector-no-of-gutters) * var(--selector-gutter))) /
+        (
+                (var(--selector-width) - var(--block-border-size)) -
+                    (var(--selector-no-of-gutters) * var(--selector-gutter))
+            ) /
             var(--side-length)
     );
     --selector-grid-template-columns: repeat(var(--side-length), 1fr);

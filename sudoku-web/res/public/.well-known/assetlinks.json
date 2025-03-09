@@ -1,26 +1,22 @@
 [
-  {
-    "relation": [
-      "delegate_permission/common.handle_all_urls"
-    ],
-    "target": {
-      "namespace": "android_app",
-      "package_name": "dev.lengler.sudoku.twa",
-      "sha256_cert_fingerprints": [
-        "3B:E1:1F:30:31:DB:69:FA:9F:68:90:72:6D:6B:61:8C:19:01:A4:B4:76:3A:4A:64:03:6F:A5:67:B6:CD:63:1C"
-      ]
+    {
+        "relation": ["delegate_permission/common.handle_all_urls"],
+        "target": {
+            "namespace": "android_app",
+            "package_name": "dev.lengler.sudoku.twa",
+            "sha256_cert_fingerprints": [
+                "3B:E1:1F:30:31:DB:69:FA:9F:68:90:72:6D:6B:61:8C:19:01:A4:B4:76:3A:4A:64:03:6F:A5:67:B6:CD:63:1C"
+            ]
+        }
+    },
+    {
+        "relation": ["delegate_permission/common.handle_all_urls"],
+        "target": {
+            "namespace": "android_app",
+            "package_name": "dev.lengler.sudoku.twa",
+            "sha256_cert_fingerprints": [
+                "62:72:A5:0A:7D:6F:16:51:06:5E:81:6F:36:96:1F:D5:2A:4B:07:E1:8C:DD:3C:E7:78:4A:0B:27:C6:C2:F3:AE"
+            ]
+        }
     }
-  },
-  {
-    "relation": [
-      "delegate_permission/common.handle_all_urls"
-    ],
-    "target": {
-      "namespace": "android_app",
-      "package_name": "dev.lengler.sudoku.twa",
-      "sha256_cert_fingerprints": [
-        "62:72:A5:0A:7D:6F:16:51:06:5E:81:6F:36:96:1F:D5:2A:4B:07:E1:8C:DD:3C:E7:78:4A:0B:27:C6:C2:F3:AE"
-      ]
-    }
-  }
 ]

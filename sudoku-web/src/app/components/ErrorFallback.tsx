@@ -41,20 +41,21 @@ function ThemeFallback({ error, resetErrorBoundary, inline }: FallbackProps & { 
     const message = errorToMessageSchema.parse(error);
 
     return (
-        (<Stack
+        <Stack
             direction={inline ? "row" : "column"}
             spacing={2}
             sx={{
                 width: 1,
                 height: 1,
                 justifyContent: "center",
-                alignItems: "center"
-            }}>
+                alignItems: "center",
+            }}
+        >
             <Alert severity="error">Unexpected error: {message}</Alert>
             <Button onClick={resetErrorBoundary} variant="contained">
                 Try again
             </Button>
-        </Stack>)
+        </Stack>
     );
 }
 
