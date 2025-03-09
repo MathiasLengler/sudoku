@@ -1,8 +1,9 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react-swc";
-import wasm from "vite-plugin-wasm";
 import { optimizeLodashImports } from "@optimize-lodash/rollup-plugin";
+import { minimal2023Preset } from "@vite-pwa/assets-generator/config";
+import react from "@vitejs/plugin-react-swc";
+import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
+import wasm from "vite-plugin-wasm";
 
 // TODO: migrate remaining webpack config
 
@@ -52,8 +53,32 @@ export default defineConfig(({ mode }) => ({
             devOptions: {
                 enabled: true,
             },
+            manifestFilename: "manifest.json",
             manifest: {
-                // TODO
+                name: "Sudoku",
+                short_name: "Sudoku",
+                orientation: "natural",
+                description: "Sudoku: design your own difficulty",
+                theme_color: "#121212",
+                background_color: "#121212",
+            },
+            pwaAssets: {
+                preset: {
+                    ...minimal2023Preset,
+                    maskable: {
+                        ...minimal2023Preset.maskable,
+                        resizeOptions: {
+                            background: "#121212",
+                        },
+                    },
+                    apple: {
+                        ...minimal2023Preset.apple,
+                        resizeOptions: {
+                            background: "#121212",
+                        },
+                    },
+                },
+                image: "public/icon_dark.png",
             },
         }),
     ],
