@@ -1,6 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import SaveIcon from "@mui/icons-material/Save";
-import { LoadingButton } from "@mui/lab";
 import { Box, Button, DialogActions, DialogContent, DialogTitle } from "@mui/material";
 import { Stack } from "@mui/material";
 import { RadioButtonGroup, SliderElement, SwitchElement, useForm } from "react-hook-form-mui";
@@ -117,7 +116,7 @@ export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
                 <Button onClick={onClose} disabled={isSubmitting}>
                     Cancel
                 </Button>
-                <LoadingButton
+                <Button
                     type="submit"
                     form="hint-settings-form"
                     color="primary"
@@ -127,7 +126,7 @@ export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
                     loadingPosition="end"
                 >
                     <span>Save settings</span>
-                </LoadingButton>
+                </Button>
             </DialogActions>
         </>
     );

@@ -9,7 +9,6 @@ import { baseToCellCount } from "../../utils/sudoku";
 import { useGenerate } from "../../actions/sudokuActions";
 import CasinoIcon from "@mui/icons-material/Casino";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
-import { LoadingButton } from "@mui/lab";
 import { useRecoilState } from "recoil";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as _ from "lodash-es";
@@ -223,7 +222,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                 >
                     Cancel
                 </Button>
-                <LoadingButton
+                <Button
                     type="submit"
                     form="generate-form"
                     color="primary"
@@ -233,7 +232,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                     loadingPosition="end"
                 >
                     <span>Generate</span>
-                </LoadingButton>
+                </Button>
             </DialogActions>
         </>
     );

@@ -1,7 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SaveAltIcon from "@mui/icons-material/SaveAlt";
-import { LoadingButton } from "@mui/lab";
 import TabPanel from "@mui/lab/TabPanel";
 import { DialogContent, Typography } from "@mui/material";
 import { Stack } from "@mui/material";
@@ -137,7 +136,7 @@ export const ImportForm = ({ onClose }: ImportFormProps) => {
                 <Button onClick={onClose} disabled={isSubmitting}>
                     Cancel
                 </Button>
-                <LoadingButton
+                <Button
                     type="submit"
                     form="import-form"
                     color="primary"
@@ -147,7 +146,7 @@ export const ImportForm = ({ onClose }: ImportFormProps) => {
                     loadingPosition="end"
                 >
                     <span>Import</span>
-                </LoadingButton>
+                </Button>
             </DialogActions>
         </>
     );
