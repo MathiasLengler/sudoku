@@ -8,3 +8,6 @@ sudoku-bubblewrap/*
 
 # cargo asm
 /*.asm
+
+# cargo llvm-cov
+lcov.info
