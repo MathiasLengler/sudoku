@@ -57,6 +57,7 @@ impl<Base: SudokuBase> Iterator for FirstCandidatesCombinationsIter<Base> {
     fn next(&mut self) -> Option<Self::Item> {
         let n = self.n?;
         let current = self.current;
+        // FIXME: the question mark is unreachable.
         let next = next_permutation(current.integral())?;
 
         if (next & (Base::CandidatesIntegral::ONE << n.get())).is_zero() {
@@ -239,6 +240,20 @@ mod tests {
                     vec![3, 4, 5].try_into().unwrap(),
                 ],
             );
+
+            let mut iter = FirstCandidatesCombinationsIter::<Base4>::new(
+                15.try_into().unwrap(),
+                15.try_into().unwrap(),
+            );
+
+            assert_eq!(
+                iter.next().unwrap(),
+                vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+                    .try_into()
+                    .unwrap()
+            );
+            assert!(iter.next().is_none());
+            assert!(iter.next().is_none());
         }
     }
 }
