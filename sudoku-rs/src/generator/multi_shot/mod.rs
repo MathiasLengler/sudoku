@@ -304,7 +304,7 @@ impl<Base: SudokuBase> MultiShotGenerator<Base> {
 
     pub fn generate_with_progress(
         &self,
-        on_progress: impl Fn(MultiShotGeneratorProgress) -> Result<()>,
+        mut on_progress: impl FnMut(MultiShotGeneratorProgress) -> Result<()>,
     ) -> Result<EvaluatedGrid<Base>> {
         let mut ret = None;
 
@@ -508,17 +508,14 @@ mod tests {
             })
             .unwrap();
 
-        let (rx, tx) = std::sync::mpsc::sync_channel(iterations.try_into().unwrap());
+        let mut progress_vec = vec![];
 
         let evaluated_grid = multi_shot_generator_par
             .generate_with_progress(|progress| {
-                rx.try_send(progress).unwrap();
+                progress_vec.push(progress);
                 Ok(())
             })
             .unwrap();
-        drop(rx);
-
-        let progress_vec: Vec<_> = tx.into_iter().collect();
 
         for progress in &progress_vec {
             assert_eq!(progress.total_iterations, iterations);
