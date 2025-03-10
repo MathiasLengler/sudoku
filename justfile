@@ -4,14 +4,14 @@ set positional-arguments
 default:
     @just --list
 
-test:
-    cargo nextest run
+test test-name="":
+    cargo nextest run {{test-name}}
 
-test-cov +nextest-args="":
-    cargo llvm-cov nextest --lcov --output-path lcov.info -- {{nextest-args}}
+test-cov test-name="":
+    cargo llvm-cov nextest --lcov --output-path lcov.info -- {{test-name}}
 
-test-cov-html +nextest-args="":
-    cargo llvm-cov nextest --html --open -- {{nextest-args}}
+test-cov-html test-name="":
+    cargo llvm-cov nextest --html --open -- {{test-name}}
 
 pack-dev-watch: (_pack-watch "pack-dev")
 pack-prod-watch: (_pack-watch "pack-prod")
