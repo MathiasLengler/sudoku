@@ -108,6 +108,7 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> Solver<Ba
     }
 
     // TODO: return map of strategy -> number of deductions
+    // TODO: move to SolverPathIter
     pub fn total_score(&mut self) -> Result<Option<StrategyScore>> {
         let solve_route_iter = &mut self.solve_route();
         let total_score = solve_route_iter.try_fold::<_, _, Result<_>>(0, |total_score, res| {

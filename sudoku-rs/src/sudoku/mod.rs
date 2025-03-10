@@ -73,23 +73,14 @@ impl<Base: SudokuBase> Sudoku<Base> {
     ) -> Result<Self> {
         info!("generator_settings {:#?}", generator_settings);
 
-        let grid = if generator_settings.parallel {
-            let goal_generator = MultiShotGenerator::new(MultiShotGeneratorSettings {
-                generator_settings,
-                iterations: 100,
-                metric: GridMetric::StrategyTotalScore,
-                optimize: GoalOptimization::Maximize,
-                parallel: true,
-            })?;
-            let (total_score, grid) = goal_generator.generate_for_total_strategy_score();
-            info!("total_score {total_score}");
-            grid
-        } else {
-            Generator::with_settings(generator_settings).generate_with_progress(on_progress)?
-        };
-
-        Ok(Self::with_grid_and_settings(grid, settings))
+        Ok(Self::with_grid_and_settings(
+            Generator::with_settings(generator_settings).generate_with_progress(on_progress)?,
+            settings,
+        ))
     }
+
+    // TODO: generate_multi_shot using MultiShotGenerator
+    //  progress callback has a different signature
 }
 
 impl<Base: SudokuBase> Sudoku<Base> {

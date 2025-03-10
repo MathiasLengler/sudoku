@@ -103,6 +103,8 @@ pub enum PruningOrder<Base: SudokuBase> {
 pub struct PruningSettings<Base: SudokuBase> {
     /// Whether to set all direct candidates after pruning is done.
     pub set_all_direct_candidates: bool,
+    // TODO: bit field
+    //  this should make this struct cloneable
     /// With which strategies the sudoku should remain solvable for.
     pub strategies: Vec<StrategyEnum>,
     /// How much to prune the solution.
@@ -160,9 +162,6 @@ pub struct GeneratorSettings<Base: SudokuBase> {
     /// - The generated solution of the sudoku.
     /// - The order in which cells are pruned.
     pub seed: Option<u64>,
-
-    // TODO: rename/refactor MultishotGeneratorSettings
-    pub parallel: bool,
 }
 
 mod dynamic_settings {
@@ -274,7 +273,6 @@ mod dynamic_settings {
         pub solution: Option<DynamicSolutionSettings>,
         #[cfg_attr(feature = "wasm", ts(optional = nullable))]
         pub seed: Option<u64>,
-        pub parallel: bool,
     }
 
     impl<Base: SudokuBase> TryFrom<DynamicGeneratorSettings> for GeneratorSettings<Base> {
@@ -286,7 +284,6 @@ mod dynamic_settings {
                 prune,
                 solution,
                 seed,
-                parallel,
             } = dynamic_generator_settings;
 
             ensure!(base == Base::BASE);
@@ -303,7 +300,6 @@ mod dynamic_settings {
                     None
                 },
                 seed,
-                parallel,
             })
         }
     }
