@@ -187,7 +187,7 @@ pub(crate) fn import_err(err: &JsValue) -> SudokuError {
 
 pub(crate) fn import_generate_on_progress(
     on_progress: IGenerateOnProgress,
-) -> Result<impl FnMut(GeneratorProgress) -> Result<(), SudokuError>> {
+) -> Result<impl Fn(GeneratorProgress) -> Result<(), SudokuError>> {
     let function = on_progress
         .dyn_into::<js_sys::Function>()
         .map_err(|value| anyhow!("Expected function, instead got: {:?}", JsValue::from(value)))?;

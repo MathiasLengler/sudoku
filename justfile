@@ -7,9 +7,11 @@ default:
 test:
     cargo nextest run
 
-test-cov nextest-args="":
+test-cov +nextest-args="":
     cargo llvm-cov nextest --lcov --output-path lcov.info -- {{nextest-args}}
-    cargo llvm-cov report --html
+
+test-cov-html +nextest-args="":
+    cargo llvm-cov nextest --html --open -- {{nextest-args}}
 
 pack-dev-watch: (_pack-watch "pack-dev")
 pack-prod-watch: (_pack-watch "pack-prod")

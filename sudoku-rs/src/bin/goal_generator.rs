@@ -15,10 +15,11 @@ fn main() -> Result<()> {
     .format_indent(Some(0))
     .init();
 
-    let generator = MultiShotGenerator::<Base>::new(Generator::with_pruning(PruningSettings {
-        strategies: StrategyEnum::default_solver_strategies_no_backtracking(),
-        ..Default::default()
-    }))?;
+    let generator =
+        MultiShotGenerator::<Base>::with_settings(Generator::with_pruning(PruningSettings {
+            strategies: StrategyEnum::default_solver_strategies_no_backtracking(),
+            ..Default::default()
+        }))?;
 
     let (total_score, grid) = generator.generate_for_total_strategy_score(10_000);
 

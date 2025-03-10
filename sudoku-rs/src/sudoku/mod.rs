@@ -9,7 +9,7 @@ use crate::cell::dynamic::{DynamicCandidates, DynamicValue};
 use crate::cell::{Candidates, Value};
 use crate::error::Result;
 use crate::generator::multi_shot::{
-    GoalOptimization, GridMetric, MultiShotGenerator, MultiShotGeneratorSettings,
+    MultiShotGenerator, MultiShotGeneratorProgress, MultiShotGeneratorSettings,
 };
 use crate::generator::{Generator, GeneratorProgress, GeneratorSettings};
 use crate::grid::dynamic::DynamicGrid;
@@ -79,8 +79,23 @@ impl<Base: SudokuBase> Sudoku<Base> {
         ))
     }
 
-    // TODO: generate_multi_shot using MultiShotGenerator
-    //  progress callback has a different signature
+    pub fn generate_multi_shot(
+        multi_shot_generator_settings: MultiShotGeneratorSettings<Base>,
+        settings: Settings,
+        on_progress: impl Fn(MultiShotGeneratorProgress) -> Result<()>,
+    ) -> Result<Self> {
+        info!(
+            "multi_shot_generator_settings {:#?}",
+            multi_shot_generator_settings
+        );
+
+        let generator = MultiShotGenerator::with_settings(multi_shot_generator_settings)?;
+
+        Ok(Self::with_grid_and_settings(
+            generator.generate_with_progress(on_progress)?.grid,
+            settings,
+        ))
+    }
 }
 
 impl<Base: SudokuBase> Sudoku<Base> {
