@@ -1,7 +1,7 @@
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::cmp;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicU32, AtomicUsize, Ordering};
 
 use anyhow::ensure;
 use log::*;
@@ -17,6 +17,7 @@ use super::{Generator, GeneratorSettings};
 pub use dynamic_settings::*;
 
 pub type EvaluatedGridMetric = u32;
+type AtomicEvaluatedGridMetric = AtomicU32;
 
 static GENERATE_NO_GRIDS: &str = "at least one generation result";
 
@@ -178,26 +179,26 @@ pub struct MultiShotGeneratorProgress {
 }
 
 #[derive(Debug)]
-pub struct MultiShotGenerationReturn<Base: SudokuBase> {
+pub struct EvaluatedGrid<Base: SudokuBase> {
     pub evaluated_grid_metric: EvaluatedGridMetric,
     pub grid: Grid<Base>,
 }
 
-impl<Base: SudokuBase + Eq> Eq for MultiShotGenerationReturn<Base> {}
+impl<Base: SudokuBase + Eq> Eq for EvaluatedGrid<Base> {}
 
-impl<Base: SudokuBase + PartialEq> PartialEq for MultiShotGenerationReturn<Base> {
+impl<Base: SudokuBase + PartialEq> PartialEq for EvaluatedGrid<Base> {
     fn eq(&self, other: &Self) -> bool {
         self.evaluated_grid_metric == other.evaluated_grid_metric
     }
 }
 
-impl<Base: SudokuBase + Ord> Ord for MultiShotGenerationReturn<Base> {
+impl<Base: SudokuBase + Ord> Ord for EvaluatedGrid<Base> {
     fn cmp(&self, other: &Self) -> cmp::Ordering {
         self.evaluated_grid_metric.cmp(&other.evaluated_grid_metric)
     }
 }
 
-impl<Base: SudokuBase + PartialOrd> PartialOrd for MultiShotGenerationReturn<Base> {
+impl<Base: SudokuBase + PartialOrd> PartialOrd for EvaluatedGrid<Base> {
     fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
         Some(self.cmp(other))
     }
@@ -286,25 +287,25 @@ impl<Base: SudokuBase> MultiShotGenerator<Base> {
         })
     }
 
-    fn evaluate_grid(&self, grid: Grid<Base>) -> Result<MultiShotGenerationReturn<Base>> {
+    fn evaluate_grid(&self, grid: Grid<Base>) -> Result<EvaluatedGrid<Base>> {
         let evaluated_grid_metric = self
             .settings
             .metric
             .evaluate(&grid, self.settings.get_prune_strategies())?;
-        Ok(MultiShotGenerationReturn {
+        Ok(EvaluatedGrid {
             evaluated_grid_metric,
             grid,
         })
     }
 
-    pub fn generate(&self) -> Result<MultiShotGenerationReturn<Base>> {
+    pub fn generate(&self) -> Result<EvaluatedGrid<Base>> {
         self.generate_with_inspect_evaluated_grids(|_, _| Ok(()))
     }
 
     pub fn generate_with_progress(
         &self,
         on_progress: impl Fn(MultiShotGeneratorProgress) -> Result<()>,
-    ) -> Result<MultiShotGenerationReturn<Base>> {
+    ) -> Result<EvaluatedGrid<Base>> {
         let mut ret = None;
 
         // `on_progress` is neither `Sync` nor `Send`, because the intended use case is a WASM/JS callback.
@@ -316,14 +317,28 @@ impl<Base: SudokuBase> MultiShotGenerator<Base> {
                 mpsc::channel::<MultiShotGeneratorProgress>();
 
             s.spawn(|_s| {
+                let best_evaluated_grid_metric =
+                    AtomicEvaluatedGridMetric::new(match self.settings.optimize {
+                        GoalOptimization::Minimize => EvaluatedGridMetric::MAX,
+                        GoalOptimization::Maximize => EvaluatedGridMetric::MIN,
+                    });
+
                 ret = Some(self.generate_with_inspect_evaluated_grids(
                     move |current_iteration, evaluated_grid| {
+                        let best_evaluated_grid_metric = match self.settings.optimize {
+                            GoalOptimization::Minimize => best_evaluated_grid_metric
+                                .fetch_min(evaluated_grid.evaluated_grid_metric, Ordering::SeqCst)
+                                .min(evaluated_grid.evaluated_grid_metric),
+                            GoalOptimization::Maximize => best_evaluated_grid_metric
+                                .fetch_max(evaluated_grid.evaluated_grid_metric, Ordering::SeqCst)
+                                .max(evaluated_grid.evaluated_grid_metric),
+                        };
+
                         let progress = MultiShotGeneratorProgress {
                             current_iteration,
                             total_iterations: self.settings.iterations,
                             current_evaluated_grid_metric: evaluated_grid.evaluated_grid_metric,
-                            // TODO: track best evaluated grid metric
-                            best_evaluated_grid_metric: 0,
+                            best_evaluated_grid_metric,
                         };
 
                         on_progress_sender
@@ -345,10 +360,10 @@ impl<Base: SudokuBase> MultiShotGenerator<Base> {
 
     fn generate_with_inspect_evaluated_grids(
         &self,
-        inspect_evaluated_grids: impl Fn(IterationsCounter, &MultiShotGenerationReturn<Base>) -> Result<()>
+        inspect_evaluated_grids: impl Fn(IterationsCounter, &EvaluatedGrid<Base>) -> Result<()>
             + Sync
             + Send,
-    ) -> Result<MultiShotGenerationReturn<Base>> {
+    ) -> Result<EvaluatedGrid<Base>> {
         let process_iteration = |iteration| -> Result<_> {
             let grid = self.generate_single(iteration)?;
             let evaluated_grid = self.evaluate_grid(grid)?;
@@ -398,6 +413,7 @@ mod tests {
     use crate::{
         base::consts::*,
         generator::{Generator, PruningSettings},
+        solver::strategic::strategies::NakedSingles,
     };
 
     use super::*;
@@ -472,31 +488,57 @@ mod tests {
 
     #[test]
     fn test_generate_with_progress() {
-        type Base = Base2;
+        type Base = Base3;
 
         let generator_settings = GeneratorSettings {
             prune: Some(PruningSettings {
-                strategies: StrategyEnum::default_solver_strategies_no_backtracking(),
+                strategies: vec![NakedSingles.into()],
                 ..Default::default()
             }),
             solution: None,
             seed: Some(42),
         };
+        let iterations = 3;
         let multi_shot_generator_par =
             MultiShotGenerator::<Base>::with_settings(MultiShotGeneratorSettings {
                 generator_settings: generator_settings.clone(),
-                iterations: 3,
+                iterations,
                 parallel: true,
                 ..Default::default()
             })
             .unwrap();
-        let grid_par = multi_shot_generator_par
+
+        let (rx, tx) = std::sync::mpsc::sync_channel(iterations.try_into().unwrap());
+
+        let evaluated_grid = multi_shot_generator_par
             .generate_with_progress(|progress| {
-                // TODO: assert that we where called three times and that the best progress matches the return.
-                dbg!(progress);
+                rx.try_send(progress).unwrap();
                 Ok(())
             })
-            .unwrap()
-            .grid;
+            .unwrap();
+        drop(rx);
+
+        let progress_vec: Vec<_> = tx.into_iter().collect();
+
+        for progress in &progress_vec {
+            assert_eq!(progress.total_iterations, iterations);
+            assert!(
+                progress.current_iteration < progress.total_iterations,
+                "Progress current iteration should be less than total iterations count"
+            );
+            assert!(progress.current_evaluated_grid_metric <= progress.best_evaluated_grid_metric);
+        }
+        let best_progress = progress_vec
+            .into_iter()
+            .max_by_key(|progress| progress.current_evaluated_grid_metric)
+            .unwrap();
+        assert_eq!(
+            best_progress.current_evaluated_grid_metric,
+            best_progress.best_evaluated_grid_metric,
+        );
+        assert_eq!(
+            best_progress.current_evaluated_grid_metric, evaluated_grid.evaluated_grid_metric,
+            "Best progress evaluated grid metric should be equal to the returned grid metric"
+        );
     }
 }
