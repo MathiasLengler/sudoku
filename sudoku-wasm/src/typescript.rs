@@ -37,6 +37,15 @@ pub(crate) fn export_value<T: serde::ser::Serialize + ?Sized>(value: &T) -> Resu
 // Bridge ts_rs and wasm_bindgen using serde_wasm_bindgen
 // Macro should be called with a list of (de)serializable types
 macro_rules! serde_wasm_bindgen_interop {
+    (IMPORT_TS_RS_BINDINGS; $($ty_name:ty),*) => {
+        #[wasm_bindgen(typescript_custom_section)]
+        const IMPORT_TS_RS_BINDINGS: &'static str = concat!(
+            "import type {\n",
+            $("    ", stringify!($ty_name) , ",\n"),*
+            , r#"} from "../../sudoku-rs/bindings";"#);
+
+        serde_wasm_bindgen_interop!($($ty_name),*);
+    };
     ($($ty_name:ty),*) => {
         paste! {
             // wasm_bindgen interfaces "ITypeName" refercing bindings from ts_rs "bindings.TypeName"
@@ -63,44 +72,13 @@ macro_rules! serde_wasm_bindgen_interop {
             )*
         }
     };
+
 }
 
 // All ts-rs annotated types:
 //  #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
-#[wasm_bindgen(typescript_custom_section)]
-const IMPORT_TS_RS_BINDINGS: &'static str = r#"
-import type {
-    BaseEnum,
-    CellWorldDimensions,
-    DynamicCandidates,
-    DynamicCell,
-    DynamicGeneratorSettings,
-    DynamicGrid,
-    DynamicPosition,
-    DynamicPruningOrder,
-    DynamicPruningSettings,
-    DynamicSolutionSettings,
-    DynamicValue,
-    DynamicWorldGridCellPosition,
-    GeneratorProgress,
-    GridFormatEnum,
-    PositionedTransportAction,
-    PositionedTransportReason,
-    PruningGroupBehaviour,
-    PruningTarget,
-    Quadrant,
-    RelativeDir,
-    StrategyEnum,
-    TransportAction,
-    TransportCell,
-    TransportDeduction,
-    TransportDeductions,
-    TransportReason,
-    TransportSudoku,
-    WorldGenerationResult
-} from "../../sudoku-rs/bindings";
-"#;
 serde_wasm_bindgen_interop! {
+    IMPORT_TS_RS_BINDINGS;
     BaseEnum,
     CellWorldDimensions,
     DynamicCandidates,
@@ -143,6 +121,16 @@ const SERDE_ALIASES: &'static str = r#"
 export type StrategyEnums = StrategyEnum[];
 export type DynamicCells = DynamicCell[];
 export type DynamicTryStrategiesReturnAlias = [StrategyEnum, TransportDeductions] | null;
+"#;
+serde_wasm_bindgen_interop! {
+    DynamicCells,
+    DynamicTryStrategiesReturnAlias,
+    StrategyEnums
+}
+
+// external types (zod branded types)
+#[wasm_bindgen(typescript_custom_section)]
+const EXTERNAL_TYPES: &'static str = r#"
 import type {
     WorldCellDim,
     WorldCellPosition,
@@ -150,11 +138,7 @@ import type {
     WorldGridPosition,
 } from "../../sudoku-web/src/app/state/world";
 "#;
-
 serde_wasm_bindgen_interop! {
-    DynamicCells,
-    DynamicTryStrategiesReturnAlias,
-    StrategyEnums,
     WorldCellDim,
     WorldCellPosition,
     WorldGridDim,
