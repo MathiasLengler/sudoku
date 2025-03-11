@@ -170,7 +170,9 @@ mod dynamic_settings {
     }
 }
 
-#[derive(Debug)]
+#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct MultiShotGeneratorProgress {
     pub current_iteration: IterationsCounter,
     pub total_iterations: IterationsCounter,
@@ -281,6 +283,10 @@ impl<Base: SudokuBase> MultiShotGenerator<Base> {
                 seed: Some(seed + u64::from(iteration)),
                 ..self.settings.generator_settings.clone()
             })
+            // TODO: generate_with_progress
+            //  this would allow us to show progress bar for each iteration
+            //  Reference: https://docs.rs/indicatif/latest/indicatif/struct.MultiProgress.html
+            //  Could become a performance issue, since the upper progress callback will be executed more often.
             .generate()?
         } else {
             Generator::with_settings(self.settings.generator_settings.clone()).generate()?

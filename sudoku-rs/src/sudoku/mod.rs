@@ -82,7 +82,7 @@ impl<Base: SudokuBase> Sudoku<Base> {
     pub fn generate_multi_shot(
         multi_shot_generator_settings: MultiShotGeneratorSettings<Base>,
         settings: Settings,
-        on_progress: impl Fn(MultiShotGeneratorProgress) -> Result<()>,
+        on_progress: impl FnMut(MultiShotGeneratorProgress) -> Result<()>,
     ) -> Result<Self> {
         info!(
             "multi_shot_generator_settings {:#?}",

@@ -6,7 +6,7 @@ import { Box, DialogContent, FormGroup, LinearProgress, Typography } from "@mui/
 import { Stack } from "@mui/material";
 
 import { baseToCellCount } from "../../utils/sudoku";
-import { useGenerate } from "../../actions/sudokuActions";
+import { useGenerate, useMultiShotGenerate } from "../../actions/sudokuActions";
 import CasinoIcon from "@mui/icons-material/Casino";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import { useRecoilState } from "recoil";
@@ -23,7 +23,7 @@ import {
     generateFormValuesState,
     SEED_MAX,
 } from "../../state/forms/generate";
-import type { GeneratorProgress } from "../../../types";
+import type { DynamicGeneratorSettings, GeneratorProgress } from "../../../types";
 import MyIconButton from "../../components/MyIconButton";
 import SelectStrategies from "../../components/formFragments/SelectStrategies";
 import { ResetFormButton } from "../../components/ResetFormButton";
@@ -98,6 +98,8 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
         };
     }, [cancelGenerate]);
 
+    const multiShotGenerate = useMultiShotGenerate();
+
     return (
         <>
             <DialogContent>
@@ -108,22 +110,42 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                             const { base, minGivens, setAllDirectCandidates, strategies, seed, useSeed, parallel } =
                                 formValues;
 
-                            try {
-                                await generate({
-                                    base,
-                                    prune: {
-                                        target: {
-                                            minClueCount: minGivens,
-                                        },
-                                        strategies,
-                                        setAllDirectCandidates,
-                                        order: "random",
-                                        startFromNearMinimalGrid: false,
+                            const generatorSettings: DynamicGeneratorSettings = {
+                                base,
+                                prune: {
+                                    target: {
+                                        minClueCount: minGivens,
                                     },
-                                    solution: undefined,
-                                    seed: useSeed && !_.isUndefined(seed) ? BigInt(seed) : undefined,
-                                    parallel,
-                                });
+                                    strategies,
+                                    setAllDirectCandidates,
+                                    // TODO: expose
+                                    order: "random",
+                                    startFromNearMinimalGrid: false,
+                                },
+                                solution: undefined,
+                                seed: useSeed && !_.isUndefined(seed) ? BigInt(seed) : undefined,
+                                // FIXME: multi/single shot mode call generate_multi_shot/generate
+                                // parallel,
+                            };
+
+                            try {
+                                if (parallel) {
+                                    await multiShotGenerate(
+                                        {
+                                            generatorSettings,
+                                            // TODO: expose other multiShot settings in form
+                                            iterations: 1000,
+                                            metric: "strategyTotalScore",
+                                            optimize: "maximize",
+                                            parallel: true,
+                                        },
+                                        (progress) => {
+                                            console.log("MultiShot progress", progress);
+                                        },
+                                    );
+                                } else {
+                                    await generate(generatorSettings);
+                                }
                             } catch (err) {
                                 if (!(err instanceof DOMException && err.name === "AbortError")) {
                                     throw err;

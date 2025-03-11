@@ -46,6 +46,8 @@ jobs:
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
+      # TODO: sync with justfile _pack
+      #  alternative: call justfile directly
       - run: wasm-pack build --out-name index --target web . -- -Z build-std=panic_abort,std
         working-directory: ./sudoku-wasm
 

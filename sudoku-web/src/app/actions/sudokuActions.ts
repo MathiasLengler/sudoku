@@ -5,9 +5,11 @@ import type { SelectorCallbackInterface, Snapshot } from "recoil";
 import { useRecoilCallback } from "recoil";
 import type {
     DynamicGeneratorSettings,
+    DynamicMultiShotGeneratorSettings,
     DynamicPosition,
     GeneratorProgress,
     GridFormatEnum,
+    MultiShotGeneratorProgress,
     StrategyEnums,
     TransportDeductions,
 } from "../../types";
@@ -374,6 +376,26 @@ export function useGenerate() {
     );
 
     return { generate: mutation.mutateAsync, progress, cancelGenerate };
+}
+
+// TODO: port/abstract remaining logic from useGenerate
+export function useMultiShotGenerate() {
+    const generateImpl = useRecoilCallback(
+        ({ snapshot, set }) =>
+            async (
+                settings: DynamicMultiShotGeneratorSettings,
+                onProgress: (progress: MultiShotGeneratorProgress) => void,
+            ) => {
+                const wasmSudokuProxy = await getRemoteWasmSudoku(snapshot);
+
+                await wasmSudokuProxy.generate_multi_shot(settings, Comlink.proxy(onProgress));
+
+                await updateSudoku({ set, wasmSudokuProxy });
+            },
+        [],
+    );
+
+    return generateImpl;
 }
 
 export function useImportSudokuString() {

@@ -9,6 +9,8 @@ use crate::cell::dynamic::DynamicCandidates;
 use crate::cell::dynamic::DynamicCell;
 use crate::cell::dynamic::DynamicValue;
 use crate::error::{Error, Result};
+use crate::generator::multi_shot::DynamicMultiShotGeneratorSettings;
+use crate::generator::multi_shot::MultiShotGeneratorProgress;
 use crate::generator::{DynamicGeneratorSettings, GeneratorProgress};
 use crate::grid::dynamic::DynamicGrid;
 use crate::grid::format::GridFormatEnum;
@@ -81,28 +83,36 @@ impl DynamicSudoku {
     ) -> Result<()> {
         let base: BaseEnum = dynamic_generator_settings.base.try_into()?;
 
-        *self = match base {
-            BaseEnum::Base2 => Self::Base2(Sudoku::<Base2>::generate(
+        *self = match_base_enum!(
+            base,
+            Self::from(Sudoku::<Base>::generate(
                 dynamic_generator_settings.try_into()?,
                 self.settings(),
                 on_progress,
-            )?),
-            BaseEnum::Base3 => Self::Base3(Sudoku::<Base3>::generate(
-                dynamic_generator_settings.try_into()?,
+            )?)
+        );
+
+        Ok(())
+    }
+
+    pub fn generate_multi_shot(
+        &mut self,
+        multi_shot_generator_settings: DynamicMultiShotGeneratorSettings,
+        on_progress: impl FnMut(MultiShotGeneratorProgress) -> Result<()>,
+    ) -> Result<()> {
+        let base: BaseEnum = multi_shot_generator_settings
+            .generator_settings
+            .base
+            .try_into()?;
+
+        *self = match_base_enum!(
+            base,
+            Self::from(Sudoku::<Base>::generate_multi_shot(
+                multi_shot_generator_settings.try_into()?,
                 self.settings(),
                 on_progress,
-            )?),
-            BaseEnum::Base4 => Self::Base4(Sudoku::<Base4>::generate(
-                dynamic_generator_settings.try_into()?,
-                self.settings(),
-                on_progress,
-            )?),
-            BaseEnum::Base5 => Self::Base5(Sudoku::<Base5>::generate(
-                dynamic_generator_settings.try_into()?,
-                self.settings(),
-                on_progress,
-            )?),
-        };
+            )?)
+        );
 
         Ok(())
     }

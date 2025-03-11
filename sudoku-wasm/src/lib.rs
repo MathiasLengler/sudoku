@@ -304,7 +304,19 @@ impl WasmSudoku {
             import_generate_on_progress(on_progress)?,
         )?;
 
-        // *self = self.sudoku.clone().into();
+        Ok(())
+    }
+
+    pub fn generate_multi_shot(
+        &mut self,
+        multi_shot_generator_settings: IDynamicMultiShotGeneratorSettings,
+        on_progress: IGenerateMultiShotOnProgress,
+    ) -> Result<()> {
+        self.sudoku.generate_multi_shot(
+            import_dynamic_multi_shot_generator_settings(multi_shot_generator_settings)?,
+            import_generate_multi_shot_on_progress(on_progress)?,
+        )?;
+
         Ok(())
     }
 

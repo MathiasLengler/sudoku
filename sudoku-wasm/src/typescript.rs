@@ -9,6 +9,7 @@ use sudoku::{
     cell::dynamic::{DynamicCandidates, DynamicCell, DynamicValue},
     error::Error as SudokuError,
     generator::{
+        multi_shot::{DynamicMultiShotGeneratorSettings, MultiShotGeneratorProgress},
         DynamicGeneratorSettings, DynamicPruningOrder, DynamicPruningSettings,
         DynamicSolutionSettings, GeneratorProgress, PruningGroupBehaviour, PruningTarget,
     },
@@ -30,6 +31,18 @@ use sudoku::{
 };
 use wasm_bindgen::prelude::*;
 
+pub(crate) fn import_err(err: &JsValue) -> SudokuError {
+    if let Some(err) = err.dyn_ref::<js_sys::Error>() {
+        if let Some(message) = err.message().as_string() {
+            anyhow!(message)
+        } else {
+            anyhow!("JsValue err message not convertible to string")
+        }
+    } else {
+        anyhow!("JsValue err not convertible to Error")
+    }
+}
+
 pub(crate) fn export_value<T: serde::ser::Serialize + ?Sized>(value: &T) -> Result<JsValue> {
     Ok(value.serialize(&Serializer::json_compatible())?)
 }
@@ -37,7 +50,7 @@ pub(crate) fn export_value<T: serde::ser::Serialize + ?Sized>(value: &T) -> Resu
 // Bridge ts_rs and wasm_bindgen using serde_wasm_bindgen
 // Macro should be called with a list of (de)serializable types
 macro_rules! serde_wasm_bindgen_interop {
-    (IMPORT_TS_RS_BINDINGS; $($ty_name:ty),*) => {
+    (IMPORT_TS_RS_BINDINGS; $($ty_name:ty),* $(,)?) => {
         #[wasm_bindgen(typescript_custom_section)]
         const IMPORT_TS_RS_BINDINGS: &'static str = concat!(
             "import type {\n",
@@ -46,7 +59,7 @@ macro_rules! serde_wasm_bindgen_interop {
 
         serde_wasm_bindgen_interop!($($ty_name),*);
     };
-    ($($ty_name:ty),*) => {
+    ($($ty_name:ty),* $(,)?) => {
         paste! {
             // wasm_bindgen interfaces "ITypeName" refercing bindings from ts_rs "bindings.TypeName"
             #[wasm_bindgen]
@@ -85,6 +98,7 @@ serde_wasm_bindgen_interop! {
     DynamicCell,
     DynamicGeneratorSettings,
     DynamicGrid,
+    DynamicMultiShotGeneratorSettings,
     DynamicPosition,
     DynamicPruningOrder,
     DynamicPruningSettings,
@@ -93,6 +107,7 @@ serde_wasm_bindgen_interop! {
     DynamicWorldGridCellPosition,
     GeneratorProgress,
     GridFormatEnum,
+    MultiShotGeneratorProgress,
     PositionedTransportAction,
     PositionedTransportReason,
     PruningGroupBehaviour,
@@ -106,7 +121,7 @@ serde_wasm_bindgen_interop! {
     TransportDeductions,
     TransportReason,
     TransportSudoku,
-    WorldGenerationResult
+    WorldGenerationResult,
 }
 
 // Serde-compatbile aliases
@@ -125,7 +140,7 @@ export type DynamicTryStrategiesReturnAlias = [StrategyEnum, TransportDeductions
 serde_wasm_bindgen_interop! {
     DynamicCells,
     DynamicTryStrategiesReturnAlias,
-    StrategyEnums
+    StrategyEnums,
 }
 
 // external types (zod branded types)
@@ -142,42 +157,56 @@ serde_wasm_bindgen_interop! {
     WorldCellDim,
     WorldCellPosition,
     WorldGridDim,
-    WorldGridPosition
+    WorldGridPosition,
 }
 
 // non-serde types - custom conversion functions
 #[wasm_bindgen(typescript_custom_section)]
 const EXTRA: &'static str = r#"
 export type GenerateOnProgress = (progress: GeneratorProgress) => void;
+export type GenerateMultiShotOnProgress = (progress: MultiShotGeneratorProgress) => void;
 "#;
 
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(typescript_type = "GenerateOnProgress")]
     pub type IGenerateOnProgress;
+    #[wasm_bindgen(typescript_type = "GenerateMultiShotOnProgress")]
+    pub type IGenerateMultiShotOnProgress;
 }
 
-pub(crate) fn import_err(err: &JsValue) -> SudokuError {
-    if let Some(err) = err.dyn_ref::<js_sys::Error>() {
-        if let Some(message) = err.message().as_string() {
-            anyhow!(message)
-        } else {
-            anyhow!("JsValue err message not convertible to string")
-        }
-    } else {
-        anyhow!("JsValue err not convertible to Error")
-    }
+fn import_function(function: impl Into<JsValue>) -> Result<js_sys::Function> {
+    Ok(function
+        .into()
+        .dyn_into::<js_sys::Function>()
+        .map_err(|value| anyhow!("Expected function, instead got: {:?}", value))?)
 }
 
 pub(crate) fn import_generate_on_progress(
     on_progress: IGenerateOnProgress,
 ) -> Result<impl Fn(GeneratorProgress) -> Result<(), SudokuError>> {
-    let function = on_progress
-        .dyn_into::<js_sys::Function>()
-        .map_err(|value| anyhow!("Expected function, instead got: {:?}", JsValue::from(value)))?;
+    let function = import_function(on_progress)?;
 
     Ok(
         move |progress: GeneratorProgress| -> Result<(), SudokuError> {
+            function
+                .call1(
+                    &JsValue::undefined(),
+                    &export_value(&progress).map_err(|err| import_err(&err.into()))?,
+                )
+                .map_err(|err| import_err(&err))?;
+            Ok(())
+        },
+    )
+}
+
+pub(crate) fn import_generate_multi_shot_on_progress(
+    on_progress: IGenerateMultiShotOnProgress,
+) -> Result<impl Fn(MultiShotGeneratorProgress) -> Result<(), SudokuError>> {
+    let function = import_function(on_progress)?;
+
+    Ok(
+        move |progress: MultiShotGeneratorProgress| -> Result<(), SudokuError> {
             function
                 .call1(
                     &JsValue::undefined(),

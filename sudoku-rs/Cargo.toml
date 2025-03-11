@@ -52,7 +52,10 @@ serde_json = "1.0.134"
 criterion = { version = "0.5.1", features = ["html_reports"] }
 
 [features]
-default = ["log"]
+# FIXME: should parallel be a feature?
+#  it is now used by Sudoku/DynamicSudoku
+#  MultiShotGenerator could be adapted to conditionally use it
+default = ["log", "parallel"]
 log = ["env_logger"]
 terminal = ["crossterm", "indicatif"]
 parallel = ["rayon", "indicatif/rayon"]

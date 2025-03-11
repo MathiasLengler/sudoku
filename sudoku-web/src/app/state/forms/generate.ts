@@ -58,6 +58,7 @@ export const generateFormValuesSchema = z.object({
                 }
             }
         }),
+    // TODO: remove
     parallel: z.boolean().default(false),
 });
 export const GENERATE_FORM_DEFAULT_VALUES = {
