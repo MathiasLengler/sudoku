@@ -1,5 +1,5 @@
-import { useCallback, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { useCallback, useRef } from "react";
 
 export type CancelableMutationFnArgs<Variables, Progress> = {
     variables: Variables;
@@ -8,10 +8,15 @@ export type CancelableMutationFnArgs<Variables, Progress> = {
     onProgress: (progress: Progress) => void;
 };
 
-export function useCancelableMutation<Variables, Progress>(
-    cancelableMutationFn: (args: CancelableMutationFnArgs<Variables, Progress>) => Promise<void>,
-) {
-    const [progress, setProgress] = useState<Progress>();
+export function useCancelableMutation<Variables, Progress>({
+    cancelableMutationFn,
+    onProgress,
+    onCancel,
+}: {
+    cancelableMutationFn: (args: CancelableMutationFnArgs<Variables, Progress>) => Promise<void>;
+    onProgress: (progress: Progress) => void;
+    onCancel: () => void;
+}) {
     const abortControllerRef = useRef<AbortController | null>(null);
 
     const mutation = useMutation({
@@ -36,17 +41,10 @@ export function useCancelableMutation<Variables, Progress>(
                 signal,
                 abortPromise,
                 onProgress: (progress: Progress) => {
-                    // FIXME: we are missing progress updates, since react fuses the state updates
-                    //  GenerateMultiShotProgress tries to keep track of the finished iterations, but misses them.
-                    // Options:
-                    // - track progress in atom
-                    // - FIFO queue
-                    // - store in array (slow/memory intensive)
-                    // - pass in callback and plumb it through
-
-                    console.debug("Progress:", progress);
                     if (!signal.aborted) {
-                        setProgress(progress);
+                        onProgress(progress);
+                    } else {
+                        console.warn("Progress update after abort:", progress);
                     }
                 },
             });
@@ -57,8 +55,8 @@ export function useCancelableMutation<Variables, Progress>(
     const cancel = useCallback(() => {
         abortControllerRef.current?.abort();
         resetMutation();
-        setProgress(undefined);
-    }, [resetMutation]);
+        onCancel();
+    }, [onCancel, resetMutation]);
 
-    return { mutation, progress, cancel };
+    return { mutation, cancel };
 }

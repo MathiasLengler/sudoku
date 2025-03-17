@@ -23,6 +23,7 @@ import { spawnWorker } from "../state/worker/spawn";
 import { useCancelableMutation } from "../useCancelableMutation";
 import { getInput } from "./inputActions";
 import { withMeasure, measure } from "../utils/measure";
+import { useCallback, useRef, useState } from "react";
 
 // Snapshot accessors
 async function getRemoteWasmSudoku(snapshot: Snapshot): Promise<RemoteWasmSudoku> {
@@ -376,15 +377,24 @@ export function useGenerate() {
         [],
     );
 
-    const {
-        mutation,
-        progress: generateProgress,
-        cancel: cancelGenerate,
-    } = useCancelableMutation<DynamicGeneratorSettings, GeneratorProgress>(
-        async ({ variables: settings, abortPromise, onProgress }) => {
-            await generate(settings, abortPromise, onProgress);
-        },
-    );
+    const [generateProgress, setGenerateProgress] = useState<GeneratorProgress>();
+
+    const { mutation, cancel: cancelGenerate } = useCancelableMutation<DynamicGeneratorSettings, GeneratorProgress>({
+        cancelableMutationFn: useCallback(
+            async ({ variables: settings, abortPromise, onProgress }) => {
+                await generate(settings, abortPromise, onProgress);
+            },
+            [generate],
+        ),
+        onProgress: useCallback((progress) => {
+            console.debug("Generate progress:", progress);
+            setGenerateProgress(progress);
+        }, []),
+        onCancel: useCallback(() => {
+            console.info("Generate was canceled.");
+            setGenerateProgress(undefined);
+        }, []),
+    });
 
     return { generate: mutation.mutateAsync, generateProgress, cancelGenerate };
 }
@@ -416,27 +426,47 @@ export function useGenerateMultiShot() {
                         throw err;
                     }
 
-                    await new Promise((resolve) => setTimeout(resolve, 5000));
-
                     await updateSudoku({ set, wasmSudokuProxy });
                 });
             },
         [],
     );
 
-    const {
-        mutation,
-        progress: generateMultiShotProgress,
-        cancel: cancelGenerateMultiShot,
-    } = useCancelableMutation<DynamicMultiShotGeneratorSettings, MultiShotGeneratorProgress>(
-        async ({ variables: settings, abortPromise, onProgress }) => {
-            await generateImpl(settings, abortPromise, onProgress);
-        },
-    );
+    const [generateMultiShotProgress, setGenerateMultiShotProgress] = useState<MultiShotGeneratorProgress>();
+    const seenIterations = useRef<Set<number>>(null);
+    if (seenIterations.current === null) {
+        seenIterations.current = new Set();
+    }
 
-    console.log({ generateMultiShotProgress });
+    const { mutation, cancel: cancelGenerateMultiShot } = useCancelableMutation<
+        DynamicMultiShotGeneratorSettings,
+        MultiShotGeneratorProgress
+    >({
+        cancelableMutationFn: useCallback(
+            async ({ variables: settings, abortPromise, onProgress }) => {
+                await generateImpl(settings, abortPromise, onProgress);
+            },
+            [generateImpl],
+        ),
+        onProgress: useCallback((progress: MultiShotGeneratorProgress) => {
+            console.debug("MultiShot progress:", progress);
+            const { currentIteration } = progress;
+            seenIterations.current?.add(currentIteration);
+            setGenerateMultiShotProgress(progress);
+        }, []),
+        onCancel: useCallback(() => {
+            console.info("MultiShot generation was canceled.");
+            seenIterations.current = new Set();
+            setGenerateMultiShotProgress(undefined);
+        }, []),
+    });
 
-    return { generateMultiShot: mutation.mutateAsync, generateMultiShotProgress, cancelGenerateMultiShot };
+    return {
+        generateMultiShot: mutation.mutateAsync,
+        generateMultiShotProgress,
+        cancelGenerateMultiShot,
+        seenIterations: seenIterations.current,
+    };
 }
 
 export function useImportSudokuString() {

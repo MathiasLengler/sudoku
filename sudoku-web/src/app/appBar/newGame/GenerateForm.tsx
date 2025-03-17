@@ -66,29 +66,16 @@ function GenerateProgress({ progress, cellCount }: GenerateProgressProps) {
 
 type GenerateMultiShotProgressProps = {
     progress?: MultiShotGeneratorProgress;
+    seenIterations: Set<number>;
 };
-function GenerateMultiShotProgress({ progress }: GenerateMultiShotProgressProps) {
-    const seenIterations = useRef<Set<number>>(null);
-
-    // FIXME: missed updates
-    if (seenIterations.current === null) {
-        seenIterations.current = new Set();
-    }
-
-    useEffect(() => {
-        if (progress) {
-            const { currentIteration } = progress;
-            seenIterations.current?.add(currentIteration);
-        }
-    }, [progress]);
-
+function GenerateMultiShotProgress({ progress, seenIterations }: GenerateMultiShotProgressProps) {
     if (!progress) {
         return null;
     }
 
     const { totalIterations, currentEvaluatedGridMetric, bestEvaluatedGridMetric } = progress;
 
-    const seenIterationsCount = seenIterations.current.size;
+    const seenIterationsCount = seenIterations.size;
     const value = (seenIterationsCount / totalIterations) * 100;
 
     const gridTemplateColumns = `repeat(${Math.ceil(Math.sqrt(totalIterations))}, 1fr)`;
@@ -101,7 +88,8 @@ function GenerateMultiShotProgress({ progress }: GenerateMultiShotProgressProps)
                 }}
             >
                 {_.range(0, totalIterations).map((iteration) => (
-                    <input key={iteration} type="checkbox" checked={seenIterations.current?.has(iteration)} readOnly />
+                    // TODO: loading state using https://mui.com/material-ui/react-checkbox/#indeterminate
+                    <input key={iteration} type="checkbox" checked={seenIterations.has(iteration)} readOnly />
                 ))}
             </Box>
             <Box sx={{ width: 1, pb: 1 }}>
@@ -150,14 +138,16 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
 
     const { generate, generateProgress, cancelGenerate } = useGenerate();
 
+    const { generateMultiShot, generateMultiShotProgress, cancelGenerateMultiShot, seenIterations } =
+        useGenerateMultiShot();
+
     // Cancel generation on unmount/modal close
     useEffect(() => {
         return () => {
             cancelGenerate();
+            cancelGenerateMultiShot();
         };
-    }, [cancelGenerate]);
-
-    const { generateMultiShot, generateMultiShotProgress, cancelGenerateMultiShot } = useGenerateMultiShot();
+    }, [cancelGenerate, cancelGenerateMultiShot]);
 
     return (
         <>
@@ -317,7 +307,10 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                 <Stack direction="column" sx={{ width: 1 }}>
                     {isSubmitting &&
                         (multiShot ? (
-                            <GenerateMultiShotProgress progress={generateMultiShotProgress} />
+                            <GenerateMultiShotProgress
+                                progress={generateMultiShotProgress}
+                                seenIterations={seenIterations}
+                            />
                         ) : (
                             <GenerateProgress progress={generateProgress} cellCount={cellCount} />
                         ))}
