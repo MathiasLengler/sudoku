@@ -399,6 +399,8 @@ export function useGenerate() {
     return { generate: mutation.mutateAsync, generateProgress, cancelGenerate };
 }
 
+export type IterationToProgress = Map<number, MultiShotGeneratorProgress>;
+
 export function useGenerateMultiShot() {
     const generateImpl = useRecoilCallback(
         ({ snapshot, set }) =>
@@ -433,9 +435,10 @@ export function useGenerateMultiShot() {
     );
 
     const [generateMultiShotProgress, setGenerateMultiShotProgress] = useState<MultiShotGeneratorProgress>();
-    const seenIterations = useRef<Set<number>>(null);
-    if (seenIterations.current === null) {
-        seenIterations.current = new Set();
+
+    const iterationToProgress = useRef<IterationToProgress>(null);
+    if (iterationToProgress.current === null) {
+        iterationToProgress.current = new Map();
     }
 
     const { mutation, cancel: cancelGenerateMultiShot } = useCancelableMutation<
@@ -451,12 +454,12 @@ export function useGenerateMultiShot() {
         onProgress: useCallback((progress: MultiShotGeneratorProgress) => {
             console.debug("MultiShot progress:", progress);
             const { currentIteration } = progress;
-            seenIterations.current?.add(currentIteration);
+            iterationToProgress.current?.set(currentIteration, progress);
             setGenerateMultiShotProgress(progress);
         }, []),
         onCancel: useCallback(() => {
             console.info("MultiShot generation was canceled.");
-            seenIterations.current = new Set();
+            iterationToProgress.current = new Map();
             setGenerateMultiShotProgress(undefined);
         }, []),
     });
@@ -465,7 +468,7 @@ export function useGenerateMultiShot() {
         generateMultiShot: mutation.mutateAsync,
         generateMultiShotProgress,
         cancelGenerateMultiShot,
-        seenIterations: seenIterations.current,
+        iterationToProgress: iterationToProgress.current,
     };
 }
 

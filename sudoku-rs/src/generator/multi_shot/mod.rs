@@ -172,12 +172,46 @@ mod dynamic_settings {
 
 #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct MultiShotGeneratorProgress {
-    pub current_iteration: IterationsCounter,
-    pub total_iterations: IterationsCounter,
-    pub current_evaluated_grid_metric: EvaluatedGridMetric,
-    pub best_evaluated_grid_metric: EvaluatedGridMetric,
+#[serde(
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase",
+    tag = "kind"
+)]
+pub enum MultiShotGeneratorProgress {
+    Started {
+        current_iteration: IterationsCounter,
+        total_iterations: IterationsCounter,
+    },
+    Finished {
+        current_iteration: IterationsCounter,
+        total_iterations: IterationsCounter,
+        current_evaluated_grid_metric: EvaluatedGridMetric,
+        best_evaluated_grid_metric: EvaluatedGridMetric,
+    },
+}
+
+impl MultiShotGeneratorProgress {
+    pub fn current_iteration(&self) -> IterationsCounter {
+        match self {
+            MultiShotGeneratorProgress::Started {
+                current_iteration, ..
+            }
+            | MultiShotGeneratorProgress::Finished {
+                current_iteration, ..
+            } => *current_iteration,
+        }
+    }
+
+    pub fn total_iterations(&self) -> IterationsCounter {
+        match self {
+            MultiShotGeneratorProgress::Started {
+                total_iterations, ..
+            }
+            | MultiShotGeneratorProgress::Finished {
+                total_iterations, ..
+            } => *total_iterations,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -305,7 +339,7 @@ impl<Base: SudokuBase> MultiShotGenerator<Base> {
     }
 
     pub fn generate(&self) -> Result<EvaluatedGrid<Base>> {
-        self.generate_with_inspect_evaluated_grids(|_, _| Ok(()))
+        self.generate_with_inspect_evaluated_grids(|_| Ok(()), |_, _| Ok(()))
     }
 
     pub fn generate_with_progress(
@@ -329,7 +363,20 @@ impl<Base: SudokuBase> MultiShotGenerator<Base> {
                         GoalOptimization::Maximize => EvaluatedGridMetric::MIN,
                     });
 
+                let on_start_progress_sender: mpsc::Sender<MultiShotGeneratorProgress> =
+                    on_progress_sender.clone();
+
                 ret = Some(self.generate_with_inspect_evaluated_grids(
+                    |current_iteration| {
+                        let progress = MultiShotGeneratorProgress::Started {
+                            current_iteration,
+                            total_iterations: self.settings.iterations,
+                        };
+                        on_start_progress_sender
+                            .send(progress)
+                            .expect("Failed to send progress");
+                        Ok(())
+                    },
                     move |current_iteration, evaluated_grid| {
                         let best_evaluated_grid_metric = match self.settings.optimize {
                             GoalOptimization::Minimize => best_evaluated_grid_metric
@@ -340,7 +387,7 @@ impl<Base: SudokuBase> MultiShotGenerator<Base> {
                                 .max(evaluated_grid.evaluated_grid_metric),
                         };
 
-                        let progress = MultiShotGeneratorProgress {
+                        let progress = MultiShotGeneratorProgress::Finished {
                             current_iteration,
                             total_iterations: self.settings.iterations,
                             current_evaluated_grid_metric: evaluated_grid.evaluated_grid_metric,
@@ -366,11 +413,13 @@ impl<Base: SudokuBase> MultiShotGenerator<Base> {
 
     fn generate_with_inspect_evaluated_grids(
         &self,
+        inspect_iteration_start: impl Fn(IterationsCounter) -> Result<()> + Sync + Send,
         inspect_evaluated_grids: impl Fn(IterationsCounter, &EvaluatedGrid<Base>) -> Result<()>
             + Sync
             + Send,
     ) -> Result<EvaluatedGrid<Base>> {
         let process_iteration = |iteration| -> Result<_> {
+            inspect_iteration_start(iteration)?;
             let grid = self.generate_single(iteration)?;
             let evaluated_grid = self.evaluate_grid(grid)?;
             inspect_evaluated_grids(iteration, &evaluated_grid)?;
@@ -523,24 +572,54 @@ mod tests {
             })
             .unwrap();
 
+        assert_eq!(
+            progress_vec.len(),
+            usize::try_from(iterations * 2).unwrap(),
+            "Progress vector should have 2 * iterations elements, on start and finish"
+        );
+
         for progress in &progress_vec {
-            assert_eq!(progress.total_iterations, iterations);
+            assert_eq!(progress.total_iterations(), iterations);
             assert!(
-                progress.current_iteration < progress.total_iterations,
+                progress.current_iteration() < progress.total_iterations(),
                 "Progress current iteration should be less than total iterations count"
             );
-            assert!(progress.current_evaluated_grid_metric <= progress.best_evaluated_grid_metric);
+            if let MultiShotGeneratorProgress::Finished {
+                current_evaluated_grid_metric,
+                best_evaluated_grid_metric,
+                ..
+            } = progress
+            {
+                assert!(current_evaluated_grid_metric <= best_evaluated_grid_metric);
+            }
         }
         let best_progress = progress_vec
             .into_iter()
-            .max_by_key(|progress| progress.current_evaluated_grid_metric)
+            .max_by_key(|progress| {
+                if let MultiShotGeneratorProgress::Finished {
+                    current_evaluated_grid_metric,
+                    ..
+                } = *progress
+                {
+                    current_evaluated_grid_metric
+                } else {
+                    EvaluatedGridMetric::MIN
+                }
+            })
             .unwrap();
+
+        let MultiShotGeneratorProgress::Finished {
+            current_evaluated_grid_metric,
+            best_evaluated_grid_metric,
+            ..
+        } = best_progress
+        else {
+            panic!("Best progress should be a finished progress")
+        };
+        assert_eq!(current_evaluated_grid_metric, best_evaluated_grid_metric);
+
         assert_eq!(
-            best_progress.current_evaluated_grid_metric,
-            best_progress.best_evaluated_grid_metric,
-        );
-        assert_eq!(
-            best_progress.current_evaluated_grid_metric, evaluated_grid.evaluated_grid_metric,
+            current_evaluated_grid_metric, evaluated_grid.evaluated_grid_metric,
             "Best progress evaluated grid metric should be equal to the returned grid metric"
         );
     }

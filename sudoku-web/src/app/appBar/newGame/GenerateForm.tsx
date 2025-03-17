@@ -1,17 +1,18 @@
-import { Box, DialogContent, FormGroup, LinearProgress, Stack, Typography } from "@mui/material";
+import { Box, Checkbox, DialogContent, FormGroup, LinearProgress, Stack, Typography } from "@mui/material";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { SliderElement, SwitchElement, TextFieldElement, useForm } from "react-hook-form-mui";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import CasinoIcon from "@mui/icons-material/Casino";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import LoopIcon from "@mui/icons-material/Loop";
 import TabPanel from "@mui/lab/TabPanel";
 import * as _ from "lodash-es";
 import { useRecoilState } from "recoil";
 import type { DynamicGeneratorSettings, GeneratorProgress, MultiShotGeneratorProgress } from "../../../types";
-import { useGenerate, useGenerateMultiShot } from "../../actions/sudokuActions";
+import { useGenerate, useGenerateMultiShot, type IterationToProgress } from "../../actions/sudokuActions";
 import { Fieldset } from "../../components/Fieldset";
 import SelectStrategies from "../../components/formFragments/SelectStrategies";
 import MyIconButton from "../../components/MyIconButton";
@@ -22,16 +23,17 @@ import {
     BASE_MIN,
     baseToLabel,
     GENERATE_FORM_DEFAULT_VALUES,
-    type GenerateFormValues,
     generateFormValuesSchema,
     generateFormValuesState,
     iterationsIndexToIterations,
     MAX_ITERATIONS_INDEX,
     MIN_ITERATIONS_INDEX,
     SEED_MAX,
+    type GenerateFormValues,
 } from "../../state/forms/generate";
 import { baseToCellCount } from "../../utils/sudoku";
 import type { NewGameTabValue } from "./NewGameDialog";
+import assertNever from "assert-never";
 
 type GenerateProgressProps = {
     progress?: GeneratorProgress;
@@ -66,19 +68,26 @@ function GenerateProgress({ progress, cellCount }: GenerateProgressProps) {
 
 type GenerateMultiShotProgressProps = {
     progress?: MultiShotGeneratorProgress;
-    seenIterations: Set<number>;
+    iterationToProgress: IterationToProgress;
 };
-function GenerateMultiShotProgress({ progress, seenIterations }: GenerateMultiShotProgressProps) {
+function GenerateMultiShotProgress({ progress, iterationToProgress: seenIterations }: GenerateMultiShotProgressProps) {
     if (!progress) {
         return null;
     }
 
-    const { totalIterations, currentEvaluatedGridMetric, bestEvaluatedGridMetric } = progress;
+    const { totalIterations } = progress;
 
     const seenIterationsCount = seenIterations.size;
-    const value = (seenIterationsCount / totalIterations) * 100;
+    const processingPercentage = (seenIterationsCount / totalIterations) * 100;
+
+    const finishedIterationsCount = seenIterations
+        .values()
+        .filter((progress) => progress.kind === "finished")
+        .reduce((sum) => sum + 1, 0);
+    const finishedPercentage = (finishedIterationsCount / totalIterations) * 100;
 
     const gridTemplateColumns = `repeat(${Math.ceil(Math.sqrt(totalIterations))}, 1fr)`;
+
     return (
         <Box sx={{ display: "flex", alignItems: "center", pt: 2, flexDirection: "column" }}>
             <Box
@@ -87,13 +96,24 @@ function GenerateMultiShotProgress({ progress, seenIterations }: GenerateMultiSh
                     gridTemplateColumns: gridTemplateColumns,
                 }}
             >
-                {_.range(0, totalIterations).map((iteration) => (
-                    // TODO: loading state using https://mui.com/material-ui/react-checkbox/#indeterminate
-                    <input key={iteration} type="checkbox" checked={seenIterations.has(iteration)} readOnly />
-                ))}
+                {_.range(0, totalIterations).map((iteration) => {
+                    const progress = seenIterations.get(iteration);
+
+                    return (
+                        <Checkbox
+                            key={iteration}
+                            checked={progress?.kind === "finished"}
+                            indeterminate={progress?.kind === "started"}
+                            indeterminateIcon={<LoopIcon />}
+                            sx={{ p: 0, m: 0 }}
+                            size="small"
+                            readOnly
+                        />
+                    );
+                })}
             </Box>
             <Box sx={{ width: 1, pb: 1 }}>
-                <LinearProgress variant="determinate" value={value} />
+                <LinearProgress variant="buffer" value={finishedPercentage} valueBuffer={processingPercentage} />
             </Box>
             <Box sx={{ minWidth: 35 }}>
                 <Typography
@@ -101,9 +121,7 @@ function GenerateMultiShotProgress({ progress, seenIterations }: GenerateMultiSh
                     sx={{
                         color: "text.secondary",
                     }}
-                >{`Iteration ${seenIterationsCount}/${totalIterations} - current metric ${currentEvaluatedGridMetric}, best metric ${
-                    bestEvaluatedGridMetric
-                }`}</Typography>
+                >{`Iteration ${seenIterationsCount}/${totalIterations}`}</Typography>
             </Box>
         </Box>
     );
@@ -138,7 +156,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
 
     const { generate, generateProgress, cancelGenerate } = useGenerate();
 
-    const { generateMultiShot, generateMultiShotProgress, cancelGenerateMultiShot, seenIterations } =
+    const { generateMultiShot, generateMultiShotProgress, cancelGenerateMultiShot, iterationToProgress } =
         useGenerateMultiShot();
 
     // Cancel generation on unmount/modal close
@@ -309,7 +327,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                         (multiShot ? (
                             <GenerateMultiShotProgress
                                 progress={generateMultiShotProgress}
-                                seenIterations={seenIterations}
+                                iterationToProgress={iterationToProgress}
                             />
                         ) : (
                             <GenerateProgress progress={generateProgress} cellCount={cellCount} />
