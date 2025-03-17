@@ -31,6 +31,7 @@ export function RequestHintButton() {
             async (): Promise<OptionalHint> => {
                 const sudokuIsSolved = await snapshot.getPromise(sudokuIsSolvedState);
                 if (sudokuIsSolved) {
+                    // FIXME: Error: Not supported on server side
                     notifications.show("Sudoku solved", {
                         severity: "success",
                     });
