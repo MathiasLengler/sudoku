@@ -31,8 +31,8 @@ export function RequestHintButton() {
             async (): Promise<OptionalHint> => {
                 const sudokuIsSolved = await snapshot.getPromise(sudokuIsSolvedState);
                 if (sudokuIsSolved) {
-                    // FIXME: Error: Not supported on server side
                     notifications.show("Sudoku solved", {
+                        key: "solved",
                         severity: "success",
                     });
                     return;
@@ -49,7 +49,10 @@ export function RequestHintButton() {
                     return;
                 }
                 if (!tryStrategiesResult) {
-                    notifications.show("No strategy made progress", { severity: "warning" });
+                    notifications.show("No strategy made progress", {
+                        key: "no-progress",
+                        severity: "warning",
+                    });
                     return;
                 }
                 const [strategy, { deductions }] = tryStrategiesResult;

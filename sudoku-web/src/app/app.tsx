@@ -1,13 +1,13 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { NotificationsProvider } from "@toolpad/core/useNotifications";
 import { Suspense } from "react";
 import { RecoilRoot } from "recoil";
-import { MySnackbarProvider } from "./MySnackbarProvider";
 import { RecoilDebug } from "./RecoilDebug";
+import { SwManager } from "./SwManager";
 import { BasicErrorBoundary, ThemeErrorBoundary } from "./components/ErrorFallback";
 import { FullScreenSpinner } from "./components/FullScreenSpinner";
 import { Sudoku } from "./sudoku";
 import { MyTheme } from "./theme/myTheme";
-import { SwManager } from "./SwManager";
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -32,12 +32,12 @@ export const App = () => {
                 <QueryClientProvider client={queryClient}>
                     <MyTheme>
                         <ThemeErrorBoundary>
-                            <MySnackbarProvider>
+                            <NotificationsProvider slotProps={{ snackbar: { autoHideDuration: 3000 } }}>
                                 <Suspense fallback={<FullScreenSpinner />}>
                                     <Sudoku />
                                 </Suspense>
                                 <SwManager />
-                            </MySnackbarProvider>
+                            </NotificationsProvider>
                         </ThemeErrorBoundary>
                     </MyTheme>
                 </QueryClientProvider>
