@@ -1,4 +1,4 @@
-import type { GridFormatEnum, StrategyEnum } from "./types";
+import type { GoalOptimization, GridFormatEnum, GridMetric, StrategyEnum } from "./types";
 import { z } from "zod";
 import type { IsEqual } from "type-fest";
 import { assert } from "./typeUtils";
@@ -36,5 +36,23 @@ export const gridFormatSchema = z.enum([
     "BinaryFixedCandidatesLine",
 ]);
 assert<IsEqual<z.infer<typeof gridFormatSchema>, GridFormatEnum>>();
-
 export const ALL_GRID_FORMATS = gridFormatSchema.options;
+
+export const gridMetricSchema = z.enum([
+    "strategyTotalScore",
+    "strategyExecutionCount",
+    "strategyApplicationCount",
+    "strategyDeductionCount",
+    "strategyOptionsAverage",
+    "solveGraphAverageBranchingFactor",
+    "satStepCount",
+    "backtrackingStepCount",
+    "gridGivens",
+    "gridGivensValueCountDeviation",
+]);
+assert<IsEqual<z.infer<typeof gridMetricSchema>, GridMetric>>();
+export const ALL_GRID_METRICS = gridMetricSchema.options;
+
+export const goalOptimizationSchema = z.enum(["minimize", "maximize"]);
+assert<IsEqual<z.infer<typeof goalOptimizationSchema>, GoalOptimization>>();
+export const ALL_GOAL_OPTIMIZATIONS = goalOptimizationSchema.options;

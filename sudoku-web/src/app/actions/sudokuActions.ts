@@ -1,7 +1,7 @@
 import assertNever from "assert-never";
 import * as Comlink from "comlink";
 import * as _ from "lodash-es";
-import type { SelectorCallbackInterface, Snapshot } from "recoil";
+import type { CallbackInterface, Snapshot } from "recoil";
 import { useRecoilCallback } from "recoil";
 import type {
     DynamicGeneratorSettings,
@@ -22,6 +22,7 @@ import { remoteWasmSudokuState, workerState, type RemoteWasmSudoku } from "../st
 import { spawnWorker } from "../state/worker/spawn";
 import { useCancelableMutation } from "../useCancelableMutation";
 import { getInput } from "./inputActions";
+import { withMeasure, measure } from "../utils/measure";
 
 // Snapshot accessors
 async function getRemoteWasmSudoku(snapshot: Snapshot): Promise<RemoteWasmSudoku> {
@@ -32,7 +33,7 @@ async function getRemoteWasmSudoku(snapshot: Snapshot): Promise<RemoteWasmSudoku
 async function isFixedValueCell({
     snapshot,
     gridPosition,
-}: Pick<SelectorCallbackInterface, "snapshot"> & { gridPosition: DynamicPosition }) {
+}: Pick<CallbackInterface, "snapshot"> & { gridPosition: DynamicPosition }) {
     const cell = await snapshot.getPromise(cellAtGridPositionState(gridPosition));
 
     if (cell.kind === "value" && cell.fixed) {
@@ -44,7 +45,7 @@ async function isFixedValueCell({
     }
 }
 
-async function isInvalidValue({ snapshot, value }: Pick<SelectorCallbackInterface, "snapshot"> & { value: number }) {
+async function isInvalidValue({ snapshot, value }: Pick<CallbackInterface, "snapshot"> & { value: number }) {
     const sideLength = await snapshot.getPromise(sudokuSideLengthState);
 
     if (!_.inRange(value, 0, sideLength + 1)) {
@@ -58,7 +59,7 @@ async function isInvalidValue({ snapshot, value }: Pick<SelectorCallbackInterfac
 async function isInvalidGridPosition({
     snapshot,
     gridPosition,
-}: Pick<SelectorCallbackInterface, "snapshot"> & { gridPosition: DynamicPosition }) {
+}: Pick<CallbackInterface, "snapshot"> & { gridPosition: DynamicPosition }) {
     const sideLength = await snapshot.getPromise(sudokuSideLengthState);
 
     if (!_.inRange(gridPosition.row, 0, sideLength) || !_.inRange(gridPosition.column, 0, sideLength)) {
@@ -77,7 +78,7 @@ async function isInvalidGridPosition({
 export async function updateSudoku({
     set,
     wasmSudokuProxy,
-}: Pick<SelectorCallbackInterface, "set"> & { wasmSudokuProxy: RemoteWasmSudoku }) {
+}: Pick<CallbackInterface, "set"> & { wasmSudokuProxy: RemoteWasmSudoku }) {
     const newSudoku = await wasmSudokuProxy.getTransportSudoku();
     set(sudokuState, newSudoku);
 }
@@ -87,7 +88,7 @@ async function applyValueAtGridPosition({
     set,
     value,
     gridPosition,
-}: Pick<SelectorCallbackInterface, "snapshot" | "set"> & {
+}: Pick<CallbackInterface, "snapshot" | "set"> & {
     value: number;
     gridPosition: DynamicPosition;
 }) {
@@ -328,74 +329,114 @@ export function useRedo() {
     );
 }
 
+const rebootWorker = withMeasure(
+    { name: "rebootWorker" },
+    async ({ snapshot, set }: Pick<CallbackInterface, "snapshot" | "set">) => {
+        console.info("Rebooting worker");
+        const currentWorker = await snapshot.getPromise(workerState);
+        console.debug("Terminating current worker");
+        currentWorker.terminate();
+        const newWorker = await spawnWorker();
+        set(workerState, newWorker);
+        console.info("Worker rebooted");
+    },
+);
+
 // TODO: reset hint
 export function useGenerate() {
-    const generateImpl = useRecoilCallback(
+    const generate = useRecoilCallback(
         ({ snapshot, set }) =>
             async (
                 settings: DynamicGeneratorSettings,
                 abortPromise: Promise<never>,
                 onProgress: (progress: GeneratorProgress) => void,
             ) => {
-                const wasmSudokuProxy = await getRemoteWasmSudoku(snapshot);
+                return await measure({ name: "generate", detail: { settings } }, async () => {
+                    const wasmSudokuProxy = await getRemoteWasmSudoku(snapshot);
 
-                console.time("generate");
-                try {
-                    await Promise.race([abortPromise, wasmSudokuProxy.generate(settings, Comlink.proxy(onProgress))]);
-                } catch (err) {
-                    if (!(err instanceof DOMException && err.name === "AbortError")) {
+                    try {
+                        await Promise.race([
+                            abortPromise,
+                            wasmSudokuProxy.generate(settings, Comlink.proxy(onProgress)),
+                        ]);
+                    } catch (err) {
+                        if (!(err instanceof DOMException && err.name === "AbortError")) {
+                            throw err;
+                        }
+                        console.info("generate was aborted.");
+
+                        await rebootWorker({ snapshot, set });
+
                         throw err;
                     }
-                    // The sudoku generation was aborted.
-                    console.debug("Terminating current worker");
-                    const currentWorker = await snapshot.getPromise(workerState);
-                    currentWorker.terminate();
-                    console.debug("Spawning new worker");
-                    const newWorker = await spawnWorker();
-                    set(workerState, newWorker);
 
-                    console.info("Generation aborted.");
-                    throw err;
-                } finally {
-                    console.timeEnd("generate");
-                }
-
-                await updateSudoku({ set, wasmSudokuProxy });
+                    await updateSudoku({ set, wasmSudokuProxy });
+                });
             },
         [],
     );
 
     const {
         mutation,
-        progress,
+        progress: generateProgress,
         cancel: cancelGenerate,
     } = useCancelableMutation<DynamicGeneratorSettings, GeneratorProgress>(
+        async ({ variables: settings, abortPromise, onProgress }) => {
+            await generate(settings, abortPromise, onProgress);
+        },
+    );
+
+    return { generate: mutation.mutateAsync, generateProgress, cancelGenerate };
+}
+
+export function useGenerateMultiShot() {
+    const generateImpl = useRecoilCallback(
+        ({ snapshot, set }) =>
+            async (
+                settings: DynamicMultiShotGeneratorSettings,
+                abortPromise: Promise<never>,
+                onProgress: (progress: MultiShotGeneratorProgress) => void,
+            ) => {
+                return await measure({ name: "generateMultiShot", detail: { settings } }, async () => {
+                    const wasmSudokuProxy = await getRemoteWasmSudoku(snapshot);
+
+                    try {
+                        await Promise.race([
+                            abortPromise,
+                            wasmSudokuProxy.generateMultiShot(settings, Comlink.proxy(onProgress)),
+                        ]);
+                    } catch (err) {
+                        if (!(err instanceof DOMException && err.name === "AbortError")) {
+                            throw err;
+                        }
+                        console.info("generateMultiShot was aborted.");
+
+                        await rebootWorker({ snapshot, set });
+
+                        throw err;
+                    }
+
+                    await new Promise((resolve) => setTimeout(resolve, 5000));
+
+                    await updateSudoku({ set, wasmSudokuProxy });
+                });
+            },
+        [],
+    );
+
+    const {
+        mutation,
+        progress: generateMultiShotProgress,
+        cancel: cancelGenerateMultiShot,
+    } = useCancelableMutation<DynamicMultiShotGeneratorSettings, MultiShotGeneratorProgress>(
         async ({ variables: settings, abortPromise, onProgress }) => {
             await generateImpl(settings, abortPromise, onProgress);
         },
     );
 
-    return { generate: mutation.mutateAsync, progress, cancelGenerate };
-}
+    console.log({ generateMultiShotProgress });
 
-// TODO: port/abstract remaining logic from useGenerate
-export function useMultiShotGenerate() {
-    const generateImpl = useRecoilCallback(
-        ({ snapshot, set }) =>
-            async (
-                settings: DynamicMultiShotGeneratorSettings,
-                onProgress: (progress: MultiShotGeneratorProgress) => void,
-            ) => {
-                const wasmSudokuProxy = await getRemoteWasmSudoku(snapshot);
-
-                await wasmSudokuProxy.generate_multi_shot(settings, Comlink.proxy(onProgress));
-
-                await updateSudoku({ set, wasmSudokuProxy });
-            },
-        [],
-    );
-
-    return generateImpl;
+    return { generateMultiShot: mutation.mutateAsync, generateMultiShotProgress, cancelGenerateMultiShot };
 }
 
 export function useImportSudokuString() {

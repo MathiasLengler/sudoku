@@ -36,6 +36,15 @@ export function useCancelableMutation<Variables, Progress>(
                 signal,
                 abortPromise,
                 onProgress: (progress: Progress) => {
+                    // FIXME: we are missing progress updates, since react fuses the state updates
+                    //  GenerateMultiShotProgress tries to keep track of the finished iterations, but misses them.
+                    // Options:
+                    // - track progress in atom
+                    // - FIFO queue
+                    // - store in array (slow/memory intensive)
+                    // - pass in callback and plumb it through
+
+                    console.debug("Progress:", progress);
                     if (!signal.aborted) {
                         setProgress(progress);
                     }

@@ -307,6 +307,7 @@ impl WasmSudoku {
         Ok(())
     }
 
+    #[wasm_bindgen(js_name = generateMultiShot)]
     pub fn generate_multi_shot(
         &mut self,
         multi_shot_generator_settings: IDynamicMultiShotGeneratorSettings,
