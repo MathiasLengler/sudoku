@@ -399,7 +399,11 @@ export function useGenerate() {
     return { generate: mutation.mutateAsync, generateProgress, cancelGenerate };
 }
 
-export type IterationToProgress = Map<number, MultiShotGeneratorProgress>;
+export type TrackedMultiShotGeneratorProgress = {
+    latestProgress: MultiShotGeneratorProgress;
+    seenIterationsCount: number;
+    finishedIterationsCount: number;
+};
 
 export function useGenerateMultiShot() {
     const generateImpl = useRecoilCallback(
@@ -434,12 +438,8 @@ export function useGenerateMultiShot() {
         [],
     );
 
-    const [generateMultiShotProgress, setGenerateMultiShotProgress] = useState<MultiShotGeneratorProgress>();
-
-    const iterationToProgress = useRef<IterationToProgress>(null);
-    if (iterationToProgress.current === null) {
-        iterationToProgress.current = new Map();
-    }
+    const [trackedMultiShotGeneratorProgress, setTrackedMultiShotGeneratorProgress] =
+        useState<TrackedMultiShotGeneratorProgress>();
 
     const { mutation, cancel: cancelGenerateMultiShot } = useCancelableMutation<
         DynamicMultiShotGeneratorSettings,
@@ -453,22 +453,34 @@ export function useGenerateMultiShot() {
         ),
         onProgress: useCallback((progress: MultiShotGeneratorProgress) => {
             console.debug("MultiShot progress:", progress);
-            const { currentIteration } = progress;
-            iterationToProgress.current?.set(currentIteration, progress);
-            setGenerateMultiShotProgress(progress);
+            let isFinished;
+            if (progress.kind === "started") {
+                isFinished = false;
+            } else if (progress.kind === "finished") {
+                isFinished = true;
+            } else {
+                assertNever(progress);
+            }
+            setTrackedMultiShotGeneratorProgress((prev) => {
+                const prevSeenIterationsCount = prev?.seenIterationsCount ?? 0;
+                const prevFinishedIterationsCount = prev?.finishedIterationsCount ?? 0;
+                return {
+                    latestProgress: progress,
+                    seenIterationsCount: isFinished ? prevSeenIterationsCount : prevSeenIterationsCount + 1,
+                    finishedIterationsCount: isFinished ? prevFinishedIterationsCount + 1 : prevFinishedIterationsCount,
+                };
+            });
         }, []),
         onCancel: useCallback(() => {
             console.info("MultiShot generation was canceled.");
-            iterationToProgress.current = new Map();
-            setGenerateMultiShotProgress(undefined);
+            setTrackedMultiShotGeneratorProgress(undefined);
         }, []),
     });
 
     return {
         generateMultiShot: mutation.mutateAsync,
-        generateMultiShotProgress,
+        trackedMultiShotGeneratorProgress,
         cancelGenerateMultiShot,
-        iterationToProgress: iterationToProgress.current,
     };
 }
 

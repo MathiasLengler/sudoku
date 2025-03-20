@@ -23,7 +23,7 @@ export function baseToLabel(base: number): string {
 export const SEED_MAX = Number.MAX_SAFE_INTEGER;
 
 export const MIN_ITERATIONS_INDEX = 0;
-export const MAX_ITERATIONS_INDEX = 10;
+export const MAX_ITERATIONS_INDEX = 16;
 
 export function iterationsIndexToIterations(iterationsIndex: number): number {
     return 2 ** iterationsIndex;
