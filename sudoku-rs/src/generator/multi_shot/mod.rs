@@ -339,7 +339,7 @@ impl<Base: SudokuBase> MultiShotGenerator<Base> {
     }
 
     pub fn generate(&self) -> Result<EvaluatedGrid<Base>> {
-        self.generate_with_inspect_evaluated_grids(|_| Ok(()), |_, _| Ok(()))
+        self.generate_with_inspect(|_| Ok(()), |_, _| Ok(()))
     }
 
     pub fn generate_with_progress(
@@ -366,7 +366,7 @@ impl<Base: SudokuBase> MultiShotGenerator<Base> {
                 let on_start_progress_sender: mpsc::Sender<MultiShotGeneratorProgress> =
                     on_progress_sender.clone();
 
-                ret = Some(self.generate_with_inspect_evaluated_grids(
+                ret = Some(self.generate_with_inspect(
                     |current_iteration| {
                         let progress = MultiShotGeneratorProgress::Started {
                             current_iteration,
@@ -411,7 +411,7 @@ impl<Base: SudokuBase> MultiShotGenerator<Base> {
         ret.expect("Spawned thread to set a return value")
     }
 
-    fn generate_with_inspect_evaluated_grids(
+    fn generate_with_inspect(
         &self,
         inspect_iteration_start: impl Fn(IterationsCounter) -> Result<()> + Sync + Send,
         inspect_evaluated_grids: impl Fn(IterationsCounter, &EvaluatedGrid<Base>) -> Result<()>
