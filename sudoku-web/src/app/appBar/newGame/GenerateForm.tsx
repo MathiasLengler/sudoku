@@ -33,34 +33,47 @@ import {
 import { baseToCellCount } from "../../utils/sudoku";
 import type { NewGameTabValue } from "./NewGameDialog";
 
+function GenerateProgressLayout({
+    linearProgress,
+    description,
+}: {
+    linearProgress: React.ReactNode;
+    description: string;
+}) {
+    return (
+        <Box sx={{ display: "flex", alignItems: "center", pt: 2, flexDirection: "column" }}>
+            <Box sx={{ width: 1, pb: 1 }}>{linearProgress}</Box>
+            <Typography
+                variant="body2"
+                sx={{
+                    color: "text.secondary",
+                }}
+            >
+                {description}
+            </Typography>
+        </Box>
+    );
+}
+
 type GenerateProgressProps = {
     progress?: GeneratorProgress;
     cellCount: number;
 };
 function GenerateProgress({ progress, cellCount }: GenerateProgressProps) {
     if (!progress) {
-        return null;
+        return <GenerateProgressLayout linearProgress={<LinearProgress />} description={"Generating solution"} />;
     }
 
     const { pruningPositionCount, pruningPositionIndex, deletedCount } = progress;
     const value = (pruningPositionIndex / pruningPositionCount) * 100;
 
     return (
-        <Box sx={{ display: "flex", alignItems: "center", pt: 2, flexDirection: "column" }}>
-            <Box sx={{ width: 1, pb: 1 }}>
-                <LinearProgress variant="determinate" value={value} />
-            </Box>
-            <Box sx={{ minWidth: 35 }}>
-                <Typography
-                    variant="body2"
-                    sx={{
-                        color: "text.secondary",
-                    }}
-                >{`Cell ${pruningPositionIndex}/${pruningPositionCount} - deleted ${deletedCount}, remaining ${
-                    cellCount - deletedCount
-                }`}</Typography>
-            </Box>
-        </Box>
+        <GenerateProgressLayout
+            linearProgress={<LinearProgress variant="determinate" value={value} />}
+            description={`Cell ${pruningPositionIndex}/${pruningPositionCount} - deleted ${deletedCount}, remaining ${
+                cellCount - deletedCount
+            }`}
+        />
     );
 }
 
@@ -69,7 +82,12 @@ type GenerateMultiShotProgressProps = {
 };
 function GenerateMultiShotProgress({ trackedMultiShotGeneratorProgress }: GenerateMultiShotProgressProps) {
     if (!trackedMultiShotGeneratorProgress) {
-        return null;
+        return (
+            <GenerateProgressLayout
+                linearProgress={<LinearProgress />}
+                description={"Initializing multi-shot generator"}
+            />
+        );
     }
 
     const { totalIterations } = trackedMultiShotGeneratorProgress.latestProgress;
@@ -83,19 +101,12 @@ function GenerateMultiShotProgress({ trackedMultiShotGeneratorProgress }: Genera
     const inProgressCount = seenIterationsCount - finishedIterationsCount;
 
     return (
-        <Box sx={{ display: "flex", alignItems: "center", pt: 2, flexDirection: "column" }}>
-            <Box sx={{ width: 1, pb: 1 }}>
+        <GenerateProgressLayout
+            linearProgress={
                 <LinearProgress variant="buffer" value={finishedPercentage} valueBuffer={processingPercentage} />
-            </Box>
-            <Box sx={{ minWidth: 35 }}>
-                <Typography
-                    variant="body2"
-                    sx={{
-                        color: "text.secondary",
-                    }}
-                >{`finished ${finishedIterationsCount}/${totalIterations}, in progress: ${inProgressCount}`}</Typography>
-            </Box>
-        </Box>
+            }
+            description={`Iteration ${finishedIterationsCount}/${totalIterations}, in progress: ${inProgressCount}`}
+        />
     );
 }
 
