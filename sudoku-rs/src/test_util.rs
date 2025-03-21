@@ -10,26 +10,65 @@ pub(crate) fn init_test_logger() {
 #[cfg(not(feature = "log"))]
 pub(crate) fn init_logger() {}
 
-macro_rules! for_all_bases {
-    ($using_base:expr) => {
-        use $crate::base::consts::*;
-
-        {
-            type Base = Base2;
+macro_rules! test_max_base3 {
+    ($using_base:block) => {
+        #[test]
+        fn test_base2() {
+            type Base = $crate::base::consts::Base2;
             $using_base
         }
-        {
-            type Base = Base3;
-            $using_base
-        }
-        {
-            type Base = Base4;
-            $using_base
-        }
-        {
-            type Base = Base5;
+        #[test]
+        fn test_base3() {
+            type Base = $crate::base::consts::Base3;
             $using_base
         }
     };
 }
-pub(crate) use for_all_bases;
+
+macro_rules! test_max_base4 {
+    ($using_base:block) => {
+        #[test]
+        fn test_base2() {
+            type Base = $crate::base::consts::Base2;
+            $using_base
+        }
+        #[test]
+        fn test_base3() {
+            type Base = $crate::base::consts::Base3;
+            $using_base
+        }
+        #[test]
+        fn test_base4() {
+            type Base = $crate::base::consts::Base4;
+            $using_base
+        }
+    };
+}
+
+macro_rules! test_all_bases {
+    ($using_base:block) => {
+        #[test]
+        fn test_base2() {
+            type Base = $crate::base::consts::Base2;
+            $using_base
+        }
+        #[test]
+        fn test_base3() {
+            type Base = $crate::base::consts::Base3;
+            $using_base
+        }
+        #[test]
+        fn test_base4() {
+            type Base = $crate::base::consts::Base4;
+            $using_base
+        }
+        #[test]
+        fn test_base5() {
+            type Base = $crate::base::consts::Base5;
+            $using_base
+        }
+    };
+}
+pub(crate) use test_all_bases;
+pub(crate) use test_max_base3;
+pub(crate) use test_max_base4;

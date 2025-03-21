@@ -338,7 +338,7 @@ impl<Base: SudokuBase> Candidates<Base> {
 
     /// Returns an iterator over all combinations of `k` candidates contained in this `Candidates`.
     pub fn combinations(self, k: Value<Base>) -> CandidatesCombinationsIter<Base> {
-        CandidatesCombinationsIter::new(k, self)
+        CandidatesCombinationsIter::new(self, k)
     }
 }
 
@@ -818,7 +818,7 @@ mod tests {
     }
 
     mod getters {
-        use std::{collections::BTreeSet, iter};
+        use std::collections::BTreeSet;
 
         use super::*;
 
@@ -1054,92 +1054,16 @@ mod tests {
 
         #[test]
         fn test_combinations() {
-            fn assert_set_equals<Base: SudokuBase>(
-                a: impl IntoIterator<Item = Candidates<Base>>,
-                b: impl IntoIterator<Item = Candidates<Base>>,
-            ) {
-                let a: BTreeSet<_> = a.into_iter().collect();
-                let b: BTreeSet<_> = b.into_iter().collect();
-                assert_eq!(a, b);
-            }
-
-            fn combinations_itertools<Base: SudokuBase>(
-                candidates: Candidates<Base>,
-                k: Value<Base>,
-            ) -> impl Iterator<Item = Candidates<Base>> {
-                use itertools::Itertools;
-
-                candidates
-                    .iter()
-                    .combinations(k.get().into())
-                    .map(|combination| combination.into())
-            }
-
-            let empty: Candidates<Base2> = Candidates::new();
-            let one: Candidates<Base2> = Candidates::with_single(1.try_into().unwrap());
-            let one_two_three: Candidates<Base2> = vec![1, 2, 3].try_into().unwrap();
-            let all: Candidates<Base2> = Candidates::all();
-            let all_base3: Candidates<Base3> = Candidates::all();
-
-            for k in Value::all() {
-                // empty candidates never produce any combinations
-                itertools::assert_equal(empty.combinations(k), iter::empty());
-
-                if k.get() == 1 {
-                    // a single candidate only produces a single combination if k == 1
-                    itertools::assert_equal(one.combinations(k), iter::once(one));
-                } else {
-                    // a single candidate never produces any combinations if k > 1
-                    itertools::assert_equal(one.combinations(k), iter::empty());
-                }
-            }
-
-            assert_set_equals(
-                all.combinations(1.try_into().unwrap()),
-                all.iter().map(Candidates::with_single),
+            let candidates = Candidates::<Base2>::all();
+            let value = 1.try_into().unwrap();
+            assert_eq!(
+                candidates.combinations(value),
+                CandidatesCombinationsIter::<Base2>::new(candidates, value)
             );
-
-            assert_set_equals(
-                one_two_three.combinations(2.try_into().unwrap()),
-                vec![
-                    vec![1, 2].try_into().unwrap(),
-                    vec![1, 3].try_into().unwrap(),
-                    vec![2, 3].try_into().unwrap(),
-                ],
-            );
-            assert_set_equals(
-                one_two_three.combinations(3.try_into().unwrap()),
-                iter::once(one_two_three),
-            );
-
-            for k in Value::all() {
-                assert_set_equals(empty.combinations(k), combinations_itertools(empty, k));
-                assert_set_equals(one.combinations(k), combinations_itertools(one, k));
-                assert_set_equals(
-                    one_two_three.combinations(k),
-                    combinations_itertools(one_two_three, k),
-                );
-                assert_set_equals(all.combinations(k), combinations_itertools(all, k));
-            }
-            for k in Value::all() {
-                assert_set_equals(
-                    all_base3.combinations(k),
-                    combinations_itertools(all_base3, k),
-                );
-            }
-        }
-
-        #[test]
-        fn test_combinations_debug() {
-            dbg!(Candidates::<Base3>::all()
-                .combinations(3.try_into().unwrap())
-                .map(|candidates| candidates.to_vec_u8())
-                .collect::<Vec<_>>());
         }
     }
 
     mod internal_helpers {
-        use crate::test_util::for_all_bases;
 
         use super::*;
 
@@ -1158,8 +1082,10 @@ mod tests {
             );
         }
 
-        #[test]
-        fn test_all_less_than_or_equal_candidates_mask() {
+        mod all_less_than_or_equal_candidates_mask {
+            use super::*;
+            use crate::test_util::test_all_bases;
+
             fn assert_all_less_than_or_equal_candidates_mask<Base: SudokuBase>(
                 candidate: Coordinate<Base>,
             ) {
@@ -1173,11 +1099,11 @@ mod tests {
                 );
             }
 
-            for_all_bases! {
+            test_all_bases!({
                 for candidate in Coordinate::<Base>::all() {
                     assert_all_less_than_or_equal_candidates_mask(candidate);
                 }
-            }
+            });
         }
 
         #[test]

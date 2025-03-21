@@ -1,8 +1,10 @@
 use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
 use crate::cell::Value;
-use num::traits::{ConstOne, WrappingAdd, WrappingNeg, WrappingShr, WrappingSub};
-use num::{PrimInt, Zero};
+use num::traits::{
+    CheckedShl, ConstOne, ConstZero, PrimInt, WrappingAdd, WrappingNeg, WrappingShr, WrappingSub,
+    Zero,
+};
 
 // Reference: https://graphics.stanford.edu/%7Eseander/bithacks.html#NextBitPermutation
 fn next_permutation<
@@ -21,7 +23,7 @@ fn next_permutation<
     )
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 struct FirstCandidatesCombinationsIter<Base: SudokuBase> {
     current: Candidates<Base>,
     // `None` if iterator is finished.
@@ -60,7 +62,17 @@ impl<Base: SudokuBase> Iterator for FirstCandidatesCombinationsIter<Base> {
         // FIXME: the question mark is unreachable.
         let next = next_permutation(current.integral())?;
 
-        if (next & (Base::CandidatesIntegral::ONE << n.get())).is_zero() {
+        // FIXME: test failure: base4::test_1_16
+        //  all candidates are set and the is no overflow bit available in CandidatesIntegral (u16).
+        //  Potential special case like in `Candidates::all_less_than_or_equal_candidates_mask`
+        //  Is it possible to fix this bug and reduce the number of branches?
+        //  We have way better test coverage than before.
+        let mask = Base::CandidatesIntegral::ONE
+            .checked_shl(n.get().into())
+            .unwrap_or(Base::CandidatesIntegral::ZERO);
+        // dbg!((&self, next, mask));
+
+        if (next & (mask)).is_zero() {
             let next = Candidates::with_integral_unchecked(next);
             self.current = next;
             Some(current)
@@ -72,14 +84,14 @@ impl<Base: SudokuBase> Iterator for FirstCandidatesCombinationsIter<Base> {
 }
 
 /// An iterator over all combinations of `k` candidates contained in a given `Candidates`.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CandidatesCombinationsIter<Base: SudokuBase> {
     candidates: Candidates<Base>,
     iter_first: FirstCandidatesCombinationsIter<Base>,
 }
 
 impl<Base: SudokuBase> CandidatesCombinationsIter<Base> {
-    pub(super) fn new(k: Value<Base>, candidates: Candidates<Base>) -> Self {
+    pub(super) fn new(candidates: Candidates<Base>, k: Value<Base>) -> Self {
         let Some(n) = Value::new(candidates.count()).unwrap() else {
             return Self {
                 candidates,
@@ -121,21 +133,264 @@ mod tests {
 
     #[test]
     fn test_next_permutation() {
+        #[rustfmt::skip]
         let expected = vec![
-            0, 2, 4, 5, 8, 6, 9, 11, 16, 10, 12, 13, 17, 14, 19, 23, 32, 18, 20, 21, 24, 22, 25,
-            27, 33, 26, 28, 29, 35, 30, 39, 47, 64, 34, 36, 37, 40, 38, 41, 43, 48, 42, 44, 45, 49,
-            46, 51, 55, 65, 50, 52, 53, 56, 54, 57, 59, 67, 58, 60, 61, 71, 62, 79, 95, 128, 66,
-            68, 69, 72, 70, 73, 75, 80, 74, 76, 77, 81, 78, 83, 87, 96, 82, 84, 85, 88, 86, 89, 91,
-            97, 90, 92, 93, 99, 94, 103, 111, 129, 98, 100, 101, 104, 102, 105, 107, 112, 106, 108,
-            109, 113, 110, 115, 119, 131, 114, 116, 117, 120, 118, 121, 123, 135, 122, 124, 125,
-            143, 126, 159, 191, 0, 130, 132, 133, 136, 134, 137, 139, 144, 138, 140, 141, 145, 142,
-            147, 151, 160, 146, 148, 149, 152, 150, 153, 155, 161, 154, 156, 157, 163, 158, 167,
-            175, 192, 162, 164, 165, 168, 166, 169, 171, 176, 170, 172, 173, 177, 174, 179, 183,
-            193, 178, 180, 181, 184, 182, 185, 187, 195, 186, 188, 189, 199, 190, 207, 223, 0, 194,
-            196, 197, 200, 198, 201, 203, 208, 202, 204, 205, 209, 206, 211, 215, 224, 210, 212,
-            213, 216, 214, 217, 219, 225, 218, 220, 221, 227, 222, 231, 239, 0, 226, 228, 229, 232,
-            230, 233, 235, 240, 234, 236, 237, 241, 238, 243, 247, 0, 242, 244, 245, 248, 246, 249,
-            251, 0, 250, 252, 253, 0, 254, 0, 0,
+            0b0000_0000,
+            0b0000_0010,
+            0b0000_0100,
+            0b0000_0101,
+            0b0000_1000,
+            0b0000_0110,
+            0b0000_1001,
+            0b0000_1011,
+            0b0001_0000,
+            0b0000_1010,
+            0b0000_1100,
+            0b0000_1101,
+            0b0001_0001,
+            0b0000_1110,
+            0b0001_0011,
+            0b0001_0111,
+            0b0010_0000,
+            0b0001_0010,
+            0b0001_0100,
+            0b0001_0101,
+            0b0001_1000,
+            0b0001_0110,
+            0b0001_1001,
+            0b0001_1011,
+            0b0010_0001,
+            0b0001_1010,
+            0b0001_1100,
+            0b0001_1101,
+            0b0010_0011,
+            0b0001_1110,
+            0b0010_0111,
+            0b0010_1111,
+            0b0100_0000,
+            0b0010_0010,
+            0b0010_0100,
+            0b0010_0101,
+            0b0010_1000,
+            0b0010_0110,
+            0b0010_1001,
+            0b0010_1011,
+            0b0011_0000,
+            0b0010_1010,
+            0b0010_1100,
+            0b0010_1101,
+            0b0011_0001,
+            0b0010_1110,
+            0b0011_0011,
+            0b0011_0111,
+            0b0100_0001,
+            0b0011_0010,
+            0b0011_0100,
+            0b0011_0101,
+            0b0011_1000,
+            0b0011_0110,
+            0b0011_1001,
+            0b0011_1011,
+            0b0100_0011,
+            0b0011_1010,
+            0b0011_1100,
+            0b0011_1101,
+            0b0100_0111,
+            0b0011_1110,
+            0b0100_1111,
+            0b0101_1111,
+            0b1000_0000,
+            0b0100_0010,
+            0b0100_0100,
+            0b0100_0101,
+            0b0100_1000,
+            0b0100_0110,
+            0b0100_1001,
+            0b0100_1011,
+            0b0101_0000,
+            0b0100_1010,
+            0b0100_1100,
+            0b0100_1101,
+            0b0101_0001,
+            0b0100_1110,
+            0b0101_0011,
+            0b0101_0111,
+            0b0110_0000,
+            0b0101_0010,
+            0b0101_0100,
+            0b0101_0101,
+            0b0101_1000,
+            0b0101_0110,
+            0b0101_1001,
+            0b0101_1011,
+            0b0110_0001,
+            0b0101_1010,
+            0b0101_1100,
+            0b0101_1101,
+            0b0110_0011,
+            0b0101_1110,
+            0b0110_0111,
+            0b0110_1111,
+            0b1000_0001,
+            0b0110_0010,
+            0b0110_0100,
+            0b0110_0101,
+            0b0110_1000,
+            0b0110_0110,
+            0b0110_1001,
+            0b0110_1011,
+            0b0111_0000,
+            0b0110_1010,
+            0b0110_1100,
+            0b0110_1101,
+            0b0111_0001,
+            0b0110_1110,
+            0b0111_0011,
+            0b0111_0111,
+            0b1000_0011,
+            0b0111_0010,
+            0b0111_0100,
+            0b0111_0101,
+            0b0111_1000,
+            0b0111_0110,
+            0b0111_1001,
+            0b0111_1011,
+            0b1000_0111,
+            0b0111_1010,
+            0b0111_1100,
+            0b0111_1101,
+            0b1000_1111,
+            0b0111_1110,
+            0b1001_1111,
+            0b1011_1111,
+            0b0000_0000,
+            0b1000_0010,
+            0b1000_0100,
+            0b1000_0101,
+            0b1000_1000,
+            0b1000_0110,
+            0b1000_1001,
+            0b1000_1011,
+            0b1001_0000,
+            0b1000_1010,
+            0b1000_1100,
+            0b1000_1101,
+            0b1001_0001,
+            0b1000_1110,
+            0b1001_0011,
+            0b1001_0111,
+            0b1010_0000,
+            0b1001_0010,
+            0b1001_0100,
+            0b1001_0101,
+            0b1001_1000,
+            0b1001_0110,
+            0b1001_1001,
+            0b1001_1011,
+            0b1010_0001,
+            0b1001_1010,
+            0b1001_1100,
+            0b1001_1101,
+            0b1010_0011,
+            0b1001_1110,
+            0b1010_0111,
+            0b1010_1111,
+            0b1100_0000,
+            0b1010_0010,
+            0b1010_0100,
+            0b1010_0101,
+            0b1010_1000,
+            0b1010_0110,
+            0b1010_1001,
+            0b1010_1011,
+            0b1011_0000,
+            0b1010_1010,
+            0b1010_1100,
+            0b1010_1101,
+            0b1011_0001,
+            0b1010_1110,
+            0b1011_0011,
+            0b1011_0111,
+            0b1100_0001,
+            0b1011_0010,
+            0b1011_0100,
+            0b1011_0101,
+            0b1011_1000,
+            0b1011_0110,
+            0b1011_1001,
+            0b1011_1011,
+            0b1100_0011,
+            0b1011_1010,
+            0b1011_1100,
+            0b1011_1101,
+            0b1100_0111,
+            0b1011_1110,
+            0b1100_1111,
+            0b1101_1111,
+            0b0000_0000,
+            0b1100_0010,
+            0b1100_0100,
+            0b1100_0101,
+            0b1100_1000,
+            0b1100_0110,
+            0b1100_1001,
+            0b1100_1011,
+            0b1101_0000,
+            0b1100_1010,
+            0b1100_1100,
+            0b1100_1101,
+            0b1101_0001,
+            0b1100_1110,
+            0b1101_0011,
+            0b1101_0111,
+            0b1110_0000,
+            0b1101_0010,
+            0b1101_0100,
+            0b1101_0101,
+            0b1101_1000,
+            0b1101_0110,
+            0b1101_1001,
+            0b1101_1011,
+            0b1110_0001,
+            0b1101_1010,
+            0b1101_1100,
+            0b1101_1101,
+            0b1110_0011,
+            0b1101_1110,
+            0b1110_0111,
+            0b1110_1111,
+            0b0000_0000,
+            0b1110_0010,
+            0b1110_0100,
+            0b1110_0101,
+            0b1110_1000,
+            0b1110_0110,
+            0b1110_1001,
+            0b1110_1011,
+            0b1111_0000,
+            0b1110_1010,
+            0b1110_1100,
+            0b1110_1101,
+            0b1111_0001,
+            0b1110_1110,
+            0b1111_0011,
+            0b1111_0111,
+            0b0000_0000,
+            0b1111_0010,
+            0b1111_0100,
+            0b1111_0101,
+            0b1111_1000,
+            0b1111_0110,
+            0b1111_1001,
+            0b1111_1011,
+            0b0000_0000,
+            0b1111_1010,
+            0b1111_1100,
+            0b1111_1101,
+            0b0000_0000,
+            0b1111_1110,
+            0b0000_0000,
+            0b0000_0000,
         ];
 
         itertools::assert_equal(
@@ -147,113 +402,352 @@ mod tests {
     }
 
     mod first_candidates_combinations_iter {
-        use std::iter;
-
-        use crate::base::consts::*;
-
         use super::*;
 
-        #[test]
-        fn test_first_candidates_combinations_iter() {
-            let iter = FirstCandidatesCombinationsIter::<Base2>::new(
-                1.try_into().unwrap(),
-                3.try_into().unwrap(),
-            );
-            itertools::assert_equal(
-                iter,
-                vec![
-                    vec![1].try_into().unwrap(),
-                    vec![2].try_into().unwrap(),
-                    vec![3].try_into().unwrap(),
-                ],
-            );
+        use crate::base::consts::*;
+        use std::iter::{empty, once};
 
-            let iter = FirstCandidatesCombinationsIter::<Base2>::new(
-                2.try_into().unwrap(),
-                3.try_into().unwrap(),
-            );
-            itertools::assert_equal(
-                iter,
-                vec![
-                    vec![1, 2].try_into().unwrap(),
-                    vec![1, 3].try_into().unwrap(),
-                    vec![2, 3].try_into().unwrap(),
-                ],
-            );
+        mod base2 {
+            use super::*;
 
-            let iter = FirstCandidatesCombinationsIter::<Base2>::new(
-                3.try_into().unwrap(),
-                3.try_into().unwrap(),
-            );
-            itertools::assert_equal(iter, iter::once(vec![1, 2, 3].try_into().unwrap()));
+            #[test]
+            fn test_1_3() {
+                let iter = FirstCandidatesCombinationsIter::<Base2>::new(
+                    1.try_into().unwrap(),
+                    3.try_into().unwrap(),
+                );
+                itertools::assert_equal(
+                    iter,
+                    vec![
+                        vec![1].try_into().unwrap(),
+                        vec![2].try_into().unwrap(),
+                        vec![3].try_into().unwrap(),
+                    ],
+                );
+            }
 
-            let iter = FirstCandidatesCombinationsIter::<Base2>::new(
-                4.try_into().unwrap(),
-                3.try_into().unwrap(),
-            );
-            itertools::assert_equal(iter, iter::empty());
+            #[test]
+            fn test_2_3() {
+                let iter = FirstCandidatesCombinationsIter::<Base2>::new(
+                    2.try_into().unwrap(),
+                    3.try_into().unwrap(),
+                );
+                itertools::assert_equal(
+                    iter,
+                    vec![
+                        vec![1, 2].try_into().unwrap(),
+                        vec![1, 3].try_into().unwrap(),
+                        vec![2, 3].try_into().unwrap(),
+                    ],
+                );
+            }
 
-            let iter = FirstCandidatesCombinationsIter::<Base2>::new(
-                2.try_into().unwrap(),
-                4.try_into().unwrap(),
-            );
-            itertools::assert_equal(
-                iter,
-                vec![
-                    vec![1, 2].try_into().unwrap(),
-                    vec![1, 3].try_into().unwrap(),
-                    vec![2, 3].try_into().unwrap(),
-                    vec![1, 4].try_into().unwrap(),
-                    vec![2, 4].try_into().unwrap(),
-                    vec![3, 4].try_into().unwrap(),
-                ],
-            );
-            let iter = FirstCandidatesCombinationsIter::<Base2>::new(
-                3.try_into().unwrap(),
-                4.try_into().unwrap(),
-            );
-            itertools::assert_equal(
-                iter,
-                vec![
-                    vec![1, 2, 3].try_into().unwrap(),
-                    vec![1, 2, 4].try_into().unwrap(),
-                    vec![1, 3, 4].try_into().unwrap(),
-                    vec![2, 3, 4].try_into().unwrap(),
-                ],
-            );
-            let iter = FirstCandidatesCombinationsIter::<Base3>::new(
-                3.try_into().unwrap(),
-                5.try_into().unwrap(),
-            );
-            itertools::assert_equal(
-                iter,
-                vec![
-                    vec![1, 2, 3].try_into().unwrap(),
-                    vec![1, 2, 4].try_into().unwrap(),
-                    vec![1, 3, 4].try_into().unwrap(),
-                    vec![2, 3, 4].try_into().unwrap(),
-                    vec![1, 2, 5].try_into().unwrap(),
-                    vec![1, 3, 5].try_into().unwrap(),
-                    vec![2, 3, 5].try_into().unwrap(),
-                    vec![1, 4, 5].try_into().unwrap(),
-                    vec![2, 4, 5].try_into().unwrap(),
-                    vec![3, 4, 5].try_into().unwrap(),
-                ],
-            );
+            #[test]
+            fn test_3_3() {
+                let iter = FirstCandidatesCombinationsIter::<Base2>::new(
+                    3.try_into().unwrap(),
+                    3.try_into().unwrap(),
+                );
+                itertools::assert_equal(iter, once(vec![1, 2, 3].try_into().unwrap()));
+            }
 
-            let mut iter = FirstCandidatesCombinationsIter::<Base4>::new(
-                15.try_into().unwrap(),
-                15.try_into().unwrap(),
-            );
+            #[test]
+            fn test_4_3() {
+                let iter = FirstCandidatesCombinationsIter::<Base2>::new(
+                    4.try_into().unwrap(),
+                    3.try_into().unwrap(),
+                );
+                itertools::assert_equal(iter, empty());
+            }
 
-            assert_eq!(
-                iter.next().unwrap(),
-                vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-                    .try_into()
-                    .unwrap()
-            );
-            assert!(iter.next().is_none());
-            assert!(iter.next().is_none());
+            #[test]
+            fn test_2_4() {
+                let iter = FirstCandidatesCombinationsIter::<Base2>::new(
+                    2.try_into().unwrap(),
+                    4.try_into().unwrap(),
+                );
+                itertools::assert_equal(
+                    iter,
+                    vec![
+                        vec![1, 2].try_into().unwrap(),
+                        vec![1, 3].try_into().unwrap(),
+                        vec![2, 3].try_into().unwrap(),
+                        vec![1, 4].try_into().unwrap(),
+                        vec![2, 4].try_into().unwrap(),
+                        vec![3, 4].try_into().unwrap(),
+                    ],
+                );
+            }
+
+            #[test]
+            fn test_3_4() {
+                let iter = FirstCandidatesCombinationsIter::<Base2>::new(
+                    3.try_into().unwrap(),
+                    4.try_into().unwrap(),
+                );
+                itertools::assert_equal(
+                    iter,
+                    vec![
+                        vec![1, 2, 3].try_into().unwrap(),
+                        vec![1, 2, 4].try_into().unwrap(),
+                        vec![1, 3, 4].try_into().unwrap(),
+                        vec![2, 3, 4].try_into().unwrap(),
+                    ],
+                );
+            }
+        }
+
+        mod base3 {
+            use super::*;
+
+            #[test]
+            fn test_3_5() {
+                let iter = FirstCandidatesCombinationsIter::<Base3>::new(
+                    3.try_into().unwrap(),
+                    5.try_into().unwrap(),
+                );
+                itertools::assert_equal(
+                    iter,
+                    vec![
+                        vec![1, 2, 3].try_into().unwrap(),
+                        vec![1, 2, 4].try_into().unwrap(),
+                        vec![1, 3, 4].try_into().unwrap(),
+                        vec![2, 3, 4].try_into().unwrap(),
+                        vec![1, 2, 5].try_into().unwrap(),
+                        vec![1, 3, 5].try_into().unwrap(),
+                        vec![2, 3, 5].try_into().unwrap(),
+                        vec![1, 4, 5].try_into().unwrap(),
+                        vec![2, 4, 5].try_into().unwrap(),
+                        vec![3, 4, 5].try_into().unwrap(),
+                    ],
+                );
+            }
+        }
+
+        mod base4 {
+            use super::*;
+
+            #[test]
+            fn test_15_15() {
+                let mut iter = FirstCandidatesCombinationsIter::<Base4>::new(
+                    15.try_into().unwrap(),
+                    15.try_into().unwrap(),
+                );
+
+                assert_eq!(
+                    iter.next().unwrap(),
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+                        .try_into()
+                        .unwrap()
+                );
+                assert!(iter.next().is_none());
+                assert!(iter.next().is_none());
+            }
+
+            #[test]
+            fn test_1_16() {
+                let iter = FirstCandidatesCombinationsIter::<Base4>::new(
+                    1.try_into().unwrap(),
+                    16.try_into().unwrap(),
+                );
+
+                itertools::assert_equal(
+                    iter,
+                    Candidates::<Base4>::all()
+                        .iter()
+                        .map(Candidates::with_single),
+                );
+            }
+        }
+    }
+
+    mod candidates_combinations_iter {
+        use std::{collections::BTreeSet, iter};
+
+        use crate::{
+            base::SudokuBase,
+            cell::{Candidates, Value},
+            test_util::{test_all_bases, test_max_base3, test_max_base4},
+        };
+
+        mod empty_candidates {
+            use super::*;
+
+            test_all_bases!({
+                let empty: Candidates<Base> = Candidates::new();
+
+                for k in Value::<Base>::all() {
+                    // empty candidates never produce any combinations
+                    itertools::assert_equal(empty.combinations(k), iter::empty());
+                }
+            });
+        }
+
+        mod single_candidate {
+            use super::*;
+
+            test_all_bases!({
+                for single in Value::<Base>::all().map(Candidates::with_single) {
+                    for k in Value::<Base>::all() {
+                        if k.get() == 1 {
+                            // a single candidate only produces a single combination if k == 1
+                            itertools::assert_equal(single.combinations(k), iter::once(single));
+                        } else {
+                            // a single candidate never produces any combinations if k > 1
+                            itertools::assert_equal(single.combinations(k), iter::empty());
+                        }
+                    }
+                }
+            });
+        }
+
+        mod three_candidates {
+            use super::*;
+
+            test_all_bases!({
+                let three_candidates: Candidates<Base> = vec![1, 2, 4].try_into().unwrap();
+
+                itertools::assert_equal(
+                    three_candidates.combinations(1.try_into().unwrap()),
+                    vec![
+                        vec![1].try_into().unwrap(),
+                        vec![2].try_into().unwrap(),
+                        vec![4].try_into().unwrap(),
+                    ],
+                );
+
+                itertools::assert_equal(
+                    three_candidates.combinations(2.try_into().unwrap()),
+                    vec![
+                        vec![1, 2].try_into().unwrap(),
+                        vec![1, 4].try_into().unwrap(),
+                        vec![2, 4].try_into().unwrap(),
+                    ],
+                );
+                itertools::assert_equal(
+                    three_candidates.combinations(3.try_into().unwrap()),
+                    iter::once(three_candidates),
+                );
+            });
+        }
+
+        mod all_candidates {
+            use super::*;
+
+            test_all_bases!({
+                let all: Candidates<Base> = Candidates::all();
+
+                // k == 1 produces all candidates
+                itertools::assert_equal(
+                    all.combinations(1.try_into().unwrap()),
+                    all.iter().map(Candidates::with_single),
+                );
+            });
+        }
+
+        mod oracle {
+            use super::*;
+
+            fn assert_against_oracle<Base: SudokuBase>(
+                candidates: Candidates<Base>,
+                k: Value<Base>,
+            ) {
+                fn combinations_itertools<Base: SudokuBase>(
+                    candidates: Candidates<Base>,
+                    k: Value<Base>,
+                ) -> impl Iterator<Item = Candidates<Base>> {
+                    use itertools::Itertools;
+
+                    candidates
+                        .iter()
+                        .combinations(k.get().into())
+                        .map(|combination| combination.into())
+                }
+                fn assert_set_equals<Base: SudokuBase>(
+                    a: impl IntoIterator<Item = Candidates<Base>>,
+                    b: impl IntoIterator<Item = Candidates<Base>>,
+                ) {
+                    let a: BTreeSet<_> = a.into_iter().collect();
+                    let b: BTreeSet<_> = b.into_iter().collect();
+                    assert_eq!(a, b);
+                }
+
+                let a = candidates.combinations(k);
+                let b = combinations_itertools(candidates, k);
+                assert_set_equals(a, b);
+            }
+
+            mod exhaustive {
+                use super::*;
+
+                // Exhaustive test up to Base3, since Base4 is too slow.
+                test_max_base3!({
+                    for candidates in Candidates::<Base>::iter_all_lexicographical() {
+                        for k in Value::all() {
+                            assert_against_oracle(candidates, k);
+                        }
+                    }
+                });
+            }
+
+            mod empty_candidates {
+                use super::*;
+
+                test_all_bases!({
+                    let empty: Candidates<Base> = Candidates::new();
+
+                    for k in Value::<Base>::all() {
+                        assert_against_oracle(empty, k);
+                    }
+                });
+            }
+
+            mod single_candidate {
+                use super::*;
+
+                test_all_bases!({
+                    for single in Value::<Base>::all().map(Candidates::with_single) {
+                        for k in Value::<Base>::all() {
+                            assert_against_oracle(single, k);
+                        }
+                    }
+                });
+            }
+
+            mod three_candidates {
+                use super::*;
+
+                test_all_bases!({
+                    let three_candidates: Candidates<Base> = vec![1, 2, 4].try_into().unwrap();
+
+                    for k in Value::all() {
+                        assert_against_oracle(three_candidates, k);
+                    }
+                });
+            }
+
+            mod all_candidates {
+
+                use super::*;
+
+                test_max_base4!({
+                    let all: Candidates<Base> = Candidates::all();
+
+                    for k in Value::all() {
+                        assert_against_oracle(all, k);
+                    }
+                });
+            }
+
+            mod all_k_1 {
+                use super::*;
+
+                test_all_bases!({
+                    let all: Candidates<Base> = Candidates::all();
+
+                    assert_against_oracle(all, 1.try_into().unwrap());
+                });
+            }
         }
     }
 }

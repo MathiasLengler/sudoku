@@ -28,9 +28,9 @@ impl<Base: SudokuBase> Default for Value<Base> {
 
 /// Constructors
 impl<Base: SudokuBase> Value<Base> {
-    /// Ok(Some(value)) => value in legal range
-    /// Ok(None) => 0
-    /// Err(err) => value too big
+    /// - `Ok(Some(value))` => value in legal range
+    /// - `Ok(None)` => 0
+    /// - `Err(err)` => value too big
     pub fn new(value: u8) -> Result<Option<Self>> {
         Self::validate_value(value, false)?;
 
