@@ -2,7 +2,7 @@ import { Box, DialogContent, FormGroup, LinearProgress, Stack, Typography } from
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import { useEffect } from "react";
-import { SliderElement, SwitchElement, TextFieldElement, useForm } from "react-hook-form-mui";
+import { SelectElement, SliderElement, SwitchElement, TextFieldElement, useForm } from "react-hook-form-mui";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import CasinoIcon from "@mui/icons-material/Casino";
@@ -32,6 +32,7 @@ import {
 } from "../../state/forms/generate";
 import { baseToCellCount } from "../../utils/sudoku";
 import type { NewGameTabValue } from "./NewGameDialog";
+import { ALL_GOAL_OPTIMIZATIONS, ALL_GRID_METRICS } from "../../../constants";
 
 function GenerateProgressLayout({
     linearProgress,
@@ -284,20 +285,41 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                                     label="Parallel"
                                     disabled={!multiShot}
                                 />
-                                <SliderElement
-                                    control={control}
-                                    name="iterationsIndex"
-                                    label="Iterations"
-                                    disabled={!multiShot}
-                                    step={1}
-                                    min={MIN_ITERATIONS_INDEX}
-                                    max={MAX_ITERATIONS_INDEX}
-                                    scale={iterationsIndexToIterations}
-                                    valueLabelDisplay="auto"
-                                    getAriaLabel={() => "Iterations"}
-                                    getAriaValueText={(iterations) => `${iterations}`}
-                                />
-                                {/* TODO: metric, optimize, parallel */}
+                                <Stack spacing={2}>
+                                    <SliderElement
+                                        control={control}
+                                        name="iterationsIndex"
+                                        label="Iterations"
+                                        disabled={!multiShot}
+                                        step={1}
+                                        min={MIN_ITERATIONS_INDEX}
+                                        max={MAX_ITERATIONS_INDEX}
+                                        scale={iterationsIndexToIterations}
+                                        valueLabelDisplay="auto"
+                                        getAriaLabel={() => "Iterations"}
+                                        getAriaValueText={(iterations) => `${iterations}`}
+                                    />
+                                    <SelectElement
+                                        control={control}
+                                        name="metric"
+                                        label="Metric"
+                                        disabled={!multiShot}
+                                        options={ALL_GRID_METRICS.map((gridMetric) => ({
+                                            id: gridMetric,
+                                            label: gridMetric,
+                                        }))}
+                                    />
+                                    <SelectElement
+                                        control={control}
+                                        name="optimize"
+                                        label="Optimize"
+                                        disabled={!multiShot}
+                                        options={ALL_GOAL_OPTIMIZATIONS.map((goalOptimizations) => ({
+                                            id: goalOptimizations,
+                                            label: goalOptimizations,
+                                        }))}
+                                    />
+                                </Stack>
                             </Fieldset>
                         </Stack>
                     </form>
