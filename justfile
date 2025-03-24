@@ -38,3 +38,7 @@ _pack wasm-pack-args:
 # update all globally installed cargo binaries
 install-update:
     cargo install-update -a
+
+# Serve vite on tailscale
+web-ts-serve:
+    tailscale serve 5173
