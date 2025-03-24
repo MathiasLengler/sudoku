@@ -58,7 +58,7 @@ fn bench_generator_group<Base: SudokuBase>(generator_group: &mut BenchmarkGroup<
             "NoBacktracking Minimal",
             Some(PruningSettings::<Base> {
                 target: PruningTarget::Minimal,
-                strategies: StrategyEnum::default_solver_strategies_no_backtracking(),
+                strategies: StrategyEnum::default_solver_strategies_no_brute_force(),
                 ..Default::default()
             }),
         ),

@@ -12,7 +12,7 @@ use crate::grid::Grid;
 use crate::position::Position;
 use crate::rng::{new_crate_rng_with_seed, CrateRng};
 use crate::solver::backtracking::DisallowedCandidateAtPosition;
-use crate::solver::strategic::strategies::Backtracking;
+use crate::solver::strategic::strategies::BruteForce;
 use crate::solver::{backtracking, introspective};
 
 pub use settings::*;
@@ -342,7 +342,7 @@ impl<Base: SudokuBase> Generator<Base> {
 
         let can_be_deleted: bool = (
             // Either default strategies
-            prune_settings.strategies == [Backtracking.into()]
+            prune_settings.strategies == [BruteForce.into()]
             ||
                 // Or ensure the grid remains solvable with the non-default strategies
                 grid

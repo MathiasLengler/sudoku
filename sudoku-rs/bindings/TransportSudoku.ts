@@ -2,4 +2,4 @@
 import type { BaseEnum } from "./BaseEnum";
 import type { TransportCell } from "./TransportCell";
 
-export type TransportSudoku = { cells: Array<TransportCell>, blocksIndexes: Array<Array<number>>, base: BaseEnum, sideLength: number, cellCount: number, isSolved: boolean, canUndo: boolean, canRedo: boolean, };
+export type TransportSudoku = { cells: Array<TransportCell>, blocksIndexes: Array<Array<number>>, base: BaseEnum, sideLength: number, cellCount: number, isSolved: boolean, hasSolution: boolean, canUndo: boolean, canRedo: boolean, };

@@ -478,7 +478,7 @@ mod tests {
         type Base = Base2;
         let generator_settings = GeneratorSettings {
             prune: Some(PruningSettings {
-                strategies: StrategyEnum::default_solver_strategies_no_backtracking(),
+                strategies: StrategyEnum::default_solver_strategies_no_brute_force(),
                 ..Default::default()
             }),
             solution: None,
@@ -508,7 +508,7 @@ mod tests {
 
         let generator_settings = GeneratorSettings {
             prune: Some(PruningSettings {
-                strategies: StrategyEnum::default_solver_strategies_no_backtracking(),
+                strategies: StrategyEnum::default_solver_strategies_no_brute_force(),
                 ..Default::default()
             }),
             solution: None,

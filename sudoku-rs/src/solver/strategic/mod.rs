@@ -283,7 +283,7 @@ mod tests {
         // Solver can solve the input grid
         let solver = Solver::new_with_strategies(
             grid.clone(),
-            StrategyEnum::default_solver_strategies_no_backtracking(),
+            StrategyEnum::default_solver_strategies_no_brute_force(),
         );
         assert_fallible_solver_single_solution(solver, &grid);
 
@@ -299,13 +299,13 @@ mod tests {
         // Solver can no longer solve it
         let mut solver = Solver::new_with_strategies(
             ambiguous_grid.clone(),
-            StrategyEnum::default_solver_strategies_no_backtracking(),
+            StrategyEnum::default_solver_strategies_no_brute_force(),
         );
         assert!(solver.try_solve().unwrap().is_none());
 
         // But solver with filter for top left cell can solve it.
         let solver = Solver::builder(ambiguous_grid.clone())
-            .strategies(StrategyEnum::default_solver_strategies_no_backtracking())
+            .strategies(StrategyEnum::default_solver_strategies_no_brute_force())
             .candidates_filter(&ForceCandidateAtPosition {
                 pos: Position::top_left(),
                 candidate: Value::default(),

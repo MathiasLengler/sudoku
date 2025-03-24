@@ -15,7 +15,7 @@ export const strategyEnumSchema = z.enum([
     "GroupIntersectionBlockToAxis",
     "GroupIntersectionAxisToBlock",
     "GroupIntersectionBoth",
-    "Backtracking",
+    "BruteForce",
 ]);
 
 export type SelectedStrategies = z.infer<typeof selectedStrategiesSchema>;

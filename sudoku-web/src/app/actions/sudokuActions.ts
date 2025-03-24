@@ -1,6 +1,7 @@
 import assertNever from "assert-never";
 import * as Comlink from "comlink";
 import * as _ from "lodash-es";
+import { useCallback, useState } from "react";
 import type { CallbackInterface, Snapshot } from "recoil";
 import { useRecoilCallback } from "recoil";
 import type {
@@ -21,9 +22,8 @@ import { sudokuSideLengthState, sudokuState } from "../state/sudoku";
 import { remoteWasmSudokuState, workerState, type RemoteWasmSudoku } from "../state/worker";
 import { spawnWorker } from "../state/worker/spawn";
 import { useCancelableMutation } from "../useCancelableMutation";
+import { measure, withMeasure } from "../utils/measure";
 import { getInput } from "./inputActions";
-import { withMeasure, measure } from "../utils/measure";
-import { useCallback, useRef, useState } from "react";
 
 // Snapshot accessors
 async function getRemoteWasmSudoku(snapshot: Snapshot): Promise<RemoteWasmSudoku> {

@@ -1,22 +1,22 @@
 use crate::base::SudokuBase;
 use crate::error::Result;
 use crate::grid::Grid;
-use crate::solver::backtracking::Solver;
+use crate::solver::introspective;
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions};
 use crate::solver::strategic::strategies::{Strategy, StrategyScore};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub struct Backtracking;
+pub struct BruteForce;
 
-impl Strategy for Backtracking {
+impl Strategy for BruteForce {
     fn name(self) -> &'static str {
-        "Backtracking"
+        "BruteForce"
     }
     fn score(self) -> StrategyScore {
-        1_000
+        1_000_000
     }
     fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
-        let mut solver = Solver::new(grid);
+        let mut solver = introspective::Solver::new(grid);
 
         if let Some(solved_grid) = solver.next() {
             Ok(grid
@@ -44,12 +44,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_backtracking_base_2() {
+    fn test_base_2() {
         let mut grid = samples::base_2().first().unwrap().clone();
         grid.fix_all_values();
         grid.set_all_direct_candidates();
 
-        let deductions = Backtracking.execute(&grid).unwrap();
+        let deductions = BruteForce.execute(&grid).unwrap();
 
         let expected_deductions: Deductions<_> = vec![
             ((0, 0), 2),
@@ -75,12 +75,12 @@ mod tests {
         assert!(grid.is_solved());
     }
     #[test]
-    fn test_backtracking_base_3() {
+    fn test_base_3() {
         let mut grid = samples::base_3().first().unwrap().clone();
         grid.fix_all_values();
         grid.set_all_direct_candidates();
 
-        let deductions = Backtracking.execute(&grid).unwrap();
+        let deductions = BruteForce.execute(&grid).unwrap();
         deductions.apply(&mut grid).unwrap();
         assert!(grid.is_solved());
     }

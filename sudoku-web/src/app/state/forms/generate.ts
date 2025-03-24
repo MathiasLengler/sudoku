@@ -76,7 +76,7 @@ export const generateFormValuesSchema = z.object({
 export const GENERATE_FORM_DEFAULT_VALUES = {
     base: 3,
     minGivens: 0,
-    strategies: ["Backtracking"],
+    strategies: ["BruteForce"],
     setAllDirectCandidates: true,
     useSeed: false,
     seed: "0",

@@ -1,4 +1,4 @@
-pub use backtracking::Backtracking;
+pub use brute_force::BruteForce;
 pub use group_intersection::{
     GroupIntersectionAxisToBlock, GroupIntersectionBlockToAxis, GroupIntersectionBoth,
 };
@@ -8,7 +8,7 @@ pub use naked_pairs::NakedPairs;
 pub use naked_singles::NakedSingles;
 
 // Strategies
-mod backtracking;
+mod brute_force;
 mod group_intersection;
 mod hidden_singles;
 pub mod locked_sets;

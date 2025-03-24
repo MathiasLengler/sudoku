@@ -31,7 +31,7 @@ fn main() -> Result<()> {
         let grid = &mut graph[node_index];
         let solver = Solver::new_with_strategies(
             grid,
-            StrategyEnum::default_solver_strategies_no_backtracking(),
+            StrategyEnum::default_solver_strategies_no_brute_force(),
         );
         let all_deductions = solver.try_all_strategies().unwrap();
 

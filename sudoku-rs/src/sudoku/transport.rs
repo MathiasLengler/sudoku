@@ -18,6 +18,7 @@ pub struct TransportSudoku {
     side_length: u8,
     cell_count: u16,
     is_solved: bool,
+    has_solution: bool,
     can_undo: bool,
     can_redo: bool,
 }
@@ -52,6 +53,7 @@ impl<Base: SudokuBase> From<&Sudoku<Base>> for TransportSudoku {
             side_length: Base::SIDE_LENGTH,
             cell_count: Base::CELL_COUNT,
             is_solved: grid.is_solved(),
+            has_solution: solved_grid.is_some(),
             can_undo: sudoku.history.can_go_back(),
             can_redo: sudoku.history.can_go_forward(),
         }

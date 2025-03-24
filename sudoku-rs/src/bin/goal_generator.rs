@@ -20,7 +20,7 @@ fn main() -> Result<()> {
     let generator = MultiShotGenerator::<Base>::with_settings(MultiShotGeneratorSettings {
         generator_settings: GeneratorSettings {
             prune: Some(PruningSettings {
-                strategies: StrategyEnum::default_solver_strategies_no_backtracking(),
+                strategies: StrategyEnum::default_solver_strategies_no_brute_force(),
                 ..Default::default()
             }),
             ..Default::default()

@@ -22,7 +22,7 @@ pub enum StrategyEnum {
     GroupIntersectionBlockToAxis,
     GroupIntersectionAxisToBlock,
     GroupIntersectionBoth,
-    Backtracking,
+    BruteForce,
 }
 
 impl Display for StrategyEnum {
@@ -41,7 +41,7 @@ impl StrategyEnum {
             GroupIntersectionBlockToAxis.into(),
             GroupIntersectionAxisToBlock.into(),
             GroupIntersectionBoth.into(),
-            Backtracking.into(),
+            BruteForce.into(),
         ]
     }
 
@@ -52,11 +52,11 @@ impl StrategyEnum {
             NakedPairs.into(),
             LockedSets.into(),
             GroupIntersectionBoth.into(),
-            Backtracking.into(),
+            BruteForce.into(),
         ]
     }
 
-    pub fn default_solver_strategies_no_backtracking() -> Vec<Self> {
+    pub fn default_solver_strategies_no_brute_force() -> Vec<Self> {
         vec![
             NakedSingles.into(),
             HiddenSingles.into(),
