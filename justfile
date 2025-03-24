@@ -18,6 +18,9 @@ test-cov test-name="":
 test-cov-html test-name="":
     cargo llvm-cov nextest --branch --html --open -- {{test-name}}
 
+clippy:
+    cargo clippy --all-targets --all-features
+
 # wasm-pack dev watch
 pack-dev-watch: (_pack-watch "pack-dev")
 # wasm-pack release watch
