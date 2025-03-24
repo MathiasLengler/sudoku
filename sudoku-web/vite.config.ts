@@ -40,6 +40,7 @@ export default defineConfig(({ mode }) => ({
                 "!**/sudoku-wasm/pkg/sudoku_wasm.*",
             ],
         },
+        allowedHosts: [".goat-snapper.ts.net"],
     },
     worker: {
         format: "es",
