@@ -16,7 +16,10 @@ const DynamicCellSchema = z.discriminatedUnion("kind", [
 export const DynamicCellsSchema = z.array(DynamicCellSchema);
 
 // TODO: evaluate IOC
-//  https://recoiljs.org/docs/guides/atom-effects/#state-synchronization-example
+//  WasmSudoku could have callback, which is called whenever the sudoku is updated
+//  Observer pattern
+//  could simplify the UI code.
+//  More relevant for CellWorld ("patches")
 
 export const sudokuState = atom<TransportSudoku>({
     key: "Sudoku",
