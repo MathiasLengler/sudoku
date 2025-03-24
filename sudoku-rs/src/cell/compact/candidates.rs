@@ -46,6 +46,7 @@ impl<Base: SudokuBase> Candidates<Base> {
         Self::with_integral_unchecked(Base::CandidatesIntegral::ZERO)
     }
 
+    // TODO: mark as unsafe
     fn with_integral_unchecked(bits: Base::CandidatesIntegral) -> Self {
         let this = Self { bits };
         this.debug_assert();
