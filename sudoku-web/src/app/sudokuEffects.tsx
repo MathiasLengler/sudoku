@@ -1,13 +1,13 @@
-import React, { Suspense, useCallback, useEffect } from "react";
-import type { DynamicCell, DynamicPosition } from "../types";
-import { saveCells } from "./state/cellsPersistence";
-import { useRecoilValue, useSetRecoilState } from "recoil";
-import { sudokuBaseState, sudokuCellsState, sudokuSolutionState } from "./state/sudoku";
-import { inputState } from "./state/input";
-import { baseToSideLength } from "./utils/sudoku";
-import * as _ from "lodash-es";
-import { useEndStickyChain } from "./actions/inputActions";
 import { useNotifications } from "@toolpad/core/useNotifications";
+import * as _ from "lodash-es";
+import { Suspense, useCallback, useEffect } from "react";
+import { useRecoilValue, useSetRecoilState } from "recoil";
+import type { DynamicCell, DynamicPosition } from "../types";
+import { useEndStickyChain } from "./actions/inputActions";
+import { saveCells } from "./state/cellsPersistence";
+import { inputState } from "./state/input";
+import { gameCounterState, sudokuBaseState, sudokuCellsState, sudokuSolutionState } from "./state/sudoku";
+import { baseToSideLength } from "./utils/sudoku";
 
 function SaveCellsEffect() {
     const cells = useRecoilValue(sudokuCellsState);
@@ -52,11 +52,11 @@ function SudokuBaseEffect() {
     return null;
 }
 
-// FIXME: show notification again for new puzzle
 function SolutionEffect() {
     const notifications = useNotifications();
 
     const solution = useRecoilValue(sudokuSolutionState);
+    const gameCounter = useRecoilValue(gameCounterState);
 
     useEffect(() => {
         if (solution === "noSolution") {
@@ -71,7 +71,7 @@ function SolutionEffect() {
                 severity: "warning",
             });
         }
-    }, [notifications, solution]);
+    }, [notifications, solution, gameCounter]);
 
     return null;
 }

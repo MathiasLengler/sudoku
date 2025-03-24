@@ -18,7 +18,7 @@ import { cellAtGridPositionState } from "../state/cellIndexing";
 import { getHint, hintState } from "../state/hint";
 import type { CellAction } from "../state/input";
 import { inputState } from "../state/input";
-import { sudokuSideLengthState, sudokuState } from "../state/sudoku";
+import { gameCounterState, sudokuSideLengthState, sudokuState } from "../state/sudoku";
 import { remoteWasmSudokuState, workerState, type RemoteWasmSudoku } from "../state/worker";
 import { spawnWorker } from "../state/worker/spawn";
 import { useCancelableMutation } from "../useCancelableMutation";
@@ -76,12 +76,16 @@ async function isInvalidGridPosition({
 }
 
 // Mutation helpers
-export async function updateSudoku({
-    set,
-    wasmSudokuProxy,
-}: Pick<CallbackInterface, "set"> & { wasmSudokuProxy: RemoteWasmSudoku }) {
+export async function updateSudoku(
+    { set, wasmSudokuProxy }: Pick<CallbackInterface, "set"> & { wasmSudokuProxy: RemoteWasmSudoku },
+    isNewGame = false,
+) {
     const newSudoku = await wasmSudokuProxy.getTransportSudoku();
     set(sudokuState, newSudoku);
+    if (isNewGame) {
+        set(gameCounterState, (prev) => prev + 1);
+        set(hintState, undefined);
+    }
 }
 
 async function applyValueAtGridPosition({
@@ -343,7 +347,6 @@ const rebootWorker = withMeasure(
     },
 );
 
-// TODO: reset hint
 export function useGenerate() {
     const generate = useRecoilCallback(
         ({ snapshot, set }) =>
@@ -371,7 +374,7 @@ export function useGenerate() {
                         throw err;
                     }
 
-                    await updateSudoku({ set, wasmSudokuProxy });
+                    await updateSudoku({ set, wasmSudokuProxy }, true);
                 });
             },
         [],
@@ -432,7 +435,7 @@ export function useGenerateMultiShot() {
                         throw err;
                     }
 
-                    await updateSudoku({ set, wasmSudokuProxy });
+                    await updateSudoku({ set, wasmSudokuProxy }, true);
                 });
             },
         [],
@@ -493,7 +496,7 @@ export function useImportSudokuString() {
                 if (setAllDirectCandidates) {
                     await wasmSudokuProxy.setAllDirectCandidates();
                 }
-                await updateSudoku({ set, wasmSudokuProxy });
+                await updateSudoku({ set, wasmSudokuProxy }, true);
             },
         [],
     );

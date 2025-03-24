@@ -32,6 +32,11 @@ export const sudokuState = atom<TransportSudoku>({
     }),
 });
 
+export const gameCounterState = atom<number>({
+    key: "GameCounter",
+    default: 0,
+});
+
 export const sudokuBaseState = selector<BaseEnum>({
     key: "Sudoku.base",
     get: ({ get }) => get(sudokuState).base,
