@@ -6,6 +6,7 @@ import * as _ from "lodash-es";
 
 export const WORKER_BOOT_UP_MESSAGE = "Worker loaded";
 
+// TODO: add labels / links
 export const strategyEnumSchema = z.enum([
     "NakedSingles",
     "HiddenSingles",
