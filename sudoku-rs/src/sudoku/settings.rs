@@ -5,7 +5,7 @@ use crate::sudoku::history::DEFAULT_LIMIT;
 pub struct Settings {
     pub update_candidates: bool,
     pub history_limit: usize,
-    pub solve_grid: bool,
+    pub find_solution: bool,
 }
 
 impl Default for Settings {
@@ -13,7 +13,7 @@ impl Default for Settings {
         Settings {
             update_candidates: true,
             history_limit: DEFAULT_LIMIT,
-            solve_grid: true,
+            find_solution: true,
         }
     }
 }

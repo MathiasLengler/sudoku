@@ -45,16 +45,16 @@ export const sudokuBlocksIndexesState = selector<TransportSudoku["blocksIndexes"
     key: "Sudoku.blocksIndexes",
     get: ({ get }) => get(sudokuState).blocksIndexes,
 });
-export const sudokuCanUndoState = selector<TransportSudoku["canUndo"]>({
+export const sudokuCanUndoState = selector<TransportSudoku["history"]["canUndo"]>({
     key: "Sudoku.canUndo",
     get: ({ get }) => {
         // showing of a hint can be undone
-        return !!get(hintState) || get(sudokuState).canUndo;
+        return !!get(hintState) || get(sudokuState).history.canUndo;
     },
 });
-export const sudokuCanRedoState = selector<TransportSudoku["canRedo"]>({
+export const sudokuCanRedoState = selector<TransportSudoku["history"]["canRedo"]>({
     key: "Sudoku.canRedo",
-    get: ({ get }) => get(sudokuState).canRedo,
+    get: ({ get }) => get(sudokuState).history.canRedo,
 });
 export const sudokuIsSolvedState = selector<TransportSudoku["isSolved"]>({
     key: "Sudoku.isSolved",

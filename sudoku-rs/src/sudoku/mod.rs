@@ -15,6 +15,7 @@ use crate::generator::{Generator, GeneratorProgress, GeneratorSettings};
 use crate::grid::dynamic::DynamicGrid;
 use crate::grid::format::GridFormat;
 use crate::grid::format::GridFormatEnum;
+use crate::grid::solution_state::SolutionState;
 use crate::grid::Grid;
 use crate::position::{DynamicPosition, Position};
 use crate::solver::strategic::deduction::transport::TransportDeductions;
@@ -32,7 +33,7 @@ pub mod transport;
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub struct Sudoku<Base: SudokuBase> {
     grid: Grid<Base>,
-    solved_grid: Option<Grid<Base>>,
+    solution: SolutionState<Base>,
     history: History<Grid<Base>>,
     settings: Settings,
 }
@@ -54,15 +55,17 @@ impl<Base: SudokuBase> Sudoku<Base> {
     }
 
     pub fn with_grid_and_settings(grid: Grid<Base>, settings: Settings) -> Self {
-        Sudoku {
-            solved_grid: if settings.solve_grid {
-                grid.unique_solution_for_fixed_values()
-            } else {
-                None
-            },
+        let solution = if settings.find_solution {
+            grid.solution_state_for_fixed_values()
+        } else {
+            SolutionState::NoSolution
+        };
+        let history = History::with_limit(settings.history_limit);
+        Self {
             grid,
+            solution,
+            history,
             settings,
-            history: History::with_limit(settings.history_limit),
         }
     }
 
@@ -101,10 +104,6 @@ impl<Base: SudokuBase> Sudoku<Base> {
 impl<Base: SudokuBase> Sudoku<Base> {
     pub fn grid(&self) -> &Grid<Base> {
         &self.grid
-    }
-
-    pub fn solved_grid(&self) -> Option<&Grid<Base>> {
-        self.solved_grid.as_ref()
     }
 }
 

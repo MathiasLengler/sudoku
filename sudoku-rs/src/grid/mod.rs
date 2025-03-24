@@ -6,6 +6,7 @@ use std::str::FromStr;
 
 use anyhow::ensure;
 use ndarray::{Array2, ArrayView2, ArrayViewMut2};
+use solution_state::SolutionState;
 
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
@@ -18,12 +19,13 @@ use crate::grid::format::{CandidatesGridANSIStyled, GridFormat, GridFormatEnum};
 use crate::position::Coordinate;
 use crate::position::Position;
 use crate::solver::strategic::strategies::StrategyEnum;
-use crate::solver::{backtracking, introspective, strategic, FallibleSolver};
+use crate::solver::{introspective, strategic, FallibleSolver};
 use crate::unsafe_utils::{get_unchecked, get_unchecked_mut};
 
 pub mod deserialization;
 pub mod format;
 pub mod group;
+pub mod solution_state;
 
 pub mod dynamic;
 
@@ -366,28 +368,27 @@ impl<Base: SudokuBase> Grid<Base> {
             })
     }
 
+    pub fn solution_state(&self) -> SolutionState<Base> {
+        SolutionState::find_solution(self)
+    }
+
     pub fn has_unique_solution(&self) -> bool {
-        self.unique_solution().is_some()
+        self.solution_state().is_unique()
     }
 
     pub fn unique_solution(&self) -> Option<Self> {
-        let mut solver = introspective::Solver::new(self);
-
-        match (solver.next(), solver.next()) {
-            (Some(unique_solution), None) => Some(unique_solution),
-            _ => None,
-        }
+        self.solution_state().into_unique_solution()
     }
 
-    pub fn unique_solution_for_fixed_values(&self) -> Option<Self> {
+    pub fn solution_state_for_fixed_values(&self) -> SolutionState<Base> {
         let mut cloned_grid = self.clone();
         cloned_grid.delete_all_unfixed_values();
 
-        cloned_grid.unique_solution()
+        cloned_grid.solution_state()
     }
 
     pub fn solution_count(&self) -> usize {
-        let solver = backtracking::Solver::new(self);
+        let solver = introspective::Solver::new(self);
         solver.count()
     }
 
@@ -755,6 +756,7 @@ impl<Base: SudokuBase> Display for Grid<Base> {
 
 #[cfg(test)]
 mod tests {
+
     use itertools::{assert_equal, Itertools};
 
     use crate::base::consts::*;
@@ -1097,16 +1099,16 @@ mod tests {
 
         grid.fix_all_values();
 
-        assert!(grid.unique_solution_for_fixed_values().is_some());
+        assert!(grid.solution_state_for_fixed_values().is_unique());
 
         // Invalid unfixed value
         grid.get_mut((0, 0).try_into().unwrap())
             .set_value(1.try_into().unwrap());
-        assert!(grid.unique_solution_for_fixed_values().is_some());
+        assert!(grid.solution_state_for_fixed_values().is_unique());
 
         // Invalid fixed value
         grid.get_mut((0, 0).try_into().unwrap()).fix();
-        assert!(grid.unique_solution_for_fixed_values().is_none());
+        assert!(!grid.solution_state_for_fixed_values().is_unique());
     }
 
     #[test]

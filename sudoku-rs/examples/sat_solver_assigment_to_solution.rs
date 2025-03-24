@@ -21,7 +21,7 @@ fn main() -> Result<()> {
     )?;
     println!("Solution:\n{solution}");
 
-    let puzzle = samples::base_3().into_iter().last().unwrap();
+    let puzzle = samples::base_3().into_iter().next_back().unwrap();
     println!("Puzzle:\n{puzzle}");
     solution.assert_is_solution_for(&puzzle);
 
