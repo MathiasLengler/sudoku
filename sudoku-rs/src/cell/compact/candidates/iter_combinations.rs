@@ -33,12 +33,11 @@ struct FirstCandidatesCombinationsIter<Base: SudokuBase> {
 impl<Base: SudokuBase> FirstCandidatesCombinationsIter<Base> {
     /// Create a new iterator over all combinations of `k` candidates for the first `n` candidates.
     fn new(k: Value<Base>, n: Value<Base>) -> Self {
-        let one = Base::CandidatesIntegral::ONE;
         if k > n {
             Self::new_empty()
         } else {
             Self {
-                current: Candidates::with_integral_unchecked((one << k.get()) - one),
+                current: Candidates::with_range(..=k),
                 n: Some(n),
             }
         }
@@ -59,26 +58,29 @@ impl<Base: SudokuBase> Iterator for FirstCandidatesCombinationsIter<Base> {
     fn next(&mut self) -> Option<Self::Item> {
         let n = self.n?;
         let current = self.current;
-        // FIXME: the question mark is unreachable.
-        let next = next_permutation(current.integral())?;
 
-        // FIXME: test failure: base4::test_1_16
-        //  all candidates are set and the is no overflow bit available in CandidatesIntegral (u16).
-        //  Potential special case like in `Candidates::all_less_than_or_equal_candidates_mask`
-        //  Is it possible to fix this bug and reduce the number of branches?
-        //  We have way better test coverage than before.
-        let mask = Base::CandidatesIntegral::ONE
-            .checked_shl(n.get().into())
-            .unwrap_or(Base::CandidatesIntegral::ZERO);
-        // dbg!((&self, next, mask));
+        let Some(next) = next_permutation(current.integral()) else {
+            self.n = None;
+            return Some(current);
+        };
 
-        if (next & (mask)).is_zero() {
+        if const { Base::BASE == 4 } && n == Value::max() {
             let next = Candidates::with_integral_unchecked(next);
             self.current = next;
             Some(current)
         } else {
-            self.n = None;
-            Some(current)
+            let mask = Base::CandidatesIntegral::ONE
+                .checked_shl(n.get().into())
+                .unwrap_or(Base::CandidatesIntegral::ZERO);
+
+            if (next & mask).is_zero() {
+                let next = Candidates::with_integral_unchecked(next);
+                self.current = next;
+                Some(current)
+            } else {
+                self.n = None;
+                Some(current)
+            }
         }
     }
 }
