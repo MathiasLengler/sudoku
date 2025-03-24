@@ -24,7 +24,7 @@ pub struct TransportSudoku {
     history: TransportHistory,
 
     is_solved: bool,
-    solution_state: TransportSolutionState,
+    solution: TransportSolutionState,
 }
 
 #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
@@ -47,7 +47,7 @@ pub struct TransportHistory {
 
 #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", tag = "kind")]
+#[serde(rename_all = "camelCase")]
 pub enum TransportSolutionState {
     NoSolution,
     MultipleSolutions,
@@ -88,7 +88,7 @@ impl<Base: SudokuBase> From<&Sudoku<Base>> for TransportSudoku {
                 can_redo: sudoku.history.can_go_forward(),
             },
             is_solved: grid.is_solved(),
-            solution_state: TransportSolutionState::from(&sudoku.solution),
+            solution: TransportSolutionState::from(&sudoku.solution),
         }
     }
 }

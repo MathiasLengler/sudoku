@@ -63,3 +63,7 @@ export const sudokuIsSolvedState = selector<TransportSudoku["isSolved"]>({
     key: "Sudoku.isSolved",
     get: ({ get }) => get(sudokuState).isSolved,
 });
+export const sudokuSolutionState = selector<TransportSudoku["solution"]>({
+    key: "Sudoku.solution",
+    get: ({ get }) => get(sudokuState).solution,
+});

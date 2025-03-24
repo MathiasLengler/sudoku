@@ -4,4 +4,4 @@ import type { TransportCell } from "./TransportCell";
 import type { TransportHistory } from "./TransportHistory";
 import type { TransportSolutionState } from "./TransportSolutionState";
 
-export type TransportSudoku = { cells: Array<TransportCell>, base: BaseEnum, blocksIndexes: Array<Array<number>>, sideLength: number, cellCount: number, history: TransportHistory, isSolved: boolean, solutionState: TransportSolutionState, };
+export type TransportSudoku = { cells: Array<TransportCell>, base: BaseEnum, blocksIndexes: Array<Array<number>>, sideLength: number, cellCount: number, history: TransportHistory, isSolved: boolean, solution: TransportSolutionState, };
