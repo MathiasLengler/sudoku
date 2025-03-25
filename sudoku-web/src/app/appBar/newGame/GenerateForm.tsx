@@ -129,7 +129,7 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
         resolver: zodResolver(generateFormValuesSchema),
     });
 
-    const { base, minGivens, useSeed, multiShot } = watch();
+    const [base, minGivens, useSeed, multiShot] = watch(["base", "minGivens", "useSeed", "multiShot"]);
     const cellCount = baseToCellCount(base);
 
     useEffect(() => {
