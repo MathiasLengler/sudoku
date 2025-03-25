@@ -5,8 +5,6 @@ import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 import wasm from "vite-plugin-wasm";
 
-// TODO: migrate remaining webpack config
-
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
     esbuild: {

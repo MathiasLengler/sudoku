@@ -10,9 +10,6 @@ type SimpleAtomEffect<T> = (param: {
     onSet: (param: (newValue: T, oldValue: T | DefaultValue, isReset: boolean) => void) => void;
 }) => void | (() => void);
 
-// TODO: switch to NPM lib `idb-keyval` for performance/more space
-//  API is async, but recoil effects should support that.
-
 export function localStorageEffect<Schema extends z.ZodTypeAny>(schema: Schema) {
     type SchemaType = z.infer<typeof schema>;
     const effect: SimpleAtomEffect<SchemaType> = ({ setSelf, onSet, node: { key: nodeKey } }) => {

@@ -33,7 +33,6 @@ type MyThemeProps = {
 const fontFamily = ['"Roboto Flex Variable"', '"Roboto"', '"Helvetica"', '"Arial"', "sans-serif"].join(",");
 const fontFamilyMonospace = ['"Inconsolata"', "monospace"].join(",");
 
-// TODO: switch to: https://mui.com/material-ui/experimental-api/css-theme-variables/overview/
 export const MyTheme = ({ children }: MyThemeProps) => {
     const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
 

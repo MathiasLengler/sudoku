@@ -1,4 +1,3 @@
-// FIXME: wrong import of Stack
 import { Alert, Button, Stack } from "@mui/material";
 
 import type { ReactNode } from "react";

@@ -54,5 +54,3 @@ declare module "../../../../../../sudoku-wasm/pkg" {
 postMessage(WORKER_BOOT_UP_MESSAGE);
 
 Comlink.expose(workerApi);
-
-// TODO: handle rust panic/WASM unreachable
