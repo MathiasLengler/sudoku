@@ -31,7 +31,7 @@ export function RequestHintButton() {
             async (): Promise<OptionalHint> => {
                 const sudokuIsSolved = await snapshot.getPromise(sudokuIsSolvedState);
                 if (sudokuIsSolved) {
-                    notifications.show("Sudoku solved", {
+                    notifications.show("Sudoku is solved", {
                         key: "solved",
                         severity: "success",
                     });
