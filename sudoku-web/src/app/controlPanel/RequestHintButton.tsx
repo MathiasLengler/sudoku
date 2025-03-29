@@ -55,7 +55,10 @@ export function RequestHintButton() {
                     });
                     return;
                 }
-                const [strategy, { deductions }] = tryStrategiesResult;
+                const {
+                    strategy,
+                    deductions: { deductions },
+                } = tryStrategiesResult;
                 console.info(`Strategy ${strategy} made progress:`, deductions);
 
                 if (hintSettings.multipleDeductions) {

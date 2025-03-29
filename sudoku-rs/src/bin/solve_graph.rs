@@ -7,7 +7,7 @@ use sudoku::error::Result;
 use sudoku::grid::Grid;
 use sudoku::samples;
 use sudoku::solver::strategic::strategies::StrategyEnum;
-use sudoku::solver::strategic::Solver;
+use sudoku::solver::strategic::{SolveStep, Solver};
 
 fn main() -> Result<()> {
     // For each strategy and deduction:
@@ -37,7 +37,11 @@ fn main() -> Result<()> {
 
         let grid = graph[node_index].clone();
 
-        for (strategy, deductions) in all_deductions {
+        for SolveStep {
+            strategy,
+            deductions,
+        } in all_deductions
+        {
             let mut new_grid = grid.clone();
             deductions.apply(&mut new_grid)?;
 

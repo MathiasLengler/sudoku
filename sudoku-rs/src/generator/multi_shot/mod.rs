@@ -41,8 +41,7 @@ pub enum GridMetric {
 
     // Based on the PoC bin `solve_graph` - a graph of all possible solve paths.
     /// The average [branching factor](https://en.wikipedia.org/wiki/Branching_factor) of the strategy solve graph.
-    /// In other words: the average number of strategies available to make progress.
-    /// E.g. the average number of available stratgies to make progress.
+    /// In other words: the average number of strategies available to make progress across all nodes in the solve graph.
     SolveGraphAverageBranchingFactor,
     /// The number of steps taken by `sat::Solver` to solve the grid.
     SatStepCount,
@@ -69,6 +68,7 @@ impl GridMetric {
             GridMetric::StrategyTotalScore => strategic::SolverBuilder::new(grid.clone())
                 .strategies(strategies)
                 .build()
+                .solve_route()
                 .total_score()?
                 .unwrap(),
             GridMetric::StrategyExecutionCount => todo!(),

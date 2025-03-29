@@ -4,6 +4,7 @@ use anyhow::ensure;
 use log::trace;
 
 pub use builder::SolverBuilder;
+pub use step::{DynamicSolveStep, SolveStep};
 use strategies::{Strategy, StrategyScore};
 
 use crate::base::SudokuBase;
@@ -17,12 +18,51 @@ use crate::solver::FallibleSolver;
 pub mod deduction;
 pub mod strategies;
 
-// TODO: return/persist chain of deductions for complete solve
+mod step {
+    use super::*;
+    pub use dynamic::DynamicSolveStep;
 
-// TODO: `solver.grade`
-//  add "difficulty" score for each strategy
-//  sum difficulty for each applied strategy
-//  Reference: sudokuwiki "Grader"/"Solve path"
+    #[derive(Debug)]
+    pub struct SolveStep<Base: SudokuBase> {
+        pub strategy: StrategyEnum,
+        pub deductions: Deductions<Base>,
+    }
+
+    impl<Base: SudokuBase> TryFrom<DynamicSolveStep> for SolveStep<Base> {
+        type Error = Error;
+
+        fn try_from(step: DynamicSolveStep) -> Result<Self> {
+            Ok(SolveStep {
+                strategy: step.strategy,
+                deductions: step.deductions.try_into()?,
+            })
+        }
+    }
+
+    mod dynamic {
+        use serde::{Deserialize, Serialize};
+
+        use crate::solver::strategic::deduction::transport::TransportDeductions;
+
+        use super::*;
+
+        #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+        #[derive(Debug, Serialize, Deserialize)]
+        pub struct DynamicSolveStep {
+            pub strategy: StrategyEnum,
+            pub deductions: TransportDeductions,
+        }
+
+        impl<Base: SudokuBase> From<SolveStep<Base>> for DynamicSolveStep {
+            fn from(solve_step: SolveStep<Base>) -> Self {
+                Self {
+                    strategy: solve_step.strategy,
+                    deductions: solve_step.deductions.into(),
+                }
+            }
+        }
+    }
+}
 
 mod builder {
     use super::*;
@@ -107,18 +147,6 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> Solver<Ba
         }
     }
 
-    // TODO: return map of strategy -> number of deductions
-    // TODO: move to SolverPathIter
-    pub fn total_score(&mut self) -> Result<Option<StrategyScore>> {
-        let solve_route_iter = &mut self.solve_route();
-        let total_score = solve_route_iter.try_fold::<_, _, Result<_>>(0, |total_score, res| {
-            let (strategy, deductions) = res?;
-            Ok(total_score + strategy.score() * StrategyScore::try_from(deductions.count())?)
-        })?;
-
-        Ok(solve_route_iter.is_solved().then_some(total_score))
-    }
-
     pub fn solve_route(&mut self) -> SolverPathIter<Base, GridMut> {
         SolverPathIter {
             solver: self,
@@ -133,11 +161,21 @@ impl<Base: SudokuBase, GridMut: AsRef<Grid<Base>>> Solver<Base, GridMut> {
         SolverBuilder::new(grid)
     }
 
-    pub fn try_all_strategies(&self) -> Result<Vec<(StrategyEnum, Deductions<Base>)>> {
+    fn validate(&self) -> Result<()> {
         ensure!(
             self.grid.as_ref().is_directly_consistent(),
             "Grid is inconsistent"
         );
+        Ok(())
+    }
+
+    // TODO: introduce StrategyExecuter
+    //  Iterator<Item = Result<SolveStep<Base>>>
+
+    /// Tries executing all strategies and returns all deductions made by each strategy.
+    pub fn try_all_strategies(&self) -> Result<Vec<SolveStep<Base>>> {
+        self.validate()?;
+
         let mut all_deductions = vec![];
         for strategy in &self.strategies {
             trace!("Executing strategy: {strategy:?}");
@@ -150,18 +188,19 @@ impl<Base: SudokuBase, GridMut: AsRef<Grid<Base>>> Solver<Base, GridMut> {
                     self.grid.as_ref()
                 );
 
-                all_deductions.push((*strategy, deductions));
+                all_deductions.push(SolveStep {
+                    strategy: *strategy,
+                    deductions,
+                });
             }
         }
         Ok(all_deductions)
     }
 
     /// Tries executing strategies until one strategy is able to make at least one deduction.
-    pub fn try_strategies(&self) -> Result<Option<(StrategyEnum, Deductions<Base>)>> {
-        ensure!(
-            self.grid.as_ref().is_directly_consistent(),
-            "Grid is inconsistent"
-        );
+    pub fn try_strategies(&self) -> Result<Option<SolveStep<Base>>> {
+        self.validate()?;
+
         for strategy in &self.strategies {
             trace!("Executing strategy: {strategy:?}");
 
@@ -173,7 +212,10 @@ impl<Base: SudokuBase, GridMut: AsRef<Grid<Base>>> Solver<Base, GridMut> {
                     self.grid.as_ref()
                 );
 
-                return Ok(Some((*strategy, deductions)));
+                return Ok(Some(SolveStep {
+                    strategy: *strategy,
+                    deductions,
+                }));
             }
         }
         Ok(None)
@@ -183,8 +225,6 @@ impl<Base: SudokuBase, GridMut: AsRef<Grid<Base>>> Solver<Base, GridMut> {
         self.grid
     }
 }
-
-pub type SolveStep<Base> = (StrategyEnum, Deductions<Base>);
 
 #[derive(Debug)]
 pub struct SolverPathIter<'a, Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> {
@@ -197,6 +237,24 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>>
 {
     pub fn is_solved(&self) -> bool {
         self.is_solved
+    }
+
+    // TODO: return map of strategy -> number of deductions
+    /// Weighted sum of all strategy scores used to solve the grid. `Strategy::score() * Number of deductions made by the strategy`
+    pub fn total_score(mut self) -> Result<Option<StrategyScore>> {
+        let total_score = self.try_fold::<_, _, Result<_>>(0, |total_score, res| {
+            let SolveStep {
+                strategy,
+                deductions,
+            } = res?;
+            Ok(total_score + (strategy.score() * StrategyScore::try_from(deductions.count())?))
+        })?;
+
+        Ok(self.is_solved().then_some(total_score))
+    }
+
+    pub fn execution_count() {
+        todo!()
     }
 }
 
@@ -213,11 +271,11 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> Iterator
             // TODO: simplify this expression
             //  a combination of `and_then`/`transpose` should be able to do this
             match self.solver.try_strategies() {
-                Ok(Some((strategy, deductions))) => {
-                    if let Err(err) = deductions.apply(self.solver.grid.as_mut()) {
+                Ok(Some(solve_step)) => {
+                    if let Err(err) = solve_step.deductions.apply(self.solver.grid.as_mut()) {
                         Some(Err(err))
                     } else {
-                        Some(Ok((strategy, deductions)))
+                        Some(Ok(solve_step))
                     }
                 }
                 // All strategies failed to make progress.

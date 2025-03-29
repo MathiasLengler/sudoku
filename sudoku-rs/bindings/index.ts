@@ -12,6 +12,7 @@ export type * from "./DynamicPosition";
 export type * from "./DynamicPruningOrder";
 export type * from "./DynamicPruningSettings";
 export type * from "./DynamicSolutionSettings";
+export type * from "./DynamicSolveStep";
 export type * from "./DynamicValue";
 export type * from "./DynamicWorldGridCellPosition";
 export type * from "./GeneratorProgress";

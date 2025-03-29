@@ -1,6 +1,6 @@
 use std::fmt::{self, Display, Formatter};
 
-pub use dynamic::{DynamicSudoku, DynamicSudokuActions, DynamicTryStrategiesReturn};
+pub use dynamic::{DynamicSudoku, DynamicSudokuActions};
 use history::History;
 use log::info;
 
@@ -21,7 +21,7 @@ use crate::position::{DynamicPosition, Position};
 use crate::solver::strategic::deduction::transport::TransportDeductions;
 use crate::solver::strategic::deduction::Deductions;
 use crate::solver::strategic::strategies::StrategyEnum;
-use crate::solver::strategic::Solver as StrategicSolver;
+use crate::solver::strategic::{DynamicSolveStep, SolveStep, Solver as StrategicSolver};
 
 use self::settings::Settings;
 
@@ -160,7 +160,7 @@ impl<Base: SudokuBase> Sudoku<Base> {
     pub fn try_strategies(
         &mut self,
         strategies: Vec<StrategyEnum>,
-    ) -> Result<Option<(StrategyEnum, Deductions<Base>)>> {
+    ) -> Result<Option<SolveStep<Base>>> {
         // Only create history entry if all candidates are empty.
         // If this is the case, StrategicSolver will mutate the grid by setting all direct candidates.
         if self.grid.are_all_candidates_empty() {
@@ -251,11 +251,8 @@ impl<Base: SudokuBase> DynamicSudokuActions for Sudoku<Base> {
     fn try_strategies(
         &mut self,
         strategies: Vec<StrategyEnum>,
-    ) -> Result<DynamicTryStrategiesReturn> {
-        Ok(DynamicTryStrategiesReturn(
-            self.try_strategies(strategies)?
-                .map(|(strategy, deductions)| (strategy, deductions.into())),
-        ))
+    ) -> Result<Option<DynamicSolveStep>> {
+        Ok(self.try_strategies(strategies)?.map(Into::into))
     }
 
     fn apply_deductions(&mut self, deductions: TransportDeductions) -> Result<()> {

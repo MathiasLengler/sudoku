@@ -21,13 +21,13 @@ use sudoku::{
             TransportDeduction, TransportDeductions, TransportReason,
         },
         strategies::StrategyEnum,
+        DynamicSolveStep,
     },
     transport::{TransportCell, TransportSudoku},
     world::{
         CellWorldDimensions, DynamicWorldGridCellPosition, Quadrant, RelativeDir, WorldCellDim,
         WorldCellPosition, WorldGenerationResult, WorldGridDim, WorldGridPosition,
     },
-    DynamicTryStrategiesReturn,
 };
 use wasm_bindgen::prelude::*;
 
@@ -103,6 +103,7 @@ serde_wasm_bindgen_interop! {
     DynamicPruningOrder,
     DynamicPruningSettings,
     DynamicSolutionSettings,
+    DynamicSolveStep,
     DynamicValue,
     DynamicWorldGridCellPosition,
     GeneratorProgress,
@@ -127,19 +128,15 @@ serde_wasm_bindgen_interop! {
 // Serde-compatbile aliases
 pub type StrategyEnums = Vec<StrategyEnum>;
 pub type DynamicCells = Vec<DynamicCell>;
-// Workaround for ts-rs import bug
-pub type DynamicTryStrategiesReturnAlias = DynamicTryStrategiesReturn;
 
 // Must be keept in sync with aliases above
 #[wasm_bindgen(typescript_custom_section)]
 const SERDE_ALIASES: &'static str = r#"
 export type StrategyEnums = StrategyEnum[];
 export type DynamicCells = DynamicCell[];
-export type DynamicTryStrategiesReturnAlias = [StrategyEnum, TransportDeductions] | null;
 "#;
 serde_wasm_bindgen_interop! {
     DynamicCells,
-    DynamicTryStrategiesReturnAlias,
     StrategyEnums,
 }
 

@@ -1,5 +1,3 @@
-use serde::{Deserialize, Serialize};
-
 use enum_dispatch::enum_dispatch;
 
 use crate::base::consts::*;
@@ -18,6 +16,7 @@ use crate::grid::Grid;
 use crate::position::DynamicPosition;
 use crate::solver::strategic::deduction::transport::TransportDeductions;
 use crate::solver::strategic::strategies::StrategyEnum;
+use crate::solver::strategic::DynamicSolveStep;
 use crate::sudoku::settings::Settings as SudokuSettings;
 use crate::sudoku::Sudoku;
 
@@ -36,10 +35,8 @@ pub trait DynamicSudokuActions {
     fn set_candidate(&mut self, pos: DynamicPosition, candidate: DynamicValue) -> Result<()>;
     fn delete_candidate(&mut self, pos: DynamicPosition, candidate: DynamicValue) -> Result<()>;
     fn delete(&mut self, pos: DynamicPosition) -> Result<()>;
-    fn try_strategies(
-        &mut self,
-        strategies: Vec<StrategyEnum>,
-    ) -> Result<DynamicTryStrategiesReturn>;
+    fn try_strategies(&mut self, strategies: Vec<StrategyEnum>)
+        -> Result<Option<DynamicSolveStep>>;
     fn apply_deductions(&mut self, deductions: TransportDeductions) -> Result<()>;
 
     // actions that don't depend on base
@@ -122,11 +119,6 @@ impl DynamicSudoku {
         Ok(())
     }
 }
-
-// FIXME: ts-rs seems to have a regression: the imports of the tuple are missing
-// #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
-#[derive(Debug, Serialize, Deserialize)]
-pub struct DynamicTryStrategiesReturn(pub Option<(StrategyEnum, TransportDeductions)>);
 
 impl TryFrom<Vec<DynamicCell>> for DynamicSudoku {
     type Error = Error;
