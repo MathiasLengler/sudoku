@@ -258,21 +258,23 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                                         name="seed"
                                         label="Seed"
                                         disabled={!useSeed}
-                                        inputProps={{ inputMode: "numeric" }}
-                                        InputProps={{
-                                            startAdornment: (
-                                                <MyIconButton
-                                                    label="Generate random seed"
-                                                    icon={CasinoIcon}
-                                                    disabled={!useSeed}
-                                                    onClick={() => {
-                                                        setValue(
-                                                            "seed",
-                                                            Math.trunc(Math.random() * SEED_MAX).toFixed(0),
-                                                        );
-                                                    }}
-                                                />
-                                            ),
+                                        slotProps={{
+                                            htmlInput: { inputMode: "numeric" },
+                                            input: {
+                                                startAdornment: (
+                                                    <MyIconButton
+                                                        label="Generate random seed"
+                                                        icon={CasinoIcon}
+                                                        disabled={!useSeed}
+                                                        onClick={() => {
+                                                            setValue(
+                                                                "seed",
+                                                                Math.trunc(Math.random() * SEED_MAX).toFixed(0),
+                                                            );
+                                                        }}
+                                                    />
+                                                ),
+                                            },
                                         }}
                                     />
                                 </FormGroup>

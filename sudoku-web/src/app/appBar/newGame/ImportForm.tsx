@@ -116,7 +116,9 @@ export const ImportForm = ({ onClose }: ImportFormProps) => {
                                 label="Formatted Sudoku"
                                 multiline
                                 fullWidth
-                                InputProps={{ sx: { fontFamily: "monospace" } }}
+                                slotProps={{
+                                    input: { sx: { fontFamily: "monospace" } },
+                                }}
                                 disabled={isSubmitting}
                             />
                             <SupportedFormats />
