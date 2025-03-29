@@ -30,8 +30,6 @@ pub enum GridMetric {
     /// Weighted sum of all strategy scores used to solve the grid. `Strategy::score() * Number of deductions made by the strategy`
     #[default]
     StrategyTotalScore,
-    /// How often each strategy was executed, successful or not, to solve the grid.
-    StrategyExecutionCount,
     /// How often each strategy was successfully executed to solve the grid.
     StrategyApplicationCount,
     /// Number of deductions used to solve the grid.
@@ -71,7 +69,6 @@ impl GridMetric {
                 .solve_route()
                 .total_score()?
                 .unwrap(),
-            GridMetric::StrategyExecutionCount => todo!(),
             GridMetric::StrategyApplicationCount => todo!(),
             GridMetric::StrategyDeductionCount => todo!(),
             GridMetric::StrategyOptionsAverage => todo!(),
