@@ -169,56 +169,38 @@ impl<Base: SudokuBase, GridMut: AsRef<Grid<Base>>> Solver<Base, GridMut> {
         Ok(())
     }
 
-    // TODO: introduce StrategyExecuter
-    //  Iterator<Item = Result<SolveStep<Base>>>
+    fn execute_strategies_iter(&self) -> impl Iterator<Item = Result<SolveStep<Base>>> + '_ {
+        self.strategies.iter().filter_map(|&strategy| {
+            trace!("Executing strategy: {strategy:?}");
+            Strategy::execute(strategy, self.grid.as_ref())
+                .map(|deductions| {
+                    (!deductions.is_empty()).then(|| {
+                        trace!(
+                            "{strategy:?} made progress:\n{deductions}\n{}",
+                            self.grid.as_ref()
+                        );
+                        SolveStep {
+                            strategy,
+                            deductions,
+                        }
+                    })
+                })
+                .transpose()
+        })
+    }
 
     /// Tries executing all strategies and returns all deductions made by each strategy.
     pub fn try_all_strategies(&self) -> Result<Vec<SolveStep<Base>>> {
         self.validate()?;
 
-        let mut all_deductions = vec![];
-        for strategy in &self.strategies {
-            trace!("Executing strategy: {strategy:?}");
-
-            let deductions = Strategy::execute(*strategy, self.grid.as_ref())?;
-
-            if !deductions.is_empty() {
-                trace!(
-                    "{strategy:?} made progress:\n{deductions}\n{}",
-                    self.grid.as_ref()
-                );
-
-                all_deductions.push(SolveStep {
-                    strategy: *strategy,
-                    deductions,
-                });
-            }
-        }
-        Ok(all_deductions)
+        self.execute_strategies_iter().collect()
     }
 
     /// Tries executing strategies until one strategy is able to make at least one deduction.
     pub fn try_strategies(&self) -> Result<Option<SolveStep<Base>>> {
         self.validate()?;
 
-        for strategy in &self.strategies {
-            trace!("Executing strategy: {strategy:?}");
-
-            let deductions = Strategy::execute(*strategy, self.grid.as_ref())?;
-
-            if !deductions.is_empty() {
-                trace!(
-                    "{strategy:?} made progress:\n{deductions}\n{}",
-                    self.grid.as_ref()
-                );
-
-                return Ok(Some(SolveStep {
-                    strategy: *strategy,
-                    deductions,
-                }));
-            }
-        }
-        Ok(None)
+        self.execute_strategies_iter().next().transpose()
     }
 
     pub fn into_grid(self) -> GridMut {
