@@ -250,20 +250,15 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> Iterator
             self.is_solved = true;
             None
         } else {
-            // TODO: simplify this expression
-            //  a combination of `and_then`/`transpose` should be able to do this
-            match self.solver.try_strategies() {
-                Ok(Some(solve_step)) => {
-                    if let Err(err) = solve_step.deductions.apply(self.solver.grid.as_mut()) {
-                        Some(Err(err))
-                    } else {
-                        Some(Ok(solve_step))
-                    }
-                }
-                // All strategies failed to make progress.
-                Ok(None) => None,
-                Err(err) => Some(Err(err)),
-            }
+            Some(
+                self.solver
+                    .try_strategies()
+                    .transpose()?
+                    .and_then(|solve_step| {
+                        solve_step.deductions.apply(self.solver.grid.as_mut())?;
+                        Ok(solve_step)
+                    }),
+            )
         }
     }
 }
