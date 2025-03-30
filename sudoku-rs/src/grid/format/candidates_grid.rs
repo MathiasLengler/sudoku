@@ -156,11 +156,6 @@ impl GridFormat for CandidatesGridPlain {
     }
 
     fn parse(self, input: &str) -> Result<Vec<DynamicCell>> {
-        // TODO: implement
-        //  split into multi-line rows
-        //  split rows into multi-line cells
-        //  extract numbers from cells
-
         fn ensure_same_line_char_count(input: &str) -> Result<usize> {
             let mut line_char_count = None;
             for line in input.lines() {
