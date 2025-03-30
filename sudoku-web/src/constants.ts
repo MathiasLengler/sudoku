@@ -31,8 +31,8 @@ export const gridFormatSchema = z.enum([
     "CandidatesGridPlain",
     "CandidatesGridCompact",
     "CandidatesGridANSIStyled",
-    "GivensLine",
-    "GivensGrid",
+    "ValuesLine",
+    "ValuesGrid",
     "BinaryCandidatesLine",
     "BinaryFixedCandidatesLine",
 ]);

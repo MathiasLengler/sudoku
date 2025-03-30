@@ -7,7 +7,7 @@ use sudoku::error::Result;
 use sudoku::generator::{
     Generator, GeneratorSettings, PruningOrder, PruningSettings, PruningTarget,
 };
-use sudoku::grid::format::{GivensLine, GridFormat};
+use sudoku::grid::format::{GridFormat, ValuesLine};
 use sudoku::solver::strategic::strategies::*;
 
 type Base = Base4;
@@ -43,7 +43,7 @@ fn main() -> Result<()> {
     let total_time = after - before;
 
     println!("{grid}");
-    println!("{}", GivensLine.render(&grid));
+    println!("{}", ValuesLine.render(&grid));
     dbg!(total_time);
 
     Ok(())

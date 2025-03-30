@@ -23,9 +23,9 @@ use crate::grid::Grid;
 ///  0 9 0 │ 0 0 0 │ 4 0 0
 /// ```
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub struct GivensGrid;
+pub struct ValuesGrid;
 
-impl GridFormat for GivensGrid {
+impl GridFormat for ValuesGrid {
     fn render<Base: SudokuBase>(self, grid: &Grid<Base>) -> String {
         use itertools::Itertools;
         use tabled::builder::Builder;
@@ -81,7 +81,7 @@ mod tests {
         let grid = samples::base_3().into_iter().next().unwrap();
 
         assert_eq!(
-            GivensGrid.render(&grid),
+            ValuesGrid.render(&grid),
             " 8 0 0 │ 0 0 0 │ 0 0 0 
  0 0 3 │ 6 0 0 │ 0 0 0 
  0 7 0 │ 0 9 0 │ 2 0 0 
@@ -98,7 +98,7 @@ mod tests {
 
     #[test]
     fn test_from_givens_grid() {
-        let cells = GivensGrid.parse(INPUT_GIVENS_GRID).unwrap();
+        let cells = ValuesGrid.parse(INPUT_GIVENS_GRID).unwrap();
 
         let expected_cells = vec![
             0, 8, 0, 5, 0, 3, 0, 7, 0, 0, 2, 7, 0, 0, 0, 3, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,

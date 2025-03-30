@@ -7,12 +7,15 @@ use crate::error::Result;
 use crate::grid::format::GridFormat;
 use crate::grid::Grid;
 
+/// All grid values concatenated into a single line.
+/// Candidates are displayed as `0`.
+///
 /// # Example
 /// `800000000003600000070090200050007000000045700000100030001000068008500010090000400`
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub struct GivensLine;
+pub struct ValuesLine;
 
-impl GridFormat for GivensLine {
+impl GridFormat for ValuesLine {
     fn render<Base: SudokuBase>(self, grid: &Grid<Base>) -> String {
         grid.all_cells().map(ToString::to_string).collect()
     }
@@ -62,14 +65,14 @@ mod tests {
         let grid = samples::base_3().into_iter().next().unwrap();
 
         assert_eq!(
-            GivensLine.render(&grid),
+            ValuesLine.render(&grid),
             "800000000003600000070090200050007000000045700000100030001000068008500010090000400"
         );
     }
 
     #[test]
     fn test_from_givens_line() -> Result<()> {
-        let cells = GivensLine.parse(INPUT_GIVENS_LINE)?;
+        let cells = ValuesLine.parse(INPUT_GIVENS_LINE)?;
 
         let expected_cells = vec![
             6, 0, 0, 0, 0, 2, 3, 0, 0, 1, 2, 5, 6, 0, 0, 0, 0, 0, 0, 0, 4, 7, 0, 0, 0, 2, 0, 7, 3,

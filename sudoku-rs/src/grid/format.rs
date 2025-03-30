@@ -11,8 +11,8 @@ pub use binary_candidates_line::*;
 pub use binary_fixed_candidates_line::*;
 pub use candidates_grid::*;
 pub use candidates_grid_compact::*;
-pub use givens_grid::*;
-pub use givens_line::GivensLine;
+pub use values_grid::*;
+pub use values_line::ValuesLine;
 
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
@@ -23,8 +23,8 @@ mod binary_candidates_line;
 mod binary_fixed_candidates_line;
 mod candidates_grid;
 mod candidates_grid_compact;
-mod givens_grid;
-mod givens_line;
+mod values_grid;
+mod values_line;
 
 #[enum_dispatch(GridFormatEnum)]
 pub trait GridFormat: Debug + Copy + Clone + Eq + Sized {
@@ -75,8 +75,9 @@ pub enum GridFormatEnum {
     CandidatesGridANSIStyled,
     CandidatesGridPlain,
     CandidatesGridCompact,
-    GivensLine,
-    GivensGrid,
+    ValuesLine,
+    ValuesGrid,
+    // TODO: dymaic grid serde JSON
 }
 
 impl GridFormatEnum {
@@ -87,8 +88,8 @@ impl GridFormatEnum {
             CandidatesGridANSIStyled.into(),
             CandidatesGridPlain.into(),
             CandidatesGridCompact.into(),
-            GivensLine.into(),
-            GivensGrid.into(),
+            ValuesLine.into(),
+            ValuesGrid.into(),
         ]
     }
 
@@ -102,9 +103,9 @@ impl GridFormatEnum {
             CandidatesGridANSIStyled
                 .parse_and_validate_cell_count(input)
                 .or_else(|_| CandidatesGridCompact.parse_and_validate_cell_count(input))
-                .or_else(|_| GivensGrid.parse_and_validate_cell_count(input))?
+                .or_else(|_| ValuesGrid.parse_and_validate_cell_count(input))?
         } else {
-            GivensLine
+            ValuesLine
                 .parse_and_validate_cell_count(input)
                 .or_else(|_| BinaryFixedCandidatesLine.parse_and_validate_cell_count(input))
                 .or_else(|_| BinaryCandidatesLine.parse_and_validate_cell_count(input))?
@@ -125,8 +126,8 @@ impl Serialize for GridFormatEnum {
             Self::CandidatesGridANSIStyled(_) => (2, "CandidatesGridANSIStyled"),
             Self::CandidatesGridPlain(_) => (3, "CandidatesGridPlain"),
             Self::CandidatesGridCompact(_) => (4, "CandidatesGridCompact"),
-            Self::GivensLine(_) => (5, "GivensLine"),
-            Self::GivensGrid(_) => (6, "GivensGrid"),
+            Self::ValuesLine(_) => (5, "ValuesLine"),
+            Self::ValuesGrid(_) => (6, "ValuesGrid"),
         };
 
         serializer.serialize_unit_variant("Strategy", variant_index, variant)
@@ -171,11 +172,11 @@ impl FromStr for GridFormatEnum {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     use anyhow::Context;
 
     use crate::samples;
-
-    use super::*;
 
     #[test]
     fn test_serde_round_trip() {
@@ -215,6 +216,8 @@ mod tests {
             })
         }
 
+        // TODO: move format capabilities to the format itself
+
         // Grid formats which preserve:
         // - cell value
         let grid_formats: Vec<GridFormatEnum> = vec![
@@ -223,8 +226,8 @@ mod tests {
             CandidatesGridANSIStyled.into(),
             CandidatesGridPlain.into(),
             CandidatesGridCompact.into(),
-            GivensLine.into(),
-            GivensGrid.into(),
+            ValuesLine.into(),
+            ValuesGrid.into(),
         ];
 
         // TODO: refactor other duplicated base handling code
@@ -234,6 +237,10 @@ mod tests {
                 for mut $grid in samples::base_2() $block
                 #[allow(unused_mut)]
                 for mut $grid in samples::base_3() $block
+                #[allow(unused_mut)]
+                for mut $grid in samples::base_4() $block
+                #[allow(unused_mut)]
+                for mut $grid in samples::base_5() $block
             };
         }
 
@@ -256,8 +263,8 @@ mod tests {
             // CandidatesGridANSIStyled.into(),
             // CandidatesGridPlain.into(),
             // CandidatesGridCompact.into(),
-            // GivensLine.into(),
-            // GivensGrid.into(),
+            // ValuesLine.into(),
+            // ValuesGrid.into(),
         ];
 
         for grid_format in grid_formats {
@@ -282,8 +289,8 @@ mod tests {
             CandidatesGridANSIStyled.into(),
             CandidatesGridPlain.into(),
             CandidatesGridCompact.into(),
-            // GivensLine.into(),
-            // GivensGrid.into(),
+            // ValuesLine.into(),
+            // ValuesGrid.into(),
         ];
         for grid_format in grid_formats {
             for_test_grids!(|grid| {
@@ -303,8 +310,8 @@ mod tests {
             // CandidatesGridANSIStyled.into(),
             // CandidatesGridPlain.into(),
             // CandidatesGridCompact.into(),
-            // GivensLine.into(),
-            // GivensGrid.into(),
+            // ValuesLine.into(),
+            // ValuesGrid.into(),
         ];
         for grid_format in grid_formats {
             for_test_grids!(|grid| {
