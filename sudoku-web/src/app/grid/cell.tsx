@@ -8,8 +8,7 @@ import { sudokuBaseState } from "../state/sudoku";
 import { useRecoilValue } from "recoil";
 import { useHandlePosition } from "../actions/sudokuActions";
 import { hintState } from "../state/hint";
-
-import isEqual from "lodash/isEqual";
+import { isEqual } from "lodash-es";
 
 function cellBackgroundClass(isSelected: boolean, isGuide: boolean) {
     if (isSelected) {

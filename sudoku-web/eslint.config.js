@@ -84,6 +84,13 @@ export default tseslint.config(
                     paths: [
                         {
                             name: "lodash",
+                            message: `Instead use: import {} from "lodash-es";`,
+                        },
+                    ],
+                    patterns: [
+                        {
+                            group: ["lodash/*"],
+                            message: `Instead use: import {} from "lodash-es";`,
                         },
                     ],
                 },

@@ -5,7 +5,7 @@ type CodeProps = {
     wrap?: boolean;
 };
 
-export const Code: React.FunctionComponent<CodeProps> = ({ children, wrap = false }) => {
+export const Code = ({ children, wrap = false }: CodeProps) => {
     return (
         <Typography
             sx={[

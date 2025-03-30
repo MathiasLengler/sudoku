@@ -1,6 +1,6 @@
 import type * as React from "react";
 import type { KeyboardEvent } from "react";
-import clamp from "lodash/clamp";
+import { clamp } from "lodash-es";
 import type { DynamicPosition, TransportSudoku } from "../types";
 import { inputState } from "./state/input";
 import { useRecoilCallback } from "recoil";
