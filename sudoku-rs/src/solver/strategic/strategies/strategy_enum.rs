@@ -10,6 +10,13 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::error::{Error, Result};
 
+// TODO: struct StrategyMap<T> {
+//    naked_singles: T
+//    ...
+// Usecases:
+// - Vec<StrategyEnum> => StrategyMap<bool> (for solver)
+// - stats for strategies
+
 #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
 #[enum_dispatch]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
