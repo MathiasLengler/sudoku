@@ -28,7 +28,7 @@ pub enum GridMetric {
     // Based on `strategic::SolverPathIter` - a single solve path determined by the solver.
     /// Weighted sum of all strategy scores used to solve the grid. `Strategy::score() * Number of deductions made by the strategy`
     #[default]
-    StrategyTotalScore,
+    StrategyScore,
     /// The number of times a strategy was applied to the grid.
     StrategyApplicationCount,
     /// Number of deductions used to solve the grid.
@@ -45,7 +45,7 @@ pub enum GridMetric {
     /// The number of steps taken by `backtracking::Solver` to solve the grid.
     BacktrackingStepCount,
     /// The number of givens in the grid.
-    GridGivens,
+    GridGivensCount,
     // Use normalized metrics instead of standard deviation? (0-1, gini coefficient etc.)
     /// The standard deviation of the givens value counts in the grid.
     /// E.g. how evenly distributed the givens values are.
@@ -69,7 +69,7 @@ impl GridMetric {
         };
 
         Ok(match self {
-            GridMetric::StrategyTotalScore => get_strategic_solver(strategies)
+            GridMetric::StrategyScore => get_strategic_solver(strategies)
                 .solve_path()
                 .total_score()?
                 .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?,
@@ -88,7 +88,7 @@ impl GridMetric {
             GridMetric::SolveGraphAverageBranchingFactor => todo!(),
             GridMetric::SatStepCount => todo!(),
             GridMetric::BacktrackingStepCount => todo!(),
-            GridMetric::GridGivens => todo!(),
+            GridMetric::GridGivensCount => todo!(),
             GridMetric::GridGivensValueCountDeviation => todo!(),
         })
     }

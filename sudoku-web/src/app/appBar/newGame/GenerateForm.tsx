@@ -32,7 +32,7 @@ import {
 } from "../../state/forms/generate";
 import { baseToCellCount } from "../../utils/sudoku";
 import type { NewGameTabValue } from "./NewGameDialog";
-import { ALL_GOAL_OPTIMIZATIONS, ALL_GRID_METRICS } from "../../../constants";
+import { ALL_GOAL_OPTIMIZATIONS, ALL_GRID_METRICS, GRID_METRIC_OPTIONS } from "../../../constants";
 
 function GenerateProgressLayout({
     linearProgress,
@@ -129,7 +129,13 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
         resolver: zodResolver(generateFormValuesSchema),
     });
 
-    const [base, minGivens, useSeed, multiShot] = watch(["base", "minGivens", "useSeed", "multiShot"]);
+    const [base, minGivens, useSeed, multiShot, metric] = watch([
+        "base",
+        "minGivens",
+        "useSeed",
+        "multiShot",
+        "metric",
+    ]);
     const cellCount = baseToCellCount(base);
 
     useEffect(() => {
@@ -306,10 +312,15 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                                         name="metric"
                                         label="Metric"
                                         disabled={!multiShot}
-                                        options={ALL_GRID_METRICS.map((gridMetric) => ({
-                                            id: gridMetric,
-                                            label: gridMetric,
-                                        }))}
+                                        helperText={GRID_METRIC_OPTIONS[metric]?.description}
+                                        options={ALL_GRID_METRICS.map((gridMetric) => {
+                                            const option = GRID_METRIC_OPTIONS[gridMetric];
+                                            return {
+                                                id: gridMetric,
+                                                label: option.label,
+                                                disabled: option.disabled,
+                                            };
+                                        })}
                                     />
                                     <SelectElement
                                         control={control}

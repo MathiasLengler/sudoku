@@ -26,7 +26,7 @@ fn main() -> Result<()> {
             ..Default::default()
         },
         iterations: 10_000,
-        metric: GridMetric::StrategyTotalScore,
+        metric: GridMetric::StrategyScore,
         optimize: GoalOptimization::Maximize,
         parallel: true,
     })?;
