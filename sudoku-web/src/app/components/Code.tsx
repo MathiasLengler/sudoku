@@ -5,7 +5,7 @@ type CodeProps = {
     wrap?: boolean;
 };
 
-export const Code = ({ children, wrap = false }: CodeProps) => {
+export function Code({ children, wrap = false }: CodeProps) {
     return (
         <Typography
             sx={[
@@ -25,4 +25,4 @@ export const Code = ({ children, wrap = false }: CodeProps) => {
             {children}
         </Typography>
     );
-};
+}

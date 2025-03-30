@@ -12,7 +12,7 @@ import { sudokuCanUndoState } from "../state/sudoku";
 import { RequestHintButton } from "./RequestHintButton";
 import { ToolbarMenu } from "./toolbarMenu";
 
-export const Toolbar = () => {
+export function Toolbar() {
     const inputCandidateMode = useRecoilValue(inputCandidateModeState);
     const inputStickyMode = useRecoilValue(inputStickyModeState);
     const canUndo = useRecoilValue(sudokuCanUndoState);
@@ -59,4 +59,4 @@ export const Toolbar = () => {
             <ToolbarMenu />
         </div>
     );
-};
+}

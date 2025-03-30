@@ -119,7 +119,7 @@ const WorldCellVirtualized = memo(function WorldCellVirtualized({
     );
 });
 
-const WorldMapVirtualized = () => {
+function WorldMapVirtualized() {
     const cellWorldDimensions = useRecoilValue(cellWorldDimensionsState);
     const worldCellSize = useDeferredValue(useRecoilValue(worldCellSizeState));
 
@@ -144,9 +144,9 @@ const WorldMapVirtualized = () => {
             </AutoSizer>
         </div>
     );
-};
+}
 
-export const WorldMap = () => {
+export function WorldMap() {
     const base = useRecoilValue(sudokuBaseState);
     const sideLength = useRecoilValue(sudokuSideLengthState);
     const [cellSize, setCellSize] = useRecoilState(worldCellSizeState);
@@ -162,4 +162,4 @@ export const WorldMap = () => {
             <WorldMapVirtualized />
         </div>
     );
-};
+}

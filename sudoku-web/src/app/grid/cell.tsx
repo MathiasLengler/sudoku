@@ -22,10 +22,9 @@ type CellValueProps = {
     value: DynamicCellValue["value"];
 };
 
-export const CellValue: React.FunctionComponent<CellValueProps> = (props) => {
-    const { value } = props;
+export function CellValue({ value }: CellValueProps) {
     return <div className="cell-value">{valueToString(value)}</div>;
-};
+}
 
 type CandidatesProps = {
     candidates: DynamicCellCandidates["candidates"];
@@ -33,7 +32,7 @@ type CandidatesProps = {
     showGuide?: boolean;
 };
 
-export const Candidates = ({ candidates, gridPosition, showGuide = true }: CandidatesProps) => {
+export function Candidates({ candidates, gridPosition, showGuide = true }: CandidatesProps) {
     const base = useRecoilValue(sudokuBaseState);
     const input = useRecoilValue(inputState);
     const hint = useRecoilValue(hintState);
@@ -82,7 +81,7 @@ export const Candidates = ({ candidates, gridPosition, showGuide = true }: Candi
             })}
         </div>
     );
-};
+}
 
 type CellProps = {
     cell: TransportCell;
@@ -90,7 +89,7 @@ type CellProps = {
     isGuide: boolean;
 };
 
-export const Cell = (props: CellProps) => {
+export function Cell(props: CellProps) {
     const { cell, isSelected, isGuide } = props;
 
     const { position: gridPosition } = cell;
@@ -144,4 +143,4 @@ export const Cell = (props: CellProps) => {
             )}
         </div>
     );
-};
+}

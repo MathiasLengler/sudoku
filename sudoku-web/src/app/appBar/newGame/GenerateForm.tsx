@@ -1,15 +1,15 @@
-import { Box, DialogContent, FormGroup, LinearProgress, Stack, Typography } from "@mui/material";
-import Button from "@mui/material/Button";
-import DialogActions from "@mui/material/DialogActions";
-import { useEffect } from "react";
-import { SelectElement, SliderElement, SwitchElement, TextFieldElement, useForm } from "react-hook-form-mui";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import CasinoIcon from "@mui/icons-material/Casino";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import TabPanel from "@mui/lab/TabPanel";
+import { Box, DialogContent, FormGroup, LinearProgress, Stack, Typography } from "@mui/material";
+import Button from "@mui/material/Button";
+import DialogActions from "@mui/material/DialogActions";
 import * as _ from "lodash-es";
+import { useEffect } from "react";
+import { SelectElement, SliderElement, SwitchElement, TextFieldElement, useForm } from "react-hook-form-mui";
 import { useRecoilState } from "recoil";
+import { ALL_GOAL_OPTIMIZATIONS, ALL_GRID_METRICS, GRID_METRIC_OPTIONS } from "../../../constants";
 import type { DynamicGeneratorSettings, GeneratorProgress } from "../../../types";
 import { useGenerate, useGenerateMultiShot, type TrackedMultiShotGeneratorProgress } from "../../actions/sudokuActions";
 import { Fieldset } from "../../components/Fieldset";
@@ -32,7 +32,6 @@ import {
 } from "../../state/forms/generate";
 import { baseToCellCount } from "../../utils/sudoku";
 import type { NewGameTabValue } from "./NewGameDialog";
-import { ALL_GOAL_OPTIMIZATIONS, ALL_GRID_METRICS, GRID_METRIC_OPTIONS } from "../../../constants";
 
 function GenerateProgressLayout({
     linearProgress,
@@ -114,7 +113,7 @@ function GenerateMultiShotProgress({ trackedMultiShotGeneratorProgress }: Genera
 type GenerateFormProps = {
     onClose: () => void;
 };
-export const GenerateForm = ({ onClose }: GenerateFormProps) => {
+export function GenerateForm({ onClose }: GenerateFormProps) {
     const [generateFormValues, setGenerateFormValues] = useRecoilState(generateFormValuesState);
 
     const {
@@ -385,4 +384,4 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
             </DialogActions>
         </>
     );
-};
+}

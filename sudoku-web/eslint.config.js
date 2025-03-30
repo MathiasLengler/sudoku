@@ -88,7 +88,7 @@ export default tseslint.config(
                         },
                         {
                             name: "react",
-                            importNames: ["default"],
+                            importNames: ["default", "FunctionComponent"],
                         },
                     ],
                     patterns: [
@@ -104,6 +104,33 @@ export default tseslint.config(
                 {
                     selector: 'ImportDeclaration[source.value="lodash-es"] ImportDefaultSpecifier',
                     message: `Instead use: import * as _ from "lodash-es";`,
+                },
+            ],
+            // Reference: https://stackoverflow.com/a/76818791
+            "@typescript-eslint/no-restricted-types": [
+                "error",
+                {
+                    types: {
+                        "React.FC": {
+                            message:
+                                "Useless and has some drawbacks, see https://github.com/facebook/create-react-app/pull/8177",
+                        },
+                        "React.FunctionComponent": {
+                            message:
+                                "Useless and has some drawbacks, see https://github.com/facebook/create-react-app/pull/8177",
+                        },
+                        "React.FunctionalComponent": {
+                            message:
+                                "Preact specific, useless and has some drawbacks, see https://github.com/facebook/create-react-app/pull/8177",
+                        },
+                    },
+                },
+            ],
+            "react/function-component-definition": [
+                "error",
+                {
+                    namedComponents: "function-declaration",
+                    unnamedComponents: "function-expression",
                 },
             ],
         },

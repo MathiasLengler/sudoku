@@ -24,7 +24,7 @@ const queryClient = new QueryClient({
     },
 });
 
-export const App = () => {
+export function App() {
     return (
         <BasicErrorBoundary>
             <RecoilRoot>
@@ -44,4 +44,4 @@ export const App = () => {
             </RecoilRoot>
         </BasicErrorBoundary>
     );
-};
+}

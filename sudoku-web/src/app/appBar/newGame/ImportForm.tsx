@@ -2,9 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SaveAltIcon from "@mui/icons-material/SaveAlt";
 import TabPanel from "@mui/lab/TabPanel";
-import { DialogContent, Typography } from "@mui/material";
-import { Stack } from "@mui/material";
-
+import { DialogContent, Stack, Typography } from "@mui/material";
 import Accordion from "@mui/material/Accordion";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import AccordionSummary from "@mui/material/AccordionSummary";
@@ -74,7 +72,7 @@ type ImportFormProps = {
     onClose: () => void;
 };
 
-export const ImportForm = ({ onClose }: ImportFormProps) => {
+export function ImportForm({ onClose }: ImportFormProps) {
     const importSudokuString = useImportSudokuString();
 
     const {
@@ -152,4 +150,4 @@ export const ImportForm = ({ onClose }: ImportFormProps) => {
             </DialogActions>
         </>
     );
-};
+}

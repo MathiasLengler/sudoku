@@ -7,7 +7,7 @@ type GridProps = {
     gridRef: UseResizeDetectorReturn<HTMLDivElement>["ref"];
 };
 
-export const Grid = ({ gridRef }: GridProps) => {
+export function Grid({ gridRef }: GridProps) {
     const blocksIndexes = useRecoilValue(sudokuBlocksIndexesState);
     const cells = useRecoilValue(sudokuCellsState);
 
@@ -32,4 +32,4 @@ export const Grid = ({ gridRef }: GridProps) => {
             </div>
         </div>
     );
-};
+}

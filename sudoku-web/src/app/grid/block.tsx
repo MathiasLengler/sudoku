@@ -25,7 +25,7 @@ const containsSelectedPosState = selectorFamily<boolean, CreateSerializableParam
         eviction: "most-recent",
     },
 });
-export const Block = ({ blockIndex, cells }: BlockProps) => {
+export function Block({ blockIndex, cells }: BlockProps) {
     const base = useRecoilValue(sudokuBaseState);
     const input = useRecoilValue(inputState);
 
@@ -56,4 +56,4 @@ export const Block = ({ blockIndex, cells }: BlockProps) => {
             })}
         </div>
     );
-};
+}

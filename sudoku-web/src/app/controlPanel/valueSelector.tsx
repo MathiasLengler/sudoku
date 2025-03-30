@@ -24,7 +24,7 @@ type SelectorValueProps = {
     value: number;
 };
 
-const ValueButton: React.FunctionComponent<SelectorValueProps> = ({ value }: SelectorValueProps) => {
+function ValueButton({ value }: SelectorValueProps) {
     const handleValue = useHandleValue();
 
     const isSelected = useRecoilValue(isSelectedState(value));
@@ -44,7 +44,7 @@ const ValueButton: React.FunctionComponent<SelectorValueProps> = ({ value }: Sel
             <span className="selector-value-text">{valueToString(value)}</span>
         </ButtonBase>
     );
-};
+}
 
 const selectorValuesState = selector({
     key: "Selector.values",
@@ -54,7 +54,7 @@ const selectorValuesState = selector({
     },
 });
 
-export const ValueSelector = () => {
+export function ValueSelector() {
     const selectorValues = useRecoilValue(selectorValuesState);
     return (
         <div className="selector-container">
@@ -65,4 +65,4 @@ export const ValueSelector = () => {
             </div>
         </div>
     );
-};
+}
