@@ -82,7 +82,7 @@ export const GENERATE_FORM_DEFAULT_VALUES = {
     seed: "0",
     multiShot: false,
     iterationsIndex: 1,
-    metric: "strategyTotalScore",
+    metric: "strategyScore",
     optimize: "maximize",
     parallel: true,
 } satisfies GenerateFormValues;
