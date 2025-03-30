@@ -6,7 +6,6 @@ import * as _ from "lodash-es";
 
 export const WORKER_BOOT_UP_MESSAGE = "Worker loaded";
 
-// TODO: add labels / links
 export const strategyEnumSchema = z.enum([
     "NakedSingles",
     "HiddenSingles",
@@ -18,14 +17,66 @@ export const strategyEnumSchema = z.enum([
     "BruteForce",
 ]);
 
+assert<IsEqual<z.infer<typeof strategyEnumSchema>, StrategyEnum>>();
+export const ALL_STRATEGIES = strategyEnumSchema.options;
+
+export const STRATEGY_OPTIONS: Record<
+    StrategyEnum,
+    {
+        label: string;
+        description: string;
+        link: string;
+    }
+> = {
+    NakedSingles: {
+        label: "Naked Singles",
+        description: "A cell with only one remaining candidate.",
+        link: "https://www.sudokuwiki.org/Getting_Started",
+    },
+    HiddenSingles: {
+        label: "Hidden Singles",
+        description: "One candidate is unique to a particular row, column and box.",
+        link: "https://www.sudokuwiki.org/Getting_Started",
+    },
+    NakedPairs: {
+        label: "Naked Pairs",
+        description: "Two cells in a row, column or box contain the same two candidates exclusively.",
+        link: "https://www.sudokuwiki.org/Naked_Candidates",
+    },
+    LockedSets: {
+        label: "Locked Sets",
+        description:
+            "Inside a single row, column or box, are there any naked or hidden candidates of any size? (Naked/Hidden Pairs/Triples/Quads)",
+        link: "https://www.sudokuwiki.org/Hidden_Candidates",
+    },
+    GroupIntersectionBlockToAxis: {
+        label: "Pointing Pairs/Triples",
+        description: "In one box the same candidate is aligned in one row or column.",
+        link: "https://www.sudokuwiki.org/Intersection_Removal",
+    },
+    GroupIntersectionAxisToBlock: {
+        label: "Box Line Reduction",
+        description: "In one row or column the same candidate is aligned in one box.",
+        link: "https://www.sudokuwiki.org/Intersection_Removal#LBR",
+    },
+    GroupIntersectionBoth: {
+        label: "Intersection Removal",
+        description: "A combination of pointing pairs/triples and box line reduction.",
+        link: "https://www.sudokuwiki.org/Intersection_Removal",
+    },
+    BruteForce: {
+        label: "Brute Force",
+        description:
+            "Solve the sudoku using brute force/trial and error. Backed by a Backtracking- or SAT-solver depending on the size of the Sudoku.",
+        link: "https://t-dillon.github.io/tdoku/",
+    },
+};
+
 export type SelectedStrategies = z.infer<typeof selectedStrategiesSchema>;
 export const selectedStrategiesSchema = strategyEnumSchema
     .array()
     .min(1)
     .transform((strategies) => _.sortBy(strategies, (strategy) => strategyEnumSchema.options.indexOf(strategy)));
-
-assert<IsEqual<z.infer<typeof strategyEnumSchema>, StrategyEnum>>();
-export const ALL_STRATEGIES = strategyEnumSchema.options;
 
 export const gridFormatSchema = z.enum([
     "CandidatesGridPlain",
