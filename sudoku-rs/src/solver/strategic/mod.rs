@@ -22,7 +22,7 @@ mod step {
     use super::*;
     pub use dynamic::DynamicSolveStep;
 
-    #[derive(Debug)]
+    #[derive(Debug, Clone)]
     pub struct SolveStep<Base: SudokuBase> {
         pub strategy: StrategyEnum,
         pub deductions: Deductions<Base>,
@@ -47,7 +47,7 @@ mod step {
         use super::*;
 
         #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
-        #[derive(Debug, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Serialize, Deserialize)]
         pub struct DynamicSolveStep {
             pub strategy: StrategyEnum,
             pub deductions: TransportDeductions,
@@ -122,8 +122,8 @@ mod builder {
 }
 
 #[derive(Debug, Clone)]
-pub struct Solver<Base: SudokuBase, GridMut: AsRef<Grid<Base>>> {
-    grid: GridMut,
+pub struct Solver<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> {
+    grid: GridRef,
     // TODO: generic: AsRef: IntoIterator<DynamicStrategy>
     //  `Generator::try_delete_cell_at_pos` would not need to clone its strategies
     strategies: Vec<StrategyEnum>,
@@ -147,8 +147,14 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> Solver<Ba
         }
     }
 
-    pub fn solve_route(&mut self) -> SolverPathIter<Base, GridMut> {
+    pub fn solve_path(&mut self) -> SolverPathIter<Base, GridMut> {
         SolverPathIter {
+            solver: self,
+            is_solved: false,
+        }
+    }
+    pub fn solve_path_all(&mut self) -> SolverPathAllIter<Base, GridMut> {
+        SolverPathAllIter {
             solver: self,
             is_solved: false,
         }
@@ -217,26 +223,37 @@ pub struct SolverPathIter<'a, Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsR
 impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>>
     SolverPathIter<'_, Base, GridMut>
 {
-    pub fn is_solved(&self) -> bool {
-        self.is_solved
-    }
-
-    // TODO: return map of strategy -> number of deductions
     /// Weighted sum of all strategy scores used to solve the grid. `Strategy::score() * Number of deductions made by the strategy`
     pub fn total_score(mut self) -> Result<Option<StrategyScore>> {
-        let total_score = self.try_fold::<_, _, Result<_>>(0, |total_score, res| {
+        let total_score = self.try_fold::<_, _, Result<_>>(0, |acc, res| {
             let SolveStep {
                 strategy,
                 deductions,
             } = res?;
-            Ok(total_score + (strategy.score() * StrategyScore::try_from(deductions.count())?))
+            Ok(acc + (strategy.score() * StrategyScore::try_from(deductions.count())?))
         })?;
 
-        Ok(self.is_solved().then_some(total_score))
+        Ok(self.is_solved.then_some(total_score))
     }
 
-    pub fn execution_count() {
-        todo!()
+    /// The number of times a strategy was applied to the grid.
+    pub fn application_count(mut self) -> Result<Option<StrategyScore>> {
+        let application_count = self.try_fold::<_, _, Result<_>>(0, |acc, res| {
+            res?;
+            Ok(acc + 1)
+        })?;
+
+        Ok(self.is_solved.then_some(application_count))
+    }
+
+    /// Number of deductions used to solve the grid.
+    pub fn deduction_count(mut self) -> Result<Option<StrategyScore>> {
+        let deduction_count = self.try_fold::<_, _, Result<_>>(0, |acc, res| {
+            let SolveStep { deductions, .. } = res?;
+            Ok(acc + StrategyScore::try_from(deductions.count())?)
+        })?;
+
+        Ok(self.is_solved.then_some(deduction_count))
     }
 }
 
@@ -269,12 +286,63 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> FallibleS
     type Error = Error;
 
     fn try_solve(&mut self) -> Result<Option<Grid<Base>>> {
-        let solve_route_iter = &mut self.solve_route();
-        solve_route_iter.try_for_each(|res| res.map(|_| ()))?;
+        let solve_path = &mut self.solve_path();
+        solve_path.try_for_each(|res| res.map(|_| ()))?;
 
-        Ok(solve_route_iter
-            .is_solved()
-            .then(|| self.grid.as_ref().clone()))
+        Ok(solve_path.is_solved.then(|| self.grid.as_ref().clone()))
+    }
+}
+
+#[derive(Debug)]
+pub struct SolverPathAllIter<'a, Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> {
+    solver: &'a mut Solver<Base, GridMut>,
+    is_solved: bool,
+}
+
+impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>>
+    SolverPathAllIter<'_, Base, GridMut>
+{
+    /// The average number of strategies available to make progress. Scaled by a factor of `1_000`.
+    pub fn average_options(mut self) -> Result<Option<StrategyScore>> {
+        const SCALE: u32 = 1_000;
+
+        let (step_count, total_options) =
+            self.try_fold::<_, _, Result<_>>((0u32, 0u32), |(acc_count, acc_options), res| {
+                let possible_solve_steps = res?;
+                Ok((
+                    acc_count + 1,
+                    acc_options + StrategyScore::try_from(possible_solve_steps.len())?,
+                ))
+            })?;
+
+        Ok(self.is_solved.then_some(StrategyScore::try_from(
+            (total_options * SCALE) / step_count,
+        )?))
+    }
+}
+
+impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> Iterator
+    for SolverPathAllIter<'_, Base, GridMut>
+{
+    type Item = Result<Vec<SolveStep<Base>>>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.solver.grid.as_ref().is_solved() {
+            self.is_solved = true;
+            None
+        } else {
+            self.solver
+                .try_all_strategies()
+                .and_then(|possible_solve_steps| {
+                    if let Some(solve_step) = possible_solve_steps.first() {
+                        solve_step.deductions.apply(self.solver.grid.as_mut())?;
+                        Ok(Some(possible_solve_steps))
+                    } else {
+                        Ok(None)
+                    }
+                })
+                .transpose()
+        }
     }
 }
 
@@ -347,5 +415,10 @@ mod tests {
             })
             .build();
         assert_fallible_solver_single_solution(solver, &grid);
+    }
+
+    #[test]
+    fn test_solve_path() {
+        todo!()
     }
 }

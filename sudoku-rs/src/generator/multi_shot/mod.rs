@@ -3,14 +3,13 @@ use serde::{Deserialize, Serialize};
 use std::cmp;
 use std::sync::atomic::{AtomicU32, AtomicUsize, Ordering};
 
-use anyhow::ensure;
+use anyhow::{ensure, Context};
 use log::*;
 
 use crate::base::SudokuBase;
 use crate::error::Result;
 use crate::grid::Grid;
-use crate::solver::strategic;
-use crate::solver::strategic::strategies::StrategyEnum;
+use crate::solver::strategic::{self, strategies::StrategyEnum};
 
 use super::{Generator, GeneratorSettings};
 
@@ -30,12 +29,12 @@ pub enum GridMetric {
     /// Weighted sum of all strategy scores used to solve the grid. `Strategy::score() * Number of deductions made by the strategy`
     #[default]
     StrategyTotalScore,
-    /// How often each strategy was successfully executed to solve the grid.
+    /// The number of times a strategy was applied to the grid.
     StrategyApplicationCount,
     /// Number of deductions used to solve the grid.
     StrategyDeductionCount,
-    /// The average number of strategies available to make progress.
-    StrategyOptionsAverage,
+    /// The average number of strategies available to make progress. Scaled by a factor of `1_000`.
+    StrategyAverageOptions,
 
     // Based on the PoC bin `solve_graph` - a graph of all possible solve paths.
     /// The average [branching factor](https://en.wikipedia.org/wiki/Branching_factor) of the strategy solve graph.
@@ -62,16 +61,33 @@ impl GridMetric {
         grid: &Grid<Base>,
         strategies: Vec<StrategyEnum>,
     ) -> Result<EvaluatedGridMetric> {
-        Ok(match self {
-            GridMetric::StrategyTotalScore => strategic::SolverBuilder::new(grid.clone())
+        static STRATEGIC_SOLVER_ERROR_MESSAGE: &str = "Strategic solver failed to solve the grid";
+        fn get_strategic_solver<Base: SudokuBase>(
+            grid: &Grid<Base>,
+            strategies: Vec<StrategyEnum>,
+        ) -> strategic::Solver<Base, Grid<Base>> {
+            strategic::SolverBuilder::new(grid.clone())
                 .strategies(strategies)
                 .build()
-                .solve_route()
+        }
+
+        Ok(match self {
+            GridMetric::StrategyTotalScore => get_strategic_solver(grid, strategies)
+                .solve_path()
                 .total_score()?
-                .unwrap(),
-            GridMetric::StrategyApplicationCount => todo!(),
-            GridMetric::StrategyDeductionCount => todo!(),
-            GridMetric::StrategyOptionsAverage => todo!(),
+                .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?,
+            GridMetric::StrategyApplicationCount => get_strategic_solver(grid, strategies)
+                .solve_path()
+                .application_count()?
+                .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?,
+            GridMetric::StrategyDeductionCount => get_strategic_solver(grid, strategies)
+                .solve_path()
+                .deduction_count()?
+                .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?,
+            GridMetric::StrategyAverageOptions => get_strategic_solver(grid, strategies)
+                .solve_path_all()
+                .average_options()?
+                .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?,
             GridMetric::SolveGraphAverageBranchingFactor => todo!(),
             GridMetric::SatStepCount => todo!(),
             GridMetric::BacktrackingStepCount => todo!(),
