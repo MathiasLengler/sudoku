@@ -3,4 +3,4 @@
 /**
  * A metric used to evaluate the difficulty of a grid.
  */
-export type GridMetric = "strategyTotalScore" | "strategyApplicationCount" | "strategyDeductionCount" | "strategyOptionsAverage" | "solveGraphAverageBranchingFactor" | "satStepCount" | "backtrackingStepCount" | "gridGivens" | "gridGivensValueCountDeviation";
+export type GridMetric = "strategyTotalScore" | "strategyApplicationCount" | "strategyDeductionCount" | "strategyAverageOptions" | "solveGraphAverageBranchingFactor" | "satStepCount" | "backtrackingStepCount" | "gridGivens" | "gridGivensValueCountDeviation";

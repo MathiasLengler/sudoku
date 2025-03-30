@@ -41,10 +41,9 @@ export const ALL_GRID_FORMATS = gridFormatSchema.options;
 
 export const gridMetricSchema = z.enum([
     "strategyTotalScore",
-    "strategyExecutionCount",
     "strategyApplicationCount",
     "strategyDeductionCount",
-    "strategyOptionsAverage",
+    "strategyAverageOptions",
     "solveGraphAverageBranchingFactor",
     "satStepCount",
     "backtrackingStepCount",
