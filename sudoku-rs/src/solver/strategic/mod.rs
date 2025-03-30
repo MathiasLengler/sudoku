@@ -19,6 +19,8 @@ pub mod deduction;
 pub mod strategies;
 
 mod step {
+    use std::fmt::Display;
+
     use super::*;
     pub use dynamic::DynamicSolveStep;
 
@@ -26,6 +28,16 @@ mod step {
     pub struct SolveStep<Base: SudokuBase> {
         pub strategy: StrategyEnum,
         pub deductions: Deductions<Base>,
+    }
+
+    impl<Base: SudokuBase> Display for SolveStep<Base> {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            let Self {
+                strategy,
+                deductions,
+            } = self;
+            write!(f, "Strategy {strategy}:\n{deductions}")
+        }
     }
 
     impl<Base: SudokuBase> TryFrom<DynamicSolveStep> for SolveStep<Base> {
@@ -348,6 +360,8 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> Iterator
 
 #[cfg(test)]
 mod tests {
+    use itertools::Itertools;
+
     use crate::base::consts::Base2;
     use crate::cell::Value;
     use crate::position::Position;
@@ -419,6 +433,34 @@ mod tests {
 
     #[test]
     fn test_solve_path() {
-        todo!()
+        for grid in crate::samples::base_2() {
+            let mut solver = Solver::new_with_strategies(
+                grid.clone(),
+                StrategyEnum::default_solver_strategies_no_brute_force(),
+            );
+            let solve_steps = solver.solve_path().collect::<Result<Vec<_>>>().unwrap();
+            println!(
+                "Grid:\n{grid}\nSolve steps:\n{}",
+                solve_steps.into_iter().join("\n")
+            );
+            // TODO: assert
+        }
+    }
+
+    #[test]
+    fn test_solve_path_all() {
+        for grid in crate::samples::base_2() {
+            let mut solver = Solver::new_with_strategies(
+                grid.clone(),
+                StrategyEnum::default_solver_strategies_no_brute_force(),
+            );
+            let all_possible_solve_steps =
+                solver.solve_path_all().collect::<Result<Vec<_>>>().unwrap();
+            println!(
+                "Grid:\n{grid}\nSolve steps:\n{}",
+                all_possible_solve_steps.into_iter().flatten().join("\n")
+            );
+            // TODO: assert
+        }
     }
 }
