@@ -47,7 +47,7 @@ impl GridFormat for CandidatesGridANSIStyled {
     // }
 }
 
-/// The same as `CandidatesGridColored`, but without terminal styling.
+/// The same as `CandidatesGridANSIStyled`, but without terminal styling.
 ///
 /// # Examples
 ///
