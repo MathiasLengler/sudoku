@@ -295,6 +295,7 @@ body,
     background-color: var(--cell-bg-color-selected);
 }
 
+/* FIXME: font-size does not equal grid cell value */
 .selector-value-text {
     color: var(--cell-value-color-fixed);
     font-size: 100cqmin;
