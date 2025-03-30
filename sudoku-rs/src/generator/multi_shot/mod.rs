@@ -62,29 +62,26 @@ impl GridMetric {
         strategies: Vec<StrategyEnum>,
     ) -> Result<EvaluatedGridMetric> {
         static STRATEGIC_SOLVER_ERROR_MESSAGE: &str = "Strategic solver failed to solve the grid";
-        fn get_strategic_solver<Base: SudokuBase>(
-            grid: &Grid<Base>,
-            strategies: Vec<StrategyEnum>,
-        ) -> strategic::Solver<Base, Grid<Base>> {
+        let get_strategic_solver = |strategies: Vec<StrategyEnum>| {
             strategic::SolverBuilder::new(grid.clone())
                 .strategies(strategies)
                 .build()
-        }
+        };
 
         Ok(match self {
-            GridMetric::StrategyTotalScore => get_strategic_solver(grid, strategies)
+            GridMetric::StrategyTotalScore => get_strategic_solver(strategies)
                 .solve_path()
                 .total_score()?
                 .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?,
-            GridMetric::StrategyApplicationCount => get_strategic_solver(grid, strategies)
+            GridMetric::StrategyApplicationCount => get_strategic_solver(strategies)
                 .solve_path()
                 .application_count()?
                 .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?,
-            GridMetric::StrategyDeductionCount => get_strategic_solver(grid, strategies)
+            GridMetric::StrategyDeductionCount => get_strategic_solver(strategies)
                 .solve_path()
                 .deduction_count()?
                 .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?,
-            GridMetric::StrategyAverageOptions => get_strategic_solver(grid, strategies)
+            GridMetric::StrategyAverageOptions => get_strategic_solver(strategies)
                 .solve_path_all()
                 .average_options()?
                 .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?,
