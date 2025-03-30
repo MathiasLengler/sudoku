@@ -1,5 +1,5 @@
 import { z } from "zod";
-import range from "lodash/range";
+import { range } from "lodash-es";
 import { baseToSideLength } from "../../utils/sudoku";
 import { atom } from "recoil";
 import { localStorageEffect } from "../localStorageEffect";
