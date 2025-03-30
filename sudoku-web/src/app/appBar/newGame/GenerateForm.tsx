@@ -9,7 +9,7 @@ import * as _ from "lodash-es";
 import { useEffect } from "react";
 import { SelectElement, SliderElement, SwitchElement, TextFieldElement, useForm } from "react-hook-form-mui";
 import { useRecoilState } from "recoil";
-import { ALL_GOAL_OPTIMIZATIONS, ALL_GRID_METRICS, GRID_METRIC_OPTIONS } from "../../../constants";
+import { ALL_GOAL_OPTIMIZATIONS, ALL_GRID_METRICS, GRID_METRIC_OPTIONS } from "../../constants";
 import type { DynamicGeneratorSettings, GeneratorProgress } from "../../../types";
 import { useGenerate, useGenerateMultiShot, type TrackedMultiShotGeneratorProgress } from "../../actions/sudokuActions";
 import { Fieldset } from "../../components/Fieldset";

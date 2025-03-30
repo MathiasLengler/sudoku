@@ -4,7 +4,7 @@ import { baseToSideLength } from "../../utils/sudoku";
 import { atom } from "recoil";
 import { localStorageEffect } from "../localStorageEffect";
 import type { ZodBigInt } from "zod";
-import { goalOptimizationSchema, gridMetricSchema, selectedStrategiesSchema } from "../../../constants";
+import { goalOptimizationSchema, gridMetricSchema, selectedStrategiesSchema } from "../../constants";
 
 export const BASE_MIN = 2;
 export const BASE_MAX = 5;

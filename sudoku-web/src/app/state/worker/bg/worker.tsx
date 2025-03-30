@@ -1,7 +1,7 @@
 import * as Comlink from "comlink";
 import { WasmCellWorld, WasmSudoku } from "../../../../../../sudoku-wasm/pkg";
 
-import { WORKER_BOOT_UP_MESSAGE } from "../../../../constants";
+import { WORKER_BOOT_UP_MESSAGE } from "../../../constants";
 import { init } from "./init";
 
 if (import.meta.env.DEV) {

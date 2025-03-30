@@ -3,7 +3,7 @@ import { Link, Stack, Tooltip } from "@mui/material";
 import type { ReactNode } from "react";
 import type { Control, FieldValues, Path } from "react-hook-form";
 import { CheckboxButtonGroup } from "react-hook-form-mui";
-import { ALL_STRATEGIES, STRATEGY_OPTIONS } from "../../../constants";
+import { ALL_STRATEGIES, STRATEGY_OPTIONS } from "../../constants";
 
 function ExternalLink({ children, href }: { children: ReactNode; href: string }) {
     return (

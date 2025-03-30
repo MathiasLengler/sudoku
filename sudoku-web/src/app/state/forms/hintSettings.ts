@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ALL_STRATEGIES, selectedStrategiesSchema } from "../../../constants";
+import { ALL_STRATEGIES, selectedStrategiesSchema } from "../../constants";
 import { atom } from "recoil";
 import { localStorageEffect } from "../localStorageEffect";
 

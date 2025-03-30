@@ -6,7 +6,7 @@ import { Stack } from "@mui/material";
 import { Suspense, useEffect } from "react";
 import { SelectElement, useForm } from "react-hook-form-mui";
 import { useRecoilState, useRecoilValueLoadable, type Loadable } from "recoil";
-import { ALL_GRID_FORMATS } from "../../../constants";
+import { ALL_GRID_FORMATS } from "../../constants";
 import { Code } from "../../components/Code";
 import { ResetFormButton } from "../../components/ResetFormButton";
 import {

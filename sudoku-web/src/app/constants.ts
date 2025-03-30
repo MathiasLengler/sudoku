@@ -1,7 +1,7 @@
-import type { GoalOptimization, GridFormatEnum, GridMetric, StrategyEnum } from "./types";
+import type { GoalOptimization, GridFormatEnum, GridMetric, StrategyEnum } from "../types";
 import { z } from "zod";
 import type { IsEqual } from "type-fest";
-import { assert } from "./typeUtils";
+import { assert } from "../typeUtils";
 import * as _ from "lodash-es";
 
 export const WORKER_BOOT_UP_MESSAGE = "Worker loaded";

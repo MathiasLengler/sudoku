@@ -1,4 +1,4 @@
-import { WORKER_BOOT_UP_MESSAGE } from "../../../constants";
+import { WORKER_BOOT_UP_MESSAGE } from "../../constants";
 
 export async function spawnWorker() {
     console.debug("Spawning worker");
