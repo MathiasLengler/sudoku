@@ -15,6 +15,8 @@ use super::{Generator, GeneratorSettings};
 
 pub use dynamic_settings::*;
 
+// FIXME: Change to f64
+//  https://github.com/rust-lang/rust/issues/72353#issuecomment-1093729062
 pub type EvaluatedGridMetric = u32;
 type AtomicEvaluatedGridMetric = AtomicU32;
 
