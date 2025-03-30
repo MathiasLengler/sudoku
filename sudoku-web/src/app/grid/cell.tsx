@@ -1,14 +1,13 @@
-import type * as React from "react";
-import type * as CSS from "csstype";
 import classNames from "classnames";
-import { cellColorClass, indexToPosition, valueToString } from "../utils/sudoku";
-import type { DynamicCellCandidates, DynamicCellValue, DynamicPosition, TransportCell } from "../../types";
-import { inputState } from "../state/input";
-import { sudokuBaseState } from "../state/sudoku";
+import type * as CSS from "csstype";
+import { isEqual } from "lodash-es";
 import { useRecoilValue } from "recoil";
+import type { DynamicCellCandidates, DynamicCellValue, DynamicPosition, TransportCell } from "../../types";
 import { useHandlePosition } from "../actions/sudokuActions";
 import { hintState } from "../state/hint";
-import { isEqual } from "lodash-es";
+import { inputState } from "../state/input";
+import { sudokuBaseState } from "../state/sudoku";
+import { cellColorClass, indexToPosition, valueToString } from "../utils/sudoku";
 
 function cellBackgroundClass(isSelected: boolean, isGuide: boolean) {
     if (isSelected) {

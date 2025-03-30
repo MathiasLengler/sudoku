@@ -2,7 +2,7 @@ import { Slider } from "@mui/material";
 import classNames from "classnames";
 import type * as CSS from "csstype";
 import * as _ from "lodash-es";
-import React, { useDeferredValue, useMemo } from "react";
+import { memo, useDeferredValue, useMemo } from "react";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeGrid as Grid } from "react-window";
 import { useRecoilCallback, useRecoilState, useRecoilValue } from "recoil";
@@ -27,7 +27,7 @@ type WorldCellVirtualizedProps = {
     style: React.CSSProperties;
 };
 
-const WorldCellVirtualized = React.memo(function WorldCellVirtualized({
+const WorldCellVirtualized = memo(function WorldCellVirtualized({
     rowIndex,
     columnIndex,
     style,

@@ -1,12 +1,11 @@
-import type * as React from "react";
-import { valueToString } from "../utils/sudoku";
 import ButtonBase from "@mui/material/ButtonBase";
 import classNames from "classnames";
-import { useHandleValue } from "../actions/sudokuActions";
+import * as _ from "lodash-es";
 import { selector, selectorFamily, useRecoilValue } from "recoil";
+import { useHandleValue } from "../actions/sudokuActions";
 import { inputState } from "../state/input";
 import { sudokuSideLengthState } from "../state/sudoku";
-import * as _ from "lodash-es";
+import { valueToString } from "../utils/sudoku";
 
 const isSelectedState = selectorFamily<boolean, number>({
     key: "ValueButton.isSelected",

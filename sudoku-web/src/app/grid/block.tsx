@@ -1,13 +1,12 @@
-import type { DynamicPosition, TransportCell } from "../../types";
-import { selectorFamily, useRecoilValue } from "recoil";
-import { sudokuBaseState } from "../state/sudoku";
-import { inputState } from "../state/input";
-import { indexToPosition } from "../utils/sudoku";
 import { isEqual } from "lodash-es";
-import { Cell } from "./cell";
-import * as React from "react";
+import { selectorFamily, useRecoilValue } from "recoil";
+import type { DynamicPosition, TransportCell } from "../../types";
 import type { CreateSerializableParam } from "../../typeUtils";
 import { selectedBlockPositionState } from "../state/cellIndexing";
+import { inputState } from "../state/input";
+import { sudokuBaseState } from "../state/sudoku";
+import { indexToPosition } from "../utils/sudoku";
+import { Cell } from "./cell";
 
 type BlockProps = {
     cells: TransportCell[];
