@@ -166,7 +166,7 @@ impl<Base: SudokuBase> CellState<Base> {
             CellState::Candidates(candidates) => candidates.set(candidate, true),
             CellState::Value(_) => {}
             CellState::FixedValue(_) => unreachable!(),
-        };
+        }
     }
     pub(super) fn delete_candidate(&mut self, candidate: Value<Base>) {
         self.assert_unfixed();
@@ -175,7 +175,7 @@ impl<Base: SudokuBase> CellState<Base> {
             CellState::Candidates(candidates) => candidates.delete(candidate),
             CellState::Value(_) => {}
             CellState::FixedValue(_) => unreachable!(),
-        };
+        }
     }
 }
 

@@ -275,6 +275,7 @@ impl<Base: SudokuBase> MultiShotGenerator<Base> {
         0..self.settings.iterations
     }
 
+    #[allow(dead_code)]
     fn iter_progress_log<'a, IterItem>(
         &'a self,
         iter: impl Iterator<Item = IterItem> + 'a,
@@ -294,6 +295,7 @@ impl<Base: SudokuBase> MultiShotGenerator<Base> {
         (0..self.settings.iterations).into_par_iter()
     }
 
+    #[allow(dead_code)]
     #[cfg(feature = "terminal")]
     fn iterations_par_iter_progress_bar(
         &self,
@@ -305,6 +307,7 @@ impl<Base: SudokuBase> MultiShotGenerator<Base> {
         ).expect("Progress bar template to be valid"))
     }
 
+    #[allow(dead_code)]
     fn par_iter_progress_log<'a, ParIterItem: Send>(
         &'a self,
         par_iter: impl IndexedParallelIterator<Item = ParIterItem> + 'a,

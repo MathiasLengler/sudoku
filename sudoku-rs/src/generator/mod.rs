@@ -756,7 +756,6 @@ mod tests {
                             .map(|values_grid| SolutionSettings { values_grid }),
                         // Unused
                         seed: Some(seed),
-                        ..Default::default()
                     });
 
                     let mut rng = new_crate_rng_with_seed(Some(seed));
