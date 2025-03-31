@@ -62,6 +62,7 @@ export default defineConfig(({ mode }) => ({
                 background_color: "#121212",
             },
             workbox: {
+                // FIXME: https://dev.sudoku.lengler.dev/assets/roboto-flex-latin-wght-normal-n-dP9qr2.woff2
                 globPatterns: ["**/*.{js,wasm,css,html,png,svg,ico}"],
             },
             pwaAssets: {
