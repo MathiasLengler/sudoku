@@ -1,34 +1,59 @@
-import React, { useEffect } from "react";
-import Button from "@mui/material/Button";
-import DialogActions from "@mui/material/DialogActions";
-import { SliderElement, SwitchElement, TextFieldElement, useForm } from "react-hook-form-mui";
-import { Box, DialogContent, FormGroup, LinearProgress, Stack, Typography } from "@mui/material";
-import { baseToCellCount } from "../../utils/sudoku";
-import { useGenerate } from "../../actions/sudokuActions";
+import { zodResolver } from "@hookform/resolvers/zod";
 import CasinoIcon from "@mui/icons-material/Casino";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
-import { LoadingButton } from "@mui/lab";
+import TabPanel from "@mui/lab/TabPanel";
+import { Box, DialogContent, FormGroup, LinearProgress, Stack, Typography } from "@mui/material";
+import Button from "@mui/material/Button";
+import DialogActions from "@mui/material/DialogActions";
+import * as _ from "lodash-es";
+import { useEffect } from "react";
+import { SelectElement, SliderElement, SwitchElement, TextFieldElement, useForm } from "react-hook-form-mui";
 import { useRecoilState } from "recoil";
-import { zodResolver } from "@hookform/resolvers/zod";
-import _ from "lodash";
+import { ALL_GOAL_OPTIMIZATIONS, ALL_GRID_METRICS, GRID_METRIC_OPTIONS } from "../../constants";
+import type { DynamicGeneratorSettings, GeneratorProgress } from "../../../types";
+import { useGenerate, useGenerateMultiShot, type TrackedMultiShotGeneratorProgress } from "../../actions/sudokuActions";
+import { Fieldset } from "../../components/Fieldset";
+import SelectStrategies from "../../components/formFragments/SelectStrategies";
+import MyIconButton from "../../components/MyIconButton";
+import { ResetFormButton } from "../../components/ResetFormButton";
 import {
     BASE_MARKS,
     BASE_MAX,
     BASE_MIN,
     baseToLabel,
     GENERATE_FORM_DEFAULT_VALUES,
-    type GenerateFormValues,
     generateFormValuesSchema,
     generateFormValuesState,
+    iterationsIndexToIterations,
+    MAX_ITERATIONS_INDEX,
+    MIN_ITERATIONS_INDEX,
     SEED_MAX,
+    type GenerateFormValues,
 } from "../../state/forms/generate";
-import type { GeneratorProgress } from "../../../types";
-import MyIconButton from "../../components/MyIconButton";
-import SelectStrategies from "../../components/formFragments/SelectStrategies";
-import { ResetFormButton } from "../../components/ResetFormButton";
-import { Fieldset } from "../../components/Fieldset";
-import TabPanel from "@mui/lab/TabPanel";
+import { baseToCellCount } from "../../utils/sudoku";
 import type { NewGameTabValue } from "./NewGameDialog";
+
+function GenerateProgressLayout({
+    linearProgress,
+    description,
+}: {
+    linearProgress: React.ReactNode;
+    description: string;
+}) {
+    return (
+        <Box sx={{ display: "flex", alignItems: "center", pt: 2, flexDirection: "column" }}>
+            <Box sx={{ width: 1, pb: 1 }}>{linearProgress}</Box>
+            <Typography
+                variant="body2"
+                sx={{
+                    color: "text.secondary",
+                }}
+            >
+                {description}
+            </Typography>
+        </Box>
+    );
+}
 
 type GenerateProgressProps = {
     progress?: GeneratorProgress;
@@ -36,33 +61,59 @@ type GenerateProgressProps = {
 };
 function GenerateProgress({ progress, cellCount }: GenerateProgressProps) {
     if (!progress) {
-        return null;
+        return <GenerateProgressLayout linearProgress={<LinearProgress />} description={"Generating solution"} />;
     }
 
     const { pruningPositionCount, pruningPositionIndex, deletedCount } = progress;
     const value = (pruningPositionIndex / pruningPositionCount) * 100;
 
     return (
-        <Box sx={{ display: "flex", alignItems: "center", pt: 2, flexDirection: "column" }}>
-            <Box sx={{ width: 1, pb: 1 }}>
-                <LinearProgress variant="determinate" value={value} />
-            </Box>
-            <Box sx={{ minWidth: 35 }}>
-                <Typography
-                    variant="body2"
-                    color="text.secondary"
-                >{`Cell ${pruningPositionIndex}/${pruningPositionCount} - deleted ${deletedCount}, remaining ${
-                    cellCount - deletedCount
-                }`}</Typography>
-            </Box>
-        </Box>
+        <GenerateProgressLayout
+            linearProgress={<LinearProgress variant="determinate" value={value} />}
+            description={`Cell ${pruningPositionIndex}/${pruningPositionCount} - deleted ${deletedCount}, remaining ${
+                cellCount - deletedCount
+            }`}
+        />
+    );
+}
+
+type GenerateMultiShotProgressProps = {
+    trackedMultiShotGeneratorProgress?: TrackedMultiShotGeneratorProgress;
+};
+function GenerateMultiShotProgress({ trackedMultiShotGeneratorProgress }: GenerateMultiShotProgressProps) {
+    if (!trackedMultiShotGeneratorProgress) {
+        return (
+            <GenerateProgressLayout
+                linearProgress={<LinearProgress />}
+                description={"Initializing multi-shot generator"}
+            />
+        );
+    }
+
+    const { totalIterations } = trackedMultiShotGeneratorProgress.latestProgress;
+
+    const seenIterationsCount = trackedMultiShotGeneratorProgress.seenIterationsCount;
+    const processingPercentage = (seenIterationsCount / totalIterations) * 100;
+
+    const finishedIterationsCount = trackedMultiShotGeneratorProgress.finishedIterationsCount;
+    const finishedPercentage = (finishedIterationsCount / totalIterations) * 100;
+
+    const inProgressCount = seenIterationsCount - finishedIterationsCount;
+
+    return (
+        <GenerateProgressLayout
+            linearProgress={
+                <LinearProgress variant="buffer" value={finishedPercentage} valueBuffer={processingPercentage} />
+            }
+            description={`Iteration ${finishedIterationsCount}/${totalIterations}, in progress: ${inProgressCount}`}
+        />
     );
 }
 
 type GenerateFormProps = {
     onClose: () => void;
 };
-export const GenerateForm = ({ onClose }: GenerateFormProps) => {
+export function GenerateForm({ onClose }: GenerateFormProps) {
     const [generateFormValues, setGenerateFormValues] = useRecoilState(generateFormValuesState);
 
     const {
@@ -77,7 +128,13 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
         resolver: zodResolver(generateFormValuesSchema),
     });
 
-    const { base, minGivens, useSeed } = watch();
+    const [base, minGivens, useSeed, multiShot, metric] = watch([
+        "base",
+        "minGivens",
+        "useSeed",
+        "multiShot",
+        "metric",
+    ]);
     const cellCount = baseToCellCount(base);
 
     useEffect(() => {
@@ -86,14 +143,17 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
         }
     }, [cellCount, minGivens, setValue]);
 
-    const { generate, progress, cancelGenerate } = useGenerate();
+    const { generate, generateProgress, cancelGenerate } = useGenerate();
+
+    const { generateMultiShot, trackedMultiShotGeneratorProgress, cancelGenerateMultiShot } = useGenerateMultiShot();
 
     // Cancel generation on unmount/modal close
     useEffect(() => {
         return () => {
             cancelGenerate();
+            cancelGenerateMultiShot();
         };
-    }, [cancelGenerate]);
+    }, [cancelGenerate, cancelGenerateMultiShot]);
 
     return (
         <>
@@ -102,23 +162,48 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                     <form
                         id="generate-form"
                         onSubmit={handleSubmit(async (formValues) => {
-                            const { base, minGivens, setAllDirectCandidates, strategies, seed, useSeed } = formValues;
+                            const {
+                                base,
+                                minGivens,
+                                setAllDirectCandidates,
+                                strategies,
+                                seed,
+                                useSeed,
+                                multiShot,
+                                iterationsIndex,
+                                metric,
+                                optimize,
+                                parallel,
+                            } = formValues;
+
+                            const generatorSettings: DynamicGeneratorSettings = {
+                                base,
+                                prune: {
+                                    target: {
+                                        minClueCount: minGivens,
+                                    },
+                                    strategies,
+                                    setAllDirectCandidates,
+                                    // TODO: expose
+                                    order: "random",
+                                    startFromNearMinimalGrid: false,
+                                },
+                                solution: undefined,
+                                seed: useSeed && !_.isUndefined(seed) ? BigInt(seed) : undefined,
+                            };
 
                             try {
-                                await generate({
-                                    base,
-                                    prune: {
-                                        target: {
-                                            minClueCount: minGivens,
-                                        },
-                                        strategies,
-                                        setAllDirectCandidates,
-                                        order: "random",
-                                        startFromNearMinimalGrid: false,
-                                    },
-                                    solution: undefined,
-                                    seed: useSeed && !_.isUndefined(seed) ? BigInt(seed) : undefined,
-                                });
+                                if (multiShot) {
+                                    await generateMultiShot({
+                                        generatorSettings,
+                                        iterations: iterationsIndexToIterations(iterationsIndex),
+                                        metric,
+                                        optimize,
+                                        parallel,
+                                    });
+                                } else {
+                                    await generate(generatorSettings);
+                                }
                             } catch (err) {
                                 if (!(err instanceof DOMException && err.name === "AbortError")) {
                                     throw err;
@@ -178,56 +263,125 @@ export const GenerateForm = ({ onClose }: GenerateFormProps) => {
                                         name="seed"
                                         label="Seed"
                                         disabled={!useSeed}
-                                        inputProps={{ inputMode: "numeric" }}
-                                        InputProps={{
-                                            startAdornment: (
-                                                <MyIconButton
-                                                    label="Generate random seed"
-                                                    icon={CasinoIcon}
-                                                    disabled={!useSeed}
-                                                    onClick={() => {
-                                                        setValue(
-                                                            "seed",
-                                                            Math.trunc(Math.random() * SEED_MAX).toFixed(0),
-                                                        );
-                                                    }}
-                                                />
-                                            ),
+                                        slotProps={{
+                                            htmlInput: { inputMode: "numeric" },
+                                            input: {
+                                                startAdornment: (
+                                                    <MyIconButton
+                                                        label="Generate random seed"
+                                                        icon={CasinoIcon}
+                                                        disabled={!useSeed}
+                                                        onClick={() => {
+                                                            setValue(
+                                                                "seed",
+                                                                Math.trunc(Math.random() * SEED_MAX).toFixed(0),
+                                                            );
+                                                        }}
+                                                    />
+                                                ),
+                                            },
                                         }}
                                     />
                                 </FormGroup>
                             </Fieldset>
-                            <GenerateProgress progress={progress} cellCount={cellCount} />
+                            <Fieldset label="Multi-shot settings">
+                                <SwitchElement control={control} name="multiShot" label="Multi-shot" />
+                                <SwitchElement
+                                    control={control}
+                                    name="parallel"
+                                    label="Parallel"
+                                    disabled={!multiShot}
+                                />
+                                <Stack spacing={2}>
+                                    <SliderElement
+                                        control={control}
+                                        name="iterationsIndex"
+                                        label="Iterations"
+                                        disabled={!multiShot}
+                                        step={1}
+                                        min={MIN_ITERATIONS_INDEX}
+                                        max={MAX_ITERATIONS_INDEX}
+                                        scale={iterationsIndexToIterations}
+                                        valueLabelDisplay="auto"
+                                        getAriaLabel={() => "Iterations"}
+                                        getAriaValueText={(iterations) => `${iterations}`}
+                                    />
+                                    <SelectElement
+                                        control={control}
+                                        name="metric"
+                                        label="Metric"
+                                        disabled={!multiShot}
+                                        helperText={GRID_METRIC_OPTIONS[metric]?.description}
+                                        options={ALL_GRID_METRICS.map((gridMetric) => {
+                                            const option = GRID_METRIC_OPTIONS[gridMetric];
+                                            return {
+                                                id: gridMetric,
+                                                label: option.label,
+                                                disabled: option.disabled,
+                                            };
+                                        })}
+                                    />
+                                    <SelectElement
+                                        control={control}
+                                        name="optimize"
+                                        label="Optimize"
+                                        disabled={!multiShot}
+                                        options={ALL_GOAL_OPTIMIZATIONS.map((goalOptimizations) => ({
+                                            id: goalOptimizations,
+                                            label: goalOptimizations,
+                                        }))}
+                                    />
+                                </Stack>
+                            </Fieldset>
                         </Stack>
                     </form>
                 </TabPanel>
             </DialogContent>
             <DialogActions>
-                <ResetFormButton disabled={isSubmitting} onClick={() => reset(GENERATE_FORM_DEFAULT_VALUES)} />
-                <Button
-                    type="button"
-                    onClick={() => {
-                        if (isSubmitting) {
-                            cancelGenerate();
-                        } else {
-                            onClose();
-                        }
-                    }}
-                >
-                    Cancel
-                </Button>
-                <LoadingButton
-                    type="submit"
-                    form="generate-form"
-                    color="primary"
-                    variant="contained"
-                    endIcon={<PlayArrowIcon />}
-                    loading={isSubmitting}
-                    loadingPosition="end"
-                >
-                    <span>Generate</span>
-                </LoadingButton>
+                <Stack direction="column" sx={{ width: 1 }}>
+                    {isSubmitting &&
+                        (multiShot ? (
+                            <GenerateMultiShotProgress
+                                trackedMultiShotGeneratorProgress={trackedMultiShotGeneratorProgress}
+                            />
+                        ) : (
+                            <GenerateProgress progress={generateProgress} cellCount={cellCount} />
+                        ))}
+                    <Stack
+                        direction="row"
+                        sx={{ width: 1, flex: 1, alignItems: "center", justifyContent: "space-between" }}
+                    >
+                        <ResetFormButton disabled={isSubmitting} onClick={() => reset(GENERATE_FORM_DEFAULT_VALUES)} />
+                        <Button
+                            type="button"
+                            onClick={() => {
+                                if (isSubmitting) {
+                                    if (multiShot) {
+                                        cancelGenerateMultiShot();
+                                    } else {
+                                        cancelGenerate();
+                                    }
+                                } else {
+                                    onClose();
+                                }
+                            }}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="submit"
+                            form="generate-form"
+                            color="primary"
+                            variant="contained"
+                            endIcon={<PlayArrowIcon />}
+                            loading={isSubmitting}
+                            loadingPosition="end"
+                        >
+                            <span>Generate</span>
+                        </Button>
+                    </Stack>
+                </Stack>
             </DialogActions>
         </>
     );
-};
+}

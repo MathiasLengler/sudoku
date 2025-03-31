@@ -1,5 +1,5 @@
 import classNames from "classnames";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import { selectorFamily } from "recoil";
 import { cellDimState, cellWorldDimensionsState, selectedGridPositionState, type WorldCellPosition } from ".";
 import { getAxisBorders, validateCellWorldPosition } from "../../utils/world";

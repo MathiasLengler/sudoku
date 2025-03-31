@@ -1,13 +1,13 @@
-import type { OnRefChangeType } from "react-resize-detector/build/types/types";
+import type { UseResizeDetectorReturn } from "react-resize-detector";
 import { useRecoilValue } from "recoil";
 import { sudokuBlocksIndexesState, sudokuCellsState } from "../state/sudoku";
 import { Block } from "./block";
 
 type GridProps = {
-    gridRef: OnRefChangeType<HTMLDivElement>;
+    gridRef: UseResizeDetectorReturn<HTMLDivElement>["ref"];
 };
 
-export const Grid = ({ gridRef }: GridProps) => {
+export function Grid({ gridRef }: GridProps) {
     const blocksIndexes = useRecoilValue(sudokuBlocksIndexesState);
     const cells = useRecoilValue(sudokuCellsState);
 
@@ -32,4 +32,4 @@ export const Grid = ({ gridRef }: GridProps) => {
             </div>
         </div>
     );
-};
+}

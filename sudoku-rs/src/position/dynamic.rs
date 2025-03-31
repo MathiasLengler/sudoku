@@ -30,12 +30,12 @@ impl<Base: SudokuBase> From<Position<Base>> for DynamicPosition {
 }
 
 impl DynamicPosition {
-    pub fn index_tuple(&self) -> (usize, usize) {
-        let &DynamicPosition { row, column } = self;
+    pub fn index_tuple(self) -> (usize, usize) {
+        let DynamicPosition { row, column } = self;
         (row.into(), column.into())
     }
 
-    pub fn cell_index<Base: SudokuBase>(&self) -> u16 {
+    pub fn cell_index<Base: SudokuBase>(self) -> u16 {
         u16::from(self.row) * u16::from(Base::SIDE_LENGTH) + u16::from(self.column)
     }
 }

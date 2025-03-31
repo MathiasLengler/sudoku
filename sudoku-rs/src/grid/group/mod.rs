@@ -1,6 +1,6 @@
 use crate::{
     base::SudokuBase,
-    cell::{Candidates, Value},
+    cell::Candidates,
     error::{Error, Result},
     position::Coordinate,
     unsafe_utils::{get_unchecked, get_unchecked_mut},
@@ -14,9 +14,17 @@ pub type CandidatesGroup<Base> = Group<Base, Candidates<Base>>;
 /// Wrapper around `Base::Group<T>`, e.g. `[T; Base::SIDE_LENGTH]`.
 ///
 /// Provides efficient indexing using `Coordinate<Base>` and better conversion errors.
-#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Group<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash> {
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Group<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug> {
     group: Base::Group<T>,
+}
+
+impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default> Default for Group<Base, T> {
+    fn default() -> Self {
+        Self {
+            group: Base::group_default(),
+        }
+    }
 }
 
 impl<Base: SudokuBase> Display for CandidatesGroup<Base> {
@@ -55,6 +63,31 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + H
         Self { group }
     }
 
+    // pub fn from_trusted_iter(iter: impl TrustedGroupSizeIter<Base, Item = T>) -> Self {
+    //     Self {
+    //         // TODO: optimize based on the safety contract of `TrustedGroupSizeIter`.
+    //         group: iter.collect::<Vec<_>>().try_into().unwrap(),
+    //     }
+    // }
+
+    pub fn from_iter_checked(iter: impl IntoIterator<Item = T>) -> Self {
+        fn inner<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash>(
+            iter: impl Iterator<Item = T>,
+        ) -> Group<Base, T> {
+            // TODO: use Base::group_uninit
+            let iter = iter.into_iter();
+            let mut this = Group::default();
+            itertools::Itertools::zip_eq(this.iter_mut(), iter).for_each(
+                |(group_item, iter_item)| {
+                    *group_item = iter_item;
+                },
+            );
+            this
+        }
+
+        inner(iter.into_iter())
+    }
+
     pub fn get(&self, coordinate: Coordinate<Base>) -> T {
         // Safety:
         // - Coordinate::<Base>::get_usize: `coordinate < Base::SIDE_LENGTH`
@@ -85,13 +118,7 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + H
         U: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash,
     {
         Group {
-            group: self
-                .group
-                .into_iter()
-                .map(f)
-                .collect::<Vec<_>>()
-                .try_into()
-                .unwrap(),
+            group: Base::group_map(self.group, f),
         }
     }
 
@@ -119,6 +146,10 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + H
         Coordinate::all().zip(self.iter_mut())
     }
 
+    pub fn into_iter_enumerate(self) -> impl Iterator<Item = (Coordinate<Base>, T)> {
+        Coordinate::all().zip(self)
+    }
+
     pub fn iter_index_mask(&self, index_mask: Candidates<Base>) -> impl Iterator<Item = T> + '_ {
         self.iter_enumerate()
             .filter(move |(coordinate, _t)| index_mask.has(*coordinate))
@@ -130,12 +161,13 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + H
         index_mask: Candidates<Base>,
     ) -> impl Iterator<Item = &mut T> {
         self.iter_mut_enumerate()
-            .filter(move |(coordinate, _t)| index_mask.has(Value::from(*coordinate)))
+            .filter(move |(coordinate, _t)| index_mask.has(*coordinate))
             .map(|(_coordinate, t)| t)
     }
 }
 
 impl<Base: SudokuBase> CandidatesGroup<Base> {
+    // TODO: bench/optimize
     #[must_use]
     pub fn transpose(&self) -> CandidatesGroup<Base> {
         let mut transposed = Self::default();
@@ -181,7 +213,7 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + H
 
 #[cfg(test)]
 mod tests {
-    use crate::base::consts::Base3;
+    use crate::{base::consts::*, cell::Value};
 
     use super::*;
 
@@ -207,7 +239,7 @@ mod tests {
 
         assert_eq!(
             format!("{candidates_group}"),
-            r"0:000001011
+            "0:000001011
 1:000001110
 2:000000101
 3:000001001
@@ -225,6 +257,51 @@ mod tests {
         let u8_group: Group<Base3, u8> = vec![0, 1, 2, 3, 4, 5, 6, 7, 8].try_into().unwrap();
 
         assert_eq!(format!("{u8_group}"), "0,1,2,3,4,5,6,7,8");
+    }
+
+    #[test]
+    fn test_from_iter_checked() {
+        let group_data = vec![1, 2, 3, 4];
+        let group = Group::<Base2, u8>::from_iter_checked(group_data.clone());
+        itertools::assert_equal(group, group_data);
+    }
+
+    #[should_panic(expected = "itertools: .zip_eq() reached end of one iterator before the other")]
+    #[test]
+    fn test_from_iter_checked_panic() {
+        Group::<Base2, u8>::from_iter_checked(vec![]);
+    }
+
+    #[test]
+    fn test_get() {
+        let group_data = vec![1, 2, 3, 4];
+        let group: Group<Base2, u8> = group_data.clone().try_into().unwrap();
+
+        assert_eq!(
+            Coordinate::all()
+                .map(|coordinate| group.get(coordinate))
+                .collect::<Vec<_>>(),
+            group_data
+        );
+    }
+
+    #[test]
+    fn test_get_mut() {
+        let group_data = vec![1, 2, 3, 4];
+        let mut group: Group<Base2, u8> = group_data.clone().try_into().unwrap();
+        *group.get_mut(Coordinate::default()) = 5;
+        itertools::assert_equal(group.iter(), vec![5, 2, 3, 4]);
+        *group.get_mut(Coordinate::max()) = 6;
+        itertools::assert_equal(group.iter(), vec![5, 2, 3, 6]);
+    }
+
+    #[test]
+    fn test_map() {
+        let group: CandidatesGroup<Base2> =
+            Group::from_iter_checked(Candidates::iter_all_lexicographical().take(4));
+
+        let group_counts = group.map(|candidates| candidates.count());
+        itertools::assert_equal(group_counts.iter(), vec![0, 1, 1, 2]);
     }
 
     #[test]

@@ -9,6 +9,7 @@ on:
 
 env:
   CI: true
+  CARGO_TERM_COLOR: always
 
 jobs:
   build:
@@ -22,9 +23,18 @@ jobs:
       # Rust
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: nightly-2024-06-23
+          toolchain: nightly-2025-03-09
           targets: wasm32-unknown-unknown
           components: clippy, rust-src
+
+      # just
+      - uses: extractions/setup-just@v3
+
+      # cargo nextest
+      - uses: taiki-e/install-action@nextest
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
       # https://github.com/actions/cache/blob/main/examples.md#rust---cargo
       - uses: actions/cache@v4
@@ -37,17 +47,14 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      # https://doc.rust-lang.org/stable/clippy/usage.html#command-line
       - name: clippy
-        run: cargo clippy -- -Dwarnings
+        run: just clippy-ci
 
-      - run: cargo test
+      - name: test
+        run: just test
 
-      - name: Install wasm-pack
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-
-      - run: wasm-pack build --out-name index --target web . -- -Z build-std=panic_abort,std
-        working-directory: ./sudoku-wasm
+      - name: wasm-pack
+        run: just pack-prod
 
       # Node
       - uses: actions/setup-node@v4

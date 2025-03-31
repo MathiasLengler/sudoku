@@ -1,5 +1,6 @@
 import type * as CSS from "csstype";
 import { Suspense } from "react";
+import { useResizeDetector } from "react-resize-detector";
 import { useRecoilValue } from "recoil";
 import SudokuAppBar from "./appBar/sudokuAppBar";
 import { ThemeErrorBoundary } from "./components/ErrorFallback";
@@ -12,9 +13,8 @@ import { sudokuBaseState, sudokuSideLengthState } from "./state/sudoku";
 import { showWorldMapState } from "./state/world";
 import { SudokuEffects } from "./sudokuEffects";
 import { useKeyboardInput } from "./useKeyboardInput";
-import { useResizeDetector } from "react-resize-detector";
 
-const SudokuGame = () => {
+function SudokuGame() {
     const base = useRecoilValue(sudokuBaseState);
     const sideLength = useRecoilValue(sudokuSideLengthState);
 
@@ -42,9 +42,9 @@ const SudokuGame = () => {
             <ValueSelector />
         </div>
     );
-};
+}
 
-const SudokuContent = () => {
+function SudokuContent() {
     const showWorldMap = useRecoilValue(showWorldMapState);
 
     return (
@@ -54,9 +54,9 @@ const SudokuContent = () => {
             </ThemeErrorBoundary>
         </div>
     );
-};
+}
 
-export const Sudoku = () => {
+export function Sudoku() {
     const { onKeyDown } = useKeyboardInput();
 
     return (
@@ -71,4 +71,4 @@ export const Sudoku = () => {
             <SudokuEffects />
         </div>
     );
-};
+}

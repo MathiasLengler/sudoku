@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ALL_STRATEGIES, selectedStrategiesSchema } from "../../../constants";
+import { ALL_STRATEGIES, selectedStrategiesSchema } from "../../constants";
 import { atom } from "recoil";
 import { localStorageEffect } from "../localStorageEffect";
 
@@ -29,13 +29,13 @@ export type HintSettings = z.infer<typeof hintSettingsSchema>;
 export const hintSettingsSchema = z.object({
     strategies: selectedStrategiesSchema,
     mode: z.enum(["toggleHint", "hintApply", "apply"]),
-    doLoop: z.boolean().default(false),
-    loopDelayIndex: z.number().nonnegative().max(MAX_LOOP_DELAY_INDEX).default(0),
+    doLoop: z.boolean(),
+    loopDelayIndex: z.number().nonnegative().max(MAX_LOOP_DELAY_INDEX),
     multipleDeductions: z.boolean(),
 });
 
 export const DEFAULT_HINT_SETTINGS = {
-    strategies: ALL_STRATEGIES.filter((strategy) => strategy !== "Backtracking"),
+    strategies: ALL_STRATEGIES.filter((strategy) => strategy !== "BruteForce"),
     mode: "hintApply",
     doLoop: false,
     loopDelayIndex: 0,

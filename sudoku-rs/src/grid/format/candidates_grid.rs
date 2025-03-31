@@ -47,7 +47,7 @@ impl GridFormat for CandidatesGridANSIStyled {
     // }
 }
 
-/// The same as `CandidatesGridColored`, but without terminal styling.
+/// The same as `CandidatesGridANSIStyled`, but without terminal styling.
 ///
 /// # Examples
 ///
@@ -156,11 +156,6 @@ impl GridFormat for CandidatesGridPlain {
     }
 
     fn parse(self, input: &str) -> Result<Vec<DynamicCell>> {
-        // TODO: implement
-        //  split into multi-line rows
-        //  split rows into multi-line cells
-        //  extract numbers from cells
-
         fn ensure_same_line_char_count(input: &str) -> Result<usize> {
             let mut line_char_count = None;
             for line in input.lines() {
@@ -326,14 +321,10 @@ impl GridFormat for CandidatesGridPlain {
                         && last_fragments.iter().all(|s| s.trim().is_empty())
                     {
                         let middle_fragment_trimmed = middle_fragment.trim();
-                        if middle_fragment_trimmed.len() == 1
+                        (middle_fragment_trimmed.len() == 1
                             && middle_fragment.find(middle_fragment_trimmed).unwrap()
-                                == cell_width / 2
-                        {
-                            Some(middle_fragment_trimmed.chars().next().unwrap())
-                        } else {
-                            None
-                        }
+                                == cell_width / 2)
+                            .then(|| middle_fragment_trimmed.chars().next().unwrap())
                     } else {
                         None
                     }

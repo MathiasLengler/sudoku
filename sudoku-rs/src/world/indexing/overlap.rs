@@ -151,7 +151,7 @@ mod tests {
         assert_eq!(GridOverlap::<Base2>::new(0).unwrap().overlap, 0);
         assert_eq!(GridOverlap::<Base2>::new(1).unwrap().overlap, 1);
         assert_eq!(GridOverlap::<Base2>::new(2).unwrap().overlap, 2);
-        assert!(GridOverlap::<Base2>::new(3).is_err());
+        GridOverlap::<Base2>::new(3).unwrap_err();
     }
 
     #[test]

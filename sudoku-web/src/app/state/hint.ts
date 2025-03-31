@@ -1,4 +1,4 @@
-import { Snapshot, atom } from "recoil";
+import { type Snapshot, atom } from "recoil";
 import type { StrategyEnum, TransportDeductions } from "../../types";
 
 export async function getHint(snapshot: Snapshot) {

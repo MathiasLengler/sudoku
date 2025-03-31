@@ -1,9 +1,8 @@
-import type * as React from "react";
+import { clamp } from "lodash-es";
 import type { KeyboardEvent } from "react";
-import clamp from "lodash/clamp";
-import type { DynamicPosition, TransportSudoku } from "../types";
-import { inputState } from "./state/input";
 import { useRecoilCallback } from "recoil";
+import type { DynamicPosition, TransportSudoku } from "../types";
+import { useToggleCandidateMode, useToggleStickyMode } from "./actions/inputActions";
 import {
     useDeleteSelectedCell,
     useHandlePosition,
@@ -11,8 +10,8 @@ import {
     useSetAllDirectCandidates,
     useUndo,
 } from "./actions/sudokuActions";
+import { inputState } from "./state/input";
 import { sudokuSideLengthState } from "./state/sudoku";
-import { useToggleCandidateMode, useToggleStickyMode } from "./actions/inputActions";
 
 function keyToValue(key: string, sideLength: number): number | undefined {
     if (key.length === 1) {

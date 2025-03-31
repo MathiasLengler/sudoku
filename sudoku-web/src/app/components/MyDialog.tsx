@@ -1,8 +1,7 @@
-import type * as React from "react";
-import type { ReactNode } from "react";
 import Dialog from "@mui/material/Dialog";
-import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import type { ReactNode } from "react";
 
 type MyDialogProps = {
     open: boolean;
@@ -10,7 +9,7 @@ type MyDialogProps = {
     children: (onClose: () => void) => ReactNode;
 };
 
-export const MyDialog = ({ open, onClose, children }: MyDialogProps) => {
+export function MyDialog({ open, onClose, children }: MyDialogProps) {
     const theme = useTheme();
     const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
 
@@ -26,4 +25,4 @@ export const MyDialog = ({ open, onClose, children }: MyDialogProps) => {
             </Dialog>
         </div>
     );
-};
+}

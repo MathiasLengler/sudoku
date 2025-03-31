@@ -137,7 +137,7 @@ mod tests {
             BlockCoordinate::<Base2>::new(1).unwrap().block_coordinate,
             1
         );
-        assert!(BlockCoordinate::<Base2>::new(2).is_err());
+        BlockCoordinate::<Base2>::new(2).unwrap_err();
     }
 
     #[test]

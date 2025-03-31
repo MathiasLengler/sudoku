@@ -1,5 +1,16 @@
 import type { DynamicCellValue, DynamicPosition, TransportSudoku } from "../../types";
 
+export function cellColorClass(fixed: boolean, incorrectValue: boolean) {
+    if (fixed) {
+        return "cell--fixed";
+    }
+    if (incorrectValue) {
+        return "cell--incorrect-value";
+    } else {
+        return "cell--user";
+    }
+}
+
 export function indexToPosition({
     blockIndex,
     base,

@@ -1,6 +1,7 @@
 use std::fmt::{Binary, Debug, Display};
 use std::hash::Hash;
-use std::ops::{BitAndAssign, BitOrAssign, BitXorAssign, RangeInclusive, Shl};
+use std::mem::MaybeUninit;
+use std::ops::{BitAndAssign, BitOrAssign, BitXorAssign, Shl};
 
 use num::traits::{
     CheckedShl, CheckedShr, ConstOne, ConstZero, NumAssignOps, Unsigned, WrappingAdd, WrappingMul,
@@ -77,70 +78,80 @@ mod cell_index_to_block_index {
     //! - `array.len() == Base::CELL_COUNT`
     use super::*;
 
-    pub(super) static BASE_2: &[u8; base_to_cell_count(2) as usize] = &[
-        0, 0, 1, 1, //
-        0, 0, 1, 1, //
-        2, 2, 3, 3, //
-        2, 2, 3, 3, //
-    ];
-    pub(super) static BASE_3: &[u8; base_to_cell_count(3) as usize] = &[
-        0, 0, 0, 1, 1, 1, 2, 2, 2, //
-        0, 0, 0, 1, 1, 1, 2, 2, 2, //
-        0, 0, 0, 1, 1, 1, 2, 2, 2, //
-        3, 3, 3, 4, 4, 4, 5, 5, 5, //
-        3, 3, 3, 4, 4, 4, 5, 5, 5, //
-        3, 3, 3, 4, 4, 4, 5, 5, 5, //
-        6, 6, 6, 7, 7, 7, 8, 8, 8, //
-        6, 6, 6, 7, 7, 7, 8, 8, 8, //
-        6, 6, 6, 7, 7, 7, 8, 8, 8, //
-    ];
-    #[rustfmt::skip]
-    pub(super) static BASE_4: &[u8; base_to_cell_count(4) as usize] = &[
-         0,  0,  0,  0,  1,  1,  1,  1,  2,  2,  2,  2,  3,  3,  3,  3,
-         0,  0,  0,  0,  1,  1,  1,  1,  2,  2,  2,  2,  3,  3,  3,  3,
-         0,  0,  0,  0,  1,  1,  1,  1,  2,  2,  2,  2,  3,  3,  3,  3,
-         0,  0,  0,  0,  1,  1,  1,  1,  2,  2,  2,  2,  3,  3,  3,  3, 
-         4,  4,  4,  4,  5,  5,  5,  5,  6,  6,  6,  6,  7,  7,  7,  7,
-         4,  4,  4,  4,  5,  5,  5,  5,  6,  6,  6,  6,  7,  7,  7,  7,
-         4,  4,  4,  4,  5,  5,  5,  5,  6,  6,  6,  6,  7,  7,  7,  7,
-         4,  4,  4,  4,  5,  5,  5,  5,  6,  6,  6,  6,  7,  7,  7,  7, 
-         8,  8,  8,  8,  9,  9,  9,  9, 10, 10, 10, 10, 11, 11, 11, 11,
-         8,  8,  8,  8,  9,  9,  9,  9, 10, 10, 10, 10, 11, 11, 11, 11,
-         8,  8,  8,  8,  9,  9,  9,  9, 10, 10, 10, 10, 11, 11, 11, 11,
-         8,  8,  8,  8,  9,  9,  9,  9, 10, 10, 10, 10, 11, 11, 11, 11,
-        12, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 14, 15, 15, 15, 15,
-        12, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 14, 15, 15, 15, 15,
-        12, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 14, 15, 15, 15, 15,
-        12, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 14, 15, 15, 15, 15,
-    ];
-    #[rustfmt::skip]
-    pub(super) static BASE_5: &[u8; base_to_cell_count(5) as usize] = &[
-         0,  0,  0,  0,  0,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  3,  3,  3,  3,  3,  4,  4,  4,  4,  4,
-         0,  0,  0,  0,  0,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  3,  3,  3,  3,  3,  4,  4,  4,  4,  4,
-         0,  0,  0,  0,  0,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  3,  3,  3,  3,  3,  4,  4,  4,  4,  4,
-         0,  0,  0,  0,  0,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  3,  3,  3,  3,  3,  4,  4,  4,  4,  4,
-         0,  0,  0,  0,  0,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  3,  3,  3,  3,  3,  4,  4,  4,  4,  4,
-         5,  5,  5,  5,  5,  6,  6,  6,  6,  6,  7,  7,  7,  7,  7,  8,  8,  8,  8,  8,  9,  9,  9,  9,  9,
-         5,  5,  5,  5,  5,  6,  6,  6,  6,  6,  7,  7,  7,  7,  7,  8,  8,  8,  8,  8,  9,  9,  9,  9,  9,
-         5,  5,  5,  5,  5,  6,  6,  6,  6,  6,  7,  7,  7,  7,  7,  8,  8,  8,  8,  8,  9,  9,  9,  9,  9,
-         5,  5,  5,  5,  5,  6,  6,  6,  6,  6,  7,  7,  7,  7,  7,  8,  8,  8,  8,  8,  9,  9,  9,  9,  9,
-         5,  5,  5,  5,  5,  6,  6,  6,  6,  6,  7,  7,  7,  7,  7,  8,  8,  8,  8,  8,  9,  9,  9,  9,  9,
-        10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 13, 13, 13, 13, 13, 14, 14, 14, 14, 14,
-        10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 13, 13, 13, 13, 13, 14, 14, 14, 14, 14,
-        10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 13, 13, 13, 13, 13, 14, 14, 14, 14, 14,
-        10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 13, 13, 13, 13, 13, 14, 14, 14, 14, 14,
-        10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 13, 13, 13, 13, 13, 14, 14, 14, 14, 14,
-        15, 15, 15, 15, 15, 16, 16, 16, 16, 16, 17, 17, 17, 17, 17, 18, 18, 18, 18, 18, 19, 19, 19, 19, 19,
-        15, 15, 15, 15, 15, 16, 16, 16, 16, 16, 17, 17, 17, 17, 17, 18, 18, 18, 18, 18, 19, 19, 19, 19, 19,
-        15, 15, 15, 15, 15, 16, 16, 16, 16, 16, 17, 17, 17, 17, 17, 18, 18, 18, 18, 18, 19, 19, 19, 19, 19,
-        15, 15, 15, 15, 15, 16, 16, 16, 16, 16, 17, 17, 17, 17, 17, 18, 18, 18, 18, 18, 19, 19, 19, 19, 19,
-        15, 15, 15, 15, 15, 16, 16, 16, 16, 16, 17, 17, 17, 17, 17, 18, 18, 18, 18, 18, 19, 19, 19, 19, 19,
-        20, 20, 20, 20, 20, 21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 23, 23, 23, 23, 23, 24, 24, 24, 24, 24,
-        20, 20, 20, 20, 20, 21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 23, 23, 23, 23, 23, 24, 24, 24, 24, 24,
-        20, 20, 20, 20, 20, 21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 23, 23, 23, 23, 23, 24, 24, 24, 24, 24,
-        20, 20, 20, 20, 20, 21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 23, 23, 23, 23, 23, 24, 24, 24, 24, 24,
-        20, 20, 20, 20, 20, 21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 23, 23, 23, 23, 23, 24, 24, 24, 24, 24
-    ];
+    const fn assert_u16(value: usize) -> u16 {
+        assert!(value <= u16::MAX as usize, "Value exceeds u16::MAX");
+        #[allow(clippy::cast_possible_truncation)]
+        {
+            value as u16
+        }
+    }
+
+    const fn assert_u8(value: u16) -> u8 {
+        assert!(value <= u8::MAX as u16, "Value exceeds u8::MAX");
+        #[allow(clippy::cast_possible_truncation)]
+        {
+            value as u8
+        }
+    }
+
+    const fn const_generate_cell_index_to_block_index<const BASE: u8, const CELL_COUNT: usize>(
+    ) -> [u8; CELL_COUNT] {
+        assert!(
+            base_to_cell_count(BASE) as usize == CELL_COUNT,
+            "Invalid CELL_COUNT for BASE"
+        );
+        let cell_count = assert_u16(CELL_COUNT);
+        let base_u16 = BASE as u16;
+
+        let mut out = [0u8; CELL_COUNT];
+
+        let mut i: u16 = 0;
+        while i < cell_count {
+            let starting_block_index = assert_u8(base_u16 * (i / (base_u16 * base_u16 * base_u16)));
+            let block_row_offset = assert_u8((i / base_u16) % base_u16);
+            out[i as usize] = starting_block_index + block_row_offset;
+
+            i += 1;
+        }
+
+        out
+    }
+
+    pub(super) static BASE_2: &[u8; base_to_cell_count(2) as usize] =
+        &const_generate_cell_index_to_block_index::<2, { base_to_cell_count(2) as usize }>();
+    pub(super) static BASE_3: &[u8; base_to_cell_count(3) as usize] =
+        &const_generate_cell_index_to_block_index::<3, { base_to_cell_count(3) as usize }>();
+    pub(super) static BASE_4: &[u8; base_to_cell_count(4) as usize] =
+        &const_generate_cell_index_to_block_index::<4, { base_to_cell_count(4) as usize }>();
+    pub(super) static BASE_5: &[u8; base_to_cell_count(5) as usize] =
+        &const_generate_cell_index_to_block_index::<5, { base_to_cell_count(5) as usize }>();
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn test_assert_u8() {
+            assert_eq!(assert_u8(u16::from(u8::MAX)), u8::MAX);
+        }
+
+        #[test]
+        #[should_panic(expected = "Value exceeds u8::MAX")]
+        fn test_assert_u8_panic() {
+            assert_u8(u16::from(u8::MAX) + 1);
+        }
+
+        #[test]
+        fn test_assert_u16() {
+            assert_eq!(assert_u16(usize::from(u16::MAX)), u16::MAX);
+        }
+
+        #[test]
+        #[should_panic(expected = "Value exceeds u16::MAX")]
+        fn test_assert_u16_panic() {
+            assert_u16(usize::from(u16::MAX) + 1);
+        }
+    }
 }
 
 mod block_index_to_top_left_cell_index {
@@ -182,7 +193,6 @@ where
     /// - `Base::DYNAMIC_BASE.into_u8() == Base::BASE`
     const ENUM: BaseEnum;
 
-    // TODO: evaluate `as` casting of constants
     /// The side length of a sudoku block. Must be non-zero.
     ///
     /// # Safety
@@ -277,15 +287,19 @@ where
         + Sync
         + Clone
         + Debug
-        + Default
-        + Ord
-        + Hash
         + IntoIterator<
             Item = T,
-            IntoIter: ExactSizeIterator<Item = T> + DoubleEndedIterator<Item = T>,
+            IntoIter: ExactSizeIterator<Item = T> + DoubleEndedIterator<Item = T> + Clone,
         > + TryFrom<Vec<T>, Error = Vec<T>>
     where
-        T: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash;
+        T: Send + Sync + Copy + Clone + Debug;
+
+    fn group_default<T: Send + Sync + Copy + Clone + Debug + Default>() -> Self::Group<T>;
+    fn group_uninit<T: Send + Sync + Copy + Clone + Debug>() -> Self::Group<MaybeUninit<T>>;
+    fn group_map<T: Send + Sync + Copy + Clone + Debug, U: Send + Sync + Copy + Clone + Debug>(
+        group: Self::Group<T>,
+        f: impl FnMut(T) -> U,
+    ) -> Self::Group<U>;
 }
 
 macro_rules! impl_sudoku_base {
@@ -326,7 +340,20 @@ unsafe impl SudokuBase for $type_num {
 
     type CandidatesIntegral = $type_integral;
 
-    type Group<T: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash> = [T; Self::SIDE_LENGTH as usize];
+    type Group<T: Send + Sync + Copy + Clone + Debug> = [T; Self::SIDE_LENGTH as usize];
+
+    fn group_default<T: Send + Sync + Copy + Clone + Debug + Default>() -> Self::Group<T> {
+        [Default::default(); Self::SIDE_LENGTH as usize]
+    }
+    fn group_uninit<T: Send + Sync + Copy + Clone + Debug>() -> Self::Group<MaybeUninit<T>> {
+        [const { MaybeUninit::uninit() }; Self::SIDE_LENGTH as usize]
+    }
+    fn group_map<T: Send + Sync + Copy + Clone + Debug, U: Send + Sync + Copy + Clone + Debug>(
+        group: Self::Group<T>,
+        f: impl FnMut(T) -> U,
+    ) -> Self::Group<U> {
+        group.map(f)
+    }
 }
         )+
     };
@@ -364,7 +391,7 @@ mod enum_impl {
                 3 => BaseEnum::Base3,
                 4 => BaseEnum::Base4,
                 5 => BaseEnum::Base5,
-                _unexpected_base => unreachable!(),
+                _unexpected_base => panic!("Unexpected base"),
             }
         }
 
@@ -667,7 +694,7 @@ mod tests {
         // MAX_VALUE must be representable at the highest bit position.
         assert!(size_of::<Base::CandidatesIntegral>() * 8 >= usize::from(Base::MAX_VALUE));
         // Safety invariant of Base::Group<T>
-        let mut group = <Base as SudokuBase>::Group::<()>::default();
+        let mut group = Base::group_default::<()>();
         assert_eq!(group.as_ref().len(), usize::from(Base::SIDE_LENGTH));
         assert_eq!(group.as_mut().len(), usize::from(Base::SIDE_LENGTH));
     }

@@ -2,8 +2,10 @@ use env_logger::Env;
 
 use sudoku::base::consts::*;
 use sudoku::error::Result;
-use sudoku::generator::goal::GoalGenerator;
-use sudoku::generator::{Generator, PruningSettings};
+use sudoku::generator::multi_shot::{
+    EvaluatedGrid, GoalOptimization, GridMetric, MultiShotGenerator, MultiShotGeneratorSettings,
+};
+use sudoku::generator::{GeneratorSettings, PruningSettings};
 use sudoku::solver::strategic::strategies::StrategyEnum;
 
 type Base = Base3;
@@ -15,14 +17,31 @@ fn main() -> Result<()> {
     .format_indent(Some(0))
     .init();
 
-    let generator = GoalGenerator::<Base>::new(Generator::with_pruning(PruningSettings {
-        strategies: StrategyEnum::default_solver_strategies_no_backtracking(),
-        ..Default::default()
-    }))?;
+    let generator = MultiShotGenerator::<Base>::with_settings(MultiShotGeneratorSettings {
+        generator_settings: GeneratorSettings {
+            prune: Some(PruningSettings {
+                strategies: StrategyEnum::default_solver_strategies_no_brute_force(),
+                ..Default::default()
+            }),
+            ..Default::default()
+        },
+        iterations: 10_000,
+        metric: GridMetric::StrategyScore,
+        optimize: GoalOptimization::Maximize,
+        parallel: true,
+    })?;
 
-    let (total_score, grid) = generator.generate_for_total_strategy_score(10_000)?;
+    let EvaluatedGrid {
+        grid,
+        evaluated_grid_metric,
+    } = generator.generate_with_progress(|progress| {
+        if progress.current_iteration() % 1000 == 0 {
+            println!("Progress: {progress:?}");
+        }
+        Ok(())
+    })?;
 
-    println!("Total score: {}\n{grid}", total_score);
+    println!("Evaluated grid metric: {}\n{grid}", evaluated_grid_metric);
 
     Ok(())
 }

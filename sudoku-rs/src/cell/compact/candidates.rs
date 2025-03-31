@@ -1,6 +1,7 @@
 use std::fmt;
 use std::fmt::{Binary, Display, Formatter};
 use std::mem::size_of;
+use std::ops::RangeBounds;
 
 use anyhow::ensure;
 use iter_combinations::CandidatesCombinationsIter;
@@ -18,9 +19,6 @@ use crate::cell::dynamic::DynamicCandidates;
 use crate::cell::{Cell, CellState};
 use crate::error::{Error, Result};
 use crate::position::{BlockCoordinate, Coordinate};
-
-// TODO: remove after bench
-pub use iter_combinations::debug_asm;
 
 mod iter;
 mod iter_combinations;
@@ -48,6 +46,7 @@ impl<Base: SudokuBase> Candidates<Base> {
         Self::with_integral_unchecked(Base::CandidatesIntegral::ZERO)
     }
 
+    // TODO: mark as unsafe
     fn with_integral_unchecked(bits: Base::CandidatesIntegral) -> Self {
         let this = Self { bits };
         this.debug_assert();
@@ -61,6 +60,7 @@ impl<Base: SudokuBase> Candidates<Base> {
         this
     }
 
+    // TODO: refactor arg `candidate: impl Into<Coordinate<Base>>`
     pub fn with_single(candidate: Value<Base>) -> Self {
         let mut this = Self::new();
         this.set(candidate, true);
@@ -69,6 +69,41 @@ impl<Base: SudokuBase> Candidates<Base> {
 
     pub fn all() -> Self {
         Self::with_integral_unchecked(Self::all_candidates_mask())
+    }
+
+    pub fn with_range<C: Into<Coordinate<Base>> + Copy>(
+        candidate_range: impl RangeBounds<C>,
+    ) -> Self {
+        use std::ops::Bound;
+
+        let start_bound: Bound<Coordinate<Base>> = candidate_range.start_bound().map(|&c| c.into());
+        let end_bound: Bound<Coordinate<Base>> = candidate_range.end_bound().map(|&c| c.into());
+
+        let excluded_mask = match start_bound {
+            // TODO: add Coordinate::{inc|dec}() -> Option<Coordinate>
+            Bound::Included(start) if start == Coordinate::default() => {
+                Base::CandidatesIntegral::ZERO
+            }
+            Bound::Included(start) => Self::all_less_than_or_equal_candidates_mask(
+                // Safety: the previous match arm checks for zero. Therefore, the expression remains in-bounds and doesn't underflow.
+                unsafe { Coordinate::new_unchecked(start.get() - 1) },
+            ),
+            Bound::Excluded(start) => Self::all_less_than_or_equal_candidates_mask(start),
+            Bound::Unbounded => Base::CandidatesIntegral::ZERO,
+        };
+
+        let included_mask = match end_bound {
+            Bound::Included(end) => Self::all_less_than_or_equal_candidates_mask(end),
+            Bound::Excluded(end) if end == Coordinate::default() => Base::CandidatesIntegral::ZERO,
+            Bound::Excluded(end) => Self::all_less_than_or_equal_candidates_mask(
+                // Safety: the previous match arm checks for zero. Therefore, the expression remains in-bounds and doesn't underflow.
+                unsafe { Coordinate::new_unchecked(end.get() - 1) },
+            ),
+            Bound::Unbounded => Self::all_candidates_mask(),
+        };
+
+        Self::with_integral_unchecked(included_mask)
+            .without(Self::with_integral_unchecked(excluded_mask))
     }
 
     pub fn block_segmentation_mask(segment_index: BlockCoordinate<Base>) -> Self {
@@ -139,6 +174,20 @@ impl<Base: SudokuBase> Candidates<Base> {
         self.debug_assert();
     }
 
+    pub fn set_range<C: Into<Coordinate<Base>> + Copy>(
+        &mut self,
+        candidate_range: impl RangeBounds<C>,
+        enabled: bool,
+    ) {
+        let range_candidates = Self::with_range(candidate_range);
+        if enabled {
+            *self = self.union(range_candidates);
+        } else {
+            *self = self.without(range_candidates);
+        }
+        self.debug_assert();
+    }
+
     pub fn insert(&mut self, candidate: impl Into<Coordinate<Base>>) {
         self.set(candidate, true);
     }
@@ -184,13 +233,9 @@ impl<Base: SudokuBase> Candidates<Base> {
     fn leading_zeros(&self) -> u8 {
         debug_assert!(!self.is_empty());
 
-        // TODO: dedup with block_segmentation
-        let size_bits: u8 = (size_of::<Base::CandidatesIntegral>() * 8)
-            .try_into()
-            .unwrap();
-
         // unwrap optimizes away
-        u8::try_from(self.bits.leading_zeros()).unwrap() - (size_bits - Base::MAX_VALUE - 1)
+        u8::try_from(self.bits.leading_zeros()).unwrap()
+            - (const { Self::storage_bit_count() - Base::MAX_VALUE - 1 })
     }
 
     // Reference: https://lemire.me/blog/2018/02/21/iterating-over-set-bits-quickly/
@@ -232,12 +277,9 @@ impl<Base: SudokuBase> Candidates<Base> {
     pub fn block_segmentation(self) -> Option<BlockCoordinate<Base>> {
         let base = Base::BASE;
 
-        let size_bits: u8 = (size_of::<Base::CandidatesIntegral>() * 8)
-            .try_into()
-            .unwrap();
         let storage_leading_zeros: u8 = self.bits.leading_zeros().try_into().unwrap();
         // Check if empty
-        if storage_leading_zeros == size_bits {
+        if storage_leading_zeros == Self::storage_bit_count() {
             return None;
         }
         let all_leading_zeros: u8 = Self::all_candidates_mask()
@@ -263,11 +305,7 @@ impl<Base: SudokuBase> Candidates<Base> {
         // because `logic_leading_zeros` is less than `Base::SIDE_LENGTH` for non-empty Candidates.
         let end_coordinate = unsafe { Coordinate::<Base>::new_unchecked(end) };
         let end_coordinate = BlockCoordinate::round_down(end_coordinate);
-        if start_block_coordinate == end_coordinate {
-            Some(start_block_coordinate)
-        } else {
-            None
-        }
+        (start_block_coordinate == end_coordinate).then_some(start_block_coordinate)
     }
 
     pub fn count(&self) -> u8 {
@@ -278,11 +316,11 @@ impl<Base: SudokuBase> Candidates<Base> {
         self.into_iter()
     }
 
-    pub fn to_vec_u8(&self) -> Vec<u8> {
+    pub fn to_vec_u8(self) -> Vec<u8> {
         self.iter().map(|value| value.get()).collect()
     }
 
-    pub fn to_vec_value(&self) -> Vec<Value<Base>> {
+    pub fn to_vec_value(self) -> Vec<Value<Base>> {
         self.iter().collect()
     }
 
@@ -301,19 +339,44 @@ impl<Base: SudokuBase> Candidates<Base> {
 
     /// Returns an iterator over all combinations of `k` candidates contained in this `Candidates`.
     pub fn combinations(self, k: Value<Base>) -> CandidatesCombinationsIter<Base> {
-        CandidatesCombinationsIter::new(k, self)
+        CandidatesCombinationsIter::new(self, k)
     }
 }
 
 /// Internal helpers
 impl<Base: SudokuBase> Candidates<Base> {
-    // TODO: benchmark/view assembly; should evaluate to a constant for a specific base
     fn all_candidates_mask() -> Base::CandidatesIntegral {
+        Self::all_less_than_or_equal_candidates_mask(Coordinate::max())
+    }
+    fn all_less_than_or_equal_candidates_mask(
+        candidate: Coordinate<Base>,
+    ) -> Base::CandidatesIntegral {
         let zero = Base::CandidatesIntegral::ZERO;
         let one = Base::CandidatesIntegral::ONE;
-        one.checked_shl(u32::from(Base::MAX_VALUE))
-            .unwrap_or(zero)
-            .wrapping_sub(&one)
+        // Pedantic micro-optimization:
+        // We only require explicit overflow handling for base4,
+        // where MAX_VALUE matches the storage bit count *exactly*.
+        // For other bases we can make use of the unsed higher bits and execute unchecked shifts/subtraction.
+        // This results in a "huge" difference of
+        // Base4: 8 x86 ASM instructions, including CMP and CMOVB
+        // Else: 4 x86 ASM instructions, no comparisons or condidional move.
+        if Base::MAX_VALUE == Self::storage_bit_count() {
+            one.checked_shl(u32::from(candidate.get() + 1))
+                .unwrap_or(zero)
+                .wrapping_sub(&one)
+        } else {
+            one.unsigned_shl(u32::from(candidate.get() + 1)) - one
+        }
+    }
+    // const TryInto is unstable
+    #[allow(clippy::cast_possible_truncation)]
+    const fn storage_bit_count() -> u8 {
+        let storage_bit_count_usize = size_of::<Base::CandidatesIntegral>() * 8;
+        assert!(
+            storage_bit_count_usize <= u8::MAX as usize,
+            "Unexpected overflow of storage_bit_count_usize"
+        );
+        storage_bit_count_usize as u8
     }
 
     /// Convert a single candidate (`Value` or `Coordinate`) into a bit mask.
@@ -522,6 +585,72 @@ mod tests {
         }
 
         #[test]
+        fn test_with_range() {
+            use std::fmt::Debug;
+            use std::ops::{Bound, RangeBounds};
+
+            fn assert_range_eq<Base: SudokuBase>(
+                range: impl RangeBounds<Value<Base>> + Clone + Debug,
+            ) {
+                let candidates = Candidates::with_range(range.clone());
+                assert!(candidates
+                    .into_iter()
+                    .all(|candidate| range.contains(&candidate)));
+                let inverted_candidates = candidates.invert();
+                assert!(inverted_candidates
+                    .into_iter()
+                    .all(|candidate| !range.contains(&candidate)));
+            }
+
+            fn all_bounds<Base: SudokuBase>() -> impl Iterator<Item = Bound<Value<Base>>> + Clone {
+                Value::all()
+                    .map(Bound::Included)
+                    .chain(Value::all().map(Bound::Excluded))
+                    .chain(std::iter::once(Bound::Unbounded))
+            }
+
+            // Sample tests
+            assert_eq!(
+                Candidates::<Base2>::with_range::<Value<_>>(..),
+                Candidates::all()
+            );
+            assert_eq!(
+                Candidates::<Base2>::with_range::<Value<_>>(Value::default()..),
+                Candidates::all()
+            );
+            assert_eq!(
+                Candidates::<Base2>::with_range::<Value<_>>(..=Value::max()),
+                Candidates::all()
+            );
+            assert_eq!(
+                Candidates::<Base2>::with_range::<Value<_>>(Value::default()..=Value::max()),
+                Candidates::all()
+            );
+            assert_eq!(
+                Candidates::<Base2>::with_range::<Value<_>>(..=Value::default()),
+                Candidates::with_single(Value::default())
+            );
+            assert_eq!(
+                Candidates::<Base2>::with_range::<Value<_>>(Value::default()..=Value::default()),
+                Candidates::with_single(Value::default())
+            );
+            assert_eq!(
+                Candidates::<Base2>::with_range::<Value<_>>(
+                    Value::default()..Value::try_from(2).unwrap()
+                ),
+                Candidates::with_single(Value::default())
+            );
+
+            // Exhasitve tests for base 2 and 3
+            for range in all_bounds::<Base2>().cartesian_product(all_bounds()) {
+                assert_range_eq(range);
+            }
+            for range in all_bounds::<Base3>().cartesian_product(all_bounds()) {
+                assert_range_eq(range);
+            }
+        }
+
+        #[test]
         fn test_with_integral() {
             type Base = Base5;
             fn assert_integral_identity(i: u32) {
@@ -591,10 +720,10 @@ mod tests {
             assert_eq!(candidates.to_vec_u8(), Vec::<u8>::new());
 
             let candidates = Candidates::<Base3>::try_from(vec![0]);
-            assert!(candidates.is_err());
+            candidates.unwrap_err();
 
             let candidates = Candidates::<Base3>::try_from(vec![10]);
-            assert!(candidates.is_err());
+            candidates.unwrap_err();
 
             Ok(())
         }
@@ -638,6 +767,31 @@ mod tests {
         }
 
         #[test]
+        fn test_set_range() {
+            let mut candidates = Candidates::<Base2>::new();
+            let value2 = Value::try_from(2).unwrap();
+            let all = ..;
+            let first_half = ..=value2;
+            let second_half = value2..;
+
+            let candidates_empty = Candidates::new();
+            let candidates_first_half = vec![1, 2].try_into().unwrap();
+            let candidates_second_half = vec![3, 4].try_into().unwrap();
+            let candidates_all = Candidates::all();
+
+            candidates.set_range::<Value<_>>(all, false);
+            assert_eq!(candidates, candidates_empty);
+            candidates.set_range(first_half, true);
+            assert_eq!(candidates, candidates_first_half);
+            candidates.set_range(second_half.clone(), true);
+            assert_eq!(candidates, candidates_all);
+            candidates.set_range(first_half, false);
+            assert_eq!(candidates, candidates_second_half);
+            candidates.set_range(second_half, false);
+            assert_eq!(candidates, candidates_empty);
+        }
+
+        #[test]
         fn test_insert() {
             let mut candidates = Candidates::<Base2>::new();
             let value1 = Value::try_from(1).unwrap();
@@ -665,7 +819,7 @@ mod tests {
     }
 
     mod getters {
-        use std::{collections::BTreeSet, iter};
+        use std::collections::BTreeSet;
 
         use super::*;
 
@@ -901,91 +1055,17 @@ mod tests {
 
         #[test]
         fn test_combinations() {
-            fn assert_set_equals<Base: SudokuBase>(
-                a: impl IntoIterator<Item = Candidates<Base>>,
-                b: impl IntoIterator<Item = Candidates<Base>>,
-            ) {
-                let a: BTreeSet<_> = a.into_iter().collect();
-                let b: BTreeSet<_> = b.into_iter().collect();
-                assert_eq!(a, b);
-            }
-
-            fn combinations_itertools<Base: SudokuBase>(
-                candidates: Candidates<Base>,
-                k: Value<Base>,
-            ) -> impl Iterator<Item = Candidates<Base>> {
-                use itertools::Itertools;
-
-                candidates
-                    .iter()
-                    .combinations(k.get().into())
-                    .map(|combination| combination.into())
-            }
-
-            let empty: Candidates<Base2> = Candidates::new();
-            let one: Candidates<Base2> = Candidates::with_single(1.try_into().unwrap());
-            let one_two_three: Candidates<Base2> = vec![1, 2, 3].try_into().unwrap();
-            let all: Candidates<Base2> = Candidates::all();
-            let all_base3: Candidates<Base3> = Candidates::all();
-
-            for k in Value::all() {
-                // empty candidates never produce any combinations
-                itertools::assert_equal(empty.combinations(k), iter::empty());
-
-                if k.get() == 1 {
-                    // a single candidate only produces a single combination if k == 1
-                    itertools::assert_equal(one.combinations(k), iter::once(one));
-                } else {
-                    // a single candidate never produces any combinations if k > 1
-                    itertools::assert_equal(one.combinations(k), iter::empty());
-                }
-            }
-
-            assert_set_equals(
-                all.combinations(1.try_into().unwrap()),
-                all.iter().map(Candidates::with_single),
+            let candidates = Candidates::<Base2>::all();
+            let value = 1.try_into().unwrap();
+            assert_eq!(
+                candidates.combinations(value),
+                CandidatesCombinationsIter::<Base2>::new(candidates, value)
             );
-
-            assert_set_equals(
-                one_two_three.combinations(2.try_into().unwrap()),
-                vec![
-                    vec![1, 2].try_into().unwrap(),
-                    vec![1, 3].try_into().unwrap(),
-                    vec![2, 3].try_into().unwrap(),
-                ],
-            );
-            assert_set_equals(
-                one_two_three.combinations(3.try_into().unwrap()),
-                iter::once(one_two_three),
-            );
-
-            for k in Value::all() {
-                assert_set_equals(empty.combinations(k), combinations_itertools(empty, k));
-                assert_set_equals(one.combinations(k), combinations_itertools(one, k));
-                assert_set_equals(
-                    one_two_three.combinations(k),
-                    combinations_itertools(one_two_three, k),
-                );
-                assert_set_equals(all.combinations(k), combinations_itertools(all, k));
-            }
-            for k in Value::all() {
-                assert_set_equals(
-                    all_base3.combinations(k),
-                    combinations_itertools(all_base3, k),
-                );
-            }
-        }
-
-        #[test]
-        fn test_combinations_debug() {
-            dbg!(Candidates::<Base3>::all()
-                .combinations(3.try_into().unwrap())
-                .map(|candidates| candidates.to_vec_u8())
-                .collect::<Vec<_>>());
         }
     }
 
     mod internal_helpers {
+
         use super::*;
 
         #[test]
@@ -1001,6 +1081,38 @@ mod tests {
                 all_candidates_mask,
                 0b0000_0001_1111_1111_1111_1111_1111_1111
             );
+        }
+
+        mod all_less_than_or_equal_candidates_mask {
+            use super::*;
+            use crate::test_util::test_all_bases;
+
+            fn assert_all_less_than_or_equal_candidates_mask<Base: SudokuBase>(
+                candidate: Coordinate<Base>,
+            ) {
+                let value = Value::from(candidate);
+                let candidates = Candidates::<Base>::with_integral(
+                    Candidates::<Base>::all_less_than_or_equal_candidates_mask(candidate),
+                );
+                assert_eq!(
+                    candidates.to_vec_u8(),
+                    (1..=value.get()).collect::<Vec<_>>()
+                );
+            }
+
+            test_all_bases!({
+                for candidate in Coordinate::<Base>::all() {
+                    assert_all_less_than_or_equal_candidates_mask(candidate);
+                }
+            });
+        }
+
+        #[test]
+        fn test_storage_bit_count() {
+            assert_eq!(Candidates::<Base2>::storage_bit_count(), 8);
+            assert_eq!(Candidates::<Base3>::storage_bit_count(), 16);
+            assert_eq!(Candidates::<Base4>::storage_bit_count(), 16);
+            assert_eq!(Candidates::<Base5>::storage_bit_count(), 32);
         }
     }
 }

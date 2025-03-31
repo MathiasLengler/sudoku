@@ -12,12 +12,12 @@ use crate::grid::Grid;
 use crate::position::Position;
 use crate::rng::{new_crate_rng_with_seed, CrateRng};
 use crate::solver::backtracking::DisallowedCandidateAtPosition;
-use crate::solver::strategic::strategies::Backtracking;
+use crate::solver::strategic::strategies::BruteForce;
 use crate::solver::{backtracking, introspective};
 
 pub use settings::*;
 #[cfg(feature = "parallel")]
-pub mod goal;
+pub mod multi_shot;
 mod settings;
 
 /*
@@ -35,7 +35,7 @@ Ideas:
 //  since checking for an ambiguous solution is way faster (early abort) than proofing a unique solution.
 //  The near minimal sudoku can then be minimized as usual.
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Generator<Base: SudokuBase> {
     settings: GeneratorSettings<Base>,
 }
@@ -342,7 +342,7 @@ impl<Base: SudokuBase> Generator<Base> {
 
         let can_be_deleted: bool = (
             // Either default strategies
-            prune_settings.strategies == [Backtracking.into()]
+            prune_settings.strategies == [BruteForce.into()]
             ||
                 // Or ensure the grid remains solvable with the non-default strategies
                 grid
@@ -376,7 +376,7 @@ impl<Base: SudokuBase> Generator<Base> {
     }
 
     fn get_solution_values_grid(&self) -> Result<&Grid<Base>> {
-        let Some(SolutionSettings { values_grid, .. }) = &self.settings.solution else {
+        let Some(SolutionSettings { values_grid }) = &self.settings.solution else {
             bail!("'PruningOrder::SolutionUnfixedValues' requires 'settings.solution.values_grid' to be defined")
         };
         Ok(values_grid)
@@ -415,7 +415,7 @@ impl<Base: SudokuBase> Generator<Base> {
     ) -> Result<Vec<Position<Base>>> {
         Ok(match &prune_settings.order {
             PruningOrder::Random => {
-                let prunable_positions = if let Some(SolutionSettings { values_grid, .. }) =
+                let prunable_positions = if let Some(SolutionSettings { values_grid }) =
                     &self.settings.solution
                 {
                     let mut all_unfixed_value_positions = values_grid.all_unfixed_value_positions();

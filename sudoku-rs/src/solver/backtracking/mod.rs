@@ -453,15 +453,11 @@ where
                         .availability
                         .available_candidates_at(availability_index);
                     let available_candidates_count = available_candidates.count();
-                    if available_candidates_count > 1 {
-                        Some((
-                            availability_index,
-                            available_candidates,
-                            available_candidates_count,
-                        ))
-                    } else {
-                        None
-                    }
+                    (available_candidates_count > 1).then_some((
+                        availability_index,
+                        available_candidates,
+                        available_candidates_count,
+                    ))
                 })
                 .min_by_key(|(_, _, available_candidates_count)| *available_candidates_count)
         else {

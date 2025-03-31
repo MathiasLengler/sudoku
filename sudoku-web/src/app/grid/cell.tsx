@@ -1,15 +1,13 @@
-import type * as React from "react";
-import type * as CSS from "csstype";
 import classNames from "classnames";
-import { indexToPosition, valueToString } from "../utils/sudoku";
-import type { DynamicCellCandidates, DynamicCellValue, DynamicPosition, TransportCell } from "../../types";
-import { inputState } from "../state/input";
-import { sudokuBaseState } from "../state/sudoku";
+import type * as CSS from "csstype";
+import { isEqual } from "lodash-es";
 import { useRecoilValue } from "recoil";
+import type { DynamicCellCandidates, DynamicCellValue, DynamicPosition, TransportCell } from "../../types";
 import { useHandlePosition } from "../actions/sudokuActions";
 import { hintState } from "../state/hint";
-
-import isEqual from "lodash/isEqual";
+import { inputState } from "../state/input";
+import { sudokuBaseState } from "../state/sudoku";
+import { cellColorClass, indexToPosition, valueToString } from "../utils/sudoku";
 
 function cellBackgroundClass(isSelected: boolean, isGuide: boolean) {
     if (isSelected) {
@@ -20,25 +18,13 @@ function cellBackgroundClass(isSelected: boolean, isGuide: boolean) {
     }
 }
 
-export function cellColorClass(fixed: boolean, incorrectValue: boolean) {
-    if (fixed) {
-        return "cell--fixed";
-    }
-    if (incorrectValue) {
-        return "cell--incorrect-value";
-    } else {
-        return "cell--user";
-    }
-}
-
 type CellValueProps = {
     value: DynamicCellValue["value"];
 };
 
-export const CellValue: React.FunctionComponent<CellValueProps> = (props) => {
-    const { value } = props;
+export function CellValue({ value }: CellValueProps) {
     return <div className="cell-value">{valueToString(value)}</div>;
-};
+}
 
 type CandidatesProps = {
     candidates: DynamicCellCandidates["candidates"];
@@ -46,7 +32,7 @@ type CandidatesProps = {
     showGuide?: boolean;
 };
 
-export const Candidates = ({ candidates, gridPosition, showGuide = true }: CandidatesProps) => {
+export function Candidates({ candidates, gridPosition, showGuide = true }: CandidatesProps) {
     const base = useRecoilValue(sudokuBaseState);
     const input = useRecoilValue(inputState);
     const hint = useRecoilValue(hintState);
@@ -95,7 +81,7 @@ export const Candidates = ({ candidates, gridPosition, showGuide = true }: Candi
             })}
         </div>
     );
-};
+}
 
 type CellProps = {
     cell: TransportCell;
@@ -103,7 +89,7 @@ type CellProps = {
     isGuide: boolean;
 };
 
-export const Cell = (props: CellProps) => {
+export function Cell(props: CellProps) {
     const { cell, isSelected, isGuide } = props;
 
     const { position: gridPosition } = cell;
@@ -157,4 +143,4 @@ export const Cell = (props: CellProps) => {
             )}
         </div>
     );
-};
+}

@@ -1,10 +1,10 @@
 import * as Comlink from "comlink";
 import { WasmCellWorld, WasmSudoku } from "../../../../../../sudoku-wasm/pkg";
 
-import { WORKER_BOOT_UP_MESSAGE } from "../../../../constants";
+import { WORKER_BOOT_UP_MESSAGE } from "../../../constants";
 import { init } from "./init";
 
-if (process.env.NODE_ENV !== "production") {
+if (import.meta.env.DEV) {
     self.addEventListener("message", (ev) => {
         console.debug("Worker message RX:", ev.data);
     });
@@ -24,16 +24,14 @@ const workerApi: WorkerApi = {
     WasmCellWorld,
 };
 
-type Newable<T, Args extends unknown[]> = new (...args: Args) => T;
-
-function markClassAsProxy<T, Args extends unknown[]>(cls: Newable<T, Args>) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    cls.prototype[Comlink.proxyMarker] = true;
+// The type of `obj` ensures that only module-augmented classed can be patched with the marker.
+function markObjectAsComlinkProxy(obj: { prototype: { [Comlink.proxyMarker]: true } }) {
+    obj.prototype[Comlink.proxyMarker] = true;
 }
 
 // Ensure wasm-bindgen class instances are proxied instead of serialized
-markClassAsProxy(WasmSudoku);
-markClassAsProxy(WasmCellWorld);
+markObjectAsComlinkProxy(WasmSudoku);
+markObjectAsComlinkProxy(WasmCellWorld);
 
 // Use declaration merging (Module Augmentation) to reflect this modification.
 // This corrects the inferred type of `Comlink.Remote`

@@ -5,17 +5,29 @@
       "type": "npm",
       "script": "lint:tsc",
       "path": "sudoku-web",
-      "problemMatcher": ["$tsc"],
-      "label": "npm: lint:tsc - sudoku-web",
-      "detail": "tsc"
+      "problemMatcher": {
+        "base": "$tsc",
+        "fileLocation": ["relative", "${workspaceFolder}/sudoku-web"]
+      },
+      "label": "npm: lint:tsc - sudoku-web"
+    },
+    {
+      "type": "npm",
+      "script": "lint:tsc:watch",
+      "path": "sudoku-web",
+      "problemMatcher": {
+        "base": "$tsc-watch",
+        "fileLocation": ["relative", "${workspaceFolder}/sudoku-web"]
+      },
+      "label": "npm: lint:tsc:watch - sudoku-web",
+      "isBackground": true
     },
     {
       "type": "npm",
       "script": "lint:eslint",
       "path": "sudoku-web",
       "problemMatcher": ["$eslint-stylish"],
-      "label": "npm: lint:eslint - sudoku-web",
-      "detail": "eslint src/** webpack.config.ts"
+      "label": "npm: lint:eslint - sudoku-web"
     }
   ]
 }

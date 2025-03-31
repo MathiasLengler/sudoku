@@ -46,7 +46,7 @@ pub fn init() {
         });
     }
 
-    trace!("WASM initialized");
+    trace!("sudoku-wasm initialized");
 }
 
 #[allow(dead_code)]
@@ -304,7 +304,20 @@ impl WasmSudoku {
             import_generate_on_progress(on_progress)?,
         )?;
 
-        // *self = self.sudoku.clone().into();
+        Ok(())
+    }
+
+    #[wasm_bindgen(js_name = generateMultiShot)]
+    pub fn generate_multi_shot(
+        &mut self,
+        multi_shot_generator_settings: IDynamicMultiShotGeneratorSettings,
+        on_progress: IGenerateMultiShotOnProgress,
+    ) -> Result<()> {
+        self.sudoku.generate_multi_shot(
+            import_dynamic_multi_shot_generator_settings(multi_shot_generator_settings)?,
+            import_generate_multi_shot_on_progress(on_progress)?,
+        )?;
+
         Ok(())
     }
 
@@ -314,19 +327,21 @@ impl WasmSudoku {
     }
 
     pub fn export(&self, format: IGridFormatEnum) -> Result<String> {
-        Ok(self.sudoku.export(&import_grid_format_enum(format)?))
+        Ok(self.sudoku.export(import_grid_format_enum(format)?))
     }
 
     #[wasm_bindgen(js_name = tryStrategies)]
     pub fn try_strategies(
         &mut self,
         strategies: IStrategyEnums,
-    ) -> Result<IDynamicTryStrategiesReturnAlias> {
-        let dynamic_try_strategies_return = self
+    ) -> Result<Option<IDynamicSolveStep>> {
+        let opt_dyn_solve_step = self
             .sudoku
             .try_strategies(import_strategy_enums(strategies)?)?;
 
-        export_dynamic_try_strategies_return_alias(dynamic_try_strategies_return)
+        opt_dyn_solve_step
+            .map(export_dynamic_solve_step)
+            .transpose()
     }
 
     #[wasm_bindgen(js_name = applyDeductions)]

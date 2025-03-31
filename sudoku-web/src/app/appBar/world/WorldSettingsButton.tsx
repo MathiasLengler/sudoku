@@ -6,7 +6,7 @@ import { MyMenu } from "../../components/MyMenu";
 import { gameState } from "../../state/gameMode";
 import { DEFAULT_WORLD_GRID_POSITION, requestedGridDimState, worldGridDimSchema } from "../../state/world";
 import { usePlaySelectedGrid, useShowWorldMap } from "../../actions/worldActions";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import { z } from "zod";
 
 const gridDims = z.array(worldGridDimSchema).parse([

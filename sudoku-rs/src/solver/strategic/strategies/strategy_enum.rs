@@ -1,6 +1,6 @@
 use super::{impls::*, Strategy};
-use std::fmt;
 use std::fmt::Debug;
+use std::fmt::{self, Display};
 use std::str::FromStr;
 
 use anyhow::format_err;
@@ -10,6 +10,13 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::error::{Error, Result};
 
+// TODO: struct StrategyMap<T> {
+//    naked_singles: T
+//    ...
+// Usecases:
+// - Vec<StrategyEnum> => StrategyMap<bool> (for solver)
+// - stats for strategies
+
 #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
 #[enum_dispatch]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -18,11 +25,17 @@ pub enum StrategyEnum {
     NakedSingles,
     HiddenSingles,
     NakedPairs,
-    GroupReduction,
+    LockedSets,
     GroupIntersectionBlockToAxis,
     GroupIntersectionAxisToBlock,
     GroupIntersectionBoth,
-    Backtracking,
+    BruteForce,
+}
+
+impl Display for StrategyEnum {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.name())
+    }
 }
 
 impl StrategyEnum {
@@ -31,11 +44,11 @@ impl StrategyEnum {
             NakedSingles.into(),
             HiddenSingles.into(),
             NakedPairs.into(),
-            GroupReduction.into(),
+            LockedSets.into(),
             GroupIntersectionBlockToAxis.into(),
             GroupIntersectionAxisToBlock.into(),
             GroupIntersectionBoth.into(),
-            Backtracking.into(),
+            BruteForce.into(),
         ]
     }
 
@@ -44,18 +57,18 @@ impl StrategyEnum {
             NakedSingles.into(),
             HiddenSingles.into(),
             NakedPairs.into(),
-            GroupReduction.into(),
+            LockedSets.into(),
             GroupIntersectionBoth.into(),
-            Backtracking.into(),
+            BruteForce.into(),
         ]
     }
 
-    pub fn default_solver_strategies_no_backtracking() -> Vec<Self> {
+    pub fn default_solver_strategies_no_brute_force() -> Vec<Self> {
         vec![
             NakedSingles.into(),
             HiddenSingles.into(),
             NakedPairs.into(),
-            GroupReduction.into(),
+            LockedSets.into(),
             GroupIntersectionBoth.into(),
         ]
     }
@@ -68,7 +81,7 @@ impl StrategyEnum {
             NakedPairs.into(),
             // FIXME: Slow for empty groups
             //  also slow for base 3, but impact is worse for larger bases
-            // GroupReduction.into(),
+            // LockedSets.into(),
             GroupIntersectionBoth.into(),
         ]
     }
@@ -99,7 +112,7 @@ impl<'de> Deserialize<'de> for StrategyEnum {
     {
         struct StrategyVisitor;
 
-        impl<'de> Visitor<'de> for StrategyVisitor {
+        impl Visitor<'_> for StrategyVisitor {
             type Value = StrategyEnum;
 
             fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
