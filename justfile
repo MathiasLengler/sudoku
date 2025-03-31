@@ -1,4 +1,4 @@
-set shell := ['pwsh.exe', '-CommandWithArgs']
+set windows-shell := ['pwsh.exe', '-CommandWithArgs']
 set positional-arguments
 
 # List all recipes
@@ -20,6 +20,9 @@ test-cov-html test-name="":
 
 clippy:
     cargo clippy --all-targets --all-features
+
+clippy-ci:
+    cargo clippy --all-targets --all-features -- -D warnings
 
 # wasm-pack dev watch
 pack-dev-watch: (_pack-watch "pack-dev")
