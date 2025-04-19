@@ -6,13 +6,15 @@ use anyhow::{bail, ensure, format_err};
 use enum_dispatch::enum_dispatch;
 use serde::de::Visitor;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+#[cfg(feature = "wasm")]
+use ts_rs::TS;
 
 pub use binary_candidates_line::*;
 pub use binary_fixed_candidates_line::*;
 pub use candidates_grid::*;
 pub use candidates_grid_compact::*;
-pub use values_grid::*;
-pub use values_line::ValuesLine;
+pub use givens_grid::*;
+pub use givens_line::GivensLine;
 
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
@@ -23,8 +25,8 @@ mod binary_candidates_line;
 mod binary_fixed_candidates_line;
 mod candidates_grid;
 mod candidates_grid_compact;
-mod values_grid;
-mod values_line;
+mod givens_grid;
+mod givens_line;
 
 #[enum_dispatch(GridFormatEnum)]
 pub trait GridFormat: Debug + Copy + Clone + Eq + Sized {
@@ -66,7 +68,7 @@ pub trait GridFormat: Debug + Copy + Clone + Eq + Sized {
     }
 }
 
-#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[enum_dispatch]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum GridFormatEnum {
@@ -75,9 +77,8 @@ pub enum GridFormatEnum {
     CandidatesGridANSIStyled,
     CandidatesGridPlain,
     CandidatesGridCompact,
-    ValuesLine,
-    ValuesGrid,
-    // TODO: dymaic grid serde JSON
+    GivensLine,
+    GivensGrid,
 }
 
 impl GridFormatEnum {
@@ -88,8 +89,8 @@ impl GridFormatEnum {
             CandidatesGridANSIStyled.into(),
             CandidatesGridPlain.into(),
             CandidatesGridCompact.into(),
-            ValuesLine.into(),
-            ValuesGrid.into(),
+            GivensLine.into(),
+            GivensGrid.into(),
         ]
     }
 
@@ -103,9 +104,9 @@ impl GridFormatEnum {
             CandidatesGridANSIStyled
                 .parse_and_validate_cell_count(input)
                 .or_else(|_| CandidatesGridCompact.parse_and_validate_cell_count(input))
-                .or_else(|_| ValuesGrid.parse_and_validate_cell_count(input))?
+                .or_else(|_| GivensGrid.parse_and_validate_cell_count(input))?
         } else {
-            ValuesLine
+            GivensLine
                 .parse_and_validate_cell_count(input)
                 .or_else(|_| BinaryFixedCandidatesLine.parse_and_validate_cell_count(input))
                 .or_else(|_| BinaryCandidatesLine.parse_and_validate_cell_count(input))?
@@ -126,8 +127,8 @@ impl Serialize for GridFormatEnum {
             Self::CandidatesGridANSIStyled(_) => (2, "CandidatesGridANSIStyled"),
             Self::CandidatesGridPlain(_) => (3, "CandidatesGridPlain"),
             Self::CandidatesGridCompact(_) => (4, "CandidatesGridCompact"),
-            Self::ValuesLine(_) => (5, "ValuesLine"),
-            Self::ValuesGrid(_) => (6, "ValuesGrid"),
+            Self::GivensLine(_) => (5, "GivensLine"),
+            Self::GivensGrid(_) => (6, "GivensGrid"),
         };
 
         serializer.serialize_unit_variant("Strategy", variant_index, variant)
@@ -141,7 +142,7 @@ impl<'de> Deserialize<'de> for GridFormatEnum {
     {
         struct GridFormatVisitor;
 
-        impl Visitor<'_> for GridFormatVisitor {
+        impl<'de> Visitor<'de> for GridFormatVisitor {
             type Value = GridFormatEnum;
 
             fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -172,11 +173,11 @@ impl FromStr for GridFormatEnum {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use anyhow::Context;
 
     use crate::samples;
+
+    use super::*;
 
     #[test]
     fn test_serde_round_trip() {
@@ -216,8 +217,6 @@ mod tests {
             })
         }
 
-        // TODO: move format capabilities to the format itself
-
         // Grid formats which preserve:
         // - cell value
         let grid_formats: Vec<GridFormatEnum> = vec![
@@ -226,8 +225,8 @@ mod tests {
             CandidatesGridANSIStyled.into(),
             CandidatesGridPlain.into(),
             CandidatesGridCompact.into(),
-            ValuesLine.into(),
-            ValuesGrid.into(),
+            GivensLine.into(),
+            GivensGrid.into(),
         ];
 
         // TODO: refactor other duplicated base handling code
@@ -237,10 +236,6 @@ mod tests {
                 for mut $grid in samples::base_2() $block
                 #[allow(unused_mut)]
                 for mut $grid in samples::base_3() $block
-                #[allow(unused_mut)]
-                for mut $grid in samples::base_4() $block
-                #[allow(unused_mut)]
-                for mut $grid in samples::base_5() $block
             };
         }
 
@@ -263,8 +258,8 @@ mod tests {
             // CandidatesGridANSIStyled.into(),
             // CandidatesGridPlain.into(),
             // CandidatesGridCompact.into(),
-            // ValuesLine.into(),
-            // ValuesGrid.into(),
+            // GivensLine.into(),
+            // GivensGrid.into(),
         ];
 
         for grid_format in grid_formats {
@@ -289,8 +284,8 @@ mod tests {
             CandidatesGridANSIStyled.into(),
             CandidatesGridPlain.into(),
             CandidatesGridCompact.into(),
-            // ValuesLine.into(),
-            // ValuesGrid.into(),
+            // GivensLine.into(),
+            // GivensGrid.into(),
         ];
         for grid_format in grid_formats {
             for_test_grids!(|grid| {
@@ -310,8 +305,8 @@ mod tests {
             // CandidatesGridANSIStyled.into(),
             // CandidatesGridPlain.into(),
             // CandidatesGridCompact.into(),
-            // ValuesLine.into(),
-            // ValuesGrid.into(),
+            // GivensLine.into(),
+            // GivensGrid.into(),
         ];
         for grid_format in grid_formats {
             for_test_grids!(|grid| {

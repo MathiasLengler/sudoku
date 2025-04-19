@@ -1,6 +1,6 @@
 import type { DynamicPosition, TransportCell } from "../../types";
 import { selector, selectorFamily } from "recoil";
-import { cellPositionToBlockPosition, positionToIndex } from "../utils/sudoku";
+import { cellPositionToBlockPosition, positionToIndex } from "../utils";
 import { sudokuBaseState, sudokuCellsState, sudokuSideLengthState } from "./sudoku";
 import { selectedPosState } from "./input";
 import type { CreateSerializableParam } from "../../typeUtils";
@@ -17,9 +17,6 @@ export const cellAtIndexState = selectorFamily<TransportCell, number>({
             }
             return selectedCells;
         },
-    cachePolicy_UNSTABLE: {
-        eviction: "most-recent",
-    },
 });
 export const cellAtGridPositionState = selectorFamily<TransportCell, CreateSerializableParam<DynamicPosition>>({
     key: "CellAtGridPosition",
@@ -29,9 +26,6 @@ export const cellAtGridPositionState = selectorFamily<TransportCell, CreateSeria
             const sideLength = get(sudokuSideLengthState);
             return get(cellAtIndexState(positionToIndex({ gridPosition, sideLength })));
         },
-    cachePolicy_UNSTABLE: {
-        eviction: "most-recent",
-    },
 });
 
 export const selectedBlockPositionState = selector<DynamicPosition | undefined>({
@@ -42,8 +36,5 @@ export const selectedBlockPositionState = selector<DynamicPosition | undefined>(
             const base = get(sudokuBaseState);
             return cellPositionToBlockPosition(selectedPos, base);
         }
-    },
-    cachePolicy_UNSTABLE: {
-        eviction: "most-recent",
     },
 });

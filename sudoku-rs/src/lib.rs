@@ -1,5 +1,3 @@
-// #![feature(iter_next_chunk)]
-// #![feature(trusted_len)]
 // rustc lints
 #![warn(missing_debug_implementations)]
 #![warn(unreachable_pub)]
@@ -17,32 +15,7 @@
 // TODO: fix separately
 #![allow(clippy::must_use_candidate)]
 // warn a subset of lints in clippy::restriction
-#![warn(clippy::assertions_on_result_states)]
-#![warn(clippy::clone_on_ref_ptr)]
-#![warn(clippy::deref_by_slicing)]
-#![warn(clippy::empty_enum_variants_with_brackets)]
-#![warn(clippy::fn_to_numeric_cast_any)]
-#![warn(clippy::if_then_some_else_none)]
-#![warn(clippy::infinite_loop)]
-#![warn(clippy::lossy_float_literal)]
-#![warn(clippy::mem_forget)]
-#![warn(clippy::mixed_read_write_in_expression)]
-#![warn(clippy::multiple_unsafe_ops_per_block)]
-#![warn(clippy::mutex_atomic)]
-#![warn(clippy::needless_raw_strings)]
-#![warn(clippy::pub_without_shorthand)]
-#![warn(clippy::rc_buffer)]
-#![warn(clippy::rc_mutex)]
-#![warn(clippy::rest_pat_in_fully_bound_structs)]
-#![warn(clippy::separated_literal_suffix)]
-#![warn(clippy::string_add)]
-#![warn(clippy::string_lit_chars_any)]
-#![warn(clippy::string_slice)]
-#![warn(clippy::string_to_string)]
-#![warn(clippy::suspicious_xor_used_as_pow)]
-#![warn(clippy::tests_outside_test_module)]
 #![warn(clippy::undocumented_unsafe_blocks)]
-#![warn(clippy::unneeded_field_pattern)]
 
 pub use crate::sudoku::*;
 
@@ -60,4 +33,16 @@ pub(crate) mod unsafe_utils;
 pub mod world;
 
 #[cfg(test)]
-mod test_util;
+mod test_util {
+    #[cfg(feature = "log")]
+    pub(crate) fn init_test_logger() {
+        use env_logger::Env;
+
+        let _ = env_logger::Builder::from_env(Env::default().default_filter_or("debug"))
+            .is_test(true)
+            .try_init();
+    }
+
+    #[cfg(not(feature = "log"))]
+    pub(crate) fn init_logger() {}
+}

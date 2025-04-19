@@ -1,5 +1,5 @@
 import { atom, selector } from "recoil";
-import type { WorkerApi } from "./bg/worker";
+import type { WorkerApi } from "./worker";
 import * as Comlink from "comlink";
 import { loadCells } from "../cellsPersistence";
 import { spawnWorker } from "./spawn";
@@ -13,9 +13,7 @@ export const workerState = atom<Worker>({
 
 export type RemoteWorkerApi = Comlink.Remote<WorkerApi>;
 export type RemoteWasmSudoku = Comlink.Remote<WasmSudoku>;
-export type RemoteWasmSudokuClass = Comlink.Remote<typeof WasmSudoku>;
 export type RemoteWasmCellWorld = Comlink.Remote<WasmCellWorld>;
-export type RemoteWasmCellWorldClass = Comlink.Remote<typeof WasmCellWorld>;
 
 export const remoteWorkerApiState = selector<RemoteWorkerApi>({
     key: "RemoteWorkerApi",
@@ -29,54 +27,42 @@ export const remoteWorkerApiState = selector<RemoteWorkerApi>({
     },
 });
 
-export const isWorkerReadyState = selector<boolean>({
-    key: "isWorkerReadyState",
-    get: ({ get }) => {
-        // remoteWorkerApiState initializes worker before returning
-        const _remoteWorkerApi = get(remoteWorkerApiState);
-        return true;
-    },
-});
-
 export async function createRemoteWasmSudoku(
-    RemoteWasmSudoku: RemoteWasmSudokuClass,
+    workerApi: Comlink.Remote<WorkerApi>,
     cells?: DynamicCells,
 ): Promise<RemoteWasmSudoku> {
     if (cells) {
         console.debug("Restoring sudoku from cells");
         try {
-            return await RemoteWasmSudoku.from_dynamic_cells(cells);
+            return await workerApi.WasmSudoku.restore(cells);
         } catch (err) {
             console.error("Failed to restore persisted grid:", err);
         }
     }
     console.debug("Generating initial sudoku");
-    return await RemoteWasmSudoku.new();
+    return await new workerApi.WasmSudoku();
 }
 
-export const remoteWasmSudokuClassState = selector<RemoteWasmSudokuClass>({
-    key: "remoteWasmSudokuClassState",
-    get: ({ get }) => {
+export const remoteWasmSudokuState = selector<RemoteWasmSudoku>({
+    key: "RemoteWasmSudoku",
+    get: async ({ get }) => {
         const remoteWorkerApi = get(remoteWorkerApiState);
-        return fixupComlinkProxy(remoteWorkerApi.WasmSudoku);
+        const cells = loadCells();
+        return fixupComlinkProxy(await createRemoteWasmSudoku(remoteWorkerApi, cells));
+    },
+});
+export const remoteWasmCellWorldState = selector<RemoteWasmCellWorld>({
+    key: "RemoteWasmCellWorld",
+    get: async ({ get }) => {
+        const remoteWorkerApi = get(remoteWorkerApiState);
+        return fixupComlinkProxy(await new remoteWorkerApi.WasmCellWorld());
     },
 });
 
-export const remoteWasmSudokuState = atom<RemoteWasmSudoku>({
-    key: "remoteWasmSudokuState",
-    default: selector({
-        key: "default-remoteWasmSudokuState",
-        get: async ({ get }) => {
-            const RemoteWasmSudoku = get(remoteWasmSudokuClassState);
-            const cells = loadCells();
-            return fixupComlinkProxy(await createRemoteWasmSudoku(RemoteWasmSudoku, cells));
-        },
-    }),
-});
-export const remoteWasmCellWorldClassState = selector<RemoteWasmCellWorldClass>({
-    key: "remoteWasmCellWorldClassState",
-    get: ({ get }) => {
-        const remoteWorkerApi = get(remoteWorkerApiState);
-        return fixupComlinkProxy(remoteWorkerApi.WasmCellWorld);
-    },
-});
+// export const legacyRemoteWorkerApiState = selector<LegacyRemoteWorkerApi>({
+//     key: "RemoteWorkerApi",
+//     get: async ({ get }) => {
+//         const worker = get(workerState);
+//         return await getRemoteWorkerApi(worker);
+//     },
+// });

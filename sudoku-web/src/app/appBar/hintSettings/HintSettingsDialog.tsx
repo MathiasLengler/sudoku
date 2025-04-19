@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import SaveIcon from "@mui/icons-material/Save";
-import { Box, Button, DialogActions, DialogContent, DialogTitle } from "@mui/material";
-import { Stack } from "@mui/material";
+import { LoadingButton } from "@mui/lab";
+import { Box, Button, DialogActions, DialogContent, DialogTitle, Stack } from "@mui/material";
 import { RadioButtonGroup, SliderElement, SwitchElement, useForm } from "react-hook-form-mui";
 import { useRecoilState } from "recoil";
 import { Fieldset } from "../../components/Fieldset";
@@ -35,7 +35,8 @@ export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
         resolver: zodResolver(hintSettingsSchema),
     });
 
-    const [mode, doLoop] = watch(["mode", "doLoop"]);
+    const mode = watch("mode");
+    const doLoop = watch("doLoop");
     return (
         <>
             <DialogTitle>Hint settings</DialogTitle>
@@ -115,7 +116,7 @@ export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
                 <Button onClick={onClose} disabled={isSubmitting}>
                     Cancel
                 </Button>
-                <Button
+                <LoadingButton
                     type="submit"
                     form="hint-settings-form"
                     color="primary"
@@ -125,8 +126,9 @@ export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
                     loadingPosition="end"
                 >
                     <span>Save settings</span>
-                </Button>
+                </LoadingButton>
             </DialogActions>
         </>
+        // </form>
     );
 }

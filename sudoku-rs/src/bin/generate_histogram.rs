@@ -101,7 +101,7 @@ use rayon::prelude::*;
 use sudoku::base::consts::*;
 use sudoku::error::Result;
 use sudoku::generator::{Generator, GeneratorSettings, PruningSettings, PruningTarget};
-use sudoku::solver::strategic::strategies::{BruteForce, HiddenSingles, NakedSingles};
+use sudoku::solver::strategic::strategies::{Backtracking, HiddenSingles, NakedSingles};
 
 type Base = Base4;
 
@@ -122,7 +122,7 @@ fn main() -> Result<()> {
             strategies: vec![
                 // NakedSingles.into(),
                 // HiddenSingles.into(),
-                BruteForce.into(),
+                Backtracking.into(),
             ],
             ..Default::default()
         }),

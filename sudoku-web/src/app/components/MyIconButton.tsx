@@ -1,5 +1,6 @@
+import React from "react";
 import type { MouseEvent, ReactNode } from "react";
-import { Badge, SvgIcon } from "@mui/material";
+import { Badge, Box, SvgIcon } from "@mui/material";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import type { IconButtonProps } from "@mui/material/IconButton/IconButton";
@@ -29,7 +30,7 @@ function MyIconButton({
     const icon = <Icon fontSize={size} />;
     return (
         <Tooltip title={label}>
-            <div className="icon-button-container">
+            <Box className="icon-button-container">
                 <IconButton
                     onClick={(ev) => {
                         (async () => await onClick(ev))().catch((err) =>
@@ -49,7 +50,7 @@ function MyIconButton({
                         icon
                     )}
                 </IconButton>
-            </div>
+            </Box>
         </Tooltip>
     );
 }

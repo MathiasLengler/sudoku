@@ -1,5 +1,7 @@
 use anyhow::bail;
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "wasm")]
+use ts_rs::TS;
 
 use crate::base::consts::BaseMax;
 use crate::base::SudokuBase;
@@ -11,7 +13,7 @@ use crate::error::{Error, Result};
 //  CellView: Unfixed value
 //  => Constructor now validates this, but Deserialize can break this contract
 
-#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 pub struct DynamicValue(pub u8);
 
@@ -27,7 +29,7 @@ impl<Base: SudokuBase> From<Value<Base>> for DynamicValue {
     }
 }
 
-#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 pub struct DynamicCandidates(pub Vec<u8>);
 
@@ -44,7 +46,7 @@ impl<Base: SudokuBase> From<Candidates<Base>> for DynamicCandidates {
     }
 }
 
-#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 #[serde(rename_all = "camelCase", tag = "kind")]
 pub enum DynamicCell {

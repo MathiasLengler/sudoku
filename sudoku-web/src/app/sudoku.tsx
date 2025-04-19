@@ -6,28 +6,19 @@ import SudokuAppBar from "./appBar/sudokuAppBar";
 import { ThemeErrorBoundary } from "./components/ErrorFallback";
 import { FullScreenSpinner } from "./components/FullScreenSpinner";
 import { WorldMap } from "./components/world/WorldMap";
-import { Toolbar } from "./controlPanel/toolbar";
-import { ValueSelector } from "./controlPanel/valueSelector";
+import { ControlPanel } from "./controlPanel/controlPanel";
 import { Grid } from "./grid/grid";
 import { sudokuBaseState, sudokuSideLengthState } from "./state/sudoku";
-import { showWorldMapState } from "./state/world";
+import { gameModeState } from "./state/world";
 import { SudokuEffects } from "./sudokuEffects";
 import { useKeyboardInput } from "./useKeyboardInput";
 
-function SudokuGame() {
+const SudokuGame = () => {
     const base = useRecoilValue(sudokuBaseState);
     const sideLength = useRecoilValue(sudokuSideLengthState);
 
     // Responsive Grid
-    const {
-        width: gridWidth,
-        height: gridHeight,
-        ref: gridRef,
-    } = useResizeDetector<HTMLDivElement>({
-        observerOptions: {
-            box: "border-box",
-        },
-    });
+    const { width: gridWidth, height: gridHeight, ref: gridRef } = useResizeDetector<HTMLDivElement>({});
 
     const cssVariables: CSS.Properties = {
         "--side-length": sideLength,
@@ -38,25 +29,25 @@ function SudokuGame() {
     return (
         <div className="sudoku-game" style={cssVariables}>
             <Grid gridRef={gridRef} />
-            <Toolbar />
-            <ValueSelector />
+            <ControlPanel />
         </div>
     );
-}
+};
 
-function SudokuContent() {
-    const showWorldMap = useRecoilValue(showWorldMapState);
-
+const SudokuContent = () => {
+    const gameMode = useRecoilValue(gameModeState);
     return (
         <div className="app-content">
             <ThemeErrorBoundary>
-                <Suspense fallback={<FullScreenSpinner />}>{showWorldMap ? <WorldMap /> : <SudokuGame />}</Suspense>
+                <Suspense fallback={<FullScreenSpinner />}>
+                    {gameMode.mode === "world" && gameMode.view === "map" ? <WorldMap /> : <SudokuGame />}
+                </Suspense>
             </ThemeErrorBoundary>
         </div>
     );
-}
+};
 
-export function Sudoku() {
+export const Sudoku = () => {
     const { onKeyDown } = useKeyboardInput();
 
     return (
@@ -71,4 +62,4 @@ export function Sudoku() {
             <SudokuEffects />
         </div>
     );
-}
+};

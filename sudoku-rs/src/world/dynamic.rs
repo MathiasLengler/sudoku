@@ -5,37 +5,23 @@ use crate::cell::dynamic::DynamicCell;
 use crate::error::Result;
 use crate::grid::dynamic::DynamicGrid;
 
-use super::{
-    CellWorld, CellWorldDimensions, DynamicWorldGridCellPosition, Quadrant, WorldCellPosition,
-    WorldGenerationResult, WorldGridDim, WorldGridPosition,
-};
+use super::{CellWorld, CellWorldDimensions, TileDim, TileIndex, WorldGenerationResult};
 
 #[enum_dispatch]
 pub trait DynamicCellWorldActions {
     // Generation
-    fn generate_solved(&mut self, seed: Option<u64>) -> Result<WorldGenerationResult>;
-    fn prune(&mut self, seed: Option<u64>) -> Result<()>;
+    fn generate_solved(&mut self, seed: Option<u64>) -> WorldGenerationResult;
+    fn prune(&mut self, seed: Option<u64>);
 
     // DynamicGrid interop
-    fn to_grid_at(&self, grid_position: WorldGridPosition) -> Result<DynamicGrid<DynamicCell>>;
-    fn set_grid_at(
-        &mut self,
-        grid: DynamicGrid<DynamicCell>,
-        grid_position: WorldGridPosition,
-    ) -> Result<()>;
+    fn to_grid_at(&self, tile_index: TileIndex) -> DynamicGrid<DynamicCell>;
+    fn set_grid_at(&mut self, grid: DynamicGrid<DynamicCell>, tile_index: TileIndex) -> Result<()>;
 
     // Queries
     fn dimensions(&self) -> CellWorldDimensions;
     fn is_solved(&self) -> bool;
     fn is_directly_consistent(&self) -> bool;
     fn all_world_cells(&self) -> Vec<DynamicCell>;
-
-    // Indexing helpers
-    fn world_cell_position_to_nearest_world_grid_cell_position(
-        &self,
-        cell_position: WorldCellPosition,
-        tie_break: Quadrant,
-    ) -> Result<DynamicWorldGridCellPosition>;
 }
 
 #[enum_dispatch(DynamicCellWorldActions)]
@@ -48,24 +34,12 @@ pub enum DynamicCellWorld {
 }
 
 impl DynamicCellWorld {
-    pub fn new(base: BaseEnum, grid_dim: WorldGridDim, overlap: u8) -> Self {
+    pub fn new(base: BaseEnum, tile_dim: TileDim, overlap: u8) -> Self {
         match base {
-            BaseEnum::Base2 => Self::Base2(CellWorld::<Base2>::new(
-                grid_dim,
-                overlap.try_into().unwrap(),
-            )),
-            BaseEnum::Base3 => Self::Base3(CellWorld::<Base3>::new(
-                grid_dim,
-                overlap.try_into().unwrap(),
-            )),
-            BaseEnum::Base4 => Self::Base4(CellWorld::<Base4>::new(
-                grid_dim,
-                overlap.try_into().unwrap(),
-            )),
-            BaseEnum::Base5 => Self::Base5(CellWorld::<Base5>::new(
-                grid_dim,
-                overlap.try_into().unwrap(),
-            )),
+            BaseEnum::Base2 => Self::Base2(CellWorld::<Base2>::new(tile_dim, overlap)),
+            BaseEnum::Base3 => Self::Base3(CellWorld::<Base3>::new(tile_dim, overlap)),
+            BaseEnum::Base4 => Self::Base4(CellWorld::<Base4>::new(tile_dim, overlap)),
+            BaseEnum::Base5 => Self::Base5(CellWorld::<Base5>::new(tile_dim, overlap)),
         }
     }
 }

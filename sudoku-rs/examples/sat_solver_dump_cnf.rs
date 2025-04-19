@@ -10,7 +10,7 @@ fn main() -> Result<()> {
 
     let grid = Grid::<Base>::new();
     println!("{grid}");
-    let solver = Solver::new(&grid);
+    let solver = Solver::new(&grid)?;
 
     solver.dump_cnf(Path::new("./sudoku-rs/out/cnf/base3_empty.cnf"));
 

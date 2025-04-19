@@ -1,18 +1,19 @@
+import type * as React from "react";
 import CreateIcon from "@mui/icons-material/Create";
 import GestureIcon from "@mui/icons-material/Gesture";
 import UndoIcon from "@mui/icons-material/Undo";
-import { ToggleButton } from "@mui/material";
 import Tooltip from "@mui/material/Tooltip";
-import { useRecoilValue } from "recoil";
-import { useToggleCandidateMode, useToggleStickyMode } from "../actions/inputActions";
-import { useUndo } from "../actions/sudokuActions";
-import MyIconButton from "../components/MyIconButton";
-import { inputCandidateModeState, inputStickyModeState } from "../state/input";
-import { sudokuCanUndoState } from "../state/sudoku";
-import { RequestHintButton } from "./RequestHintButton";
 import { ToolbarMenu } from "./toolbarMenu";
+import { ToggleButton } from "@mui/material";
+import { inputCandidateModeState, inputStickyModeState } from "../state/input";
+import { useRecoilValue } from "recoil";
+import { useUndo } from "../actions/sudokuActions";
+import { sudokuCanUndoState } from "../state/sudoku";
+import MyIconButton from "../components/MyIconButton";
+import { RequestHintButton } from "./RequestHintButton";
+import { useToggleCandidateMode, useToggleStickyMode } from "../actions/inputActions";
 
-export function Toolbar() {
+export const Toolbar = () => {
     const inputCandidateMode = useRecoilValue(inputCandidateModeState);
     const inputStickyMode = useRecoilValue(inputStickyModeState);
     const canUndo = useRecoilValue(sudokuCanUndoState);
@@ -59,4 +60,4 @@ export function Toolbar() {
             <ToolbarMenu />
         </div>
     );
-}
+};

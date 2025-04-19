@@ -1,8 +1,6 @@
-// TODO: migrate to jotai
-// Recoil is not compatible with react 19: https://github.com/facebookexperimental/Recoil/issues/2318
 import { atom, selector } from "recoil";
 import { z } from "zod";
-import type { BaseEnum, TransportCell, TransportSudoku } from "../../types";
+import type { TransportCell, TransportSudoku } from "../../types";
 import { hintState } from "./hint";
 import { remoteWasmSudokuState } from "./worker";
 
@@ -16,10 +14,7 @@ const DynamicCellSchema = z.discriminatedUnion("kind", [
 export const DynamicCellsSchema = z.array(DynamicCellSchema);
 
 // TODO: evaluate IOC
-//  WasmSudoku could have callback, which is called whenever the sudoku is updated
-//  Observer pattern
-//  could simplify the UI code.
-//  More relevant for CellWorld ("patches")
+//  https://recoiljs.org/docs/guides/atom-effects/#state-synchronization-example
 
 export const sudokuState = atom<TransportSudoku>({
     key: "Sudoku",
@@ -27,17 +22,12 @@ export const sudokuState = atom<TransportSudoku>({
         key: "DefaultSudoku",
         get: async ({ get }) => {
             const remoteWasmSudoku = get(remoteWasmSudokuState);
-            return await remoteWasmSudoku.getTransportSudoku();
+            return await remoteWasmSudoku.getSudoku();
         },
     }),
 });
 
-export const gameCounterState = atom<number>({
-    key: "GameCounter",
-    default: 0,
-});
-
-export const sudokuBaseState = selector<BaseEnum>({
+export const sudokuBaseState = selector<number>({
     key: "Sudoku.base",
     get: ({ get }) => get(sudokuState).base,
 });
@@ -53,22 +43,18 @@ export const sudokuBlocksIndexesState = selector<TransportSudoku["blocksIndexes"
     key: "Sudoku.blocksIndexes",
     get: ({ get }) => get(sudokuState).blocksIndexes,
 });
-export const sudokuCanUndoState = selector<TransportSudoku["history"]["canUndo"]>({
+export const sudokuCanUndoState = selector<TransportSudoku["canUndo"]>({
     key: "Sudoku.canUndo",
     get: ({ get }) => {
         // showing of a hint can be undone
-        return !!get(hintState) || get(sudokuState).history.canUndo;
+        return !!get(hintState) || get(sudokuState).canUndo;
     },
 });
-export const sudokuCanRedoState = selector<TransportSudoku["history"]["canRedo"]>({
+export const sudokuCanRedoState = selector<TransportSudoku["canRedo"]>({
     key: "Sudoku.canRedo",
-    get: ({ get }) => get(sudokuState).history.canRedo,
+    get: ({ get }) => get(sudokuState).canRedo,
 });
 export const sudokuIsSolvedState = selector<TransportSudoku["isSolved"]>({
     key: "Sudoku.isSolved",
     get: ({ get }) => get(sudokuState).isSolved,
-});
-export const sudokuSolutionState = selector<TransportSudoku["solution"]>({
-    key: "Sudoku.solution",
-    get: ({ get }) => get(sudokuState).solution,
 });

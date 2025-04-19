@@ -2,8 +2,8 @@ import LightbulbIcon from "@mui/icons-material/Lightbulb";
 import CircularProgress from "@mui/material/CircularProgress";
 import type { IconButtonProps } from "@mui/material/IconButton/IconButton";
 import assertNever from "assert-never";
-import * as _ from "lodash-es";
-import { useNotifications } from "@toolpad/core/useNotifications";
+import _ from "lodash";
+import { useSnackbar } from "notistack";
 import { useState } from "react";
 import { useRecoilCallback, useRecoilValue } from "recoil";
 import { useApplyDeductions, useTryStrategies } from "../actions/sudokuActions";
@@ -20,7 +20,7 @@ export function RequestHintButton() {
     const applyDeductions = useApplyDeductions();
     const sudokuIsSolved = useRecoilValue(sudokuIsSolvedState);
 
-    const notifications = useNotifications();
+    const { enqueueSnackbar } = useSnackbar();
 
     const hideHint = useRecoilCallback(({ reset }) => () => {
         reset(hintState);
@@ -31,10 +31,7 @@ export function RequestHintButton() {
             async (): Promise<OptionalHint> => {
                 const sudokuIsSolved = await snapshot.getPromise(sudokuIsSolvedState);
                 if (sudokuIsSolved) {
-                    notifications.show("Sudoku is solved", {
-                        key: "solved",
-                        severity: "success",
-                    });
+                    enqueueSnackbar({ variant: "success", message: "Sudoku solved" });
                     return;
                 }
 
@@ -45,20 +42,13 @@ export function RequestHintButton() {
                 } catch (err) {
                     if (!(err instanceof Error)) throw err;
                     console.error("Failed to execute strategies", hintSettings.strategies, ":", err);
-                    notifications.show(err.message, { severity: "error" });
-                    return;
+                    enqueueSnackbar({ variant: "error", message: err.message });
                 }
                 if (!tryStrategiesResult) {
-                    notifications.show("No strategy made progress", {
-                        key: "no-progress",
-                        severity: "warning",
-                    });
+                    enqueueSnackbar({ variant: "warning", message: "No strategy made progress" });
                     return;
                 }
-                const {
-                    strategy,
-                    deductions: { deductions },
-                } = tryStrategiesResult;
+                const [strategy, { deductions }] = tryStrategiesResult;
                 console.info(`Strategy ${strategy} made progress:`, deductions);
 
                 if (hintSettings.multipleDeductions) {
@@ -74,7 +64,7 @@ export function RequestHintButton() {
                     return { strategy, deductions: [deduction] };
                 }
             },
-        [notifications, tryStrategies],
+        [enqueueSnackbar, tryStrategies],
     );
 
     const showHint = useRecoilCallback(
@@ -104,14 +94,14 @@ export function RequestHintButton() {
                 } catch (err) {
                     if (!(err instanceof Error)) throw err;
                     console.error("Failed to apply deductions", deductions, ":", err);
-                    notifications.show(`Failed to apply hint: ${err.message}`, { severity: "error" });
+                    enqueueSnackbar({ variant: "error", message: `Failed to apply hint: ${err.message}` });
                     madeProgress = false;
                 }
 
                 hideHint();
                 return madeProgress;
             },
-        [applyDeductions, notifications, hideHint],
+        [applyDeductions, enqueueSnackbar, hideHint],
     );
 
     const requestSingleHint = useRecoilCallback(

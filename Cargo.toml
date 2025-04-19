@@ -19,15 +19,19 @@ rust-version = "1.78"
 version = "0.2.0"
 
 [workspace.dependencies]
-log = { version = "0.4.22" }
-serde = { version = "1.0.216" }
-anyhow = { version = "1.0.95", features = ["backtrace"] }
+log = { version = "0.4.20" }
+serde = { version = "1.0.194" }
+anyhow = { version = "1.0.79", features = ["backtrace"] }
 
 [profile.release-with-debug]
 inherits = "release"
 debug = true
 
 [patch.crates-io]
+
+[patch.crates-io.ts-rs]
+git = "https://github.com/MathiasLengler/ts-rs"
+#path = "../ts-rs/ts-rs"
 
 [patch.crates-io.varisat]
 git = "https://github.com/MathiasLengler/varisat"

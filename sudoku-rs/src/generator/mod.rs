@@ -4,21 +4,22 @@ use log::debug;
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
+#[cfg(feature = "wasm")]
+use ts_rs::TS;
+
+pub use dynamic_settings::*;
 
 use crate::base::SudokuBase;
-use crate::cell::Value;
+use crate::cell::{Candidates, Value};
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::rng::{new_crate_rng_with_seed, CrateRng};
-use crate::solver::backtracking::DisallowedCandidateAtPosition;
-use crate::solver::strategic::strategies::BruteForce;
+use crate::solver::strategic::strategies::{Backtracking, StrategyEnum};
 use crate::solver::{backtracking, introspective};
 
-pub use settings::*;
-#[cfg(feature = "parallel")]
-pub mod multi_shot;
-mod settings;
+// TODO: strategic
+//  target difficulty: sum of weighted strategy applications
 
 /*
 Ideas:
@@ -35,12 +36,305 @@ Ideas:
 //  since checking for an ambiguous solution is way faster (early abort) than proofing a unique solution.
 //  The near minimal sudoku can then be minimized as usual.
 
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+#[derive(Debug, Copy, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum PruningTarget {
+    #[default]
+    Minimal,
+    MinimalPlusClueCunt(u16),
+    MaxEmptyCellCount(u16),
+    MinClueCount(u16),
+}
+
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum PruningGroupBehaviour {
+    /// Never prune cells in this group
+    Retain,
+    /// Only prune cells in this group
+    Exclusive,
+    /// Prune cells in this group first, then cells outside this group.
+    First,
+    /// Prune cells in this group last, then cells inside this group.
+    Last,
+}
+
+impl PruningGroupBehaviour {
+    fn process_pruning_positions<Base: SudokuBase>(
+        self,
+        rng: &mut CrateRng,
+        get_group_pruning_positions: impl FnOnce(&mut CrateRng) -> Vec<Position<Base>>,
+        get_other_pruning_positions: impl FnOnce(&mut CrateRng) -> Vec<Position<Base>>,
+    ) -> Vec<Position<Base>> {
+        match self {
+            PruningGroupBehaviour::Retain => get_other_pruning_positions(rng),
+            PruningGroupBehaviour::Exclusive => get_group_pruning_positions(rng),
+            PruningGroupBehaviour::First => {
+                let mut pruning_positions = get_group_pruning_positions(rng);
+                pruning_positions.extend(get_other_pruning_positions(rng));
+                pruning_positions
+            }
+            PruningGroupBehaviour::Last => {
+                let mut pruning_positions = get_other_pruning_positions(rng);
+                pruning_positions.extend(get_group_pruning_positions(rng));
+                pruning_positions
+            }
+        }
+    }
+
+    fn process_non_pruning_positions<Base: SudokuBase>(
+        self,
+        get_group_pruning_positions: impl FnOnce() -> Vec<Position<Base>>,
+        get_other_pruning_positions: impl FnOnce() -> Vec<Position<Base>>,
+    ) -> Vec<Position<Base>> {
+        match self {
+            PruningGroupBehaviour::Retain => get_group_pruning_positions(),
+            PruningGroupBehaviour::Exclusive => get_other_pruning_positions(),
+            PruningGroupBehaviour::First | PruningGroupBehaviour::Last => {
+                vec![]
+            }
+        }
+    }
+}
+
+// TODO: group_breath_first vs group_depth_first
+//  prioritize most empty groups vs even number of values across all groups
+// TODO: test
+/// Define the order in which cells should be pruned.
 #[derive(Debug, Default, Clone)]
+pub enum PruningOrder<Base: SudokuBase> {
+    /// Prune all cells in a random order
+    #[default]
+    Random,
+    /// Handle cells defined by a list of positions differently.
+    Positions {
+        /// The positions of the cells
+        positions: Vec<Position<Base>>,
+        /// How to handle those cells
+        /// If pruning is allowed, the visit order will be defined by the list.
+        behaviour: PruningGroupBehaviour,
+    },
+    /// Handle the set of values defined in `settings.solution.values_grid` differently.
+    SolutionUnfixedValues {
+        /// How to handle those cells
+        /// If pruning is allowed, the visit order will be random.
+        behaviour: PruningGroupBehaviour,
+    },
+}
+
+/// How to prune/delete clues from a solved sudoku, while preserving the uniqueness of the solution.
+#[derive(Debug, Clone)]
+pub struct PruningSettings<Base: SudokuBase> {
+    /// Whether to set all direct candidates after pruning is done.
+    pub set_all_direct_candidates: bool,
+    /// With which strategies the sudoku should remain solvable for.
+    pub strategies: Vec<StrategyEnum>,
+    /// How much to prune the solution.
+    pub target: PruningTarget,
+    /// Adjust order in which cells are pruned.
+    pub order: PruningOrder<Base>,
+    /// Optimization: instead of pruning from a solved grid,
+    /// first generate a near minimal grid by adding values from the solution to a empty grid,
+    /// then prune from there.
+    pub start_from_near_minimal_grid: bool,
+}
+
+impl<Base: SudokuBase> Default for PruningSettings<Base> {
+    fn default() -> Self {
+        Self {
+            strategies: vec![Backtracking.into()],
+            set_all_direct_candidates: false,
+            target: PruningTarget::default(),
+            order: PruningOrder::default(),
+            start_from_near_minimal_grid: false,
+        }
+    }
+}
+
+/// Influence the generated solution.
+#[derive(Debug, Clone)]
+pub struct SolutionSettings<Base: SudokuBase> {
+    /// Every value cell in this grid will be included in the solution of the generated grid.
+    /// Fixed values will never be pruned.
+    pub values_grid: Grid<Base>,
+}
+
+impl<Base: SudokuBase> Default for SolutionSettings<Base> {
+    fn default() -> Self {
+        Self {
+            values_grid: Grid::default(),
+        }
+    }
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct GeneratorSettings<Base: SudokuBase> {
+    /// How to prune the solution.
+    pub prune: Option<PruningSettings<Base>>,
+    /// How to generate the solution.
+    pub solution: Option<SolutionSettings<Base>>,
+    /// A seed for randomness in the generation process.
+    ///
+    /// If `Some`, generation of sudokus will be deterministic.
+    ///
+    /// If `None`, a new random seed will be chosen for each generated sudoku,
+    /// making the generation non-deterministic.
+    ///
+    /// Influence of randomness when generating a sudoku:
+    /// - The generated solution of the sudoku.
+    /// - The order in which cells are pruned.
+    pub seed: Option<u64>,
+}
+
+mod dynamic_settings {
+    use anyhow::ensure;
+
+    use crate::cell::dynamic::DynamicCell;
+    use crate::error::Error;
+    use crate::grid::dynamic::DynamicGrid;
+    use crate::position::DynamicPosition;
+
+    use super::*;
+
+    #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+    #[derive(Debug, Serialize, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    pub enum DynamicPruningOrder {
+        Random,
+        Positions {
+            positions: Vec<DynamicPosition>,
+            behaviour: PruningGroupBehaviour,
+        },
+        SolutionUnfixedValues {
+            behaviour: PruningGroupBehaviour,
+        },
+    }
+
+    impl<Base: SudokuBase> TryFrom<DynamicPruningOrder> for PruningOrder<Base> {
+        type Error = Error;
+
+        fn try_from(dynamic_pruning_order: DynamicPruningOrder) -> Result<Self> {
+            Ok(match dynamic_pruning_order {
+                DynamicPruningOrder::Random => Self::Random,
+                DynamicPruningOrder::Positions {
+                    positions,
+                    behaviour,
+                } => Self::Positions {
+                    positions: positions
+                        .into_iter()
+                        .map(TryInto::try_into)
+                        .collect::<Result<_>>()?,
+                    behaviour,
+                },
+                DynamicPruningOrder::SolutionUnfixedValues { behaviour } => {
+                    Self::SolutionUnfixedValues { behaviour }
+                }
+            })
+        }
+    }
+
+    #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+    #[derive(Debug, Serialize, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct DynamicPruningSettings {
+        pub set_all_direct_candidates: bool,
+        pub strategies: Vec<StrategyEnum>,
+        pub target: PruningTarget,
+        pub order: DynamicPruningOrder,
+        pub start_from_near_minimal_grid: bool,
+    }
+
+    impl<Base: SudokuBase> TryFrom<DynamicPruningSettings> for PruningSettings<Base> {
+        type Error = Error;
+
+        fn try_from(dynamic_pruning_settings: DynamicPruningSettings) -> Result<Self> {
+            let DynamicPruningSettings {
+                set_all_direct_candidates,
+                strategies,
+                target,
+                order,
+                start_from_near_minimal_grid,
+            } = dynamic_pruning_settings;
+
+            Ok(Self {
+                set_all_direct_candidates,
+                strategies,
+                target,
+                order: order.try_into()?,
+                start_from_near_minimal_grid,
+            })
+        }
+    }
+
+    #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+    #[derive(Debug, Serialize, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct DynamicSolutionSettings {
+        pub values_grid: DynamicGrid<DynamicCell>,
+    }
+
+    impl<Base: SudokuBase> TryFrom<DynamicSolutionSettings> for SolutionSettings<Base> {
+        type Error = Error;
+
+        fn try_from(dynamic_solution_settings: DynamicSolutionSettings) -> Result<Self> {
+            let DynamicSolutionSettings { values_grid } = dynamic_solution_settings;
+            Ok(Self {
+                values_grid: values_grid.try_into()?,
+            })
+        }
+    }
+
+    #[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+    #[derive(Debug, Serialize, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct DynamicGeneratorSettings {
+        pub base: u8,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub prune: Option<DynamicPruningSettings>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub solution: Option<DynamicSolutionSettings>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub seed: Option<u64>,
+    }
+
+    impl<Base: SudokuBase> TryFrom<DynamicGeneratorSettings> for GeneratorSettings<Base> {
+        type Error = Error;
+
+        fn try_from(dynamic_generator_settings: DynamicGeneratorSettings) -> Result<Self> {
+            let DynamicGeneratorSettings {
+                base,
+                prune,
+                solution,
+                seed,
+            } = dynamic_generator_settings;
+
+            ensure!(base == Base::BASE);
+
+            Ok(Self {
+                prune: if let Some(prune) = prune {
+                    Some(prune.try_into()?)
+                } else {
+                    None
+                },
+                solution: if let Some(solution) = solution {
+                    Some(solution.try_into()?)
+                } else {
+                    None
+                },
+                seed,
+            })
+        }
+    }
+}
+
+#[derive(Debug, Default)]
 pub struct Generator<Base: SudokuBase> {
     settings: GeneratorSettings<Base>,
 }
 
-#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GeneratorProgress {
@@ -342,21 +636,79 @@ impl<Base: SudokuBase> Generator<Base> {
 
         let can_be_deleted: bool = (
             // Either default strategies
-            prune_settings.strategies == [BruteForce.into()]
+            prune_settings.strategies == [Backtracking.into()]
             ||
                 // Or ensure the grid remains solvable with the non-default strategies
                 grid
                 .is_solvable_with_strategies(prune_settings.strategies.clone())
                 .is_ok_and(|solution| solution.is_some())
         ) && {
-            let mut solver = introspective::Solver::new_with_filter(
-                grid.clone(),
-                DisallowedCandidateAtPosition {
-                    pos,
-                    candidate: deleted_value,
-                },
-            );
-            let has_ambiguous_solution = solver.next().is_some();
+            const USE_INTROSPECTIVE_SOLVER: bool = true;
+
+            let has_ambiguous_solution = if USE_INTROSPECTIVE_SOLVER {
+                // Is actually faster for base 4:
+                //  USE_INTROSPECTIVE_SOLVER false: 17.9s
+                //  USE_INTROSPECTIVE_SOLVER true: 5.53s
+                // TODO: merge with backtracking availability_filter optimization below
+                !grid.has_unique_solution()
+
+                // FIXME: why does this wrongly report a ambiguous solution?
+                // let mut solver = introspective::Solver::new_with_filter(
+                //     grid.clone(),
+                //     |mut available_candidates: Candidates<Base>, index| {
+                //         if Position::from(index) == pos {
+                //             available_candidates.delete(deleted_value);
+                //             available_candidates
+                //         } else {
+                //             available_candidates
+                //         }
+                //     },
+                // );
+                // solver.next().is_some()
+            } else {
+                // TODO: evaluate parallelism higher up in the generation call stack
+                //  parallel solving of a single grid is quite tricky to parallelize efficiently,
+                //  especially for Base <= 3
+                // Idea 1:
+                //  race multiple positions with try_delete_cell_at_pos
+                //   if one succeeds, abort all, delete value and race again
+                //  find required cells breath-first in parallel
+                //   if one cell is required, this cell will still be required if another cell is deleted
+                // Idea 2:
+                //  generate multiple sudokus in parallel:
+                //   - optimize for some metric
+                //     - generate n-thread count, select the "best" by some metric
+                //     - keep generating until some metric is meet
+                //   - generate n-thread count, return the first successful one
+                #[cfg(feature = "parallel_generator")]
+                {
+                    let mut denylist = Grid::new();
+                    denylist[pos] = Candidates::with_single(deleted_value);
+                    let solver = backtracking::Solver::builder(&grid)
+                        .availability_filter(denylist)
+                        .build();
+
+                    solver.has_any_solution()
+                }
+                #[cfg(not(feature = "parallel_generator"))]
+                {
+                    let mut solver = backtracking::Solver::builder(&grid)
+                        .availability_filter(
+                            move |mut available_candidates: Candidates<Base>, index| {
+                                if Position::from(index) == pos {
+                                    available_candidates.delete(deleted_value);
+                                    available_candidates
+                                } else {
+                                    available_candidates
+                                }
+                            },
+                        )
+                        .build();
+
+                    solver.next().is_some()
+                }
+            };
+
             !has_ambiguous_solution
         };
 
@@ -376,7 +728,7 @@ impl<Base: SudokuBase> Generator<Base> {
     }
 
     fn get_solution_values_grid(&self) -> Result<&Grid<Base>> {
-        let Some(SolutionSettings { values_grid }) = &self.settings.solution else {
+        let Some(SolutionSettings { values_grid, .. }) = &self.settings.solution else {
             bail!("'PruningOrder::SolutionUnfixedValues' requires 'settings.solution.values_grid' to be defined")
         };
         Ok(values_grid)
@@ -415,7 +767,7 @@ impl<Base: SudokuBase> Generator<Base> {
     ) -> Result<Vec<Position<Base>>> {
         Ok(match &prune_settings.order {
             PruningOrder::Random => {
-                let prunable_positions = if let Some(SolutionSettings { values_grid }) =
+                let prunable_positions = if let Some(SolutionSettings { values_grid, .. }) =
                     &self.settings.solution
                 {
                     let mut all_unfixed_value_positions = values_grid.all_unfixed_value_positions();

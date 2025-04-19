@@ -1,16 +1,13 @@
 import assertNever from "assert-never";
 import * as Comlink from "comlink";
-import * as _ from "lodash-es";
-import { useCallback, useState } from "react";
-import type { CallbackInterface, Snapshot } from "recoil";
+import _ from "lodash";
+import type { SelectorCallbackInterface, Snapshot } from "recoil";
 import { useRecoilCallback } from "recoil";
 import type {
     DynamicGeneratorSettings,
-    DynamicMultiShotGeneratorSettings,
     DynamicPosition,
     GeneratorProgress,
     GridFormatEnum,
-    MultiShotGeneratorProgress,
     StrategyEnums,
     TransportDeductions,
 } from "../../types";
@@ -18,11 +15,10 @@ import { cellAtGridPositionState } from "../state/cellIndexing";
 import { getHint, hintState } from "../state/hint";
 import type { CellAction } from "../state/input";
 import { inputState } from "../state/input";
-import { gameCounterState, sudokuSideLengthState, sudokuState } from "../state/sudoku";
+import { sudokuSideLengthState, sudokuState } from "../state/sudoku";
 import { remoteWasmSudokuState, workerState, type RemoteWasmSudoku } from "../state/worker";
 import { spawnWorker } from "../state/worker/spawn";
 import { useCancelableMutation } from "../useCancelableMutation";
-import { measure, withMeasure } from "../utils/measure";
 import { getInput } from "./inputActions";
 
 // Snapshot accessors
@@ -34,7 +30,7 @@ async function getRemoteWasmSudoku(snapshot: Snapshot): Promise<RemoteWasmSudoku
 async function isFixedValueCell({
     snapshot,
     gridPosition,
-}: Pick<CallbackInterface, "snapshot"> & { gridPosition: DynamicPosition }) {
+}: Pick<SelectorCallbackInterface, "snapshot"> & { gridPosition: DynamicPosition }) {
     const cell = await snapshot.getPromise(cellAtGridPositionState(gridPosition));
 
     if (cell.kind === "value" && cell.fixed) {
@@ -46,7 +42,7 @@ async function isFixedValueCell({
     }
 }
 
-async function isInvalidValue({ snapshot, value }: Pick<CallbackInterface, "snapshot"> & { value: number }) {
+async function isInvalidValue({ snapshot, value }: Pick<SelectorCallbackInterface, "snapshot"> & { value: number }) {
     const sideLength = await snapshot.getPromise(sudokuSideLengthState);
 
     if (!_.inRange(value, 0, sideLength + 1)) {
@@ -60,7 +56,7 @@ async function isInvalidValue({ snapshot, value }: Pick<CallbackInterface, "snap
 async function isInvalidGridPosition({
     snapshot,
     gridPosition,
-}: Pick<CallbackInterface, "snapshot"> & { gridPosition: DynamicPosition }) {
+}: Pick<SelectorCallbackInterface, "snapshot"> & { gridPosition: DynamicPosition }) {
     const sideLength = await snapshot.getPromise(sudokuSideLengthState);
 
     if (!_.inRange(gridPosition.row, 0, sideLength) || !_.inRange(gridPosition.column, 0, sideLength)) {
@@ -76,16 +72,12 @@ async function isInvalidGridPosition({
 }
 
 // Mutation helpers
-export async function updateSudoku(
-    { set, wasmSudokuProxy }: Pick<CallbackInterface, "set"> & { wasmSudokuProxy: RemoteWasmSudoku },
-    isNewGame = false,
-) {
-    const newSudoku = await wasmSudokuProxy.getTransportSudoku();
+async function updateSudoku({
+    set,
+    wasmSudokuProxy,
+}: Pick<SelectorCallbackInterface, "set"> & { wasmSudokuProxy: RemoteWasmSudoku }) {
+    const newSudoku = await wasmSudokuProxy.getSudoku();
     set(sudokuState, newSudoku);
-    if (isNewGame) {
-        set(gameCounterState, (prev) => prev + 1);
-        set(hintState, undefined);
-    }
 }
 
 async function applyValueAtGridPosition({
@@ -93,7 +85,7 @@ async function applyValueAtGridPosition({
     set,
     value,
     gridPosition,
-}: Pick<CallbackInterface, "snapshot" | "set"> & {
+}: Pick<SelectorCallbackInterface, "snapshot" | "set"> & {
     value: number;
     gridPosition: DynamicPosition;
 }) {
@@ -334,157 +326,51 @@ export function useRedo() {
     );
 }
 
-const rebootWorker = withMeasure(
-    { name: "rebootWorker" },
-    async ({ snapshot, set }: Pick<CallbackInterface, "snapshot" | "set">) => {
-        console.info("Rebooting worker");
-        const currentWorker = await snapshot.getPromise(workerState);
-        console.debug("Terminating current worker");
-        currentWorker.terminate();
-        const newWorker = await spawnWorker();
-        set(workerState, newWorker);
-        console.info("Worker rebooted");
-    },
-);
-
+// TODO: reset hint
 export function useGenerate() {
-    const generate = useRecoilCallback(
+    const generateImpl = useRecoilCallback(
         ({ snapshot, set }) =>
             async (
                 settings: DynamicGeneratorSettings,
                 abortPromise: Promise<never>,
                 onProgress: (progress: GeneratorProgress) => void,
             ) => {
-                return await measure({ name: "generate", detail: { settings } }, async () => {
-                    const wasmSudokuProxy = await getRemoteWasmSudoku(snapshot);
+                const wasmSudokuProxy = await getRemoteWasmSudoku(snapshot);
 
-                    try {
-                        await Promise.race([
-                            abortPromise,
-                            wasmSudokuProxy.generate(settings, Comlink.proxy(onProgress)),
-                        ]);
-                    } catch (err) {
-                        if (!(err instanceof DOMException && err.name === "AbortError")) {
-                            throw err;
-                        }
-                        console.info("generate was aborted.");
-
-                        await rebootWorker({ snapshot, set });
-
+                try {
+                    await Promise.race([abortPromise, wasmSudokuProxy.generate(settings, Comlink.proxy(onProgress))]);
+                } catch (err) {
+                    if (!(err instanceof DOMException && err.name === "AbortError")) {
                         throw err;
                     }
+                    // The sudoku generation was aborted.
+                    console.debug("Terminating current worker");
+                    const currentWorker = await snapshot.getPromise(workerState);
+                    currentWorker.terminate();
+                    console.debug("Spawning new worker");
+                    const newWorker = await spawnWorker();
+                    set(workerState, newWorker);
 
-                    await updateSudoku({ set, wasmSudokuProxy }, true);
-                });
+                    console.info("Generation aborted.");
+                    throw err;
+                }
+
+                await updateSudoku({ set, wasmSudokuProxy });
             },
         [],
     );
 
-    const [generateProgress, setGenerateProgress] = useState<GeneratorProgress>();
-
-    const { mutation, cancel: cancelGenerate } = useCancelableMutation<DynamicGeneratorSettings, GeneratorProgress>({
-        cancelableMutationFn: useCallback(
-            async ({ variables: settings, abortPromise, onProgress }) => {
-                await generate(settings, abortPromise, onProgress);
-            },
-            [generate],
-        ),
-        onProgress: useCallback((progress) => {
-            console.debug("Generate progress:", progress);
-            setGenerateProgress(progress);
-        }, []),
-        onCancel: useCallback(() => {
-            console.info("Generate was canceled.");
-            setGenerateProgress(undefined);
-        }, []),
-    });
-
-    return { generate: mutation.mutateAsync, generateProgress, cancelGenerate };
-}
-
-export type TrackedMultiShotGeneratorProgress = {
-    latestProgress: MultiShotGeneratorProgress;
-    seenIterationsCount: number;
-    finishedIterationsCount: number;
-};
-
-export function useGenerateMultiShot() {
-    const generateImpl = useRecoilCallback(
-        ({ snapshot, set }) =>
-            async (
-                settings: DynamicMultiShotGeneratorSettings,
-                abortPromise: Promise<never>,
-                onProgress: (progress: MultiShotGeneratorProgress) => void,
-            ) => {
-                return await measure({ name: "generateMultiShot", detail: { settings } }, async () => {
-                    const wasmSudokuProxy = await getRemoteWasmSudoku(snapshot);
-
-                    try {
-                        await Promise.race([
-                            abortPromise,
-                            wasmSudokuProxy.generateMultiShot(settings, Comlink.proxy(onProgress)),
-                        ]);
-                    } catch (err) {
-                        if (!(err instanceof DOMException && err.name === "AbortError")) {
-                            throw err;
-                        }
-                        console.info("generateMultiShot was aborted.");
-
-                        await rebootWorker({ snapshot, set });
-
-                        throw err;
-                    }
-
-                    await updateSudoku({ set, wasmSudokuProxy }, true);
-                });
-            },
-        [],
+    const {
+        mutation,
+        progress,
+        cancel: cancelGenerate,
+    } = useCancelableMutation<DynamicGeneratorSettings, GeneratorProgress>(
+        async ({ variables: settings, abortPromise, onProgress }) => {
+            await generateImpl(settings, abortPromise, onProgress);
+        },
     );
 
-    const [trackedMultiShotGeneratorProgress, setTrackedMultiShotGeneratorProgress] =
-        useState<TrackedMultiShotGeneratorProgress>();
-
-    const { mutation, cancel: cancelGenerateMultiShot } = useCancelableMutation<
-        DynamicMultiShotGeneratorSettings,
-        MultiShotGeneratorProgress
-    >({
-        cancelableMutationFn: useCallback(
-            async ({ variables: settings, abortPromise, onProgress }) => {
-                await generateImpl(settings, abortPromise, onProgress);
-            },
-            [generateImpl],
-        ),
-        onProgress: useCallback((progress: MultiShotGeneratorProgress) => {
-            console.debug("MultiShot progress:", progress);
-            let isFinished;
-            if (progress.kind === "started") {
-                isFinished = false;
-            } else if (progress.kind === "finished") {
-                isFinished = true;
-            } else {
-                assertNever(progress);
-            }
-            setTrackedMultiShotGeneratorProgress((prev) => {
-                const prevSeenIterationsCount = prev?.seenIterationsCount ?? 0;
-                const prevFinishedIterationsCount = prev?.finishedIterationsCount ?? 0;
-                return {
-                    latestProgress: progress,
-                    seenIterationsCount: isFinished ? prevSeenIterationsCount : prevSeenIterationsCount + 1,
-                    finishedIterationsCount: isFinished ? prevFinishedIterationsCount + 1 : prevFinishedIterationsCount,
-                };
-            });
-        }, []),
-        onCancel: useCallback(() => {
-            console.info("MultiShot generation was canceled.");
-            setTrackedMultiShotGeneratorProgress(undefined);
-        }, []),
-    });
-
-    return {
-        generateMultiShot: mutation.mutateAsync,
-        trackedMultiShotGeneratorProgress,
-        cancelGenerateMultiShot,
-    };
+    return { generate: mutation.mutateAsync, progress, cancelGenerate };
 }
 
 export function useImportSudokuString() {
@@ -496,7 +382,7 @@ export function useImportSudokuString() {
                 if (setAllDirectCandidates) {
                     await wasmSudokuProxy.setAllDirectCandidates();
                 }
-                await updateSudoku({ set, wasmSudokuProxy }, true);
+                await updateSudoku({ set, wasmSudokuProxy });
             },
         [],
     );

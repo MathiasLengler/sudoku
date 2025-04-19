@@ -1,4 +1,4 @@
-import { DefaultValue } from "recoil";
+import { DefaultValue, type AtomEffect } from "recoil";
 import { z } from "zod";
 
 type SimpleAtomEffect<T> = (param: {
@@ -9,6 +9,35 @@ type SimpleAtomEffect<T> = (param: {
     // Atom effect observers are called before global transaction observers
     onSet: (param: (newValue: T, oldValue: T | DefaultValue, isReset: boolean) => void) => void;
 }) => void | (() => void);
+
+// FIXME: is this useful?
+//  effects can only read other atoms, not write to them
+//  this limits what `innerToOuter` can de
+export function transformEffect<TOuter, TInner>(
+    innerEffect: SimpleAtomEffect<TInner>,
+    outerToInner: (value: TOuter) => TInner,
+    innerToOuter: (value: TInner, effectParams: Parameters<AtomEffect<TOuter>>[0]) => TOuter,
+) {
+    const outerEffect = ((params) => {
+        const {
+            onSet,
+            setSelf,
+            node: { key },
+        } = params;
+        innerEffect({
+            node: { key },
+            setSelf: (newValue) => {
+                setSelf(innerToOuter(newValue, params));
+            },
+            onSet: (innerOnSet) => {
+                onSet((newValue, _oldValue, isReset) => {
+                    innerOnSet(outerToInner(newValue), new DefaultValue(), isReset);
+                });
+            },
+        });
+    }) satisfies AtomEffect<TOuter>;
+    return outerEffect;
+}
 
 export function localStorageEffect<Schema extends z.ZodTypeAny>(schema: Schema) {
     type SchemaType = z.infer<typeof schema>;
