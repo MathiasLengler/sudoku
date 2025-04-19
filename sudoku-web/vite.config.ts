@@ -52,6 +52,7 @@ export default defineConfig(({ mode }) => ({
             devOptions: {
                 enabled: true,
             },
+            filename: "service-worker.js",
             manifestFilename: "manifest.json",
             manifest: {
                 name: "Sudoku",
