@@ -1,15 +1,13 @@
-import type * as React from "react";
+import classNames from "classnames";
 import type * as CSS from "csstype";
-import classnames from "classnames";
-import { indexToPosition, valueToString } from "../utils";
-import type { DynamicCellCandidates, DynamicCellValue, DynamicPosition, TransportCell } from "../../types";
-import { inputState } from "../state/input";
-import { sudokuBaseState } from "../state/sudoku";
+import { isEqual } from "lodash-es";
 import { useRecoilValue } from "recoil";
+import type { DynamicCellCandidates, DynamicCellValue, DynamicPosition, TransportCell } from "../../types";
 import { useHandlePosition } from "../actions/sudokuActions";
 import { hintState } from "../state/hint";
-
-import isEqual from "lodash/isEqual";
+import { inputState } from "../state/input";
+import { sudokuBaseState } from "../state/sudoku";
+import { cellColorClass, indexToPosition, valueToString } from "../utils/sudoku";
 
 function cellBackgroundClass(isSelected: boolean, isGuide: boolean) {
     if (isSelected) {
@@ -20,36 +18,21 @@ function cellBackgroundClass(isSelected: boolean, isGuide: boolean) {
     }
 }
 
-export function cellColorClass(fixed: boolean, incorrectValue: boolean) {
-    if (fixed) {
-        return "cell--fixed";
-    }
-    if (incorrectValue) {
-        return "cell--incorrect-value";
-    } else {
-        return "cell--user";
-    }
-}
-
 type CellValueProps = {
     value: DynamicCellValue["value"];
 };
 
-export const CellValue: React.FunctionComponent<CellValueProps> = (props) => {
-    const { value } = props;
-    return (
-        <div className="cellValue">
-            <span className="cellValueText">{valueToString(value)}</span>
-        </div>
-    );
-};
+export function CellValue({ value }: CellValueProps) {
+    return <div className="cell-value">{valueToString(value)}</div>;
+}
 
 type CandidatesProps = {
     candidates: DynamicCellCandidates["candidates"];
     gridPosition: DynamicPosition;
+    showGuide?: boolean;
 };
 
-export const Candidates = ({ candidates, gridPosition }: CandidatesProps) => {
+export function Candidates({ candidates, gridPosition, showGuide = true }: CandidatesProps) {
     const base = useRecoilValue(sudokuBaseState);
     const input = useRecoilValue(inputState);
     const hint = useRecoilValue(hintState);
@@ -64,7 +47,7 @@ export const Candidates = ({ candidates, gridPosition }: CandidatesProps) => {
                     "--candidate-column": column,
                     "--candidate-row": row,
                 };
-                const isGuide = input.stickyMode && input.selectedValue === candidate;
+                const isGuide = showGuide && input.stickyMode && input.selectedValue === candidate;
 
                 // TODO: optimize
                 //  prototype different deductions data structures via selector
@@ -84,7 +67,7 @@ export const Candidates = ({ candidates, gridPosition }: CandidatesProps) => {
 
                 return (
                     <div
-                        className={classnames("candidate", {
+                        className={classNames("candidate", {
                             "candidate--guide": isGuide,
                             "candidate--deduction-reason": isDeductionReason,
                             "candidate--deduction-delete": isDeductionDelete,
@@ -98,7 +81,7 @@ export const Candidates = ({ candidates, gridPosition }: CandidatesProps) => {
             })}
         </div>
     );
-};
+}
 
 type CellProps = {
     cell: TransportCell;
@@ -106,12 +89,12 @@ type CellProps = {
     isGuide: boolean;
 };
 
-export const Cell = (props: CellProps) => {
+export function Cell(props: CellProps) {
     const { cell, isSelected, isGuide } = props;
 
     const { position: gridPosition } = cell;
 
-    const cellClassNames = classnames(
+    const cellClassNames = classNames(
         "cell",
         cellBackgroundClass(isSelected, isGuide),
         cellColorClass(cell.kind === "value" && cell.fixed, cell.incorrectValue),
@@ -160,4 +143,4 @@ export const Cell = (props: CellProps) => {
             )}
         </div>
     );
-};
+}

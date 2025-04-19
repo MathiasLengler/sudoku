@@ -96,66 +96,97 @@ mod wasm {
     // Recursive expansion of TS macro
     // ================================
 
-    impl<T: Clone> ts_rs::TS for DynamicGrid<T>
+    impl<T: Clone> ::ts_rs::TS for DynamicGrid<T>
     where
-        T: ts_rs::TS,
+        T: ::ts_rs::TS,
     {
-        const EXPORT_TO: Option<&'static str> = Some("bindings/DynamicGrid.ts");
-        fn decl() -> String {
-            format!(
-                "type {}{} = {};",
-                "DynamicGrid",
-                format!(
-                    "<{}>",
-                    [format!("{} = {}", "T", <DynamicCell as ts_rs::TS>::name())].join(", ")
-                ),
-                <Vec<T> as ts_rs::TS>::name_with_type_args(vec!["T".to_owned()])
-            )
-        }
-        fn name() -> String {
+        type WithoutGenerics = DynamicGrid<::ts_rs::Dummy>;
+        fn ident() -> String {
             "DynamicGrid".to_owned()
         }
-        fn inline() -> String {
-            <Vec<T> as ts_rs::TS>::name_with_type_args(vec!["T".to_owned()])
+        fn name() -> String {
+            format!(
+                "{}<{}>",
+                "DynamicGrid",
+                vec![<T as ::ts_rs::TS>::name()].join(", ")
+            )
         }
-        fn dependencies() -> Vec<ts_rs::Dependency>
+        fn decl_concrete() -> String {
+            format!(
+                "type {} = {};",
+                "DynamicGrid",
+                <Self as ::ts_rs::TS>::inline()
+            )
+        }
+        fn decl() -> String {
+            #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
+            struct T;
+
+            impl std::fmt::Display for T {
+                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                    write!(f, "{self:?}")
+                }
+            }
+            impl ::ts_rs::TS for T {
+                type WithoutGenerics = T;
+                fn name() -> String {
+                    stringify!(T).to_owned()
+                }
+                fn inline() -> String {
+                    panic!("{} cannot be inlined", <Self as ::ts_rs::TS>::name())
+                }
+                fn inline_flattened() -> String {
+                    panic!("{} cannot be flattened", <Self as ::ts_rs::TS>::name())
+                }
+                fn decl() -> String {
+                    panic!("{} cannot be declared", <Self as ::ts_rs::TS>::name())
+                }
+                fn decl_concrete() -> String {
+                    panic!("{} cannot be declared", <Self as ::ts_rs::TS>::name())
+                }
+            }
+            let inline = <DynamicGrid<T> as ::ts_rs::TS>::inline();
+            let generics = format!(
+                "<{}>",
+                [format!(
+                    "{} = {}",
+                    "T",
+                    <DynamicCell as ::ts_rs::TS>::name()
+                )]
+                .join(", ")
+            );
+            format!("type {}{generics} = {inline};", "DynamicGrid")
+        }
+        fn inline() -> String {
+            <Vec<T> as ::ts_rs::TS>::name()
+        }
+        fn inline_flattened() -> String {
+            panic!("{} cannot be flattened", <Self as ::ts_rs::TS>::name())
+        }
+        fn visit_generics(v: &mut impl ::ts_rs::TypeVisitor)
         where
             Self: 'static,
         {
-            {
-                let mut dependencies = Vec::new();
-                if <Vec<T> as ts_rs::TS>::transparent() {
-                    dependencies.append(&mut <Vec<T> as ts_rs::TS>::dependencies());
-                } else {
-                    if let Some(dep) = ts_rs::Dependency::from_ty::<Vec<T>>() {
-                        dependencies.push(dep);
-                    }
-                }
-                if <Vec<T> as ts_rs::TS>::transparent() {
-                    dependencies.append(&mut <Vec<T> as ts_rs::TS>::dependencies());
-                } else {
-                    if let Some(dep) = ts_rs::Dependency::from_ty::<Vec<T>>() {
-                        dependencies.push(dep);
-                    }
-                }
-                if <DynamicCell as ts_rs::TS>::transparent() {
-                    dependencies.append(&mut <DynamicCell as ts_rs::TS>::dependencies());
-                } else {
-                    if let Some(dep) = ts_rs::Dependency::from_ty::<DynamicCell>() {
-                        dependencies.push(dep);
-                    }
-                }
-                dependencies
-            }
+            v.visit::<T>();
+            <T as ::ts_rs::TS>::visit_generics(v);
         }
-        fn transparent() -> bool {
-            false
+        fn output_path() -> Option<&'static std::path::Path> {
+            Some(std::path::Path::new("DynamicGrid.ts"))
+        }
+        fn visit_dependencies(v: &mut impl ::ts_rs::TypeVisitor)
+        where
+            Self: 'static,
+        {
+            <DynamicCell as ::ts_rs::TS>::visit_generics(v);
+            v.visit::<Vec<T>>();
+            v.visit::<DynamicCell>();
+            <Vec<T> as ::ts_rs::TS>::visit_generics(v);
         }
     }
     #[cfg(test)]
     #[test]
     fn export_bindings_dynamicgrid() {
-        <DynamicGrid<()> as ts_rs::TS>::export().expect("could not export type");
+        <DynamicGrid<::ts_rs::Dummy> as ::ts_rs::TS>::export_all().expect("could not export type");
     }
 }
 

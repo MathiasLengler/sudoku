@@ -96,6 +96,15 @@ impl<Base: SudokuBase> CellState<Base> {
             _ => None,
         }
     }
+    // TODO: test
+    pub(super) fn to_candidates(&self) -> Candidates<Base> {
+        match *self {
+            CellState::Value(value) | CellState::FixedValue(value) => {
+                Candidates::with_single(value)
+            }
+            CellState::Candidates(candidates) => candidates,
+        }
+    }
 
     pub(super) fn delete(&mut self) {
         self.assert_unfixed();
@@ -157,7 +166,7 @@ impl<Base: SudokuBase> CellState<Base> {
             CellState::Candidates(candidates) => candidates.set(candidate, true),
             CellState::Value(_) => {}
             CellState::FixedValue(_) => unreachable!(),
-        };
+        }
     }
     pub(super) fn delete_candidate(&mut self, candidate: Value<Base>) {
         self.assert_unfixed();
@@ -166,7 +175,7 @@ impl<Base: SudokuBase> CellState<Base> {
             CellState::Candidates(candidates) => candidates.delete(candidate),
             CellState::Value(_) => {}
             CellState::FixedValue(_) => unreachable!(),
-        };
+        }
     }
 }
 
