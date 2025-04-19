@@ -1,0 +1,9 @@
+services:
+  sudoku-web:
+    build: ./
+    ports:
+      - 8080:80
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://hetzner-ctpc:4317
+      - OTEL_SERVICE_NAME=sudoku
+    image: sudoku-web

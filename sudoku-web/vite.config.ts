@@ -48,6 +48,7 @@ export default defineConfig(({ mode }) => ({
         wasm(),
         optimizeLodashImports(),
         VitePWA({
+            strategies: "generateSW",
             registerType: "autoUpdate",
             devOptions: {
                 enabled: true,
@@ -64,6 +65,8 @@ export default defineConfig(({ mode }) => ({
             },
             workbox: {
                 globPatterns: ["**/*.{js,wasm,css,html,png,svg,ico,woff2}"],
+                // We don't have a SPA router, so serve 404s as-is.
+                navigateFallback: null,
             },
             pwaAssets: {
                 preset: {

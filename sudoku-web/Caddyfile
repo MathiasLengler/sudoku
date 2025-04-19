@@ -2,6 +2,10 @@ http:// {
 	root * /srv
 	encode gzip
 
+	tracing {
+		span file_server
+	}
+
 	header {
 		# cross-origin isolation for SharedArrayBuffer (wasm threads)
 		# https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer#security_requirements
@@ -17,5 +21,14 @@ http:// {
 		Permissions-Policy: geolocation=(), camera=(), microphone=()
 	}
 
+	# https://vite-pwa-org.netlify.app/deployment/nginx.html#cache-control
+	header /assets/* Cache-Control "public, max-age=31536000, immutable"
+	header /workbox-* Cache-Control "public, max-age=31536000, immutable"
+
 	file_server
+
+	handle_errors {
+		rewrite * /404.html
+		file_server
+	}
 }
