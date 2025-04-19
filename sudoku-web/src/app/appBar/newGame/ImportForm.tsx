@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SaveAltIcon from "@mui/icons-material/SaveAlt";
+import { LoadingButton } from "@mui/lab";
 import TabPanel from "@mui/lab/TabPanel";
 import { DialogContent, Stack, Typography } from "@mui/material";
 import Accordion from "@mui/material/Accordion";
@@ -62,8 +63,8 @@ function SupportedFormats() {
     );
 }
 
-type ImportFormValues = z.infer<typeof importFormValuesSchema>;
-const importFormValuesSchema = z.object({
+export type ImportFormValues = z.infer<typeof importFormValuesSchema>;
+export const importFormValuesSchema = z.object({
     input: z.string().min(1),
     setAllDirectCandidates: z.boolean(),
 });
@@ -72,7 +73,7 @@ type ImportFormProps = {
     onClose: () => void;
 };
 
-export function ImportForm({ onClose }: ImportFormProps) {
+export const ImportForm = ({ onClose }: ImportFormProps) => {
     const importSudokuString = useImportSudokuString();
 
     const {
@@ -114,9 +115,7 @@ export function ImportForm({ onClose }: ImportFormProps) {
                                 label="Formatted Sudoku"
                                 multiline
                                 fullWidth
-                                slotProps={{
-                                    input: { sx: { fontFamily: "monospace" } },
-                                }}
+                                InputProps={{ sx: { fontFamily: "monospace" } }}
                                 disabled={isSubmitting}
                             />
                             <SupportedFormats />
@@ -136,7 +135,7 @@ export function ImportForm({ onClose }: ImportFormProps) {
                 <Button onClick={onClose} disabled={isSubmitting}>
                     Cancel
                 </Button>
-                <Button
+                <LoadingButton
                     type="submit"
                     form="import-form"
                     color="primary"
@@ -146,8 +145,8 @@ export function ImportForm({ onClose }: ImportFormProps) {
                     loadingPosition="end"
                 >
                     <span>Import</span>
-                </Button>
+                </LoadingButton>
             </DialogActions>
         </>
     );
-}
+};

@@ -12,9 +12,6 @@ use crate::solver::strategic::deduction::transport::{
 };
 use crate::solver::strategic::deduction::{Action, Reason};
 
-// TODO: make generic over the position/index type.
-//  use-case: reporting Deduction for a single group.
-
 /// A single, self-contained result of a strategy.
 /// Consists of actions to be taken on a Sudoku grid, as well as the reasons why.
 /// # Examples
@@ -25,11 +22,6 @@ use crate::solver::strategic::deduction::{Action, Reason};
 pub struct Deduction<Base: SudokuBase> {
     pub actions: PositionMap<Base, Action<Base>>,
     pub reasons: PositionMap<Base, Reason<Base>>,
-    // TODO: cost for this deduction
-    //  we currently only support cost per Strategy.
-    //  Different deductions produced by a strategy could vary in difficulty, e.g.:
-    //  - LockedSets/LockedCandidates: naked vs hidden, set size
-    //  - Chain-based strategies: length of chain
 }
 
 impl<Base: SudokuBase> TryFrom<TransportDeduction> for Deduction<Base> {

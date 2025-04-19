@@ -1,6 +1,6 @@
 import { atom, selector } from "recoil";
 import { z } from "zod";
-import { gridFormatSchema } from "../../constants";
+import { gridFormatSchema } from "../../../constants";
 import { localStorageEffect } from "../localStorageEffect";
 import { sudokuState } from "../sudoku";
 import { remoteWasmSudokuState } from "../worker";

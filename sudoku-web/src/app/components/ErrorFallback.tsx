@@ -1,5 +1,4 @@
 import { Alert, Button, Stack } from "@mui/material";
-
 import type { ReactNode } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { z } from "zod";
@@ -40,21 +39,21 @@ function ThemeFallback({ error, resetErrorBoundary, inline }: FallbackProps & { 
     const message = errorToMessageSchema.parse(error);
 
     return (
+        // <Box sx={{ display: "grid", height: 1, gap: 1, placeItems: "center", alignContent: "center" }}>
         <Stack
             direction={inline ? "row" : "column"}
+            width={1}
+            height={1}
             spacing={2}
-            sx={{
-                width: 1,
-                height: 1,
-                justifyContent: "center",
-                alignItems: "center",
-            }}
+            justifyContent="center"
+            alignItems="center"
         >
             <Alert severity="error">Unexpected error: {message}</Alert>
             <Button onClick={resetErrorBoundary} variant="contained">
                 Try again
             </Button>
         </Stack>
+        // </Box>
     );
 }
 

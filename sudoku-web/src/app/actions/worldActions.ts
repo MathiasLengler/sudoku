@@ -1,65 +1,52 @@
-import { useRecoilCallback } from "recoil";
-import { gameState } from "../state/gameMode";
-import { remoteWasmSudokuClassState, remoteWasmSudokuState } from "../state/worker";
-import { fixupComlinkProxy } from "../state/worker/comlinkProxyWrapper";
-import {
-    allWorldCellsInvalidateCounterState,
-    assertGameModeWorld,
-    remoteWasmCellWorldState,
-    selectedGridPositionState,
-} from "../state/world";
-import { updateSudoku } from "./sudokuActions";
+import { Snapshot, useRecoilCallback } from "recoil";
+import type { RelativeTileDir } from "../../types";
+import { remoteWasmCellWorldState, type RemoteWasmCellWorld } from "../state/worker";
 
-export function useShowWorldMap() {
-    return useRecoilCallback(({ snapshot, set }) => async () => {
-        const remoteWasmSudoku = await snapshot.getPromise(remoteWasmSudokuState);
-        const remoteWasmCellWorld = await snapshot.getPromise(remoteWasmCellWorldState);
-        const selectedGridPosition = await snapshot.getPromise(selectedGridPositionState);
-
-        const dynamicGrid = await remoteWasmSudoku.toDynamicGrid();
-
-        await remoteWasmCellWorld.setGridAt(dynamicGrid, selectedGridPosition);
-
-        set(allWorldCellsInvalidateCounterState, (prev) => prev + 1);
-
-        set(gameState, (prev) => {
-            return {
-                ...assertGameModeWorld(prev),
-                view: "map" as const,
-            };
-        });
-    });
+async function getWasmCellWorldProxy(snapshot: Snapshot): Promise<RemoteWasmCellWorld> {
+    return await snapshot.getPromise(remoteWasmCellWorldState);
 }
 
-export function usePlaySelectedGrid() {
+// TODO: set/get grid at tile index
+//  set grid when opening world
+//  get grid when selecting tile
+
+// TODO: port changeTile
+// #[wasm_bindgen(js_name = changeTile)]
+// pub fn change_tile(&mut self, _dir: IRelativeTileDir) -> Result<()> {
+//
+// let dir = import_dir(dir)?;
+//
+// let new_tile_index =
+//     self.tile_index
+//         .adjacent(dir, self.world.tile_dim())
+//         .ok_or(anyhow!(
+//             "Currently at world boundary {:?}, can't move {:?}",
+//             self.tile_index,
+//             dir
+//         ))?;
+//
+// let DynamicSudoku::Base3(sudoku_base_3) = &self.sudoku else {
+//     panic!("POC: base 3 only")
+// };
+//
+// self.world
+//     .set_grid_at(sudoku_base_3.grid(), self.tile_index);
+//
+// self.sudoku =
+//     DynamicSudoku::Base3(Sudoku::with_grid(self.world.to_grid_at(new_tile_index)));
+// self.tile_index = new_tile_index;
+//
+// Ok(())
+
+export function useChangeTile() {
     return useRecoilCallback(
-        ({ snapshot, set }) =>
-            async () => {
-                const remoteWasmCellWorld = await snapshot.getPromise(remoteWasmCellWorldState);
-                const selectedGridPosition = await snapshot.getPromise(selectedGridPositionState);
-                const newGrid = await remoteWasmCellWorld.toGridAt(selectedGridPosition);
-
-                const RemoteWasmSudoku = await snapshot.getPromise(remoteWasmSudokuClassState);
-
-                const newRemoteWasmSudoku = fixupComlinkProxy(await RemoteWasmSudoku.from_dynamic_grid(newGrid));
-                set(remoteWasmSudokuState, newRemoteWasmSudoku);
-
-                await updateSudoku({
-                    set,
-                    wasmSudokuProxy: newRemoteWasmSudoku,
-                });
-
-                // Switch view to sudoku
-                set(gameState, (prev) => {
-                    if (!(prev.mode === "world" && prev.view === "map")) {
-                        console.warn("Unexpected game state", prev);
-                        return prev;
-                    }
-                    return {
-                        ...prev,
-                        view: "sudoku" as const,
-                    };
-                });
+        ({ snapshot, set: _set }) =>
+            async (dir: RelativeTileDir) => {
+                console.log("changeTile", dir);
+                const wasmCellWorldProxy = await getWasmCellWorldProxy(snapshot);
+                console.log(wasmCellWorldProxy);
+                // await wasmCellWorldProxy.???;
+                // await updateSudoku({ set, wasmSudokuProxy });
             },
         [],
     );

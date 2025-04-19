@@ -2,4 +2,7 @@
 import type { DynamicPosition } from "./DynamicPosition";
 import type { PruningGroupBehaviour } from "./PruningGroupBehaviour";
 
-export type DynamicPruningOrder = "random" | { "positions": { positions: Array<DynamicPosition>, behaviour: PruningGroupBehaviour, } } | { "solutionUnfixedValues": { behaviour: PruningGroupBehaviour, } };
+export type DynamicPruningOrder = DynamicPruningOrderRandom | DynamicPruningOrderPositions | DynamicPruningOrderSolutionUnfixedValues;
+export type DynamicPruningOrderRandom = "random";
+export type DynamicPruningOrderPositions = { "positions": { positions: Array<DynamicPosition>, behaviour: PruningGroupBehaviour, } };
+export type DynamicPruningOrderSolutionUnfixedValues = { "solutionUnfixedValues": { behaviour: PruningGroupBehaviour, } };

@@ -9,13 +9,11 @@ use criterion::measurement::WallTime;
 use criterion::{BatchSize, BenchmarkId, SamplingMode, Throughput};
 use criterion::{BenchmarkGroup, Criterion};
 
-use num::Integer;
 use sudoku::base::{consts::*, BaseEnum, SudokuBase};
 use sudoku::cell::Candidates;
 use sudoku::cell::Value;
 use sudoku::generator::{Generator, GeneratorSettings, PruningSettings, PruningTarget};
 use sudoku::grid::deserialization::read_grids_from_file;
-use sudoku::grid::group::CandidatesGroup;
 use sudoku::grid::Grid;
 use sudoku::position::test_utils::{consume_iter, consume_nested_iter};
 use sudoku::position::Coordinate;
@@ -23,11 +21,7 @@ use sudoku::position::Position;
 use sudoku::rng::{new_crate_rng_from_rng, new_crate_rng_with_seed};
 use sudoku::samples::{base_2, base_3, base_4, base_5};
 use sudoku::solver::sat;
-use sudoku::solver::strategic::strategies::locked_sets::v2::find_locked_set;
-use sudoku::solver::strategic::strategies::locked_sets::v2::test_utils::locked_set_test_cases_base_3;
-use sudoku::solver::strategic::strategies::{
-    GroupIntersectionBoth, HiddenSingles, LockedSets, Strategy, StrategyEnum,
-};
+use sudoku::solver::strategic::strategies::{GroupIntersectionBoth, GroupReduction, Strategy};
 use sudoku::solver::{backtracking, introspective, strategic, FallibleSolver, InfallibleSolver};
 
 fn cast_grid<Base: SudokuBase>(any_grid: Box<dyn Any>) -> Grid<Base> {
@@ -46,25 +40,20 @@ fn sample_grid<Base: SudokuBase>() -> Grid<Base> {
 fn bench_generator_group<Base: SudokuBase>(generator_group: &mut BenchmarkGroup<WallTime>) {
     let base = Base::BASE;
 
-    for (prune_name, prune_settings) in [
-        (
-            "Backtracking Minimal",
-            Some(PruningSettings::<Base> {
-                target: PruningTarget::Minimal,
-                ..Default::default()
-            }),
-        ),
-        (
-            "NoBacktracking Minimal",
-            Some(PruningSettings::<Base> {
-                target: PruningTarget::Minimal,
-                strategies: StrategyEnum::default_solver_strategies_no_brute_force(),
-                ..Default::default()
-            }),
-        ),
-        ("None", None),
+    for prune_settings in [
+        Some(PruningSettings::<Base> {
+            target: PruningTarget::Minimal,
+            ..Default::default()
+        }),
+        None,
     ] {
-        let parameter_string = format!("Base={} Target={:?}", base, prune_name);
+        let parameter_string = format!(
+            "Base={} Target={:?}",
+            base,
+            prune_settings
+                .as_ref()
+                .map(|prune_settings| prune_settings.target)
+        );
 
         generator_group.bench_with_input(
             BenchmarkId::new("generate", parameter_string),
@@ -107,7 +96,7 @@ fn bench_solver_sample_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup
         |b, grid| {
             b.iter(|| {
                 backtracking::Solver::builder(grid)
-                    .candidates_filter(Grid::new())
+                    .availability_filter(Grid::new())
                     .build()
                     .solve()
                     .unwrap()
@@ -157,14 +146,22 @@ fn bench_solver_sample_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup
     solver_group.bench_with_input(
         BenchmarkId::new("sat", &parameter_string),
         &grid,
-        |b, grid| b.iter(|| sat::Solver::new(grid).try_solve().unwrap().unwrap()),
+        |b, grid| {
+            b.iter(|| {
+                sat::Solver::new(grid)
+                    .unwrap()
+                    .try_solve()
+                    .unwrap()
+                    .unwrap()
+            })
+        },
     );
 }
 
 fn bench_solver_tdoku_group(solver_tdoku_group: &mut BenchmarkGroup<WallTime>) {
     type Base = Base3;
 
-    let tdoku_datasets_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("./tests/res/tdoku/");
+    let tdoku_datasets_dir = Path::new("./tests/res/tdoku/");
 
     let tdoku_datasets = vec![
         "puzzles0_kaggle",
@@ -219,7 +216,11 @@ fn bench_solver_tdoku_group(solver_tdoku_group: &mut BenchmarkGroup<WallTime>) {
             |b, grids| {
                 b.iter(|| {
                     for grid in grids {
-                        sat::Solver::new(grid).try_solve().unwrap().unwrap();
+                        sat::Solver::new(grid)
+                            .unwrap()
+                            .try_solve()
+                            .unwrap()
+                            .unwrap();
                     }
                 })
             },
@@ -341,39 +342,27 @@ fn bench_grid_group<Base: SudokuBase>(grid_group: &mut BenchmarkGroup<WallTime>)
 }
 
 fn bench_strategy_group(strategy_group: &mut BenchmarkGroup<WallTime>) {
-    let mut grid: Grid<Base3> =
-        "000000300000071500002400018000009040094618230610700000430897600008140000009000000"
-            .parse()
-            .unwrap();
-    grid.set_all_direct_candidates();
-    grid.fix_all_values();
-    strategy_group.bench_with_input(
-        BenchmarkId::new("HiddenSingles/execute", "sample_grid_hidden_singles"),
-        &grid,
-        |b, grid| b.iter(|| HiddenSingles.execute(grid).unwrap()),
-    );
+    let candidates_group: Vec<Candidates<Base3>> = vec![
+        vec![1, 2],
+        vec![1, 3],
+        vec![2, 3],
+        vec![1, 2, 3, 4, 5, 6],
+        vec![1, 3, 4],
+        vec![2, 3, 4, 5, 6],
+    ]
+    .into_iter()
+    .map(|candidates_data| candidates_data.try_into().unwrap())
+    .collect();
 
-    for (locked_sets_param_name, candidates_group, _) in locked_set_test_cases_base_3() {
-        strategy_group.bench_with_input(
-            BenchmarkId::new("LockedSets/find_locked_set", locked_sets_param_name),
-            &candidates_group,
-            |b, candidates_group| b.iter(|| find_locked_set(candidates_group)),
-        );
-    }
-
-    let grid: Grid<Base3> =
-        "4105300hg281j209i2j081381ag614j20h410hh80318412181h00581033k4109g130342gi0k86s811103m8i4igh0l85805210hla81g20550g12181500h0309090h50120654i0i081032181g10h09054111"
-            .parse()
-            .unwrap();
     strategy_group.bench_with_input(
-        BenchmarkId::new("LockedSets/execute", "sample_grid_hidden_pairs"),
-        &grid,
-        |b, grid| b.iter(|| LockedSets.execute(grid).unwrap()),
+        BenchmarkId::new("GroupReduction/reduce_candidates_group", "basic"),
+        &candidates_group,
+        |b, candidates_group| b.iter(|| GroupReduction::reduce_candidates_group(candidates_group)),
     );
 
     let grid: Grid<Base3> = "s00905cgdg2103pgc00h03r0ccd85cmcpcece0c0b0g1do036s9sec11c48222g1482c8c0ho421og8o9o1ogc410209sgoi22054gi0o011i6gkiq116q814s0s4ca48kao4s6o4s1003g10610410s0qg081210c".parse().unwrap();
     strategy_group.bench_with_input(
-        BenchmarkId::new("GroupIntersection/execute", "sample_grid_pointing_pairs_2"),
+        BenchmarkId::new("GroupIntersection/execute", "basic"),
         &grid,
         |b, grid| b.iter(|| GroupIntersectionBoth.execute(grid).unwrap()),
     );
@@ -440,31 +429,6 @@ fn bench_candidates_group(candidates_group: &mut BenchmarkGroup<WallTime>) {
             BatchSize::SmallInput,
         );
     });
-
-    candidates_group.bench_function(BenchmarkId::new("combinations", "Base=3 single k=1"), |b| {
-        b.iter_batched(
-            || {
-                (
-                    Candidates::<Base3>::with_integral(0b000_010_000),
-                    1.try_into().unwrap(),
-                )
-            },
-            |(candidates, k)| consume_iter(candidates.combinations(k)),
-            BatchSize::SmallInput,
-        );
-    });
-    for k in Value::<Base3>::all() {
-        candidates_group.bench_function(
-            BenchmarkId::new("combinations", format!("Base=3 all k={k}")),
-            |b| {
-                b.iter_batched(
-                    || (Candidates::<Base3>::all(), k),
-                    |(candidates, k)| consume_iter(candidates.combinations(k)),
-                    BatchSize::SmallInput,
-                );
-            },
-        );
-    }
 }
 
 fn bench_position_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup<WallTime>) {
@@ -495,95 +459,29 @@ fn bench_position_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup<Wall
         BenchmarkId::new("iter/all_blocks", &parameter_string),
         |b| b.iter(|| consume_nested_iter(Position::<Base>::all_blocks())),
     );
-    solver_group.bench_function(
-        BenchmarkId::new("iter/all_groups", &parameter_string),
-        |b| b.iter(|| consume_nested_iter(Position::<Base>::all_groups())),
-    );
-}
-
-fn bench_group_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup<WallTime>) {
-    let base = Base::BASE;
-    let parameter_string = format!("Base={}", base);
-
-    let group: CandidatesGroup<Base> = Candidates::iter_all_lexicographical()
-        .take(Base::SIDE_LENGTH.into())
-        .collect::<Vec<_>>()
-        .try_into()
-        .unwrap();
-
-    let coordinate = Coordinate::default();
-
-    solver_group.bench_function(
-        BenchmarkId::new("from_iter_checked", &parameter_string),
-        |b| {
-            b.iter_batched(
-                || Candidates::iter_all_lexicographical().take(Base::SIDE_LENGTH.into()),
-                |iter| CandidatesGroup::<Base>::from_iter_checked(iter),
-                BatchSize::SmallInput,
-            );
-        },
-    );
-
-    solver_group.bench_function(BenchmarkId::new("get", &parameter_string), |b| {
-        b.iter(|| group.get(black_box(coordinate)));
-    });
-    solver_group.bench_function(BenchmarkId::new("map", &parameter_string), |b| {
-        b.iter_batched(
-            || group.clone(),
-            |group| group.map(|c| c.count()),
-            BatchSize::SmallInput,
-        );
-    });
-    solver_group.bench_function(BenchmarkId::new("reverse", &parameter_string), |b| {
-        b.iter_batched(
-            || group.clone(),
-            |group| group.reverse(),
-            BatchSize::SmallInput,
-        );
-    });
-    solver_group.bench_function(BenchmarkId::new("iter", &parameter_string), |b| {
-        b.iter(|| consume_iter(group.iter()));
-    });
-    solver_group.bench_function(BenchmarkId::new("iter_enumerate", &parameter_string), |b| {
-        b.iter(|| consume_iter(group.iter_enumerate()));
-    });
-    let mask = Value::<Base>::all().filter(|v| v.get().is_odd()).collect();
-    solver_group.bench_function(
-        BenchmarkId::new("iter_index_mask", &parameter_string),
-        |b| {
-            b.iter(|| consume_iter(group.iter_index_mask(black_box(mask))));
-        },
-    );
-    solver_group.bench_function(BenchmarkId::new("transpose", &parameter_string), |b| {
-        b.iter_batched(
-            || group.clone(),
-            |group| group.transpose(),
-            BatchSize::SmallInput,
-        );
-    });
 }
 
 fn criterion_benchmark(c: &mut Criterion) {
-    let mut bench_group: BenchmarkGroup<WallTime> = c.benchmark_group("Generator");
-    bench_generator_group::<Base2>(&mut bench_group);
-    bench_generator_group::<Base3>(&mut bench_group);
+    let mut generator_group: BenchmarkGroup<WallTime> = c.benchmark_group("Generator");
+    bench_generator_group::<Base2>(&mut generator_group);
+    bench_generator_group::<Base3>(&mut generator_group);
     // Too slow
     // bench_generator_group::<Base4>(&mut generator_group);
-    bench_group.finish();
+    generator_group.finish();
 
-    let mut bench_group = c.benchmark_group("SolverSample");
-    bench_group.sample_size(20);
-    bench_solver_sample_group::<Base2>(&mut bench_group);
-    bench_solver_sample_group::<Base3>(&mut bench_group);
-    bench_solver_sample_group::<Base4>(&mut bench_group);
-    bench_solver_sample_group::<Base5>(&mut bench_group);
-    bench_group.finish();
+    let mut solver_sample_group = c.benchmark_group("SolverSample");
+    solver_sample_group.sample_size(20);
+    bench_solver_sample_group::<Base2>(&mut solver_sample_group);
+    bench_solver_sample_group::<Base3>(&mut solver_sample_group);
+    bench_solver_sample_group::<Base4>(&mut solver_sample_group);
+    bench_solver_sample_group::<Base5>(&mut solver_sample_group);
+    solver_sample_group.finish();
 
-    let mut bench_group = c.benchmark_group("SolverTdoku");
-    bench_group.sample_size(10);
-    bench_group.sampling_mode(SamplingMode::Flat);
-    bench_solver_tdoku_group(&mut bench_group);
-    bench_group.finish();
+    let mut solver_tdoku_group = c.benchmark_group("SolverTdoku");
+    solver_tdoku_group.sample_size(10);
+    solver_tdoku_group.sampling_mode(SamplingMode::Flat);
+    bench_solver_tdoku_group(&mut solver_tdoku_group);
+    solver_tdoku_group.finish();
 
     let mut solver_micro_group = c.benchmark_group("SolverMicro");
     solver_micro_group.sample_size(20);
@@ -591,30 +489,24 @@ fn criterion_benchmark(c: &mut Criterion) {
     bench_solver_micro_group::<Base3>(&mut solver_micro_group);
     solver_micro_group.finish();
 
-    let mut bench_group = c.benchmark_group("Grid");
-    bench_grid_group::<Base2>(&mut bench_group);
-    bench_grid_group::<Base3>(&mut bench_group);
-    bench_group.finish();
+    let mut grid_group = c.benchmark_group("Grid");
+    bench_grid_group::<Base2>(&mut grid_group);
+    bench_grid_group::<Base3>(&mut grid_group);
+    grid_group.finish();
 
-    let mut bench_group = c.benchmark_group("Strategies");
-    bench_strategy_group(&mut bench_group);
-    bench_group.finish();
+    let mut strategy_group = c.benchmark_group("Strategies");
+    bench_strategy_group(&mut strategy_group);
+    strategy_group.finish();
 
-    let mut bench_group = c.benchmark_group("Candidates");
-    bench_candidates_group(&mut bench_group);
-    bench_group.finish();
+    let mut candidates_group = c.benchmark_group("Candidates");
+    bench_candidates_group(&mut candidates_group);
+    candidates_group.finish();
 
-    let mut bench_group = c.benchmark_group("Position");
-    bench_position_group::<Base2>(&mut bench_group);
-    bench_position_group::<Base3>(&mut bench_group);
-    bench_position_group::<Base4>(&mut bench_group);
-    bench_group.finish();
-
-    let mut bench_group = c.benchmark_group("Group");
-    bench_group_group::<Base2>(&mut bench_group);
-    bench_group_group::<Base3>(&mut bench_group);
-    bench_group_group::<Base4>(&mut bench_group);
-    bench_group.finish();
+    let mut position_group = c.benchmark_group("Position");
+    bench_position_group::<Base2>(&mut position_group);
+    bench_position_group::<Base3>(&mut position_group);
+    bench_position_group::<Base4>(&mut position_group);
+    position_group.finish();
 }
 
 criterion_group!(benches, criterion_benchmark);

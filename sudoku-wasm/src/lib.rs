@@ -6,7 +6,7 @@ use error::Result;
 use sudoku::base::consts::*;
 use sudoku::grid::Grid;
 use sudoku::transport::TransportSudoku;
-use sudoku::world::{CellWorld, WorldGridDim};
+use sudoku::world::{CellWorld, TileDim};
 use sudoku::{DynamicSudoku, DynamicSudokuActions, Sudoku};
 
 use crate::typescript::*;
@@ -46,21 +46,19 @@ pub fn init() {
         });
     }
 
-    trace!("sudoku-wasm initialized");
+    trace!("WASM initialized");
 }
 
 #[allow(dead_code)]
 #[wasm_bindgen]
 pub struct WasmCellWorld {
+    // TODO: expose methods from DynamicCellWorldActions with wasm-bindgen
     world: DynamicCellWorld,
 }
 
 impl Default for WasmCellWorld {
     fn default() -> Self {
-        let world =
-            CellWorld::<Base3>::new(WorldGridDim::new(3, 3).unwrap(), 1.try_into().unwrap());
-
-        DynamicCellWorld::from(world).into()
+        Self::new()
     }
 }
 
@@ -72,58 +70,40 @@ impl From<DynamicCellWorld> for WasmCellWorld {
 
 #[wasm_bindgen]
 impl WasmCellWorld {
-    pub fn new(base: IBaseEnum, grid_dim: IWorldGridDim, overlap: u8) -> Result<WasmCellWorld> {
-        Ok(DynamicCellWorld::new(
-            import_base_enum(base)?,
-            import_world_grid_dim(grid_dim)?,
-            overlap,
-        )
-        .into())
-    }
+    #[wasm_bindgen(constructor)]
+    pub fn new() -> Self {
+        let mut world = CellWorld::<Base3>::new(
+            TileDim {
+                row_count: 3,
+                column_count: 3,
+            },
+            1,
+        );
 
-    #[allow(clippy::should_implement_trait)]
-    pub fn default() -> Self {
-        Default::default()
-    }
+        let seed = Some(1);
+        world.generate_solved(seed);
+        world.prune(seed);
 
-    pub fn generate(
-        base: IBaseEnum,
-        grid_dim: IWorldGridDim,
-        overlap: u8,
-        seed: Option<u64>,
-    ) -> Result<WasmCellWorld> {
-        let mut this = Self::new(base, grid_dim, overlap)?;
-        this.generate_solved(seed).unwrap();
-        this.prune(seed).unwrap();
-        Ok(this)
+        DynamicCellWorld::from(world).into()
     }
 
     #[wasm_bindgen(js_name = generateSolved)]
     pub fn generate_solved(&mut self, seed: Option<u64>) -> Result<IWorldGenerationResult> {
-        export_world_generation_result(self.world.generate_solved(seed)?)
+        export_world_generation_result(self.world.generate_solved(seed))
     }
-    pub fn prune(&mut self, seed: Option<u64>) -> Result<()> {
-        Ok(self.world.prune(seed)?)
+    pub fn prune(&mut self, seed: Option<u64>) {
+        self.world.prune(seed);
     }
 
     // DynamicGrid interop
     #[wasm_bindgen(js_name = toGridAt)]
-    pub fn to_grid_at(&self, grid_position: IWorldGridPosition) -> Result<IDynamicGrid> {
-        export_dynamic_grid(
-            self.world
-                .to_grid_at(import_world_grid_position(grid_position)?)?,
-        )
+    pub fn to_grid_at(&self, tile_index: ITileIndex) -> Result<IDynamicGrid> {
+        export_dynamic_grid(self.world.to_grid_at(import_tile_index(tile_index)?))
     }
     #[wasm_bindgen(js_name = setGridAt)]
-    pub fn set_grid_at(
-        &mut self,
-        grid: IDynamicGrid,
-        grid_position: IWorldGridPosition,
-    ) -> Result<()> {
-        self.world.set_grid_at(
-            import_dynamic_grid(grid)?,
-            import_world_grid_position(grid_position)?,
-        )?;
+    pub fn set_grid_at(&mut self, grid: IDynamicGrid, tile_index: ITileIndex) -> Result<()> {
+        self.world
+            .set_grid_at(import_dynamic_grid(grid)?, import_tile_index(tile_index)?)?;
         Ok(())
     }
 
@@ -143,22 +123,6 @@ impl WasmCellWorld {
     pub fn all_world_cells(&self) -> Result<IDynamicCells> {
         export_dynamic_cells(self.world.all_world_cells())
     }
-
-    // Indexing helpers
-    #[wasm_bindgen(js_name = worldCellPositionToNearestWorldGridCellPosition)]
-    pub fn world_cell_position_to_nearest_world_grid_cell_position(
-        &self,
-        cell_position: IWorldCellPosition,
-        tie_break: IQuadrant,
-    ) -> Result<IDynamicWorldGridCellPosition> {
-        export_dynamic_world_grid_cell_position(
-            self.world
-                .world_cell_position_to_nearest_world_grid_cell_position(
-                    import_world_cell_position(cell_position)?,
-                    import_quadrant(tie_break)?,
-                )?,
-        )
-    }
 }
 
 #[wasm_bindgen]
@@ -168,9 +132,7 @@ pub struct WasmSudoku {
 
 impl Default for WasmSudoku {
     fn default() -> Self {
-        let grid: Grid<Base3> = sudoku::samples::minimal();
-
-        DynamicSudoku::from(Sudoku::with_grid(grid)).into()
+        Self::new()
     }
 }
 
@@ -182,32 +144,24 @@ impl From<DynamicSudoku> for WasmSudoku {
 
 #[wasm_bindgen]
 impl WasmSudoku {
+    #[wasm_bindgen(constructor)]
     pub fn new() -> Self {
-        Self::default()
+        let grid: Grid<Base3> = sudoku::samples::minimal();
+
+        DynamicSudoku::from(Sudoku::with_grid(grid)).into()
     }
 
-    pub fn from_dynamic_cells(cells: IDynamicCells) -> Result<WasmSudoku> {
+    pub fn restore(cells: IDynamicCells) -> Result<WasmSudoku> {
         let cells = import_dynamic_cells(cells)?;
 
         Ok(DynamicSudoku::try_from(cells)?.into())
     }
 
-    pub fn from_dynamic_grid(dynamic_grid: IDynamicGrid) -> Result<WasmSudoku> {
-        let dynamic_grid = import_dynamic_grid(dynamic_grid)?;
-
-        Ok(DynamicSudoku::try_from(dynamic_grid)?.into())
-    }
-
-    #[wasm_bindgen(js_name = getTransportSudoku)]
-    pub fn get_transport_sudoku(&self) -> Result<ITransportSudoku> {
+    #[wasm_bindgen(js_name = getSudoku)]
+    pub fn get_sudoku(&self) -> Result<ITransportSudoku> {
         let transport_sudoku = TransportSudoku::from(&self.sudoku);
 
         export_transport_sudoku(transport_sudoku)
-    }
-
-    #[wasm_bindgen(js_name = toDynamicGrid)]
-    pub fn to_dynamic_grid(&self) -> Result<IDynamicGrid> {
-        export_dynamic_grid(self.sudoku.to_dynamic_grid())
     }
 
     #[wasm_bindgen(js_name = setValue)]
@@ -304,20 +258,7 @@ impl WasmSudoku {
             import_generate_on_progress(on_progress)?,
         )?;
 
-        Ok(())
-    }
-
-    #[wasm_bindgen(js_name = generateMultiShot)]
-    pub fn generate_multi_shot(
-        &mut self,
-        multi_shot_generator_settings: IDynamicMultiShotGeneratorSettings,
-        on_progress: IGenerateMultiShotOnProgress,
-    ) -> Result<()> {
-        self.sudoku.generate_multi_shot(
-            import_dynamic_multi_shot_generator_settings(multi_shot_generator_settings)?,
-            import_generate_multi_shot_on_progress(on_progress)?,
-        )?;
-
+        // *self = self.sudoku.clone().into();
         Ok(())
     }
 
@@ -327,21 +268,19 @@ impl WasmSudoku {
     }
 
     pub fn export(&self, format: IGridFormatEnum) -> Result<String> {
-        Ok(self.sudoku.export(import_grid_format_enum(format)?))
+        Ok(self.sudoku.export(&import_grid_format_enum(format)?))
     }
 
     #[wasm_bindgen(js_name = tryStrategies)]
     pub fn try_strategies(
         &mut self,
         strategies: IStrategyEnums,
-    ) -> Result<Option<IDynamicSolveStep>> {
-        let opt_dyn_solve_step = self
+    ) -> Result<IDynamicTryStrategiesReturn> {
+        let dynamic_try_strategies_return = self
             .sudoku
             .try_strategies(import_strategy_enums(strategies)?)?;
 
-        opt_dyn_solve_step
-            .map(export_dynamic_solve_step)
-            .transpose()
+        export_dynamic_try_strategies_return(dynamic_try_strategies_return)
     }
 
     #[wasm_bindgen(js_name = applyDeductions)]

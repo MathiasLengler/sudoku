@@ -1,28 +1,21 @@
 import { Typography } from "@mui/material";
+import React from "react";
 
 type CodeProps = {
     children: string;
     wrap?: boolean;
 };
 
-export function Code({ children, wrap = false }: CodeProps) {
+export const Code: React.FunctionComponent<CodeProps> = ({ children, wrap = false }) => {
     return (
         <Typography
-            sx={[
-                {
-                    minHeight: "1lh",
-                },
-                wrap
-                    ? {
-                          whiteSpace: "pre-wrap",
-                      }
-                    : {
-                          whiteSpace: "pre",
-                      },
-            ]}
+            sx={{
+                whiteSpace: wrap ? "pre-wrap" : "pre",
+                minHeight: "1lh",
+            }}
             variant="code"
         >
             {children}
         </Typography>
     );
-}
+};

@@ -2,4 +2,4 @@
 import type { PositionedTransportAction } from "./PositionedTransportAction";
 import type { PositionedTransportReason } from "./PositionedTransportReason";
 
-export type TransportDeduction = { reasons: Array<PositionedTransportReason>, actions: Array<PositionedTransportAction>, };
+export interface TransportDeduction { reasons: Array<PositionedTransportReason>, actions: Array<PositionedTransportAction>, }

@@ -1,7 +1,9 @@
-import CssBaseline from "@mui/material/CssBaseline";
-import { createTheme, StyledEngineProvider, ThemeProvider } from "@mui/material/styles";
+import type { ReactNode } from "react";
+import React from "react";
 import useMediaQuery from "@mui/material/useMediaQuery";
-import { useMemo, type ReactNode } from "react";
+import { createTheme, StyledEngineProvider, ThemeProvider } from "@mui/material/styles";
+import CssBaseline from "@mui/material/CssBaseline";
+import "./styles";
 
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
 declare module "@mui/material/styles" {
@@ -32,10 +34,11 @@ type MyThemeProps = {
 const fontFamily = ['"Roboto Flex Variable"', '"Roboto"', '"Helvetica"', '"Arial"', "sans-serif"].join(",");
 const fontFamilyMonospace = ['"Inconsolata"', "monospace"].join(",");
 
-export function MyTheme({ children }: MyThemeProps) {
+// TODO: switch to: https://mui.com/material-ui/experimental-api/css-theme-variables/overview/
+export const MyTheme = ({ children }: MyThemeProps) => {
     const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
 
-    const theme = useMemo(() => {
+    const theme = React.useMemo(() => {
         return createTheme({
             palette: {
                 primary: {
@@ -105,4 +108,4 @@ export function MyTheme({ children }: MyThemeProps) {
             </ThemeProvider>
         </StyledEngineProvider>
     );
-}
+};

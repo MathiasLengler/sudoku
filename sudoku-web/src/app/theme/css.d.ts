@@ -11,6 +11,5 @@ declare module "csstype" {
         "--block-column"?: number;
         "--block-row"?: number;
         "--grid-size"?: string;
-        "--cell-size"?: string;
     }
 }

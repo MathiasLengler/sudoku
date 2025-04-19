@@ -1,12 +1,9 @@
-import { WORKER_BOOT_UP_MESSAGE } from "../../constants";
+import { WORKER_BOOT_UP_MESSAGE } from "../../../constants";
 
 export async function spawnWorker() {
     console.debug("Spawning worker");
-    const worker = new Worker(new URL("./bg/worker.tsx", import.meta.url), {
-        name: "SudokuWasmWorker",
-        type: "module",
-    });
-    if (import.meta.env.DEV) {
+    const worker = new Worker(new URL("./worker.tsx", import.meta.url), { name: "SudokuWasmWorker" });
+    if (process.env.NODE_ENV !== "production") {
         console.debug("Attaching debug event listeners");
         worker.addEventListener("message", (ev) => {
             console.debug("Worker message TX:", ev.data);

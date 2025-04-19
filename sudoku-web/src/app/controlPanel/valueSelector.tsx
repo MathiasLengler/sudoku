@@ -1,11 +1,12 @@
+import type * as React from "react";
+import { valueToString } from "../utils";
 import ButtonBase from "@mui/material/ButtonBase";
-import classNames from "classnames";
-import * as _ from "lodash-es";
-import { selector, selectorFamily, useRecoilValue } from "recoil";
+import classnames from "classnames";
 import { useHandleValue } from "../actions/sudokuActions";
+import { selector, selectorFamily, useRecoilValue } from "recoil";
 import { inputState } from "../state/input";
 import { sudokuSideLengthState } from "../state/sudoku";
-import { valueToString } from "../utils/sudoku";
+import _ from "lodash";
 
 const isSelectedState = selectorFamily<boolean, number>({
     key: "ValueButton.isSelected",
@@ -15,22 +16,19 @@ const isSelectedState = selectorFamily<boolean, number>({
             const input = get(inputState);
             return input.stickyMode && input.selectedValue === value;
         },
-    cachePolicy_UNSTABLE: {
-        eviction: "most-recent",
-    },
 });
 
 type SelectorValueProps = {
     value: number;
 };
 
-function ValueButton({ value }: SelectorValueProps) {
+const ValueButton: React.FunctionComponent<SelectorValueProps> = ({ value }: SelectorValueProps) => {
     const handleValue = useHandleValue();
 
     const isSelected = useRecoilValue(isSelectedState(value));
 
-    const buttonClassNames = classNames("selector-value", {
-        "selector-value--selected": isSelected,
+    const buttonClassNames = classnames("selectorValue", {
+        "selectorValue--selected": isSelected,
     });
 
     return (
@@ -41,10 +39,10 @@ function ValueButton({ value }: SelectorValueProps) {
                 await handleValue(value);
             }}
         >
-            <span className="selector-value-text">{valueToString(value)}</span>
+            <span className="selectorValueText">{valueToString(value)}</span>
         </ButtonBase>
     );
-}
+};
 
 const selectorValuesState = selector({
     key: "Selector.values",
@@ -54,7 +52,7 @@ const selectorValuesState = selector({
     },
 });
 
-export function ValueSelector() {
+export const ValueSelector = () => {
     const selectorValues = useRecoilValue(selectorValuesState);
     return (
         <div className="selector-container">
@@ -65,4 +63,4 @@ export function ValueSelector() {
             </div>
         </div>
     );
-}
+};

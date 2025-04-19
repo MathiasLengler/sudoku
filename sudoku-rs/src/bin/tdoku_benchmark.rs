@@ -73,7 +73,11 @@ fn work(
                 *total_backtrack_count += solver.backtrack_count;
             }
             SolverSelection::Sat => {
-                sat::Solver::new(grid).try_solve().unwrap().unwrap();
+                sat::Solver::new(grid)
+                    .unwrap()
+                    .try_solve()
+                    .unwrap()
+                    .unwrap();
             }
         }
     }

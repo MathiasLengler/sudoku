@@ -3,14 +3,14 @@ use crate::cell::Value;
 use crate::error::{Error, Result};
 use crate::position::{Coordinate, Position};
 use anyhow::bail;
-use num::Integer as _;
+use num::Integer;
 use std::fmt::{Display, Formatter};
 use varisat::Lit;
 
 /// A logical variable expressing that the cell at `pos` contains `value`.
 ///
 /// Can be negated with `is_true = false`.
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct CellVariable<Base: SudokuBase> {
     pub pos: Position<Base>,
     pub value: Value<Base>,
@@ -83,29 +83,22 @@ mod tests {
 
     use crate::base::consts::BaseMax;
 
-    fn all_max_base_cell_variables() -> impl Iterator<Item = CellVariable<BaseMax>> {
-        Position::<BaseMax>::all().flat_map(|pos| {
-            Value::<BaseMax>::all().flat_map(move |value| {
-                [true, false].iter().map(move |&is_true| CellVariable {
-                    pos,
-                    value,
-                    is_true,
-                })
-            })
-        })
-    }
-
     #[test]
     fn test_i32_roundtrip() {
-        for variable in all_max_base_cell_variables() {
-            assert_eq!(variable, i32::from(variable).try_into().unwrap());
+        type Base = BaseMax;
+
+        for pos in Position::<Base>::all() {
+            for value in Value::<Base>::all() {
+                for is_true in [true, false] {
+                    let variable = CellVariable {
+                        pos,
+                        value,
+                        is_true,
+                    };
+
+                    assert_eq!(variable, i32::from(variable).try_into().unwrap());
+                }
+            }
         }
-    }
-
-    #[test]
-    fn test_i32_unique() {
-        use itertools::Itertools;
-
-        assert!(all_max_base_cell_variables().all_unique());
     }
 }

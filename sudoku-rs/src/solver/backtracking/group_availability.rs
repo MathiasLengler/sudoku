@@ -1,8 +1,45 @@
 use crate::base::SudokuBase;
 use crate::cell::{Candidates, Value};
-use crate::grid::group::CandidatesGroup;
 use crate::position::{Coordinate, Position};
-use crate::solver::backtracking::candidates_filter::CandidatesFilter;
+use crate::solver::backtracking::availability_filter::AvailabilityFilter;
+use crate::unsafe_utils::{get_unchecked, get_unchecked_mut};
+
+/// A thin indexing wrapper around a `[Candidates<Base>; Base::SIDE_LENGTH]`.
+#[derive(Debug, Clone, Default)]
+pub(crate) struct CandidatesGroup<Base: SudokuBase> {
+    candidates_group: Base::CandidatesGroup,
+}
+
+impl<Base: SudokuBase> CandidatesGroup<Base> {
+    pub(crate) fn get(&self, coordinate: Coordinate<Base>) -> Candidates<Base> {
+        // Safety:
+        // - Coordinate::<Base>::get_usize: `coordinate < Base::SIDE_LENGTH`
+        // - Base::CandidatesCells: array length equals `Base::SIDE_LENGTH`
+        // Therefore the index remains in-bounds.
+        *unsafe { get_unchecked(self.candidates_group.as_ref(), coordinate.get_usize()) }
+    }
+
+    pub(crate) fn get_mut(&mut self, coordinate: Coordinate<Base>) -> &mut Candidates<Base> {
+        // Safety:
+        // - Coordinate::<Base>::get_usize: `coordinate < Base::SIDE_LENGTH`
+        // - Base::CandidatesCells: array length equals `Base::SIDE_LENGTH`
+        // Therefore the index remains in-bounds.
+        unsafe { get_unchecked_mut(self.candidates_group.as_mut(), coordinate.get_usize()) }
+    }
+
+    pub(crate) fn iter_mut(&mut self) -> impl Iterator<Item = &mut Candidates<Base>> {
+        self.candidates_group.as_mut().iter_mut()
+    }
+}
+
+impl<Base: SudokuBase> IntoIterator for CandidatesGroup<Base> {
+    type Item = Candidates<Base>;
+    type IntoIter = Base::CandidatesGroupIntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.candidates_group.into_iter()
+    }
+}
 
 /// A compact data structure representing group information of a sudoku grid.
 ///
@@ -12,7 +49,7 @@ use crate::solver::backtracking::candidates_filter::CandidatesFilter;
 /// - What are the available candidates at a position?
 /// - Where in each group is a specific candidate set?
 #[derive(Debug, Clone, Default)]
-pub(crate) struct GroupAvailability<Base: SudokuBase, Filter: CandidatesFilter<Base>> {
+pub(crate) struct GroupAvailability<Base: SudokuBase, Filter: AvailabilityFilter<Base>> {
     rows: CandidatesGroup<Base>,
     columns: CandidatesGroup<Base>,
     blocks: CandidatesGroup<Base>,
@@ -31,7 +68,7 @@ impl<Base: SudokuBase> GroupAvailability<Base, ()> {
         this
     }
 
-    pub(crate) fn with_filter<Filter: CandidatesFilter<Base>>(
+    pub(crate) fn with_filter<Filter: AvailabilityFilter<Base>>(
         self,
         filter: Filter,
     ) -> GroupAvailability<Base, Filter> {
@@ -51,7 +88,7 @@ impl<Base: SudokuBase> GroupAvailability<Base, ()> {
     }
 }
 
-impl<Base: SudokuBase, Filter: CandidatesFilter<Base>> GroupAvailability<Base, Filter> {
+impl<Base: SudokuBase, Filter: AvailabilityFilter<Base>> GroupAvailability<Base, Filter> {
     fn iter_mut(&mut self) -> impl Iterator<Item = &mut Candidates<Base>> {
         self.rows
             .iter_mut()
@@ -116,7 +153,7 @@ impl<Base: SudokuBase, Filter: CandidatesFilter<Base>> GroupAvailability<Base, F
             .intersection(column_candidates)
             .intersection(block_candidates);
 
-        available_candidates.without(self.filter.denied_candidates(index.into()))
+        self.filter.filter(available_candidates, index)
     }
 }
 
