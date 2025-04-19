@@ -1,11 +1,12 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import { LoadingButton } from "@mui/lab";
-import { Button, DialogActions, DialogContent, DialogTitle, LinearProgress, Stack } from "@mui/material";
+import { Button, DialogActions, DialogContent, DialogTitle, LinearProgress } from "@mui/material";
+import { Stack } from "@mui/material";
+
 import { Suspense, useEffect } from "react";
 import { SelectElement, useForm } from "react-hook-form-mui";
 import { useRecoilState, useRecoilValueLoadable, type Loadable } from "recoil";
-import { ALL_GRID_FORMATS } from "../../../constants";
+import { ALL_GRID_FORMATS } from "../../constants";
 import { Code } from "../../components/Code";
 import { ResetFormButton } from "../../components/ResetFormButton";
 import {
@@ -94,7 +95,7 @@ export function ExportToClipboardDialog({ onClose }: ExportToClipboardDialogProp
                 <Button onClick={onClose} disabled={isSubmitting}>
                     Cancel
                 </Button>
-                <LoadingButton
+                <Button
                     type="submit"
                     form="export-to-clipboard-form"
                     color="primary"
@@ -104,9 +105,8 @@ export function ExportToClipboardDialog({ onClose }: ExportToClipboardDialogProp
                     loadingPosition="end"
                 >
                     Copy to Clipboard
-                </LoadingButton>
+                </Button>
             </DialogActions>
         </>
-        // </form>
     );
 }

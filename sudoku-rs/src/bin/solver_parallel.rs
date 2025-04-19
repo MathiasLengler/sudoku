@@ -10,7 +10,7 @@ fn main() -> Result<()> {
     let before = Instant::now();
     let grid = samples::base_4().into_iter().next().unwrap();
     let solver = Solver::builder(&grid)
-        .availability_filter(Grid::new())
+        .candidates_filter(Grid::new())
         .build();
 
     assert!(solver.has_any_solution());

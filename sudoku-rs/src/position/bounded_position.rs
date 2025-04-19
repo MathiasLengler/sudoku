@@ -7,10 +7,10 @@ use serde::{Serialize, Serializer};
 
 use crate::base::SudokuBase;
 use crate::error::{Error, Result};
+use crate::grid::group::Group;
 use crate::position::Coordinate;
 use crate::position::DynamicPosition;
 
-// TODO: use for all non-public APIs
 /// The position of a cell in a grid of known size.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Default)]
 pub struct Position<Base: SudokuBase> {
@@ -54,15 +54,13 @@ impl<Base: SudokuBase> Position<Base> {
         let block_top_left = Base::block_to_top_left_pos(block);
         let (block_top_left_row, block_top_left_column) = block_top_left.to_row_and_column();
         let (block_row, block_column) = row_major_index.to_block_row_and_column();
-        // Safety: the top-left cell in a block has a `Base::BASE -1` cells to the left and bottom of it.
-        // Therefore, the indexes remain in-bounds.
-        unsafe {
-            (
-                Coordinate::new_unchecked(block_top_left_row.get() + block_row.get()),
-                Coordinate::new_unchecked(block_top_left_column.get() + block_column.get()),
-            )
-        }
-        .into()
+        (
+            // Safety: the top-left cell in a block has a `Base::BASE - 1` cells to the right of it
+            unsafe { Coordinate::new_unchecked(block_top_left_row.get() + block_row.get()) },
+            // Safety: the top-left cell in a block has a `Base::BASE - 1` cells to the bottom of it
+            unsafe { Coordinate::new_unchecked(block_top_left_column.get() + block_column.get()) },
+        )
+            .into()
     }
 
     pub fn with_block_and_column_major_index(
@@ -71,15 +69,13 @@ impl<Base: SudokuBase> Position<Base> {
         let block_top_left = Base::block_to_top_left_pos(block);
         let (block_top_left_row, block_top_left_column) = block_top_left.to_row_and_column();
         let (block_column, block_row) = column_major_index.to_block_row_and_column();
-        // Safety: the top-left cell in a block has a `Base::BASE -1` cells to the left and bottom of it.
-        // Therefore, the indexes remain in-bounds.
-        unsafe {
-            (
-                Coordinate::new_unchecked(block_top_left_row.get() + block_row.get()),
-                Coordinate::new_unchecked(block_top_left_column.get() + block_column.get()),
-            )
-        }
-        .into()
+        (
+            // Safety: the top-left cell in a block has a `Base::BASE - 1` cells to the right of it.
+            unsafe { Coordinate::new_unchecked(block_top_left_row.get() + block_row.get()) },
+            // Safety: the top-left cell in a block has a `Base::BASE - 1` cells to the bottom of it.
+            unsafe { Coordinate::new_unchecked(block_top_left_column.get() + block_column.get()) },
+        )
+            .into()
     }
 
     // TODO: other corners
@@ -301,13 +297,17 @@ impl<Base: SudokuBase> Position<Base> {
         Coordinate::all().map(Base::block_to_top_left_pos)
     }
 
-    // TODO: optimize
-    //  collect into `[Position: SIDE_LENGTH]`?
     pub fn all_groups() -> impl Iterator<Item = impl Iterator<Item = Self> + Clone> {
         Self::all_rows()
-            .map(|rows| rows.collect::<Vec<_>>().into_iter())
-            .chain(Self::all_columns().map(|columns| columns.collect::<Vec<_>>().into_iter()))
-            .chain(Self::all_blocks().map(|blocks| blocks.collect::<Vec<_>>().into_iter()))
+            .map(|rows| Group::<Base, _>::from_iter_checked(rows).into_iter())
+            .chain(
+                Self::all_columns()
+                    .map(|columns| Group::<Base, _>::from_iter_checked(columns).into_iter()),
+            )
+            .chain(
+                Self::all_blocks()
+                    .map(|blocks| Group::<Base, _>::from_iter_checked(blocks).into_iter()),
+            )
     }
 }
 
@@ -363,7 +363,7 @@ mod tests {
         fn test_new() {
             assert_eq!(Position::<Base2>::new(0).unwrap().cell_index, 0);
             assert_eq!(Position::<Base2>::new(15).unwrap().cell_index, 15);
-            assert!(Position::<Base2>::new(16).is_err());
+            Position::<Base2>::new(16).unwrap_err();
         }
     }
 
@@ -630,6 +630,36 @@ mod tests {
         }
 
         #[test]
+        fn test_all_groups() {
+            Position::<Base2>::all_groups()
+                .zip_eq(vec![
+                    // Rows
+                    vec![(0, 0), (0, 1), (0, 2), (0, 3)],
+                    vec![(1, 0), (1, 1), (1, 2), (1, 3)],
+                    vec![(2, 0), (2, 1), (2, 2), (2, 3)],
+                    vec![(3, 0), (3, 1), (3, 2), (3, 3)],
+                    // Columns
+                    vec![(0, 0), (1, 0), (2, 0), (3, 0)],
+                    vec![(0, 1), (1, 1), (2, 1), (3, 1)],
+                    vec![(0, 2), (1, 2), (2, 2), (3, 2)],
+                    vec![(0, 3), (1, 3), (2, 3), (3, 3)],
+                    // Blocks
+                    vec![(0, 0), (0, 1), (1, 0), (1, 1)],
+                    vec![(0, 2), (0, 3), (1, 2), (1, 3)],
+                    vec![(2, 0), (2, 1), (3, 0), (3, 1)],
+                    vec![(2, 2), (2, 3), (3, 2), (3, 3)],
+                ])
+                .for_each(|(actual_group, expected_group)| {
+                    itertools::assert_equal(
+                        actual_group,
+                        expected_group
+                            .into_iter()
+                            .map(|pos| pos.try_into().unwrap()),
+                    );
+                });
+        }
+
+        #[test]
         fn test_iter_overflow() {
             consume_iter(Position::<Base5>::all());
             consume_iter(Position::<Base5>::row(Coordinate::max()));
@@ -638,6 +668,7 @@ mod tests {
             consume_nested_iter(Position::<Base5>::all_columns());
             consume_iter(Position::<Base5>::block(Coordinate::max()));
             consume_nested_iter(Position::<Base5>::all_blocks());
+            consume_nested_iter(Position::<Base5>::all_groups());
         }
     }
 }

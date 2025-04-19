@@ -1,277 +1,165 @@
-// FIXME: remove when feature complete
-/* eslint-disable */
-
 import { Slider } from "@mui/material";
-import Box from "@mui/material/Box";
+import classNames from "classnames";
 import type * as CSS from "csstype";
-import _ from "lodash";
-import { useDeferredValue, useState } from "react";
-import { useRecoilValue } from "recoil";
-import type { CellWorldDimensions, DynamicPosition } from "../../../types";
-import { sudokuBaseState, sudokuSideLengthState } from "../../state/sudoku";
-import { allWorldCellsState, cellWorldDimensionsState } from "../../state/world";
-import { Code } from "../Code";
+import * as _ from "lodash-es";
+import { memo, useDeferredValue, useMemo } from "react";
+import AutoSizer from "react-virtualized-auto-sizer";
+import { FixedSizeGrid as Grid } from "react-window";
+import { useRecoilCallback, useRecoilState, useRecoilValue } from "recoil";
+import type { Quadrant } from "../../../types";
+import { usePlaySelectedGrid } from "../../actions/worldActions";
 import { Candidates, CellValue } from "../../grid/cell";
+import { sudokuBaseState, sudokuSideLengthState } from "../../state/sudoku";
+import {
+    cellWorldDimensionsState,
+    emptyWasmCellWorldState,
+    selectedGridPositionState,
+    worldCellPositionSchema,
+    worldCellSizeState,
+    worldCellState,
+} from "../../state/world";
+import { worldCellBorderClassesState } from "../../state/world/cellBorder";
+import { cellColorClass } from "../../utils/sudoku";
 
-type GridBorderMarker = "grid";
-type BlockBorderMarker = "block";
-type BorderMarker = GridBorderMarker | BlockBorderMarker;
-
-type CellBorders<T> = {
-    top?: T;
-    right?: T;
-    bottom?: T;
-    left?: T;
+type WorldCellVirtualizedProps = {
+    rowIndex: number;
+    columnIndex: number;
+    style: React.CSSProperties;
 };
 
-type AxisBorders<T> = {
-    start?: T;
-    end?: T;
-};
-
-// FIXME: start and end of consecutive indexes don't agree
-// TODO: test
-function getAxisBorders(
-    // current cell
-    axisIndex: number,
-    // world
-    cellAxisCount: number,
-    overlap: number,
-    // grid
-    base: number,
-    gridSideLength: number,
-): { axisBorders: AxisBorders<BorderMarker>; debug: unknown } {
-    const gridSideLengthEndIndex = gridSideLength - 1;
-    const gridStride = gridSideLength - overlap;
-    const gridStrideEndIndex = gridStride - 1;
-    const blockStride = base;
-    const blockStrideEndIndex = blockStride - 1;
-
-    const tileAxis = Math.floor(axisIndex / gridStride);
-    const firstGridAxis = axisIndex % gridStride;
-    const gridAxes = _.filter(
-        [
-            //
-            axisIndex < cellAxisCount - overlap && firstGridAxis,
-            axisIndex >= overlap && firstGridAxis < overlap && firstGridAxis + gridStride,
-        ],
-        // eslint-disable-next-line @typescript-eslint/unbound-method
-        _.isNumber,
-    );
-    const axisBorders: AxisBorders<BorderMarker> = {};
-
-    for (const gridAxis of gridAxes) {
-        const blockAxis = gridAxis % blockStride;
-        if (gridAxis === 0) {
-            axisBorders.start = "grid";
-        } else if (gridAxis === gridSideLengthEndIndex) {
-            axisBorders.end = "grid";
-        }
-        if (blockAxis === 0) {
-            axisBorders.start ??= "block";
-        } else if (blockAxis === blockStrideEndIndex) {
-            axisBorders.end ??= "block";
-        }
-    }
-
-    return { axisBorders, debug: gridAxes };
-}
-
-function getCellBorders(
-    {
-        overlap,
-        tileDim: { rowCount: tileRowCount, columnCount: tileColumnCount },
-        cellDim: { rowCount: cellRowCount, columnCount: cellColumnCount },
-        tileDim,
-        cellDim,
-    }: CellWorldDimensions,
-    cellIndex: DynamicPosition,
-    base: number,
-    gridSideLength: number,
-): {
-    cellBorders: CellBorders<BorderMarker>;
-    debug: string;
-} {
-    const { row: rowIndex, column: columnIndex } = cellIndex;
-
-    if (!(_.inRange(rowIndex, 0, cellRowCount) && _.inRange(columnIndex, 0, cellColumnCount))) {
-        throw new Error(
-            `cellIndex out of bounds: ${JSON.stringify(cellIndex)} for cellDim: ${JSON.stringify(cellDim)}`,
-        );
-    }
-
-    const { axisBorders: rowBorders } = getAxisBorders(rowIndex, cellRowCount, overlap, base, gridSideLength);
-    const { axisBorders: columnBorders, debug: axisDebug } = getAxisBorders(
-        columnIndex,
-        cellColumnCount,
-        overlap,
-        base,
-        gridSideLength,
+const WorldCellVirtualized = memo(function WorldCellVirtualized({
+    rowIndex,
+    columnIndex,
+    style,
+}: WorldCellVirtualizedProps) {
+    const cellWorldPosition = useMemo(
+        () =>
+            worldCellPositionSchema.parse({
+                row: rowIndex,
+                column: columnIndex,
+            }),
+        [columnIndex, rowIndex],
     );
 
-    return {
-        cellBorders: _.omitBy(
-            {
-                top: rowBorders.start,
-                right: columnBorders.end,
-                bottom: rowBorders.end,
-                left: columnBorders.start,
+    const worldCell = useRecoilValue(worldCellState(cellWorldPosition));
+
+    const worldCellBorderClasses = useRecoilValue(worldCellBorderClassesState(cellWorldPosition));
+
+    const playSelectedGrid = usePlaySelectedGrid();
+
+    const cellOnClick = useRecoilCallback(
+        ({ snapshot, set }) =>
+            async (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+                const { width, height } = e.currentTarget.getBoundingClientRect();
+                const centerX = width / 2;
+                const centerY = height / 2;
+                const clickX = e.nativeEvent.offsetX;
+                const clickY = e.nativeEvent.offsetY;
+
+                let tieBreak: Quadrant;
+                if (clickX <= centerX && clickY <= centerY) {
+                    tieBreak = "topLeft";
+                } else if (clickX > centerX && clickY <= centerY) {
+                    tieBreak = "topRight";
+                } else if (clickX <= centerX && clickY > centerY) {
+                    tieBreak = "bottomLeft";
+                } else if (clickX > centerX && clickY > centerY) {
+                    tieBreak = "bottomRight";
+                } else {
+                    console.warn("Unexpected click position", { clickX, clickY, width, height });
+                    return;
+                }
+
+                const emptyCellWorld = await snapshot.getPromise(emptyWasmCellWorldState);
+
+                const nearestWorldGridCellPosition = emptyCellWorld.worldCellPositionToNearestWorldGridCellPosition(
+                    cellWorldPosition,
+                    tieBreak,
+                );
+
+                set(selectedGridPositionState, (prev) => {
+                    const current = nearestWorldGridCellPosition.world_grid_pos;
+
+                    if (_.isEqual(prev, current)) {
+                        playSelectedGrid().catch(console.error);
+                        return prev;
+                    }
+
+                    return current;
+                });
             },
-            // eslint-disable-next-line @typescript-eslint/unbound-method
-            _.isUndefined,
+        [cellWorldPosition, playSelectedGrid],
+    );
+
+    const cellClassNames = classNames(
+        "cell",
+        cellColorClass(
+            worldCell.kind === "value" && worldCell.fixed,
+            // TODO: incorrectValue for world cell
+            //  currently only calculated based on solved grid
+            false,
         ),
-        debug: _.chain({ axisDebug })
-            .entries()
-            .map(([key, value]) => `${key}:${JSON.stringify(value)}`)
-            .join("\n")
-            .value(),
-    };
+    );
+
+    return (
+        <div className={`world-map-cell ${worldCellBorderClasses}`} style={style} onClick={cellOnClick}>
+            <div className={cellClassNames}>
+                {/* <Code wrap>{debug}</Code> */}
+                {worldCell.kind === "value" ? (
+                    <CellValue value={worldCell.value} />
+                ) : (
+                    <Candidates
+                        candidates={worldCell.candidates}
+                        gridPosition={{ column: 0, row: 0 }}
+                        showGuide={false}
+                    />
+                )}
+            </div>
+        </div>
+    );
+});
+
+function WorldMapVirtualized() {
+    const cellWorldDimensions = useRecoilValue(cellWorldDimensionsState);
+    const worldCellSize = useDeferredValue(useRecoilValue(worldCellSizeState));
+
+    return (
+        <div className="world-map-grid-auto-sizer-container">
+            <AutoSizer className="world-map-grid-auto-sizer">
+                {({ height, width }) => (
+                    <Grid
+                        className="world-map-grid"
+                        columnCount={cellWorldDimensions.cellDim.columnCount}
+                        columnWidth={worldCellSize}
+                        height={height}
+                        rowCount={cellWorldDimensions.cellDim.rowCount}
+                        rowHeight={worldCellSize}
+                        width={width}
+                    >
+                        {({ columnIndex, rowIndex, style }) => (
+                            <WorldCellVirtualized rowIndex={rowIndex} columnIndex={columnIndex} style={style} />
+                        )}
+                    </Grid>
+                )}
+            </AutoSizer>
+        </div>
+    );
 }
 
-export const WorldMap = () => {
-    const allWorldCells = useRecoilValue(allWorldCellsState);
-    const cellWorldDimensions = useRecoilValue(cellWorldDimensionsState);
+export function WorldMap() {
     const base = useRecoilValue(sudokuBaseState);
     const sideLength = useRecoilValue(sudokuSideLengthState);
-
-    // TODO: change tile
-
-    const [cellSize, setCellSize] = useState(100);
+    const [cellSize, setCellSize] = useRecoilState(worldCellSizeState);
 
     const cssVariables: CSS.Properties = {
         "--side-length": sideLength,
         "--base": base,
     };
 
-    const gridBorder = "11px solid red";
-    const blockBorder = "10px solid blue";
-    const cellBorder = "5px solid black";
-
-    const cellSizeCss = `${useDeferredValue(cellSize)}px`;
-
     return (
-        <Box
-            className="world-map"
-            sx={{
-                display: "flex",
-                flexDirection: "column",
-                height: 1,
-                ...cssVariables,
-            }}
-        >
-            <Code wrap>{JSON.stringify(cellWorldDimensions)}</Code>
+        <div className="world-map" style={cssVariables}>
             <Slider min={1} max={200} value={cellSize} onChange={(_e, value) => setCellSize(value as number)} />
-            <Box
-                component="table"
-                sx={{
-                    overflow: "auto",
-                    display: "block",
-                    borderCollapse: "collapse",
-                    borderStyle: "groove",
-                    "--cell-size": cellSizeCss,
-                }}
-            >
-                <tbody>
-                    {_.chunk(allWorldCells, cellWorldDimensions.cellDim.columnCount).map((row, rowIndex) => (
-                        <tr key={rowIndex}>
-                            {row.map((cell, columnIndex) => {
-                                const cellIndex: DynamicPosition = {
-                                    column: columnIndex,
-                                    row: rowIndex,
-                                };
-
-                                const { cellBorders, debug } = getCellBorders(
-                                    cellWorldDimensions,
-                                    cellIndex,
-                                    base,
-                                    sideLength,
-                                );
-
-                                const cellCssBorders = _.chain(cellBorders)
-                                    .mapValues((value) => {
-                                        if (value === "grid") {
-                                            return gridBorder;
-                                        } else if (value === "block") {
-                                            return blockBorder;
-                                        }
-                                    })
-                                    .mapKeys((_value, key) => {
-                                        return `border${_.capitalize(key)}`;
-                                    })
-                                    .value();
-
-                                const style = {
-                                    border: cellBorder,
-                                    padding: 0,
-                                    ...cellCssBorders,
-                                };
-
-                                return (
-                                    <Box component="td" key={columnIndex} sx={style}>
-                                        <Box
-                                            className="cell"
-                                            sx={{
-                                                width: cellSizeCss,
-                                                height: cellSizeCss,
-                                            }}
-                                        >
-                                            {/* <Code wrap>{debug}</Code> */}
-                                            {cell.kind === "value" ? (
-                                                <CellValue value={cell.value} />
-                                            ) : (
-                                                <Candidates
-                                                    candidates={cell.candidates}
-                                                    gridPosition={{ column: 0, row: 0 }}
-                                                />
-                                            )}
-                                        </Box>
-                                    </Box>
-                                );
-                            })}
-                        </tr>
-                    ))}
-                </tbody>
-            </Box>
-            {/* <Box
-                sx={{
-                    display: "grid",
-                    gridTemplateRows: `repeat(${cellWorldDimensions.cellDim.rowCount}, ${cellSizeCss})`,
-                    gridTemplateColumns: `repeat(${cellWorldDimensions.cellDim.columnCount}, ${cellSizeCss})`,
-                    "--cell-size": cellSizeCss,
-                    overflow: "auto",
-                    gap: "10px",
-                    background: "var(--cell-border-color)",
-                }}
-            >
-                {allWorldCells.map((cell, index) => {
-                    const cellClassNames = classnames(
-                        "cell",
-                        cellColorClass(cell.kind === "value" && cell.fixed, false),
-                    );
-                    return (
-                        <Box
-                            onClick={(e) => {
-                                e.currentTarget.scrollIntoView({
-                                    behavior: "smooth",
-                                    block: "center",
-                                    inline: "center",
-                                });
-                            }}
-                            key={index}
-                            className={cellClassNames}
-                            sx={{
-                                aspectRatio: 1,
-                            }}
-                        >
-                            {cell.kind === "value" ? (
-                                <CellValue value={cell.value} />
-                            ) : (
-                                <Candidates candidates={cell.candidates} gridPosition={{ column: 0, row: 0 }} />
-                            )}
-                        </Box>
-                    );
-                })}
-            </Box> */}
-        </Box>
+            <WorldMapVirtualized />
+        </div>
     );
-};
+}

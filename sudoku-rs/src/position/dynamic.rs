@@ -2,14 +2,12 @@ use std::fmt::{self, Display};
 use std::ops::{Div, Mul};
 
 use serde::{Deserialize, Serialize};
-#[cfg(feature = "wasm")]
-use ts_rs::TS;
 
 use crate::base::SudokuBase;
 use crate::position::Position;
 
 /// The position of a cell in a grid of unknown size.
-#[cfg_attr(feature = "wasm", derive(TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
 #[derive(
     Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize, Default,
 )]
@@ -32,12 +30,12 @@ impl<Base: SudokuBase> From<Position<Base>> for DynamicPosition {
 }
 
 impl DynamicPosition {
-    pub fn index_tuple(&self) -> (usize, usize) {
-        let &DynamicPosition { row, column } = self;
+    pub fn index_tuple(self) -> (usize, usize) {
+        let DynamicPosition { row, column } = self;
         (row.into(), column.into())
     }
 
-    pub fn cell_index<Base: SudokuBase>(&self) -> u16 {
+    pub fn cell_index<Base: SudokuBase>(self) -> u16 {
         u16::from(self.row) * u16::from(Base::SIDE_LENGTH) + u16::from(self.column)
     }
 }

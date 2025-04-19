@@ -21,7 +21,7 @@
     "alias": "android"
   },
   "appVersionName": "1",
-  "appVersionCode": 12,
+  "appVersionCode": 5,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://sudoku.lengler.dev/manifest.json",

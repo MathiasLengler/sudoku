@@ -9,7 +9,7 @@ import { MyMenu } from "../components/MyMenu";
 import { inputStickyModeState } from "../state/input";
 import { sudokuCanRedoState } from "../state/sudoku";
 
-export const ToolbarMenu = () => {
+export function ToolbarMenu() {
     const deleteSelectedCell = useDeleteSelectedCell();
     const setAllDirectCandidates = useSetAllDirectCandidates();
     const inputStickyMode = useRecoilValue(inputStickyModeState);
@@ -49,4 +49,4 @@ export const ToolbarMenu = () => {
             )}
         </MyMenu>
     );
-};
+}

@@ -3,14 +3,15 @@ import { MyMenu } from "../../components/MyMenu";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import ShareIcon from "@mui/icons-material/Share";
-import React from "react";
+
 import { MyDialog } from "../../components/MyDialog";
 import { ExportToClipboardDialog } from "./ExportToClipboardDialog";
 import MyIconButton from "../../components/MyIconButton";
+import { useState } from "react";
 
 export function ShareMenu() {
     const exportSudokuString = useExportSudokuString();
-    const [isExportToClipboardDialogOpen, setIsExportToClipboardDialogOpen] = React.useState(false);
+    const [isExportToClipboardDialogOpen, setIsExportToClipboardDialogOpen] = useState(false);
 
     return (
         <>
