@@ -1,37 +1,35 @@
-import type { OnRefChangeType } from "react-resize-detector/build/types/types";
+import type { UseResizeDetectorReturn } from "react-resize-detector";
 import { useRecoilValue } from "recoil";
 import { sudokuBlocksIndexesState, sudokuCellsState } from "../state/sudoku";
 import { Block } from "./block";
 
 type GridProps = {
-    gridRef: OnRefChangeType<HTMLDivElement>;
+    gridRef: UseResizeDetectorReturn<HTMLDivElement>["ref"];
 };
 
-export const Grid = ({ gridRef }: GridProps) => {
+export function Grid({ gridRef }: GridProps) {
     const blocksIndexes = useRecoilValue(sudokuBlocksIndexesState);
     const cells = useRecoilValue(sudokuCellsState);
 
     return (
-        <>
-            <div className="grid-container">
-                <div className="grid" ref={gridRef}>
-                    {blocksIndexes.map((cellIndices, blockIndex) => (
-                        <Block
-                            key={blockIndex}
-                            cells={cellIndices.map((cellIndex) => {
-                                const cell = cells[cellIndex];
-                                if (!cell) {
-                                    throw new Error(
-                                        `index out of bounds: the length is ${cells.length} but the index is ${cellIndex}`,
-                                    );
-                                }
-                                return cell;
-                            })}
-                            blockIndex={blockIndex}
-                        />
-                    ))}
-                </div>
+        <div className="grid-container">
+            <div className="grid" ref={gridRef}>
+                {blocksIndexes.map((cellIndices, blockIndex) => (
+                    <Block
+                        key={blockIndex}
+                        cells={cellIndices.map((cellIndex) => {
+                            const cell = cells[cellIndex];
+                            if (!cell) {
+                                throw new Error(
+                                    `index out of bounds: the length is ${cells.length} but the index is ${cellIndex}`,
+                                );
+                            }
+                            return cell;
+                        })}
+                        blockIndex={blockIndex}
+                    />
+                ))}
             </div>
-        </>
+        </div>
     );
-};
+}

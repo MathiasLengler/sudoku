@@ -1,12 +1,12 @@
 use crate::base::{BaseEnum, SudokuBase};
 use crate::cell::CandidatesAscIter;
 use crate::grid::Grid;
-use crate::solver::backtracking::AvailabilityFilter;
+use crate::solver::backtracking::CandidatesFilter;
 use crate::solver::sat;
 use crate::solver::{backtracking, InfallibleSolver};
 
 #[derive(Debug, Default)]
-enum SolverImpl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, Filter: AvailabilityFilter<Base>> {
+enum SolverImpl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, Filter: CandidatesFilter<Base>> {
     #[default]
     Done,
     Sat(sat::SolverIter<Base>),
@@ -17,7 +17,7 @@ enum SolverImpl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, Filter: Availabili
 ///
 /// This is a meta-solver, which delegates the work to the other solvers.
 #[derive(Debug)]
-pub struct Solver<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, Filter: AvailabilityFilter<Base>> {
+pub struct Solver<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, Filter: CandidatesFilter<Base>> {
     solver_impl: SolverImpl<Base, GridRef, Filter>,
 }
 
@@ -27,7 +27,7 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Solver<Base, GridRef, ()> {
     }
 }
 
-impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, Filter: AvailabilityFilter<Base>>
+impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, Filter: CandidatesFilter<Base>>
     Solver<Base, GridRef, Filter>
 {
     pub fn new_with_filter(grid: GridRef, filter: Filter) -> Self {
@@ -37,23 +37,21 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, Filter: AvailabilityFilter<Ba
             BaseEnum::Base2 | BaseEnum::Base3 => Self {
                 solver_impl: SolverImpl::Backtracking(
                     backtracking::Solver::builder(grid)
-                        .availability_filter(filter)
+                        .candidates_filter(filter)
                         .build(),
                 ),
             },
             // For base >= 4, sat solver is faster
             BaseEnum::Base4 | BaseEnum::Base5 => Self {
                 solver_impl: SolverImpl::Sat(
-                    sat::Solver::new_with_availability_filter(grid, &filter)
-                        .unwrap()
-                        .into_iter(),
+                    sat::Solver::new_with_candidates_filter(grid, &filter).into_iter(),
                 ),
             },
         }
     }
 }
 
-impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, Filter: AvailabilityFilter<Base>>
+impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, Filter: CandidatesFilter<Base>>
     InfallibleSolver<Base> for Solver<Base, GridRef, Filter>
 {
     fn solve(&mut self) -> Option<Grid<Base>> {
@@ -74,7 +72,7 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, Filter: AvailabilityFilter<Ba
     }
 }
 
-impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, Filter: AvailabilityFilter<Base>> Iterator
+impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, Filter: CandidatesFilter<Base>> Iterator
     for Solver<Base, GridRef, Filter>
 {
     type Item = Grid<Base>;

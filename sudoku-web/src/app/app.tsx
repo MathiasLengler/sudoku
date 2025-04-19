@@ -1,13 +1,13 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { NotificationsProvider } from "@toolpad/core/useNotifications";
 import { Suspense } from "react";
 import { RecoilRoot } from "recoil";
-import { MySnackbarProvider } from "./MySnackbarProvider";
 import { RecoilDebug } from "./RecoilDebug";
+import { SwManager } from "./SwManager";
 import { BasicErrorBoundary, ThemeErrorBoundary } from "./components/ErrorFallback";
 import { FullScreenSpinner } from "./components/FullScreenSpinner";
 import { Sudoku } from "./sudoku";
 import { MyTheme } from "./theme/myTheme";
-import { WorkboxManager } from "./workboxManager";
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -24,24 +24,24 @@ const queryClient = new QueryClient({
     },
 });
 
-export const App = () => {
+export function App() {
     return (
         <BasicErrorBoundary>
             <RecoilRoot>
-                {process.env.NODE_ENV !== "production" && <RecoilDebug />}
+                {import.meta.env.DEV && <RecoilDebug />}
                 <QueryClientProvider client={queryClient}>
                     <MyTheme>
                         <ThemeErrorBoundary>
-                            <MySnackbarProvider>
+                            <NotificationsProvider slotProps={{ snackbar: { autoHideDuration: 3000 } }}>
                                 <Suspense fallback={<FullScreenSpinner />}>
                                     <Sudoku />
                                 </Suspense>
-                                <WorkboxManager />
-                            </MySnackbarProvider>
+                                <SwManager />
+                            </NotificationsProvider>
                         </ThemeErrorBoundary>
                     </MyTheme>
                 </QueryClientProvider>
             </RecoilRoot>
         </BasicErrorBoundary>
     );
-};
+}

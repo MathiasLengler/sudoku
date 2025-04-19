@@ -3,11 +3,13 @@ name: Deploy
 on:
   push:
     branches:
-      - master
+      - "master"
+      - "test"
   workflow_dispatch:
 
 env:
   CI: true
+  CARGO_TERM_COLOR: always
 
 jobs:
   build:
@@ -21,9 +23,18 @@ jobs:
       # Rust
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: nightly-2024-03-02
+          toolchain: nightly-2025-03-09
           targets: wasm32-unknown-unknown
           components: clippy, rust-src
+
+      # just
+      - uses: extractions/setup-just@v3
+
+      # cargo nextest
+      - uses: taiki-e/install-action@nextest
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
       # https://github.com/actions/cache/blob/main/examples.md#rust---cargo
       - uses: actions/cache@v4
@@ -36,17 +47,14 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      # https://doc.rust-lang.org/stable/clippy/usage.html#command-line
       - name: clippy
-        run: cargo clippy -- -Dwarnings
+        run: just clippy-ci
 
-      - run: cargo test
+      - name: test
+        run: just test
 
-      - name: Install wasm-pack
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-
-      - run: wasm-pack build --out-name index --target web . -- -Z build-std=panic_abort,std
-        working-directory: ./sudoku-wasm
+      - name: wasm-pack
+        run: just pack-prod
 
       # Node
       - uses: actions/setup-node@v4
@@ -67,6 +75,18 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            docker-registry.lengler.dev/sudoku
+          tags: |
+            # set latest tag for default branch
+            type=raw,value=latest,enable={{is_default_branch}}
+            # add tag based on branch name
+            type=ref,event=branch
+
       - name: Login to Container Registry
         uses: docker/login-action@v3
         with:
@@ -80,8 +100,9 @@ jobs:
           context: ./sudoku-web
           platforms: linux/arm64
           push: true
-          tags: docker-registry.lengler.dev/sudoku:latest
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
 
       - name: Deploy to Coolify
         run: |
-          curl --fail-with-body --request GET '${{ secrets.COOLIFY_WEBHOOK }}' --header 'Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}'
+          curl --fail-with-body --request GET '${{ github.ref == 'refs/heads/master' && secrets.COOLIFY_WEBHOOK_PROD || secrets.COOLIFY_WEBHOOK_TEST }}' --header 'Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}'

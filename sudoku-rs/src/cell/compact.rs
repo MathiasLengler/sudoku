@@ -96,6 +96,12 @@ impl<Base: SudokuBase> Cell<Base> {
         self.0.candidates()
     }
 
+    /// Cast this cell to candidates.
+    /// If the cell contains a value, represent it as a single candidate inside `Candidates`.
+    pub fn to_candidates(&self) -> Candidates<Base> {
+        self.0.to_candidates()
+    }
+
     /// Delete contents of the cell
     ///
     /// # Panics

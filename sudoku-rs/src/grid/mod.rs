@@ -6,6 +6,7 @@ use std::str::FromStr;
 
 use anyhow::ensure;
 use ndarray::{Array2, ArrayView2, ArrayViewMut2};
+use solution_state::SolutionState;
 
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
@@ -18,11 +19,13 @@ use crate::grid::format::{CandidatesGridANSIStyled, GridFormat, GridFormatEnum};
 use crate::position::Coordinate;
 use crate::position::Position;
 use crate::solver::strategic::strategies::StrategyEnum;
-use crate::solver::{backtracking, introspective, strategic, FallibleSolver};
+use crate::solver::{introspective, strategic, FallibleSolver};
 use crate::unsafe_utils::{get_unchecked, get_unchecked_mut};
 
 pub mod deserialization;
 pub mod format;
+pub mod group;
+pub mod solution_state;
 
 pub mod dynamic;
 
@@ -36,6 +39,7 @@ pub struct Grid<Base: SudokuBase, T = Cell<Base>> {
     ///
     /// # Safety invariants
     /// - `cells.len() == Base::CELL_COUNT`
+    /// - `cells.dim() == (Base::SIDE_LENGTH, Base::SIDE_LENGTH)`
     /// - `cells.is_standard_layout()`
     cells: Array2<T>,
     _base: PhantomData<Base>,
@@ -96,6 +100,8 @@ impl<Base: SudokuBase, T> Grid<Base, T> {
 impl<Base: SudokuBase, T> Grid<Base, T> {
     fn validate_cells(cells: &Array2<T>) -> Result<()> {
         ensure!(cells.len() == usize::from(Base::CELL_COUNT));
+        let side_length = usize::from(Base::SIDE_LENGTH);
+        ensure!(cells.dim() == (side_length, side_length));
         ensure!(cells.is_standard_layout());
 
         Ok(())
@@ -254,7 +260,8 @@ impl<Base: SudokuBase> Grid<Base> {
                     0 => "row",
                     1 => "column",
                     2 => "block",
-                    _ => "??",
+                    unexpected_group_type =>
+                        panic!("Unexpected goup type: {unexpected_group_type}"),
                 },
                 group_i % Base::SIDE_LENGTH
             );
@@ -361,28 +368,27 @@ impl<Base: SudokuBase> Grid<Base> {
             })
     }
 
+    pub fn solution_state(&self) -> SolutionState<Base> {
+        SolutionState::find_solution(self)
+    }
+
     pub fn has_unique_solution(&self) -> bool {
-        self.unique_solution().is_some()
+        self.solution_state().is_unique()
     }
 
     pub fn unique_solution(&self) -> Option<Self> {
-        let mut solver = introspective::Solver::new(self);
-
-        match (solver.next(), solver.next()) {
-            (Some(unique_solution), None) => Some(unique_solution),
-            _ => None,
-        }
+        self.solution_state().into_unique_solution()
     }
 
-    pub fn unique_solution_for_fixed_values(&self) -> Option<Self> {
+    pub fn solution_state_for_fixed_values(&self) -> SolutionState<Base> {
         let mut cloned_grid = self.clone();
         cloned_grid.delete_all_unfixed_values();
 
-        cloned_grid.unique_solution()
+        cloned_grid.solution_state()
     }
 
     pub fn solution_count(&self) -> usize {
-        let solver = backtracking::Solver::new(self);
+        let solver = introspective::Solver::new(self);
         solver.count()
     }
 
@@ -451,7 +457,7 @@ impl<Base: SudokuBase, T> Grid<Base, T> {
     }
 
     pub fn into_cells(self) -> Vec<T> {
-        self.cells.into_raw_vec()
+        self.cells.into_raw_vec_and_offset().0
     }
 }
 
@@ -534,27 +540,29 @@ impl<Base: SudokuBase> Grid<Base> {
 /// Cell iterators
 ///
 /// TODO: unify/expand iterator API:
-///  Use-cases:
-///  Iterator Item:
-///  - Position
-///  - &Cell
-///  - &mut Cell
-///  - Positioned<&Cell>
-///  - Positioned<&mut Cell>
-///  What is iterated:
-///  - Position iterators
-///    - all
-///    - row i
-///    - all rows
-///    - column i
-///    - all columns
-///    - block i
-///    - all blocks
-///  - all groups (chained: all rows, all columns, all blocks)
-///  - filtered cell state
-///    - `all_value_positions`
-///    - `all_unfixed_value_positions`
-///    - `all_candidates_positions`
+///
+/// Use-cases:
+/// Iterator Item:
+/// - Position
+/// - &Cell
+/// - &mut Cell
+/// - Positioned<&Cell>
+/// - Positioned<&mut Cell>
+///
+/// What is iterated:
+/// - Position iterators
+///   - all
+///   - row i
+///   - all rows
+///   - column i
+///   - all columns
+///   - block i
+///   - all blocks
+/// - all groups (chained: all rows, all columns, all blocks)
+/// - filtered cell state
+///   - `all_value_positions`
+///   - `all_unfixed_value_positions`
+///   - `all_candidates_positions`
 impl<Base: SudokuBase, T> Grid<Base, T> {
     fn positions_to_cells(
         &self,
@@ -637,7 +645,8 @@ impl<Base: SudokuBase, T> Grid<Base, T> {
         Position::all_blocks()
     }
 
-    pub fn all_group_positions() -> impl Iterator<Item = impl Iterator<Item = Position<Base>>> {
+    pub fn all_group_positions(
+    ) -> impl Iterator<Item = impl Iterator<Item = Position<Base>> + Clone> {
         Position::all_groups()
     }
 }
@@ -747,6 +756,7 @@ impl<Base: SudokuBase> Display for Grid<Base> {
 
 #[cfg(test)]
 mod tests {
+
     use itertools::{assert_equal, Itertools};
 
     use crate::base::consts::*;
@@ -1089,16 +1099,16 @@ mod tests {
 
         grid.fix_all_values();
 
-        assert!(grid.unique_solution_for_fixed_values().is_some());
+        assert!(grid.solution_state_for_fixed_values().is_unique());
 
         // Invalid unfixed value
         grid.get_mut((0, 0).try_into().unwrap())
             .set_value(1.try_into().unwrap());
-        assert!(grid.unique_solution_for_fixed_values().is_some());
+        assert!(grid.solution_state_for_fixed_values().is_unique());
 
         // Invalid fixed value
         grid.get_mut((0, 0).try_into().unwrap()).fix();
-        assert!(grid.unique_solution_for_fixed_values().is_none());
+        assert!(!grid.solution_state_for_fixed_values().is_unique());
     }
 
     #[test]

@@ -1,14 +1,12 @@
-import type { DynamicPosition, TransportCell } from "../../types";
+import { isEqual } from "lodash-es";
 import { selectorFamily, useRecoilValue } from "recoil";
-import { sudokuBaseState } from "../state/sudoku";
-import { inputState } from "../state/input";
-import { indexToPosition } from "../utils";
-import type * as CSS from "csstype";
-import isEqual from "lodash/isEqual";
-import { Cell } from "./cell";
-import * as React from "react";
+import type { DynamicPosition, TransportCell } from "../../types";
 import type { CreateSerializableParam } from "../../typeUtils";
 import { selectedBlockPositionState } from "../state/cellIndexing";
+import { inputState } from "../state/input";
+import { sudokuBaseState } from "../state/sudoku";
+import { indexToPosition } from "../utils/sudoku";
+import { Cell } from "./cell";
 
 type BlockProps = {
     cells: TransportCell[];
@@ -23,8 +21,11 @@ const containsSelectedPosState = selectorFamily<boolean, CreateSerializableParam
             const selectedBlockPosition = get(selectedBlockPositionState);
             return !!selectedBlockPosition && isEqual(blockPosition, selectedBlockPosition);
         },
+    cachePolicy_UNSTABLE: {
+        eviction: "most-recent",
+    },
 });
-export const Block = ({ blockIndex, cells }: BlockProps) => {
+export function Block({ blockIndex, cells }: BlockProps) {
     const base = useRecoilValue(sudokuBaseState);
     const input = useRecoilValue(inputState);
 
@@ -32,13 +33,8 @@ export const Block = ({ blockIndex, cells }: BlockProps) => {
 
     const containsSelectedPos = useRecoilValue(containsSelectedPosState(blockPosition));
 
-    const style: CSS.Properties = {
-        "--block-column": blockPosition.column,
-        "--block-row": blockPosition.row,
-    };
-
     return (
-        <div className="block" style={style}>
+        <div className="block">
             {cells.map((cell, blockCellIndex) => {
                 let isSelected: boolean;
                 let isGuide: boolean;
@@ -60,4 +56,4 @@ export const Block = ({ blockIndex, cells }: BlockProps) => {
             })}
         </div>
     );
-};
+}
