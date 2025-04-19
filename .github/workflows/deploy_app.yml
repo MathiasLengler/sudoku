@@ -1,11 +1,10 @@
 name: Deploy
 
-# TODO: change deployment to test branch
 on:
   push:
     branches:
       - "master"
-      - "dev"
+      - "test"
   workflow_dispatch:
 
 env:
@@ -106,4 +105,4 @@ jobs:
 
       - name: Deploy to Coolify
         run: |
-          curl --fail-with-body --request GET '${{ github.ref == 'refs/heads/master' && secrets.COOLIFY_WEBHOOK || secrets.COOLIFY_WEBHOOK_DEV }}' --header 'Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}'
+          curl --fail-with-body --request GET '${{ github.ref == 'refs/heads/master' && secrets.COOLIFY_WEBHOOK_PROD || secrets.COOLIFY_WEBHOOK_TEST }}' --header 'Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}'
