@@ -1,4 +1,4 @@
-FROM caddy:2.7.6
+FROM caddy:2.9.1
 
 COPY Caddyfile /etc/caddy/Caddyfile
 COPY dist /srv
