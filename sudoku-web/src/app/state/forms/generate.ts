@@ -81,7 +81,7 @@ export const GENERATE_FORM_DEFAULT_VALUES = {
     useSeed: false,
     seed: "0",
     multiShot: false,
-    iterationsIndex: 1,
+    iterationsIndex: 8,
     metric: "strategyScore",
     optimize: "maximize",
     parallel: true,
