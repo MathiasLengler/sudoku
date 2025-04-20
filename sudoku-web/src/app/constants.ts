@@ -99,6 +99,7 @@ export const gridMetricSchema = z.enum([
     "satStepCount",
     "backtrackingStepCount",
     "gridGivensCount",
+    "gridDirectCandidatesCount",
     "gridGivensValueCountDeviation",
 ]);
 assert<IsEqual<z.infer<typeof gridMetricSchema>, GridMetric>>();
@@ -145,6 +146,9 @@ export const GRID_METRIC_OPTIONS: Record<
     gridGivensCount: {
         label: "Grid givens: count",
         disabled: true,
+    },
+    gridDirectCandidatesCount: {
+        label: "Grid candidates: count",
     },
     gridGivensValueCountDeviation: {
         label: "Grid givens: value count deviation",

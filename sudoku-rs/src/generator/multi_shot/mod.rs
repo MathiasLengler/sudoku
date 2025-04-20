@@ -48,6 +48,8 @@ pub enum GridMetric {
     BacktrackingStepCount,
     /// The number of givens in the grid.
     GridGivensCount,
+    /// The number of candidates in the grid.
+    GridDirectCandidatesCount,
     // Use normalized metrics instead of standard deviation? (0-1, gini coefficient etc.)
     /// The standard deviation of the givens value counts in the grid.
     /// E.g. how evenly distributed the givens values are.
@@ -70,6 +72,7 @@ impl GridMetric {
                 .build()
         };
 
+        // TODO: implement remaining metrics
         Ok(match self {
             GridMetric::StrategyScore => get_strategic_solver(strategies)
                 .solve_path()
@@ -91,6 +94,11 @@ impl GridMetric {
             GridMetric::SatStepCount => todo!(),
             GridMetric::BacktrackingStepCount => todo!(),
             GridMetric::GridGivensCount => todo!(),
+            GridMetric::GridDirectCandidatesCount => grid
+                .all_candidates_positions()
+                .into_iter()
+                .map(|pos| EvaluatedGridMetric::from(grid.direct_candidates(pos).count()))
+                .sum(),
             GridMetric::GridGivensValueCountDeviation => todo!(),
         })
     }
@@ -487,6 +495,24 @@ mod tests {
     };
 
     use super::*;
+
+    // TODO: test other GridMetrics
+    // TODO: parametrize tests
+    mod grid_metric {
+        use super::*;
+
+        use crate::samples;
+
+        #[test]
+        fn test_grid_direct_candidates_count() {
+            let grid = samples::base_2().into_iter().next().unwrap();
+            let strategies = vec![];
+
+            let metric = GridMetric::GridDirectCandidatesCount;
+
+            assert_eq!(metric.evaluate(&grid, strategies).unwrap(), 8);
+        }
+    }
 
     #[test]
     fn test_one_iteration_against_single_shot_generator() {
