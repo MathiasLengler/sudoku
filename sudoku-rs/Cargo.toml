@@ -47,6 +47,7 @@ petgraph = { version = "0.6.5", optional = true }
 
 [dev-dependencies]
 serde_json = "1.0.134"
+rstest = "0.25.0"
 
 [target.'cfg(not(target_family="wasm"))'.dev-dependencies]
 criterion = { version = "0.5.1", features = ["html_reports"] }
