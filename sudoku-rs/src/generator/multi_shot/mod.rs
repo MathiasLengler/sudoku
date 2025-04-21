@@ -35,6 +35,11 @@ pub enum GridMetric {
     StrategyApplicationCount,
     /// Number of deductions used to solve the grid.
     StrategyDeductionCount,
+    // FIXME: this produces counterintuitive results
+    //  if there are only single candidates left, all strategies except for *Singles don't make progress.
+    //  The intention was to measure "needle point" strategies, which block further progress until spotted,
+    //  but this metric does not reflect that.
+    //  We need to somehow weigh the available strategies by their difficulty.
     /// The average number of strategies available to make progress. Scaled by a factor of `1_000`.
     StrategyAverageOptions,
 
