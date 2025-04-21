@@ -93,7 +93,7 @@ impl GridMetric {
             GridMetric::SolveGraphAverageBranchingFactor => todo!(),
             GridMetric::SatStepCount => todo!(),
             GridMetric::BacktrackingStepCount => todo!(),
-            GridMetric::GridGivensCount => todo!(),
+            GridMetric::GridGivensCount => grid.all_value_positions().len().try_into()?,
             GridMetric::GridDirectCandidatesCount => grid
                 .all_candidates_positions()
                 .into_iter()
