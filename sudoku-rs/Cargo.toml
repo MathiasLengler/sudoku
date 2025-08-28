@@ -44,6 +44,7 @@ ts-rs = { version = "11.0.1", optional = true }
 hdrhistogram = { version = "7.5.4", optional = true }
 env_logger = { version = "0.11.8", optional = true }
 petgraph = { version = "0.8.2", optional = true }
+clap = { version = "4.5.46", optional = true, features = ["derive"] }
 
 [dev-dependencies]
 serde_json = "1.0.143"
@@ -58,7 +59,7 @@ criterion = { version = "0.5.1", features = ["html_reports"] }
 #  MultiShotGenerator could be adapted to conditionally use it
 default = ["log", "parallel"]
 log = ["env_logger"]
-terminal = ["crossterm", "indicatif"]
+terminal = ["crossterm", "indicatif", "clap"]
 parallel = ["rayon", "indicatif/rayon"]
 wasm = ["getrandom/wasm_js", "ts-rs"]
 solver_debug_print = ["terminal"]
@@ -99,3 +100,6 @@ required-features = ["terminal"]
 [[bin]]
 name = "solve_graph"
 required-features = ["graph"]
+[[bin]]
+name = "metric_analysis"
+required-features = ["log", "parallel", "terminal"]
