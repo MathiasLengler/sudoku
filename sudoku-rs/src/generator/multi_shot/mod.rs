@@ -26,6 +26,15 @@ type AtomicEvaluatedGridMetric = AtomicU64;
 
 static GENERATE_NO_GRIDS: &str = "at least one generation result";
 
+// TODO: statistical analysis of metrics
+//  which metrics correlate?
+//  which metrics are redundant?
+//  which metrics are fast to compute?
+//  which metrics correlate with human difficulty ratings?
+// =>
+//  Generate and score a large number of grids
+//  Analyze the results
+
 /// A metric used to evaluate the difficulty of a grid.
 #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
 #[derive(Debug, Copy, Clone, Default, Serialize, Deserialize)]
