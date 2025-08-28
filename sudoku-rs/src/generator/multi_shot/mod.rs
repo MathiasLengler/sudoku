@@ -17,7 +17,10 @@ use super::{Generator, GeneratorSettings};
 pub use dynamic_settings::*;
 
 // FIXME: Change to f64
-//  https://github.com/rust-lang/rust/issues/72353#issuecomment-1093729062
+//  https://docs.rs/atomic_float/latest/atomic_float/struct.AtomicF64.html
+//  Disadvantages:
+//  - u64 => f64 try into not available
+//  - f64 does not implement Ord, only PartialOrd
 pub type EvaluatedGridMetric = u64;
 type AtomicEvaluatedGridMetric = AtomicU64;
 
