@@ -585,8 +585,8 @@ mod tests {
             use super::*;
             tests_solver_samples! {
                 |grid| {
-                    let solver = Solver::new(&grid);
-                    assert_infallible_solver_single_solution(solver, &grid);
+                    let mut solver = Solver::new(&grid);
+                    assert_infallible_solver_single_solution(&mut solver, &grid);
                 }
             }
         }

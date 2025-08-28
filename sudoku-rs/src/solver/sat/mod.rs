@@ -401,8 +401,8 @@ mod tests {
             tests_solver_samples! {
                 init_test_logger(),
                 |grid| {
-                    let solver = Solver::new(&grid);
-                    assert_fallible_solver_single_solution(solver, &grid);
+                    let mut solver = Solver::new(&grid);
+                    assert_fallible_solver_single_solution(&mut solver, &grid);
                 }
             }
         }

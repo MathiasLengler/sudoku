@@ -372,8 +372,8 @@ mod tests {
 
     tests_solver_samples! {
         |grid| {
-            let solver = Solver::new(grid.clone());
-            assert_fallible_solver_single_solution(solver, &grid);
+            let mut solver = Solver::new(grid.clone());
+            assert_fallible_solver_single_solution(&mut solver, &grid);
         }
     }
 
@@ -398,11 +398,11 @@ mod tests {
         assert!(grid.is_minimal());
 
         // Solver can solve the input grid
-        let solver = Solver::new_with_strategies(
+        let mut solver = Solver::new_with_strategies(
             grid.clone(),
             StrategyEnum::default_solver_strategies_no_brute_force(),
         );
-        assert_fallible_solver_single_solution(solver, &grid);
+        assert_fallible_solver_single_solution(&mut solver, &grid);
 
         // Delete top left value 1 => grid is ambiguous
         let ambiguous_grid = {
@@ -421,14 +421,14 @@ mod tests {
         assert!(solver.try_solve().unwrap().is_none());
 
         // But solver with filter for top left cell can solve it.
-        let solver = Solver::builder(ambiguous_grid.clone())
+        let mut solver = Solver::builder(ambiguous_grid.clone())
             .strategies(StrategyEnum::default_solver_strategies_no_brute_force())
             .candidates_filter(&ForceCandidateAtPosition {
                 pos: Position::top_left(),
                 candidate: Value::default(),
             })
             .build();
-        assert_fallible_solver_single_solution(solver, &grid);
+        assert_fallible_solver_single_solution(&mut solver, &grid);
     }
 
     #[test]

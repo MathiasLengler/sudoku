@@ -135,7 +135,7 @@ pub(crate) mod test_util {
     pub(crate) use tests_solver_samples;
 
     pub(crate) fn assert_infallible_solver_single_solution<Base: SudokuBase>(
-        mut solver: impl InfallibleSolver<Base>,
+        solver: &mut impl InfallibleSolver<Base>,
         puzzle: &Grid<Base>,
     ) {
         let solution = solver.solve().expect("Solver should return a solution");
@@ -144,7 +144,7 @@ pub(crate) mod test_util {
     }
 
     pub(crate) fn assert_fallible_solver_single_solution<Base: SudokuBase>(
-        mut solver: impl FallibleSolver<Base>,
+        solver: &mut impl FallibleSolver<Base>,
         puzzle: &Grid<Base>,
     ) {
         let solution = solver
