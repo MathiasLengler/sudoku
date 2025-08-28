@@ -540,6 +540,7 @@ mod enum_impl {
 
         impl ::ts_rs::TS for BaseEnum {
             type WithoutGenerics = Self;
+            type OptionInnerType = Self;
 
             fn name() -> String {
                 "BaseEnum".to_owned()
@@ -557,8 +558,8 @@ mod enum_impl {
             fn inline_flattened() -> String {
                 panic!("{} cannot be flattened", Self::name())
             }
-            fn output_path() -> Option<&'static std::path::Path> {
-                Some(std::path::Path::new("BaseEnum.ts"))
+            fn output_path() -> Option<std::path::PathBuf> {
+                Some(std::path::PathBuf::from(format!("{}.ts", Self::name())))
             }
         }
 

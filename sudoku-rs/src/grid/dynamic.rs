@@ -101,8 +101,9 @@ mod wasm {
         T: ::ts_rs::TS,
     {
         type WithoutGenerics = DynamicGrid<::ts_rs::Dummy>;
+        type OptionInnerType = Self;
         fn ident() -> String {
-            "DynamicGrid".to_owned()
+            ("DynamicGrid").to_string()
         }
         fn name() -> String {
             format!(
@@ -124,11 +125,12 @@ mod wasm {
 
             impl std::fmt::Display for T {
                 fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                    write!(f, "{self:?}")
+                    write!(f, "{:?}", self)
                 }
             }
             impl ::ts_rs::TS for T {
                 type WithoutGenerics = T;
+                type OptionInnerType = Self;
                 fn name() -> String {
                     stringify!(T).to_owned()
                 }
@@ -136,7 +138,7 @@ mod wasm {
                     panic!("{} cannot be inlined", <Self as ::ts_rs::TS>::name())
                 }
                 fn inline_flattened() -> String {
-                    panic!("{} cannot be flattened", <Self as ::ts_rs::TS>::name())
+                    stringify!(T).to_owned()
                 }
                 fn decl() -> String {
                     panic!("{} cannot be declared", <Self as ::ts_rs::TS>::name())
@@ -170,17 +172,17 @@ mod wasm {
             v.visit::<T>();
             <T as ::ts_rs::TS>::visit_generics(v);
         }
-        fn output_path() -> Option<&'static std::path::Path> {
-            Some(std::path::Path::new("DynamicGrid.ts"))
+        fn output_path() -> Option<std::path::PathBuf> {
+            Some(std::path::PathBuf::from(format!("{}.ts", "DynamicGrid")))
         }
         fn visit_dependencies(v: &mut impl ::ts_rs::TypeVisitor)
         where
             Self: 'static,
         {
-            <DynamicCell as ::ts_rs::TS>::visit_generics(v);
             v.visit::<Vec<T>>();
-            v.visit::<DynamicCell>();
             <Vec<T> as ::ts_rs::TS>::visit_generics(v);
+            v.visit::<DynamicCell>();
+            <DynamicCell as ::ts_rs::TS>::visit_generics(v);
         }
     }
     #[cfg(test)]
