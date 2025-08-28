@@ -15,7 +15,7 @@ mod strategy_enum;
 
 mod impls;
 
-pub type StrategyScore = u32;
+pub type StrategyScore = u64;
 
 #[enum_dispatch(StrategyEnum)]
 pub trait Strategy: Debug + Copy + Clone + Eq + Sized {

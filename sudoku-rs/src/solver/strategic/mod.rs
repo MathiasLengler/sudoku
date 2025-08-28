@@ -316,10 +316,10 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>>
 {
     /// The average number of strategies available to make progress. Scaled by a factor of `1_000`.
     pub fn average_options(mut self) -> Result<Option<StrategyScore>> {
-        const SCALE: u32 = 1_000;
+        const SCALE: StrategyScore = 1_000;
 
         let (step_count, total_options) =
-            self.try_fold::<_, _, Result<_>>((0u32, 0u32), |(acc_count, acc_options), res| {
+            self.try_fold::<_, _, Result<_>>((0u64, 0u64), |(acc_count, acc_options), res| {
                 let possible_solve_steps = res?;
                 Ok((
                     acc_count + 1,

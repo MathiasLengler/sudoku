@@ -1,7 +1,7 @@
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::cmp;
-use std::sync::atomic::{AtomicU32, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 
 use anyhow::{ensure, Context};
 use log::*;
@@ -10,6 +10,7 @@ use crate::base::SudokuBase;
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::solver::strategic::{self, strategies::StrategyEnum};
+use crate::solver::{backtracking, sat, FallibleSolver, InfallibleSolver};
 
 use super::{Generator, GeneratorSettings};
 
@@ -17,8 +18,8 @@ pub use dynamic_settings::*;
 
 // FIXME: Change to f64
 //  https://github.com/rust-lang/rust/issues/72353#issuecomment-1093729062
-pub type EvaluatedGridMetric = u32;
-type AtomicEvaluatedGridMetric = AtomicU32;
+pub type EvaluatedGridMetric = u64;
+type AtomicEvaluatedGridMetric = AtomicU64;
 
 static GENERATE_NO_GRIDS: &str = "at least one generation result";
 
@@ -49,8 +50,8 @@ pub enum GridMetric {
     SolveGraphAverageBranchingFactor,
     /// The number of steps taken by `sat::Solver` to solve the grid.
     SatStepCount,
-    /// The number of steps taken by `backtracking::Solver` to solve the grid.
-    BacktrackingStepCount,
+    /// The number of backtracking steps taken by `backtracking::Solver` to solve the grid.
+    BacktrackCount,
     /// The number of givens in the grid.
     GridGivensCount,
     /// The number of candidates in the grid.
@@ -96,8 +97,20 @@ impl GridMetric {
                 .average_options()?
                 .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?,
             GridMetric::SolveGraphAverageBranchingFactor => todo!(),
-            GridMetric::SatStepCount => todo!(),
-            GridMetric::BacktrackingStepCount => todo!(),
+            GridMetric::SatStepCount => {
+                let mut solver = sat::Solver::new(grid);
+                solver
+                    .try_solve()?
+                    .context("SAT solver failed to solve the grid")?;
+                solver.step_count()
+            }
+            GridMetric::BacktrackCount => {
+                let mut solver = backtracking::Solver::new(grid);
+                solver
+                    .solve()
+                    .context("Backtracking solver failed to solve the grid")?;
+                dbg!(solver.backtrack_count)
+            }
             GridMetric::GridGivensCount => grid.all_value_positions().len().try_into()?,
             GridMetric::GridDirectCandidatesCount => grid
                 .all_candidates_positions()
@@ -509,16 +522,6 @@ mod tests {
         use crate::samples;
         use rstest::{fixture, rstest};
 
-        #[test]
-        fn test_grid_direct_candidates_count() {
-            let grid = samples::base_2().into_iter().next().unwrap();
-            let strategies = vec![];
-
-            let metric = GridMetric::GridDirectCandidatesCount;
-
-            assert_eq!(metric.evaluate(&grid, strategies).unwrap(), 8);
-        }
-
         mod evaluate {
             use crate::test_util::init_test_logger;
 
@@ -526,9 +529,9 @@ mod tests {
 
             #[test]
             fn debug_grid() {
-                let mut grid = grid_sample_base_2(1);
+                let mut grid = grid_sample_base_2(2);
                 grid.set_all_direct_candidates();
-                println!("Grid: {grid}");
+                println!("Grid:\n{grid}");
             }
 
             #[fixture]
@@ -536,28 +539,44 @@ mod tests {
                 samples::base_2().into_iter().nth(index).unwrap()
             }
 
-            //TODO: merge test_base_2 tests
-
             #[rstest]
-            #[case::strategy_score(GridMetric::StrategyScore, 8)]
-            #[case::strategy_application_count(GridMetric::StrategyApplicationCount, 1)]
-            #[case::strategy_deduction_count(GridMetric::StrategyDeductionCount, 8)]
-            #[case::strategy_average_options(GridMetric::StrategyAverageOptions, 2000)]
+            #[case::strategy_score(0, GridMetric::StrategyScore, 8)]
+            #[case::strategy_score(1, GridMetric::StrategyScore, 12)]
+            #[case::strategy_score(2, GridMetric::StrategyScore, 12)]
+            #[case::strategy_application_count(0, GridMetric::StrategyApplicationCount, 1)]
+            #[case::strategy_application_count(1, GridMetric::StrategyApplicationCount, 4)]
+            #[case::strategy_application_count(2, GridMetric::StrategyApplicationCount, 2)]
+            #[case::strategy_deduction_count(0, GridMetric::StrategyDeductionCount, 8)]
+            #[case::strategy_deduction_count(1, GridMetric::StrategyDeductionCount, 12)]
+            #[case::strategy_deduction_count(2, GridMetric::StrategyDeductionCount, 12)]
+            #[case::strategy_average_options(0, GridMetric::StrategyAverageOptions, 2000)]
+            #[case::strategy_average_options(1, GridMetric::StrategyAverageOptions, 2750)]
+            #[case::strategy_average_options(2, GridMetric::StrategyAverageOptions, 3000)]
             // #[case::solve_graph_average_branching_factor(
+            //     0,
             //     GridMetric::SolveGraphAverageBranchingFactor,
             //     0
             // )]
-            // #[case::sat_step_count(GridMetric::SatStepCount, 0)]
-            // #[case::backtracking_step_count(GridMetric::BacktrackingStepCount, 0)]
-            #[case::grid_givens_count(GridMetric::GridGivensCount, 8)]
-            #[case::grid_direct_candidates_count(GridMetric::GridDirectCandidatesCount, 8)]
-            // #[case::grid_givens_value_count_deviation(GridMetric::GridGivensValueCountDeviation, 0)]
+            #[case::sat_step_count(0, GridMetric::SatStepCount, 1)]
+            #[case::sat_step_count(1, GridMetric::SatStepCount, 1)]
+            #[case::sat_step_count(2, GridMetric::SatStepCount, 1)]
+            #[case::backtrack_count(0, GridMetric::BacktrackCount, 0)]
+            #[case::backtrack_count(1, GridMetric::BacktrackCount, 0)]
+            #[case::backtrack_count(2, GridMetric::BacktrackCount, 0)]
+            #[case::grid_givens_count(0, GridMetric::GridGivensCount, 8)]
+            #[case::grid_givens_count(1, GridMetric::GridGivensCount, 4)]
+            #[case::grid_givens_count(2, GridMetric::GridGivensCount, 4)]
+            #[case::grid_direct_candidates_count(0, GridMetric::GridDirectCandidatesCount, 8)]
+            #[case::grid_direct_candidates_count(1, GridMetric::GridDirectCandidatesCount, 28)]
+            // #[case::grid_givens_value_count_deviation(0, GridMetric::GridGivensValueCountDeviation, 0)]
             fn test_base_2_0(
-                #[with(0)] grid_sample_base_2: Grid<Base2>,
+                #[case] grid_sample_base_2_index: usize,
                 #[case] grid_metric: GridMetric,
-                #[case] expected: u32,
+                #[case] expected: EvaluatedGridMetric,
             ) {
                 init_test_logger();
+
+                let grid_sample_base_2 = grid_sample_base_2(grid_sample_base_2_index);
 
                 let strategies = StrategyEnum::default_solver_strategies_no_brute_force();
 
@@ -568,39 +587,6 @@ mod tests {
                     expected
                 );
             }
-
-            #[rstest]
-            #[case::strategy_score(GridMetric::StrategyScore, 12)]
-            #[case::strategy_application_count(GridMetric::StrategyApplicationCount, 4)]
-            #[case::strategy_deduction_count(GridMetric::StrategyDeductionCount, 12)]
-            #[case::strategy_average_options(GridMetric::StrategyAverageOptions, 2750)]
-            // #[case::solve_graph_average_branching_factor(
-            //     GridMetric::SolveGraphAverageBranchingFactor,
-            //     0
-            // )]
-            // #[case::sat_step_count(GridMetric::SatStepCount, 0)]
-            // #[case::backtracking_step_count(GridMetric::BacktrackingStepCount, 0)]
-            #[case::grid_givens_count(GridMetric::GridGivensCount, 4)]
-            #[case::grid_direct_candidates_count(GridMetric::GridDirectCandidatesCount, 28)]
-            // #[case::grid_givens_value_count_deviation(GridMetric::GridGivensValueCountDeviation, 0)]
-            fn test_base_2_1(
-                #[with(1)] grid_sample_base_2: Grid<Base2>,
-                #[case] grid_metric: GridMetric,
-                #[case] expected: u32,
-            ) {
-                init_test_logger();
-
-                let strategies = StrategyEnum::default_solver_strategies_no_brute_force();
-
-                assert_eq!(
-                    grid_metric
-                        .evaluate(&grid_sample_base_2, strategies)
-                        .unwrap(),
-                    expected
-                );
-            }
-
-            // TODO: test_grid_sample_base_2_2
         }
     }
 

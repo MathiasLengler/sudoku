@@ -91,6 +91,10 @@ impl<Base: SudokuBase> Solver<Base> {
             })
             .collect()
     }
+
+    pub fn step_count(&self) -> u64 {
+        self.sat_solver.stats().conflicts
+    }
 }
 
 /// Helpers
