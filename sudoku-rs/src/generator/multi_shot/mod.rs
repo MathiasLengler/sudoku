@@ -529,14 +529,19 @@ mod tests {
 
             #[test]
             fn debug_grid() {
-                let mut grid = grid_sample_base_2(2);
+                let mut grid = grid_sample::<Base3>(1);
                 grid.set_all_direct_candidates();
                 println!("Grid:\n{grid}");
             }
 
+            // TODO: move to samples.rs
+            fn grid_sample<Base: SudokuBase>(index: usize) -> Grid<Base> {
+                Base::grid_samples().nth(index).unwrap()
+            }
+
             #[fixture]
-            fn grid_sample_base_2(#[default(0)] index: usize) -> Grid<Base2> {
-                samples::base_2().into_iter().nth(index).unwrap()
+            fn grid_sample_base_3(#[default(0)] index: usize) -> Grid<Base3> {
+                samples::base_3().into_iter().nth(index).unwrap()
             }
 
             #[rstest]
@@ -569,21 +574,52 @@ mod tests {
             #[case::grid_direct_candidates_count(0, GridMetric::GridDirectCandidatesCount, 8)]
             #[case::grid_direct_candidates_count(1, GridMetric::GridDirectCandidatesCount, 28)]
             // #[case::grid_givens_value_count_deviation(0, GridMetric::GridGivensValueCountDeviation, 0)]
-            fn test_base_2_0(
-                #[case] grid_sample_base_2_index: usize,
+            fn test_base_2(
+                #[case] grid_sample_index: usize,
                 #[case] grid_metric: GridMetric,
                 #[case] expected: EvaluatedGridMetric,
             ) {
+                type Base = Base2;
+
                 init_test_logger();
 
-                let grid_sample_base_2 = grid_sample_base_2(grid_sample_base_2_index);
+                let grid_sample = grid_sample::<Base>(grid_sample_index);
 
                 let strategies = StrategyEnum::default_solver_strategies_no_brute_force();
 
                 assert_eq!(
-                    grid_metric
-                        .evaluate(&grid_sample_base_2, strategies)
-                        .unwrap(),
+                    grid_metric.evaluate(&grid_sample, strategies).unwrap(),
+                    expected
+                );
+            }
+
+            #[rstest]
+            #[case::strategy_score(1, GridMetric::StrategyScore, 47)]
+            #[case::strategy_application_count(1, GridMetric::StrategyApplicationCount, 4)]
+            #[case::strategy_deduction_count(1, GridMetric::StrategyDeductionCount, 47)]
+            #[case::strategy_average_options(1, GridMetric::StrategyAverageOptions, 3500)]
+            #[case::sat_step_count(0, GridMetric::SatStepCount, 77)]
+            #[case::sat_step_count(1, GridMetric::SatStepCount, 1)]
+            #[case::backtrack_count(0, GridMetric::BacktrackCount, 13357)]
+            #[case::backtrack_count(1, GridMetric::BacktrackCount, 0)]
+            #[case::grid_givens_count(0, GridMetric::GridGivensCount, 21)]
+            #[case::grid_givens_count(1, GridMetric::GridGivensCount, 34)]
+            #[case::grid_direct_candidates_count(0, GridMetric::GridDirectCandidatesCount, 254)]
+            #[case::grid_direct_candidates_count(1, GridMetric::GridDirectCandidatesCount, 115)]
+            fn test_base_3(
+                #[case] grid_sample_index: usize,
+                #[case] grid_metric: GridMetric,
+                #[case] expected: EvaluatedGridMetric,
+            ) {
+                type Base = Base3;
+                init_test_logger();
+
+                let grid_sample = grid_sample::<Base>(grid_sample_index);
+
+                let strategies = StrategyEnum::default_solver_strategies_no_brute_force();
+
+                assert_eq!(
+                    grid_metric.evaluate(&grid_sample, strategies).unwrap(),
                     expected
                 );
             }
