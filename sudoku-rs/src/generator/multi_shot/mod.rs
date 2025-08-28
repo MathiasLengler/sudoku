@@ -529,14 +529,9 @@ mod tests {
 
             #[test]
             fn debug_grid() {
-                let mut grid = grid_sample::<Base3>(1);
+                let mut grid = samples::grid::<Base3>(1);
                 grid.set_all_direct_candidates();
                 println!("Grid:\n{grid}");
-            }
-
-            // TODO: move to samples.rs
-            fn grid_sample<Base: SudokuBase>(index: usize) -> Grid<Base> {
-                Base::grid_samples().nth(index).unwrap()
             }
 
             #[fixture]
@@ -583,7 +578,7 @@ mod tests {
 
                 init_test_logger();
 
-                let grid_sample = grid_sample::<Base>(grid_sample_index);
+                let grid_sample = samples::grid::<Base>(grid_sample_index);
 
                 let strategies = StrategyEnum::default_solver_strategies_no_brute_force();
 
@@ -614,7 +609,7 @@ mod tests {
                 type Base = Base3;
                 init_test_logger();
 
-                let grid_sample = grid_sample::<Base>(grid_sample_index);
+                let grid_sample = samples::grid::<Base>(grid_sample_index);
 
                 let strategies = StrategyEnum::default_solver_strategies_no_brute_force();
 
