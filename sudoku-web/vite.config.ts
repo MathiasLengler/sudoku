@@ -52,6 +52,7 @@ export default defineConfig(({ mode }) => ({
             registerType: "autoUpdate",
             devOptions: {
                 enabled: true,
+                navigateFallbackAllowlist: [/^\/$/],
             },
             filename: "service-worker.js",
             manifestFilename: "manifest.json",
@@ -65,8 +66,9 @@ export default defineConfig(({ mode }) => ({
             },
             workbox: {
                 globPatterns: ["**/*.{js,wasm,css,html,png,svg,ico,woff2}"],
-                // We don't have a SPA router, so serve 404s as-is.
-                navigateFallback: null,
+                // We currently don't have a SPA router
+                navigateFallbackAllowlist: [/^\/$/],
+                maximumFileSizeToCacheInBytes: 20 * 1024 * 1024, // 20 MiB
             },
             pwaAssets: {
                 preset: {
