@@ -21,7 +21,7 @@ use sudoku::position::test_utils::{consume_iter, consume_nested_iter};
 use sudoku::position::Coordinate;
 use sudoku::position::Position;
 use sudoku::rng::{new_crate_rng_from_rng, new_crate_rng_with_seed};
-use sudoku::samples::{base_2, base_3, base_4, base_5};
+use sudoku::samples;
 use sudoku::solver::sat;
 use sudoku::solver::strategic::strategies::locked_sets::v2::find_locked_set;
 use sudoku::solver::strategic::strategies::locked_sets::v2::test_utils::locked_set_test_cases_base_3;
@@ -30,17 +30,8 @@ use sudoku::solver::strategic::strategies::{
 };
 use sudoku::solver::{backtracking, introspective, strategic, FallibleSolver, InfallibleSolver};
 
-fn cast_grid<Base: SudokuBase>(any_grid: Box<dyn Any>) -> Grid<Base> {
-    *any_grid.downcast().unwrap()
-}
-
 fn sample_grid<Base: SudokuBase>() -> Grid<Base> {
-    match Base::ENUM {
-        BaseEnum::Base2 => cast_grid(Box::new(base_2().into_iter().next().unwrap())),
-        BaseEnum::Base3 => cast_grid(Box::new(base_3().into_iter().next().unwrap())),
-        BaseEnum::Base4 => cast_grid(Box::new(base_4().into_iter().next().unwrap())),
-        BaseEnum::Base5 => cast_grid(Box::new(base_5().into_iter().next().unwrap())),
-    }
+    samples::grid::<Base>(0)
 }
 
 fn bench_generator_group<Base: SudokuBase>(generator_group: &mut BenchmarkGroup<WallTime>) {
