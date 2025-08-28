@@ -1,7 +1,6 @@
 #[macro_use]
 extern crate criterion;
 
-use std::any::Any;
 use std::hint::black_box;
 use std::path::Path;
 
@@ -10,7 +9,7 @@ use criterion::{BatchSize, BenchmarkId, SamplingMode, Throughput};
 use criterion::{BenchmarkGroup, Criterion};
 
 use num::Integer;
-use sudoku::base::{consts::*, BaseEnum, SudokuBase};
+use sudoku::base::{consts::*, SudokuBase};
 use sudoku::cell::Candidates;
 use sudoku::cell::Value;
 use sudoku::generator::{Generator, GeneratorSettings, PruningSettings, PruningTarget};
