@@ -97,7 +97,7 @@ export const gridMetricSchema = z.enum([
     "strategyAverageOptions",
     "solveGraphAverageBranchingFactor",
     "satStepCount",
-    "backtrackingStepCount",
+    "backtrackCount",
     "gridGivensCount",
     "gridDirectCandidatesCount",
     "gridGivensValueCountDeviation",
@@ -137,15 +137,12 @@ export const GRID_METRIC_OPTIONS: Record<
     },
     satStepCount: {
         label: "SAT solver: step count",
-        disabled: true,
     },
-    backtrackingStepCount: {
+    backtrackCount: {
         label: "Backtracking solver: step count",
-        disabled: true,
     },
     gridGivensCount: {
         label: "Grid givens: count",
-        disabled: true,
     },
     gridDirectCandidatesCount: {
         label: "Grid candidates: count",
