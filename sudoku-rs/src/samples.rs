@@ -10,7 +10,6 @@ pub fn grid<Base: SudokuBase>(index: usize) -> Grid<Base> {
     Base::grid_samples().nth(index).unwrap()
 }
 
-// TODO: rethink API (unwrap, clone for consumer of specific sudoku)
 pub fn base_2() -> Vec<Grid<Base2>> {
     let mut grids = vec![
         vec![
