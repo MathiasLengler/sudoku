@@ -12,21 +12,20 @@
 //! ```
 
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::Write;
 use std::time::{Duration, Instant};
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use clap::Parser;
-use indicatif::{ProgressBar, ProgressStyle};
+use indicatif::{ParallelProgressIterator, ProgressBar, ProgressStyle};
 use rayon::prelude::*;
 use serde::Serialize;
 
-use sudoku::base::consts::*;
+use sudoku::base::BaseEnum;
 use sudoku::base::SudokuBase;
 use sudoku::generator::multi_shot::{EvaluatedGridMetric, GridMetric};
 use sudoku::generator::{Generator, GeneratorSettings, PruningSettings};
 use sudoku::grid::Grid;
+use sudoku::match_base_enum;
 use sudoku::solver::strategic::strategies::StrategyEnum;
 
 #[derive(Parser, Debug)]
@@ -35,53 +34,41 @@ use sudoku::solver::strategic::strategies::StrategyEnum;
 struct Args {
     /// Number of grids to generate and analyze
     #[arg(short, long, default_value = "1000")]
-    samples: usize,
+    samples: u64,
 
     /// Sudoku base (2 for 4x4, 3 for 9x9, 4 for 16x16)
-    #[arg(short, long, default_value = "3")]
-    base: u8,
-
-    /// Output CSV file path
-    #[arg(short, long, default_value = "metrics_analysis.csv")]
-    output: String,
+    #[arg(short, long, default_value = "3", value_enum)]
+    base: BaseEnum,
 
     /// Random seed for reproducible results
     #[arg(long)]
     seed: Option<u64>,
+}
 
-    /// Enable parallel processing
-    #[arg(long, default_value = "true")]
-    parallel: bool,
+#[derive(Debug, Serialize)]
+struct TimedEvaluatedGridMetric {
+    value: EvaluatedGridMetric,
+    duration: Duration,
 }
 
 #[derive(Debug, Serialize)]
 struct MetricResult {
-    grid_id: usize,
-    strategy_score: EvaluatedGridMetric,
-    strategy_application_count: EvaluatedGridMetric,
-    strategy_deduction_count: EvaluatedGridMetric,
-    strategy_average_options: EvaluatedGridMetric,
-    sat_step_count: EvaluatedGridMetric,
-    backtrack_count: EvaluatedGridMetric,
-    grid_givens_count: EvaluatedGridMetric,
-    grid_direct_candidates_count: EvaluatedGridMetric,
-
-    // Computation times (in nanoseconds)
-    strategy_score_time_ns: u64,
-    strategy_application_count_time_ns: u64,
-    strategy_deduction_count_time_ns: u64,
-    strategy_average_options_time_ns: u64,
-    sat_step_count_time_ns: u64,
-    backtrack_count_time_ns: u64,
-    grid_givens_count_time_ns: u64,
-    grid_direct_candidates_count_time_ns: u64,
+    grid_id: u64,
+    strategy_score: TimedEvaluatedGridMetric,
+    strategy_application_count: TimedEvaluatedGridMetric,
+    strategy_deduction_count: TimedEvaluatedGridMetric,
+    strategy_average_options: TimedEvaluatedGridMetric,
+    sat_step_count: TimedEvaluatedGridMetric,
+    backtrack_count: TimedEvaluatedGridMetric,
+    grid_givens_count: TimedEvaluatedGridMetric,
+    grid_direct_candidates_count: TimedEvaluatedGridMetric,
 }
 
 #[derive(Debug)]
 struct CorrelationAnalysis {
-    pearson_correlations: HashMap<(String, String), f64>,
-    metric_stats: HashMap<String, MetricStats>,
-    computation_times: HashMap<String, Duration>,
+    pearson_correlations: HashMap<(&'static str, &'static str), f64>,
+    metric_stats: HashMap<&'static str, MetricStats>,
+    computation_times: HashMap<&'static str, Duration>,
 }
 
 #[derive(Debug)]
@@ -97,33 +84,31 @@ fn evaluate_metric_with_timing<Base: SudokuBase>(
     metric: GridMetric,
     grid: &Grid<Base>,
     strategies: &[StrategyEnum],
-) -> Result<(EvaluatedGridMetric, Duration)> {
+) -> Result<TimedEvaluatedGridMetric> {
     let start = Instant::now();
-    let result = metric.evaluate(grid, strategies.to_vec())?;
+    let value = metric.evaluate(grid, strategies.to_vec())?;
     let duration = start.elapsed();
-    Ok((result, duration))
+    Ok(TimedEvaluatedGridMetric { value, duration })
 }
 
 fn analyze_single_grid<Base: SudokuBase>(
-    grid_id: usize,
+    grid_id: u64,
     grid: Grid<Base>,
     strategies: &[StrategyEnum],
 ) -> Result<MetricResult> {
-    let (strategy_score, strategy_score_time) =
-        evaluate_metric_with_timing(GridMetric::StrategyScore, &grid, strategies)?;
-    let (strategy_application_count, strategy_application_count_time) =
+    let strategy_score = evaluate_metric_with_timing(GridMetric::StrategyScore, &grid, strategies)?;
+    let strategy_application_count =
         evaluate_metric_with_timing(GridMetric::StrategyApplicationCount, &grid, strategies)?;
-    let (strategy_deduction_count, strategy_deduction_count_time) =
+    let strategy_deduction_count =
         evaluate_metric_with_timing(GridMetric::StrategyDeductionCount, &grid, strategies)?;
-    let (strategy_average_options, strategy_average_options_time) =
+    let strategy_average_options =
         evaluate_metric_with_timing(GridMetric::StrategyAverageOptions, &grid, strategies)?;
-    let (sat_step_count, sat_step_count_time) =
-        evaluate_metric_with_timing(GridMetric::SatStepCount, &grid, strategies)?;
-    let (backtrack_count, backtrack_count_time) =
+    let sat_step_count = evaluate_metric_with_timing(GridMetric::SatStepCount, &grid, strategies)?;
+    let backtrack_count =
         evaluate_metric_with_timing(GridMetric::BacktrackCount, &grid, strategies)?;
-    let (grid_givens_count, grid_givens_count_time) =
+    let grid_givens_count =
         evaluate_metric_with_timing(GridMetric::GridGivensCount, &grid, strategies)?;
-    let (grid_direct_candidates_count, grid_direct_candidates_count_time) =
+    let grid_direct_candidates_count =
         evaluate_metric_with_timing(GridMetric::GridDirectCandidatesCount, &grid, strategies)?;
 
     Ok(MetricResult {
@@ -136,14 +121,6 @@ fn analyze_single_grid<Base: SudokuBase>(
         backtrack_count,
         grid_givens_count,
         grid_direct_candidates_count,
-        strategy_score_time_ns: strategy_score_time.as_nanos() as u64,
-        strategy_application_count_time_ns: strategy_application_count_time.as_nanos() as u64,
-        strategy_deduction_count_time_ns: strategy_deduction_count_time.as_nanos() as u64,
-        strategy_average_options_time_ns: strategy_average_options_time.as_nanos() as u64,
-        sat_step_count_time_ns: sat_step_count_time.as_nanos() as u64,
-        backtrack_count_time_ns: backtrack_count_time.as_nanos() as u64,
-        grid_givens_count_time_ns: grid_givens_count_time.as_nanos() as u64,
-        grid_direct_candidates_count_time_ns: grid_direct_candidates_count_time.as_nanos() as u64,
     })
 }
 
@@ -212,84 +189,83 @@ fn analyze_results(results: &[MetricResult]) -> CorrelationAnalysis {
     ];
 
     // Extract metric values
-    let metric_values: HashMap<String, Vec<EvaluatedGridMetric>> = [
+    let metric_values: HashMap<&'static str, Vec<EvaluatedGridMetric>> = [
         (
             "strategy_score",
-            results.iter().map(|r| r.strategy_score).collect(),
+            results.iter().map(|r| r.strategy_score.value).collect(),
         ),
         (
             "strategy_application_count",
             results
                 .iter()
-                .map(|r| r.strategy_application_count)
+                .map(|r| r.strategy_application_count.value)
                 .collect(),
         ),
         (
             "strategy_deduction_count",
-            results.iter().map(|r| r.strategy_deduction_count).collect(),
+            results
+                .iter()
+                .map(|r| r.strategy_deduction_count.value)
+                .collect(),
         ),
         (
             "strategy_average_options",
-            results.iter().map(|r| r.strategy_average_options).collect(),
+            results
+                .iter()
+                .map(|r| r.strategy_average_options.value)
+                .collect(),
         ),
         (
             "sat_step_count",
-            results.iter().map(|r| r.sat_step_count).collect(),
+            results.iter().map(|r| r.sat_step_count.value).collect(),
         ),
         (
             "backtrack_count",
-            results.iter().map(|r| r.backtrack_count).collect(),
+            results.iter().map(|r| r.backtrack_count.value).collect(),
         ),
         (
             "grid_givens_count",
-            results.iter().map(|r| r.grid_givens_count).collect(),
+            results.iter().map(|r| r.grid_givens_count.value).collect(),
         ),
         (
             "grid_direct_candidates_count",
             results
                 .iter()
-                .map(|r| r.grid_direct_candidates_count)
+                .map(|r| r.grid_direct_candidates_count.value)
                 .collect(),
         ),
     ]
     .into_iter()
-    .map(|(k, v)| (k.to_string(), v))
     .collect();
 
     // Calculate correlations
     let mut pearson_correlations = HashMap::new();
     for i in 0..metric_names.len() {
         for j in (i + 1)..metric_names.len() {
-            let metric1 = &metric_names[i];
-            let metric2 = &metric_names[j];
+            let metric1 = metric_names[i];
+            let metric2 = metric_names[j];
 
-            let values1: Vec<f64> = metric_values[&metric1.to_string()]
-                .iter()
-                .map(|&v| v as f64)
-                .collect();
-            let values2: Vec<f64> = metric_values[&metric2.to_string()]
-                .iter()
-                .map(|&v| v as f64)
-                .collect();
+            let values1: Vec<f64> = metric_values[metric1].iter().map(|&v| v as f64).collect();
+            let values2: Vec<f64> = metric_values[metric2].iter().map(|&v| v as f64).collect();
 
             let correlation = calculate_pearson_correlation(&values1, &values2);
-            pearson_correlations.insert((metric1.to_string(), metric2.to_string()), correlation);
+            pearson_correlations.insert((metric1, metric2), correlation);
         }
     }
 
     // Calculate metric statistics
-    let metric_stats: HashMap<String, MetricStats> = metric_values
+    let metric_stats: HashMap<&'static str, MetricStats> = metric_values
         .into_iter()
-        .map(|(name, values)| (name.clone(), calculate_metric_stats(&values)))
+        .map(|(name, values)| (name, calculate_metric_stats(&values)))
         .collect();
 
     // Calculate average computation times
-    let computation_times: HashMap<String, Duration> = [
+    let computation_times: HashMap<&'static str, Duration> = [
         (
             "strategy_score",
             results
                 .iter()
-                .map(|r| Duration::from_nanos(r.strategy_score_time_ns))
+                .map(|r| (r.strategy_score.duration))
                 .sum::<Duration>()
                 / results.len() as u32,
         ),
@@ -297,7 +273,7 @@ fn analyze_results(results: &[MetricResult]) -> CorrelationAnalysis {
             "strategy_application_count",
             results
                 .iter()
-                .map(|r| Duration::from_nanos(r.strategy_application_count_time_ns))
+                .map(|r| (r.strategy_application_count.duration))
                 .sum::<Duration>()
                 / results.len() as u32,
         ),
@@ -305,7 +281,7 @@ fn analyze_results(results: &[MetricResult]) -> CorrelationAnalysis {
             "strategy_deduction_count",
             results
                 .iter()
-                .map(|r| Duration::from_nanos(r.strategy_deduction_count_time_ns))
+                .map(|r| (r.strategy_deduction_count.duration))
                 .sum::<Duration>()
                 / results.len() as u32,
         ),
@@ -313,7 +289,7 @@ fn analyze_results(results: &[MetricResult]) -> CorrelationAnalysis {
             "strategy_average_options",
             results
                 .iter()
-                .map(|r| Duration::from_nanos(r.strategy_average_options_time_ns))
+                .map(|r| (r.strategy_average_options.duration))
                 .sum::<Duration>()
                 / results.len() as u32,
         ),
@@ -321,7 +297,7 @@ fn analyze_results(results: &[MetricResult]) -> CorrelationAnalysis {
             "sat_step_count",
             results
                 .iter()
-                .map(|r| Duration::from_nanos(r.sat_step_count_time_ns))
+                .map(|r| (r.sat_step_count.duration))
                 .sum::<Duration>()
                 / results.len() as u32,
         ),
@@ -329,7 +305,7 @@ fn analyze_results(results: &[MetricResult]) -> CorrelationAnalysis {
             "backtrack_count",
             results
                 .iter()
-                .map(|r| Duration::from_nanos(r.backtrack_count_time_ns))
+                .map(|r| (r.backtrack_count.duration))
                 .sum::<Duration>()
                 / results.len() as u32,
         ),
@@ -337,7 +313,7 @@ fn analyze_results(results: &[MetricResult]) -> CorrelationAnalysis {
             "grid_givens_count",
             results
                 .iter()
-                .map(|r| Duration::from_nanos(r.grid_givens_count_time_ns))
+                .map(|r| (r.grid_givens_count.duration))
                 .sum::<Duration>()
                 / results.len() as u32,
         ),
@@ -345,13 +321,12 @@ fn analyze_results(results: &[MetricResult]) -> CorrelationAnalysis {
             "grid_direct_candidates_count",
             results
                 .iter()
-                .map(|r| Duration::from_nanos(r.grid_direct_candidates_count_time_ns))
+                .map(|r| (r.grid_direct_candidates_count.duration))
                 .sum::<Duration>()
                 / results.len() as u32,
         ),
     ]
     .into_iter()
-    .map(|(k, v)| (k.to_string(), v))
     .collect();
 
     CorrelationAnalysis {
@@ -441,49 +416,6 @@ fn print_analysis_summary(analysis: &CorrelationAnalysis) {
         "   • Slowest metric to compute: {} ({:?})",
         slowest_metric.0, slowest_metric.1
     );
-
-    println!("\n💡 RECOMMENDATIONS:");
-    println!(
-        "   • Use fast metrics ({:?}) for real-time evaluation",
-        fastest_metric.1
-    );
-    println!("   • Consider removing redundant metrics with high correlation");
-    println!("   • Focus on uncorrelated metrics for diverse difficulty assessment");
-    println!("   • Investigate human difficulty correlation with collected data");
-}
-
-fn write_csv_results(results: &[MetricResult], output_path: &str) -> Result<()> {
-    let mut file = File::create(output_path)?;
-
-    // Write CSV header
-    writeln!(file, "grid_id,strategy_score,strategy_application_count,strategy_deduction_count,strategy_average_options,sat_step_count,backtrack_count,grid_givens_count,grid_direct_candidates_count,strategy_score_time_ns,strategy_application_count_time_ns,strategy_deduction_count_time_ns,strategy_average_options_time_ns,sat_step_count_time_ns,backtrack_count_time_ns,grid_givens_count_time_ns,grid_direct_candidates_count_time_ns")?;
-
-    // Write data rows
-    for result in results {
-        writeln!(
-            file,
-            "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}",
-            result.grid_id,
-            result.strategy_score,
-            result.strategy_application_count,
-            result.strategy_deduction_count,
-            result.strategy_average_options,
-            result.sat_step_count,
-            result.backtrack_count,
-            result.grid_givens_count,
-            result.grid_direct_candidates_count,
-            result.strategy_score_time_ns,
-            result.strategy_application_count_time_ns,
-            result.strategy_deduction_count_time_ns,
-            result.strategy_average_options_time_ns,
-            result.sat_step_count_time_ns,
-            result.backtrack_count_time_ns,
-            result.grid_givens_count_time_ns,
-            result.grid_direct_candidates_count_time_ns
-        )?;
-    }
-
-    Ok(())
 }
 
 fn run_analysis<Base: SudokuBase>() -> Result<()> {
@@ -505,54 +437,30 @@ fn run_analysis<Base: SudokuBase>() -> Result<()> {
         ..Default::default()
     };
 
-    let pb = ProgressBar::new(args.samples as u64).with_style(
+    let pb = ProgressBar::new(args.samples).with_style(
         ProgressStyle::default_bar()
-            .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] ({pos}/{len}, ETA {eta}, {per_sec})")
-            .context("Failed to create progress bar template")?
+            .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] ({pos}/{len}, ETA {eta}, {per_sec})")?
     );
 
-    let results: Result<Vec<MetricResult>> = if args.parallel {
-        (0..args.samples)
-            .into_par_iter()
-            .map(|i| {
-                let generator_settings = if let Some(base_seed) = args.seed {
-                    GeneratorSettings {
-                        seed: Some(base_seed + (i as u64)),
-                        ..generator_settings.clone()
-                    }
-                } else {
-                    generator_settings.clone()
-                };
+    let results: Result<Vec<MetricResult>> = (0..args.samples)
+        .into_par_iter()
+        .progress_with(pb)
+        .map(|i| {
+            let generator_settings = if let Some(base_seed) = args.seed {
+                GeneratorSettings {
+                    seed: Some(base_seed + (i)),
+                    ..generator_settings.clone()
+                }
+            } else {
+                generator_settings.clone()
+            };
 
-                let generator = Generator::<Base>::with_settings(generator_settings);
-                let grid = generator.generate()?;
-                pb.inc(1);
+            let generator = Generator::<Base>::with_settings(generator_settings);
+            let grid = generator.generate()?;
 
-                analyze_single_grid(i, grid, &strategies)
-            })
-            .collect()
-    } else {
-        (0..args.samples)
-            .map(|i| {
-                let generator_settings = if let Some(base_seed) = args.seed {
-                    GeneratorSettings {
-                        seed: Some(base_seed + (i as u64)),
-                        ..generator_settings.clone()
-                    }
-                } else {
-                    generator_settings.clone()
-                };
-
-                let generator = Generator::<Base>::with_settings(generator_settings);
-                let grid = generator.generate()?;
-                pb.inc(1);
-
-                analyze_single_grid(i, grid, &strategies)
-            })
-            .collect()
-    };
-
-    pb.finish_with_message("Analysis complete!");
+            analyze_single_grid(i, grid, &strategies)
+        })
+        .collect();
 
     let results = results?;
 
@@ -560,20 +468,11 @@ fn run_analysis<Base: SudokuBase>() -> Result<()> {
     let analysis = analyze_results(&results);
     print_analysis_summary(&analysis);
 
-    // Write results to CSV
-    write_csv_results(&results, &args.output)?;
-    println!("\n📄 Results written to: {}", args.output);
-
     Ok(())
 }
 
 fn main() -> Result<()> {
     let args = Args::parse();
 
-    match args.base {
-        2 => run_analysis::<Base2>(),
-        3 => run_analysis::<Base3>(),
-        4 => run_analysis::<Base4>(),
-        _ => anyhow::bail!("Unsupported base: {}. Supported bases: 2, 3, 4", args.base),
-    }
+    match_base_enum!(args.base, run_analysis::<Base>())
 }

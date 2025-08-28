@@ -10,7 +10,7 @@ use num::traits::{
 use num::PrimInt;
 
 use consts::*;
-pub(crate) use enum_impl::match_base_enum;
+pub use enum_impl::match_base_enum;
 pub use enum_impl::BaseEnum;
 
 use crate::error::{Error, Result};
@@ -378,6 +378,7 @@ mod enum_impl {
     use anyhow::{bail, format_err};
     use serde_repr::{Deserialize_repr, Serialize_repr};
 
+    #[cfg_attr(feature = "terminal", derive(clap::ValueEnum))]
     #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize_repr, Deserialize_repr)]
     #[repr(u8)]
     pub enum BaseEnum {
@@ -385,6 +386,12 @@ mod enum_impl {
         Base3 = 3,
         Base4 = 4,
         Base5 = 5,
+    }
+
+    impl Display for BaseEnum {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "Base{}", self.into_u8())
+        }
     }
 
     /// const conversions between `u8` and `DynamicBase`
@@ -506,6 +513,7 @@ mod enum_impl {
         }
     }
 
+    #[macro_export]
     macro_rules! match_base_enum {
         ($base_enum_value:expr, $using_base:expr) => {{
             use $crate::base::consts::*;
@@ -530,7 +538,7 @@ mod enum_impl {
         }};
     }
 
-    pub(crate) use match_base_enum;
+    pub use match_base_enum;
 
     #[cfg(feature = "wasm")]
     mod wasm {

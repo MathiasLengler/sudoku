@@ -11,6 +11,3 @@ sudoku-bubblewrap/*
 
 # cargo llvm-cov
 lcov.info
-
-# metric_analysis
-*.csv

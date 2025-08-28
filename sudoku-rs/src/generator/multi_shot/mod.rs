@@ -59,6 +59,7 @@ pub enum GridMetric {
     // Based on the PoC bin `solve_graph` - a graph of all possible solve paths.
     /// The average [branching factor](https://en.wikipedia.org/wiki/Branching_factor) of the strategy solve graph.
     /// In other words: the average number of strategies available to make progress across all nodes in the solve graph.
+    #[deprecated]
     SolveGraphAverageBranchingFactor,
     /// The number of steps taken by `sat::Solver` to solve the grid.
     SatStepCount,
@@ -74,6 +75,7 @@ pub enum GridMetric {
     /// Example:
     /// 3 givens for each number => 1
     /// Only 2s and 3s => >>1
+    #[deprecated]
     GridGivensValueCountDeviation,
 }
 
@@ -121,7 +123,7 @@ impl GridMetric {
                 solver
                     .solve()
                     .context("Backtracking solver failed to solve the grid")?;
-                dbg!(solver.backtrack_count)
+                solver.backtrack_count
             }
             GridMetric::GridGivensCount => grid.all_value_positions().len().try_into()?,
             GridMetric::GridDirectCandidatesCount => grid
