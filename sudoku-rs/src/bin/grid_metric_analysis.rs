@@ -1,15 +1,4 @@
 //! Statistical analysis of grid metrics
-//!
-//! This binary addresses the TODO in `multi_shot/mod.rs`:
-//! - Analyzes correlations between different metrics
-//! - Identifies redundant metrics
-//! - Measures computation speed of each metric
-//! - Provides foundation for correlation with human difficulty ratings
-//!
-//! Usage:
-//! ```bash
-//! cargo run --bin metric_analysis --features="log,parallel,terminal" -- --samples 1000 --base 3 --output metrics_analysis.csv
-//! ```
 
 use std::collections::HashMap;
 use std::time::{Duration, Instant};

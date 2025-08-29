@@ -101,5 +101,5 @@ required-features = ["terminal"]
 name = "solve_graph"
 required-features = ["graph"]
 [[bin]]
-name = "metric_analysis"
+name = "grid_metric_analysis"
 required-features = ["log", "parallel", "terminal"]
