@@ -45,6 +45,7 @@ hdrhistogram = { version = "7.5.4", optional = true }
 env_logger = { version = "0.11.8", optional = true }
 petgraph = { version = "0.8.2", optional = true }
 clap = { version = "4.5.46", optional = true, features = ["derive"] }
+linfa = { version = "0.7.1", optional = true }
 
 [dev-dependencies]
 serde_json = "1.0.143"
@@ -58,13 +59,14 @@ criterion = { version = "0.5.1", features = ["html_reports"] }
 #  it is now used by Sudoku/DynamicSudoku
 #  MultiShotGenerator could be adapted to conditionally use it
 default = ["log", "parallel"]
-log = ["env_logger"]
-terminal = ["crossterm", "indicatif", "clap"]
-parallel = ["rayon", "indicatif/rayon"]
-wasm = ["getrandom/wasm_js", "ts-rs"]
+log = ["dep:env_logger"]
+terminal = ["dep:crossterm", "dep:indicatif", "dep:clap"]
+parallel = ["dep:rayon", "indicatif/rayon"]
+wasm = ["getrandom/wasm_js", "dep:ts-rs"]
 solver_debug_print = ["terminal"]
-histogram = ["hdrhistogram"]
-graph = ["petgraph"]
+histogram = ["dep:hdrhistogram"]
+graph = ["dep:petgraph"]
+analysis = ["dep:linfa"]
 
 [[bench]]
 name = "sudoku_benchmark"
@@ -102,4 +104,4 @@ name = "solve_graph"
 required-features = ["graph"]
 [[bin]]
 name = "grid_metric_analysis"
-required-features = ["log", "parallel", "terminal"]
+required-features = ["parallel", "terminal", "analysis"]

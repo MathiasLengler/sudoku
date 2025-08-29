@@ -113,6 +113,7 @@ fn analyze_single_grid<Base: SudokuBase>(
     })
 }
 
+// TODO: replace with linfa
 fn calculate_pearson_correlation(x: &[f64], y: &[f64]) -> f64 {
     assert_eq!(x.len(), y.len());
     let n = x.len() as f64;
