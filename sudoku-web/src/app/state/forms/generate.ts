@@ -63,7 +63,7 @@ export const generateFormValuesSchema = z.object({
                 .safeParse(value);
             if (!bigintResult.success) {
                 for (const issue of bigintResult.error.issues) {
-                    ctx.addIssue(issue);
+                    ctx.addIssue(issue.message);
                 }
             }
         }),
