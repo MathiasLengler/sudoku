@@ -4,7 +4,7 @@ import type * as CSS from "csstype";
 import * as _ from "lodash-es";
 import { memo, useDeferredValue, useMemo } from "react";
 import AutoSizer from "react-virtualized-auto-sizer";
-import { FixedSizeGrid as Grid } from "react-window";
+import { Grid, type CellComponentProps } from "react-window";
 import { useRecoilCallback, useRecoilState, useRecoilValue } from "recoil";
 import type { Quadrant } from "../../../types";
 import { usePlaySelectedGrid } from "../../actions/worldActions";
@@ -21,17 +21,7 @@ import {
 import { worldCellBorderClassesState } from "../../state/world/cellBorder";
 import { cellColorClass } from "../../utils/sudoku";
 
-type WorldCellVirtualizedProps = {
-    rowIndex: number;
-    columnIndex: number;
-    style: React.CSSProperties;
-};
-
-const WorldCellVirtualized = memo(function WorldCellVirtualized({
-    rowIndex,
-    columnIndex,
-    style,
-}: WorldCellVirtualizedProps) {
+const WorldCellVirtualized = memo(function WorldCellVirtualized({ rowIndex, columnIndex, style }: CellComponentProps) {
     const cellWorldPosition = useMemo(
         () =>
             worldCellPositionSchema.parse({
@@ -124,25 +114,15 @@ function WorldMapVirtualized() {
     const worldCellSize = useDeferredValue(useRecoilValue(worldCellSizeState));
 
     return (
-        <div className="world-map-grid-auto-sizer-container">
-            <AutoSizer className="world-map-grid-auto-sizer">
-                {({ height, width }) => (
-                    <Grid
-                        className="world-map-grid"
-                        columnCount={cellWorldDimensions.cellDim.columnCount}
-                        columnWidth={worldCellSize}
-                        height={height}
-                        rowCount={cellWorldDimensions.cellDim.rowCount}
-                        rowHeight={worldCellSize}
-                        width={width}
-                    >
-                        {({ columnIndex, rowIndex, style }) => (
-                            <WorldCellVirtualized rowIndex={rowIndex} columnIndex={columnIndex} style={style} />
-                        )}
-                    </Grid>
-                )}
-            </AutoSizer>
-        </div>
+        <Grid
+            className="world-map-grid"
+            columnCount={cellWorldDimensions.cellDim.columnCount}
+            columnWidth={worldCellSize}
+            rowCount={cellWorldDimensions.cellDim.rowCount}
+            rowHeight={worldCellSize}
+            cellComponent={WorldCellVirtualized}
+            cellProps={{}}
+        ></Grid>
     );
 }
 
@@ -158,7 +138,7 @@ export function WorldMap() {
 
     return (
         <div className="world-map" style={cssVariables}>
-            <Slider min={1} max={200} value={cellSize} onChange={(_e, value) => setCellSize(value as number)} />
+            <Slider min={1} max={200} value={cellSize} onChange={(_e, value) => setCellSize(value)} />
             <WorldMapVirtualized />
         </div>
     );

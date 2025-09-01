@@ -1,6 +1,6 @@
 import LightbulbIcon from "@mui/icons-material/Lightbulb";
 import CircularProgress from "@mui/material/CircularProgress";
-import type { IconButtonProps } from "@mui/material/IconButton/IconButton";
+import type { IconButtonProps } from "@mui/material/IconButton";
 import assertNever from "assert-never";
 import * as _ from "lodash-es";
 import { useNotifications } from "@toolpad/core/useNotifications";

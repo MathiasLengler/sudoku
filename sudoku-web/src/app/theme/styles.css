@@ -310,6 +310,7 @@ body,
     height: 100%;
 }
 
+/* FIXME: where is this now? */
 .world-map-grid-auto-sizer-container {
     flex: 1 1 auto;
 }
