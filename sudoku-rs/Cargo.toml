@@ -45,7 +45,6 @@ hdrhistogram = { version = "7.5.4", optional = true }
 env_logger = { version = "0.11.8", optional = true }
 petgraph = { version = "0.8.2", optional = true }
 clap = { version = "4.5.46", optional = true, features = ["derive"] }
-linfa = { version = "0.7.1", optional = true }
 
 [dev-dependencies]
 serde_json = "1.0.143"
@@ -66,7 +65,6 @@ wasm = ["getrandom/wasm_js", "dep:ts-rs"]
 solver_debug_print = ["terminal"]
 histogram = ["dep:hdrhistogram"]
 graph = ["dep:petgraph"]
-analysis = ["dep:linfa"]
 
 [[bench]]
 name = "sudoku_benchmark"
@@ -104,4 +102,4 @@ name = "solve_graph"
 required-features = ["graph"]
 [[bin]]
 name = "grid_metric_analysis"
-required-features = ["parallel", "terminal", "analysis"]
+required-features = ["parallel", "terminal"]
