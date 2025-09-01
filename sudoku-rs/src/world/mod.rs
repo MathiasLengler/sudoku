@@ -376,14 +376,14 @@ impl<Base: SudokuBase> CellWorld<Base> {
         WorldCellDim::new(self.cells.nrows(), self.cells.ncols()).unwrap()
     }
 
-    fn grid_cells(&self, grid_position: ValidatedWorldGridPosition) -> ArrayView2<Cell<Base>> {
+    fn grid_cells(&self, grid_position: ValidatedWorldGridPosition) -> ArrayView2<'_, Cell<Base>> {
         self.cells
             .slice(Self::grid_cells_slice_info(grid_position, self.overlap))
     }
     fn grid_cells_mut(
         &mut self,
         grid_position: ValidatedWorldGridPosition,
-    ) -> ArrayViewMut2<Cell<Base>> {
+    ) -> ArrayViewMut2<'_, Cell<Base>> {
         self.cells
             .slice_mut(Self::grid_cells_slice_info(grid_position, self.overlap))
     }

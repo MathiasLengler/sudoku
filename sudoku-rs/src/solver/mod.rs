@@ -186,9 +186,9 @@ pub(crate) mod test_util {
 
         assert_eq!(solutions.len(), NUMBER_OF_BASE_2_SOLUTIONS);
 
-        solutions
-            .iter()
-            .for_each(|solution| assert!(solution.is_solved()));
+        for solution in &solutions {
+            assert!(solution.is_solved());
+        }
 
         let unique_solutions = solutions.into_iter().collect::<HashSet<_>>();
 

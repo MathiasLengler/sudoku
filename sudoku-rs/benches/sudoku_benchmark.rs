@@ -1,14 +1,13 @@
 #[macro_use]
 extern crate criterion;
 
-use std::hint::black_box;
-use std::path::Path;
-
 use criterion::measurement::WallTime;
 use criterion::{BatchSize, BenchmarkId, SamplingMode, Throughput};
 use criterion::{BenchmarkGroup, Criterion};
-
 use num::Integer;
+use rand::prelude::*;
+use std::hint::black_box;
+use std::path::Path;
 use sudoku::base::{consts::*, SudokuBase};
 use sudoku::cell::Candidates;
 use sudoku::cell::Value;
@@ -19,7 +18,7 @@ use sudoku::grid::Grid;
 use sudoku::position::test_utils::{consume_iter, consume_nested_iter};
 use sudoku::position::Coordinate;
 use sudoku::position::Position;
-use sudoku::rng::{new_crate_rng_from_rng, new_crate_rng_with_seed};
+use sudoku::rng::{new_crate_rng_with_seed, CrateRng};
 use sudoku::samples;
 use sudoku::solver::sat;
 use sudoku::solver::strategic::strategies::locked_sets::v2::find_locked_set;
@@ -112,7 +111,7 @@ fn bench_solver_sample_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup
             let mut rng = new_crate_rng_with_seed(Some(0));
             b.iter(|| {
                 backtracking::Solver::builder(grid)
-                    .rng(new_crate_rng_from_rng(&mut rng))
+                    .rng(CrateRng::from_rng(&mut rng))
                     .build()
                     .solve()
                     .unwrap()

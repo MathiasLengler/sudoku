@@ -255,7 +255,7 @@ fn analyze_results(results: &[MetricResult]) -> CorrelationAnalysis {
             "strategy_score",
             results
                 .iter()
-                .map(|r| (r.strategy_score.duration))
+                .map(|r| r.strategy_score.duration)
                 .sum::<Duration>()
                 / results.len() as u32,
         ),
@@ -263,7 +263,7 @@ fn analyze_results(results: &[MetricResult]) -> CorrelationAnalysis {
             "strategy_application_count",
             results
                 .iter()
-                .map(|r| (r.strategy_application_count.duration))
+                .map(|r| r.strategy_application_count.duration)
                 .sum::<Duration>()
                 / results.len() as u32,
         ),
@@ -271,7 +271,7 @@ fn analyze_results(results: &[MetricResult]) -> CorrelationAnalysis {
             "strategy_deduction_count",
             results
                 .iter()
-                .map(|r| (r.strategy_deduction_count.duration))
+                .map(|r| r.strategy_deduction_count.duration)
                 .sum::<Duration>()
                 / results.len() as u32,
         ),
@@ -279,7 +279,7 @@ fn analyze_results(results: &[MetricResult]) -> CorrelationAnalysis {
             "strategy_average_options",
             results
                 .iter()
-                .map(|r| (r.strategy_average_options.duration))
+                .map(|r| r.strategy_average_options.duration)
                 .sum::<Duration>()
                 / results.len() as u32,
         ),
@@ -287,7 +287,7 @@ fn analyze_results(results: &[MetricResult]) -> CorrelationAnalysis {
             "sat_step_count",
             results
                 .iter()
-                .map(|r| (r.sat_step_count.duration))
+                .map(|r| r.sat_step_count.duration)
                 .sum::<Duration>()
                 / results.len() as u32,
         ),
@@ -295,7 +295,7 @@ fn analyze_results(results: &[MetricResult]) -> CorrelationAnalysis {
             "backtrack_count",
             results
                 .iter()
-                .map(|r| (r.backtrack_count.duration))
+                .map(|r| r.backtrack_count.duration)
                 .sum::<Duration>()
                 / results.len() as u32,
         ),
@@ -303,7 +303,7 @@ fn analyze_results(results: &[MetricResult]) -> CorrelationAnalysis {
             "grid_givens_count",
             results
                 .iter()
-                .map(|r| (r.grid_givens_count.duration))
+                .map(|r| r.grid_givens_count.duration)
                 .sum::<Duration>()
                 / results.len() as u32,
         ),
@@ -311,7 +311,7 @@ fn analyze_results(results: &[MetricResult]) -> CorrelationAnalysis {
             "grid_direct_candidates_count",
             results
                 .iter()
-                .map(|r| (r.grid_direct_candidates_count.duration))
+                .map(|r| r.grid_direct_candidates_count.duration)
                 .sum::<Duration>()
                 / results.len() as u32,
         ),

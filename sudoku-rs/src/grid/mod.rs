@@ -145,12 +145,12 @@ impl<Base: SudokuBase, T> Grid<Base, T> {
 
 /// internal ndarray views for cells
 impl<Base: SudokuBase, T> Grid<Base, T> {
-    pub(crate) fn cells_view(&self) -> ArrayView2<T> {
+    pub(crate) fn cells_view(&self) -> ArrayView2<'_, T> {
         self.cells.view()
     }
 
     #[allow(dead_code)]
-    pub(crate) fn cells_view_mut(&mut self) -> ArrayViewMut2<T> {
+    pub(crate) fn cells_view_mut(&mut self) -> ArrayViewMut2<'_, T> {
         self.cells.view_mut()
     }
 }

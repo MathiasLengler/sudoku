@@ -39,7 +39,7 @@ impl Strategy for HiddenSingles {
 
                 candidate_histogram
                     .into_iter_enumerate()
-                    .filter(|&(_coordinate, stats)| (stats.count == 1))
+                    .filter(|&(_coordinate, stats)| stats.count == 1)
                     .map(|(coordinate, stats)| {
                         // This candidate is unique in this group.
                         let pos = stats.last_pos.unwrap();

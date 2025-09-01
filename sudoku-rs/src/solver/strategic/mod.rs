@@ -159,13 +159,13 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> Solver<Ba
         }
     }
 
-    pub fn solve_path(&mut self) -> SolverPathIter<Base, GridMut> {
+    pub fn solve_path(&mut self) -> SolverPathIter<'_, Base, GridMut> {
         SolverPathIter {
             solver: self,
             is_solved: false,
         }
     }
-    pub fn solve_path_all(&mut self) -> SolverPathAllIter<Base, GridMut> {
+    pub fn solve_path_all(&mut self) -> SolverPathAllIter<'_, Base, GridMut> {
         SolverPathAllIter {
             solver: self,
             is_solved: false,
