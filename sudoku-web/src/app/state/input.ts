@@ -1,6 +1,8 @@
 import { atom } from "jotai";
 import { z } from "zod";
 import type { DynamicPosition } from "../../types";
+import { atomWithStorage } from "jotai/utils";
+import { getZodLocalStorage } from "./localStorageEffect";
 
 const baseInputSchema = z.object({
     // Sticky mode:
@@ -47,12 +49,16 @@ const inputSchema = z
     .discriminatedUnion("stickyMode", [normalModeInputSchema, stickyModeInputSchema])
     .and(baseInputSchema);
 
-export const inputState = atom<Input>({
-    stickyMode: false,
-    selectedPos: { column: 0, row: 0 },
-    candidateMode: false,
-    previouslySelectedValue: 1,
-});
+export const inputState = atomWithStorage<Input>(
+    "Input",
+    {
+        stickyMode: false,
+        selectedPos: { column: 0, row: 0 },
+        candidateMode: false,
+        previouslySelectedValue: 1,
+    },
+    getZodLocalStorage(inputSchema),
+);
 
 // Defined in normal mode
 export const selectedPosState = atom<DynamicPosition | undefined>((get) => {

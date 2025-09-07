@@ -20,7 +20,6 @@ import type { CellAction } from "../state/input";
 import { inputState } from "../state/input";
 import { gameCounterState, sudokuSideLengthState, sudokuState } from "../state/sudoku";
 import { remoteWasmSudokuState, workerState, type RemoteWasmSudoku } from "../state/worker";
-import { spawnWorker } from "../state/worker/spawn";
 import { useCancelableMutation } from "../useCancelableMutation";
 import { measure, withMeasure } from "../utils/measure";
 
