@@ -128,6 +128,8 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
         resolver: zodResolver(generateFormValuesSchema),
     });
 
+    const formValues = watch();
+
     const [base, minGivens, useSeed, multiShot, metric] = watch([
         "base",
         "minGivens",
@@ -161,7 +163,7 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
                 <TabPanel value={"generate-form" satisfies NewGameTabValue} sx={{ p: 0 }}>
                     <form
                         id="generate-form"
-                        onSubmit={handleSubmit(async (formValues) => {
+                        onSubmit={handleSubmit(async () => {
                             const {
                                 base,
                                 minGivens,
