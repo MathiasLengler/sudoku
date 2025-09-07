@@ -13,11 +13,13 @@ type BlockProps = {
     blockIndex: number;
 };
 
-const containsSelectedPosState = atomFamily<DynamicPosition, Atom<Promise<boolean>>>((blockPosition) =>
-    atom(async (get) => {
-        const selectedBlockPosition = await get(selectedBlockPositionState);
-        return !!selectedBlockPosition && isEqual(blockPosition, selectedBlockPosition);
-    }),
+const containsSelectedPosState = atomFamily<DynamicPosition, Atom<Promise<boolean>>>(
+    (blockPosition) =>
+        atom(async (get) => {
+            const selectedBlockPosition = await get(selectedBlockPositionState);
+            return !!selectedBlockPosition && isEqual(blockPosition, selectedBlockPosition);
+        }),
+    isEqual,
 );
 export function Block({ blockIndex, cells }: BlockProps) {
     const base = useAtomValue(sudokuBaseState);

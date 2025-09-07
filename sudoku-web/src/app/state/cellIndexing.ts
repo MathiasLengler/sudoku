@@ -4,6 +4,7 @@ import type { DynamicPosition, TransportCell } from "../../types";
 import { cellPositionToBlockPosition, positionToIndex } from "../utils/sudoku";
 import { selectedPosState } from "./input";
 import { sudokuBaseState, sudokuCellsState, sudokuSideLengthState } from "./sudoku";
+import { isEqual } from "lodash-es";
 
 export const cellAtIndexState = atomFamily<number, Atom<Promise<TransportCell>>>((cellIndex) =>
     atom(async (get) => {
@@ -15,11 +16,13 @@ export const cellAtIndexState = atomFamily<number, Atom<Promise<TransportCell>>>
         return selectedCells;
     }),
 );
-export const cellAtGridPositionState = atomFamily<DynamicPosition, Atom<Promise<TransportCell>>>((gridPosition) =>
-    atom(async (get) => {
-        const sideLength = await get(sudokuSideLengthState);
-        return get(cellAtIndexState(positionToIndex({ gridPosition, sideLength })));
-    }),
+export const cellAtGridPositionState = atomFamily<DynamicPosition, Atom<Promise<TransportCell>>>(
+    (gridPosition) =>
+        atom(async (get) => {
+            const sideLength = await get(sudokuSideLengthState);
+            return get(cellAtIndexState(positionToIndex({ gridPosition, sideLength })));
+        }),
+    isEqual,
 );
 
 export const selectedBlockPositionState = atom<Promise<DynamicPosition | undefined>>(async (get) => {
