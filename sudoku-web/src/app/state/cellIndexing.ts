@@ -5,6 +5,7 @@ import { cellPositionToBlockPosition, positionToIndex } from "../utils/sudoku";
 import { selectedPosState } from "./input";
 import { sudokuBaseState, sudokuCellsState, sudokuSideLengthState } from "./sudoku";
 import { isEqual } from "lodash-es";
+import { eagerAtom } from "jotai-eager";
 
 export const cellAtIndexState = atomFamily<number, Atom<Promise<TransportCell>>>((cellIndex) =>
     atom(async (get) => {
@@ -25,10 +26,10 @@ export const cellAtGridPositionState = atomFamily<DynamicPosition, Atom<Promise<
     isEqual,
 );
 
-export const selectedBlockPositionState = atom<Promise<DynamicPosition | undefined>>(async (get) => {
+export const selectedBlockPositionState = eagerAtom<DynamicPosition | undefined>((get) => {
     const selectedPos = get(selectedPosState);
+    const base = get(sudokuBaseState);
     if (selectedPos) {
-        const base = await get(sudokuBaseState);
         return cellPositionToBlockPosition(selectedPos, base);
     }
 });

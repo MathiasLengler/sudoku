@@ -4,6 +4,7 @@ import type { BaseEnum, TransportCell, TransportSudoku } from "../../types";
 import { hintState } from "./hint";
 import { remoteWasmSudokuState } from "./worker";
 import { atomWithDefault } from "jotai/utils";
+import { eagerAtom } from "jotai-eager";
 
 const valueSchema = z.number().int().positive().safe();
 
@@ -28,17 +29,13 @@ export const sudokuState = atomWithDefault<TransportSudoku | Promise<TransportSu
 
 export const gameCounterState = atom<number>(0);
 
-export const sudokuBaseState = atom<Promise<BaseEnum>>(async (get) => (await get(sudokuState)).base);
-export const sudokuSideLengthState = atom<Promise<number>>(async (get) => (await get(sudokuState)).sideLength);
-export const sudokuCellsState = atom<Promise<TransportCell[]>>(async (get) => (await get(sudokuState)).cells);
-export const sudokuBlocksIndexesState = atom<Promise<TransportSudoku["blocksIndexes"]>>(
-    async (get) => (await get(sudokuState)).blocksIndexes,
+export const sudokuBaseState = eagerAtom<BaseEnum>((get) => get(sudokuState).base);
+export const sudokuSideLengthState = eagerAtom<number>((get) => get(sudokuState).sideLength);
+export const sudokuCellsState = eagerAtom<TransportCell[]>((get) => get(sudokuState).cells);
+export const sudokuBlocksIndexesState = eagerAtom<TransportSudoku["blocksIndexes"]>(
+    (get) => get(sudokuState).blocksIndexes,
 );
-export const sudokuCanUndoState = atom<Promise<boolean>>(
-    async (get) => !!get(hintState) || (await get(sudokuState)).history.canUndo,
-);
-export const sudokuCanRedoState = atom<Promise<boolean>>(async (get) => (await get(sudokuState)).history.canRedo);
-export const sudokuIsSolvedState = atom<Promise<boolean>>(async (get) => (await get(sudokuState)).isSolved);
-export const sudokuSolutionState = atom<Promise<TransportSudoku["solution"]>>(
-    async (get) => (await get(sudokuState)).solution,
-);
+export const sudokuCanUndoState = eagerAtom<boolean>((get) => !!get(hintState) || get(sudokuState).history.canUndo);
+export const sudokuCanRedoState = eagerAtom<boolean>((get) => get(sudokuState).history.canRedo);
+export const sudokuIsSolvedState = eagerAtom<boolean>((get) => get(sudokuState).isSolved);
+export const sudokuSolutionState = eagerAtom<TransportSudoku["solution"]>((get) => get(sudokuState).solution);

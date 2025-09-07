@@ -7,16 +7,17 @@ import { inputState } from "../state/input";
 import { sudokuBaseState } from "../state/sudoku";
 import { indexToPosition } from "../utils/sudoku";
 import { Cell } from "./cell";
+import { eagerAtom } from "jotai-eager";
 
 type BlockProps = {
     cells: TransportCell[];
     blockIndex: number;
 };
 
-const containsSelectedPosState = atomFamily<DynamicPosition, Atom<Promise<boolean>>>(
+const containsSelectedPosState = atomFamily<DynamicPosition, Atom<Promise<boolean> | boolean>>(
     (blockPosition) =>
-        atom(async (get) => {
-            const selectedBlockPosition = await get(selectedBlockPositionState);
+        eagerAtom((get) => {
+            const selectedBlockPosition = get(selectedBlockPositionState);
             return !!selectedBlockPosition && isEqual(blockPosition, selectedBlockPosition);
         }),
     isEqual,
