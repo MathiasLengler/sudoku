@@ -1,9 +1,10 @@
+import { atom, type Atom } from "jotai";
+import { atomFamily, RESET } from "jotai/utils";
 import * as _ from "lodash-es";
-import { DefaultValue, atom, selector, selectorFamily } from "recoil";
 import type { IsEqual } from "type-fest";
 import { z } from "zod";
 import { WasmCellWorld } from "../../../../../sudoku-wasm/pkg";
-import { assert, type CreateSerializableParam } from "../../../typeUtils";
+import { assert } from "../../../typeUtils";
 import type {
     CellWorldDimensions,
     DynamicCell,
@@ -61,105 +62,60 @@ export const gameModeWorldSchema = z.object({
     selectedGridPosition: worldGridPositionSchema,
 });
 
-export const showWorldMapState = selector<boolean>({
-    key: "showWorldMap",
-    get: ({ get }) => {
-        const game = get(gameState);
-        return game.mode === "world" && game.view === "map";
-    },
+export const showWorldMapState = atom<boolean>((get) => {
+    const game = get(gameState);
+    return game.mode === "world" && game.view === "map";
 });
 
-export const requestedGridDimState = atom<WorldGridDim>({
-    key: "requestedGridDimState",
-    default: worldGridDimSchema.parse({ rowCount: 3, columnCount: 3 }),
+export const requestedGridDimState = atom<WorldGridDim>(worldGridDimSchema.parse({ rowCount: 3, columnCount: 3 }));
+
+export const requestedOverlapState = atom<number>(1);
+export const requestedSeedState = atom<bigint>(1n);
+
+export const remoteWasmCellWorldState = atom<Promise<RemoteWasmCellWorld>>(async (get) => {
+    const RemoteWasmCellWorldClass = await get(remoteWasmCellWorldClassState);
+    const requestedWorldBase = await get(sudokuBaseState);
+    const requestedGridDim = get(requestedGridDimState);
+    const requestedOverlap = get(requestedOverlapState);
+    const requestedSeed = get(requestedSeedState);
+
+    return fixupComlinkProxy(
+        await RemoteWasmCellWorldClass.generate(requestedWorldBase, requestedGridDim, requestedOverlap, requestedSeed),
+    );
 });
 
-export const requestedOverlapState = atom<number>({
-    key: "requestedOverlapState",
-    default: 1,
-});
-export const requestedSeedState = atom<bigint>({
-    key: "requestedSeedState",
-    default: 1n,
+export const emptyWasmCellWorldState = atom<Promise<WasmCellWorld>>(async (get) => {
+    await init(1);
+
+    const requestedWorldBase = await get(sudokuBaseState);
+    const requestedGridDim = get(requestedGridDimState);
+    const requestedOverlap = get(requestedOverlapState);
+
+    return WasmCellWorld.new(requestedWorldBase, requestedGridDim, requestedOverlap);
 });
 
-export const remoteWasmCellWorldState = selector<RemoteWasmCellWorld>({
-    key: "remoteWasmCellWorldState",
-    get: async ({ get }) => {
-        const RemoteWasmCellWorldClass = get(remoteWasmCellWorldClassState);
-        const requestedWorldBase = get(sudokuBaseState);
-        const requestedGridDim = get(requestedGridDimState);
-        const requestedOverlap = get(requestedOverlapState);
-        const requestedSeed = get(requestedSeedState);
+export const allWorldCellsInvalidateCounterState = atom<number>(0);
 
-        return fixupComlinkProxy(
-            await RemoteWasmCellWorldClass.generate(
-                requestedWorldBase,
-                requestedGridDim,
-                requestedOverlap,
-                requestedSeed,
-            ),
-        );
-    },
+export const allWorldCellsState = atom<Promise<DynamicCells>>(async (get) => {
+    get(allWorldCellsInvalidateCounterState);
+    const remoteWasmCellWorld = await get(remoteWasmCellWorldState);
+    return await remoteWasmCellWorld.allWorldCells();
 });
 
-export const emptyWasmCellWorldState = selector<WasmCellWorld>({
-    key: "emptyWasmCellWorldState",
-    get: async ({ get }) => {
-        await init(1);
+export const worldCellSizeState = atom<number>(100);
 
-        const requestedWorldBase = get(sudokuBaseState);
-        const requestedGridDim = get(requestedGridDimState);
-        const requestedOverlap = get(requestedOverlapState);
-
-        return WasmCellWorld.new(requestedWorldBase, requestedGridDim, requestedOverlap);
-    },
+export const cellWorldDimensionsState = atom<Promise<CellWorldDimensions>>(async (get) => {
+    const remoteWasmCellWorld = await get(remoteWasmCellWorldState);
+    return await remoteWasmCellWorld.dimensions();
 });
 
-export const allWorldCellsInvalidateCounterState = atom<number>({
-    key: "allWorldCellsInvalidateCounter",
-    default: 0,
-});
+export const gridDimState = atom<Promise<WorldGridDim>>(async (get) => (await get(cellWorldDimensionsState)).gridDim);
+export const cellDimState = atom<Promise<WorldCellDim>>(async (get) => (await get(cellWorldDimensionsState)).cellDim);
+export const overlapState = atom<Promise<number>>(async (get) => (await get(cellWorldDimensionsState)).overlap);
 
-export const allWorldCellsState = selector<DynamicCells>({
-    key: "AllWorldCells",
-    get: async ({ get }) => {
-        get(allWorldCellsInvalidateCounterState);
-        const remoteWasmCellWorld = get(remoteWasmCellWorldState);
-        return await remoteWasmCellWorld.allWorldCells();
-    },
-});
-
-export const worldCellSizeState = atom<number>({
-    key: "WorldCellSize",
-    default: 100,
-});
-
-export const cellWorldDimensionsState = selector<CellWorldDimensions>({
-    key: "CellWorldDimensions",
-    get: async ({ get }) => {
-        const remoteWasmCellWorld = get(remoteWasmCellWorldState);
-        return await remoteWasmCellWorld.dimensions();
-    },
-});
-
-export const gridDimState = selector<WorldGridDim>({
-    key: "gridDim",
-    get: ({ get }) => get(cellWorldDimensionsState).gridDim,
-});
-export const cellDimState = selector<WorldCellDim>({
-    key: "cellDim",
-    get: ({ get }) => get(cellWorldDimensionsState).cellDim,
-});
-export const overlapState = selector<number>({
-    key: "overlap",
-    get: ({ get }) => get(cellWorldDimensionsState).overlap,
-});
-
-export const gridStrideState = selector<number>({
-    key: "gridStride",
-    get: ({ get }) => get(sudokuSideLengthState) - get(overlapState),
-});
+export const gridStrideState = atom<Promise<number>>(
+    async (get) => (await get(sudokuSideLengthState)) - (await get(overlapState)),
+);
 
 export function assertGameModeWorld(gameMode: Game): GameModeWorld {
     if (gameMode.mode !== "world") {
@@ -168,50 +124,37 @@ export function assertGameModeWorld(gameMode: Game): GameModeWorld {
     return gameMode;
 }
 
-export const selectedGridPositionState = selector<WorldGridPosition>({
-    key: "selectedGridPositionState",
-    get: ({ get }) => {
+export const selectedGridPositionState = atom<WorldGridPosition, [WorldGridPosition | typeof RESET], void>(
+    (get) => {
         const gameModeWorld = assertGameModeWorld(get(gameState));
         return gameModeWorld.selectedGridPosition;
     },
-    set: ({ set }, newGridIndex) => {
-        set(gameState, (prevGameMode) => {
-            const gameModeWorld = assertGameModeWorld(prevGameMode);
+    (get, set, newGridIndex) => {
+        const gameModeWorld = assertGameModeWorld(get(gameState));
 
-            return {
-                ...gameModeWorld,
-                selectedGridPosition: newGridIndex instanceof DefaultValue ? DEFAULT_WORLD_GRID_POSITION : newGridIndex,
-            };
+        set(gameState, {
+            ...gameModeWorld,
+            selectedGridPosition: newGridIndex === RESET ? DEFAULT_WORLD_GRID_POSITION : newGridIndex,
         });
     },
-});
+);
 
-export const selectedGridRowIndexState = selector<number>({
-    key: "selectedGridRowIndex",
-    get: ({ get }) => get(selectedGridPositionState).row,
-});
-export const selectedGridColumnIndexState = selector<number>({
-    key: "selectedGridColumnIndex",
-    get: ({ get }) => get(selectedGridPositionState).column,
-});
-export const selectedGridBaseCellRowIndexState = selector<number>({
-    key: "selectedGridBaseCellRowIndex",
-    get: ({ get }) => get(selectedGridRowIndexState) * get(gridStrideState),
-});
-export const selectedGridBaseCellColumnIndexState = selector<number>({
-    key: "selectedGridBaseCellColumnIndex",
-    get: ({ get }) => get(selectedGridColumnIndexState) * get(gridStrideState),
-});
+export const selectedGridRowIndexState = atom<number>((get) => get(selectedGridPositionState).row);
+export const selectedGridColumnIndexState = atom<number>((get) => get(selectedGridPositionState).column);
+export const selectedGridBaseCellRowIndexState = atom<Promise<number>>(
+    async (get) => get(selectedGridRowIndexState) * (await get(gridStrideState)),
+);
+export const selectedGridBaseCellColumnIndexState = atom<Promise<number>>(
+    async (get) => get(selectedGridColumnIndexState) * (await get(gridStrideState)),
+);
 
-export const isCellInSelectedGridState = selectorFamily<boolean, CreateSerializableParam<DynamicPosition>>({
-    key: "isCellInSelectedGrid",
-    get:
-        (cellWorldPosition) =>
-        ({ get }) => {
+export const isCellInSelectedGridState = atomFamily<DynamicPosition, Atom<Promise<boolean>>>(
+    (cellWorldPosition) =>
+        atom(async (get) => {
             const { row: cellRowIndex, column: cellColumnIndex } = cellWorldPosition;
-            const gridSideLength = get(sudokuSideLengthState);
-            const selectedGridBaseCellRowIndex = get(selectedGridBaseCellRowIndexState);
-            const selectedGridBaseCellColumnIndex = get(selectedGridBaseCellColumnIndexState);
+            const gridSideLength = await get(sudokuSideLengthState);
+            const selectedGridBaseCellRowIndex = await get(selectedGridBaseCellRowIndexState);
+            const selectedGridBaseCellColumnIndex = await get(selectedGridBaseCellColumnIndexState);
 
             const isCellInSelectedGrid =
                 _.inRange(cellRowIndex, selectedGridBaseCellRowIndex, selectedGridBaseCellRowIndex + gridSideLength) &&
@@ -221,22 +164,17 @@ export const isCellInSelectedGridState = selectorFamily<boolean, CreateSerializa
                     selectedGridBaseCellColumnIndex + gridSideLength,
                 );
             return isCellInSelectedGrid;
-        },
-    cachePolicy_UNSTABLE: {
-        eviction: "most-recent",
-    },
-});
+        }),
+    _.isEqual,
+);
 
-export const worldCellState = selectorFamily<DynamicCell, WorldCellPosition>({
-    key: "worldCell",
-    get:
-        (cellWorldPosition) =>
-        ({ get }) => {
-            const cellDim = get(cellDimState);
+export const worldCellState = atomFamily<WorldCellPosition, Atom<Promise<DynamicCell>>>((cellWorldPosition) =>
+    atom(async (get) => {
+        const cellDim = await get(cellDimState);
 
-            validateCellWorldPosition({ cellWorldPosition, cellDim });
+        validateCellWorldPosition({ cellWorldPosition, cellDim });
 
-            const allWorldCells = get(allWorldCellsState);
-            return allWorldCells[cellWorldPosition.row * cellDim.columnCount + cellWorldPosition.column]!;
-        },
-});
+        const allWorldCells = await get(allWorldCellsState);
+        return allWorldCells[cellWorldPosition.row * cellDim.columnCount + cellWorldPosition.column]!;
+    }),
+);

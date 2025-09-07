@@ -66,12 +66,6 @@ export default tseslint.config(
                     ignoreStatic: true,
                 },
             ],
-            "react-hooks/exhaustive-deps": [
-                "warn",
-                {
-                    additionalHooks: "(useRecoilCallback|useRecoilTransaction_UNSTABLE)",
-                },
-            ],
             "react/no-unknown-property": [
                 "error",
                 {

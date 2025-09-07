@@ -3,7 +3,7 @@ import GestureIcon from "@mui/icons-material/Gesture";
 import UndoIcon from "@mui/icons-material/Undo";
 import { ToggleButton } from "@mui/material";
 import Tooltip from "@mui/material/Tooltip";
-import { useRecoilValue } from "recoil";
+import { useAtomValue } from "jotai";
 import { useToggleCandidateMode, useToggleStickyMode } from "../actions/inputActions";
 import { useUndo } from "../actions/sudokuActions";
 import MyIconButton from "../components/MyIconButton";
@@ -13,9 +13,9 @@ import { RequestHintButton } from "./RequestHintButton";
 import { ToolbarMenu } from "./toolbarMenu";
 
 export function Toolbar() {
-    const inputCandidateMode = useRecoilValue(inputCandidateModeState);
-    const inputStickyMode = useRecoilValue(inputStickyModeState);
-    const canUndo = useRecoilValue(sudokuCanUndoState);
+    const inputCandidateMode = useAtomValue(inputCandidateModeState);
+    const inputStickyMode = useAtomValue(inputStickyModeState);
+    const canUndo = useAtomValue(sudokuCanUndoState);
 
     const toggleCandidateMode = useToggleCandidateMode();
     const toggleStickyMode = useToggleStickyMode();

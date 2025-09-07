@@ -1,10 +1,10 @@
-import { z } from "zod";
+import { atomWithStorage } from "jotai/utils";
 import { range } from "lodash-es";
-import { baseToSideLength } from "../../utils/sudoku";
-import { atom } from "recoil";
-import { localStorageEffect } from "../localStorageEffect";
 import type { ZodBigInt } from "zod";
+import { z } from "zod";
 import { goalOptimizationSchema, gridMetricSchema, selectedStrategiesSchema } from "../../constants";
+import { baseToSideLength } from "../../utils/sudoku";
+import { getZodLocalStorage } from "../localStorageEffect";
 
 export const BASE_MIN = 2;
 export const BASE_MAX = 5;
@@ -86,8 +86,8 @@ export const GENERATE_FORM_DEFAULT_VALUES = {
     optimize: "maximize",
     parallel: true,
 } satisfies GenerateFormValues;
-export const generateFormValuesState = atom<GenerateFormValues>({
-    key: "GenerateFormValues",
-    default: GENERATE_FORM_DEFAULT_VALUES,
-    effects: [localStorageEffect(generateFormValuesSchema)],
-});
+export const generateFormValuesState = atomWithStorage<GenerateFormValues>(
+    "GenerateFormValues",
+    GENERATE_FORM_DEFAULT_VALUES,
+    getZodLocalStorage(generateFormValuesSchema),
+);

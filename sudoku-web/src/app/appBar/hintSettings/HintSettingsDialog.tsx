@@ -3,7 +3,7 @@ import SaveIcon from "@mui/icons-material/Save";
 import { Box, Button, DialogActions, DialogContent, DialogTitle } from "@mui/material";
 import { Stack } from "@mui/material";
 import { RadioButtonGroup, SliderElement, SwitchElement, useForm } from "react-hook-form-mui";
-import { useRecoilState } from "recoil";
+import { useAtom } from "jotai";
 import { Fieldset } from "../../components/Fieldset";
 import { ResetFormButton } from "../../components/ResetFormButton";
 import SelectStrategies from "../../components/formFragments/SelectStrategies";
@@ -22,7 +22,7 @@ type HintSettingsDialogProps = {
 };
 
 export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
-    const [hintSettingsFormValues, setHintSettingsFormValues] = useRecoilState(hintSettingsState);
+    const [hintSettingsFormValues, setHintSettingsFormValues] = useAtom(hintSettingsState);
 
     const {
         control,

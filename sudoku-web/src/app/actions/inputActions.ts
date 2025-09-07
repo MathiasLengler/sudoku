@@ -1,56 +1,56 @@
-import { type Snapshot, useRecoilCallback } from "recoil";
-import { type Input, inputState } from "../state/input";
-
-export async function getInput(snapshot: Snapshot) {
-    return await snapshot.getPromise(inputState);
-}
+import { useAtomCallback } from "jotai/utils";
+import { inputState } from "../state/input";
+import { useCallback } from "react";
 
 export function useToggleCandidateMode() {
-    return useRecoilCallback(
-        ({ set }) =>
-            () => {
-                set(inputState, (input) => ({ ...input, candidateMode: !input.candidateMode }));
+    return useAtomCallback(
+        useCallback(
+            (get, set) => () => {
+                const input = get(inputState);
+                set(inputState, { ...input, candidateMode: !input.candidateMode });
             },
-        [],
+            [],
+        ),
     );
 }
 
 export function useToggleStickyMode() {
-    return useRecoilCallback(
-        ({ set }) =>
-            () => {
-                set(inputState, (input): Input => {
-                    if (input.stickyMode) {
-                        return {
-                            stickyMode: false,
-                            candidateMode: input.candidateMode,
-                            selectedPos: input.previouslySelectedPos,
-                            previouslySelectedValue: input.selectedValue,
-                        };
-                    } else {
-                        return {
-                            stickyMode: true,
-                            candidateMode: input.candidateMode,
-                            selectedValue: input.previouslySelectedValue,
-                            previouslySelectedPos: input.selectedPos,
-                            stickyChain: undefined,
-                        };
-                    }
-                });
+    return useAtomCallback(
+        useCallback(
+            (get, set) => () => {
+                const input = get(inputState);
+                if (input.stickyMode) {
+                    set(inputState, {
+                        stickyMode: false,
+                        candidateMode: input.candidateMode,
+                        selectedPos: input.previouslySelectedPos,
+                        previouslySelectedValue: input.selectedValue,
+                    });
+                } else {
+                    set(inputState, {
+                        stickyMode: true,
+                        candidateMode: input.candidateMode,
+                        selectedValue: input.previouslySelectedValue,
+                        previouslySelectedPos: input.selectedPos,
+                        stickyChain: undefined,
+                    });
+                }
             },
-        [],
+            [],
+        ),
     );
 }
 
 export function useEndStickyChain() {
-    return useRecoilCallback(
-        ({ snapshot, set }) =>
-            async () => {
-                const input = await getInput(snapshot);
+    return useAtomCallback(
+        useCallback(
+            (get, set) => () => {
+                const input = get(inputState);
                 if (input.stickyMode && input.stickyChain) {
                     set(inputState, { ...input, stickyChain: undefined });
                 }
             },
-        [],
+            [],
+        ),
     );
 }

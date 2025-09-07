@@ -1,49 +1,31 @@
+import { atom, type Atom } from "jotai";
+import { atomFamily } from "jotai/utils";
 import type { DynamicPosition, TransportCell } from "../../types";
-import { selector, selectorFamily } from "recoil";
 import { cellPositionToBlockPosition, positionToIndex } from "../utils/sudoku";
-import { sudokuBaseState, sudokuCellsState, sudokuSideLengthState } from "./sudoku";
 import { selectedPosState } from "./input";
-import type { CreateSerializableParam } from "../../typeUtils";
+import { sudokuBaseState, sudokuCellsState, sudokuSideLengthState } from "./sudoku";
 
-export const cellAtIndexState = selectorFamily<TransportCell, number>({
-    key: "CellAtIndex",
-    get:
-        (cellIndex) =>
-        ({ get }) => {
-            const cells = get(sudokuCellsState);
-            const selectedCells = cells[cellIndex];
-            if (!selectedCells) {
-                throw new Error(`Failed to get cell at index ${cellIndex} in cells with length of ${cells.length}`);
-            }
-            return selectedCells;
-        },
-    cachePolicy_UNSTABLE: {
-        eviction: "most-recent",
-    },
-});
-export const cellAtGridPositionState = selectorFamily<TransportCell, CreateSerializableParam<DynamicPosition>>({
-    key: "CellAtGridPosition",
-    get:
-        (gridPosition) =>
-        ({ get }) => {
-            const sideLength = get(sudokuSideLengthState);
-            return get(cellAtIndexState(positionToIndex({ gridPosition, sideLength })));
-        },
-    cachePolicy_UNSTABLE: {
-        eviction: "most-recent",
-    },
-});
-
-export const selectedBlockPositionState = selector<DynamicPosition | undefined>({
-    key: "CellSelection.selectedBlockPosition",
-    get: ({ get }) => {
-        const selectedPos = get(selectedPosState);
-        if (selectedPos) {
-            const base = get(sudokuBaseState);
-            return cellPositionToBlockPosition(selectedPos, base);
+export const cellAtIndexState = atomFamily<number, Atom<Promise<TransportCell>>>((cellIndex) =>
+    atom(async (get) => {
+        const cells = await get(sudokuCellsState);
+        const selectedCells = cells[cellIndex];
+        if (!selectedCells) {
+            throw new Error(`Failed to get cell at index ${cellIndex} in cells with length of ${cells.length}`);
         }
-    },
-    cachePolicy_UNSTABLE: {
-        eviction: "most-recent",
-    },
+        return selectedCells;
+    }),
+);
+export const cellAtGridPositionState = atomFamily<DynamicPosition, Atom<Promise<TransportCell>>>((gridPosition) =>
+    atom(async (get) => {
+        const sideLength = await get(sudokuSideLengthState);
+        return get(cellAtIndexState(positionToIndex({ gridPosition, sideLength })));
+    }),
+);
+
+export const selectedBlockPositionState = atom<Promise<DynamicPosition | undefined>>(async (get) => {
+    const selectedPos = get(selectedPosState);
+    if (selectedPos) {
+        const base = await get(sudokuBaseState);
+        return cellPositionToBlockPosition(selectedPos, base);
+    }
 });

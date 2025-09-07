@@ -44,7 +44,12 @@ export default defineConfig(({ mode }) => ({
         format: "es",
     },
     plugins: [
-        react(),
+        react({
+            plugins: [
+                ["@swc-jotai/debug-label", {}],
+                ["@swc-jotai/react-refresh", {}],
+            ],
+        }),
         wasm(),
         optimizeLodashImports(),
         VitePWA({

@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { BaseEnum, TransportCell, TransportSudoku } from "../../types";
 import { hintState } from "./hint";
 import { remoteWasmSudokuState } from "./worker";
+import { atomWithDefault } from "jotai/utils";
 
 const valueSchema = z.number().int().positive().safe();
 
@@ -19,7 +20,8 @@ export const DynamicCellsSchema = z.array(DynamicCellSchema);
 //  could simplify the UI code.
 //  More relevant for CellWorld ("patches")
 
-export const sudokuState = atom<Promise<TransportSudoku>>(async (get) => {
+export const sudokuState = atomWithDefault<TransportSudoku | Promise<TransportSudoku>>(async (get) => {
+    console.info("sudokuState: fetching initial sudoku");
     const remoteWasmSudoku = await get(remoteWasmSudokuState);
     return await remoteWasmSudoku.getTransportSudoku();
 });
@@ -33,7 +35,7 @@ export const sudokuBlocksIndexesState = atom<Promise<TransportSudoku["blocksInde
     async (get) => (await get(sudokuState)).blocksIndexes,
 );
 export const sudokuCanUndoState = atom<Promise<boolean>>(
-    async (get) => !!(await get(hintState)) || (await get(sudokuState)).history.canUndo,
+    async (get) => !!get(hintState) || (await get(sudokuState)).history.canUndo,
 );
 export const sudokuCanRedoState = atom<Promise<boolean>>(async (get) => (await get(sudokuState)).history.canRedo);
 export const sudokuIsSolvedState = atom<Promise<boolean>>(async (get) => (await get(sudokuState)).isSolved);

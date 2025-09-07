@@ -1,15 +1,13 @@
-import { atom, selector } from "recoil";
-import type { WorkerApi } from "./bg/worker";
 import * as Comlink from "comlink";
-import { loadCells } from "../cellsPersistence";
-import { spawnWorker } from "./spawn";
-import { fixupComlinkProxy } from "./comlinkProxyWrapper";
+import { atom } from "jotai";
+import { atomWithDefault, atomWithRefresh } from "jotai/utils";
 import type { DynamicCells, WasmCellWorld, WasmSudoku } from "../../../types";
+import { loadCells } from "../cellsPersistence";
+import type { WorkerApi } from "./bg/worker";
+import { fixupComlinkProxy } from "./comlinkProxyWrapper";
+import { spawnWorker } from "./spawn";
 
-export const workerState = atom<Worker>({
-    key: "Worker",
-    default: spawnWorker(),
-});
+export const workerState = atomWithRefresh<Promise<Worker>>(async () => await spawnWorker());
 
 export type RemoteWorkerApi = Comlink.Remote<WorkerApi>;
 export type RemoteWasmSudoku = Comlink.Remote<WasmSudoku>;
@@ -17,25 +15,18 @@ export type RemoteWasmSudokuClass = Comlink.Remote<typeof WasmSudoku>;
 export type RemoteWasmCellWorld = Comlink.Remote<WasmCellWorld>;
 export type RemoteWasmCellWorldClass = Comlink.Remote<typeof WasmCellWorld>;
 
-export const remoteWorkerApiState = selector<RemoteWorkerApi>({
-    key: "RemoteWorkerApi",
-    get: async ({ get }) => {
-        const worker = get(workerState);
-        const remoteWorkerApi = Comlink.wrap<WorkerApi>(worker, {});
-        console.debug("Worker init");
-        await remoteWorkerApi.init();
-        console.debug("Worker initialized");
-        return remoteWorkerApi;
-    },
+export const remoteWorkerApiState = atom<Promise<RemoteWorkerApi>>(async (get) => {
+    const worker = await get(workerState);
+    const remoteWorkerApi = Comlink.wrap<WorkerApi>(worker, {});
+    console.debug("Worker init");
+    await remoteWorkerApi.init();
+    console.debug("Worker initialized");
+    return remoteWorkerApi;
 });
 
-export const isWorkerReadyState = selector<boolean>({
-    key: "isWorkerReadyState",
-    get: ({ get }) => {
-        // remoteWorkerApiState initializes worker before returning
-        const _remoteWorkerApi = get(remoteWorkerApiState);
-        return true;
-    },
+export const isWorkerReadyState = atom<Promise<boolean>>(async (get) => {
+    await get(remoteWorkerApiState);
+    return true;
 });
 
 export async function createRemoteWasmSudoku(
@@ -54,29 +45,17 @@ export async function createRemoteWasmSudoku(
     return await RemoteWasmSudoku.new();
 }
 
-export const remoteWasmSudokuClassState = selector<RemoteWasmSudokuClass>({
-    key: "remoteWasmSudokuClassState",
-    get: ({ get }) => {
-        const remoteWorkerApi = get(remoteWorkerApiState);
-        return fixupComlinkProxy(remoteWorkerApi.WasmSudoku);
-    },
+export const remoteWasmSudokuClassState = atom<Promise<RemoteWasmSudokuClass>>(async (get) => {
+    const remoteWorkerApi = await get(remoteWorkerApiState);
+    return fixupComlinkProxy(remoteWorkerApi.WasmSudoku);
 });
 
-export const remoteWasmSudokuState = atom<RemoteWasmSudoku>({
-    key: "remoteWasmSudokuState",
-    default: selector({
-        key: "default-remoteWasmSudokuState",
-        get: async ({ get }) => {
-            const RemoteWasmSudoku = get(remoteWasmSudokuClassState);
-            const cells = loadCells();
-            return fixupComlinkProxy(await createRemoteWasmSudoku(RemoteWasmSudoku, cells));
-        },
-    }),
+export const remoteWasmSudokuState = atomWithDefault<RemoteWasmSudoku | Promise<RemoteWasmSudoku>>(async (get) => {
+    const RemoteWasmSudoku = await get(remoteWasmSudokuClassState);
+    const cells = loadCells();
+    return fixupComlinkProxy(await createRemoteWasmSudoku(RemoteWasmSudoku, cells));
 });
-export const remoteWasmCellWorldClassState = selector<RemoteWasmCellWorldClass>({
-    key: "remoteWasmCellWorldClassState",
-    get: ({ get }) => {
-        const remoteWorkerApi = get(remoteWorkerApiState);
-        return fixupComlinkProxy(remoteWorkerApi.WasmCellWorld);
-    },
+export const remoteWasmCellWorldClassState = atom<Promise<RemoteWasmCellWorldClass>>(async (get) => {
+    const remoteWorkerApi = await get(remoteWorkerApiState);
+    return fixupComlinkProxy(remoteWorkerApi.WasmCellWorld);
 });

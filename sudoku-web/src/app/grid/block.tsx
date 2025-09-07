@@ -1,7 +1,7 @@
+import { atom, useAtomValue, type Atom } from "jotai";
+import { atomFamily } from "jotai/utils";
 import { isEqual } from "lodash-es";
-import { selectorFamily, useRecoilValue } from "recoil";
 import type { DynamicPosition, TransportCell } from "../../types";
-import type { CreateSerializableParam } from "../../typeUtils";
 import { selectedBlockPositionState } from "../state/cellIndexing";
 import { inputState } from "../state/input";
 import { sudokuBaseState } from "../state/sudoku";
@@ -13,25 +13,19 @@ type BlockProps = {
     blockIndex: number;
 };
 
-const containsSelectedPosState = selectorFamily<boolean, CreateSerializableParam<DynamicPosition>>({
-    key: "Block.containsSelectedPos",
-    get:
-        (blockPosition) =>
-        ({ get }) => {
-            const selectedBlockPosition = get(selectedBlockPositionState);
-            return !!selectedBlockPosition && isEqual(blockPosition, selectedBlockPosition);
-        },
-    cachePolicy_UNSTABLE: {
-        eviction: "most-recent",
-    },
-});
+const containsSelectedPosState = atomFamily<DynamicPosition, Atom<Promise<boolean>>>((blockPosition) =>
+    atom(async (get) => {
+        const selectedBlockPosition = await get(selectedBlockPositionState);
+        return !!selectedBlockPosition && isEqual(blockPosition, selectedBlockPosition);
+    }),
+);
 export function Block({ blockIndex, cells }: BlockProps) {
-    const base = useRecoilValue(sudokuBaseState);
-    const input = useRecoilValue(inputState);
+    const base = useAtomValue(sudokuBaseState);
+    const input = useAtomValue(inputState);
 
     const blockPosition = indexToPosition({ blockIndex, base });
 
-    const containsSelectedPos = useRecoilValue(containsSelectedPosState(blockPosition));
+    const containsSelectedPos = useAtomValue(containsSelectedPosState(blockPosition));
 
     return (
         <div className="block">

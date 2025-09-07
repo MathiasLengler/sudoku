@@ -1,9 +1,5 @@
-import { type Snapshot, atom } from "recoil";
+import { atomWithReset } from "jotai/utils";
 import type { StrategyEnum, TransportDeductions } from "../../types";
-
-export async function getHint(snapshot: Snapshot) {
-    return await snapshot.getPromise(hintState);
-}
 
 export type Hint = {
     strategy: StrategyEnum;
@@ -11,8 +7,4 @@ export type Hint = {
 
 export type OptionalHint = Hint | undefined;
 
-export const hintState = atom<OptionalHint>({
-    key: "Hint",
-    default: undefined,
-    effects: [],
-});
+export const hintState = atomWithReset<OptionalHint>(undefined);

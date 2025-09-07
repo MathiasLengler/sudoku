@@ -1,7 +1,6 @@
-import type { DynamicPosition } from "../../types";
-import { atom, selector } from "recoil";
-import { localStorageEffect } from "./localStorageEffect";
+import { atom } from "jotai";
 import { z } from "zod";
+import type { DynamicPosition } from "../../types";
 
 const baseInputSchema = z.object({
     // Sticky mode:
@@ -49,33 +48,21 @@ const inputSchema = z
     .and(baseInputSchema);
 
 export const inputState = atom<Input>({
-    key: "Input",
-    default: {
-        stickyMode: false,
-        selectedPos: { column: 0, row: 0 },
-        candidateMode: false,
-        previouslySelectedValue: 1,
-    },
-    effects: [localStorageEffect(inputSchema)],
+    stickyMode: false,
+    selectedPos: { column: 0, row: 0 },
+    candidateMode: false,
+    previouslySelectedValue: 1,
 });
 
 // Defined in normal mode
-export const selectedPosState = selector<DynamicPosition | undefined>({
-    key: "Input.selectedPos",
-    get: ({ get }) => {
-        const input = get(inputState);
-        if (!input.stickyMode) {
-            return input.selectedPos;
-        }
-    },
+export const selectedPosState = atom<DynamicPosition | undefined>((get) => {
+    const input = get(inputState);
+    if (!input.stickyMode) {
+        return input.selectedPos;
+    }
+    return undefined;
 });
 
-export const inputCandidateModeState = selector<Input["candidateMode"]>({
-    key: "Input.candidateMode",
-    get: ({ get }) => get(inputState).candidateMode,
-});
+export const inputCandidateModeState = atom<Input["candidateMode"]>((get) => get(inputState).candidateMode);
 
-export const inputStickyModeState = selector<Input["stickyMode"]>({
-    key: "Input.stickyMode",
-    get: ({ get }) => get(inputState).stickyMode,
-});
+export const inputStickyModeState = atom<Input["stickyMode"]>((get) => get(inputState).stickyMode);

@@ -2,7 +2,7 @@ import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { Suspense } from "react";
-import { useRecoilValue } from "recoil";
+import { useAtomValue } from "jotai";
 import { ThemeErrorBoundary } from "../components/ErrorFallback";
 import { FullScreenSpinner } from "../components/FullScreenSpinner";
 import { featureFlagsState } from "../state/featureFlags";
@@ -13,7 +13,7 @@ import { WorldSettingsButton } from "./world/WorldSettingsButton";
 import { Box } from "@mui/material";
 
 export default function SudokuAppBar() {
-    const { experimentWorld } = useRecoilValue(featureFlagsState);
+    const { experimentWorld } = useAtomValue(featureFlagsState);
 
     return (
         <Box sx={{ flexGrow: 1 }} className="app-bar">

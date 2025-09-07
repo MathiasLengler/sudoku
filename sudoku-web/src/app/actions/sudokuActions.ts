@@ -1,9 +1,9 @@
 import assertNever from "assert-never";
 import * as Comlink from "comlink";
+import type { Getter, Setter } from "jotai";
+import { useAtomCallback } from "jotai/utils";
 import * as _ from "lodash-es";
 import { useCallback, useState } from "react";
-import type { CallbackInterface, Snapshot } from "recoil";
-import { useRecoilCallback } from "recoil";
 import type {
     DynamicGeneratorSettings,
     DynamicMultiShotGeneratorSettings,
@@ -15,7 +15,7 @@ import type {
     TransportDeductions,
 } from "../../types";
 import { cellAtGridPositionState } from "../state/cellIndexing";
-import { getHint, hintState } from "../state/hint";
+import { hintState } from "../state/hint";
 import type { CellAction } from "../state/input";
 import { inputState } from "../state/input";
 import { gameCounterState, sudokuSideLengthState, sudokuState } from "../state/sudoku";
@@ -23,19 +23,10 @@ import { remoteWasmSudokuState, workerState, type RemoteWasmSudoku } from "../st
 import { spawnWorker } from "../state/worker/spawn";
 import { useCancelableMutation } from "../useCancelableMutation";
 import { measure, withMeasure } from "../utils/measure";
-import { getInput } from "./inputActions";
-
-// Snapshot accessors
-async function getRemoteWasmSudoku(snapshot: Snapshot): Promise<RemoteWasmSudoku> {
-    return await snapshot.getPromise(remoteWasmSudokuState);
-}
 
 // Validation
-async function isFixedValueCell({
-    snapshot,
-    gridPosition,
-}: Pick<CallbackInterface, "snapshot"> & { gridPosition: DynamicPosition }) {
-    const cell = await snapshot.getPromise(cellAtGridPositionState(gridPosition));
+async function isFixedValueCell({ get, gridPosition }: { get: Getter; gridPosition: DynamicPosition }) {
+    const cell = await get(cellAtGridPositionState(gridPosition));
 
     if (cell.kind === "value" && cell.fixed) {
         console.info("Can't modify fixed cell", cell);
@@ -46,8 +37,8 @@ async function isFixedValueCell({
     }
 }
 
-async function isInvalidValue({ snapshot, value }: Pick<CallbackInterface, "snapshot"> & { value: number }) {
-    const sideLength = await snapshot.getPromise(sudokuSideLengthState);
+async function isInvalidValue({ get, value }: { get: Getter; value: number }) {
+    const sideLength = await get(sudokuSideLengthState);
 
     if (!_.inRange(value, 0, sideLength + 1)) {
         console.warn(`Skip handling of value ${value} outside range [0, ${sideLength}]`);
@@ -57,11 +48,8 @@ async function isInvalidValue({ snapshot, value }: Pick<CallbackInterface, "snap
     }
 }
 
-async function isInvalidGridPosition({
-    snapshot,
-    gridPosition,
-}: Pick<CallbackInterface, "snapshot"> & { gridPosition: DynamicPosition }) {
-    const sideLength = await snapshot.getPromise(sudokuSideLengthState);
+async function isInvalidGridPosition({ get, gridPosition }: { get: Getter; gridPosition: DynamicPosition }) {
+    const sideLength = await get(sudokuSideLengthState);
 
     if (!_.inRange(gridPosition.row, 0, sideLength) || !_.inRange(gridPosition.column, 0, sideLength)) {
         console.warn(
@@ -77,7 +65,7 @@ async function isInvalidGridPosition({
 
 // Mutation helpers
 export async function updateSudoku(
-    { set, wasmSudokuProxy }: Pick<CallbackInterface, "set"> & { wasmSudokuProxy: RemoteWasmSudoku },
+    { set, wasmSudokuProxy }: { set: Setter; wasmSudokuProxy: RemoteWasmSudoku },
     isNewGame = false,
 ) {
     const newSudoku = await wasmSudokuProxy.getTransportSudoku();
@@ -89,19 +77,21 @@ export async function updateSudoku(
 }
 
 async function applyValueAtGridPosition({
-    snapshot,
+    get,
     set,
     value,
     gridPosition,
-}: Pick<CallbackInterface, "snapshot" | "set"> & {
+}: {
+    get: Getter;
+    set: Setter;
     value: number;
     gridPosition: DynamicPosition;
 }) {
-    if (await isFixedValueCell({ snapshot, gridPosition })) {
+    if (await isFixedValueCell({ get, gridPosition })) {
         return;
     }
-    const wasmSudokuProxy = await getRemoteWasmSudoku(snapshot);
-    const input = await getInput(snapshot);
+    const wasmSudokuProxy = await get(remoteWasmSudokuState);
+    const input = get(inputState);
 
     if (input.stickyMode) {
         // Behaviour of stickyMode ("value first, cell second"):
@@ -118,7 +108,7 @@ async function applyValueAtGridPosition({
         //    delete value => delete value if matching
         let cellAction: CellAction;
         if (!input.stickyChain) {
-            const cell = await snapshot.getPromise(cellAtGridPositionState(gridPosition));
+            const cell = await get(cellAtGridPositionState(gridPosition));
             if (input.candidateMode) {
                 if (cell.kind === "value") {
                     return; // Wait for first candidates cell interaction.
@@ -181,7 +171,7 @@ async function applyValueAtGridPosition({
             if (cellAction === "set") {
                 await wasmSudokuProxy.setValue(gridPosition, value);
             } else if (cellAction === "delete") {
-                const cell = await snapshot.getPromise(cellAtGridPositionState(gridPosition));
+                const cell = await get(cellAtGridPositionState(gridPosition));
                 // Only delete cell value if it matches the handled value
                 if (cell.kind === "value" && cell.value === value) {
                     await wasmSudokuProxy.delete(gridPosition);
@@ -235,128 +225,117 @@ async function applyValueAtGridPosition({
 
 // Public action hooks
 export function useHandlePosition() {
-    return useRecoilCallback(
-        ({ snapshot, set }) =>
-            async (gridPosition: DynamicPosition) => {
-                if (await isInvalidGridPosition({ snapshot, gridPosition })) {
-                    return;
-                }
-                const input = await getInput(snapshot);
-                if (input.stickyMode) {
-                    await applyValueAtGridPosition({ set, snapshot, gridPosition, value: input.selectedValue });
-                } else {
-                    set(inputState, (input) => ({ ...input, selectedPos: gridPosition }));
-                }
-            },
-        [],
+    return useAtomCallback(
+        useCallback(async (get, set, gridPosition: DynamicPosition) => {
+            if (await isInvalidGridPosition({ get, gridPosition })) {
+                return;
+            }
+            const input = get(inputState);
+            if (input.stickyMode) {
+                await applyValueAtGridPosition({ set, get, gridPosition, value: input.selectedValue });
+            } else {
+                set(inputState, (input) => ({ ...input, selectedPos: gridPosition }));
+            }
+        }, []),
     );
 }
 
 export function useHandleValue() {
-    return useRecoilCallback(
-        ({ snapshot, set }) =>
-            async (value: number) => {
-                if (await isInvalidValue({ snapshot, value })) {
-                    return;
-                }
+    return useAtomCallback(
+        useCallback(async (get, set, value: number) => {
+            if (await isInvalidValue({ get, value })) {
+                return;
+            }
 
-                const input = await getInput(snapshot);
-                if (input.stickyMode) {
-                    set(inputState, (input) => ({ ...input, selectedValue: value }));
-                } else {
-                    await applyValueAtGridPosition({ set, snapshot, gridPosition: input.selectedPos, value });
-                }
-            },
-        [],
+            const input = get(inputState);
+            if (input.stickyMode) {
+                set(inputState, (input) => ({ ...input, selectedValue: value }));
+            } else {
+                await applyValueAtGridPosition({ set, get, gridPosition: input.selectedPos, value });
+            }
+        }, []),
     );
 }
 export function useDeleteSelectedCell() {
-    return useRecoilCallback(
-        ({ snapshot, set }) =>
-            async () => {
-                const input = await getInput(snapshot);
-                if (input.stickyMode) {
-                    console.warn("Deletion of cells is unavailable in sticky mode");
-                } else {
-                    await applyValueAtGridPosition({
-                        set,
-                        snapshot,
-                        gridPosition: input.selectedPos,
-                        value: 0,
-                    });
-                }
-            },
-        [],
+    return useAtomCallback(
+        useCallback(async (get, set) => {
+            const input = get(inputState);
+            if (input.stickyMode) {
+                console.warn("Deletion of cells is unavailable in sticky mode");
+            } else {
+                await applyValueAtGridPosition({
+                    set,
+                    get,
+                    gridPosition: input.selectedPos,
+                    value: 0,
+                });
+            }
+        }, []),
     );
 }
 
 export function useSetAllDirectCandidates() {
-    return useRecoilCallback(
-        ({ snapshot, set }) =>
-            async () => {
-                const wasmSudokuProxy = await getRemoteWasmSudoku(snapshot);
-                await wasmSudokuProxy.setAllDirectCandidates();
-                await updateSudoku({ set, wasmSudokuProxy });
-            },
-        [],
+    return useAtomCallback(
+        useCallback(async (get, set) => {
+            const wasmSudokuProxy = await get(remoteWasmSudokuState);
+            await wasmSudokuProxy.setAllDirectCandidates();
+            await updateSudoku({ set, wasmSudokuProxy });
+        }, []),
     );
 }
 export function useUndo() {
-    return useRecoilCallback(
-        ({ snapshot, set }) =>
-            async () => {
-                // Hide hint if it's visible.
-                // This is somewhat of a hack:
-                // the sudoku history state lives inside Rust, but not the hint.
-                // As a result, hiding of the hint is not re-doable.
-                const hint = await getHint(snapshot);
-                if (hint) {
-                    set(hintState, undefined);
-                    return;
-                }
+    return useAtomCallback(
+        useCallback(async (get, set) => {
+            // Hide hint if it's visible.
+            // This is somewhat of a hack:
+            // the sudoku history state lives inside Rust, but not the hint.
+            // As a result, hiding of the hint is not re-doable.
+            const hint = get(hintState);
+            if (hint) {
+                set(hintState, undefined);
+                return;
+            }
 
-                const wasmSudokuProxy = await getRemoteWasmSudoku(snapshot);
-                await wasmSudokuProxy.undo();
-                await updateSudoku({ set, wasmSudokuProxy });
-            },
-        [],
+            const wasmSudokuProxy = await get(remoteWasmSudokuState);
+            await wasmSudokuProxy.undo();
+            await updateSudoku({ set, wasmSudokuProxy });
+        }, []),
     );
 }
 export function useRedo() {
-    return useRecoilCallback(
-        ({ snapshot, set }) =>
-            async () => {
-                const wasmSudokuProxy = await getRemoteWasmSudoku(snapshot);
-                await wasmSudokuProxy.redo();
-                await updateSudoku({ set, wasmSudokuProxy });
-            },
-        [],
+    return useAtomCallback(
+        useCallback(async (get, set) => {
+            const wasmSudokuProxy = await get(remoteWasmSudokuState);
+            await wasmSudokuProxy.redo();
+            await updateSudoku({ set, wasmSudokuProxy });
+        }, []),
     );
 }
 
-const rebootWorker = withMeasure(
-    { name: "rebootWorker" },
-    async ({ snapshot, set }: Pick<CallbackInterface, "snapshot" | "set">) => {
-        console.info("Rebooting worker");
-        const currentWorker = await snapshot.getPromise(workerState);
-        console.debug("Terminating current worker");
-        currentWorker.terminate();
-        const newWorker = await spawnWorker();
-        set(workerState, newWorker);
-        console.info("Worker rebooted");
-    },
-);
+const rebootWorker = withMeasure({ name: "rebootWorker" }, async ({ get, set }: { get: Getter; set: Setter }) => {
+    console.info("Rebooting worker");
+    const currentWorker = await get(workerState);
+    console.debug("Terminating current worker");
+    currentWorker.terminate();
+    // Refresh the atom, spawning a new worker
+    set(workerState);
+    // Wait for the new worker to be ready
+    await get(workerState);
+    console.info("Worker rebooted");
+});
 
 export function useGenerate() {
-    const generate = useRecoilCallback(
-        ({ snapshot, set }) =>
+    const generate = useAtomCallback(
+        useCallback(
             async (
+                get,
+                set,
                 settings: DynamicGeneratorSettings,
                 abortPromise: Promise<never>,
                 onProgress: (progress: GeneratorProgress) => void,
             ) => {
                 return await measure({ name: "generate", detail: { settings } }, async () => {
-                    const wasmSudokuProxy = await getRemoteWasmSudoku(snapshot);
+                    const wasmSudokuProxy = await get(remoteWasmSudokuState);
 
                     try {
                         await Promise.race([
@@ -369,7 +348,7 @@ export function useGenerate() {
                         }
                         console.info("generate was aborted.");
 
-                        await rebootWorker({ snapshot, set });
+                        await rebootWorker({ get, set });
 
                         throw err;
                     }
@@ -377,7 +356,8 @@ export function useGenerate() {
                     await updateSudoku({ set, wasmSudokuProxy }, true);
                 });
             },
-        [],
+            [],
+        ),
     );
 
     const [generateProgress, setGenerateProgress] = useState<GeneratorProgress>();
@@ -409,15 +389,17 @@ export type TrackedMultiShotGeneratorProgress = {
 };
 
 export function useGenerateMultiShot() {
-    const generateImpl = useRecoilCallback(
-        ({ snapshot, set }) =>
+    const generateImpl = useAtomCallback(
+        useCallback(
             async (
+                get,
+                set,
                 settings: DynamicMultiShotGeneratorSettings,
                 abortPromise: Promise<never>,
                 onProgress: (progress: MultiShotGeneratorProgress) => void,
             ) => {
                 return await measure({ name: "generateMultiShot", detail: { settings } }, async () => {
-                    const wasmSudokuProxy = await getRemoteWasmSudoku(snapshot);
+                    const wasmSudokuProxy = await get(remoteWasmSudokuState);
 
                     try {
                         await Promise.race([
@@ -430,7 +412,7 @@ export function useGenerateMultiShot() {
                         }
                         console.info("generateMultiShot was aborted.");
 
-                        await rebootWorker({ snapshot, set });
+                        await rebootWorker({ get, set });
 
                         throw err;
                     }
@@ -438,7 +420,8 @@ export function useGenerateMultiShot() {
                     await updateSudoku({ set, wasmSudokuProxy }, true);
                 });
             },
-        [],
+            [],
+        ),
     );
 
     const [trackedMultiShotGeneratorProgress, setTrackedMultiShotGeneratorProgress] =
@@ -488,51 +471,43 @@ export function useGenerateMultiShot() {
 }
 
 export function useImportSudokuString() {
-    return useRecoilCallback(
-        ({ snapshot, set }) =>
-            async (input: string, setAllDirectCandidates: boolean) => {
-                const wasmSudokuProxy = await getRemoteWasmSudoku(snapshot);
-                await wasmSudokuProxy.import(input);
-                if (setAllDirectCandidates) {
-                    await wasmSudokuProxy.setAllDirectCandidates();
-                }
-                await updateSudoku({ set, wasmSudokuProxy }, true);
-            },
-        [],
+    return useAtomCallback(
+        useCallback(async (get, set, input: string, setAllDirectCandidates: boolean) => {
+            const wasmSudokuProxy = await get(remoteWasmSudokuState);
+            await wasmSudokuProxy.import(input);
+            if (setAllDirectCandidates) {
+                await wasmSudokuProxy.setAllDirectCandidates();
+            }
+            await updateSudoku({ set, wasmSudokuProxy }, true);
+        }, []),
     );
 }
 export function useExportSudokuString() {
-    return useRecoilCallback(
-        ({ snapshot }) =>
-            async (format: GridFormatEnum) => {
-                const wasmSudokuProxy = await getRemoteWasmSudoku(snapshot);
-                return await wasmSudokuProxy.export(format);
-            },
-        [],
+    return useAtomCallback(
+        useCallback(async (get, _set, format: GridFormatEnum) => {
+            const wasmSudokuProxy = await get(remoteWasmSudokuState);
+            return await wasmSudokuProxy.export(format);
+        }, []),
     );
 }
 
 export function useTryStrategies() {
-    return useRecoilCallback(
-        ({ snapshot, set }) =>
-            async (strategies: StrategyEnums) => {
-                const wasmSudokuProxy = await getRemoteWasmSudoku(snapshot);
-                const res = await wasmSudokuProxy.tryStrategies(strategies);
-                await updateSudoku({ set, wasmSudokuProxy });
-                return res;
-            },
-        [],
+    return useAtomCallback(
+        useCallback(async (get, set, strategies: StrategyEnums) => {
+            const wasmSudokuProxy = await get(remoteWasmSudokuState);
+            const res = await wasmSudokuProxy.tryStrategies(strategies);
+            await updateSudoku({ set, wasmSudokuProxy });
+            return res;
+        }, []),
     );
 }
 
 export function useApplyDeductions() {
-    return useRecoilCallback(
-        ({ snapshot, set }) =>
-            async (deductions: TransportDeductions) => {
-                const wasmSudokuProxy = await getRemoteWasmSudoku(snapshot);
-                await wasmSudokuProxy.applyDeductions(deductions);
-                await updateSudoku({ set, wasmSudokuProxy });
-            },
-        [],
+    return useAtomCallback(
+        useCallback(async (get, set, deductions: TransportDeductions) => {
+            const wasmSudokuProxy = await get(remoteWasmSudokuState);
+            await wasmSudokuProxy.applyDeductions(deductions);
+            await updateSudoku({ set, wasmSudokuProxy });
+        }, []),
     );
 }

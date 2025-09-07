@@ -1,6 +1,6 @@
 import LanguageIcon from "@mui/icons-material/Language";
 import assertNever from "assert-never";
-import { useRecoilState } from "recoil";
+import { useAtom } from "jotai";
 import MyIconButton from "../../components/MyIconButton";
 import { MyMenu } from "../../components/MyMenu";
 import { gameState } from "../../state/gameMode";
@@ -17,8 +17,8 @@ const gridDims = z.array(worldGridDimSchema).parse([
 ]);
 
 export function WorldSettingsButton() {
-    const [game, setGame] = useRecoilState(gameState);
-    const [requestedGridDim, setRequestedGridDim] = useRecoilState(requestedGridDimState);
+    const [game, setGame] = useAtom(gameState);
+    const [requestedGridDim, setRequestedGridDim] = useAtom(requestedGridDimState);
 
     const playSelectedGrid = usePlaySelectedGrid();
     const showWorldMap = useShowWorldMap();
