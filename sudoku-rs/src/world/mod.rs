@@ -20,7 +20,7 @@ use crate::generator::{
 use crate::grid::dynamic::DynamicGrid;
 use crate::grid::Grid;
 use crate::position::Position;
-use crate::rng::{new_crate_rng_from_rng, new_crate_rng_with_seed};
+use crate::rng::{new_crate_rng_with_seed, CrateRng};
 use crate::solver::backtracking;
 use crate::solver::backtracking::candidates_filter::DeniedCandidatesGrid;
 use crate::world::RelativeDir::TopRight;
@@ -107,7 +107,7 @@ impl<Base: SudokuBase> DynamicCellWorldActions for CellWorld<Base> {
 
         solver_stack.push(
             backtracking::Solver::builder(self.to_grid_at(WorldPosition::default())?)
-                .rng(new_crate_rng_from_rng(&mut rng))
+                .rng(CrateRng::from_rng(&mut rng))
                 .candidates_filter(Grid::new())
                 .build(),
         );
@@ -137,7 +137,7 @@ impl<Base: SudokuBase> DynamicCellWorldActions for CellWorld<Base> {
                     let next_grid = self.to_grid_at_validated(next_grid_position);
                     solver_stack.push(
                         backtracking::Solver::builder(next_grid)
-                            .rng(new_crate_rng_from_rng(&mut rng))
+                            .rng(CrateRng::from_rng(&mut rng))
                             .candidates_filter(denylist)
                             .build(),
                     );
@@ -219,7 +219,7 @@ impl<Base: SudokuBase> DynamicCellWorldActions for CellWorld<Base> {
                     ..Default::default()
                 }),
                 solution: Some(SolutionSettings { values_grid: grid }),
-                seed: Some(rng.gen()),
+                seed: Some(rng.random()),
             })
             .generate()?;
 
@@ -376,14 +376,14 @@ impl<Base: SudokuBase> CellWorld<Base> {
         WorldCellDim::new(self.cells.nrows(), self.cells.ncols()).unwrap()
     }
 
-    fn grid_cells(&self, grid_position: ValidatedWorldGridPosition) -> ArrayView2<Cell<Base>> {
+    fn grid_cells(&self, grid_position: ValidatedWorldGridPosition) -> ArrayView2<'_, Cell<Base>> {
         self.cells
             .slice(Self::grid_cells_slice_info(grid_position, self.overlap))
     }
     fn grid_cells_mut(
         &mut self,
         grid_position: ValidatedWorldGridPosition,
-    ) -> ArrayViewMut2<Cell<Base>> {
+    ) -> ArrayViewMut2<'_, Cell<Base>> {
         self.cells
             .slice_mut(Self::grid_cells_slice_info(grid_position, self.overlap))
     }

@@ -1,6 +1,8 @@
 import { optimizeLodashImports } from "@optimize-lodash/rollup-plugin";
 import { minimal2023Preset } from "@vite-pwa/assets-generator/config";
-import react from "@vitejs/plugin-react-swc";
+import react from "@vitejs/plugin-react";
+import jotaiDebugLabel from "jotai/babel/plugin-debug-label";
+import jotaiReactRefresh from "jotai/babel/plugin-react-refresh";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 import wasm from "vite-plugin-wasm";
@@ -44,7 +46,7 @@ export default defineConfig(({ mode }) => ({
         format: "es",
     },
     plugins: [
-        react(),
+        react({ babel: { plugins: [jotaiDebugLabel, jotaiReactRefresh] } }),
         wasm(),
         optimizeLodashImports(),
         VitePWA({
@@ -52,6 +54,7 @@ export default defineConfig(({ mode }) => ({
             registerType: "autoUpdate",
             devOptions: {
                 enabled: true,
+                navigateFallbackAllowlist: [/^\/$/],
             },
             filename: "service-worker.js",
             manifestFilename: "manifest.json",
@@ -65,8 +68,9 @@ export default defineConfig(({ mode }) => ({
             },
             workbox: {
                 globPatterns: ["**/*.{js,wasm,css,html,png,svg,ico,woff2}"],
-                // We don't have a SPA router, so serve 404s as-is.
-                navigateFallback: null,
+                // We currently don't have a SPA router
+                navigateFallbackAllowlist: [/^\/$/],
+                maximumFileSizeToCacheInBytes: 20 * 1024 * 1024, // 20 MiB
             },
             pwaAssets: {
                 preset: {

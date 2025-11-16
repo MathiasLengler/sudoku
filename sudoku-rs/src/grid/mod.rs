@@ -145,12 +145,12 @@ impl<Base: SudokuBase, T> Grid<Base, T> {
 
 /// internal ndarray views for cells
 impl<Base: SudokuBase, T> Grid<Base, T> {
-    pub(crate) fn cells_view(&self) -> ArrayView2<T> {
+    pub(crate) fn cells_view(&self) -> ArrayView2<'_, T> {
         self.cells.view()
     }
 
     #[allow(dead_code)]
-    pub(crate) fn cells_view_mut(&mut self) -> ArrayViewMut2<T> {
+    pub(crate) fn cells_view_mut(&mut self) -> ArrayViewMut2<'_, T> {
         self.cells.view_mut()
     }
 }
@@ -454,6 +454,13 @@ impl<Base: SudokuBase, T> Grid<Base, T> {
         // Check for safety invariants in debug builds.
         grid.debug_assert();
         Ok(grid)
+    }
+
+    pub fn filled_with(value: T) -> Self
+    where
+        T: Clone,
+    {
+        Self::with(vec![value; Base::CELL_COUNT.into()]).unwrap()
     }
 
     pub fn into_cells(self) -> Vec<T> {

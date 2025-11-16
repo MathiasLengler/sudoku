@@ -159,13 +159,13 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>> Solver<Ba
         }
     }
 
-    pub fn solve_path(&mut self) -> SolverPathIter<Base, GridMut> {
+    pub fn solve_path(&mut self) -> SolverPathIter<'_, Base, GridMut> {
         SolverPathIter {
             solver: self,
             is_solved: false,
         }
     }
-    pub fn solve_path_all(&mut self) -> SolverPathAllIter<Base, GridMut> {
+    pub fn solve_path_all(&mut self) -> SolverPathAllIter<'_, Base, GridMut> {
         SolverPathAllIter {
             solver: self,
             is_solved: false,
@@ -316,10 +316,10 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>>
 {
     /// The average number of strategies available to make progress. Scaled by a factor of `1_000`.
     pub fn average_options(mut self) -> Result<Option<StrategyScore>> {
-        const SCALE: u32 = 1_000;
+        const SCALE: StrategyScore = 1_000;
 
         let (step_count, total_options) =
-            self.try_fold::<_, _, Result<_>>((0u32, 0u32), |(acc_count, acc_options), res| {
+            self.try_fold::<_, _, Result<_>>((0u64, 0u64), |(acc_count, acc_options), res| {
                 let possible_solve_steps = res?;
                 Ok((
                     acc_count + 1,
@@ -372,8 +372,8 @@ mod tests {
 
     tests_solver_samples! {
         |grid| {
-            let solver = Solver::new(grid.clone());
-            assert_fallible_solver_single_solution(solver, &grid);
+            let mut solver = Solver::new(grid.clone());
+            assert_fallible_solver_single_solution(&mut solver, &grid);
         }
     }
 
@@ -398,11 +398,11 @@ mod tests {
         assert!(grid.is_minimal());
 
         // Solver can solve the input grid
-        let solver = Solver::new_with_strategies(
+        let mut solver = Solver::new_with_strategies(
             grid.clone(),
             StrategyEnum::default_solver_strategies_no_brute_force(),
         );
-        assert_fallible_solver_single_solution(solver, &grid);
+        assert_fallible_solver_single_solution(&mut solver, &grid);
 
         // Delete top left value 1 => grid is ambiguous
         let ambiguous_grid = {
@@ -421,14 +421,14 @@ mod tests {
         assert!(solver.try_solve().unwrap().is_none());
 
         // But solver with filter for top left cell can solve it.
-        let solver = Solver::builder(ambiguous_grid.clone())
+        let mut solver = Solver::builder(ambiguous_grid.clone())
             .strategies(StrategyEnum::default_solver_strategies_no_brute_force())
             .candidates_filter(&ForceCandidateAtPosition {
                 pos: Position::top_left(),
                 candidate: Value::default(),
             })
             .build();
-        assert_fallible_solver_single_solution(solver, &grid);
+        assert_fallible_solver_single_solution(&mut solver, &grid);
     }
 
     #[test]

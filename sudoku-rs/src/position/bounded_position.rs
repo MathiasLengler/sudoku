@@ -48,39 +48,21 @@ impl<Base: SudokuBase> Position<Base> {
         this
     }
 
-    pub fn with_block_and_row_major_index(
-        (block, row_major_index): (Coordinate<Base>, Coordinate<Base>),
-    ) -> Self {
-        let block_top_left = Base::block_to_top_left_pos(block);
-        let (block_top_left_row, block_top_left_column) = block_top_left.to_row_and_column();
-        let (block_row, block_column) = row_major_index.to_block_row_and_column();
-        (
-            // Safety: the top-left cell in a block has a `Base::BASE - 1` cells to the right of it
-            unsafe { Coordinate::new_unchecked(block_top_left_row.get() + block_row.get()) },
-            // Safety: the top-left cell in a block has a `Base::BASE - 1` cells to the bottom of it
-            unsafe { Coordinate::new_unchecked(block_top_left_column.get() + block_column.get()) },
-        )
-            .into()
-    }
-
-    pub fn with_block_and_column_major_index(
-        (block, column_major_index): (Coordinate<Base>, Coordinate<Base>),
-    ) -> Self {
-        let block_top_left = Base::block_to_top_left_pos(block);
-        let (block_top_left_row, block_top_left_column) = block_top_left.to_row_and_column();
-        let (block_column, block_row) = column_major_index.to_block_row_and_column();
-        (
-            // Safety: the top-left cell in a block has a `Base::BASE - 1` cells to the right of it.
-            unsafe { Coordinate::new_unchecked(block_top_left_row.get() + block_row.get()) },
-            // Safety: the top-left cell in a block has a `Base::BASE - 1` cells to the bottom of it.
-            unsafe { Coordinate::new_unchecked(block_top_left_column.get() + block_column.get()) },
-        )
-            .into()
-    }
-
     // TODO: other corners
     pub fn top_left() -> Self {
         Position::default()
+    }
+
+    pub fn top_right() -> Self {
+        (Coordinate::default(), Coordinate::max()).into()
+    }
+
+    pub fn bottom_left() -> Self {
+        (Coordinate::max(), Coordinate::default()).into()
+    }
+
+    pub fn bottom_right() -> Self {
+        (Coordinate::max(), Coordinate::max()).into()
     }
 }
 
@@ -352,7 +334,7 @@ impl<Base: SudokuBase> Serialize for Position<Base> {
 mod tests {
     use itertools::Itertools;
 
-    use crate::base::consts::Base2;
+    use crate::base::consts::{Base2, Base3};
 
     use super::*;
 
@@ -364,6 +346,52 @@ mod tests {
             assert_eq!(Position::<Base2>::new(0).unwrap().cell_index, 0);
             assert_eq!(Position::<Base2>::new(15).unwrap().cell_index, 15);
             Position::<Base2>::new(16).unwrap_err();
+        }
+
+        #[test]
+        fn test_new_unchecked() {
+            assert_eq!(
+                // Safety: 0 is a valid cell index
+                unsafe { Position::<Base2>::new_unchecked(0) }.cell_index,
+                0
+            );
+            assert_eq!(
+                // Safety: 15 is the last valid cell index
+                unsafe { Position::<Base2>::new_unchecked(15) }.cell_index,
+                15
+            );
+        }
+
+        #[cfg(debug_assertions)]
+        #[test]
+        #[should_panic(expected = "Condition failed: `cell_index < Base::CELL_COUNT`")]
+        fn test_new_unchecked_panic() {
+            // Safety: 16 is an invalid cell index, this should panic in debug mode.
+            unsafe { Position::<Base2>::new_unchecked(16) };
+        }
+
+        #[test]
+        fn test_default() {
+            assert_eq!(Position::<Base2>::default().cell_index, 0);
+            assert_eq!(Position::<Base3>::default().cell_index, 0);
+        }
+
+        #[test]
+        fn test_top_right() {
+            assert_eq!(Position::<Base2>::top_right().cell_index, 3);
+            assert_eq!(Position::<Base3>::top_right().cell_index, 8);
+        }
+
+        #[test]
+        fn test_bottom_left() {
+            assert_eq!(Position::<Base2>::bottom_left().cell_index, 12);
+            assert_eq!(Position::<Base3>::bottom_left().cell_index, 72);
+        }
+
+        #[test]
+        fn test_bottom_right() {
+            assert_eq!(Position::<Base2>::bottom_right().cell_index, 15);
+            assert_eq!(Position::<Base3>::bottom_right().cell_index, 80);
         }
     }
 

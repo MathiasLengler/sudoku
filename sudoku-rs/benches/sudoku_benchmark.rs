@@ -1,16 +1,14 @@
 #[macro_use]
 extern crate criterion;
 
-use std::any::Any;
-use std::hint::black_box;
-use std::path::Path;
-
 use criterion::measurement::WallTime;
 use criterion::{BatchSize, BenchmarkId, SamplingMode, Throughput};
 use criterion::{BenchmarkGroup, Criterion};
-
 use num::Integer;
-use sudoku::base::{consts::*, BaseEnum, SudokuBase};
+use rand::prelude::*;
+use std::hint::black_box;
+use std::path::Path;
+use sudoku::base::{consts::*, SudokuBase};
 use sudoku::cell::Candidates;
 use sudoku::cell::Value;
 use sudoku::generator::{Generator, GeneratorSettings, PruningSettings, PruningTarget};
@@ -20,8 +18,8 @@ use sudoku::grid::Grid;
 use sudoku::position::test_utils::{consume_iter, consume_nested_iter};
 use sudoku::position::Coordinate;
 use sudoku::position::Position;
-use sudoku::rng::{new_crate_rng_from_rng, new_crate_rng_with_seed};
-use sudoku::samples::{base_2, base_3, base_4, base_5};
+use sudoku::rng::{new_crate_rng_with_seed, CrateRng};
+use sudoku::samples;
 use sudoku::solver::sat;
 use sudoku::solver::strategic::strategies::locked_sets::v2::find_locked_set;
 use sudoku::solver::strategic::strategies::locked_sets::v2::test_utils::locked_set_test_cases_base_3;
@@ -30,17 +28,8 @@ use sudoku::solver::strategic::strategies::{
 };
 use sudoku::solver::{backtracking, introspective, strategic, FallibleSolver, InfallibleSolver};
 
-fn cast_grid<Base: SudokuBase>(any_grid: Box<dyn Any>) -> Grid<Base> {
-    *any_grid.downcast().unwrap()
-}
-
 fn sample_grid<Base: SudokuBase>() -> Grid<Base> {
-    match Base::ENUM {
-        BaseEnum::Base2 => cast_grid(Box::new(base_2().into_iter().next().unwrap())),
-        BaseEnum::Base3 => cast_grid(Box::new(base_3().into_iter().next().unwrap())),
-        BaseEnum::Base4 => cast_grid(Box::new(base_4().into_iter().next().unwrap())),
-        BaseEnum::Base5 => cast_grid(Box::new(base_5().into_iter().next().unwrap())),
-    }
+    samples::grid::<Base>(0)
 }
 
 fn bench_generator_group<Base: SudokuBase>(generator_group: &mut BenchmarkGroup<WallTime>) {
@@ -122,7 +111,7 @@ fn bench_solver_sample_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup
             let mut rng = new_crate_rng_with_seed(Some(0));
             b.iter(|| {
                 backtracking::Solver::builder(grid)
-                    .rng(new_crate_rng_from_rng(&mut rng))
+                    .rng(CrateRng::from_rng(&mut rng))
                     .build()
                     .solve()
                     .unwrap()

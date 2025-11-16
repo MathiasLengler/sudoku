@@ -1,16 +1,17 @@
 import LightbulbIcon from "@mui/icons-material/Lightbulb";
 import CircularProgress from "@mui/material/CircularProgress";
-import type { IconButtonProps } from "@mui/material/IconButton/IconButton";
+import type { IconButtonProps } from "@mui/material/IconButton";
 import assertNever from "assert-never";
 import * as _ from "lodash-es";
 import { useNotifications } from "@toolpad/core/useNotifications";
-import { useState } from "react";
-import { useRecoilCallback, useRecoilValue } from "recoil";
+import { useCallback, useState } from "react";
+import { useAtomValue } from "jotai";
 import { useApplyDeductions, useTryStrategies } from "../actions/sudokuActions";
 import MyIconButton from "../components/MyIconButton";
 import { hintSettingsState, scaleLoopDelayIndex } from "../state/forms/hintSettings";
 import { hintState, type Hint, type OptionalHint } from "../state/hint";
 import { sudokuIsSolvedState } from "../state/sudoku";
+import { RESET, useAtomCallback } from "jotai/utils";
 
 export function RequestHintButton() {
     const [isRequestingHint, setIsRequestingHint] = useState(false);
@@ -18,18 +19,20 @@ export function RequestHintButton() {
 
     const tryStrategies = useTryStrategies();
     const applyDeductions = useApplyDeductions();
-    const sudokuIsSolved = useRecoilValue(sudokuIsSolvedState);
+    const sudokuIsSolved = useAtomValue(sudokuIsSolvedState);
 
     const notifications = useNotifications();
 
-    const hideHint = useRecoilCallback(({ reset }) => () => {
-        reset(hintState);
-    });
+    const hideHint = useAtomCallback(
+        useCallback((_get, set) => {
+            set(hintState, RESET);
+        }, []),
+    );
 
-    const getHint = useRecoilCallback(
-        ({ snapshot }) =>
-            async (): Promise<OptionalHint> => {
-                const sudokuIsSolved = await snapshot.getPromise(sudokuIsSolvedState);
+    const getHint = useAtomCallback(
+        useCallback(
+            async (get): Promise<OptionalHint> => {
+                const sudokuIsSolved = await get(sudokuIsSolvedState);
                 if (sudokuIsSolved) {
                     notifications.show("Sudoku is solved", {
                         key: "solved",
@@ -38,7 +41,7 @@ export function RequestHintButton() {
                     return;
                 }
 
-                const hintSettings = await snapshot.getPromise(hintSettingsState);
+                const hintSettings = get(hintSettingsState);
                 let tryStrategiesResult;
                 try {
                     tryStrategiesResult = await tryStrategies(hintSettings.strategies);
@@ -74,12 +77,13 @@ export function RequestHintButton() {
                     return { strategy, deductions: [deduction] };
                 }
             },
-        [notifications, tryStrategies],
+            [notifications, tryStrategies],
+        ),
     );
 
-    const showHint = useRecoilCallback(
-        ({ set }) =>
-            async (): Promise<boolean> => {
+    const showHint = useAtomCallback(
+        useCallback(
+            async (_get, set): Promise<boolean> => {
                 const hint = await getHint();
                 if (hint) {
                     set(hintState, hint);
@@ -88,37 +92,37 @@ export function RequestHintButton() {
                     return false;
                 }
             },
-        [getHint],
+            [getHint],
+        ),
     );
 
-    const applyHint = useRecoilCallback(
-        () =>
-            async (hint: Hint): Promise<boolean> => {
-                const { strategy, deductions } = hint;
+    const applyHint = useCallback(
+        async (hint: Hint): Promise<boolean> => {
+            const { strategy, deductions } = hint;
 
-                console.info(`Applying deductions from strategy ${strategy}:`, deductions);
+            console.info(`Applying deductions from strategy ${strategy}:`, deductions);
 
-                let madeProgress = true;
-                try {
-                    await applyDeductions({ deductions });
-                } catch (err) {
-                    if (!(err instanceof Error)) throw err;
-                    console.error("Failed to apply deductions", deductions, ":", err);
-                    notifications.show(`Failed to apply hint: ${err.message}`, { severity: "error" });
-                    madeProgress = false;
-                }
+            let madeProgress = true;
+            try {
+                await applyDeductions({ deductions });
+            } catch (err) {
+                if (!(err instanceof Error)) throw err;
+                console.error("Failed to apply deductions", deductions, ":", err);
+                notifications.show(`Failed to apply hint: ${err.message}`, { severity: "error" });
+                madeProgress = false;
+            }
 
-                hideHint();
-                return madeProgress;
-            },
+            hideHint();
+            return madeProgress;
+        },
         [applyDeductions, notifications, hideHint],
     );
 
-    const requestSingleHint = useRecoilCallback(
-        ({ snapshot }) =>
-            async (): Promise<boolean> => {
-                const { mode } = await snapshot.getPromise(hintSettingsState);
-                const hint = await snapshot.getPromise(hintState);
+    const requestSingleHint = useAtomCallback(
+        useCallback(
+            async (get): Promise<boolean> => {
+                const { mode } = get(hintSettingsState);
+                const hint = get(hintState);
 
                 if (mode === "toggleHint") {
                     if (hint) {
@@ -148,12 +152,13 @@ export function RequestHintButton() {
                 }
                 assertNever(mode);
             },
-        [applyHint, getHint, hideHint, showHint],
+            [applyHint, getHint, hideHint, showHint],
+        ),
     );
 
-    const requestHint = useRecoilCallback(
-        ({ snapshot }) =>
-            async () => {
+    const requestHint = useAtomCallback(
+        useCallback(
+            async (get) => {
                 if (isRequestingHint) {
                     console.warn("Unexpected concurrent call to requestHint");
                     return;
@@ -162,7 +167,7 @@ export function RequestHintButton() {
                 setIsRequestingHint(true);
 
                 try {
-                    const { mode, doLoop, loopDelayIndex } = await snapshot.getPromise(hintSettingsState);
+                    const { mode, doLoop, loopDelayIndex } = get(hintSettingsState);
 
                     if (doLoop && mode !== "toggleHint") {
                         while (await requestSingleHint()) {
@@ -185,7 +190,8 @@ export function RequestHintButton() {
                     setIsRequestingHint(false);
                 }
             },
-        [isRequestingHint, requestHintAbortController.signal, requestSingleHint],
+            [isRequestingHint, requestHintAbortController.signal, requestSingleHint],
+        ),
     );
 
     let iconColor: IconButtonProps["color"];

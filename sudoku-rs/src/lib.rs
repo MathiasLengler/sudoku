@@ -38,7 +38,6 @@
 #![warn(clippy::string_add)]
 #![warn(clippy::string_lit_chars_any)]
 #![warn(clippy::string_slice)]
-#![warn(clippy::string_to_string)]
 #![warn(clippy::suspicious_xor_used_as_pow)]
 #![warn(clippy::tests_outside_test_module)]
 #![warn(clippy::undocumented_unsafe_blocks)]

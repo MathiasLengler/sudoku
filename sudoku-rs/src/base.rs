@@ -10,12 +10,14 @@ use num::traits::{
 use num::PrimInt;
 
 use consts::*;
-pub(crate) use enum_impl::match_base_enum;
+pub use enum_impl::match_base_enum;
 pub use enum_impl::BaseEnum;
 
 use crate::error::{Error, Result};
+use crate::grid::Grid;
 use crate::position::Coordinate;
 use crate::position::Position;
+use crate::samples;
 use crate::unsafe_utils::get_unchecked;
 
 pub mod consts {
@@ -300,10 +302,11 @@ where
         group: Self::Group<T>,
         f: impl FnMut(T) -> U,
     ) -> Self::Group<U>;
+    fn grid_samples() -> impl Iterator<Item = Grid<Self>>;
 }
 
 macro_rules! impl_sudoku_base {
-    ($($type_num:ty,$base_u8:expr,$type_integral:ty,$CELL_INDEX_TO_BLOCK_INDEX:expr,$BLOCK_INDEX_TO_TOP_LEFT_CELL_INDEX:expr;)+) => {
+    ($($type_num:ty,$base_u8:expr,$type_integral:ty,$CELL_INDEX_TO_BLOCK_INDEX:expr,$BLOCK_INDEX_TO_TOP_LEFT_CELL_INDEX:expr,$GRID_SAMPLES_ITER:expr;)+) => {
         $(
 // Safety: this private macro is only instantiated below and the correctness of the generated impls is tested.
 unsafe impl SudokuBase for $type_num {
@@ -354,6 +357,9 @@ unsafe impl SudokuBase for $type_num {
     ) -> Self::Group<U> {
         group.map(f)
     }
+    fn grid_samples() -> impl Iterator<Item = Grid<Self>> {
+        $GRID_SAMPLES_ITER
+    }
 }
         )+
     };
@@ -361,10 +367,10 @@ unsafe impl SudokuBase for $type_num {
 
 // Implement `SudokuBase` for all base structs
 impl_sudoku_base!(
-    Base2, 2, u8, cell_index_to_block_index::BASE_2, block_index_to_top_left_cell_index::BASE_2;
-    Base3, 3, u16, cell_index_to_block_index::BASE_3, block_index_to_top_left_cell_index::BASE_3;
-    Base4, 4, u16, cell_index_to_block_index::BASE_4, block_index_to_top_left_cell_index::BASE_4;
-    Base5, 5, u32, cell_index_to_block_index::BASE_5, block_index_to_top_left_cell_index::BASE_5;
+    Base2, 2, u8, cell_index_to_block_index::BASE_2, block_index_to_top_left_cell_index::BASE_2, samples::base_2().into_iter();
+    Base3, 3, u16, cell_index_to_block_index::BASE_3, block_index_to_top_left_cell_index::BASE_3, samples::base_3().into_iter();
+    Base4, 4, u16, cell_index_to_block_index::BASE_4, block_index_to_top_left_cell_index::BASE_4, samples::base_4().into_iter();
+    Base5, 5, u32, cell_index_to_block_index::BASE_5, block_index_to_top_left_cell_index::BASE_5, samples::base_5().into_iter();
 );
 
 mod enum_impl {
@@ -372,6 +378,7 @@ mod enum_impl {
     use anyhow::{bail, format_err};
     use serde_repr::{Deserialize_repr, Serialize_repr};
 
+    #[cfg_attr(feature = "terminal", derive(clap::ValueEnum))]
     #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize_repr, Deserialize_repr)]
     #[repr(u8)]
     pub enum BaseEnum {
@@ -379,6 +386,12 @@ mod enum_impl {
         Base3 = 3,
         Base4 = 4,
         Base5 = 5,
+    }
+
+    impl Display for BaseEnum {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "Base{}", self.into_u8())
+        }
     }
 
     /// const conversions between `u8` and `DynamicBase`
@@ -500,6 +513,7 @@ mod enum_impl {
         }
     }
 
+    #[macro_export]
     macro_rules! match_base_enum {
         ($base_enum_value:expr, $using_base:expr) => {{
             use $crate::base::consts::*;
@@ -524,7 +538,7 @@ mod enum_impl {
         }};
     }
 
-    pub(crate) use match_base_enum;
+    pub use match_base_enum;
 
     #[cfg(feature = "wasm")]
     mod wasm {
@@ -534,6 +548,7 @@ mod enum_impl {
 
         impl ::ts_rs::TS for BaseEnum {
             type WithoutGenerics = Self;
+            type OptionInnerType = Self;
 
             fn name() -> String {
                 "BaseEnum".to_owned()
@@ -551,8 +566,8 @@ mod enum_impl {
             fn inline_flattened() -> String {
                 panic!("{} cannot be flattened", Self::name())
             }
-            fn output_path() -> Option<&'static std::path::Path> {
-                Some(std::path::Path::new("BaseEnum.ts"))
+            fn output_path() -> Option<std::path::PathBuf> {
+                Some(std::path::PathBuf::from(format!("{}.ts", Self::name())))
             }
         }
 

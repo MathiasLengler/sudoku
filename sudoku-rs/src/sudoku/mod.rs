@@ -74,7 +74,7 @@ impl<Base: SudokuBase> Sudoku<Base> {
         settings: Settings,
         on_progress: impl FnMut(GeneratorProgress) -> Result<()>,
     ) -> Result<Self> {
-        info!("generator_settings {:#?}", generator_settings);
+        info!("generator_settings {generator_settings:#?}");
 
         Ok(Self::with_grid_and_settings(
             Generator::with_settings(generator_settings).generate_with_progress(on_progress)?,
@@ -87,10 +87,7 @@ impl<Base: SudokuBase> Sudoku<Base> {
         settings: Settings,
         on_progress: impl FnMut(MultiShotGeneratorProgress) -> Result<()>,
     ) -> Result<Self> {
-        info!(
-            "multi_shot_generator_settings {:#?}",
-            multi_shot_generator_settings
-        );
+        info!("multi_shot_generator_settings {multi_shot_generator_settings:#?}");
 
         let generator = MultiShotGenerator::with_settings(multi_shot_generator_settings)?;
 

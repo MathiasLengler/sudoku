@@ -1,24 +1,19 @@
 import ButtonBase from "@mui/material/ButtonBase";
 import classNames from "classnames";
 import * as _ from "lodash-es";
-import { selector, selectorFamily, useRecoilValue } from "recoil";
+import { atom, useAtomValue, type Atom } from "jotai";
 import { useHandleValue } from "../actions/sudokuActions";
 import { inputState } from "../state/input";
 import { sudokuSideLengthState } from "../state/sudoku";
 import { valueToString } from "../utils/sudoku";
+import { atomFamily } from "jotai/utils";
 
-const isSelectedState = selectorFamily<boolean, number>({
-    key: "ValueButton.isSelected",
-    get:
-        (value) =>
-        ({ get }) => {
-            const input = get(inputState);
-            return input.stickyMode && input.selectedValue === value;
-        },
-    cachePolicy_UNSTABLE: {
-        eviction: "most-recent",
-    },
-});
+const isSelectedState = atomFamily<number, Atom<boolean>>((value) =>
+    atom((get) => {
+        const input = get(inputState);
+        return input.stickyMode && input.selectedValue === value;
+    }),
+);
 
 type SelectorValueProps = {
     value: number;
@@ -27,7 +22,7 @@ type SelectorValueProps = {
 function ValueButton({ value }: SelectorValueProps) {
     const handleValue = useHandleValue();
 
-    const isSelected = useRecoilValue(isSelectedState(value));
+    const isSelected = useAtomValue(isSelectedState(value));
 
     const buttonClassNames = classNames("selector-value", {
         "selector-value--selected": isSelected,
@@ -46,16 +41,13 @@ function ValueButton({ value }: SelectorValueProps) {
     );
 }
 
-const selectorValuesState = selector({
-    key: "Selector.values",
-    get: ({ get }) => {
-        const sideLength = get(sudokuSideLengthState);
-        return _.range(1, sideLength + 1);
-    },
+const selectorValuesState = atom(async (get) => {
+    const sideLength = await get(sudokuSideLengthState);
+    return _.range(1, sideLength + 1);
 });
 
 export function ValueSelector() {
-    const selectorValues = useRecoilValue(selectorValuesState);
+    const selectorValues = useAtomValue(selectorValuesState);
     return (
         <div className="selector-container">
             <div className="selector">

@@ -1,7 +1,8 @@
-import { atom, selector } from "recoil";
+import { atom } from "jotai";
+import { atomWithStorage } from "jotai/utils";
 import { z } from "zod";
 import { gridFormatSchema } from "../../constants";
-import { localStorageEffect } from "../localStorageEffect";
+import { getZodLocalStorage } from "../localStorageEffect";
 import { sudokuState } from "../sudoku";
 import { remoteWasmSudokuState } from "../worker";
 
@@ -13,19 +14,16 @@ export const exportToClipboardFormValuesSchema = z.object({
 export const EXPORT_TO_CLIPBOARD_FORM_DEFAULT_VALUES = {
     gridFormat: "CandidatesGridPlain",
 } satisfies ExportToClipboardFormValues;
-export const exportToClipboardFormValuesState = atom<ExportToClipboardFormValues>({
-    key: "ExportToClipboardFormValues",
-    default: EXPORT_TO_CLIPBOARD_FORM_DEFAULT_VALUES,
-    effects: [localStorageEffect(exportToClipboardFormValuesSchema)],
-});
+export const exportToClipboardFormValuesState = atomWithStorage<ExportToClipboardFormValues>(
+    "ExportToClipboardFormValues",
+    EXPORT_TO_CLIPBOARD_FORM_DEFAULT_VALUES,
+    getZodLocalStorage(exportToClipboardFormValuesSchema),
+);
 
-export const exportedGridStringState = selector<string>({
-    key: "ExportedGridString",
-    get: async ({ get }) => {
-        // The exported grid string depends on the sudoku state.
-        get(sudokuState);
-        const remoteWasmSudoku = get(remoteWasmSudokuState);
-        const { gridFormat } = get(exportToClipboardFormValuesState);
-        return await remoteWasmSudoku.export(gridFormat);
-    },
+export const exportedGridStringState = atom<Promise<string>>(async (get) => {
+    // The exported grid string depends on the sudoku state.
+    await get(sudokuState);
+    const remoteWasmSudoku = await get(remoteWasmSudokuState);
+    const { gridFormat } = get(exportToClipboardFormValuesState);
+    return await remoteWasmSudoku.export(gridFormat);
 });

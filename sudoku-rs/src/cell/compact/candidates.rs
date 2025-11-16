@@ -440,7 +440,6 @@ impl<Base: SudokuBase> IntoIterator for Candidates<Base> {
     }
 }
 
-#[allow(clippy::into_iter_without_iter)]
 impl<Base: SudokuBase> IntoIterator for &'_ Candidates<Base> {
     type Item = Value<Base>;
     type IntoIter = CandidatesAscIter<Base>;

@@ -1,7 +1,8 @@
+import { atom } from "jotai";
+import { atomWithStorage } from "jotai/utils";
 import { z } from "zod";
+import { getZodLocalStorage } from "./localStorageEffect";
 import { gameModeWorldSchema } from "./world";
-import { localStorageEffect } from "./localStorageEffect";
-import { atom, selector } from "recoil";
 
 export type Game = z.infer<typeof gameSchema>;
 export const gameSchema = z.discriminatedUnion("mode", [
@@ -13,15 +14,6 @@ export const gameSchema = z.discriminatedUnion("mode", [
 
 export type GameMode = Game["mode"];
 
-export const gameState = atom<Game>({
-    key: "Game",
-    default: {
-        mode: "sudoku",
-    },
-    effects: [localStorageEffect(gameSchema)],
-});
+export const gameState = atomWithStorage<Game>("gameState", { mode: "sudoku" }, getZodLocalStorage(gameSchema));
 
-export const gameModeState = selector<GameMode>({
-    key: "GameMode",
-    get: ({ get }) => get(gameState).mode,
-});
+export const gameModeState = atom<GameMode>((get) => get(gameState).mode);

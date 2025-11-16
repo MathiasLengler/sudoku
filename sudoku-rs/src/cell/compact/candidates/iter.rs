@@ -135,7 +135,7 @@ impl<Base: SudokuBase> CandidatesIterator<Base> for CandidatesRandIter<Base> {
     ) -> Self {
         let mut iter = CandidatesRandNoPeekIter {
             iter: candidates.into(),
-            rng: CrateRng::from_rng(init_rng).unwrap(),
+            rng: CrateRng::from_rng(init_rng),
         };
 
         Self {
