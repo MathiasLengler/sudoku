@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::cmp;

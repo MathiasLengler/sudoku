@@ -1,4 +1,5 @@
-import { atom, useAtomValue, type Atom } from "jotai";
+import { useAtomValue, type Atom } from "jotai";
+import { eagerAtom } from "jotai-eager";
 import { atomFamily } from "jotai/utils";
 import { isEqual } from "lodash-es";
 import type { DynamicPosition, TransportCell } from "../../types";
@@ -7,7 +8,6 @@ import { inputState } from "../state/input";
 import { sudokuBaseState } from "../state/sudoku";
 import { indexToPosition } from "../utils/sudoku";
 import { Cell } from "./cell";
-import { eagerAtom } from "jotai-eager";
 
 type BlockProps = {
     cells: TransportCell[];
