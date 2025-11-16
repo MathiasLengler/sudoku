@@ -64,10 +64,6 @@ impl<Base: SudokuBase> Position<Base> {
     pub fn bottom_right() -> Self {
         (Coordinate::max(), Coordinate::max()).into()
     }
-
-    pub fn max() -> Self {
-        Self::bottom_right()
-    }
 }
 
 impl<Base: SudokuBase> From<(Coordinate<Base>, Coordinate<Base>)> for Position<Base> {
