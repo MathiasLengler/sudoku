@@ -76,7 +76,7 @@ export type SelectedStrategies = z.infer<typeof selectedStrategiesSchema>;
 export const selectedStrategiesSchema = strategyEnumSchema
     .array()
     .min(1)
-    .transform((strategies) => _.sortBy(strategies, (strategy) => strategyEnumSchema.options.indexOf(strategy)));
+    .overwrite((strategies) => _.sortBy(strategies, (strategy) => strategyEnumSchema.options.indexOf(strategy)));
 
 export const gridFormatSchema = z.enum([
     "CandidatesGridPlain",

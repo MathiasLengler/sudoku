@@ -456,6 +456,13 @@ impl<Base: SudokuBase, T> Grid<Base, T> {
         Ok(grid)
     }
 
+    pub fn filled_with(value: T) -> Self
+    where
+        T: Clone,
+    {
+        Self::with(vec![value; Base::CELL_COUNT.into()]).unwrap()
+    }
+
     pub fn into_cells(self) -> Vec<T> {
         self.cells.into_raw_vec_and_offset().0
     }

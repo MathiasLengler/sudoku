@@ -1,14 +1,14 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import { Button, DialogActions, DialogContent, DialogTitle, LinearProgress } from "@mui/material";
-import { Stack } from "@mui/material";
+import { Button, DialogActions, DialogContent, DialogTitle, LinearProgress, Stack } from "@mui/material";
 
-import { Suspense, useEffect } from "react";
+import { useAtom, useAtomValue } from "jotai";
+import { useAtomCallback } from "jotai/utils";
+import { Suspense, useCallback, useEffect } from "react";
 import { SelectElement, useForm } from "react-hook-form-mui";
-import { useRecoilState, useRecoilValueLoadable, type Loadable } from "recoil";
-import { ALL_GRID_FORMATS } from "../../constants";
 import { Code } from "../../components/Code";
 import { ResetFormButton } from "../../components/ResetFormButton";
+import { ALL_GRID_FORMATS } from "../../constants";
 import {
     exportToClipboardFormValuesSchema,
     exportToClipboardFormValuesState,
@@ -18,13 +18,14 @@ import {
 
 type DisplayExportedGridStringProps = {
     gridFormat: ExportToClipboardFormValues["gridFormat"];
-    exportedGridStringLoadable: Loadable<string>;
 };
 
-function DisplayExportedGridString({ gridFormat, exportedGridStringLoadable }: DisplayExportedGridStringProps) {
+function DisplayExportedGridString({ gridFormat }: DisplayExportedGridStringProps) {
+    const exportedGridStringLoadable = useAtomValue(exportedGridStringState);
+
     return (
         <Code wrap={["givensLine", "binaryCandidatesLine", "binaryFixedCandidatesLine"].includes(gridFormat)}>
-            {exportedGridStringLoadable.getValue()}
+            {exportedGridStringLoadable}
         </Code>
     );
 }
@@ -34,9 +35,7 @@ type ExportToClipboardDialogProps = {
 };
 
 export function ExportToClipboardDialog({ onClose }: ExportToClipboardDialogProps) {
-    const [exportToClipboardFormValues, setExportToClipboardFormValues] = useRecoilState(
-        exportToClipboardFormValuesState,
-    );
+    const [exportToClipboardFormValues, setExportToClipboardFormValues] = useAtom(exportToClipboardFormValuesState);
     const {
         control,
         handleSubmit,
@@ -49,12 +48,21 @@ export function ExportToClipboardDialog({ onClose }: ExportToClipboardDialogProp
     });
     const gridFormat = watch("gridFormat");
 
-    const exportedGridStringLoadable = useRecoilValueLoadable(exportedGridStringState);
-
     // Always update selected gridFormat
     useEffect(() => {
         setExportToClipboardFormValues({ gridFormat });
     }, [gridFormat, setExportToClipboardFormValues]);
+
+    const onSubmit = useAtomCallback(
+        useCallback(
+            async (get) => {
+                const exportedGridString = await get(exportedGridStringState);
+                await window.navigator.clipboard.writeText(exportedGridString);
+                onClose();
+            },
+            [onClose],
+        ),
+    );
 
     return (
         <>
@@ -63,11 +71,7 @@ export function ExportToClipboardDialog({ onClose }: ExportToClipboardDialogProp
                 <form
                     id="export-to-clipboard-form"
                     noValidate
-                    onSubmit={handleSubmit(async () => {
-                        const exportedGridString = await exportedGridStringLoadable.toPromise();
-                        await window.navigator.clipboard.writeText(exportedGridString);
-                        onClose();
-                    })}
+                    onSubmit={handleSubmit(onSubmit)}
                     style={{ display: "sticky" }}
                 >
                     <Stack spacing={2}>
@@ -82,10 +86,7 @@ export function ExportToClipboardDialog({ onClose }: ExportToClipboardDialogProp
                             }))}
                         />
                         <Suspense fallback={<LinearProgress variant="indeterminate" />}>
-                            <DisplayExportedGridString
-                                gridFormat={gridFormat}
-                                exportedGridStringLoadable={exportedGridStringLoadable}
-                            />
+                            <DisplayExportedGridString gridFormat={gridFormat} />
                         </Suspense>
                     </Stack>
                 </form>

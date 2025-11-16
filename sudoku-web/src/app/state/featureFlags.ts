@@ -1,15 +1,12 @@
-import { selector } from "recoil";
+import { atom } from "jotai";
 
 export type FeatureFlags = {
     experimentWorld: boolean;
 };
 
-export const featureFlagsState = selector<FeatureFlags>({
-    key: "FeatureFlags",
-    get: () => {
-        const params = new URLSearchParams(window.location.search);
-        return {
-            experimentWorld: params.has("world"),
-        };
-    },
+export const featureFlagsState = atom<FeatureFlags>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return {
+        experimentWorld: params.has("world"),
+    };
 });

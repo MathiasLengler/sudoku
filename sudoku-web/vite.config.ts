@@ -1,6 +1,8 @@
 import { optimizeLodashImports } from "@optimize-lodash/rollup-plugin";
 import { minimal2023Preset } from "@vite-pwa/assets-generator/config";
-import react from "@vitejs/plugin-react-swc";
+import react from "@vitejs/plugin-react";
+import jotaiDebugLabel from "jotai/babel/plugin-debug-label";
+import jotaiReactRefresh from "jotai/babel/plugin-react-refresh";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 import wasm from "vite-plugin-wasm";
@@ -44,7 +46,7 @@ export default defineConfig(({ mode }) => ({
         format: "es",
     },
     plugins: [
-        react(),
+        react({ babel: { plugins: [jotaiDebugLabel, jotaiReactRefresh] } }),
         wasm(),
         optimizeLodashImports(),
         VitePWA({

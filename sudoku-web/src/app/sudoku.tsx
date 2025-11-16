@@ -1,7 +1,7 @@
 import type * as CSS from "csstype";
 import { Suspense } from "react";
 import { useResizeDetector } from "react-resize-detector";
-import { useRecoilValue } from "recoil";
+import { useAtomValue } from "jotai";
 import SudokuAppBar from "./appBar/sudokuAppBar";
 import { ThemeErrorBoundary } from "./components/ErrorFallback";
 import { FullScreenSpinner } from "./components/FullScreenSpinner";
@@ -15,8 +15,8 @@ import { SudokuEffects } from "./sudokuEffects";
 import { useKeyboardInput } from "./useKeyboardInput";
 
 function SudokuGame() {
-    const base = useRecoilValue(sudokuBaseState);
-    const sideLength = useRecoilValue(sudokuSideLengthState);
+    const base = useAtomValue(sudokuBaseState);
+    const sideLength = useAtomValue(sudokuSideLengthState);
 
     // Responsive Grid
     const {
@@ -45,7 +45,7 @@ function SudokuGame() {
 }
 
 function SudokuContent() {
-    const showWorldMap = useRecoilValue(showWorldMapState);
+    const showWorldMap = useAtomValue(showWorldMapState);
 
     return (
         <div className="app-content">

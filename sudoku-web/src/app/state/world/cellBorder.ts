@@ -1,19 +1,18 @@
 import classNames from "classnames";
-import * as _ from "lodash-es";
-import { selectorFamily } from "recoil";
+import { inRange, isEqual } from "lodash-es";
+import { atomFamily } from "jotai/utils";
 import { cellDimState, cellWorldDimensionsState, selectedGridPositionState, type WorldCellPosition } from ".";
 import { getAxisBorders, validateCellWorldPosition } from "../../utils/world";
 import { sudokuBaseState, sudokuSideLengthState } from "../sudoku";
+import { atom, type Atom } from "jotai";
 
-export const worldCellBorderClassesState = selectorFamily<string, WorldCellPosition>({
-    key: "worldCellBorder",
-    get:
-        (cellWorldPosition) =>
-        ({ get }) => {
-            const base = get(sudokuBaseState);
-            const gridSideLength = get(sudokuSideLengthState);
-            const { overlap, cellDim } = get(cellWorldDimensionsState);
-            const { rowCount: cellRowCount, columnCount: cellColumnCount } = get(cellDimState);
+export const worldCellBorderClassesState = atomFamily<WorldCellPosition, Atom<Promise<string>>>(
+    (cellWorldPosition) =>
+        atom(async (get) => {
+            const base = await get(sudokuBaseState);
+            const gridSideLength = await get(sudokuSideLengthState);
+            const { overlap, cellDim } = await get(cellWorldDimensionsState);
+            const { rowCount: cellRowCount, columnCount: cellColumnCount } = await get(cellDimState);
             const { row: selectedGridRowIndex, column: selectedGridColumnIndex } = get(selectedGridPositionState);
             const { row: cellRowIndex, column: cellColumnIndex } = cellWorldPosition;
 
@@ -23,8 +22,8 @@ export const worldCellBorderClassesState = selectorFamily<string, WorldCellPosit
             const selectedGridBaseCellRowIndex = selectedGridRowIndex * gridStride;
             const selectedGridBaseCellColumnIndex = selectedGridColumnIndex * gridStride;
             const isCellInSelectedGrid =
-                _.inRange(cellRowIndex, selectedGridBaseCellRowIndex, selectedGridBaseCellRowIndex + gridSideLength) &&
-                _.inRange(
+                inRange(cellRowIndex, selectedGridBaseCellRowIndex, selectedGridBaseCellRowIndex + gridSideLength) &&
+                inRange(
                     cellColumnIndex,
                     selectedGridBaseCellColumnIndex,
                     selectedGridBaseCellColumnIndex + gridSideLength,
@@ -55,8 +54,6 @@ export const worldCellBorderClassesState = selectorFamily<string, WorldCellPosit
                 [`${rowBorders.end}-border-bottom`]: !!rowBorders.end,
                 [`${columnBorders.start}-border-left`]: !!columnBorders.start,
             });
-        },
-    cachePolicy_UNSTABLE: {
-        eviction: "most-recent",
-    },
-});
+        }),
+    isEqual,
+);
