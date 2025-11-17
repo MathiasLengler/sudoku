@@ -1,6 +1,9 @@
+/// <reference types="vitest/config" />
+
 import { optimizeLodashImports } from "@optimize-lodash/rollup-plugin";
 import { minimal2023Preset } from "@vite-pwa/assets-generator/config";
 import react from "@vitejs/plugin-react";
+import { playwright } from "@vitest/browser-playwright";
 import jotaiDebugLabel from "jotai/babel/plugin-debug-label";
 import jotaiReactRefresh from "jotai/babel/plugin-react-refresh";
 import { defineConfig } from "vite";
@@ -49,49 +52,53 @@ export default defineConfig(({ mode }) => ({
         react({ babel: { plugins: [jotaiDebugLabel, jotaiReactRefresh] } }),
         wasm(),
         optimizeLodashImports(),
-        VitePWA({
-            strategies: "generateSW",
-            registerType: "autoUpdate",
-            devOptions: {
-                enabled: true,
-                navigateFallbackAllowlist: [/^\/$/],
-            },
-            filename: "service-worker.js",
-            manifestFilename: "manifest.json",
-            manifest: {
-                name: "Sudoku",
-                short_name: "Sudoku",
-                orientation: "natural",
-                description: "Sudoku: design your own difficulty",
-                theme_color: "#121212",
-                background_color: "#121212",
-            },
-            workbox: {
-                globPatterns: ["**/*.{js,wasm,css,html,png,svg,ico,woff2}"],
-                // We currently don't have a SPA router
-                navigateFallbackAllowlist: [/^\/$/],
-                maximumFileSizeToCacheInBytes: 20 * 1024 * 1024, // 20 MiB
-            },
-            pwaAssets: {
-                preset: {
-                    ...minimal2023Preset,
-                    maskable: {
-                        ...minimal2023Preset.maskable,
-                        resizeOptions: {
-                            background: "#121212",
-                        },
-                    },
-                    apple: {
-                        ...minimal2023Preset.apple,
-                        resizeOptions: {
-                            background: "#121212",
-                        },
-                    },
-                },
-                image: "public/icon_dark.png",
-                injectThemeColor: false,
-            },
-        }),
+        ...(mode !== "test"
+            ? [
+                  VitePWA({
+                      strategies: "generateSW",
+                      registerType: "autoUpdate",
+                      devOptions: {
+                          enabled: true,
+                          navigateFallbackAllowlist: [/^\/$/],
+                      },
+                      filename: "service-worker.js",
+                      manifestFilename: "manifest.json",
+                      manifest: {
+                          name: "Sudoku",
+                          short_name: "Sudoku",
+                          orientation: "natural",
+                          description: "Sudoku: design your own difficulty",
+                          theme_color: "#121212",
+                          background_color: "#121212",
+                      },
+                      workbox: {
+                          globPatterns: ["**/*.{js,wasm,css,html,png,svg,ico,woff2}"],
+                          // We currently don't have a SPA router
+                          navigateFallbackAllowlist: [/^\/$/],
+                          maximumFileSizeToCacheInBytes: 20 * 1024 * 1024, // 20 MiB
+                      },
+                      pwaAssets: {
+                          preset: {
+                              ...minimal2023Preset,
+                              maskable: {
+                                  ...minimal2023Preset.maskable,
+                                  resizeOptions: {
+                                      background: "#121212",
+                                  },
+                              },
+                              apple: {
+                                  ...minimal2023Preset.apple,
+                                  resizeOptions: {
+                                      background: "#121212",
+                                  },
+                              },
+                          },
+                          image: "public/icon_dark.png",
+                          injectThemeColor: false,
+                      },
+                  }),
+              ]
+            : []),
     ],
     resolve: {
         alias: {
@@ -99,6 +106,14 @@ export default defineConfig(({ mode }) => ({
             ...(mode === "profile" && {
                 "react-dom/client": "react-dom/profiling",
             }),
+        },
+    },
+    test: {
+        browser: {
+            enabled: true,
+            provider: playwright(),
+            headless: false,
+            instances: [{ browser: "chromium" }],
         },
     },
 }));
