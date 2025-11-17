@@ -2,6 +2,7 @@ import { Slider } from "@mui/material";
 import classNames from "classnames";
 import type * as CSS from "csstype";
 import { useAtom, useAtomValue } from "jotai";
+import { useAtomCallback } from "jotai/utils";
 import * as _ from "lodash-es";
 import { memo, useCallback, useDeferredValue, useMemo } from "react";
 import { Grid, type CellComponentProps } from "react-window";
@@ -13,13 +14,12 @@ import {
     cellWorldDimensionsState,
     emptyWasmCellWorldState,
     selectedGridPositionState,
-    worldCellPositionSchema,
     worldCellSizeState,
     worldCellState,
 } from "../../state/world";
 import { worldCellBorderClassesState } from "../../state/world/cellBorder";
+import { worldCellPositionSchema } from "../../state/world/schema";
 import { cellColorClass } from "../../utils/sudoku";
-import { useAtomCallback } from "jotai/utils";
 
 const WorldCellVirtualized = memo(function WorldCellVirtualized({ rowIndex, columnIndex, style }: CellComponentProps) {
     const cellWorldPosition = useMemo(

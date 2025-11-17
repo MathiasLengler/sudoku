@@ -70,12 +70,12 @@ pub struct WorldGenerationResult {
 pub struct CellWorldDimensions {
     #[cfg_attr(
         feature = "wasm",
-        ts(type = "import('../../sudoku-web/src/app/state/world').WorldGridDim")
+        ts(type = "import('../../sudoku-web/src/app/state/world/schema').WorldGridDim")
     )]
     pub grid_dim: WorldGridDim,
     #[cfg_attr(
         feature = "wasm",
-        ts(type = "import('../../sudoku-web/src/app/state/world').WorldCellDim")
+        ts(type = "import('../../sudoku-web/src/app/state/world/schema').WorldCellDim")
     )]
     pub cell_dim: WorldCellDim,
     pub overlap: u8,
