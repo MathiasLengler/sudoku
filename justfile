@@ -45,6 +45,15 @@ _pack wasm-pack-args:
 install-update:
     cargo install-update -a
 
+# upgrade all Cargo dependencies to latest
+upgrade-latest:
+    cargo upgrade -i --verbose
+    cargo update
+
+bench:
+    cargo bench --bench sudoku_benchmark -- --quick
+
 # Serve vite on tailscale
 web-ts-serve:
     tailscale serve 5173
+
