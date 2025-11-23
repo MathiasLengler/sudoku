@@ -33,11 +33,7 @@ paste = "1.0.15"
 [dependencies.sudoku]
 path = "../sudoku-rs"
 default-features = false
-features = [
-    "wasm",
-    # TODO: re-enable
-    "parallel",
-]
+features = ["wasm", "parallel"]
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.55"
