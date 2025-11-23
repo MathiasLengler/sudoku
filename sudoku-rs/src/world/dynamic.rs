@@ -100,4 +100,13 @@ impl DynamicCellWorld {
             )?
         }))
     }
+
+    pub fn base(&self) -> BaseEnum {
+        match self {
+            Self::Base2(_) => BaseEnum::Base2,
+            Self::Base3(_) => BaseEnum::Base3,
+            Self::Base4(_) => BaseEnum::Base4,
+            Self::Base5(_) => BaseEnum::Base5,
+        }
+    }
 }

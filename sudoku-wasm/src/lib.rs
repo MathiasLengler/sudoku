@@ -128,6 +128,9 @@ impl WasmCellWorld {
     }
 
     // Queries
+    pub fn base(&self) -> Result<IBaseEnum> {
+        export_base_enum(self.world.base())
+    }
     pub fn dimensions(&self) -> Result<ICellWorldDimensions> {
         export_cell_world_dimensions(self.world.dimensions())
     }
