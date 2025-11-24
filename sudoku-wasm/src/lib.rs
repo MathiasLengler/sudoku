@@ -108,8 +108,8 @@ impl WasmCellWorld {
         seed: Option<u64>,
     ) -> Result<Self> {
         let mut this = Self::new(base, grid_dim, overlap)?;
-        this.generate_solved(seed).unwrap();
-        this.prune(seed).unwrap();
+        this.generate_solved(seed)?;
+        this.prune(seed)?;
         Ok(this)
     }
 

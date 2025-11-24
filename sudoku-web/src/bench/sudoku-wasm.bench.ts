@@ -1,7 +1,7 @@
 import { bench, describe } from "vitest";
-import { WasmCellWorld, WasmSudoku } from "../../../sudoku-wasm/pkg/sudoku_wasm";
+import { WasmSudoku } from "../../../sudoku-wasm/pkg/sudoku_wasm";
 import { init } from "../app/state/worker/bg/init";
-import { worldGridDimSchema } from "../app/state/world/schema";
+import { getWasmCellWorldSamples } from "../test/util/cellWorld";
 
 describe("sudoku-wasm", async () => {
     await init(1);
@@ -13,23 +13,24 @@ describe("sudoku-wasm", async () => {
     });
     describe("WasmCellWorld", () => {
         [2, 4, 8, 16, 32].forEach((size) => {
-            // TODO: more representative cell world sample
-            //  the default cell world only contains empty cells
-            const wasmCellWorld = WasmCellWorld.new(
-                3,
-                worldGridDimSchema.decode({ rowCount: size, columnCount: size }),
-                1,
-            );
-            // TODO: update test names based on `sudoku-wasm.test.ts`
-            describe(`allWorldCells size=${size}`, () => {
-                bench(`serde_wasm_bindgen`, () => {
-                    const _cells = wasmCellWorld.allWorldCells();
-                });
-                bench(`postcard Vec<u8>`, () => {
-                    const _bytes = wasmCellWorld.allWorldCellsPostcardDynamicCellVec();
-                });
-                bench(`postcard Box<[u8]>`, () => {
-                    const _bytes = wasmCellWorld.allWorldCellsPostcardDynamicCellBoxedSlice();
+            const base = 3;
+            const seed = 42n;
+
+            describe(`size=${size}`, () => {
+                getWasmCellWorldSamples(base, size, seed).forEach(({ name, wasmCellWorld }) => {
+                    describe(name, () => {
+                        describe(`deserialization`, () => {
+                            bench(`serde_wasm_bindgen Vec<DynamicCell> => DynamicCell[]`, () => {
+                                const _cells = wasmCellWorld.allWorldCells();
+                            });
+                            bench(`postcard Vec<DynamicCell> => Vec<u8> => Uint8Array`, () => {
+                                const _bytes = wasmCellWorld.allWorldCellsPostcardDynamicCellVec();
+                            });
+                            bench(`postcard Vec<DynamicCell> => Box<[u8]> => Uint8Array`, () => {
+                                const _bytes = wasmCellWorld.allWorldCellsPostcardDynamicCellBoxedSlice();
+                            });
+                        });
+                    });
                 });
             });
         });

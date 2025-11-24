@@ -44,6 +44,7 @@ impl<Base: SudokuBase> From<Candidates<Base>> for DynamicCandidates {
     }
 }
 
+// FIXME: `tag = "kind"` leads to larger serialized size
 #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
 #[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 #[serde(rename_all = "camelCase", tag = "kind")]
