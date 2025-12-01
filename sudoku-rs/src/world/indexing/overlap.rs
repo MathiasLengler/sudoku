@@ -1,7 +1,6 @@
+use anyhow::ensure;
 use std::fmt::{Display, Formatter};
 use std::marker::PhantomData;
-
-use anyhow::ensure;
 
 use crate::base::SudokuBase;
 use crate::error::{Error, Result};
