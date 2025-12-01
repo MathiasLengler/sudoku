@@ -273,7 +273,7 @@ where
         + Shl<u8, Output = Self::CandidatesIntegral>
         // Conversions
         + Into<u32>
-        + TryFrom<u32, Error: Into<Error> + Debug>;
+        + TryFrom<u32, Error: Into<Error> + std::error::Error + Debug + Send + Sync>;
 
     /// A generic array of `SIDE_LENGTH` elements, e.g. `[T; Self::SIDE_LENGTH]`.
     ///

@@ -134,7 +134,7 @@ impl TryFrom<u32> for DynamicCell {
     type Error = Error;
 
     fn try_from(bits: u32) -> Result<Self> {
-        let candidates = Candidates::<BaseMax>::with_integral(bits);
+        let candidates = Candidates::<BaseMax>::with_integral(bits)?;
         let candidates_vec = candidates.to_vec_u8();
 
         Ok(if let &[value] = candidates_vec.as_slice() {

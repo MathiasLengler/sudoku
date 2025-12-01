@@ -410,7 +410,7 @@ fn bench_candidates_group(candidates_group: &mut BenchmarkGroup<WallTime>) {
 
     candidates_group.bench_function(BenchmarkId::new("block_segmentation", "segment"), |b| {
         b.iter_batched(
-            || Candidates::<Base3>::with_integral(0b000_101_000),
+            || Candidates::<Base3>::with_integral(0b000_101_000).unwrap(),
             |candidates| candidates.block_segmentation(),
             BatchSize::SmallInput,
         );
@@ -434,7 +434,7 @@ fn bench_candidates_group(candidates_group: &mut BenchmarkGroup<WallTime>) {
         b.iter_batched(
             || {
                 (
-                    Candidates::<Base3>::with_integral(0b000_010_000),
+                    Candidates::<Base3>::with_integral(0b000_010_000).unwrap(),
                     1.try_into().unwrap(),
                 )
             },

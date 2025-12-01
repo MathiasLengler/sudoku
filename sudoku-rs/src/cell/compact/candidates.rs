@@ -104,21 +104,23 @@ impl<Base: SudokuBase> Default for Candidates<Base> {
 /// Constructors
 impl<Base: SudokuBase> Candidates<Base> {
     pub fn new() -> Self {
-        Self::with_integral_unchecked(Base::CandidatesIntegral::ZERO)
+        // Safety: all bits are zero.
+        unsafe { Self::with_integral_unchecked(Base::CandidatesIntegral::ZERO) }
     }
 
-    // TODO: mark as unsafe
-    fn with_integral_unchecked(bits: Base::CandidatesIntegral) -> Self {
+    /// # Safety
+    ///
+    /// The bits at position `Base::MAX_VALUE` and greater must be zero.
+    unsafe fn with_integral_unchecked(bits: Base::CandidatesIntegral) -> Self {
         let this = Self { bits };
         this.debug_assert();
         this
     }
 
-    // TODO: refactor into TryFrom implementation
-    pub fn with_integral(bits: Base::CandidatesIntegral) -> Self {
+    pub fn with_integral(bits: Base::CandidatesIntegral) -> Result<Self> {
         let this = Self { bits };
-        this.assert();
-        this
+        this.validate()?;
+        Ok(this)
     }
 
     // TODO: refactor arg `candidate: impl Into<Coordinate<Base>>`
@@ -129,7 +131,16 @@ impl<Base: SudokuBase> Candidates<Base> {
     }
 
     pub fn all() -> Self {
-        Self::with_integral_unchecked(Self::all_candidates_mask())
+        // Safety: `all_candidates_mask` only has bits set in the valid range.
+        unsafe { Self::with_integral_unchecked(Self::all_candidates_mask()) }
+    }
+
+    pub fn all_less_than_or_equal(candidate: impl Into<Coordinate<Base>>) -> Self {
+        let candidate = candidate.into();
+        // Safety: `all_less_than_or_equal_candidates_mask` only has bits set in the valid range.
+        unsafe {
+            Self::with_integral_unchecked(Self::all_less_than_or_equal_candidates_mask(candidate))
+        }
     }
 
     pub fn with_range<C: Into<Coordinate<Base>> + Copy>(
@@ -140,31 +151,28 @@ impl<Base: SudokuBase> Candidates<Base> {
         let start_bound: Bound<Coordinate<Base>> = candidate_range.start_bound().map(|&c| c.into());
         let end_bound: Bound<Coordinate<Base>> = candidate_range.end_bound().map(|&c| c.into());
 
-        let excluded_mask = match start_bound {
+        let excluded = match start_bound {
             // TODO: add Coordinate::{inc|dec}() -> Option<Coordinate>
-            Bound::Included(start) if start == Coordinate::default() => {
-                Base::CandidatesIntegral::ZERO
-            }
-            Bound::Included(start) => Self::all_less_than_or_equal_candidates_mask(
+            Bound::Included(start) if start == Coordinate::default() => Self::new(),
+            Bound::Included(start) => Self::all_less_than_or_equal(
                 // Safety: the previous match arm checks for zero. Therefore, the expression remains in-bounds and doesn't underflow.
                 unsafe { Coordinate::new_unchecked(start.get() - 1) },
             ),
-            Bound::Excluded(start) => Self::all_less_than_or_equal_candidates_mask(start),
-            Bound::Unbounded => Base::CandidatesIntegral::ZERO,
+            Bound::Excluded(start) => Self::all_less_than_or_equal(start),
+            Bound::Unbounded => Self::new(),
         };
 
-        let included_mask = match end_bound {
-            Bound::Included(end) => Self::all_less_than_or_equal_candidates_mask(end),
-            Bound::Excluded(end) if end == Coordinate::default() => Base::CandidatesIntegral::ZERO,
-            Bound::Excluded(end) => Self::all_less_than_or_equal_candidates_mask(
+        let included = match end_bound {
+            Bound::Included(end) => Self::all_less_than_or_equal(end),
+            Bound::Excluded(end) if end == Coordinate::default() => Self::new(),
+            Bound::Excluded(end) => Self::all_less_than_or_equal(
                 // Safety: the previous match arm checks for zero. Therefore, the expression remains in-bounds and doesn't underflow.
                 unsafe { Coordinate::new_unchecked(end.get() - 1) },
             ),
-            Bound::Unbounded => Self::all_candidates_mask(),
+            Bound::Unbounded => Self::all(),
         };
 
-        Self::with_integral_unchecked(included_mask)
-            .without(Self::with_integral_unchecked(excluded_mask))
+        included.without(excluded)
     }
 
     pub fn block_segmentation_mask(segment_index: BlockCoordinate<Base>) -> Self {
@@ -173,7 +181,8 @@ impl<Base: SudokuBase> Candidates<Base> {
 
         let first_segment_mask = (one << base) - one;
 
-        Self::with_integral_unchecked(first_segment_mask << (segment_index.get() * base))
+        // Safety: the shift remains in-bounds, because segment_index is always less than Base::BASE.
+        unsafe { Self::with_integral_unchecked(first_segment_mask << (segment_index.get() * base)) }
     }
 
     pub fn iter_all_lexicographical() -> impl Iterator<Item = Self> + Clone {
@@ -182,7 +191,10 @@ impl<Base: SudokuBase> Candidates<Base> {
             Self::all_candidates_mask(),
             Base::CandidatesIntegral::ONE,
         )
-        .map(Self::with_integral_unchecked)
+        .map(|bits| {
+            // Safety: the range only produces bits in the valid range.
+            unsafe { Self::with_integral_unchecked(bits) }
+        })
     }
 }
 
@@ -193,7 +205,8 @@ impl<Base: SudokuBase> Candidates<Base> {
     /// [Reference](https://en.wikipedia.org/wiki/Union_(set_theory))
     #[must_use]
     pub fn union(self, other: Self) -> Self {
-        Self::with_integral_unchecked(self.bits | other.bits)
+        // Safety: union of two valid Candidates remains valid.
+        unsafe { Self::with_integral_unchecked(self.bits | other.bits) }
     }
 
     /// `self ∩ other`
@@ -201,7 +214,8 @@ impl<Base: SudokuBase> Candidates<Base> {
     /// [Reference](https://en.wikipedia.org/wiki/Intersection_(set_theory))
     #[must_use]
     pub fn intersection(self, other: Self) -> Self {
-        Self::with_integral_unchecked(self.bits & other.bits)
+        // Safety: intersection of two valid Candidates remains valid.
+        unsafe { Self::with_integral_unchecked(self.bits & other.bits) }
     }
 
     /// `self ∖ other`
@@ -209,7 +223,8 @@ impl<Base: SudokuBase> Candidates<Base> {
     /// [Reference](https://en.wikipedia.org/wiki/Complement_(set_theory)#Relative_complement)
     #[must_use]
     pub fn without(self, other: Self) -> Self {
-        Self::with_integral_unchecked(self.bits & !other.bits)
+        // Safety: difference of two valid Candidates remains valid.
+        unsafe { Self::with_integral_unchecked(self.bits & !other.bits) }
     }
 }
 
@@ -395,7 +410,8 @@ impl<Base: SudokuBase> Candidates<Base> {
 
     #[must_use]
     pub fn invert(self) -> Self {
-        Self::with_integral_unchecked(self.bits ^ Self::all_candidates_mask())
+        // Safety: the xor with all_candidates_mask only flips bits in the valid range.
+        unsafe { Self::with_integral_unchecked(self.bits ^ Self::all_candidates_mask()) }
     }
 
     /// Returns an iterator over all combinations of `k` candidates contained in this `Candidates`.
@@ -406,6 +422,9 @@ impl<Base: SudokuBase> Candidates<Base> {
 
 /// Internal helpers
 impl<Base: SudokuBase> Candidates<Base> {
+    /// Get a bit mask with all candidates set.
+    ///
+    /// The bits at position `Base::MAX_VALUE` and greater are always zero.
     fn all_candidates_mask() -> Base::CandidatesIntegral {
         Self::all_less_than_or_equal_candidates_mask(Coordinate::max())
     }
@@ -429,6 +448,7 @@ impl<Base: SudokuBase> Candidates<Base> {
             one.unsigned_shl(u32::from(candidate.get() + 1)) - one
         }
     }
+
     // const TryInto is unstable
     #[allow(clippy::cast_possible_truncation)]
     const fn storage_bit_count() -> u8 {
@@ -458,7 +478,10 @@ impl<Base: SudokuBase> Candidates<Base> {
 
     fn validate_integral(bits: Base::CandidatesIntegral) -> Result<()> {
         let unused_bits = Self::mask_unused_bits(bits);
-        ensure!(unused_bits.is_zero(), "Unexpected bit set in {unused_bits}");
+        ensure!(
+            unused_bits.is_zero(),
+            "Unexpected bit set in {unused_bits:b}"
+        );
         Ok(())
     }
 
@@ -701,7 +724,7 @@ mod tests {
         fn test_with_integral() {
             type Base = Base5;
             fn assert_integral_identity(i: u32) {
-                assert_eq!(Candidates::<Base>::with_integral(i).integral(), i);
+                assert_eq!(Candidates::<Base>::with_integral(i).unwrap().integral(), i);
             }
 
             let powers_of_two = std::iter::successors(Some(1u32), |i| {
@@ -716,19 +739,19 @@ mod tests {
             for i in powers_of_two {
                 assert_integral_identity(i);
                 assert_eq!(
-                    Candidates::<Base>::with_integral(i).to_vec_u8(),
+                    Candidates::<Base>::with_integral(i).unwrap().to_vec_u8(),
                     vec![u8::try_from(i.trailing_zeros() + 1).unwrap()]
                 );
             }
             assert_integral_identity(0);
             assert_eq!(
-                Candidates::<Base>::with_integral(0).to_vec_u8(),
+                Candidates::<Base>::with_integral(0).unwrap().to_vec_u8(),
                 Vec::<u8>::new()
             );
             let all = 0b0000_0001_1111_1111_1111_1111_1111_1111;
             assert_integral_identity(all);
             assert_eq!(
-                Candidates::<Base>::with_integral(all).to_vec_u8(),
+                Candidates::<Base>::with_integral(all).unwrap().to_vec_u8(),
                 (1..=25).collect::<Vec<_>>()
             );
         }
@@ -737,7 +760,7 @@ mod tests {
         fn test_iter_all_lexicographical() {
             itertools::assert_equal(
                 Candidates::<Base2>::iter_all_lexicographical(),
-                (0..16).map(Candidates::with_integral),
+                (0..16).map(Candidates::with_integral).map(Result::unwrap),
             );
         }
 
@@ -972,6 +995,7 @@ mod tests {
             {
                 assert_eq!(
                     Candidates::<Base>::with_integral(segmented_candidates_integral)
+                        .unwrap()
                         .block_segmentation(),
                     Some(BlockCoordinate::new(segment_index).unwrap())
                 );
@@ -989,7 +1013,9 @@ mod tests {
             .filter(|integral| !segmented_integrals.contains(integral))
             {
                 assert_eq!(
-                    Candidates::<Base>::with_integral(non_segmented_integral).block_segmentation(),
+                    Candidates::<Base>::with_integral(non_segmented_integral)
+                        .unwrap()
+                        .block_segmentation(),
                     None,
                     "Non segmented integral: {non_segmented_integral:b}"
                 );
@@ -1094,8 +1120,8 @@ mod tests {
             assert_eq!(empty.invert(), all);
             assert_eq!(all.invert(), empty);
 
-            let candidates_12 = Candidates::<Base2>::with_integral(0b0011);
-            let candidates_34 = Candidates::<Base2>::with_integral(0b1100);
+            let candidates_12 = Candidates::<Base2>::with_integral(0b0011).unwrap();
+            let candidates_34 = Candidates::<Base2>::with_integral(0b1100).unwrap();
             assert_eq!(candidates_12.invert(), candidates_34);
             assert_eq!(candidates_34.invert(), candidates_12);
         }
@@ -1140,7 +1166,8 @@ mod tests {
                 let value = Value::from(candidate);
                 let candidates = Candidates::<Base>::with_integral(
                     Candidates::<Base>::all_less_than_or_equal_candidates_mask(candidate),
-                );
+                )
+                .unwrap();
                 assert_eq!(
                     candidates.to_vec_u8(),
                     (1..=value.get()).collect::<Vec<_>>()

@@ -450,7 +450,7 @@ mod tests {
         .for_each(|(candidates, expected_candidates_integral)| {
             assert_equal(
                 candidates,
-                Candidates::with_integral(expected_candidates_integral),
+                Candidates::with_integral(expected_candidates_integral).unwrap(),
             );
         });
     }
@@ -474,7 +474,7 @@ mod tests {
         .for_each(|(candidates, expected_candidates_integral)| {
             assert_equal(
                 candidates,
-                Candidates::with_integral(expected_candidates_integral),
+                Candidates::with_integral(expected_candidates_integral).unwrap(),
             );
         });
     }
@@ -499,7 +499,7 @@ mod tests {
             .for_each(|(candidates, expected_candidates_integral)| {
                 assert_equal(
                     candidates,
-                    Candidates::with_integral(expected_candidates_integral),
+                    Candidates::with_integral(expected_candidates_integral).unwrap(),
                 );
             });
         }
