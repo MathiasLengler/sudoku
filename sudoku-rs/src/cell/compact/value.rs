@@ -4,7 +4,7 @@ use std::marker::PhantomData;
 use std::num::NonZeroU8;
 
 use anyhow::{ensure, format_err};
-use serde::{Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicValue;
@@ -14,8 +14,15 @@ use crate::position::Coordinate;
 /// A valid sudoku value for a given base.
 ///
 /// A `Value` always is in the range of `1..=(Base::MAX_VALUE)`
-#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Copy, Clone, Debug)]
+#[allow(
+    clippy::unsafe_derive_deserialize,
+    reason = "Safety invariants upheld by serde(try_from)"
+)]
+#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Copy, Clone, Debug, Serialize, Deserialize)]
+#[serde(into = "u8", try_from = "u8")]
 pub struct Value<Base: SudokuBase> {
+    /// # Safety invariants
+    /// - `value <= Base::MAX_VALUE`
     value: NonZeroU8,
     base: PhantomData<Base>,
 }
@@ -138,12 +145,9 @@ impl<Base: SudokuBase> TryFrom<DynamicValue> for Value<Base> {
     }
 }
 
-impl<Base: SudokuBase> Serialize for Value<Base> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_u8(self.value.get())
+impl<Base: SudokuBase> From<Value<Base>> for u8 {
+    fn from(value: Value<Base>) -> Self {
+        value.get()
     }
 }
 
