@@ -1,14 +1,3 @@
-use anyhow::{bail, ensure};
-use log::{info, trace};
-use ndarray::{s, Array2, ArrayView2, ArrayViewMut2, Axis};
-use rand::prelude::*;
-use serde::{Deserialize, Serialize};
-use std::fmt::{Display, Formatter};
-use tabled::builder::Builder;
-use tabled::settings::{Padding, Style};
-
-pub use indexing::*;
-
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
 use crate::cell::{Candidates, Cell};
@@ -24,20 +13,68 @@ use crate::rng::{new_crate_rng_with_seed, CrateRng};
 use crate::solver::backtracking;
 use crate::solver::backtracking::candidates_filter::DeniedCandidatesGrid;
 use crate::world::RelativeDir::TopRight;
-
-use self::dynamic::DynamicCellWorldActions;
+use anyhow::{bail, ensure};
+use dynamic::DynamicCellWorldActions;
+use log::{info, trace};
+use ndarray::{s, Array2, ArrayView2, ArrayViewMut2, Axis};
+use rand::prelude::*;
+use serde::{Deserialize, Serialize};
+use serialization::SerializedCellWorld;
+use std::fmt::{Display, Formatter};
+use tabled::builder::Builder;
+use tabled::settings::{Padding, Style};
 
 mod indexing;
-
+pub use indexing::*;
 pub mod dynamic;
 
+mod serialization {
+    use crate::error::Error;
+
+    use super::*;
+
+    /// This struct may contain invalid data; it does not enforce any safety invariants.
+    #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+    #[serde(bound = "Base: SudokuBase")]
+    pub(super) struct SerializedCellWorld<Base: SudokuBase> {
+        pub grid_dim: WorldGridDim,
+        pub cells: Array2<Cell<Base>>,
+        pub overlap: GridOverlap<Base>,
+    }
+
+    impl<Base: SudokuBase> From<CellWorld<Base>> for SerializedCellWorld<Base> {
+        fn from(cell_world: CellWorld<Base>) -> Self {
+            Self {
+                grid_dim: cell_world.grid_dim,
+                cells: cell_world.cells,
+                overlap: cell_world.overlap,
+            }
+        }
+    }
+
+    impl<Base: SudokuBase> TryFrom<SerializedCellWorld<Base>> for CellWorld<Base> {
+        type Error = Error;
+
+        fn try_from(serialized_cell_world: SerializedCellWorld<Base>) -> Result<Self> {
+            Self::with(
+                serialized_cell_world.grid_dim,
+                serialized_cell_world.overlap,
+                serialized_cell_world.cells,
+            )
+        }
+    }
+}
+
 /// A two dimensional grid of overlapping sudoku grids.
-#[derive(
-    Debug,
-    Clone,
-    Eq,
-    PartialEq,
-    // TODO: Serialize, Deserialize
+#[allow(
+    clippy::unsafe_derive_deserialize,
+    reason = "Safety invariants upheld by serde(try_from)"
+)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(
+    bound = "Base: SudokuBase",
+    into = "SerializedCellWorld<Base>",
+    try_from = "SerializedCellWorld<Base>"
 )]
 pub struct CellWorld<Base: SudokuBase> {
     grid_dim: WorldGridDim,

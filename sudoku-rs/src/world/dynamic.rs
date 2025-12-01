@@ -1,10 +1,10 @@
-use enum_dispatch::enum_dispatch;
-use ndarray::Array2;
-
 use crate::base::{consts::*, BaseEnum};
 use crate::cell::dynamic::DynamicCell;
 use crate::error::Result;
 use crate::grid::dynamic::DynamicGrid;
+use enum_dispatch::enum_dispatch;
+use ndarray::Array2;
+use serde::{Deserialize, Serialize};
 
 use super::{
     CellWorld, CellWorldDimensions, DynamicWorldGridCellPosition, Quadrant, WorldCellPosition,
@@ -40,12 +40,7 @@ pub trait DynamicCellWorldActions {
 }
 
 #[enum_dispatch(DynamicCellWorldActions)]
-#[derive(
-    Debug,
-    Eq,
-    PartialEq,
-    // TODO: Serialize, Deserialize
-)]
+#[derive(Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum DynamicCellWorld {
     Base2(CellWorld<Base2>),
     Base3(CellWorld<Base3>),

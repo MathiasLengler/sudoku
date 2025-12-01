@@ -30,9 +30,12 @@ mod iter_combinations;
 mod serialization {
     use super::*;
 
-    // Workaround for generic conversion implementations in core.
+    /// Newtype wrapper around `Base::CandidatesIntegral`.
+    /// Workaround for generic conversion implementations in core.
+    ///
+    /// This struct may contain invalid bits; it does not enforce any safety invariants.
     #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Copy, Clone, Debug, Serialize, Deserialize)]
-    #[serde(transparent)]
+    #[serde(transparent, bound = "Base: SudokuBase")]
     #[repr(transparent)]
     pub(super) struct SerializedCandidatesIntegral<Base: SudokuBase>(Base::CandidatesIntegral);
 
@@ -86,6 +89,7 @@ mod serialization {
 )]
 #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Copy, Clone, Debug, Serialize, Deserialize)]
 #[serde(
+    bound = "Base: SudokuBase",
     into = "SerializedCandidatesIntegral<Base>",
     try_from = "SerializedCandidatesIntegral<Base>"
 )]
