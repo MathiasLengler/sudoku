@@ -40,7 +40,12 @@ pub trait DynamicCellWorldActions {
 }
 
 #[enum_dispatch(DynamicCellWorldActions)]
-#[derive(Debug, Eq, PartialEq)]
+#[derive(
+    Debug,
+    Eq,
+    PartialEq,
+    // TODO: Serialize, Deserialize
+)]
 pub enum DynamicCellWorld {
     Base2(CellWorld<Base2>),
     Base3(CellWorld<Base3>),

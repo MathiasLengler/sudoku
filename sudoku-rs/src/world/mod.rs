@@ -32,7 +32,13 @@ mod indexing;
 pub mod dynamic;
 
 /// A two dimensional grid of overlapping sudoku grids.
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(
+    Debug,
+    Clone,
+    Eq,
+    PartialEq,
+    // TODO: Serialize, Deserialize
+)]
 pub struct CellWorld<Base: SudokuBase> {
     grid_dim: WorldGridDim,
     cells: Array2<Cell<Base>>,
