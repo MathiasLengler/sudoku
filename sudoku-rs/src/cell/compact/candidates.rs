@@ -8,8 +8,7 @@ use iter_combinations::CandidatesCombinationsIter;
 use itertools::Itertools;
 use num::traits::{CheckedShl, ConstOne, ConstZero, WrappingSub};
 use num::{PrimInt, Zero};
-use serde::ser::SerializeSeq;
-use serde::{Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 
 pub use iter::{CandidatesAscIter, CandidatesIterator, CandidatesRandIter};
 
@@ -19,6 +18,7 @@ use crate::cell::dynamic::DynamicCandidates;
 use crate::cell::{Cell, CellState};
 use crate::error::{Error, Result};
 use crate::position::{BlockCoordinate, Coordinate};
+use serialization::SerializedCandidatesIntegral;
 
 mod iter;
 mod iter_combinations;
@@ -27,7 +27,68 @@ mod iter_combinations;
 //  `Candidates` is Copy and smaller than or equal to a 32-bit pointer
 //  benchmark before/after
 
-#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Copy, Clone, Debug)]
+mod serialization {
+    use super::*;
+
+    // Workaround for generic conversion implementations in core.
+    #[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Copy, Clone, Debug, Serialize, Deserialize)]
+    #[serde(transparent)]
+    #[repr(transparent)]
+    pub(super) struct SerializedCandidatesIntegral<Base: SudokuBase>(Base::CandidatesIntegral);
+
+    // Emulate: `From<Candidates<Base>> for Base::CandidatesIntegral`
+    impl<Base: SudokuBase> From<Candidates<Base>> for SerializedCandidatesIntegral<Base> {
+        fn from(candidates: Candidates<Base>) -> Self {
+            Self(candidates.integral())
+        }
+    }
+
+    // Emulate: `TryFrom<Base::CandidatesIntegral> for Candidates<Base>``
+    impl<Base: SudokuBase> TryFrom<SerializedCandidatesIntegral<Base>> for Candidates<Base> {
+        type Error = Error;
+
+        fn try_from(serialized: SerializedCandidatesIntegral<Base>) -> Result<Candidates<Base>> {
+            Candidates::with_integral(serialized.0)
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+        use crate::base::consts::*;
+        use serde_test::{assert_tokens, Token};
+
+        #[test]
+        fn test_ser_de_zero() {
+            assert_tokens(&Candidates::<Base2>::new(), &[Token::U8(0)]);
+            assert_tokens(&Candidates::<Base3>::new(), &[Token::U16(0)]);
+            assert_tokens(&Candidates::<Base4>::new(), &[Token::U16(0)]);
+            assert_tokens(&Candidates::<Base5>::new(), &[Token::U32(0)]);
+        }
+
+        #[test]
+        fn test_ser_de_all() {
+            let all = Candidates::<Base2>::all();
+            assert_tokens(&all, &[Token::U8(all.integral())]);
+            let all = Candidates::<Base3>::all();
+            assert_tokens(&all, &[Token::U16(all.integral())]);
+            let all = Candidates::<Base4>::all();
+            assert_tokens(&all, &[Token::U16(all.integral())]);
+            let all = Candidates::<Base5>::all();
+            assert_tokens(&all, &[Token::U32(all.integral())]);
+        }
+    }
+}
+
+#[allow(
+    clippy::unsafe_derive_deserialize,
+    reason = "Safety invariants upheld by serde(try_from)"
+)]
+#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Copy, Clone, Debug, Serialize, Deserialize)]
+#[serde(
+    into = "SerializedCandidatesIntegral<Base>",
+    try_from = "SerializedCandidatesIntegral<Base>"
+)]
 pub struct Candidates<Base: SudokuBase> {
     /// # Safety invariants
     /// The bits at position `Base::MAX_VALUE` and greater must be zero.
@@ -508,19 +569,6 @@ impl<Base: SudokuBase> Display for Candidates<Base> {
 impl<Base: SudokuBase> Binary for Candidates<Base> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         Binary::fmt(&self.bits, f)
-    }
-}
-
-impl<Base: SudokuBase> Serialize for Candidates<Base> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut seq = serializer.serialize_seq(Some(usize::from(self.count())))?;
-        for candidate in self {
-            seq.serialize_element(&candidate)?;
-        }
-        seq.end()
     }
 }
 
