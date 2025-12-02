@@ -49,3 +49,9 @@ wasm-bindgen-rayon = "1.3.0"
 [features]
 default = ["console"]
 console = ["console_error_panic_hook", "console_log"]
+
+# Enable DWARF debug info in wasm-pack dev builds.
+# Enables Rust sourcemaps in Chrome DevTools, but slows down dev compile times by ~3 seconds.
+# https://github.com/drager/wasm-pack/issues/1351#issuecomment-2100231587
+[package.metadata.wasm-pack.profile.dev.wasm-bindgen]
+dwarf-debug-info = true
