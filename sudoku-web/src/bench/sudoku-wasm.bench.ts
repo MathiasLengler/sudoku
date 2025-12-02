@@ -19,15 +19,22 @@ describe("sudoku-wasm", async () => {
             describe(`size=${size}`, () => {
                 getWasmCellWorldSamples(base, size, seed).forEach(({ name, wasmCellWorld }) => {
                     describe(name, () => {
-                        describe(`deserialization`, () => {
-                            bench(`serde_wasm_bindgen Vec<DynamicCell> => DynamicCell[]`, () => {
-                                const _cells = wasmCellWorld.allWorldCells();
+                        describe(`serialization`, () => {
+                            describe("Vec<DynamicCell> =>", () => {
+                                bench(`serde_wasm_bindgen => DynamicCell[]`, () => {
+                                    const _cells = wasmCellWorld.allWorldCells();
+                                });
+                                bench(`postcard => Vec<u8> => Uint8Array`, () => {
+                                    const _bytes = wasmCellWorld.allWorldCellsPostcardDynamicCellVec();
+                                });
+                                bench(`postcard => Box<[u8]> => Uint8Array`, () => {
+                                    const _bytes = wasmCellWorld.allWorldCellsPostcardDynamicCellBoxedSlice();
+                                });
                             });
-                            bench(`postcard Vec<DynamicCell> => Vec<u8> => Uint8Array`, () => {
-                                const _bytes = wasmCellWorld.allWorldCellsPostcardDynamicCellVec();
-                            });
-                            bench(`postcard Vec<DynamicCell> => Box<[u8]> => Uint8Array`, () => {
-                                const _bytes = wasmCellWorld.allWorldCellsPostcardDynamicCellBoxedSlice();
+                            describe("DynamicCellWorld =>", () => {
+                                bench(`postcard => Vec<u8> => Uint8Array`, () => {
+                                    const _bytes = wasmCellWorld.serialize();
+                                });
                             });
                         });
                     });

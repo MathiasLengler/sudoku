@@ -4,6 +4,7 @@ use wasm_bindgen::prelude::*;
 
 use error::Result;
 use sudoku::base::consts::*;
+use sudoku::error::Error as SudokuError;
 use sudoku::grid::Grid;
 use sudoku::transport::TransportSudoku;
 use sudoku::world::{CellWorld, WorldGridDim};
@@ -171,15 +172,30 @@ impl WasmCellWorld {
     #[wasm_bindgen(js_name = allWorldCellsPostcardDynamicCellVec)]
     pub fn all_world_cells_postcard_vec(&self) -> Result<Vec<u8>> {
         let all_world_cells = self.world.all_world_cells();
-        Ok(postcard::to_stdvec(&all_world_cells).map_err(anyhow::Error::from)?)
+        Ok(postcard::to_stdvec(&all_world_cells).map_err(SudokuError::from)?)
     }
     #[wasm_bindgen(js_name = allWorldCellsPostcardDynamicCellBoxedSlice)]
     pub fn all_world_cells_postcard_boxed_slice(&self) -> Result<Box<[u8]>> {
         let all_world_cells = self.world.all_world_cells();
 
         Ok(postcard::to_stdvec(&all_world_cells)
-            .map_err(anyhow::Error::from)?
+            .map_err(SudokuError::from)?
             .into_boxed_slice())
+    }
+
+    // TODO: evaluate branded types for serialized data
+    //  once we have multiple postcard serializations in use,
+    //  we could confuse the `Uint8Array`s in TS.
+    //  This is not *unsafe*, but would lead to unclear deserialization errors.
+    // TODO: decide on Box<[u8]> vs Vec<u8>
+    //  No perf difference in benchmark.
+    pub fn serialize(&self) -> Result<Vec<u8>> {
+        Ok(postcard::to_stdvec(&self.world).map_err(SudokuError::from)?)
+    }
+
+    pub fn deserialize(&self, bytes: &[u8]) -> Result<Self> {
+        let world: DynamicCellWorld = postcard::from_bytes(bytes).map_err(SudokuError::from)?;
+        Ok(Self { world })
     }
 
     // Indexing helpers
