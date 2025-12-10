@@ -12,6 +12,9 @@ describe("sudoku-wasm", async () => {
         //  DynamicGrid
         //  postcard DynamicSudoku
         // TODO: evaluate WASM based iteration instead of serializing full grid to JS
+        //  Idea: return JS-compatible iterator object from WASM. This will be used by React to render the grid.
+        //   https://rustwasm.github.io/docs/wasm-bindgen/reference/types/exported-rust-types.html
+        //  Problem: react/jotai rely on structural equality for render optimizations.
         test("default base", () => {
             const wasmSudoku = WasmSudoku.new();
             expect(wasmSudoku).toBeInstanceOf(WasmSudoku);
