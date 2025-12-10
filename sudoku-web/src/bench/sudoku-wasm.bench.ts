@@ -7,8 +7,8 @@ describe("sudoku-wasm", async () => {
     await init(1);
     describe("WasmSudoku", () => {
         const wasmSudoku = WasmSudoku.new();
-        describe("getTransportSudoku", () => {
-            wasmSudoku.getTransportSudoku();
+        bench("getTransportSudoku", () => {
+            const _transportSudoku = wasmSudoku.getTransportSudoku();
         });
     });
     describe("WasmCellWorld", () => {
