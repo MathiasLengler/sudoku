@@ -1,4 +1,4 @@
-import { WasmCellWorld } from "../../../../sudoku-wasm/pkg/sudoku_wasm";
+import { WasmCellWorld } from "sudoku-wasm";
 import { worldGridDimSchema } from "../../app/state/world/schema";
 import type { BaseEnum } from "../../types";
 

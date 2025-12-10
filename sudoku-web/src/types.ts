@@ -4,7 +4,7 @@
 import type { DynamicCell } from "../../sudoku-rs/bindings";
 
 export type * from "../../sudoku-rs/bindings";
-export type * from "../../sudoku-wasm/pkg";
+export type * from "sudoku-wasm";
 
 export type DynamicCellValue = Extract<DynamicCell, { kind: "value" }>;
 export type DynamicCellCandidates = Extract<DynamicCell, { kind: "candidates" }>;

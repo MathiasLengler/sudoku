@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { WasmCellWorld, WasmSudoku } from "../../../sudoku-wasm/pkg/sudoku_wasm";
+import { WasmCellWorld, WasmSudoku } from "sudoku-wasm";
 import { init } from "../app/state/worker/bg/init";
 import { getWasmCellWorldSamples } from "./util/cellWorld";
 

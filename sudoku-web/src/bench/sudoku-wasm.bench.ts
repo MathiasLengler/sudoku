@@ -1,5 +1,5 @@
 import { bench, describe } from "vitest";
-import { WasmSudoku } from "../../../sudoku-wasm/pkg/sudoku_wasm";
+import { WasmSudoku } from "sudoku-wasm";
 import { init } from "../app/state/worker/bg/init";
 import { getWasmCellWorldSamples } from "../test/util/cellWorld";
 

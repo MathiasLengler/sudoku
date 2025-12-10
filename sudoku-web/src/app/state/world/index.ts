@@ -1,7 +1,7 @@
 import { atom, type Atom } from "jotai";
 import { atomFamily, RESET } from "jotai/utils";
 import * as _ from "lodash-es";
-import { WasmCellWorld } from "../../../../../sudoku-wasm/pkg";
+import { WasmCellWorld } from "sudoku-wasm";
 import type { CellWorldDimensions, DynamicCell, DynamicCells, DynamicPosition } from "../../../types";
 import { init } from "../../state/worker/bg/init";
 import { validateCellWorldPosition } from "../../utils/world";
