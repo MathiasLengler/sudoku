@@ -5,7 +5,13 @@ import { getWasmCellWorldSamples } from "./util/cellWorld";
 
 describe("sudoku-wasm", async () => {
     await init(1);
+
     describe("WasmSudoku", () => {
+        // TODO: test/bench different serialization methods for WasmSudoku:
+        //  TransportSudoku
+        //  DynamicGrid
+        //  postcard DynamicSudoku
+        // TODO: evaluate WASM based iteration instead of serializing full grid to JS
         test("default base", () => {
             const wasmSudoku = WasmSudoku.new();
             expect(wasmSudoku).toBeInstanceOf(WasmSudoku);
