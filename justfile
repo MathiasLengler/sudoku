@@ -64,5 +64,4 @@ ci-local:
     just pack-prod
     cd sudoku-web && npm ci
     cd sudoku-web && npm run lint
-    cd sudoku-web && npm run build
-    cd sudoku-web && docker build -t docker-registry.lengler.dev/sudoku:local .
+    cd sudoku-web && npm run docker:dev
