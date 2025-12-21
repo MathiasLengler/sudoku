@@ -57,3 +57,12 @@ bench:
 web-ts-serve:
     tailscale serve 5173
 
+# Run CI build/test/lint locally; fork of `.github/workflows/deploy_app.yml`
+ci-local:
+    just clippy-ci
+    just test
+    just pack-prod
+    cd sudoku-web && npm ci
+    cd sudoku-web && npm run lint
+    cd sudoku-web && npm run build
+    cd sudoku-web && docker build -t docker-registry.lengler.dev/sudoku:local .
