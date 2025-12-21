@@ -60,63 +60,51 @@ pub enum DynamicSudoku {
     Base5(Sudoku<Base5>),
 }
 
-// TODO: re-evaluate constructors vs replacing &mut self methods (*self =)
-/// Actions which can change the currently used base
+/// Constructors
 impl DynamicSudoku {
     pub fn new(base: u8) -> Result<Self> {
         let base: BaseEnum = base.try_into()?;
 
-        Ok(match base {
-            BaseEnum::Base2 => Self::Base2(Sudoku::<Base2>::new()),
-            BaseEnum::Base3 => Self::Base3(Sudoku::<Base3>::new()),
-            BaseEnum::Base4 => Self::Base4(Sudoku::<Base4>::new()),
-            BaseEnum::Base5 => Self::Base5(Sudoku::<Base5>::new()),
-        })
+        Ok(match_base_enum!(base, Self::from(Sudoku::<Base>::new())))
     }
+
     pub fn generate(
-        &mut self,
         dynamic_generator_settings: DynamicGeneratorSettings,
         on_progress: impl FnMut(GeneratorProgress) -> Result<()>,
-    ) -> Result<()> {
+    ) -> Result<Self> {
         let base: BaseEnum = dynamic_generator_settings.base.try_into()?;
 
-        *self = match_base_enum!(
+        Ok(match_base_enum!(
             base,
             Self::from(Sudoku::<Base>::generate(
                 dynamic_generator_settings.try_into()?,
-                self.settings(),
+                SudokuSettings::default(),
                 on_progress,
             )?)
-        );
-
-        Ok(())
+        ))
     }
 
     pub fn generate_multi_shot(
-        &mut self,
         multi_shot_generator_settings: DynamicMultiShotGeneratorSettings,
         on_progress: impl FnMut(MultiShotGeneratorProgress) -> Result<()>,
-    ) -> Result<()> {
+    ) -> Result<Self> {
         let base: BaseEnum = multi_shot_generator_settings
             .generator_settings
             .base
             .try_into()?;
 
-        *self = match_base_enum!(
+        Ok(match_base_enum!(
             base,
             Self::from(Sudoku::<Base>::generate_multi_shot(
                 multi_shot_generator_settings.try_into()?,
-                self.settings(),
+                SudokuSettings::default(),
                 on_progress,
             )?)
-        );
-
-        Ok(())
+        ))
     }
-    pub fn import(&mut self, input: &str) -> Result<()> {
-        *self = input.try_into()?;
 
-        Ok(())
+    pub fn import(input: &str) -> Result<Self> {
+        Self::try_from(input)
     }
 }
 

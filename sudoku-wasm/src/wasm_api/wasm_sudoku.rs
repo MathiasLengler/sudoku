@@ -25,24 +25,55 @@ impl From<DynamicSudoku> for WasmSudoku {
     }
 }
 
+/// Constructors
 #[wasm_bindgen]
 impl WasmSudoku {
     pub fn new() -> Self {
         Self::default()
     }
 
-    pub fn from_dynamic_cells(cells: IDynamicCells) -> Result<WasmSudoku> {
+    pub fn from_dynamic_cells(cells: IDynamicCells) -> Result<Self> {
         let cells = import_dynamic_cells(cells)?;
 
         Ok(DynamicSudoku::try_from(cells)?.into())
     }
 
-    pub fn from_dynamic_grid(dynamic_grid: IDynamicGrid) -> Result<WasmSudoku> {
+    pub fn from_dynamic_grid(dynamic_grid: IDynamicGrid) -> Result<Self> {
         let dynamic_grid = import_dynamic_grid(dynamic_grid)?;
 
         Ok(DynamicSudoku::try_from(dynamic_grid)?.into())
     }
 
+    pub fn generate(
+        generator_settings: IDynamicGeneratorSettings,
+        on_progress: IGenerateOnProgress,
+    ) -> Result<Self> {
+        Ok(DynamicSudoku::generate(
+            import_dynamic_generator_settings(generator_settings)?,
+            import_generate_on_progress(on_progress)?,
+        )?
+        .into())
+    }
+
+    #[wasm_bindgen(js_name = generateMultiShot)]
+    pub fn generate_multi_shot(
+        multi_shot_generator_settings: IDynamicMultiShotGeneratorSettings,
+        on_progress: IGenerateMultiShotOnProgress,
+    ) -> Result<Self> {
+        Ok(DynamicSudoku::generate_multi_shot(
+            import_dynamic_multi_shot_generator_settings(multi_shot_generator_settings)?,
+            import_generate_multi_shot_on_progress(on_progress)?,
+        )?
+        .into())
+    }
+
+    pub fn import(&mut self, input: &str) -> Result<Self> {
+        Ok(DynamicSudoku::import(input)?.into())
+    }
+}
+
+#[wasm_bindgen]
+impl WasmSudoku {
     #[wasm_bindgen(js_name = getTransportSudoku)]
     pub fn get_transport_sudoku(&self) -> Result<ITransportSudoku> {
         let transport_sudoku = TransportSudoku::from(&self.sudoku);
@@ -137,38 +168,6 @@ impl WasmSudoku {
 
     pub fn redo(&mut self) {
         self.sudoku.redo();
-    }
-
-    pub fn generate(
-        &mut self,
-        generator_settings: IDynamicGeneratorSettings,
-        on_progress: IGenerateOnProgress,
-    ) -> Result<()> {
-        self.sudoku.generate(
-            import_dynamic_generator_settings(generator_settings)?,
-            import_generate_on_progress(on_progress)?,
-        )?;
-
-        Ok(())
-    }
-
-    #[wasm_bindgen(js_name = generateMultiShot)]
-    pub fn generate_multi_shot(
-        &mut self,
-        multi_shot_generator_settings: IDynamicMultiShotGeneratorSettings,
-        on_progress: IGenerateMultiShotOnProgress,
-    ) -> Result<()> {
-        self.sudoku.generate_multi_shot(
-            import_dynamic_multi_shot_generator_settings(multi_shot_generator_settings)?,
-            import_generate_multi_shot_on_progress(on_progress)?,
-        )?;
-
-        Ok(())
-    }
-
-    pub fn import(&mut self, input: &str) -> Result<()> {
-        self.sudoku.import(input)?;
-        Ok(())
     }
 
     pub fn export(&self, format: IGridFormatEnum) -> Result<String> {
