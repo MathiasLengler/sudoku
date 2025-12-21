@@ -93,7 +93,7 @@ pub(crate) fn char_value_to_u8(c: char) -> Result<u8> {
         '.' | '0' => Ok(0),
         _ => match c.to_digit(36) {
             Some(digit) => Ok(digit.try_into()?),
-            None => bail!("Unable to convert character into number: {}", c),
+            None => bail!("Unable to convert character into number: {c}"),
         },
     }
 }

@@ -13,6 +13,10 @@ use std::marker::PhantomData;
 /// - complicate the implementation of the world
 ///
 /// Therefore, we restrict the overlap to the range `0..=Base::BASE`.
+#[allow(
+    clippy::unsafe_derive_deserialize,
+    reason = "Safety invariants upheld by serde(try_from)"
+)]
 #[derive(
     Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Default, Serialize, Deserialize,
 )]
