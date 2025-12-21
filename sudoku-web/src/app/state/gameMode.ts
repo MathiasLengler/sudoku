@@ -2,7 +2,7 @@ import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 import { z } from "zod";
 import { getZodLocalStorage } from "./localStorageEffect";
-import { gameModeWorldSchema } from "./world";
+import { gameModeWorldSchema } from "./world/schema";
 
 export type Game = z.infer<typeof gameSchema>;
 export const gameSchema = z.discriminatedUnion("mode", [

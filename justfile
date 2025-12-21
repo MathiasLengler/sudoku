@@ -45,6 +45,23 @@ _pack wasm-pack-args:
 install-update:
     cargo install-update -a
 
+# upgrade all Cargo dependencies to latest
+upgrade-latest:
+    cargo upgrade -i --verbose
+    cargo update
+
+bench:
+    cargo bench --bench sudoku_benchmark -- --quick
+
 # Serve vite on tailscale
 web-ts-serve:
     tailscale serve 5173
+
+# Run CI build/test/lint locally; fork of `.github/workflows/deploy_app.yml`
+ci-local:
+    just clippy-ci
+    just test
+    just pack-prod
+    cd sudoku-web && npm ci
+    cd sudoku-web && npm run lint
+    cd sudoku-web && npm run docker:dev

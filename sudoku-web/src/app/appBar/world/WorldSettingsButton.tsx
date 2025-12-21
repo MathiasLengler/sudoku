@@ -1,13 +1,14 @@
 import LanguageIcon from "@mui/icons-material/Language";
 import assertNever from "assert-never";
 import { useAtom } from "jotai";
+import * as _ from "lodash-es";
+import { z } from "zod";
+import { usePlaySelectedGrid, useShowWorldMap } from "../../actions/worldActions";
 import MyIconButton from "../../components/MyIconButton";
 import { MyMenu } from "../../components/MyMenu";
 import { gameState } from "../../state/gameMode";
-import { DEFAULT_WORLD_GRID_POSITION, requestedGridDimState, worldGridDimSchema } from "../../state/world";
-import { usePlaySelectedGrid, useShowWorldMap } from "../../actions/worldActions";
-import * as _ from "lodash-es";
-import { z } from "zod";
+import { DEFAULT_WORLD_GRID_POSITION, requestedGridDimState } from "../../state/world";
+import { worldGridDimSchema } from "../../state/world/schema";
 
 const gridDims = z.array(worldGridDimSchema).parse([
     { rowCount: 3, columnCount: 3 },

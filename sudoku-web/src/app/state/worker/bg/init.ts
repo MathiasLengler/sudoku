@@ -1,4 +1,4 @@
-import wbgInit, { initThreadPool, init as wasmInit } from "../../../../../../sudoku-wasm/pkg";
+import wbgInit, { initThreadPool, init as wasmInit } from "sudoku-wasm";
 
 // Based on benchmarking: more threads don't improve performance of parallel grid generation.
 const MAX_THREADS = 4;

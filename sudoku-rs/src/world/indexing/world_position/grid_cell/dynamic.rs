@@ -9,7 +9,7 @@ use super::WorldGridCellPosition;
 pub struct DynamicWorldGridCellPosition {
     #[cfg_attr(
         feature = "wasm",
-        ts(type = "import('../../sudoku-web/src/app/state/world').WorldGridPosition")
+        ts(type = "import('../../sudoku-web/src/app/state/world/schema').WorldGridPosition")
     )]
     world_grid_pos: WorldGridPosition,
     cell_pos: DynamicPosition,

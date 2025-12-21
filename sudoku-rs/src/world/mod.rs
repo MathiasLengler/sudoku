@@ -1,14 +1,3 @@
-use anyhow::bail;
-use log::{info, trace};
-use ndarray::{s, Array2, ArrayView2, ArrayViewMut2, Axis};
-use rand::prelude::*;
-use serde::{Deserialize, Serialize};
-use std::fmt::{Display, Formatter};
-use tabled::builder::Builder;
-use tabled::settings::{Padding, Style};
-
-pub use indexing::*;
-
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
 use crate::cell::{Candidates, Cell};
@@ -24,15 +13,69 @@ use crate::rng::{new_crate_rng_with_seed, CrateRng};
 use crate::solver::backtracking;
 use crate::solver::backtracking::candidates_filter::DeniedCandidatesGrid;
 use crate::world::RelativeDir::TopRight;
-
-use self::dynamic::DynamicCellWorldActions;
+use anyhow::{bail, ensure};
+use dynamic::DynamicCellWorldActions;
+use log::{info, trace};
+use ndarray::{s, Array2, ArrayView2, ArrayViewMut2, Axis};
+use rand::prelude::*;
+use serde::{Deserialize, Serialize};
+use serialization::SerializedCellWorld;
+use std::fmt::{Display, Formatter};
+use tabled::builder::Builder;
+use tabled::settings::{Padding, Style};
 
 mod indexing;
-
+pub use indexing::*;
 pub mod dynamic;
 
+mod serialization {
+    use crate::error::Error;
+
+    use super::*;
+
+    /// This struct may contain invalid data; it does not enforce any safety invariants.
+    #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+    #[serde(bound = "Base: SudokuBase")]
+    pub(super) struct SerializedCellWorld<Base: SudokuBase> {
+        pub grid_dim: WorldGridDim,
+        pub cells: Array2<Cell<Base>>,
+        pub overlap: GridOverlap<Base>,
+    }
+
+    impl<Base: SudokuBase> From<CellWorld<Base>> for SerializedCellWorld<Base> {
+        fn from(cell_world: CellWorld<Base>) -> Self {
+            Self {
+                grid_dim: cell_world.grid_dim,
+                cells: cell_world.cells,
+                overlap: cell_world.overlap,
+            }
+        }
+    }
+
+    impl<Base: SudokuBase> TryFrom<SerializedCellWorld<Base>> for CellWorld<Base> {
+        type Error = Error;
+
+        fn try_from(serialized_cell_world: SerializedCellWorld<Base>) -> Result<Self> {
+            Self::with(
+                serialized_cell_world.grid_dim,
+                serialized_cell_world.overlap,
+                serialized_cell_world.cells,
+            )
+        }
+    }
+}
+
 /// A two dimensional grid of overlapping sudoku grids.
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[allow(
+    clippy::unsafe_derive_deserialize,
+    reason = "Safety invariants upheld by serde(try_from)"
+)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(
+    bound = "Base: SudokuBase",
+    into = "SerializedCellWorld<Base>",
+    try_from = "SerializedCellWorld<Base>"
+)]
 pub struct CellWorld<Base: SudokuBase> {
     grid_dim: WorldGridDim,
     cells: Array2<Cell<Base>>,
@@ -70,12 +113,12 @@ pub struct WorldGenerationResult {
 pub struct CellWorldDimensions {
     #[cfg_attr(
         feature = "wasm",
-        ts(type = "import('../../sudoku-web/src/app/state/world').WorldGridDim")
+        ts(type = "import('../../sudoku-web/src/app/state/world/schema').WorldGridDim")
     )]
     pub grid_dim: WorldGridDim,
     #[cfg_attr(
         feature = "wasm",
-        ts(type = "import('../../sudoku-web/src/app/state/world').WorldCellDim")
+        ts(type = "import('../../sudoku-web/src/app/state/world/schema').WorldCellDim")
     )]
     pub cell_dim: WorldCellDim,
     pub overlap: u8,
@@ -89,6 +132,31 @@ impl<Base: SudokuBase> CellWorld<Base> {
             grid_dim,
             overlap,
         }
+    }
+
+    /// Creates a `CellWorld` from world cells.
+    ///
+    /// Note that the world/grid dimensions are required, since cells alone are ambiguous.
+    /// For example `Base2` with `8x8` cells could represent both:
+    /// - World 2x2, Overlap 0
+    /// - World 3x3, Overlap 2
+    pub fn with(
+        grid_dim: WorldGridDim,
+        overlap: GridOverlap<Base>,
+        cells: Array2<Cell<Base>>,
+    ) -> Result<Self> {
+        let given_cell_dim = WorldCellDim::from_cells(&cells)?;
+        let expected_cell_dim = grid_dim.to_cell_dim::<Base>(overlap);
+        ensure!(
+            given_cell_dim == expected_cell_dim,
+            "Invalid cells dimensions, expected {expected_cell_dim}, instead got: {given_cell_dim}",
+        );
+
+        Ok(Self {
+            grid_dim,
+            cells,
+            overlap,
+        })
     }
 }
 
@@ -373,7 +441,7 @@ impl<Base: SudokuBase> CellWorld<Base> {
 /// Internal helpers
 impl<Base: SudokuBase> CellWorld<Base> {
     fn cell_dim(&self) -> WorldCellDim {
-        WorldCellDim::new(self.cells.nrows(), self.cells.ncols()).unwrap()
+        WorldCellDim::from_cells(&self.cells).unwrap()
     }
 
     fn grid_cells(&self, grid_position: ValidatedWorldGridPosition) -> ArrayView2<'_, Cell<Base>> {
@@ -494,7 +562,137 @@ mod tests {
     use itertools::Itertools;
 
     use super::*;
-    use crate::base::consts::*;
+    use crate::{base::consts::*, samples};
+
+    fn sample_cell_world() -> CellWorld<Base2> {
+        let grid_dim = WorldGridDim::new(3, 3).unwrap();
+        let overlap = 2.try_into().unwrap();
+
+        let mut cell_world = CellWorld::<Base2>::new(grid_dim, overlap);
+
+        cell_world
+            .all_validated_grid_positions()
+            .for_each(|grid_position| {
+                cell_world.set_grid_at_validated(
+                    &samples::base_2_candidates_coordinates(),
+                    grid_position,
+                );
+            });
+
+        let mut base_2_samples = samples::base_2().into_iter();
+        let first_value_grid = base_2_samples.next().unwrap();
+        let second_value_grid = base_2_samples.next().unwrap();
+
+        cell_world.set_grid_at_validated(&first_value_grid, ValidatedWorldGridPosition::default());
+        cell_world
+            .set_grid_at(&second_value_grid, WorldGridPosition::new(1, 1))
+            .unwrap();
+
+        cell_world
+    }
+
+    mod with {
+        use super::*;
+
+        #[test]
+        fn test_roundtrip() {
+            let cell_world = sample_cell_world();
+
+            let reconstructed_cell_world = CellWorld::with(
+                cell_world.grid_dim,
+                cell_world.overlap,
+                cell_world.cells.clone(),
+            )
+            .unwrap();
+
+            assert_eq!(cell_world, reconstructed_cell_world);
+        }
+
+        #[test]
+        fn test_different_compatible_dim() {
+            let cell_world = sample_cell_world();
+
+            let expected_grid_dim = WorldGridDim::new(3, 3).unwrap();
+            let expected_overlap = 2.try_into().unwrap();
+            assert_eq!(cell_world.grid_dim, expected_grid_dim);
+            assert_eq!(cell_world.overlap, expected_overlap);
+
+            let reconstructed_cell_world = CellWorld::with(
+                WorldGridDim::new(2, 2).unwrap(),
+                0.try_into().unwrap(),
+                cell_world.cells.clone(),
+            )
+            .unwrap();
+
+            assert_ne!(cell_world, reconstructed_cell_world);
+            assert_eq!(cell_world.cells, reconstructed_cell_world.cells);
+        }
+
+        #[test]
+        fn test_validation() {
+            let test_cases: Vec<_> = vec![
+                // valid
+                (true, (2, 2), 0, (8, 8)),
+                // different row/column counts
+                (false, (1, 1), 0, (8, 8)),
+                (false, (1, 2), 0, (8, 8)),
+                (false, (1, 3), 0, (8, 8)),
+                (false, (2, 1), 0, (8, 8)),
+                (false, (2, 3), 0, (8, 8)),
+                (false, (3, 1), 0, (8, 8)),
+                (false, (3, 2), 0, (8, 8)),
+                (false, (3, 3), 0, (8, 8)),
+                // different overlap
+                (false, (2, 2), 1, (8, 8)),
+                (false, (2, 2), 2, (8, 8)),
+                // different cells shape
+                (false, (2, 2), 0, (7, 7)),
+                (false, (2, 2), 0, (7, 8)),
+                (false, (2, 2), 0, (7, 9)),
+                (false, (2, 2), 0, (8, 7)),
+                (false, (2, 2), 0, (8, 9)),
+                (false, (2, 2), 0, (9, 7)),
+                (false, (2, 2), 0, (9, 8)),
+                (false, (2, 2), 0, (9, 9)),
+                // valid minimal
+                (true, (1, 1), 0, (4, 4)),
+                (true, (1, 1), 1, (4, 4)),
+                (true, (1, 1), 2, (4, 4)),
+            ]
+            .into_iter()
+            .map(
+                |(is_valid, (row_count, column_count), overlap, cells_shape): (
+                    bool,
+                    (usize, usize),
+                    u8,
+                    (usize, usize),
+                )| {
+                    (
+                        is_valid,
+                        WorldGridDim::new(row_count, column_count).unwrap(),
+                        overlap.try_into().unwrap(),
+                        Array2::default(cells_shape),
+                    )
+                },
+            )
+            .collect();
+
+            for (is_valid, grid_dim, overlap, cells) in test_cases {
+                let cell_dim_string = WorldCellDim::from_cells(&cells)
+                    .map_or_else(|_| "(0, 0)".to_owned(), |dim| dim.to_string());
+
+                let result = CellWorld::<Base2>::with(grid_dim, overlap, cells);
+                if is_valid {
+                    result.unwrap();
+                } else {
+                    assert!(
+                        result.is_err(),
+                        "Expected error for grid_dim: {grid_dim}, overlap: {overlap}, cells dim: {cell_dim_string}",
+                    );
+                }
+            }
+        }
+    }
 
     #[test]
     fn test_prune_is_directly_consistent() {

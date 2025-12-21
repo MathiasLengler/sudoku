@@ -1,24 +1,22 @@
-use std::fmt::{Binary, Debug, Display};
-use std::hash::Hash;
-use std::mem::MaybeUninit;
-use std::ops::{BitAndAssign, BitOrAssign, BitXorAssign, Shl};
-
-use num::traits::{
-    CheckedShl, CheckedShr, ConstOne, ConstZero, NumAssignOps, Unsigned, WrappingAdd, WrappingMul,
-    WrappingNeg, WrappingShl, WrappingShr, WrappingSub,
-};
-use num::PrimInt;
-
-use consts::*;
-pub use enum_impl::match_base_enum;
-pub use enum_impl::BaseEnum;
-
 use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::position::Coordinate;
 use crate::position::Position;
 use crate::samples;
 use crate::unsafe_utils::get_unchecked;
+use consts::*;
+use num::traits::{
+    CheckedShl, CheckedShr, ConstOne, ConstZero, NumAssignOps, Unsigned, WrappingAdd, WrappingMul,
+    WrappingNeg, WrappingShl, WrappingShr, WrappingSub,
+};
+use num::PrimInt;
+use std::fmt::{Binary, Debug, Display};
+use std::hash::Hash;
+use std::mem::MaybeUninit;
+use std::ops::{BitAndAssign, BitOrAssign, BitXorAssign, Shl};
+
+pub use enum_impl::match_base_enum;
+pub use enum_impl::BaseEnum;
 
 pub mod consts {
     // Aliases
@@ -273,7 +271,9 @@ where
         + Shl<u8, Output = Self::CandidatesIntegral>
         // Conversions
         + Into<u32>
-        + TryFrom<u32, Error: Into<Error> + Debug>;
+        + TryFrom<u32, Error: Into<Error> + std::error::Error + Debug + Send + Sync>
+        + serde::Serialize
+        + for<'de> serde::Deserialize<'de>;
 
     /// A generic array of `SIDE_LENGTH` elements, e.g. `[T; Self::SIDE_LENGTH]`.
     ///

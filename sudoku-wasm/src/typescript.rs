@@ -148,7 +148,7 @@ import type {
     WorldCellPosition,
     WorldGridDim,
     WorldGridPosition,
-} from "../../sudoku-web/src/app/state/world";
+} from "../../sudoku-web/src/app/state/world/schema";
 "#;
 serde_wasm_bindgen_interop! {
     WorldCellDim,

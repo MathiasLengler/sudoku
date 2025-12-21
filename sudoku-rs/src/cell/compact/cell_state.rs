@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use std::cmp::Eq;
 use std::fmt::{self, Debug, Display, Formatter};
 use std::hash::Hash;
@@ -6,7 +7,8 @@ use crate::base::SudokuBase;
 use crate::cell::compact::candidates::Candidates;
 use crate::cell::compact::value::Value;
 
-#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
+#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug, Serialize, Deserialize)]
+#[serde(bound = "Base: SudokuBase")]
 pub(crate) enum CellState<Base: SudokuBase> {
     Value(Value<Base>),
     FixedValue(Value<Base>),

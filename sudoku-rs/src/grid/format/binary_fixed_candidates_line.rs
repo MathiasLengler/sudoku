@@ -60,9 +60,8 @@ impl GridFormat for BinaryFixedCandidatesLine {
 
                     bits >>= 1; // Shift the bits to remove the flag
 
-                    let candidates: Candidates<Base> = Candidates::with_integral(
-                        Base::CandidatesIntegral::try_from(bits).unwrap(),
-                    );
+                    let candidates: Candidates<Base> =
+                        Candidates::with_integral(Base::CandidatesIntegral::try_from(bits)?)?;
 
                     Ok(DynamicCell::from(Cell::from((candidates, is_fixed_value))))
                 })

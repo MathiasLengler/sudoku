@@ -4,6 +4,7 @@ use wasm_bindgen::prelude::*;
 
 use error::Result;
 use sudoku::base::consts::*;
+use sudoku::error::Error as SudokuError;
 use sudoku::grid::Grid;
 use sudoku::transport::TransportSudoku;
 use sudoku::world::{CellWorld, WorldGridDim};
@@ -72,12 +73,27 @@ impl From<DynamicCellWorld> for WasmCellWorld {
 
 #[wasm_bindgen]
 impl WasmCellWorld {
-    pub fn new(base: IBaseEnum, grid_dim: IWorldGridDim, overlap: u8) -> Result<WasmCellWorld> {
+    pub fn new(base: IBaseEnum, grid_dim: IWorldGridDim, overlap: u8) -> Result<Self> {
         Ok(DynamicCellWorld::new(
             import_base_enum(base)?,
             import_world_grid_dim(grid_dim)?,
             overlap,
-        )
+        )?
+        .into())
+    }
+
+    pub fn with(
+        base: IBaseEnum,
+        grid_dim: IWorldGridDim,
+        overlap: u8,
+        cells: IDynamicCells,
+    ) -> Result<Self> {
+        Ok(DynamicCellWorld::with(
+            import_base_enum(base)?,
+            import_world_grid_dim(grid_dim)?,
+            overlap,
+            import_dynamic_cells(cells)?,
+        )?
         .into())
     }
 
@@ -91,11 +107,15 @@ impl WasmCellWorld {
         grid_dim: IWorldGridDim,
         overlap: u8,
         seed: Option<u64>,
-    ) -> Result<WasmCellWorld> {
+    ) -> Result<Self> {
         let mut this = Self::new(base, grid_dim, overlap)?;
-        this.generate_solved(seed).unwrap();
-        this.prune(seed).unwrap();
+        this.generate_solved(seed)?;
+        this.prune(seed)?;
         Ok(this)
+    }
+
+    pub fn equals(&self, other: &WasmCellWorld) -> bool {
+        self.world == other.world
     }
 
     #[wasm_bindgen(js_name = generateSolved)]
@@ -128,6 +148,9 @@ impl WasmCellWorld {
     }
 
     // Queries
+    pub fn base(&self) -> Result<IBaseEnum> {
+        export_base_enum(self.world.base())
+    }
     pub fn dimensions(&self) -> Result<ICellWorldDimensions> {
         export_cell_world_dimensions(self.world.dimensions())
     }
@@ -139,9 +162,40 @@ impl WasmCellWorld {
     pub fn is_directly_consistent(&self) -> bool {
         self.world.is_directly_consistent()
     }
+    // TODO: evaluate non-DynamicCell solution
+    //  Serialize `DynamicCellWorld` directly
+
     #[wasm_bindgen(js_name = allWorldCells)]
     pub fn all_world_cells(&self) -> Result<IDynamicCells> {
         export_dynamic_cells(self.world.all_world_cells())
+    }
+    #[wasm_bindgen(js_name = allWorldCellsPostcardDynamicCellVec)]
+    pub fn all_world_cells_postcard_vec(&self) -> Result<Vec<u8>> {
+        let all_world_cells = self.world.all_world_cells();
+        Ok(postcard::to_stdvec(&all_world_cells).map_err(SudokuError::from)?)
+    }
+    #[wasm_bindgen(js_name = allWorldCellsPostcardDynamicCellBoxedSlice)]
+    pub fn all_world_cells_postcard_boxed_slice(&self) -> Result<Box<[u8]>> {
+        let all_world_cells = self.world.all_world_cells();
+
+        Ok(postcard::to_stdvec(&all_world_cells)
+            .map_err(SudokuError::from)?
+            .into_boxed_slice())
+    }
+
+    // TODO: evaluate branded types for serialized data
+    //  once we have multiple postcard serializations in use,
+    //  we could confuse the `Uint8Array`s in TS.
+    //  This is not *unsafe*, but would lead to unclear deserialization errors.
+    // TODO: decide on Box<[u8]> vs Vec<u8>
+    //  No perf difference in benchmark.
+    pub fn serialize(&self) -> Result<Vec<u8>> {
+        Ok(postcard::to_stdvec(&self.world).map_err(SudokuError::from)?)
+    }
+
+    pub fn deserialize(&self, bytes: &[u8]) -> Result<Self> {
+        let world: DynamicCellWorld = postcard::from_bytes(bytes).map_err(SudokuError::from)?;
+        Ok(Self { world })
     }
 
     // Indexing helpers

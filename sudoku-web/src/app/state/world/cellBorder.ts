@@ -1,10 +1,11 @@
 import classNames from "classnames";
-import { inRange, isEqual } from "lodash-es";
+import { atom, type Atom } from "jotai";
 import { atomFamily } from "jotai/utils";
-import { cellDimState, cellWorldDimensionsState, selectedGridPositionState, type WorldCellPosition } from ".";
+import { inRange, isEqual } from "lodash-es";
+import { cellDimState, cellWorldDimensionsState, selectedGridPositionState } from ".";
 import { getAxisBorders, validateCellWorldPosition } from "../../utils/world";
 import { sudokuBaseState, sudokuSideLengthState } from "../sudoku";
-import { atom, type Atom } from "jotai";
+import type { WorldCellPosition } from "./schema";
 
 export const worldCellBorderClassesState = atomFamily<WorldCellPosition, Atom<Promise<string>>>(
     (cellWorldPosition) =>

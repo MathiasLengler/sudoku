@@ -1,5 +1,5 @@
 import * as Comlink from "comlink";
-import { WasmCellWorld, WasmSudoku } from "../../../../../../sudoku-wasm/pkg";
+import { WasmCellWorld, WasmSudoku } from "sudoku-wasm";
 
 import { WORKER_BOOT_UP_MESSAGE } from "../../../constants";
 import { init } from "./init";
@@ -35,7 +35,7 @@ markObjectAsComlinkProxy(WasmCellWorld);
 
 // Use declaration merging (Module Augmentation) to reflect this modification.
 // This corrects the inferred type of `Comlink.Remote`
-declare module "../../../../../../sudoku-wasm/pkg" {
+declare module "sudoku-wasm" {
     // Declaration merging of classes only works with `interface`
     /* eslint-disable @typescript-eslint/consistent-type-definitions */
     interface WasmSudoku {

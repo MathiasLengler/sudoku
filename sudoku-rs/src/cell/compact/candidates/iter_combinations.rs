@@ -65,7 +65,9 @@ impl<Base: SudokuBase> Iterator for FirstCandidatesCombinationsIter<Base> {
         };
 
         if const { Base::BASE == 4 } && n == Value::max() {
-            let next = Candidates::with_integral_unchecked(next);
+            // Safety: this edge case is only possible for Base4 with all candidates selected.
+            // Therefore, `next` is always valid. Also verified by testing.
+            let next = unsafe { Candidates::with_integral_unchecked(next) };
             self.current = next;
             Some(current)
         } else {
@@ -74,7 +76,8 @@ impl<Base: SudokuBase> Iterator for FirstCandidatesCombinationsIter<Base> {
                 .unwrap_or(Base::CandidatesIntegral::ZERO);
 
             if (next & mask).is_zero() {
-                let next = Candidates::with_integral_unchecked(next);
+                // Safety: masked bits are zero, so `next` is valid.
+                let next = unsafe { Candidates::with_integral_unchecked(next) };
                 self.current = next;
                 Some(current)
             } else {

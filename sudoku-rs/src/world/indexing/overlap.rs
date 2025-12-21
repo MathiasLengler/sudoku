@@ -1,10 +1,9 @@
-use std::fmt::{Display, Formatter};
-use std::marker::PhantomData;
-
-use anyhow::ensure;
-
 use crate::base::SudokuBase;
 use crate::error::{Error, Result};
+use anyhow::ensure;
+use serde::{Deserialize, Serialize};
+use std::fmt::{Display, Formatter};
+use std::marker::PhantomData;
 
 /// How many cells grids overlap each other in the world.
 ///
@@ -14,7 +13,14 @@ use crate::error::{Error, Result};
 /// - complicate the implementation of the world
 ///
 /// Therefore, we restrict the overlap to the range `0..=Base::BASE`.
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Default)]
+#[allow(
+    clippy::unsafe_derive_deserialize,
+    reason = "Safety invariants upheld by serde(try_from)"
+)]
+#[derive(
+    Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Default, Serialize, Deserialize,
+)]
+#[serde(into = "u8", try_from = "u8")]
 pub struct GridOverlap<Base: SudokuBase> {
     /// # Safety invariants
     /// - `overlap <= Base::BASE`
@@ -136,6 +142,12 @@ impl<Base: SudokuBase> TryFrom<u8> for GridOverlap<Base> {
 
     fn try_from(overlap: u8) -> Result<Self> {
         Self::new(overlap)
+    }
+}
+
+impl<Base: SudokuBase> From<GridOverlap<Base>> for u8 {
+    fn from(value: GridOverlap<Base>) -> Self {
+        value.get()
     }
 }
 
