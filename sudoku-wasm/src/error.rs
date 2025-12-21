@@ -1,10 +1,7 @@
+use crate::typescript::import_err;
 use std::fmt::{Display, Formatter};
-
-use wasm_bindgen::{JsError, JsValue};
-
 use sudoku::error::Error as SudokuError;
-
-use crate::import_err;
+use wasm_bindgen::{JsError, JsValue};
 
 #[derive(Debug)]
 pub enum SudokuWasmError {
