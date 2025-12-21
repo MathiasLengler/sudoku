@@ -2,7 +2,7 @@ import { useAtomCallback } from "jotai/utils";
 import { useCallback } from "react";
 import { gameState } from "../state/gameMode";
 import { remoteWasmSudokuClassState, remoteWasmSudokuState } from "../state/worker";
-import { fixupComlinkProxy } from "../state/worker/comlinkProxyWrapper";
+import { fixupComlinkRemote } from "../state/worker/comlinkProxyWrapper";
 import {
     allWorldCellsInvalidateCounterState,
     assertGameModeWorld,
@@ -43,7 +43,7 @@ export function usePlaySelectedGrid() {
 
             const RemoteWasmSudoku = await get(remoteWasmSudokuClassState);
 
-            const newRemoteWasmSudoku = fixupComlinkProxy(await RemoteWasmSudoku.from_dynamic_grid(newGrid));
+            const newRemoteWasmSudoku = fixupComlinkRemote(await RemoteWasmSudoku.from_dynamic_grid(newGrid));
             set(remoteWasmSudokuState, newRemoteWasmSudoku);
 
             await updateSudoku({

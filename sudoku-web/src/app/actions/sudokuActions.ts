@@ -19,7 +19,8 @@ import { hintState } from "../state/hint";
 import type { CellAction } from "../state/input";
 import { inputState } from "../state/input";
 import { gameCounterState, sudokuSideLengthState, sudokuState } from "../state/sudoku";
-import { remoteWasmSudokuState, workerState, type RemoteWasmSudoku } from "../state/worker";
+import { remoteWasmSudokuClassState, remoteWasmSudokuState, workerState, type RemoteWasmSudoku } from "../state/worker";
+import { fixupComlinkRemote } from "../state/worker/comlinkProxyWrapper";
 import { useCancelableMutation } from "../useCancelableMutation";
 import { measure, withMeasure } from "../utils/measure";
 
@@ -334,12 +335,13 @@ export function useGenerate() {
                 onProgress: (progress: GeneratorProgress) => void,
             ) => {
                 return await measure({ name: "generate", detail: { settings } }, async () => {
-                    const wasmSudokuProxy = await get(remoteWasmSudokuState);
+                    const RemoteWasmSudoku = await get(remoteWasmSudokuClassState);
 
+                    let unsafeWasmSudokuProxy;
                     try {
-                        await Promise.race([
+                        unsafeWasmSudokuProxy = await Promise.race([
                             abortPromise,
-                            wasmSudokuProxy.generate(settings, Comlink.proxy(onProgress)),
+                            RemoteWasmSudoku.generate(settings, Comlink.proxy(onProgress)),
                         ]);
                     } catch (err) {
                         if (!(err instanceof DOMException && err.name === "AbortError")) {
@@ -351,6 +353,10 @@ export function useGenerate() {
 
                         throw err;
                     }
+
+                    const wasmSudokuProxy = fixupComlinkRemote(unsafeWasmSudokuProxy);
+
+                    set(remoteWasmSudokuState, wasmSudokuProxy);
 
                     await updateSudoku({ set, wasmSudokuProxy }, true);
                 });
@@ -398,12 +404,13 @@ export function useGenerateMultiShot() {
                 onProgress: (progress: MultiShotGeneratorProgress) => void,
             ) => {
                 return await measure({ name: "generateMultiShot", detail: { settings } }, async () => {
-                    const wasmSudokuProxy = await get(remoteWasmSudokuState);
+                    const RemoteWasmSudoku = await get(remoteWasmSudokuClassState);
 
+                    let unsafeWasmSudokuProxy;
                     try {
-                        await Promise.race([
+                        unsafeWasmSudokuProxy = await Promise.race([
                             abortPromise,
-                            wasmSudokuProxy.generateMultiShot(settings, Comlink.proxy(onProgress)),
+                            RemoteWasmSudoku.generateMultiShot(settings, Comlink.proxy(onProgress)),
                         ]);
                     } catch (err) {
                         if (!(err instanceof DOMException && err.name === "AbortError")) {
@@ -415,6 +422,10 @@ export function useGenerateMultiShot() {
 
                         throw err;
                     }
+
+                    const wasmSudokuProxy = fixupComlinkRemote(unsafeWasmSudokuProxy);
+
+                    set(remoteWasmSudokuState, wasmSudokuProxy);
 
                     await updateSudoku({ set, wasmSudokuProxy }, true);
                 });
