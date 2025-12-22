@@ -1,5 +1,3 @@
-use enum_dispatch::enum_dispatch;
-
 use crate::base::consts::*;
 use crate::base::match_base_enum;
 use crate::base::BaseEnum;
@@ -19,6 +17,8 @@ use crate::solver::strategic::strategies::StrategyEnum;
 use crate::solver::strategic::DynamicSolveStep;
 use crate::sudoku::settings::Settings as SudokuSettings;
 use crate::sudoku::Sudoku;
+use enum_dispatch::enum_dispatch;
+use serde::{Deserialize, Serialize};
 
 /// All methods provided by `Sudoku`, which:
 /// - do not depend on the generic `SudokuBase`
@@ -52,7 +52,7 @@ pub trait DynamicSudokuActions {
 
 /// A game of Sudoku which is able to change the size of the board at runtime.
 #[enum_dispatch(DynamicSudokuActions)]
-#[derive(Eq, PartialEq, Hash, Clone, Debug)]
+#[derive(Eq, PartialEq, Hash, Clone, Debug, Serialize, Deserialize)]
 pub enum DynamicSudoku {
     Base2(Sudoku<Base2>),
     Base3(Sudoku<Base3>),
