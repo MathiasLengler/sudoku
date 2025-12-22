@@ -6,7 +6,7 @@ import { getWasmCellWorldSamples } from "../test/util/cellWorld";
 describe("sudoku-wasm", async () => {
     await init(1);
     describe("WasmSudoku", () => {
-        const wasmSudoku = WasmSudoku.new();
+        const wasmSudoku = WasmSudoku.new(3);
         bench("getTransportSudoku", () => {
             const _transportSudoku = wasmSudoku.getTransportSudoku();
         });

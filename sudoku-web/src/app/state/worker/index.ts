@@ -6,6 +6,7 @@ import { loadCells } from "../cellsPersistence";
 import type { WorkerApi } from "./bg/worker";
 import { fixupComlinkRemote, type SaveComlinkRemote } from "./comlinkProxyWrapper";
 import { spawnWorker } from "./spawn";
+import { GENERATE_FORM_DEFAULT_VALUES } from "../forms/generate";
 
 export const workerState = atomWithRefresh<Promise<Worker>>(async () => await spawnWorker());
 
@@ -43,7 +44,21 @@ async function createRemoteWasmSudoku(
         }
     }
     console.debug("Generating initial sudoku");
-    return await RemoteWasmSudoku.new();
+    return await RemoteWasmSudoku.generate(
+        {
+            base: GENERATE_FORM_DEFAULT_VALUES.base,
+            prune: {
+                target: "minimal",
+                strategies: GENERATE_FORM_DEFAULT_VALUES.strategies,
+                setAllDirectCandidates: GENERATE_FORM_DEFAULT_VALUES.setAllDirectCandidates,
+                order: "random",
+                startFromNearMinimalGrid: false,
+            },
+        },
+        Comlink.proxy((progress) => {
+            console.debug("Initial sudoku generation progress:", progress);
+        }),
+    );
 }
 
 export const remoteWasmSudokuClassState = atom<Promise<RemoteWasmSudokuClass>>(async (get) => {

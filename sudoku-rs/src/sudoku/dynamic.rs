@@ -62,20 +62,17 @@ pub enum DynamicSudoku {
 
 /// Constructors
 impl DynamicSudoku {
-    pub fn new(base: u8) -> Result<Self> {
-        let base: BaseEnum = base.try_into()?;
-
-        Ok(match_base_enum!(base, Self::from(Sudoku::<Base>::new())))
+    /// Creates a new empty Sudoku with the given base.
+    pub fn new(base: BaseEnum) -> Self {
+        match_base_enum!(base, Self::from(Sudoku::<Base>::new()))
     }
 
     pub fn generate(
         dynamic_generator_settings: DynamicGeneratorSettings,
         on_progress: impl FnMut(GeneratorProgress) -> Result<()>,
     ) -> Result<Self> {
-        let base: BaseEnum = dynamic_generator_settings.base.try_into()?;
-
         Ok(match_base_enum!(
-            base,
+            dynamic_generator_settings.base,
             Self::from(Sudoku::<Base>::generate(
                 dynamic_generator_settings.try_into()?,
                 SudokuSettings::default(),
@@ -88,13 +85,8 @@ impl DynamicSudoku {
         multi_shot_generator_settings: DynamicMultiShotGeneratorSettings,
         on_progress: impl FnMut(MultiShotGeneratorProgress) -> Result<()>,
     ) -> Result<Self> {
-        let base: BaseEnum = multi_shot_generator_settings
-            .generator_settings
-            .base
-            .try_into()?;
-
         Ok(match_base_enum!(
-            base,
+            multi_shot_generator_settings.generator_settings.base,
             Self::from(Sudoku::<Base>::generate_multi_shot(
                 multi_shot_generator_settings.try_into()?,
                 SudokuSettings::default(),

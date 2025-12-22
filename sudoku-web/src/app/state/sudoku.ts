@@ -6,7 +6,7 @@ import { remoteWasmSudokuState } from "./worker";
 import { atomWithDefault } from "jotai/utils";
 import { eagerAtom } from "jotai-eager";
 
-const valueSchema = z.number().int().positive().safe();
+const valueSchema = z.int().positive();
 
 const DynamicCellSchema = z.discriminatedUnion("kind", [
     z.object({ kind: z.literal("value"), value: valueSchema, fixed: z.boolean() }),

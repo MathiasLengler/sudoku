@@ -17,10 +17,6 @@ import SelectStrategies from "../../components/formFragments/SelectStrategies";
 import MyIconButton from "../../components/MyIconButton";
 import { ResetFormButton } from "../../components/ResetFormButton";
 import {
-    BASE_MARKS,
-    BASE_MAX,
-    BASE_MIN,
-    baseToLabel,
     GENERATE_FORM_DEFAULT_VALUES,
     generateFormValuesSchema,
     generateFormValuesState,
@@ -30,6 +26,7 @@ import {
     SEED_MAX,
     type GenerateFormValues,
 } from "../../state/forms/generate";
+import { BASE_MARKS, BASE_MAX, BASE_MIN, baseToLabel, parseBase } from "../../state/base";
 import { baseToCellCount } from "../../utils/sudoku";
 import type { NewGameTabValue } from "./NewGameDialog";
 
@@ -179,7 +176,7 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
                             } = formValues;
 
                             const generatorSettings: DynamicGeneratorSettings = {
-                                base,
+                                base: parseBase(base),
                                 prune: {
                                     target: {
                                         minClueCount: minGivens,

@@ -1,22 +1,12 @@
 use crate::error::Result;
 use crate::typescript::*;
-use sudoku::base::consts::*;
-use sudoku::grid::Grid;
 use sudoku::transport::TransportSudoku;
-use sudoku::{DynamicSudoku, DynamicSudokuActions, Sudoku};
+use sudoku::{DynamicSudoku, DynamicSudokuActions};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
 pub struct WasmSudoku {
     sudoku: DynamicSudoku,
-}
-
-impl Default for WasmSudoku {
-    fn default() -> Self {
-        let grid: Grid<Base3> = sudoku::samples::minimal();
-
-        DynamicSudoku::from(Sudoku::with_grid(grid)).into()
-    }
 }
 
 impl From<DynamicSudoku> for WasmSudoku {
@@ -28,8 +18,8 @@ impl From<DynamicSudoku> for WasmSudoku {
 /// Constructors
 #[wasm_bindgen]
 impl WasmSudoku {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(base: IBaseEnum) -> Result<Self> {
+        Ok(DynamicSudoku::new(import_base_enum(base)?).into())
     }
 
     pub fn from_dynamic_cells(cells: IDynamicCells) -> Result<Self> {

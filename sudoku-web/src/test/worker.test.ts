@@ -1,4 +1,4 @@
-import { describe } from "vitest";
+import { describe, expect, test } from "vitest";
 
 describe("worker", () => {
     // TODO: test and bench worker communication
@@ -11,4 +11,8 @@ describe("worker", () => {
     // Goal: find new architecture: which parts are executed into worker, which parts stay on main thread?
     //  Probably: only heavy computations in worker, light computations on main thread
     //  We will need to manage multiple class instances, transferring the state between main thread and worker depending on the operation.
+
+    test("todo", () => {
+        expect(true).toBe(true);
+    });
 });

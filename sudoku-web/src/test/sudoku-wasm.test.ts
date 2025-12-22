@@ -16,7 +16,7 @@ describe("sudoku-wasm", async () => {
         //   https://rustwasm.github.io/docs/wasm-bindgen/reference/types/exported-rust-types.html
         //  Problem: react/jotai rely on structural equality for render optimizations.
         test("default base", () => {
-            const wasmSudoku = WasmSudoku.new();
+            const wasmSudoku = WasmSudoku.new(3);
             expect(wasmSudoku).toBeInstanceOf(WasmSudoku);
             const transportSudoku = wasmSudoku.getTransportSudoku();
             expect(transportSudoku.base).toBe(3);

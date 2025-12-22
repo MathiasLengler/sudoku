@@ -167,6 +167,7 @@ pub struct GeneratorSettings<Base: SudokuBase> {
 mod dynamic_settings {
     use anyhow::ensure;
 
+    use crate::base::BaseEnum;
     use crate::cell::dynamic::DynamicCell;
     use crate::error::Error;
     use crate::grid::dynamic::DynamicGrid;
@@ -266,7 +267,7 @@ mod dynamic_settings {
     #[derive(Debug, Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct DynamicGeneratorSettings {
-        pub base: u8,
+        pub base: BaseEnum,
         #[cfg_attr(feature = "wasm", ts(optional = nullable))]
         pub prune: Option<DynamicPruningSettings>,
         #[cfg_attr(feature = "wasm", ts(optional = nullable))]
@@ -286,7 +287,7 @@ mod dynamic_settings {
                 seed,
             } = dynamic_generator_settings;
 
-            ensure!(base == Base::BASE);
+            ensure!(base == Base::ENUM);
 
             Ok(Self {
                 prune: if let Some(prune) = prune {

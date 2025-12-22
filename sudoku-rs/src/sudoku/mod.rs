@@ -46,6 +46,7 @@ impl<Base: SudokuBase> Default for Sudoku<Base> {
 
 /// Constructors
 impl<Base: SudokuBase> Sudoku<Base> {
+    /// Creates a new empty Sudoku.
     pub fn new() -> Self {
         Self::with_grid(Grid::new())
     }
