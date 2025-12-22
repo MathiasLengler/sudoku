@@ -3,7 +3,7 @@ import type { ZodBigInt } from "zod";
 import { z } from "zod";
 import { goalOptimizationSchema, gridMetricSchema, selectedStrategiesSchema } from "../../constants";
 import { getZodLocalStorage } from "../localStorageEffect";
-import { baseSchema } from "../base";
+import { baseSchema } from "../../utils/base";
 
 export const SEED_MAX = Number.MAX_SAFE_INTEGER;
 

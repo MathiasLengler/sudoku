@@ -1,7 +1,7 @@
 import { range } from "lodash-es";
 import z from "zod";
 import type { BaseEnum } from "../../types";
-import { baseToSideLength } from "../utils/sudoku";
+import { baseToSideLength } from "./sudoku";
 
 export const BASE_MIN = 2;
 export const BASE_MAX = 5;

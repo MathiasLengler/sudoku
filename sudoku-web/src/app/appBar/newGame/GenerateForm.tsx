@@ -26,7 +26,7 @@ import {
     SEED_MAX,
     type GenerateFormValues,
 } from "../../state/forms/generate";
-import { BASE_MARKS, BASE_MAX, BASE_MIN, baseToLabel, parseBase } from "../../state/base";
+import { BASE_MARKS, BASE_MAX, BASE_MIN, baseToLabel, parseBase } from "../../utils/base";
 import { baseToCellCount } from "../../utils/sudoku";
 import type { NewGameTabValue } from "./NewGameDialog";
 
