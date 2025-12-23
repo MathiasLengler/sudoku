@@ -131,7 +131,7 @@ pub type DynamicCells = Vec<DynamicCell>;
 
 // Must be keept in sync with aliases above
 #[wasm_bindgen(typescript_custom_section)]
-const SERDE_ALIASES: &'static str = r#"
+const TS_SERDE_ALIASES: &'static str = r#"
 export type StrategyEnums = StrategyEnum[];
 export type DynamicCells = DynamicCell[];
 "#;
@@ -142,7 +142,7 @@ serde_wasm_bindgen_interop! {
 
 // external types (zod branded types)
 #[wasm_bindgen(typescript_custom_section)]
-const EXTERNAL_TYPES: &'static str = r#"
+const TS_EXTERNAL_SERDE_TYPES: &'static str = r#"
 import type {
     WorldCellDim,
     WorldCellPosition,
@@ -159,7 +159,7 @@ serde_wasm_bindgen_interop! {
 
 // non-serde types - custom conversion functions
 #[wasm_bindgen(typescript_custom_section)]
-const EXTRA: &'static str = r#"
+const TS_CUSTOM: &'static str = r#"
 export type GenerateOnProgress = (progress: GeneratorProgress) => void;
 export type GenerateMultiShotOnProgress = (progress: MultiShotGeneratorProgress) => void;
 "#;
@@ -213,4 +213,22 @@ pub(crate) fn import_generate_multi_shot_on_progress(
             Ok(())
         },
     )
+}
+
+// serialized data (postcard)
+#[wasm_bindgen(typescript_custom_section)]
+const TS_SERIALIZED: &'static str = r#"
+import type {
+    SerializedDynamicCellWorld,
+    SerializedDynamicSudoku,
+} from "../../sudoku-web/src/app/utils/serializedData";
+"#;
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(typescript_type = "SerializedDynamicCellWorld")]
+    pub type ISerializedDynamicCellWorld;
+
+    #[wasm_bindgen(typescript_type = "SerializedDynamicSudoku")]
+    pub type ISerializedDynamicSudoku;
 }

@@ -43,7 +43,7 @@ export function usePlaySelectedGrid() {
 
             const RemoteWasmSudoku = await get(remoteWasmSudokuClassState);
 
-            const newRemoteWasmSudoku = fixupComlinkRemote(await RemoteWasmSudoku.from_dynamic_grid(newGrid));
+            const newRemoteWasmSudoku = fixupComlinkRemote(await RemoteWasmSudoku.fromDynamicGrid(newGrid));
             set(remoteWasmSudokuState, newRemoteWasmSudoku);
 
             await updateSudoku({

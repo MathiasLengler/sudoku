@@ -103,11 +103,8 @@ impl DynamicSudoku {
 impl TryFrom<Vec<DynamicCell>> for DynamicSudoku {
     type Error = Error;
 
-    fn try_from(views: Vec<DynamicCell>) -> Result<Self> {
-        Ok(match_base_enum!(
-            BaseEnum::try_from_cell_count_usize(views.len())?,
-            Sudoku::<Base>::with_grid(views.try_into()?).into()
-        ))
+    fn try_from(dynamic_cells: Vec<DynamicCell>) -> Result<Self> {
+        DynamicGrid::try_from(dynamic_cells)?.try_into()
     }
 }
 

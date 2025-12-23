@@ -1,5 +1,6 @@
 use crate::error::Result;
 use crate::typescript::*;
+use sudoku::error::Error as SudokuError;
 use sudoku::transport::TransportSudoku;
 use sudoku::{DynamicSudoku, DynamicSudokuActions};
 use wasm_bindgen::prelude::*;
@@ -22,12 +23,7 @@ impl WasmSudoku {
         Ok(DynamicSudoku::new(import_base_enum(base)?).into())
     }
 
-    pub fn from_dynamic_cells(cells: IDynamicCells) -> Result<Self> {
-        let cells = import_dynamic_cells(cells)?;
-
-        Ok(DynamicSudoku::try_from(cells)?.into())
-    }
-
+    #[wasm_bindgen(js_name = fromDynamicGrid)]
     pub fn from_dynamic_grid(dynamic_grid: IDynamicGrid) -> Result<Self> {
         let dynamic_grid = import_dynamic_grid(dynamic_grid)?;
 
@@ -64,6 +60,10 @@ impl WasmSudoku {
 
 #[wasm_bindgen]
 impl WasmSudoku {
+    pub fn equals(&self, other: &Self) -> bool {
+        self.sudoku == other.sudoku
+    }
+
     #[wasm_bindgen(js_name = getTransportSudoku)]
     pub fn get_transport_sudoku(&self) -> Result<ITransportSudoku> {
         let transport_sudoku = TransportSudoku::from(&self.sudoku);
@@ -183,5 +183,21 @@ impl WasmSudoku {
         self.sudoku
             .apply_deductions(import_transport_deductions(deductions)?)?;
         Ok(())
+    }
+}
+
+/// (De)serialization
+#[wasm_bindgen]
+impl WasmSudoku {
+    pub fn serialize(&self) -> Result<ISerializedDynamicSudoku> {
+        let vec = postcard::to_stdvec(&self.sudoku).map_err(SudokuError::from)?;
+        Ok(JsValue::from(vec).into())
+    }
+
+    pub fn deserialize(
+        #[wasm_bindgen(unchecked_param_type = "SerializedDynamicSudoku")] bytes: &[u8],
+    ) -> Result<Self> {
+        let sudoku: DynamicSudoku = postcard::from_bytes(bytes).map_err(SudokuError::from)?;
+        Ok(Self { sudoku })
     }
 }

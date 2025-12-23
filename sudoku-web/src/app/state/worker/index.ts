@@ -1,12 +1,12 @@
 import * as Comlink from "comlink";
 import { atom } from "jotai";
 import { atomWithDefault, atomWithRefresh } from "jotai/utils";
-import type { DynamicCells, WasmCellWorld, WasmSudoku } from "../../../types";
+import type { DynamicGrid, WasmCellWorld, WasmSudoku } from "../../../types";
 import { loadCells } from "../cellsPersistence";
+import { GENERATE_FORM_DEFAULT_VALUES } from "../forms/generate";
 import type { WorkerApi } from "./bg/worker";
 import { fixupComlinkRemote, type SaveComlinkRemote } from "./comlinkProxyWrapper";
 import { spawnWorker } from "./spawn";
-import { GENERATE_FORM_DEFAULT_VALUES } from "../forms/generate";
 
 export const workerState = atomWithRefresh<Promise<Worker>>(async () => await spawnWorker());
 
@@ -33,12 +33,12 @@ export const isWorkerReadyState = atom<Promise<boolean>>(async (get) => {
 
 async function createRemoteWasmSudoku(
     RemoteWasmSudoku: RemoteWasmSudokuClass,
-    cells?: DynamicCells,
+    dynamicGrid?: DynamicGrid,
 ): Promise<UnsafeRemoteWasmSudoku> {
-    if (cells) {
-        console.debug("Restoring sudoku from cells");
+    if (dynamicGrid) {
+        console.debug("Restoring sudoku");
         try {
-            return await RemoteWasmSudoku.from_dynamic_cells(cells);
+            return await RemoteWasmSudoku.fromDynamicGrid(dynamicGrid);
         } catch (err) {
             console.error("Failed to restore persisted grid:", err);
         }
