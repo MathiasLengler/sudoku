@@ -55,7 +55,7 @@ describe("worker", async () => {
         });
 
         describe("WasmCellWorld", () => {
-            [2, 4, 8, 16, 32, 64, 128, 256].forEach((size) => {
+            [2, 4, 8, 16, 32, 64].forEach((size) => {
                 describe(`size=${size}`, () => {
                     getWasmCellWorldSamples(base, size, seed).forEach(({ name, wasmCellWorld }) => {
                         describe(name, () => {
