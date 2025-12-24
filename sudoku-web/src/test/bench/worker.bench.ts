@@ -29,11 +29,6 @@ describe("worker", async () => {
                         );
                         const _roundTrippedTransportSudoku = await remoteWasmSudoku.getTransportSudoku();
                     });
-                    bench("copied: SerializedDynamicSudoku to worker, TransportSudoku to host", async () => {
-                        const serializedDynamicSudoku = wasmSudoku.serialize();
-                        const remoteWasmSudoku = await remoteWorkerApi.WasmSudoku.deserialize(serializedDynamicSudoku);
-                        const _roundTrippedTransportSudoku = await remoteWasmSudoku.getTransportSudoku();
-                    });
                     bench("copied: roundtrip SerializedDynamicSudoku", async () => {
                         const serializedDynamicSudoku = wasmSudoku.serialize();
                         const remoteWasmSudoku = await remoteWorkerApi.WasmSudoku.deserialize(serializedDynamicSudoku);

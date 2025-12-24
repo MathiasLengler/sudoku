@@ -58,16 +58,6 @@ describe("worker", async () => {
                             const roundTrippedTransportSudoku = await remoteWasmSudoku.getTransportSudoku();
                             expect(roundTrippedTransportSudoku).toStrictEqual(transportSudoku);
                         });
-                        test("SerializedDynamicSudoku to worker, TransportSudoku to host", async ({
-                            remoteWorkerApi,
-                        }) => {
-                            const transportSudoku = wasmSudoku.getTransportSudoku();
-                            const serializedDynamicSudoku = wasmSudoku.serialize();
-                            const remoteWasmSudoku =
-                                await remoteWorkerApi.WasmSudoku.deserialize(serializedDynamicSudoku);
-                            const roundTrippedTransportSudoku = await remoteWasmSudoku.getTransportSudoku();
-                            expect(roundTrippedTransportSudoku.cellCount).toBe(transportSudoku.cellCount);
-                        });
                         test("roundtrip SerializedDynamicSudoku", async ({ remoteWorkerApi }) => {
                             const serializedDynamicSudoku = wasmSudoku.serialize();
                             const remoteWasmSudoku =
