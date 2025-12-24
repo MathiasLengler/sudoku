@@ -19,7 +19,13 @@ import { hintState } from "../state/hint";
 import type { CellAction } from "../state/input";
 import { inputState } from "../state/input";
 import { gameCounterState, sudokuSideLengthState, sudokuState } from "../state/sudoku";
-import { remoteWasmSudokuClassState, remoteWasmSudokuState, workerState, type RemoteWasmSudoku } from "../state/worker";
+import {
+    isWorkerReadyState,
+    remoteWasmSudokuClassState,
+    remoteWasmSudokuState,
+    workerState,
+    type RemoteWasmSudoku,
+} from "../state/worker";
 import { fixupComlinkRemote } from "../state/worker/comlinkProxyWrapper";
 import { useCancelableMutation } from "../useCancelableMutation";
 import { measure, withMeasure } from "../utils/measure";
@@ -314,13 +320,17 @@ export function useRedo() {
 
 const rebootWorker = withMeasure({ name: "rebootWorker" }, async ({ get, set }: { get: Getter; set: Setter }) => {
     console.info("Rebooting worker");
-    const currentWorker = await get(workerState);
+    const currentWorker = get(workerState);
     console.debug("Terminating current worker");
     currentWorker.terminate();
     // Refresh the atom, spawning a new worker
     set(workerState);
     // Wait for the new worker to be ready
-    await get(workerState);
+    await get(isWorkerReadyState);
+
+    // Sync sudokuState to the new worker
+    await updateSudoku({ set, wasmSudokuProxy: await get(remoteWasmSudokuState) }, true);
+
     console.info("Worker rebooted");
 });
 

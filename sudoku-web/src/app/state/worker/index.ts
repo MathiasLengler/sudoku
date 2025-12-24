@@ -8,7 +8,7 @@ import type { WorkerApi } from "./bg/worker";
 import { fixupComlinkRemote, type SaveComlinkRemote } from "./comlinkProxyWrapper";
 import { spawnWorker } from "./spawn";
 
-export const workerState = atomWithRefresh<Promise<Worker>>(async () => await spawnWorker());
+export const workerState = atomWithRefresh<Worker>(() => spawnWorker());
 
 export type RemoteWorkerApi = Comlink.Remote<WorkerApi>;
 export type UnsafeRemoteWasmSudoku = Comlink.Remote<WasmSudoku>;
@@ -18,7 +18,7 @@ export type RemoteWasmCellWorld = SaveComlinkRemote<WasmCellWorld>;
 export type RemoteWasmCellWorldClass = SaveComlinkRemote<typeof WasmCellWorld>;
 
 export const remoteWorkerApiState = atom<Promise<RemoteWorkerApi>>(async (get) => {
-    const worker = await get(workerState);
+    const worker = get(workerState);
     const remoteWorkerApi = Comlink.wrap<WorkerApi>(worker, {});
     console.debug("Worker init");
     await remoteWorkerApi.init();

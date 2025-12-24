@@ -1,9 +1,7 @@
 import * as Comlink from "comlink";
 import { WasmCellWorld, WasmSudoku } from "sudoku-wasm";
-
-import { WORKER_BOOT_UP_MESSAGE } from "../../../constants";
-import { init } from "./init";
 import type { SerializedDynamicCellWorld, SerializedDynamicSudoku } from "../../../utils/serializedData";
+import { init } from "./init";
 
 if (import.meta.env.MODE === "development") {
     self.addEventListener("message", (ev) => {
@@ -76,11 +74,5 @@ declare module "sudoku-wasm" {
     }
     /* eslint-enable @typescript-eslint/consistent-type-definitions */
 }
-
-// Send boot up message
-// Background: worker.tsx is an async module. (TODO: is this still the case?)
-// This requires manual synchronization between Comlink.wrap and Comlink.expose,
-// otherwise initialization messages from comlink would get lost, resulting in a deadlock.
-postMessage(WORKER_BOOT_UP_MESSAGE);
 
 Comlink.expose(workerApi);

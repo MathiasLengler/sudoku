@@ -1,6 +1,4 @@
-import { WORKER_BOOT_UP_MESSAGE } from "../../constants";
-
-export async function spawnWorker() {
+export function spawnWorker() {
     console.debug("Spawning worker");
     const worker = new Worker(new URL("./bg/worker.tsx", import.meta.url), {
         name: "SudokuWasmWorker",
@@ -18,21 +16,5 @@ export async function spawnWorker() {
             console.error("Worker messageerror:", ev);
         });
     }
-    console.debug("Waiting for worker boot up message");
-    const bootUpMessage = await new Promise((resolve, reject) => {
-        worker.addEventListener(
-            "message",
-            (ev: MessageEvent) => {
-                if (ev.data === WORKER_BOOT_UP_MESSAGE) {
-                    resolve(ev.data);
-                } else {
-                    reject(new Error(`Unexpected message: ${ev.data}`));
-                }
-            },
-            { once: true },
-        );
-    });
-    console.debug("Received worker boot up message:", bootUpMessage);
-
     return worker;
 }
