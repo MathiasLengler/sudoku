@@ -62,6 +62,9 @@ describe("worker", async () => {
                             const serializedDynamicSudoku = wasmSudoku.serialize();
                             const remoteWasmSudoku =
                                 await remoteWorkerApi.WasmSudoku.deserialize(serializedDynamicSudoku);
+                            // Not transferred
+                            expect(serializedDynamicSudoku.length).toBeGreaterThan(0);
+
                             const roundTrippedSerializedDynamicSudoku = await remoteWasmSudoku.serialize();
                             const roundTrippedWasmSudoku = WasmSudoku.deserialize(roundTrippedSerializedDynamicSudoku);
                             expect(wasmSudoku.equals(roundTrippedWasmSudoku)).toBe(true);
@@ -73,6 +76,8 @@ describe("worker", async () => {
                             const remoteWasmSudoku = await remoteWorkerApi.WasmSudokuWithTransfer.deserialize(
                                 Comlink.transfer(serializedDynamicSudoku, [serializedDynamicSudoku.buffer]),
                             );
+                            // Transferred
+                            expect(serializedDynamicSudoku.length).toBe(0);
                             const roundTrippedSerializedDynamicSudoku = await remoteWasmSudoku.serializeWithTransfer();
                             const roundTrippedWasmSudoku = WasmSudoku.deserialize(roundTrippedSerializedDynamicSudoku);
                             expect(wasmSudoku.equals(roundTrippedWasmSudoku)).toBe(true);
