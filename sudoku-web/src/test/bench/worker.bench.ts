@@ -104,31 +104,5 @@ describe("worker", async () => {
                 });
             });
         });
-
-        describe("raw Uint8Array", () => {
-            const sizes = range(10, 21).map((exp) => 2 ** exp);
-
-            for (const size of sizes) {
-                describe(`size=${size}`, () => {
-                    const randomData = new Uint8Array(1024);
-                    self.crypto.getRandomValues(randomData);
-
-                    const sampleData = new Uint8Array(size);
-                    sampleData.set(randomData, 0);
-                    sampleData.set(randomData, sampleData.length - randomData.length);
-
-                    let data: Uint8Array = sampleData;
-
-                    const benchmark = remoteWorkerApi.benchmark as unknown as Comlink.Remote<MicroBenchmarkAPI>;
-
-                    bench.only("echo clone Uint8Array", async () => {
-                        data = await benchmark.echoCloneUint8Array(data);
-                    });
-                    bench.only("echo transferred Uint8Array", async () => {
-                        data = await benchmark.echoTransferUint8Array(Comlink.transfer(data, [data.buffer]));
-                    });
-                });
-            }
-        });
     });
 });

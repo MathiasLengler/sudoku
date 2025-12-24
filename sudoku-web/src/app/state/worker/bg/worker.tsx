@@ -35,10 +35,6 @@ class WasmCellWorldWithTransfer extends WasmCellWorld {
         return Comlink.transfer(serialized, [serialized.buffer]);
     }
 }
-export type MicroBenchmarkAPI = {
-    echoCloneUint8Array: (data: Uint8Array) => Uint8Array;
-    echoTransferUint8Array: (data: Uint8Array) => Uint8Array;
-};
 
 export type WorkerApi = {
     init: typeof init;
@@ -48,8 +44,6 @@ export type WorkerApi = {
     WasmSudokuWithTransfer: typeof WasmSudokuWithTransfer;
     WasmCellWorld: typeof WasmCellWorld;
     WasmCellWorldWithTransfer: typeof WasmCellWorldWithTransfer;
-
-    benchmark: MicroBenchmarkAPI;
 };
 
 const workerApi: WorkerApi = {
@@ -58,14 +52,6 @@ const workerApi: WorkerApi = {
     WasmSudokuWithTransfer,
     WasmCellWorld,
     WasmCellWorldWithTransfer,
-    benchmark: {
-        echoCloneUint8Array: (data: Uint8Array) => {
-            return data;
-        },
-        echoTransferUint8Array: (data: Uint8Array) => {
-            return Comlink.transfer(data, [data.buffer]);
-        },
-    },
 };
 
 // The type of `obj` ensures that only module-augmented classed can be patched with the marker.
