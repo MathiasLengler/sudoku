@@ -4,11 +4,12 @@
 import * as Comlink from "comlink";
 import { test as baseTest, describe, expect } from "vitest";
 import { init } from "../app/state/worker/bg/init";
-import type { WorkerApi } from "../app/state/worker/bg/worker";
+import type { MicroBenchmarkAPI, WorkerApi } from "../app/state/worker/bg/worker";
 import { spawnWorker } from "../app/state/worker/spawn";
 import type { RemoteWorkerApi } from "../app/state/worker";
 import { getWasmSudokuSamples } from "./util/sudoku";
-import { WasmSudoku } from "sudoku-wasm";
+import { WasmCellWorld, WasmSudoku } from "sudoku-wasm";
+import { getWasmCellWorldSamples } from "./util/cellWorld";
 
 type WorkerFixtures = {
     remoteWorkerApi: RemoteWorkerApi;
@@ -27,7 +28,7 @@ const test = baseTest.extend<WorkerFixtures>({
     },
 });
 
-describe("worker", async () => {
+describe("worker communication", async () => {
     // Init foreground WASM.
     await init(1);
 
@@ -45,46 +46,130 @@ describe("worker", async () => {
     //  Probably: only heavy computations in worker, light computations on main thread
     //  We will need to manage multiple class instances, transferring the state between main thread and worker depending on the operation.
 
-    describe("communication", () => {
-        describe("WasmSudoku", () => {
-            for (const { name, wasmSudoku } of getWasmSudokuSamples(base, seed)) {
-                describe(name, () => {
-                    describe("copied", () => {
-                        test("roundtrip TransportSudoku", async ({ remoteWorkerApi }) => {
-                            const transportSudoku = wasmSudoku.getTransportSudoku();
-                            const remoteWasmSudoku = await remoteWorkerApi.WasmSudoku.fromDynamicGrid(
-                                transportSudoku.cells,
-                            );
-                            const roundTrippedTransportSudoku = await remoteWasmSudoku.getTransportSudoku();
-                            expect(roundTrippedTransportSudoku).toStrictEqual(transportSudoku);
-                        });
-                        test("roundtrip SerializedDynamicSudoku", async ({ remoteWorkerApi }) => {
-                            const serializedDynamicSudoku = wasmSudoku.serialize();
-                            const remoteWasmSudoku =
-                                await remoteWorkerApi.WasmSudoku.deserialize(serializedDynamicSudoku);
-                            // Not transferred
-                            expect(serializedDynamicSudoku.length).toBeGreaterThan(0);
-
-                            const roundTrippedSerializedDynamicSudoku = await remoteWasmSudoku.serialize();
-                            const roundTrippedWasmSudoku = WasmSudoku.deserialize(roundTrippedSerializedDynamicSudoku);
-                            expect(wasmSudoku.equals(roundTrippedWasmSudoku)).toBe(true);
-                        });
+    describe("WasmSudoku", () => {
+        for (const { name, wasmSudoku } of getWasmSudokuSamples(base, seed)) {
+            describe(name, () => {
+                describe("copied", () => {
+                    test("roundtrip TransportSudoku", async ({ remoteWorkerApi }) => {
+                        const transportSudoku = wasmSudoku.getTransportSudoku();
+                        const remoteWasmSudoku = await remoteWorkerApi.WasmSudoku.fromDynamicGrid(
+                            transportSudoku.cells,
+                        );
+                        const roundTrippedTransportSudoku = await remoteWasmSudoku.getTransportSudoku();
+                        expect(roundTrippedTransportSudoku).toStrictEqual(transportSudoku);
                     });
-                    describe("transferred", () => {
-                        test("roundtrip SerializedDynamicSudoku", async ({ remoteWorkerApi }) => {
-                            const serializedDynamicSudoku = wasmSudoku.serialize();
-                            const remoteWasmSudoku = await remoteWorkerApi.WasmSudokuWithTransfer.deserialize(
-                                Comlink.transfer(serializedDynamicSudoku, [serializedDynamicSudoku.buffer]),
-                            );
-                            // Transferred
-                            expect(serializedDynamicSudoku.length).toBe(0);
-                            const roundTrippedSerializedDynamicSudoku = await remoteWasmSudoku.serializeWithTransfer();
-                            const roundTrippedWasmSudoku = WasmSudoku.deserialize(roundTrippedSerializedDynamicSudoku);
-                            expect(wasmSudoku.equals(roundTrippedWasmSudoku)).toBe(true);
-                        });
+                    test("roundtrip DynamicGrid", async ({ remoteWorkerApi }) => {
+                        const dynamicGrid = wasmSudoku.toDynamicGrid();
+                        const remoteWasmSudoku = await remoteWorkerApi.WasmSudoku.fromDynamicGrid(dynamicGrid);
+                        const roundTrippedDynamicGrid = await remoteWasmSudoku.toDynamicGrid();
+                        expect(roundTrippedDynamicGrid).toStrictEqual(dynamicGrid);
+                    });
+                    test("roundtrip SerializedDynamicSudoku", async ({ remoteWorkerApi }) => {
+                        const serializedDynamicSudoku = wasmSudoku.serialize();
+                        const remoteWasmSudoku = await remoteWorkerApi.WasmSudoku.deserialize(serializedDynamicSudoku);
+                        // Copied
+                        expect(serializedDynamicSudoku.length).toBeGreaterThan(0);
+                        const roundTrippedSerializedDynamicSudoku = await remoteWasmSudoku.serialize();
+                        const roundTrippedWasmSudoku = WasmSudoku.deserialize(roundTrippedSerializedDynamicSudoku);
+                        expect(wasmSudoku.equals(roundTrippedWasmSudoku)).toBe(true);
                     });
                 });
-            }
+                describe("transferred", () => {
+                    test("roundtrip SerializedDynamicSudoku", async ({ remoteWorkerApi }) => {
+                        const serializedDynamicSudoku = wasmSudoku.serialize();
+                        const remoteWasmSudoku = await remoteWorkerApi.WasmSudokuWithTransfer.deserialize(
+                            Comlink.transfer(serializedDynamicSudoku, [serializedDynamicSudoku.buffer]),
+                        );
+                        // Transferred
+                        expect(serializedDynamicSudoku.length).toBe(0);
+                        const roundTrippedSerializedDynamicSudoku = await remoteWasmSudoku.serializeWithTransfer();
+                        const roundTrippedWasmSudoku = WasmSudoku.deserialize(roundTrippedSerializedDynamicSudoku);
+                        expect(wasmSudoku.equals(roundTrippedWasmSudoku)).toBe(true);
+                    });
+                });
+            });
+        }
+    });
+
+    describe("WasmCellWorld", () => {
+        const size = 3;
+
+        getWasmCellWorldSamples(base, size, seed).forEach(({ name, wasmCellWorld }) => {
+            describe(name, () => {
+                describe("copied", () => {
+                    test("roundtrip DynamicCells", async ({ remoteWorkerApi }) => {
+                        const cells = wasmCellWorld.allWorldCells();
+                        const base = wasmCellWorld.base();
+                        const { overlap, gridDim } = wasmCellWorld.dimensions();
+                        const remoteWasmCellWorld = await remoteWorkerApi.WasmCellWorld.with(
+                            base,
+                            gridDim,
+                            overlap,
+                            cells,
+                        );
+                        const roundTrippedCells = await remoteWasmCellWorld.allWorldCells();
+                        const roundTrippedBase = await remoteWasmCellWorld.base();
+                        const roundTrippedDimensions = await remoteWasmCellWorld.dimensions();
+                        const roundTrippedWasmCellWorld = WasmCellWorld.with(
+                            roundTrippedBase,
+                            roundTrippedDimensions.gridDim,
+                            roundTrippedDimensions.overlap,
+                            roundTrippedCells,
+                        );
+                        expect(wasmCellWorld.equals(roundTrippedWasmCellWorld)).toBe(true);
+                    });
+                    test("roundtrip SerializedDynamicCellWorld", async ({ remoteWorkerApi }) => {
+                        const serializedDynamicCellWorld = wasmCellWorld.serialize();
+                        const remoteWasmCellWorld =
+                            await remoteWorkerApi.WasmCellWorld.deserialize(serializedDynamicCellWorld);
+                        // Copied
+                        expect(serializedDynamicCellWorld.length).toBeGreaterThan(0);
+                        const roundTrippedSerializedDynamicCellWorld = await remoteWasmCellWorld.serialize();
+                        const roundTrippedWasmCellWorld = WasmCellWorld.deserialize(
+                            roundTrippedSerializedDynamicCellWorld,
+                        );
+                        expect(wasmCellWorld.equals(roundTrippedWasmCellWorld)).toBe(true);
+                    });
+                });
+                describe("transferred", () => {
+                    test("roundtrip SerializedDynamicCellWorld", async ({ remoteWorkerApi }) => {
+                        const serializedDynamicCellWorld = wasmCellWorld.serialize();
+                        const remoteWasmCellWorld = await remoteWorkerApi.WasmCellWorldWithTransfer.deserialize(
+                            Comlink.transfer(serializedDynamicCellWorld, [serializedDynamicCellWorld.buffer]),
+                        );
+                        // Transferred
+                        expect(serializedDynamicCellWorld.length).toBe(0);
+                        const roundTrippedSerializedDynamicCellWorld =
+                            await remoteWasmCellWorld.serializeWithTransfer();
+                        const roundTrippedWasmCellWorld = WasmCellWorld.deserialize(
+                            roundTrippedSerializedDynamicCellWorld,
+                        );
+                        expect(wasmCellWorld.equals(roundTrippedWasmCellWorld)).toBe(true);
+                    });
+                });
+            });
+        });
+    });
+
+    describe("raw Uint8Array", () => {
+        const size = 1024;
+        test("echo cloned Uint8Array", async ({ remoteWorkerApi }) => {
+            const data = new Uint8Array(size);
+            self.crypto.getRandomValues(data);
+            const clonedData = structuredClone(data);
+            const benchmark = remoteWorkerApi.benchmark as unknown as Comlink.Remote<MicroBenchmarkAPI>;
+
+            const echoedData = await benchmark.echoCloneUint8Array(data);
+            expect(echoedData).toStrictEqual(clonedData);
+        });
+        test("echo transferred Uint8Array", async ({ remoteWorkerApi }) => {
+            const data = new Uint8Array(size);
+            self.crypto.getRandomValues(data);
+            const clonedData = structuredClone(data);
+            const benchmark = remoteWorkerApi.benchmark as unknown as Comlink.Remote<MicroBenchmarkAPI>;
+
+            const echoedData = await benchmark.echoTransferUint8Array(Comlink.transfer(data, [data.buffer]));
+            expect(echoedData).toStrictEqual(clonedData);
         });
     });
 });

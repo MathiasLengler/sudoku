@@ -1,10 +1,12 @@
 import * as Comlink from "comlink";
-import { WasmSudoku } from "sudoku-wasm";
+import { WasmCellWorld, WasmSudoku } from "sudoku-wasm";
 import { bench, describe } from "vitest";
 import { init } from "../../app/state/worker/bg/init";
 import { getWasmSudokuSamples } from "../util/sudoku";
 import { spawnWorker } from "../../app/state/worker/spawn";
-import type { WorkerApi } from "../../app/state/worker/bg/worker";
+import type { MicroBenchmarkAPI, WorkerApi } from "../../app/state/worker/bg/worker";
+import { getWasmCellWorldSamples } from "../util/cellWorld";
+import { range } from "es-toolkit";
 
 describe("worker", async () => {
     // Init foreground WASM.
@@ -16,7 +18,7 @@ describe("worker", async () => {
     const worker = await spawnWorker();
 
     const remoteWorkerApi = Comlink.wrap<WorkerApi>(worker, {});
-    await remoteWorkerApi.init();
+    await remoteWorkerApi.init(1);
 
     describe("communication", () => {
         describe("WasmSudoku", () => {
@@ -28,6 +30,11 @@ describe("worker", async () => {
                             transportSudoku.cells,
                         );
                         const _roundTrippedTransportSudoku = await remoteWasmSudoku.getTransportSudoku();
+                    });
+                    bench("copied: roundtrip DynamicGrid", async () => {
+                        const dynamicGrid = wasmSudoku.toDynamicGrid();
+                        const remoteWasmSudoku = await remoteWorkerApi.WasmSudoku.fromDynamicGrid(dynamicGrid);
+                        const _roundTrippedDynamicGrid = await remoteWasmSudoku.toDynamicGrid();
                     });
                     bench("copied: roundtrip SerializedDynamicSudoku", async () => {
                         const serializedDynamicSudoku = wasmSudoku.serialize();
@@ -42,6 +49,83 @@ describe("worker", async () => {
                         );
                         const roundTrippedSerializedDynamicSudoku = await remoteWasmSudoku.serializeWithTransfer();
                         const _roundTrippedWasmSudoku = WasmSudoku.deserialize(roundTrippedSerializedDynamicSudoku);
+                    });
+                });
+            }
+        });
+
+        describe("WasmCellWorld", () => {
+            [2, 4, 8, 16, 32, 64, 128, 256].forEach((size) => {
+                describe(`size=${size}`, () => {
+                    getWasmCellWorldSamples(base, size, seed).forEach(({ name, wasmCellWorld }) => {
+                        describe(name, () => {
+                            bench("copied: roundtrip DynamicCells", async () => {
+                                const cells = wasmCellWorld.allWorldCells();
+                                const base = wasmCellWorld.base();
+                                const { overlap, gridDim } = wasmCellWorld.dimensions();
+                                const remoteWasmCellWorld = await remoteWorkerApi.WasmCellWorld.with(
+                                    base,
+                                    gridDim,
+                                    overlap,
+                                    cells,
+                                );
+                                const roundTrippedCells = await remoteWasmCellWorld.allWorldCells();
+                                const roundTrippedBase = await remoteWasmCellWorld.base();
+                                const roundTrippedDimensions = await remoteWasmCellWorld.dimensions();
+                                const _roundTrippedWasmCellWorld = WasmCellWorld.with(
+                                    roundTrippedBase,
+                                    roundTrippedDimensions.gridDim,
+                                    roundTrippedDimensions.overlap,
+                                    roundTrippedCells,
+                                );
+                            });
+                            bench("copied: roundtrip SerializedDynamicCellWorld", async () => {
+                                const serializedDynamicCellWorld = wasmCellWorld.serialize();
+                                const remoteWasmCellWorld =
+                                    await remoteWorkerApi.WasmCellWorld.deserialize(serializedDynamicCellWorld);
+                                const roundTrippedSerializedDynamicCellWorld = await remoteWasmCellWorld.serialize();
+                                const _roundTrippedWasmCellWorld = WasmCellWorld.deserialize(
+                                    roundTrippedSerializedDynamicCellWorld,
+                                );
+                            });
+                            bench("transferred: roundtrip SerializedDynamicCellWorld", async () => {
+                                const serializedDynamicCellWorld = wasmCellWorld.serialize();
+                                const remoteWasmCellWorld = await remoteWorkerApi.WasmCellWorldWithTransfer.deserialize(
+                                    Comlink.transfer(serializedDynamicCellWorld, [serializedDynamicCellWorld.buffer]),
+                                );
+                                const roundTrippedSerializedDynamicCellWorld =
+                                    await remoteWasmCellWorld.serializeWithTransfer();
+                                const _roundTrippedWasmCellWorld = WasmCellWorld.deserialize(
+                                    roundTrippedSerializedDynamicCellWorld,
+                                );
+                            });
+                        });
+                    });
+                });
+            });
+        });
+
+        describe("raw Uint8Array", () => {
+            const sizes = range(10, 21).map((exp) => 2 ** exp);
+
+            for (const size of sizes) {
+                describe(`size=${size}`, () => {
+                    const randomData = new Uint8Array(1024);
+                    self.crypto.getRandomValues(randomData);
+
+                    const sampleData = new Uint8Array(size);
+                    sampleData.set(randomData, 0);
+                    sampleData.set(randomData, sampleData.length - randomData.length);
+
+                    let data: Uint8Array = sampleData;
+
+                    const benchmark = remoteWorkerApi.benchmark as unknown as Comlink.Remote<MicroBenchmarkAPI>;
+
+                    bench.only("echo clone Uint8Array", async () => {
+                        data = await benchmark.echoCloneUint8Array(data);
+                    });
+                    bench.only("echo transferred Uint8Array", async () => {
+                        data = await benchmark.echoTransferUint8Array(Comlink.transfer(data, [data.buffer]));
                     });
                 });
             }

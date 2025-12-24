@@ -95,7 +95,7 @@ describe("sudoku-wasm", async () => {
         getWasmCellWorldSamples(base, size, seed).forEach(({ name, wasmCellWorld }) => {
             describe(name, () => {
                 describe("serialization", () => {
-                    test(`"Vec<DynamicCell> => serde_wasm_bindgen => DynamicCell[]`, () => {
+                    test(`"DynamicCells => serde_wasm_bindgen => DynamicCells`, () => {
                         const cells = wasmCellWorld.allWorldCells();
                         expect(cells.length).toBe(
                             // base 3, grid 3x3, overlap 1
@@ -106,7 +106,7 @@ describe("sudoku-wasm", async () => {
                         });
                     });
 
-                    test(`DynamicCellWorld => postcard => Uint8Array`, () => {
+                    test(`DynamicCellWorld => postcard => SerializedDynamicCellWorld`, () => {
                         const serializedDynamicCellWorld = wasmCellWorld.serialize();
                         expect(serializedDynamicCellWorld).instanceOf(Uint8Array);
                         expect(serializedDynamicCellWorld.length).toBeGreaterThan(0);

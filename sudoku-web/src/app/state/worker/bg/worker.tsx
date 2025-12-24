@@ -3,7 +3,7 @@ import { WasmCellWorld, WasmSudoku } from "sudoku-wasm";
 
 import { WORKER_BOOT_UP_MESSAGE } from "../../../constants";
 import { init } from "./init";
-import type { SerializedDynamicSudoku } from "../../../utils/serializedData";
+import type { SerializedDynamicCellWorld, SerializedDynamicSudoku } from "../../../utils/serializedData";
 
 if (import.meta.env.MODE === "development") {
     self.addEventListener("message", (ev) => {
@@ -24,6 +24,22 @@ class WasmSudokuWithTransfer extends WasmSudoku {
     }
 }
 
+class WasmCellWorldWithTransfer extends WasmCellWorld {
+    static override deserialize(bytes: SerializedDynamicCellWorld): WasmCellWorldWithTransfer {
+        const instance = WasmCellWorld.deserialize(bytes);
+        Object.setPrototypeOf(instance, this.prototype);
+        return instance as WasmCellWorldWithTransfer;
+    }
+    serializeWithTransfer(): SerializedDynamicCellWorld {
+        const serialized = super.serialize();
+        return Comlink.transfer(serialized, [serialized.buffer]);
+    }
+}
+export type MicroBenchmarkAPI = {
+    echoCloneUint8Array: (data: Uint8Array) => Uint8Array;
+    echoTransferUint8Array: (data: Uint8Array) => Uint8Array;
+};
+
 export type WorkerApi = {
     init: typeof init;
     // expose class constructors directly
@@ -31,6 +47,9 @@ export type WorkerApi = {
     WasmSudoku: typeof WasmSudoku;
     WasmSudokuWithTransfer: typeof WasmSudokuWithTransfer;
     WasmCellWorld: typeof WasmCellWorld;
+    WasmCellWorldWithTransfer: typeof WasmCellWorldWithTransfer;
+
+    benchmark: MicroBenchmarkAPI;
 };
 
 const workerApi: WorkerApi = {
@@ -38,6 +57,15 @@ const workerApi: WorkerApi = {
     WasmSudoku,
     WasmSudokuWithTransfer,
     WasmCellWorld,
+    WasmCellWorldWithTransfer,
+    benchmark: {
+        echoCloneUint8Array: (data: Uint8Array) => {
+            return data;
+        },
+        echoTransferUint8Array: (data: Uint8Array) => {
+            return Comlink.transfer(data, [data.buffer]);
+        },
+    },
 };
 
 // The type of `obj` ensures that only module-augmented classed can be patched with the marker.
