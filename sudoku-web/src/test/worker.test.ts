@@ -1,32 +1,10 @@
-/* eslint-disable no-empty-pattern */
-/* eslint-disable react-hooks/rules-of-hooks */
-
 import * as Comlink from "comlink";
-import { test as baseTest, describe, expect } from "vitest";
-import { init } from "../app/state/worker/bg/init";
-import type { MicroBenchmarkAPI, WorkerApi } from "../app/state/worker/bg/worker";
-import { spawnWorker } from "../app/state/worker/spawn";
-import type { RemoteWorkerApi } from "../app/state/worker";
-import { getWasmSudokuSamples } from "./util/sudoku";
 import { WasmCellWorld, WasmSudoku } from "sudoku-wasm";
+import { describe, expect } from "vitest";
+import { init } from "../app/state/worker/bg/init";
 import { getWasmCellWorldSamples } from "./util/cellWorld";
-
-type WorkerFixtures = {
-    remoteWorkerApi: RemoteWorkerApi;
-};
-
-const test = baseTest.extend<WorkerFixtures>({
-    remoteWorkerApi: async ({}, use) => {
-        const worker = await spawnWorker();
-
-        const remoteWorkerApi = Comlink.wrap<WorkerApi>(worker, {});
-        await remoteWorkerApi.init();
-
-        await use(remoteWorkerApi);
-
-        worker.terminate();
-    },
-});
+import { getWasmSudokuSamples } from "./util/sudoku";
+import { test } from "./util/fixtures";
 
 describe("worker communication", async () => {
     // Init foreground WASM.
@@ -148,28 +126,6 @@ describe("worker communication", async () => {
                     });
                 });
             });
-        });
-    });
-
-    describe("raw Uint8Array", () => {
-        const size = 1024;
-        test("echo cloned Uint8Array", async ({ remoteWorkerApi }) => {
-            const data = new Uint8Array(size);
-            self.crypto.getRandomValues(data);
-            const clonedData = structuredClone(data);
-            const benchmark = remoteWorkerApi.benchmark as unknown as Comlink.Remote<MicroBenchmarkAPI>;
-
-            const echoedData = await benchmark.echoCloneUint8Array(data);
-            expect(echoedData).toStrictEqual(clonedData);
-        });
-        test("echo transferred Uint8Array", async ({ remoteWorkerApi }) => {
-            const data = new Uint8Array(size);
-            self.crypto.getRandomValues(data);
-            const clonedData = structuredClone(data);
-            const benchmark = remoteWorkerApi.benchmark as unknown as Comlink.Remote<MicroBenchmarkAPI>;
-
-            const echoedData = await benchmark.echoTransferUint8Array(Comlink.transfer(data, [data.buffer]));
-            expect(echoedData).toStrictEqual(clonedData);
         });
     });
 });

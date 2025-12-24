@@ -2,11 +2,10 @@ import * as Comlink from "comlink";
 import { WasmCellWorld, WasmSudoku } from "sudoku-wasm";
 import { bench, describe } from "vitest";
 import { init } from "../../app/state/worker/bg/init";
-import { getWasmSudokuSamples } from "../util/sudoku";
+import type { WorkerApi } from "../../app/state/worker/bg/worker";
 import { spawnWorker } from "../../app/state/worker/spawn";
-import type { MicroBenchmarkAPI, WorkerApi } from "../../app/state/worker/bg/worker";
 import { getWasmCellWorldSamples } from "../util/cellWorld";
-import { range } from "es-toolkit";
+import { getWasmSudokuSamples } from "../util/sudoku";
 
 describe("worker", async () => {
     // Init foreground WASM.
@@ -15,7 +14,7 @@ describe("worker", async () => {
     const base = 3;
     const seed = 42n;
 
-    const worker = await spawnWorker();
+    const worker = spawnWorker();
 
     const remoteWorkerApi = Comlink.wrap<WorkerApi>(worker, {});
     await remoteWorkerApi.init(1);

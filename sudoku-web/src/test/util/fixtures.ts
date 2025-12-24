@@ -13,10 +13,10 @@ type WorkerFixtures = {
 
 export const test = baseTest.extend<WorkerFixtures>({
     remoteWorkerApi: async ({}, use) => {
-        const worker = await spawnWorker();
+        const worker = spawnWorker();
 
         const remoteWorkerApi = Comlink.wrap<WorkerApi>(worker, {});
-        await remoteWorkerApi.init();
+        await remoteWorkerApi.init(1);
 
         await use(remoteWorkerApi);
 
