@@ -3,11 +3,25 @@ import { WasmCellWorld, WasmSudoku } from "sudoku-wasm";
 
 import { WORKER_BOOT_UP_MESSAGE } from "../../../constants";
 import { init } from "./init";
+import type { SerializedDynamicSudoku } from "../../../utils/serializedData";
 
-if (import.meta.env.DEV) {
+if (import.meta.env.MODE === "development") {
     self.addEventListener("message", (ev) => {
         console.debug("Worker message RX:", ev.data);
     });
+}
+
+class WasmSudokuWithTransfer extends WasmSudoku {
+    static override deserialize(bytes: SerializedDynamicSudoku): WasmSudokuWithTransfer {
+        const instance = WasmSudoku.deserialize(bytes);
+        Object.setPrototypeOf(instance, this.prototype);
+        return instance as WasmSudokuWithTransfer;
+    }
+
+    serializeWithTransfer(): SerializedDynamicSudoku {
+        const serialized = super.serialize();
+        return Comlink.transfer(serialized, [serialized.buffer]);
+    }
 }
 
 export type WorkerApi = {
@@ -15,12 +29,14 @@ export type WorkerApi = {
     // expose class constructors directly
     // Reference: https://github.com/GoogleChromeLabs/comlink/tree/main/docs/examples/03-classes-example
     WasmSudoku: typeof WasmSudoku;
+    WasmSudokuWithTransfer: typeof WasmSudokuWithTransfer;
     WasmCellWorld: typeof WasmCellWorld;
 };
 
 const workerApi: WorkerApi = {
     init,
     WasmSudoku,
+    WasmSudokuWithTransfer,
     WasmCellWorld,
 };
 

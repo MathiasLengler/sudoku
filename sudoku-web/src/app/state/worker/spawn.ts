@@ -6,7 +6,7 @@ export async function spawnWorker() {
         name: "SudokuWasmWorker",
         type: "module",
     });
-    if (import.meta.env.DEV) {
+    if (import.meta.env.MODE === "development") {
         console.debug("Attaching debug event listeners");
         worker.addEventListener("message", (ev) => {
             console.debug("Worker message TX:", ev.data);

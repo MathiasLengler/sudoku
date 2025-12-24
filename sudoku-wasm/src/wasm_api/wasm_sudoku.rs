@@ -1,5 +1,6 @@
 use crate::error::Result;
 use crate::typescript::*;
+use sudoku::base::BaseEnum;
 use sudoku::error::Error as SudokuError;
 use sudoku::transport::TransportSudoku;
 use sudoku::{DynamicSudoku, DynamicSudokuActions};
@@ -19,6 +20,11 @@ impl From<DynamicSudoku> for WasmSudoku {
 /// Constructors
 #[wasm_bindgen]
 impl WasmSudoku {
+    #[wasm_bindgen(constructor)]
+    pub fn default() -> Self {
+        DynamicSudoku::new(BaseEnum::Base3).into()
+    }
+
     pub fn new(base: IBaseEnum) -> Result<Self> {
         Ok(DynamicSudoku::new(import_base_enum(base)?).into())
     }

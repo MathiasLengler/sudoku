@@ -1,8 +1,8 @@
 import { bench, describe } from "vitest";
 import { WasmCellWorld, WasmSudoku } from "sudoku-wasm";
-import { init } from "../app/state/worker/bg/init";
-import { getWasmCellWorldSamples } from "../test/util/cellWorld";
-import { getWasmSudokuSamples } from "../test/util/sudoku";
+import { init } from "../../app/state/worker/bg/init";
+import { getWasmCellWorldSamples } from "../util/cellWorld";
+import { getWasmSudokuSamples } from "../util/sudoku";
 
 describe("sudoku-wasm", async () => {
     await init(1);
@@ -10,12 +10,7 @@ describe("sudoku-wasm", async () => {
     const base = 3;
     const seed = 42n;
 
-    describe.only("WasmSudoku", () => {
-        const wasmSudoku = WasmSudoku.new(3);
-        bench("getTransportSudoku", () => {
-            const _transportSudoku = wasmSudoku.getTransportSudoku();
-        });
-
+    describe("WasmSudoku", () => {
         getWasmSudokuSamples(base, seed).forEach(({ name, wasmSudoku }) => {
             describe(name, () => {
                 describe("serialization", () => {
