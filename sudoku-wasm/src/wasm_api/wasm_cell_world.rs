@@ -54,7 +54,7 @@ impl WasmCellWorld {
         .into())
     }
 
-    #[allow(clippy::should_implement_trait)]
+    #[wasm_bindgen(constructor)]
     pub fn default() -> Self {
         Default::default()
     }

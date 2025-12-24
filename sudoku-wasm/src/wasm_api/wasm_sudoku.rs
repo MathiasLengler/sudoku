@@ -11,6 +11,12 @@ pub struct WasmSudoku {
     sudoku: DynamicSudoku,
 }
 
+impl Default for WasmSudoku {
+    fn default() -> Self {
+        DynamicSudoku::new(BaseEnum::Base3).into()
+    }
+}
+
 impl From<DynamicSudoku> for WasmSudoku {
     fn from(sudoku: DynamicSudoku) -> Self {
         Self { sudoku }
@@ -22,7 +28,7 @@ impl From<DynamicSudoku> for WasmSudoku {
 impl WasmSudoku {
     #[wasm_bindgen(constructor)]
     pub fn default() -> Self {
-        DynamicSudoku::new(BaseEnum::Base3).into()
+        Default::default()
     }
 
     pub fn new(base: IBaseEnum) -> Result<Self> {
