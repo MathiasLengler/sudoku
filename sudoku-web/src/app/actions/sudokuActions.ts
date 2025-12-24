@@ -2,7 +2,7 @@ import assertNever from "assert-never";
 import * as Comlink from "comlink";
 import type { Getter, Setter } from "jotai";
 import { useAtomCallback } from "jotai/utils";
-import * as _ from "lodash-es";
+import { inRange, isEqual } from "es-toolkit";
 import { useCallback, useState } from "react";
 import type {
     DynamicGeneratorSettings,
@@ -46,7 +46,7 @@ async function isFixedValueCell({ get, gridPosition }: { get: Getter; gridPositi
 async function isInvalidValue({ get, value }: { get: Getter; value: number }) {
     const sideLength = await get(sudokuSideLengthState);
 
-    if (!_.inRange(value, 0, sideLength + 1)) {
+    if (!inRange(value, 0, sideLength + 1)) {
         console.warn(`Skip handling of value ${value} outside range [0, ${sideLength}]`);
         return true;
     } else {
@@ -57,7 +57,7 @@ async function isInvalidValue({ get, value }: { get: Getter; value: number }) {
 async function isInvalidGridPosition({ get, gridPosition }: { get: Getter; gridPosition: DynamicPosition }) {
     const sideLength = await get(sudokuSideLengthState);
 
-    if (!_.inRange(gridPosition.row, 0, sideLength) || !_.inRange(gridPosition.column, 0, sideLength)) {
+    if (!inRange(gridPosition.row, 0, sideLength) || !inRange(gridPosition.column, 0, sideLength)) {
         console.warn(
             `Skip handling of grid position ${JSON.stringify(
                 gridPosition,
@@ -156,7 +156,11 @@ async function applyValueAtGridPosition({
             ({ cellAction } = input.stickyChain);
         }
 
-        if (_.find(input.stickyChain?.handledGridPositions, gridPosition)) {
+        if (
+            input.stickyChain?.handledGridPositions?.some((handledGridPosition) =>
+                isEqual(handledGridPosition, gridPosition),
+            )
+        ) {
             console.info(
                 `Skip handling of grid position ${JSON.stringify(
                     gridPosition,
@@ -197,7 +201,11 @@ async function applyValueAtGridPosition({
                 console.warn("Expected stickyChain to be defined");
                 return input;
             }
-            if (_.find(input.stickyChain.handledGridPositions, gridPosition)) {
+            if (
+                input.stickyChain.handledGridPositions.some((handledGridPosition) =>
+                    isEqual(handledGridPosition, gridPosition),
+                )
+            ) {
                 console.warn(
                     "Expected handledGridPositions to not contain gridPosition",
                     gridPosition,

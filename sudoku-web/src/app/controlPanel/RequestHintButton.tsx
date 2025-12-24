@@ -2,7 +2,7 @@ import LightbulbIcon from "@mui/icons-material/Lightbulb";
 import CircularProgress from "@mui/material/CircularProgress";
 import type { IconButtonProps } from "@mui/material/IconButton";
 import assertNever from "assert-never";
-import * as _ from "lodash-es";
+import * as _ from "es-toolkit";
 import { useNotifications } from "@toolpad/core/useNotifications";
 import { useCallback, useState } from "react";
 import { useAtomValue } from "jotai";

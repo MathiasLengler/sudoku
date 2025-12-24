@@ -1,6 +1,6 @@
 import ButtonBase from "@mui/material/ButtonBase";
 import classNames from "classnames";
-import * as _ from "lodash-es";
+import * as _ from "es-toolkit";
 import { atom, useAtomValue, type Atom } from "jotai";
 import { useHandleValue } from "../actions/sudokuActions";
 import { inputState } from "../state/input";

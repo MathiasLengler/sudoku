@@ -1,6 +1,5 @@
 /// <reference types="vitest/config" />
 
-import { optimizeLodashImports } from "@optimize-lodash/rollup-plugin";
 import { minimal2023Preset } from "@vite-pwa/assets-generator/config";
 import react from "@vitejs/plugin-react";
 import { playwright } from "@vitest/browser-playwright";
@@ -51,7 +50,6 @@ export default defineConfig(({ mode }) => ({
     plugins: [
         react({ babel: { plugins: [jotaiDebugLabel, jotaiReactRefresh] } }),
         wasm(),
-        optimizeLodashImports(),
         ...(mode !== "test"
             ? [
                   VitePWA({
@@ -102,7 +100,6 @@ export default defineConfig(({ mode }) => ({
     ],
     resolve: {
         alias: {
-            lodash: "lodash-es",
             ...(mode === "profile" && {
                 "react-dom/client": "react-dom/profiling",
             }),

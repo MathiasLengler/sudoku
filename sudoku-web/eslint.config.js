@@ -77,27 +77,10 @@ export default tseslint.config(
                 {
                     paths: [
                         {
-                            name: "lodash",
-                            message: `Instead use: import {} from "lodash-es";`,
-                        },
-                        {
                             name: "react",
                             importNames: ["default", "FunctionComponent"],
                         },
                     ],
-                    patterns: [
-                        {
-                            group: ["lodash/*"],
-                            message: `Instead use: import {} from "lodash-es";`,
-                        },
-                    ],
-                },
-            ],
-            "no-restricted-syntax": [
-                "error",
-                {
-                    selector: 'ImportDeclaration[source.value="lodash-es"] ImportDefaultSpecifier',
-                    message: `Instead use: import * as _ from "lodash-es";`,
                 },
             ],
             // Reference: https://stackoverflow.com/a/76818791

@@ -1,4 +1,4 @@
-import { range } from "lodash-es";
+import { range } from "es-toolkit";
 import z from "zod";
 import type { BaseEnum } from "../../types";
 import { baseToSideLength } from "./sudoku";
