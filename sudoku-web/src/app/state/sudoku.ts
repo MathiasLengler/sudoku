@@ -2,7 +2,7 @@ import { atom } from "jotai";
 import { eagerAtom } from "jotai-eager";
 import { atomWithDefault } from "jotai/utils";
 import type { IsEqual } from "type-fest";
-import { z } from "zod";
+import * as z from "zod";
 import type { BaseEnum, DynamicCells, DynamicGrid, TransportCell, TransportSudoku } from "../../types";
 import { assert } from "../../typeUtils";
 import { hintState } from "./hint";

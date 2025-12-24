@@ -10,7 +10,7 @@ import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import { useForm } from "react-hook-form";
 import { SwitchElement, TextFieldElement } from "react-hook-form-mui";
-import { z } from "zod";
+import * as z from "zod";
 import { useImportSudokuString } from "../../actions/sudokuActions";
 import { Code } from "../../components/Code";
 import { Fieldset } from "../../components/Fieldset";

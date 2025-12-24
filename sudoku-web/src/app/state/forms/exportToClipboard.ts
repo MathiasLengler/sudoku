@@ -1,6 +1,6 @@
 import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
-import { z } from "zod";
+import * as z from "zod";
 import { gridFormatSchema } from "../../constants";
 import { getZodLocalStorage } from "../localStorageEffect";
 import { sudokuState } from "../sudoku";

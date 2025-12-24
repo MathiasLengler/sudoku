@@ -1,6 +1,6 @@
 import { atomWithStorage } from "jotai/utils";
-import type { ZodBigInt } from "zod";
-import { z } from "zod";
+import * as z from "zod";
+
 import { goalOptimizationSchema, gridMetricSchema, selectedStrategiesSchema } from "../../constants";
 import { getZodLocalStorage } from "../localStorageEffect";
 import { baseSchema } from "../../utils/base";
@@ -15,7 +15,7 @@ export function iterationsIndexToIterations(iterationsIndex: number): number {
 }
 
 // TODO: use zod pipe to simplify this
-const parseBigintSchema = <T extends ZodBigInt>(bigIntSchema: T) =>
+const parseBigintSchema = <T extends z.ZodBigInt>(bigIntSchema: T) =>
     z.preprocess((value) => {
         const safeParseResult = z
             .bigint()
@@ -35,7 +35,7 @@ const parseBigintSchema = <T extends ZodBigInt>(bigIntSchema: T) =>
 export type GenerateFormValues = z.infer<typeof generateFormValuesSchema>;
 export const generateFormValuesSchema = z.object({
     base: baseSchema,
-    minGivens: z.number().int().min(0),
+    minGivens: z.int().min(0),
     strategies: selectedStrategiesSchema,
     setAllDirectCandidates: z.boolean(),
     useSeed: z.boolean(),
@@ -53,7 +53,7 @@ export const generateFormValuesSchema = z.object({
             }
         }),
     multiShot: z.boolean(),
-    iterationsIndex: z.number().int().min(MIN_ITERATIONS_INDEX).max(MAX_ITERATIONS_INDEX),
+    iterationsIndex: z.int().min(MIN_ITERATIONS_INDEX).max(MAX_ITERATIONS_INDEX),
     metric: gridMetricSchema,
     optimize: goalOptimizationSchema,
     parallel: z.boolean(),

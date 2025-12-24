@@ -3,7 +3,7 @@ import { describe, expect, test } from "vitest";
 import { init } from "../app/state/worker/bg/init";
 import { getWasmCellWorldSamples } from "./util/cellWorld";
 import { getWasmSudokuSamples } from "./util/sudoku";
-import z from "zod";
+import * as z from "zod";
 
 describe("sudoku-wasm", async () => {
     await init(1);

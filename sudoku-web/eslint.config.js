@@ -3,15 +3,18 @@ import hooksPlugin from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import reactJsxRuntime from "eslint-plugin-react/configs/jsx-runtime.js";
 import reactRecommended from "eslint-plugin-react/configs/recommended.js";
+import eslintPluginZodX from "eslint-plugin-zod-x";
+import { defineConfig } from "eslint/config";
 import tseslint from "typescript-eslint";
 
-export default tseslint.config(
+export default defineConfig(
     {
         ignores: ["*.js", "*.mjs", "dist", "dev-dist"],
     },
     eslint.configs.recommended,
-    ...tseslint.configs.recommendedTypeChecked,
-    ...tseslint.configs.stylisticTypeChecked,
+    tseslint.configs.recommendedTypeChecked,
+    tseslint.configs.stylisticTypeChecked,
+    eslintPluginZodX.configs.recommended,
     {
         languageOptions: {
             parserOptions: {

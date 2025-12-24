@@ -1,5 +1,5 @@
 import { range } from "es-toolkit";
-import z from "zod";
+import * as z from "zod";
 import type { BaseEnum } from "../../types";
 import { baseToSideLength } from "./sudoku";
 

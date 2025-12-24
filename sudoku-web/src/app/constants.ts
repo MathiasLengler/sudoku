@@ -1,5 +1,5 @@
 import type { GoalOptimization, GridFormatEnum, GridMetric, StrategyEnum } from "../types";
-import { z } from "zod";
+import * as z from "zod";
 import type { IsEqual } from "type-fest";
 import { assert } from "../typeUtils";
 import * as _ from "es-toolkit";

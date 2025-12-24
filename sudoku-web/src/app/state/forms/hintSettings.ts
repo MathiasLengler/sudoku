@@ -1,5 +1,5 @@
 import { atomWithStorage } from "jotai/utils";
-import { z } from "zod";
+import * as z from "zod";
 import { ALL_STRATEGIES, selectedStrategiesSchema } from "../../constants";
 import { getZodLocalStorage } from "../localStorageEffect";
 

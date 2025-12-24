@@ -1,4 +1,4 @@
-import z from "zod";
+import * as z from "zod";
 
 export type SerializedDynamicCellWorld = z.infer<typeof serializedDynamicCellWorldSchema>;
 export const serializedDynamicCellWorldSchema = z.instanceof(Uint8Array).brand<"SerializedDynamicCellWorld">();
