@@ -1,7 +1,8 @@
+use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::fmt::Debug;
 
-#[derive(Eq, PartialEq, Hash, Clone, Debug)]
+#[derive(Eq, PartialEq, Hash, Clone, Debug, Serialize, Deserialize)]
 pub(super) struct History<T> {
     limit: usize,
     past_records: VecDeque<T>,

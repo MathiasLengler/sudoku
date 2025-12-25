@@ -1,24 +1,9 @@
 import { atomWithStorage } from "jotai/utils";
-import { range } from "lodash-es";
-import type { ZodBigInt } from "zod";
-import { z } from "zod";
+import * as z from "zod";
+
 import { goalOptimizationSchema, gridMetricSchema, selectedStrategiesSchema } from "../../constants";
-import { baseToSideLength } from "../../utils/sudoku";
 import { getZodLocalStorage } from "../localStorageEffect";
-
-export const BASE_MIN = 2;
-export const BASE_MAX = 5;
-export const BASE_MARKS = range(BASE_MIN, BASE_MAX + 1).map((base) => {
-    return {
-        value: base,
-        label: baseToLabel(base),
-    };
-});
-export function baseToLabel(base: number): string {
-    const sideLength = baseToSideLength(base);
-
-    return `${sideLength}x${sideLength}`;
-}
+import { baseSchema } from "../../utils/base";
 
 export const SEED_MAX = Number.MAX_SAFE_INTEGER;
 
@@ -30,7 +15,7 @@ export function iterationsIndexToIterations(iterationsIndex: number): number {
 }
 
 // TODO: use zod pipe to simplify this
-const parseBigintSchema = <T extends ZodBigInt>(bigIntSchema: T) =>
+const parseBigintSchema = <T extends z.ZodBigInt>(bigIntSchema: T) =>
     z.preprocess((value) => {
         const safeParseResult = z
             .bigint()
@@ -49,8 +34,8 @@ const parseBigintSchema = <T extends ZodBigInt>(bigIntSchema: T) =>
 
 export type GenerateFormValues = z.infer<typeof generateFormValuesSchema>;
 export const generateFormValuesSchema = z.object({
-    base: z.number().int().min(BASE_MIN).max(BASE_MAX),
-    minGivens: z.number().int().min(0),
+    base: baseSchema,
+    minGivens: z.int().min(0),
     strategies: selectedStrategiesSchema,
     setAllDirectCandidates: z.boolean(),
     useSeed: z.boolean(),
@@ -68,13 +53,13 @@ export const generateFormValuesSchema = z.object({
             }
         }),
     multiShot: z.boolean(),
-    iterationsIndex: z.number().int().min(MIN_ITERATIONS_INDEX).max(MAX_ITERATIONS_INDEX),
+    iterationsIndex: z.int().min(MIN_ITERATIONS_INDEX).max(MAX_ITERATIONS_INDEX),
     metric: gridMetricSchema,
     optimize: goalOptimizationSchema,
     parallel: z.boolean(),
 });
 export const GENERATE_FORM_DEFAULT_VALUES = {
-    base: 3,
+    base: 3 as const,
     minGivens: 0,
     strategies: ["NakedSingles", "HiddenSingles", "NakedPairs", "LockedSets", "GroupIntersectionBoth"],
     setAllDirectCandidates: true,

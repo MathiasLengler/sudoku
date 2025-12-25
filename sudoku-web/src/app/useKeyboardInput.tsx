@@ -1,4 +1,4 @@
-import { clamp } from "lodash-es";
+import { clamp } from "es-toolkit";
 import { useCallback, type KeyboardEvent } from "react";
 import { useAtomCallback } from "jotai/utils";
 import type { DynamicPosition, TransportSudoku } from "../types";

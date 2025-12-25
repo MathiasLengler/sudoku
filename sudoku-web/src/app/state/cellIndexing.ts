@@ -4,7 +4,7 @@ import type { DynamicPosition, TransportCell } from "../../types";
 import { cellPositionToBlockPosition, positionToIndex } from "../utils/sudoku";
 import { selectedPosState } from "./input";
 import { sudokuBaseState, sudokuCellsState, sudokuSideLengthState } from "./sudoku";
-import { isEqual } from "lodash-es";
+import { isEqual } from "es-toolkit";
 import { eagerAtom } from "jotai-eager";
 
 export const cellAtIndexState = atomFamily<number, Atom<Promise<TransportCell>>>((cellIndex) =>

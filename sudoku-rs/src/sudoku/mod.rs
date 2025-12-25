@@ -1,9 +1,3 @@
-use std::fmt::{self, Display, Formatter};
-
-pub use dynamic::{DynamicSudoku, DynamicSudokuActions};
-use history::History;
-use log::info;
-
 use crate::base::SudokuBase;
 use crate::cell::dynamic::{DynamicCandidates, DynamicValue};
 use crate::cell::{Candidates, Value};
@@ -22,15 +16,21 @@ use crate::solver::strategic::deduction::transport::TransportDeductions;
 use crate::solver::strategic::deduction::Deductions;
 use crate::solver::strategic::strategies::StrategyEnum;
 use crate::solver::strategic::{DynamicSolveStep, SolveStep, Solver as StrategicSolver};
+use history::History;
+use log::info;
+use serde::{Deserialize, Serialize};
+use settings::Settings;
+use std::fmt::{self, Display, Formatter};
 
-use self::settings::Settings;
+pub use dynamic::{DynamicSudoku, DynamicSudokuActions};
 
 mod dynamic;
 mod history;
 pub mod settings;
 pub mod transport;
 
-#[derive(Eq, PartialEq, Hash, Clone, Debug)]
+#[derive(Eq, PartialEq, Hash, Clone, Debug, Serialize, Deserialize)]
+#[serde(bound = "Base: SudokuBase")]
 pub struct Sudoku<Base: SudokuBase> {
     grid: Grid<Base>,
     solution: SolutionState<Base>,
@@ -46,6 +46,7 @@ impl<Base: SudokuBase> Default for Sudoku<Base> {
 
 /// Constructors
 impl<Base: SudokuBase> Sudoku<Base> {
+    /// Creates a new empty Sudoku.
     pub fn new() -> Self {
         Self::with_grid(Grid::new())
     }

@@ -1,8 +1,8 @@
 import LanguageIcon from "@mui/icons-material/Language";
 import assertNever from "assert-never";
 import { useAtom } from "jotai";
-import * as _ from "lodash-es";
-import { z } from "zod";
+import * as _ from "es-toolkit";
+import * as z from "zod";
 import { usePlaySelectedGrid, useShowWorldMap } from "../../actions/worldActions";
 import MyIconButton from "../../components/MyIconButton";
 import { MyMenu } from "../../components/MyMenu";
@@ -64,8 +64,10 @@ export function WorldSettingsButton() {
                           {
                               label: `Toggle world size (${requestedGridDim.rowCount}x${requestedGridDim.columnCount})`,
                               onClick: () => {
-                                  setRequestedGridDim((gridDim) => {
-                                      const currentIndex = _.findIndex(gridDims, gridDim);
+                                  setRequestedGridDim((currentGridDim) => {
+                                      const currentIndex = gridDims.findIndex((gridDim) =>
+                                          _.isEqual(gridDim, currentGridDim),
+                                      );
 
                                       if (currentIndex === -1) {
                                           return _.head(gridDims)!;

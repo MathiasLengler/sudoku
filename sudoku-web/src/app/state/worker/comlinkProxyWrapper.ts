@@ -1,13 +1,21 @@
 import * as Comlink from "comlink";
 
-export function fixupComlinkProxy<T>(comlinkProxy: Comlink.Remote<T>): Comlink.Remote<T> {
+export type SaveComlinkRemote<T> = Comlink.Remote<T> & {
+    [saveComlinkRemoteSymbol]: true;
+};
+
+const saveComlinkRemoteSymbol = Symbol("SaveComlinkProxy");
+
+export function fixupComlinkRemote<T>(comlinkRemote: Comlink.Remote<T>): SaveComlinkRemote<T> {
     return new Proxy(
         // Target a plain object for `typeof proxy === "object"`
         // Reference: https://stackoverflow.com/a/42493645
-        {},
+        { [saveComlinkRemoteSymbol]: true },
         {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            get: (_target, property: string): any => {
+            get: (_target, property: string | symbol): unknown => {
+                if (property === saveComlinkRemoteSymbol) {
+                    return _target[saveComlinkRemoteSymbol];
+                }
                 // Not a thenable
                 // Reference: https://stackoverflow.com/a/53890904
                 if (property === "then") {
@@ -20,8 +28,8 @@ export function fixupComlinkProxy<T>(comlinkProxy: Comlink.Remote<T>): Comlink.R
                         return { COMLINK_PROXY_PLACEHOLDER: true };
                     };
                 }
-                return (comlinkProxy as unknown as Record<string, unknown>)[property];
+                return (comlinkRemote as Record<string | symbol, unknown>)[property];
             },
         },
-    ) as unknown as Comlink.Remote<T>;
+    ) as SaveComlinkRemote<T>;
 }

@@ -1,6 +1,8 @@
 use crate::{base::SudokuBase, grid::Grid, solver::introspective};
+use serde::{Deserialize, Serialize};
 
-#[derive(Eq, PartialEq, Hash, Clone, Debug)]
+#[derive(Eq, PartialEq, Hash, Clone, Debug, Serialize, Deserialize)]
+#[serde(bound = "Base: SudokuBase")]
 pub enum SolutionState<Base: SudokuBase> {
     NoSolution,
     MultipleSolutions,

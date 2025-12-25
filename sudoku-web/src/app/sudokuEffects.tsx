@@ -1,5 +1,5 @@
 import { useNotifications } from "@toolpad/core/useNotifications";
-import * as _ from "lodash-es";
+import * as _ from "es-toolkit";
 import { Suspense, useCallback, useEffect } from "react";
 import { useAtomValue, useSetAtom } from "jotai";
 import type { DynamicCell, DynamicPosition } from "../types";

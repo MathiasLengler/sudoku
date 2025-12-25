@@ -1,12 +1,10 @@
 import type { IsEqual } from "type-fest";
-import { z } from "zod";
+import * as z from "zod";
 import { assert } from "../../../typeUtils";
 import type { WorldDim, WorldPosition } from "../../../types";
 
-const usizeSchema = z
-    .number()
+const usizeSchema = z.int()
     .nonnegative()
-    .int()
     // wasm32 (bits)
     .max(Math.pow(2, 32) - 1);
 export const worldPositionSchema = z.object({

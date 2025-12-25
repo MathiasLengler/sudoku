@@ -1,5 +1,5 @@
 import type { SyncStorage } from "jotai/vanilla/utils/atomWithStorage";
-import { z } from "zod";
+import * as z from "zod";
 
 // https://zod.dev/codecs?id=jsonschema
 const jsonCodec = <T extends z.core.$ZodType>(schema: T) =>

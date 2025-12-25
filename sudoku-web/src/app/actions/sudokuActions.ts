@@ -2,7 +2,7 @@ import assertNever from "assert-never";
 import * as Comlink from "comlink";
 import type { Getter, Setter } from "jotai";
 import { useAtomCallback } from "jotai/utils";
-import * as _ from "lodash-es";
+import { inRange, isEqual } from "es-toolkit";
 import { useCallback, useState } from "react";
 import type {
     DynamicGeneratorSettings,
@@ -19,7 +19,14 @@ import { hintState } from "../state/hint";
 import type { CellAction } from "../state/input";
 import { inputState } from "../state/input";
 import { gameCounterState, sudokuSideLengthState, sudokuState } from "../state/sudoku";
-import { remoteWasmSudokuState, workerState, type RemoteWasmSudoku } from "../state/worker";
+import {
+    isWorkerReadyState,
+    remoteWasmSudokuClassState,
+    remoteWasmSudokuState,
+    workerState,
+    type RemoteWasmSudoku,
+} from "../state/worker";
+import { fixupComlinkRemote } from "../state/worker/comlinkProxyWrapper";
 import { useCancelableMutation } from "../useCancelableMutation";
 import { measure, withMeasure } from "../utils/measure";
 
@@ -39,7 +46,7 @@ async function isFixedValueCell({ get, gridPosition }: { get: Getter; gridPositi
 async function isInvalidValue({ get, value }: { get: Getter; value: number }) {
     const sideLength = await get(sudokuSideLengthState);
 
-    if (!_.inRange(value, 0, sideLength + 1)) {
+    if (!inRange(value, 0, sideLength + 1)) {
         console.warn(`Skip handling of value ${value} outside range [0, ${sideLength}]`);
         return true;
     } else {
@@ -50,7 +57,7 @@ async function isInvalidValue({ get, value }: { get: Getter; value: number }) {
 async function isInvalidGridPosition({ get, gridPosition }: { get: Getter; gridPosition: DynamicPosition }) {
     const sideLength = await get(sudokuSideLengthState);
 
-    if (!_.inRange(gridPosition.row, 0, sideLength) || !_.inRange(gridPosition.column, 0, sideLength)) {
+    if (!inRange(gridPosition.row, 0, sideLength) || !inRange(gridPosition.column, 0, sideLength)) {
         console.warn(
             `Skip handling of grid position ${JSON.stringify(
                 gridPosition,
@@ -149,7 +156,11 @@ async function applyValueAtGridPosition({
             ({ cellAction } = input.stickyChain);
         }
 
-        if (_.find(input.stickyChain?.handledGridPositions, gridPosition)) {
+        if (
+            input.stickyChain?.handledGridPositions?.some((handledGridPosition) =>
+                isEqual(handledGridPosition, gridPosition),
+            )
+        ) {
             console.info(
                 `Skip handling of grid position ${JSON.stringify(
                     gridPosition,
@@ -190,7 +201,11 @@ async function applyValueAtGridPosition({
                 console.warn("Expected stickyChain to be defined");
                 return input;
             }
-            if (_.find(input.stickyChain.handledGridPositions, gridPosition)) {
+            if (
+                input.stickyChain.handledGridPositions.some((handledGridPosition) =>
+                    isEqual(handledGridPosition, gridPosition),
+                )
+            ) {
                 console.warn(
                     "Expected handledGridPositions to not contain gridPosition",
                     gridPosition,
@@ -313,13 +328,17 @@ export function useRedo() {
 
 const rebootWorker = withMeasure({ name: "rebootWorker" }, async ({ get, set }: { get: Getter; set: Setter }) => {
     console.info("Rebooting worker");
-    const currentWorker = await get(workerState);
+    const currentWorker = get(workerState);
     console.debug("Terminating current worker");
     currentWorker.terminate();
     // Refresh the atom, spawning a new worker
     set(workerState);
     // Wait for the new worker to be ready
-    await get(workerState);
+    await get(isWorkerReadyState);
+
+    // Sync sudokuState to the new worker
+    await updateSudoku({ set, wasmSudokuProxy: await get(remoteWasmSudokuState) }, true);
+
     console.info("Worker rebooted");
 });
 
@@ -334,12 +353,13 @@ export function useGenerate() {
                 onProgress: (progress: GeneratorProgress) => void,
             ) => {
                 return await measure({ name: "generate", detail: { settings } }, async () => {
-                    const wasmSudokuProxy = await get(remoteWasmSudokuState);
+                    const RemoteWasmSudoku = await get(remoteWasmSudokuClassState);
 
+                    let unsafeWasmSudokuProxy;
                     try {
-                        await Promise.race([
+                        unsafeWasmSudokuProxy = await Promise.race([
                             abortPromise,
-                            wasmSudokuProxy.generate(settings, Comlink.proxy(onProgress)),
+                            RemoteWasmSudoku.generate(settings, Comlink.proxy(onProgress)),
                         ]);
                     } catch (err) {
                         if (!(err instanceof DOMException && err.name === "AbortError")) {
@@ -351,6 +371,10 @@ export function useGenerate() {
 
                         throw err;
                     }
+
+                    const wasmSudokuProxy = fixupComlinkRemote(unsafeWasmSudokuProxy);
+
+                    set(remoteWasmSudokuState, wasmSudokuProxy);
 
                     await updateSudoku({ set, wasmSudokuProxy }, true);
                 });
@@ -398,12 +422,13 @@ export function useGenerateMultiShot() {
                 onProgress: (progress: MultiShotGeneratorProgress) => void,
             ) => {
                 return await measure({ name: "generateMultiShot", detail: { settings } }, async () => {
-                    const wasmSudokuProxy = await get(remoteWasmSudokuState);
+                    const RemoteWasmSudoku = await get(remoteWasmSudokuClassState);
 
+                    let unsafeWasmSudokuProxy;
                     try {
-                        await Promise.race([
+                        unsafeWasmSudokuProxy = await Promise.race([
                             abortPromise,
-                            wasmSudokuProxy.generateMultiShot(settings, Comlink.proxy(onProgress)),
+                            RemoteWasmSudoku.generateMultiShot(settings, Comlink.proxy(onProgress)),
                         ]);
                     } catch (err) {
                         if (!(err instanceof DOMException && err.name === "AbortError")) {
@@ -415,6 +440,10 @@ export function useGenerateMultiShot() {
 
                         throw err;
                     }
+
+                    const wasmSudokuProxy = fixupComlinkRemote(unsafeWasmSudokuProxy);
+
+                    set(remoteWasmSudokuState, wasmSudokuProxy);
 
                     await updateSudoku({ set, wasmSudokuProxy }, true);
                 });

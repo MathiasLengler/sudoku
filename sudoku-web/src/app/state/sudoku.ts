@@ -1,12 +1,14 @@
 import { atom } from "jotai";
-import { z } from "zod";
-import type { BaseEnum, TransportCell, TransportSudoku } from "../../types";
+import { eagerAtom } from "jotai-eager";
+import { atomWithDefault } from "jotai/utils";
+import type { IsEqual } from "type-fest";
+import * as z from "zod";
+import type { BaseEnum, DynamicCells, DynamicGrid, TransportCell, TransportSudoku } from "../../types";
+import { assert } from "../../typeUtils";
 import { hintState } from "./hint";
 import { remoteWasmSudokuState } from "./worker";
-import { atomWithDefault } from "jotai/utils";
-import { eagerAtom } from "jotai-eager";
 
-const valueSchema = z.number().int().positive().safe();
+const valueSchema = z.int().positive();
 
 const DynamicCellSchema = z.discriminatedUnion("kind", [
     z.object({ kind: z.literal("value"), value: valueSchema, fixed: z.boolean() }),
@@ -14,6 +16,9 @@ const DynamicCellSchema = z.discriminatedUnion("kind", [
 ]);
 
 export const DynamicCellsSchema = z.array(DynamicCellSchema);
+
+assert<IsEqual<z.infer<typeof DynamicCellsSchema>, DynamicCells>>();
+assert<IsEqual<z.infer<typeof DynamicCellsSchema>, DynamicGrid>>();
 
 // TODO: evaluate IOC
 //  WasmSudoku could have callback, which is called whenever the sudoku is updated

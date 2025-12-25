@@ -1,10 +1,9 @@
 import type { GoalOptimization, GridFormatEnum, GridMetric, StrategyEnum } from "../types";
-import { z } from "zod";
+import * as z from "zod";
 import type { IsEqual } from "type-fest";
 import { assert } from "../typeUtils";
-import * as _ from "lodash-es";
-
-export const WORKER_BOOT_UP_MESSAGE = "Worker loaded";
+import * as _ from "es-toolkit";
+import { sortBy } from "es-toolkit/compat";
 
 export const strategyEnumSchema = z.enum([
     "NakedSingles",
@@ -76,7 +75,7 @@ export type SelectedStrategies = z.infer<typeof selectedStrategiesSchema>;
 export const selectedStrategiesSchema = strategyEnumSchema
     .array()
     .min(1)
-    .overwrite((strategies) => _.sortBy(strategies, (strategy) => strategyEnumSchema.options.indexOf(strategy)));
+    .overwrite((strategies) => sortBy(strategies, (strategy) => strategyEnumSchema.options.indexOf(strategy)));
 
 export const gridFormatSchema = z.enum([
     "CandidatesGridPlain",

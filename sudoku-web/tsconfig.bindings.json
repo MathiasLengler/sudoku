@@ -15,6 +15,7 @@
         "../sudoku-wasm/pkg/*.ts",
         "../sudoku-rs/bindings",
         "src/app/state/world/schema.ts",
+        "src/app/utils/serializedData.ts",
         "src/typeUtils.ts",
         "src/types.ts",
         "src/**/*.d.ts"

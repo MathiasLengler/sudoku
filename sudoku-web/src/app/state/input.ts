@@ -1,5 +1,5 @@
 import { atom } from "jotai";
-import { z } from "zod";
+import * as z from "zod";
 import type { DynamicPosition } from "../../types";
 import { atomWithStorage } from "jotai/utils";
 import { getZodLocalStorage } from "./localStorageEffect";
@@ -14,8 +14,8 @@ const baseInputSchema = z.object({
 });
 export type BaseInput = z.infer<typeof baseInputSchema>;
 
-const positionSchema = z.object({ row: z.number().int().nonnegative(), column: z.number().int().nonnegative() });
-const valueSchema = z.number().int().positive();
+const positionSchema = z.object({ row: z.int().nonnegative(), column: z.int().nonnegative() });
+const valueSchema = z.int().positive();
 
 const normalModeInputSchema = z.object({
     stickyMode: z.literal(false),

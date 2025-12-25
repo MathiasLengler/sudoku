@@ -1,6 +1,6 @@
 import { atom, type Atom } from "jotai";
 import { atomFamily, RESET } from "jotai/utils";
-import * as _ from "lodash-es";
+import * as _ from "es-toolkit";
 import { WasmCellWorld } from "sudoku-wasm";
 import type { CellWorldDimensions, DynamicCell, DynamicCells, DynamicPosition } from "../../../types";
 import { init } from "../../state/worker/bg/init";
@@ -8,7 +8,7 @@ import { validateCellWorldPosition } from "../../utils/world";
 import { gameState, type Game } from "../gameMode";
 import { sudokuBaseState, sudokuSideLengthState } from "../sudoku";
 import { remoteWasmCellWorldClassState, type RemoteWasmCellWorld } from "../worker";
-import { fixupComlinkProxy } from "../worker/comlinkProxyWrapper";
+import { fixupComlinkRemote } from "../worker/comlinkProxyWrapper";
 import {
     worldGridDimSchema,
     worldGridPositionSchema,
@@ -38,7 +38,7 @@ export const remoteWasmCellWorldState = atom<Promise<RemoteWasmCellWorld>>(async
     const requestedOverlap = get(requestedOverlapState);
     const requestedSeed = get(requestedSeedState);
 
-    return fixupComlinkProxy(
+    return fixupComlinkRemote(
         await RemoteWasmCellWorldClass.generate(requestedWorldBase, requestedGridDim, requestedOverlap, requestedSeed),
     );
 });

@@ -3,7 +3,7 @@ import classNames from "classnames";
 import type * as CSS from "csstype";
 import { useAtom, useAtomValue } from "jotai";
 import { useAtomCallback } from "jotai/utils";
-import * as _ from "lodash-es";
+import * as _ from "es-toolkit";
 import { memo, useCallback, useDeferredValue, useMemo } from "react";
 import { Grid, type CellComponentProps } from "react-window";
 import type { Quadrant } from "../../../types";

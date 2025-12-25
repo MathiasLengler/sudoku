@@ -1,13 +1,3 @@
-use std::fmt;
-use std::fmt::{Display, Formatter};
-use std::marker::PhantomData;
-use std::ops::{Index, IndexMut};
-use std::str::FromStr;
-
-use anyhow::ensure;
-use ndarray::{Array2, ArrayView2, ArrayViewMut2};
-use solution_state::SolutionState;
-
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
 use crate::cell::Candidates;
@@ -21,19 +11,72 @@ use crate::position::Position;
 use crate::solver::strategic::strategies::StrategyEnum;
 use crate::solver::{introspective, strategic, FallibleSolver};
 use crate::unsafe_utils::{get_unchecked, get_unchecked_mut};
+use anyhow::ensure;
+use ndarray::{Array2, ArrayView2, ArrayViewMut2};
+use serde::{Deserialize, Serialize};
+use serialization::SerializedGrid;
+use solution_state::SolutionState;
+use std::fmt;
+use std::fmt::{Display, Formatter};
+use std::marker::PhantomData;
+use std::ops::{Index, IndexMut};
+use std::str::FromStr;
 
 pub mod deserialization;
+pub mod dynamic;
 pub mod format;
 pub mod group;
 pub mod solution_state;
 
-pub mod dynamic;
+mod serialization {
+    use super::*;
+
+    #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+    #[serde(bound(
+        serialize = "Base: SudokuBase, T: Serialize",
+        deserialize = "Base: SudokuBase, T: Deserialize<'de>"
+    ))]
+    pub(super) struct SerializedGrid<Base: SudokuBase, T> {
+        /// The cells of this grid.
+        cells: Vec<T>,
+        _base: PhantomData<Base>,
+    }
+
+    impl<Base: SudokuBase, T> From<Grid<Base, T>> for SerializedGrid<Base, T> {
+        fn from(grid: Grid<Base, T>) -> Self {
+            Self {
+                cells: grid.into_cells(),
+                _base: PhantomData,
+            }
+        }
+    }
+
+    impl<Base: SudokuBase, T> TryFrom<SerializedGrid<Base, T>> for Grid<Base, T> {
+        type Error = Error;
+
+        fn try_from(serialized_grid: SerializedGrid<Base, T>) -> Result<Self> {
+            Self::with(serialized_grid.cells)
+        }
+    }
+}
 
 /// A square grid of cells with side length `Base::SIDE_LENGTH`.
 ///
 /// By default, the cell type `T` is `Cell<Base>`.
 /// Other cell types are supported, but with less functionality.
-#[derive(Eq, PartialEq, Hash, Clone, Debug)]
+#[allow(
+    clippy::unsafe_derive_deserialize,
+    reason = "Safety invariants upheld by serde(try_from)"
+)]
+#[derive(Eq, PartialEq, Hash, Clone, Debug, Serialize, Deserialize)]
+#[serde(
+    bound(
+        serialize = "Base: SudokuBase, T: Serialize + Clone",
+        deserialize = "Base: SudokuBase, T: Deserialize<'de>"
+    ),
+    into = "SerializedGrid<Base, T>",
+    try_from = "SerializedGrid<Base, T>"
+)]
 pub struct Grid<Base: SudokuBase, T = Cell<Base>> {
     /// The cells of this grid.
     ///

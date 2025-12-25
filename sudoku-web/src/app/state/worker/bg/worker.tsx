@@ -1,13 +1,37 @@
 import * as Comlink from "comlink";
 import { WasmCellWorld, WasmSudoku } from "sudoku-wasm";
-
-import { WORKER_BOOT_UP_MESSAGE } from "../../../constants";
+import type { SerializedDynamicCellWorld, SerializedDynamicSudoku } from "../../../utils/serializedData";
 import { init } from "./init";
 
-if (import.meta.env.DEV) {
+if (import.meta.env.MODE === "development") {
     self.addEventListener("message", (ev) => {
         console.debug("Worker message RX:", ev.data);
     });
+}
+
+class WasmSudokuWithTransfer extends WasmSudoku {
+    static override deserialize(bytes: SerializedDynamicSudoku): WasmSudokuWithTransfer {
+        const instance = WasmSudoku.deserialize(bytes);
+        Object.setPrototypeOf(instance, this.prototype);
+        return instance as WasmSudokuWithTransfer;
+    }
+
+    serializeWithTransfer(): SerializedDynamicSudoku {
+        const serialized = super.serialize();
+        return Comlink.transfer(serialized, [serialized.buffer]);
+    }
+}
+
+class WasmCellWorldWithTransfer extends WasmCellWorld {
+    static override deserialize(bytes: SerializedDynamicCellWorld): WasmCellWorldWithTransfer {
+        const instance = WasmCellWorld.deserialize(bytes);
+        Object.setPrototypeOf(instance, this.prototype);
+        return instance as WasmCellWorldWithTransfer;
+    }
+    serializeWithTransfer(): SerializedDynamicCellWorld {
+        const serialized = super.serialize();
+        return Comlink.transfer(serialized, [serialized.buffer]);
+    }
 }
 
 export type WorkerApi = {
@@ -15,13 +39,17 @@ export type WorkerApi = {
     // expose class constructors directly
     // Reference: https://github.com/GoogleChromeLabs/comlink/tree/main/docs/examples/03-classes-example
     WasmSudoku: typeof WasmSudoku;
+    WasmSudokuWithTransfer: typeof WasmSudokuWithTransfer;
     WasmCellWorld: typeof WasmCellWorld;
+    WasmCellWorldWithTransfer: typeof WasmCellWorldWithTransfer;
 };
 
 const workerApi: WorkerApi = {
     init,
     WasmSudoku,
+    WasmSudokuWithTransfer,
     WasmCellWorld,
+    WasmCellWorldWithTransfer,
 };
 
 // The type of `obj` ensures that only module-augmented classed can be patched with the marker.
@@ -46,11 +74,5 @@ declare module "sudoku-wasm" {
     }
     /* eslint-enable @typescript-eslint/consistent-type-definitions */
 }
-
-// Send boot up message
-// Background: worker.tsx is an async module. (TODO: is this still the case?)
-// This requires manual synchronization between Comlink.wrap and Comlink.expose,
-// otherwise initialization messages from comlink would get lost, resulting in a deadlock.
-postMessage(WORKER_BOOT_UP_MESSAGE);
 
 Comlink.expose(workerApi);

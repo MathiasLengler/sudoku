@@ -1,4 +1,4 @@
-import * as _ from "lodash-es";
+import * as _ from "es-toolkit";
 import type { DynamicPosition, WorldDim } from "../../types";
 
 export function validateCellWorldPosition({

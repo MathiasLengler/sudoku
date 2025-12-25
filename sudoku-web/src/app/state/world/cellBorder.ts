@@ -1,7 +1,7 @@
 import classNames from "classnames";
 import { atom, type Atom } from "jotai";
 import { atomFamily } from "jotai/utils";
-import { inRange, isEqual } from "lodash-es";
+import { inRange, isEqual } from "es-toolkit";
 import { cellDimState, cellWorldDimensionsState, selectedGridPositionState } from ".";
 import { getAxisBorders, validateCellWorldPosition } from "../../utils/world";
 import { sudokuBaseState, sudokuSideLengthState } from "../sudoku";

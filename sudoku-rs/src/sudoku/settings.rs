@@ -1,7 +1,8 @@
 use crate::sudoku::history::DEFAULT_LIMIT;
+use serde::{Deserialize, Serialize};
 
 // TODO: add public settings API
-#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug, Copy)]
+#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug, Copy, Serialize, Deserialize)]
 pub struct Settings {
     pub update_candidates: bool,
     pub history_limit: usize,

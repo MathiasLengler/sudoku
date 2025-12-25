@@ -1,6 +1,6 @@
 import classNames from "classnames";
 import type * as CSS from "csstype";
-import { isEqual } from "lodash-es";
+import { isEqual } from "es-toolkit";
 import { useAtomValue } from "jotai";
 import type { DynamicCellCandidates, DynamicCellValue, DynamicPosition, TransportCell } from "../../types";
 import { useHandlePosition } from "../actions/sudokuActions";

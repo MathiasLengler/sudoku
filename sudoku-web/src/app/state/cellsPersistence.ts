@@ -11,7 +11,6 @@ export function saveCells(cells: DynamicCells) {
 
 export function loadCells(): DynamicCells | undefined {
     const cellsString = localStorage.getItem(KEY_CELLS);
-
     if (!cellsString) return undefined;
 
     try {
