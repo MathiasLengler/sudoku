@@ -1,5 +1,5 @@
 import eslint from "@eslint/js";
-import hooksPlugin from "eslint-plugin-react-hooks";
+import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import reactJsxRuntime from "eslint-plugin-react/configs/jsx-runtime.js";
 import reactRecommended from "eslint-plugin-react/configs/recommended.js";
@@ -14,7 +14,6 @@ export default defineConfig(
     eslint.configs.recommended,
     tseslint.configs.recommendedTypeChecked,
     tseslint.configs.stylisticTypeChecked,
-    eslintPluginZodX.configs.recommended,
     {
         languageOptions: {
             parserOptions: {
@@ -32,14 +31,9 @@ export default defineConfig(
             },
         },
     },
-    // Reference: https://github.com/facebook/react/issues/28313
-    {
-        plugins: {
-            "react-hooks": hooksPlugin,
-        },
-        rules: hooksPlugin.configs.recommended.rules,
-    },
+    reactHooks.configs.flat.recommended,
     reactRefresh.configs.vite,
+    eslintPluginZodX.configs.recommended,
     {
         rules: {
             "@typescript-eslint/no-unused-vars": [
