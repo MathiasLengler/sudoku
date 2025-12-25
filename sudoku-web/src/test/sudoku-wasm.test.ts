@@ -39,7 +39,6 @@ describe("sudoku-wasm", async () => {
                         for (const cell of transportSudoku.cells) {
                             transportCellSchema.decode(cell, { reportInput: true });
                         }
-                        console.log(transportSudoku.blocksIndexes);
                         for (const blocksIndex of transportSudoku.blocksIndexes) {
                             expect(blocksIndex).toHaveLength(9);
                             for (const blockIndex of blocksIndex) {
