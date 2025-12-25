@@ -1,10 +1,10 @@
 import { Slider } from "@mui/material";
 import classNames from "classnames";
 import type * as CSS from "csstype";
+import * as _ from "es-toolkit";
 import { useAtom, useAtomValue } from "jotai";
 import { useAtomCallback } from "jotai/utils";
-import * as _ from "es-toolkit";
-import { memo, useCallback, useDeferredValue, useMemo } from "react";
+import { useCallback, useDeferredValue, useMemo } from "react";
 import { Grid, type CellComponentProps } from "react-window";
 import type { Quadrant } from "../../../types";
 import { usePlaySelectedGrid } from "../../actions/worldActions";
@@ -21,7 +21,7 @@ import { worldCellBorderClassesState } from "../../state/world/cellBorder";
 import { worldCellPositionSchema } from "../../state/world/schema";
 import { cellColorClass } from "../../utils/sudoku";
 
-function WorldCellVirtualized({ rowIndex, columnIndex, style }: CellComponentProps<{}>) {
+function WorldCellVirtualized({ rowIndex, columnIndex, style }: CellComponentProps) {
     const cellWorldPosition = useMemo(
         () =>
             worldCellPositionSchema.parse({
