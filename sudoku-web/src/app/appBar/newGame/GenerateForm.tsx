@@ -6,16 +6,16 @@ import { Box, DialogContent, FormGroup, LinearProgress, Stack, Typography } from
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import * as _ from "es-toolkit";
+import { useAtom } from "jotai";
 import { useEffect } from "react";
 import { SelectElement, SliderElement, SwitchElement, TextFieldElement, useForm } from "react-hook-form-mui";
-import { useAtom } from "jotai";
-import { ALL_GOAL_OPTIMIZATIONS, ALL_GRID_METRICS, GRID_METRIC_OPTIONS } from "../../constants";
 import type { DynamicGeneratorSettings, GeneratorProgress } from "../../../types";
 import { useGenerate, useGenerateMultiShot, type TrackedMultiShotGeneratorProgress } from "../../actions/sudokuActions";
 import { Fieldset } from "../../components/Fieldset";
 import SelectStrategies from "../../components/formFragments/SelectStrategies";
 import MyIconButton from "../../components/MyIconButton";
 import { ResetFormButton } from "../../components/ResetFormButton";
+import { ALL_GOAL_OPTIMIZATIONS, ALL_GRID_METRICS, GRID_METRIC_OPTIONS } from "../../constants";
 import {
     GENERATE_FORM_DEFAULT_VALUES,
     generateFormValuesSchema,
