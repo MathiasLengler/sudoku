@@ -3,7 +3,8 @@ import * as z from "zod";
 import { assert } from "../../../typeUtils";
 import type { WorldDim, WorldPosition } from "../../../types";
 
-const usizeSchema = z.int()
+const usizeSchema = z
+    .int()
     .nonnegative()
     // wasm32 (bits)
     .max(Math.pow(2, 32) - 1);
