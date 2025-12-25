@@ -21,7 +21,7 @@ import { worldCellBorderClassesState } from "../../state/world/cellBorder";
 import { worldCellPositionSchema } from "../../state/world/schema";
 import { cellColorClass } from "../../utils/sudoku";
 
-const WorldCellVirtualized = memo(function WorldCellVirtualized({ rowIndex, columnIndex, style }: CellComponentProps) {
+function WorldCellVirtualized({ rowIndex, columnIndex, style }: CellComponentProps<{}>) {
     const cellWorldPosition = useMemo(
         () =>
             worldCellPositionSchema.parse({
@@ -106,7 +106,7 @@ const WorldCellVirtualized = memo(function WorldCellVirtualized({ rowIndex, colu
             </div>
         </div>
     );
-});
+}
 
 function WorldMapVirtualized() {
     const cellWorldDimensions = useAtomValue(cellWorldDimensionsState);
