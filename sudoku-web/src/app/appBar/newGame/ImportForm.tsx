@@ -116,9 +116,13 @@ export function ImportForm({ onClose }: ImportFormProps) {
                                 multiline
                                 fullWidth
                                 slotProps={{
-                                    input: { sx: { fontFamily: "monospace" } },
+                                    input: {
+                                        sx: {
+                                            fontFamily: "monospace",
+                                        },
+                                        readOnly: isSubmitting,
+                                    },
                                 }}
-                                disabled={isSubmitting}
                             />
                             <SupportedFormats />
                             <Fieldset label="Post import">
