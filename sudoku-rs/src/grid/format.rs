@@ -26,12 +26,39 @@ mod candidates_grid_compact;
 mod values_grid;
 mod values_line;
 
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum GridFormatPreservesCellValue {
+    /// Perserves the value, but not the fixed (clue) state.
+    ValueOnly,
+    /// Perserves both value and fixed (clue) state.
+    ValueAndFixedState,
+}
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum GridFormatPreservesCellCandidates {
+    /// Perserves no candidates, e.g. an empty cell.
+    /// Any candidates will be lost.
+    Empty,
+    /// Preserves empty and multiple candidates.
+    /// Single candidates will be converted to values.
+    OnlyMultiple,
+    /// Preserves empty, single and multiple candidates.
+    All,
+}
+
+/// TODO: implement and test via capabilities
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub struct GridFormatCapabilities {
+    pub preserves_cell_value: GridFormatPreservesCellValue,
+    pub preserves_cell_candidates: GridFormatPreservesCellCandidates,
+}
+
 #[enum_dispatch(GridFormatEnum)]
 pub trait GridFormat: Debug + Copy + Clone + Eq + Sized {
     fn render<Base: SudokuBase>(self, grid: &Grid<Base>) -> String;
 
     fn parse(self, input: &str) -> Result<Vec<DynamicCell>>;
 
+    // FIXME: move to capabilities
     fn do_fix_all_values(self) -> bool {
         true
     }
@@ -217,6 +244,8 @@ mod tests {
         }
 
         // TODO: move format capabilities to the format itself
+        //  declare unit test for each format
+        //  define helper which tests based on the declared capabilities
 
         // Grid formats which preserve:
         // - cell value
