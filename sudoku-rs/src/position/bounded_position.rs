@@ -48,7 +48,6 @@ impl<Base: SudokuBase> Position<Base> {
         this
     }
 
-    // TODO: other corners
     pub fn top_left() -> Self {
         Position::default()
     }
