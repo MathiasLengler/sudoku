@@ -10,9 +10,14 @@ use crate::error::Result;
 use crate::grid::format::GridFormat;
 use crate::grid::Grid;
 
-/// New compact candidates grid format defined by [sudokuwiki.org](https://www.sudokuwiki.org/Sudoku_String_Definitions)
+// FIXME: sudokuwiki's format has changed again:
+//  https://www.sudokuwiki.org/Sudoku_String_Definitions
+//  https://blueant1.github.io/puzzle-coding/documentation/puzzlecoding/encodingformats/
+//  => Implement as a new format
+
+/// Compact candidates grid format defined by [sudokuwiki.org](https://www.sudokuwiki.org/Sudoku_String_Definitions) as "Version 1".
 ///
-/// Used by the solver via the search parameter `bd`.
+/// Used by their solver via the search parameter `bd`.
 ///
 /// Differences from `BinaryCandidatesLine`:
 /// - additional bit in the candidates bitset indicating a clue (fixed value)
@@ -22,6 +27,9 @@ use crate::grid::Grid;
 ///   - Base 4: 4
 ///   - Base 5: 6
 /// - no delimiters
+///
+/// # Note
+/// This format does not differentiate between single candidates and values.
 ///
 /// # Example
 /// `8104jk4s5e0ujalgnqhm0m0921d68mp2tgli3i413g8og18q059g3qiu11ikocac41q2okimieaei4oc0h1141o4i6mkakmk03a4q4r009jk5s0s03ks4cgsh821816s2s81116cisg803kc7cg174cceeae0h545c`
@@ -94,11 +102,19 @@ impl GridFormat for BinaryFixedCandidatesLine {
 #[cfg(test)]
 mod tests {
     use crate::grid::format::test_util::assert_grid_format_roundtrip;
+    use crate::position::Position;
     use crate::samples;
 
     use super::*;
 
-    //noinspection SpellCheckingInspection
+    // TODO: https://www.sudokuwiki.org/Test_Strings
+
+    #[ignore = "New format with header, not yet implemented"]
+    #[test]
+    fn test_parse_example() {
+        BinaryFixedCandidatesLine.parse("S9B015y2e685w68050609040i022e0e0f0a2e085y050f0a5u090b042e2u2e0i06042c0810012q0f0dd0015w9i102e020a089e03050f9e0d5y042e05d0609i010f095y0e5y0f0a045y0206020166cy669id205").unwrap();
+    }
+
     #[test]
     fn test_render() {
         let mut grid = samples::base_3().into_iter().next().unwrap();
@@ -113,7 +129,30 @@ mod tests {
     }
 
     #[test]
-    fn test_parse() {
+    fn test_single_candidate_to_unfixed_value() {
+        type Base = Base2;
+        let grid = {
+            let mut grid = Grid::<Base>::new();
+            grid.get_mut(Position::top_left())
+                .set_candidates(Candidates::with_single(1.try_into().unwrap()));
+            grid
+        };
+
+        let grid_roundtrip = Grid::<Base>::try_from(
+            BinaryFixedCandidatesLine
+                .parse(&BinaryFixedCandidatesLine.render(&grid))
+                .unwrap(),
+        )
+        .unwrap();
+
+        assert_eq!(
+            grid_roundtrip[Position::top_left()],
+            Cell::with_value(1.try_into().unwrap(), false)
+        );
+    }
+
+    #[test]
+    fn test_roundtrip() {
         for grid in samples::base_2() {
             assert_grid_format_roundtrip(&grid, BinaryFixedCandidatesLine).unwrap();
         }
