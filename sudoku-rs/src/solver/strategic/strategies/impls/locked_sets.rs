@@ -17,7 +17,6 @@ pub mod v2;
 //  - https://opensourc.es/blog/sudoku/
 //  This seems to be the bottleneck for the goal generator
 // TODO: produce decuction reasons
-// TODO: rename LockedSet
 // TODO: parameterize strategy
 //  set size
 //  naked/hidden
