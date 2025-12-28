@@ -604,6 +604,7 @@ mod tests {
 
             let solution_values_grid = {
                 let mut solution_values_grid = samples::base_2_solved();
+                solution_values_grid.unfix_all_values();
 
                 // Delete lower half of solution grid
                 Position::all_rows()
@@ -1045,7 +1046,11 @@ mod tests {
 
         #[test]
         fn test_solved_values_grid_prune_minimal() {
-            let values_grid = samples::base_2_solved();
+            let values_grid = {
+                let mut solved_grid = samples::base_2_solved();
+                solved_grid.unfix_all_values();
+                solved_grid
+            };
 
             let grid = Generator::<Base2>::with_settings(GeneratorSettings {
                 solution: Some(SolutionSettings {

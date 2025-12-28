@@ -44,13 +44,15 @@ pub fn base_2() -> Vec<Grid<Base2>> {
 }
 
 pub fn base_2_solved() -> Grid<Base2> {
-    Grid::<Base2>::try_from(vec![
+    let mut grid = Grid::<Base2>::try_from(vec![
         vec![2, 3, 4, 1],
         vec![4, 1, 3, 2],
         vec![1, 4, 2, 3],
         vec![3, 2, 1, 4],
     ])
-    .unwrap()
+    .unwrap();
+    grid.fix_all_values();
+    grid
 }
 
 pub fn base_2_candidates_coordinates() -> Grid<Base2> {
@@ -124,6 +126,7 @@ pub fn minimal<Base: SudokuBase>() -> Grid<Base> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{position::Position, test_util::test_all_bases};
 
     #[test]
     fn test_base_2() {
@@ -139,15 +142,43 @@ mod tests {
     fn test_base_2_candidates_coordinates() {
         let grid = base_2_candidates_coordinates();
 
-        let top_left_cell = grid.get((0, 0).try_into().unwrap());
+        let top_left_cell = grid.get(Position::top_left());
         assert_eq!(*top_left_cell, Cell::with_candidates(Candidates::new()));
 
-        let bottom_right = grid.get((3, 3).try_into().unwrap());
+        let bottom_right = grid.get(Position::bottom_right());
         assert_eq!(*bottom_right, Cell::with_candidates(Candidates::all()));
     }
 
     #[test]
     fn test_base_3() {
         base_3();
+    }
+
+    macro_rules! test_all_base_samples {
+        (|$grid:ident| $block:block) => {
+            test_all_bases!({
+                for $grid in Base::grid_samples() $block
+            });
+            #[test]
+            fn test_base_2_solved() {
+                let $grid = base_2_solved();
+                $block
+            }
+            #[test]
+            fn test_base_2_candidates_coordinates() {
+                let $grid = base_2_candidates_coordinates();
+                $block
+            }
+        };
+    }
+
+    mod all_values_fixed {
+        use super::*;
+        test_all_base_samples!(|grid| {
+            assert!(
+                grid.all_unfixed_value_positions().is_empty(),
+                "Not all values are fixed in grid:\n{grid}"
+            );
+        });
     }
 }
