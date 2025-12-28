@@ -522,38 +522,21 @@ impl<Base: SudokuBase> MultiShotGenerator<Base> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::{
         base::consts::*,
         generator::{Generator, PruningSettings},
         solver::strategic::strategies::NakedSingles,
     };
 
-    use super::*;
-
-    // TODO: test other GridMetrics
-    // TODO: parametrize tests
     mod grid_metric {
         use super::*;
-
         use crate::samples;
-        use rstest::{fixture, rstest};
+        use rstest::rstest;
 
         mod evaluate {
-            use crate::test_util::init_test_logger;
-
             use super::*;
-
-            #[test]
-            fn debug_grid() {
-                let mut grid = samples::grid::<Base3>(1);
-                grid.set_all_direct_candidates();
-                println!("Grid:\n{grid}");
-            }
-
-            #[fixture]
-            fn grid_sample_base_3(#[default(0)] index: usize) -> Grid<Base3> {
-                samples::base_3().into_iter().nth(index).unwrap()
-            }
+            use crate::test_util::init_test_logger;
 
             #[rstest]
             #[case::strategy_score(0, GridMetric::StrategyScore, 8)]
