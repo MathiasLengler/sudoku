@@ -60,10 +60,6 @@ pub trait GridFormat: Debug + Copy + Clone + Eq + Sized {
 
     fn capabilities(self) -> GridFormatCapabilities;
 
-    fn do_fix_all_values(self) -> bool {
-        self.capabilities().preserves_cell_value == GridFormatPreservesCellValue::ValueOnly
-    }
-
     fn parse_and_validate_cell_count(self, input: &str) -> Result<Vec<DynamicCell>> {
         use crate::base::consts::ALL_CELL_COUNTS;
 
@@ -76,7 +72,8 @@ pub trait GridFormat: Debug + Copy + Clone + Eq + Sized {
             "Unexpected cell count {actual_cell_count}, expected one of: {ALL_CELL_COUNTS:?}"
         );
 
-        if self.do_fix_all_values() {
+        if self.capabilities().preserves_cell_value == GridFormatPreservesCellValue::ValueOnly {
+            // If the format does not preserve fixed state, assume all values are fixed.
             for dynamic_cell in &mut dynamic_cells {
                 if let DynamicCell::Value { fixed, value } = dynamic_cell {
                     if value.0 != 0 {
