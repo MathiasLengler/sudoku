@@ -2,6 +2,9 @@ use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
 use crate::error::Result;
 use crate::grid::format::GridFormat;
+use crate::grid::format::GridFormatCapabilities;
+use crate::grid::format::GridFormatPreservesCellCandidates;
+use crate::grid::format::GridFormatPreservesCellValue;
 use crate::grid::Grid;
 
 /// A grid of cell values.
@@ -26,6 +29,13 @@ use crate::grid::Grid;
 pub struct ValuesGrid;
 
 impl GridFormat for ValuesGrid {
+    fn capabilities(self) -> GridFormatCapabilities {
+        GridFormatCapabilities {
+            preserves_cell_value: GridFormatPreservesCellValue::ValueOnly,
+            preserves_cell_candidates: GridFormatPreservesCellCandidates::Empty,
+        }
+    }
+
     fn render<Base: SudokuBase>(self, grid: &Grid<Base>) -> String {
         use itertools::Itertools;
         use tabled::builder::Builder;

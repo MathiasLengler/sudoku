@@ -1,11 +1,13 @@
-use anyhow::bail;
-
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
 use crate::cell::Cell;
 use crate::error::Result;
 use crate::grid::format::GridFormat;
+use crate::grid::format::GridFormatCapabilities;
+use crate::grid::format::GridFormatPreservesCellCandidates;
+use crate::grid::format::GridFormatPreservesCellValue;
 use crate::grid::Grid;
+use anyhow::bail;
 
 /// All grid values concatenated into a single line.
 /// Candidates are displayed as `0`.
@@ -16,6 +18,13 @@ use crate::grid::Grid;
 pub struct ValuesLine;
 
 impl GridFormat for ValuesLine {
+    fn capabilities(self) -> GridFormatCapabilities {
+        GridFormatCapabilities {
+            preserves_cell_value: GridFormatPreservesCellValue::ValueOnly,
+            preserves_cell_candidates: GridFormatPreservesCellCandidates::Empty,
+        }
+    }
+
     fn render<Base: SudokuBase>(self, grid: &Grid<Base>) -> String {
         grid.all_cells().map(ToString::to_string).collect()
     }

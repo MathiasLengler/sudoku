@@ -1,13 +1,15 @@
-use itertools::Itertools;
-use tabled::builder::Builder;
-use tabled::settings::Style;
-
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
 use crate::cell::CellState;
 use crate::error::Result;
 use crate::grid::format::GridFormat;
+use crate::grid::format::GridFormatCapabilities;
+use crate::grid::format::GridFormatPreservesCellCandidates;
+use crate::grid::format::GridFormatPreservesCellValue;
 use crate::grid::Grid;
+use itertools::Itertools;
+use tabled::builder::Builder;
+use tabled::settings::Style;
 
 /// A grid of cells.
 /// Candidates are visualized as concatenated numbers in a single line.
@@ -32,6 +34,13 @@ use crate::grid::Grid;
 pub struct CandidatesGridCompact;
 
 impl GridFormat for CandidatesGridCompact {
+    fn capabilities(self) -> GridFormatCapabilities {
+        GridFormatCapabilities {
+            preserves_cell_value: GridFormatPreservesCellValue::ValueOnly,
+            preserves_cell_candidates: GridFormatPreservesCellCandidates::OnlyMultiple,
+        }
+    }
+
     fn render<Base: SudokuBase>(self, grid: &Grid<Base>) -> String {
         let all_block_cells = grid
             .all_block_cells()

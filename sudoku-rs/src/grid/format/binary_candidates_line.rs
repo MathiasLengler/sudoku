@@ -1,7 +1,10 @@
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
 use crate::error;
-use crate::grid::format::GridFormat;
+use crate::grid::format::{
+    GridFormat, GridFormatCapabilities, GridFormatPreservesCellCandidates,
+    GridFormatPreservesCellValue,
+};
 use crate::grid::Grid;
 
 /// Compact candidates grid format used by [sudokuwiki.org](https://www.sudokuwiki.org/sudoku.htm)
@@ -23,6 +26,13 @@ use crate::grid::Grid;
 pub struct BinaryCandidatesLine;
 
 impl GridFormat for BinaryCandidatesLine {
+    fn capabilities(self) -> GridFormatCapabilities {
+        GridFormatCapabilities {
+            preserves_cell_value: GridFormatPreservesCellValue::ValueOnly,
+            preserves_cell_candidates: GridFormatPreservesCellCandidates::OnlyMultiple,
+        }
+    }
+
     fn render<Base: SudokuBase>(self, grid: &Grid<Base>) -> String {
         use crate::cell::CellState;
         use itertools::Itertools;

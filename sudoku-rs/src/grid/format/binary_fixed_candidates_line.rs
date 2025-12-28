@@ -1,14 +1,15 @@
-use std::fmt::Write;
-
-use anyhow::bail;
-
 use crate::base::consts::*;
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
 use crate::cell::{Candidates, Cell};
 use crate::error::Result;
 use crate::grid::format::GridFormat;
+use crate::grid::format::GridFormatCapabilities;
+use crate::grid::format::GridFormatPreservesCellCandidates;
+use crate::grid::format::GridFormatPreservesCellValue;
 use crate::grid::Grid;
+use anyhow::bail;
+use std::fmt::Write;
 
 // FIXME: sudokuwiki's format has changed again:
 //  https://www.sudokuwiki.org/Sudoku_String_Definitions
@@ -37,6 +38,12 @@ use crate::grid::Grid;
 pub struct BinaryFixedCandidatesLine;
 
 impl GridFormat for BinaryFixedCandidatesLine {
+    fn capabilities(self) -> GridFormatCapabilities {
+        GridFormatCapabilities {
+            preserves_cell_value: GridFormatPreservesCellValue::ValueAndFixedState,
+            preserves_cell_candidates: GridFormatPreservesCellCandidates::OnlyMultiple,
+        }
+    }
     fn render<Base: SudokuBase>(self, grid: &Grid<Base>) -> String {
         use radix_fmt::radix_32;
 
@@ -92,10 +99,6 @@ impl GridFormat for BinaryFixedCandidatesLine {
             BASE_5_CHAR_COUNT => parse_base::<Base5>(input),
             unexpected_char_count => bail!("Unexpected char count: {unexpected_char_count}"),
         }
-    }
-
-    fn do_fix_all_values(self) -> bool {
-        false
     }
 }
 

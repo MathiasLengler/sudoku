@@ -58,9 +58,10 @@ pub trait GridFormat: Debug + Copy + Clone + Eq + Sized {
 
     fn parse(self, input: &str) -> Result<Vec<DynamicCell>>;
 
-    // FIXME: move to capabilities
+    fn capabilities(self) -> GridFormatCapabilities;
+
     fn do_fix_all_values(self) -> bool {
-        true
+        self.capabilities().preserves_cell_value == GridFormatPreservesCellValue::ValueOnly
     }
 
     fn parse_and_validate_cell_count(self, input: &str) -> Result<Vec<DynamicCell>> {

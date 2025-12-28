@@ -1,19 +1,20 @@
-use std::iter;
-
-use anyhow::{bail, ensure, Context};
-use itertools::Itertools;
-use num::Integer;
-use owo_colors::Style as OwoStyle;
-use tabled::builder::Builder;
-use tabled::settings::{Padding, Style};
-
 use crate::base::consts::ALL_SIDE_LENGTHS;
 use crate::base::SudokuBase;
 use crate::cell::dynamic::{char_value_to_u8, DynamicCandidates, DynamicCell};
 use crate::cell::{CellState, Value};
 use crate::error::Result;
 use crate::grid::format::GridFormat;
+use crate::grid::format::GridFormatCapabilities;
+use crate::grid::format::GridFormatPreservesCellCandidates;
+use crate::grid::format::GridFormatPreservesCellValue;
 use crate::grid::Grid;
+use anyhow::{bail, ensure, Context};
+use itertools::Itertools;
+use num::Integer;
+use owo_colors::Style as OwoStyle;
+use std::iter;
+use tabled::builder::Builder;
+use tabled::settings::{Padding, Style};
 
 /// A grid of cells.
 /// Values are centered.
@@ -30,6 +31,15 @@ use crate::grid::Grid;
 pub struct CandidatesGridANSIStyled;
 
 impl GridFormat for CandidatesGridANSIStyled {
+    fn capabilities(self) -> GridFormatCapabilities {
+        GridFormatCapabilities {
+            // Could support `ValueAndFixedState`, but parsing of ansii escape codes is not implemented.
+            preserves_cell_value: GridFormatPreservesCellValue::ValueOnly,
+            // The representation of a single candidate 5 in base 3 is indistinguishable from a value 5; both are a centered "5".
+            preserves_cell_candidates: GridFormatPreservesCellCandidates::OnlyMultiple,
+        }
+    }
+
     fn render<Base: SudokuBase>(self, grid: &Grid<Base>) -> String {
         render_candidates_grid(grid, true)
     }
@@ -40,11 +50,6 @@ impl GridFormat for CandidatesGridANSIStyled {
 
         CandidatesGridPlain.parse(&stripped_input)
     }
-
-    // TODO: uncomment after parsing of ANSI escapes for fixed values
-    // fn do_fix_all_values(self) -> bool {
-    //     false
-    // }
 }
 
 /// The same as `CandidatesGridANSIStyled`, but without terminal styling.
@@ -151,6 +156,13 @@ impl GridFormat for CandidatesGridANSIStyled {
 pub struct CandidatesGridPlain;
 
 impl GridFormat for CandidatesGridPlain {
+    fn capabilities(self) -> GridFormatCapabilities {
+        GridFormatCapabilities {
+            preserves_cell_value: GridFormatPreservesCellValue::ValueOnly,
+            preserves_cell_candidates: GridFormatPreservesCellCandidates::OnlyMultiple,
+        }
+    }
+
     fn render<Base: SudokuBase>(self, grid: &Grid<Base>) -> String {
         render_candidates_grid(grid, false)
     }
