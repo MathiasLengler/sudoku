@@ -1,28 +1,28 @@
-use std::fmt;
-use std::fmt::Debug;
-use std::str::FromStr;
-
+use crate::base::SudokuBase;
+use crate::cell::dynamic::DynamicCell;
+use crate::error::{Error, Result};
+use crate::grid::Grid;
 use anyhow::{bail, ensure, format_err};
 use enum_dispatch::enum_dispatch;
 use serde::de::Visitor;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::fmt;
+use std::fmt::Debug;
+use std::str::FromStr;
 
 pub use binary_candidates_line::*;
 pub use binary_fixed_candidates_line::*;
 pub use candidates_grid::*;
 pub use candidates_grid_compact::*;
+pub use json::Json;
 pub use values_grid::*;
 pub use values_line::ValuesLine;
-
-use crate::base::SudokuBase;
-use crate::cell::dynamic::DynamicCell;
-use crate::error::{Error, Result};
-use crate::grid::Grid;
 
 mod binary_candidates_line;
 mod binary_fixed_candidates_line;
 mod candidates_grid;
 mod candidates_grid_compact;
+mod json;
 mod values_grid;
 mod values_line;
 
@@ -101,7 +101,7 @@ pub enum GridFormatEnum {
     CandidatesGridCompact,
     ValuesLine,
     ValuesGrid,
-    // TODO: dymaic grid serde JSON
+    Json,
 }
 
 impl GridFormatEnum {
@@ -114,6 +114,7 @@ impl GridFormatEnum {
             CandidatesGridCompact.into(),
             ValuesLine.into(),
             ValuesGrid.into(),
+            Json.into(),
         ]
     }
 
@@ -152,6 +153,7 @@ impl Serialize for GridFormatEnum {
             Self::CandidatesGridCompact(_) => (4, "CandidatesGridCompact"),
             Self::ValuesLine(_) => (5, "ValuesLine"),
             Self::ValuesGrid(_) => (6, "ValuesGrid"),
+            Self::Json(_) => (7, "Json"),
         };
 
         serializer.serialize_unit_variant("Strategy", variant_index, variant)
