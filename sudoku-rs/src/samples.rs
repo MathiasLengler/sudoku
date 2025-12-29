@@ -57,8 +57,8 @@ pub fn base_2_solved() -> Grid<Base2> {
 
 pub fn base_2_candidates_coordinates() -> Grid<Base2> {
     Grid::<Base2>::with(
-        (0..u8::try_from(Base2::CELL_COUNT).unwrap())
-            .map(|i| Cell::with_candidates(Candidates::with_integral(i).unwrap()))
+        Candidates::iter_all_lexicographical()
+            .map(Cell::with_candidates)
             .collect(),
     )
     .unwrap()
@@ -141,12 +141,22 @@ mod tests {
     #[test]
     fn test_base_2_candidates_coordinates() {
         let grid = base_2_candidates_coordinates();
-
-        let top_left_cell = grid.get(Position::top_left());
-        assert_eq!(*top_left_cell, Cell::with_candidates(Candidates::new()));
-
-        let bottom_right = grid.get(Position::bottom_right());
-        assert_eq!(*bottom_right, Cell::with_candidates(Candidates::all()));
+        assert_eq!(
+            grid.get(Position::top_left()).candidates().unwrap(),
+            Candidates::new()
+        );
+        assert_eq!(
+            grid.get(Position::top_right()).candidates().unwrap(),
+            Candidates::try_from(vec![1, 2]).unwrap()
+        );
+        assert_eq!(
+            grid.get(Position::bottom_left()).candidates().unwrap(),
+            Candidates::try_from(vec![3, 4]).unwrap()
+        );
+        assert_eq!(
+            grid.get(Position::bottom_right()).candidates().unwrap(),
+            Candidates::all()
+        );
     }
 
     #[test]
