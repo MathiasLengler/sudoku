@@ -154,7 +154,7 @@ mod tests {
         base_3();
     }
 
-    macro_rules! test_all_base_samples {
+    macro_rules! test_all_sample_grids {
         (|$grid:ident| $block:block) => {
             test_all_bases!({
                 for $grid in Base::grid_samples() $block
@@ -174,7 +174,7 @@ mod tests {
 
     mod all_values_fixed {
         use super::*;
-        test_all_base_samples!(|grid| {
+        test_all_sample_grids!(|grid| {
             assert!(
                 grid.all_unfixed_value_positions().is_empty(),
                 "Not all values are fixed in grid:\n{grid}"
