@@ -90,12 +90,12 @@ impl GridFormat for CandidatesGridCompact {
     }
 
     fn parse(self, input: &str) -> Result<Vec<DynamicCell>> {
-        static GRID_BORDER_CHARS: &[char] = &['-', '|', ':', '+', '\'', '\n', '*'];
+        static GRID_BORDER_CHARS: &[char] = &['-', '|', '│', ':', '+', '\'', '\n', '*'];
 
         input
             .lines()
             // Filter horizontal separator lines
-            .filter(|line| line.contains(|c: char| c.is_digit(36)))
+            .filter(|&line| line.contains(|c: char| c.is_digit(36)))
             // Filter vertical separators
             .flat_map(|line| line.split(GRID_BORDER_CHARS))
             .filter(|s| !s.is_empty())

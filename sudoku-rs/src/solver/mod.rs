@@ -98,7 +98,14 @@ pub(crate) mod test_util {
 
                 for $grid in grids $block
             }
+            #[test]
+            fn test_samples_base_2_solved() {
+                $setup;
 
+                let $grid = crate::samples::base_2_solved();
+
+                $block
+            }
             #[test]
             fn test_samples_base_3() {
                 $setup;
@@ -107,7 +114,6 @@ pub(crate) mod test_util {
 
                 for $grid in grids $block
             }
-
             #[cfg(not(debug_assertions))]
             #[test]
             fn test_samples_base_4() {
@@ -116,15 +122,6 @@ pub(crate) mod test_util {
                 let grids = crate::samples::base_4();
 
                 for $grid in grids $block
-            }
-
-            #[test]
-            fn test_samples_solved() {
-                $setup;
-
-                let $grid = crate::samples::base_2_solved();
-
-                $block
             }
         };
         (|$grid:ident| $block:block) => {

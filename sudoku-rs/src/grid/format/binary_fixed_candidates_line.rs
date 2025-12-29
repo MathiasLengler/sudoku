@@ -104,7 +104,7 @@ impl GridFormat for BinaryFixedCandidatesLine {
 
 #[cfg(test)]
 mod tests {
-    use crate::grid::format::test_util::assert_grid_format_roundtrip;
+    use crate::grid::format::test_util::assert_grid_format_roundtrip_unchanged;
     use crate::position::Position;
     use crate::samples;
 
@@ -157,19 +157,19 @@ mod tests {
     #[test]
     fn test_roundtrip() {
         for grid in samples::base_2() {
-            assert_grid_format_roundtrip(&grid, BinaryFixedCandidatesLine).unwrap();
+            assert_grid_format_roundtrip_unchanged(BinaryFixedCandidatesLine, &grid).unwrap();
         }
 
         for grid in samples::base_3() {
-            assert_grid_format_roundtrip(&grid, BinaryFixedCandidatesLine).unwrap();
+            assert_grid_format_roundtrip_unchanged(BinaryFixedCandidatesLine, &grid).unwrap();
         }
 
         let mut grid = Grid::<Base4>::new();
         grid.set_all_direct_candidates();
-        assert_grid_format_roundtrip(&grid, BinaryFixedCandidatesLine).unwrap();
+        assert_grid_format_roundtrip_unchanged(BinaryFixedCandidatesLine, &grid).unwrap();
 
         let mut grid = Grid::<Base5>::new();
         grid.set_all_direct_candidates();
-        assert_grid_format_roundtrip(&grid, BinaryFixedCandidatesLine).unwrap();
+        assert_grid_format_roundtrip_unchanged(BinaryFixedCandidatesLine, &grid).unwrap();
     }
 }

@@ -39,13 +39,12 @@ pub enum GridFormatPreservesCellCandidates {
     /// Any candidates will be lost.
     Empty,
     /// Preserves empty and multiple candidates.
-    /// Single candidates will be converted to values.
+    /// Single candidates may be converted to values.
     OnlyMultiple,
     /// Preserves empty, single and multiple candidates.
     All,
 }
 
-/// TODO: implement and test via capabilities
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct GridFormatCapabilities {
     pub preserves_cell_value: GridFormatPreservesCellValue,
@@ -198,49 +197,26 @@ impl FromStr for GridFormatEnum {
 #[cfg(test)]
 mod tests {
     use super::*;
-
+    use crate::{grid::format::test_util::assert_grid_format_roundtrip_unchanged_detect, samples};
     use anyhow::Context;
 
-    use crate::samples;
+    mod grid_format_enum {
+        use super::*;
+        #[test]
+        fn test_serde_round_trip() {
+            let all_strategies = GridFormatEnum::all();
 
-    #[test]
-    fn test_serde_round_trip() {
-        let all_strategies = GridFormatEnum::all();
+            let json_string = serde_json::to_string(&all_strategies).unwrap();
 
-        let json_string = serde_json::to_string(&all_strategies).unwrap();
+            let all_strategies_round_tripped: Vec<GridFormatEnum> =
+                serde_json::from_str(&json_string).unwrap();
 
-        let all_strategies_round_tripped: Vec<GridFormatEnum> =
-            serde_json::from_str(&json_string).unwrap();
-
-        assert_eq!(all_strategies, all_strategies_round_tripped);
+            assert_eq!(all_strategies, all_strategies_round_tripped);
+        }
     }
 
     #[test]
     fn test_detect_and_parse_cells_roundtrip() {
-        pub(crate) fn assert_grid_format_roundtrip_detect<Base: SudokuBase>(
-            grid: &Grid<Base>,
-            grid_format: GridFormatEnum,
-        ) -> Result<()> {
-            (|| {
-                let grid_string = grid_format.render(grid);
-
-                let cell_views =
-                    GridFormatEnum::detect_and_parse(&grid_string).with_context(|| {
-                        format!("Failed to detect and parse grid_string:\n{grid_string}")
-                    })?;
-
-                test_util::assert_grid_equals_cell_views(grid, &cell_views).with_context(|| {
-                    format!("Failed to compare cell views to grid for grid_string:\n{grid_string}")
-                })
-            })()
-            .with_context(|| {
-                format!(
-                    "Failed to roundtrip format {} with grid:\n{grid}",
-                    grid_format.name()
-                )
-            })
-        }
-
         // TODO: move format capabilities to the format itself
         //  declare unit test for each format
         //  define helper which tests based on the declared capabilities
@@ -275,7 +251,7 @@ mod tests {
             for_test_grids!(|grid| {
                 grid.fix_all_values();
 
-                assert_grid_format_roundtrip_detect(&grid, grid_format)
+                assert_grid_format_roundtrip_unchanged_detect(grid_format, &grid)
                     .with_context(|| "Test cell value roundtrip".to_string())
                     .unwrap();
             });
@@ -297,11 +273,11 @@ mod tests {
         for grid_format in grid_formats {
             for_test_grids!(|grid| {
                 grid.fix_all_values();
-                assert_grid_format_roundtrip_detect(&grid, grid_format)
+                assert_grid_format_roundtrip_unchanged_detect(grid_format, &grid)
                     .with_context(|| "Test cell fixed value roundtrip".to_string())
                     .unwrap();
                 grid.unfix_all_values();
-                assert_grid_format_roundtrip_detect(&grid, grid_format)
+                assert_grid_format_roundtrip_unchanged_detect(grid_format, &grid)
                     .with_context(|| "Test cell unfixed value roundtrip".to_string())
                     .unwrap();
             });
@@ -321,7 +297,7 @@ mod tests {
         ];
         for grid_format in grid_formats {
             for_test_grids!(|grid| {
-                assert_grid_format_roundtrip_detect(&grid, grid_format)
+                assert_grid_format_roundtrip_unchanged_detect(grid_format, &grid)
                     .with_context(|| "Test cell candidates roundtrip".to_string())
                     .unwrap();
             });
@@ -354,47 +330,167 @@ mod tests {
                     .enumerate()
                     .filter(|&(i, _)| i % 2 == 0)
                     .for_each(|(_, pos)| grid.get_mut(pos).unfix());
-                assert_grid_format_roundtrip_detect(&grid, grid_format)
+                assert_grid_format_roundtrip_unchanged_detect(grid_format, &grid)
                     .with_context(|| "Test cell multiple candidates roundtrip".to_string())
                     .unwrap();
             });
+        }
+    }
+
+    mod via_capabilities {
+        use super::*;
+        use crate::{
+            cell::{Cell, Value},
+            grid::format::test_util::{
+                assert_grid_format_roundtrip, assert_grid_format_roundtrip_unchanged,
+            },
+        };
+
+        // TODO: GridFormatPreservesCellCandidates
+        // TODO: test with detect_parse_format = true
+
+        mod cell_value {
+            use super::*;
+            use crate::test_util::test_all_bases;
+
+            // TODO: use rstest
+
+            fn assert_preserves_cell_value<Base: SudokuBase, F: GridFormat>(
+                grid_format: F,
+                grid_with_fixed_values: &Grid<Base>,
+            ) {
+                assert!(
+                    grid_with_fixed_values
+                        .all_unfixed_value_positions()
+                        .is_empty(),
+                    "Not all values are fixed in grid:\n{grid_with_fixed_values}"
+                );
+                assert!(
+                    grid_with_fixed_values.are_all_candidates_empty(),
+                    "Not all candidates are empty in grid:\n{grid_with_fixed_values}"
+                );
+                let grid_with_unfixed_values = {
+                    let mut grid = grid_with_fixed_values.clone();
+                    grid.unfix_all_values();
+                    grid
+                };
+
+                // Fixed values remain fixed.
+                assert_grid_format_roundtrip_unchanged(grid_format, grid_with_fixed_values)
+                    .unwrap();
+
+                match grid_format.capabilities().preserves_cell_value {
+                    GridFormatPreservesCellValue::ValueOnly => {
+                        // Unfixed values get converted to fixed values.
+                        assert_grid_format_roundtrip(
+                            grid_format,
+                            false,
+                            &grid_with_unfixed_values,
+                            grid_with_fixed_values,
+                        )
+                        .unwrap();
+                    }
+                    GridFormatPreservesCellValue::ValueAndFixedState => {
+                        // Unfixed values remain unfixed.
+                        assert_grid_format_roundtrip_unchanged(
+                            grid_format,
+                            &grid_with_unfixed_values,
+                        )
+                        .unwrap();
+                    }
+                }
+            }
+
+            // TODO: test via all sample grids
+
+            mod filled {
+                use super::*;
+
+                // TODO: only test base5 in release mode:
+                //  PASS [   1.421s] sudoku grid::format::tests::via_capabilities::cell_value::filled::test_base5
+                //  #[cfg(not(debug_assertions))]
+                test_all_bases!({
+                    for grid_format in GridFormatEnum::all() {
+                        for value in Value::all() {
+                            let grid_with_fixed_values =
+                                Grid::<Base>::filled_with(Cell::with_value(value, true));
+                            assert_preserves_cell_value(grid_format, &grid_with_fixed_values);
+                        }
+                    }
+                });
+            }
         }
     }
 }
 
 #[cfg(test)]
 mod test_util {
+    use super::*;
     use anyhow::Context;
 
-    use super::*;
-
-    pub(crate) fn assert_grid_equals_cell_views<Base: SudokuBase>(
-        grid: &Grid<Base>,
-        cell_views: &[DynamicCell],
+    pub(crate) fn assert_grid_equals_dynamic_cells<Base: SudokuBase>(
+        expected_grid: &Grid<Base>,
+        dynamic_cells: &[DynamicCell],
     ) -> Result<()> {
-        let parsed_grid: Grid<Base> = cell_views
+        let parsed_grid: Grid<Base> = dynamic_cells
             .to_vec()
             .try_into()
-            .with_context(|| format!("Failed to convert cell_views to grid:\n{cell_views:#?}"))?;
+            .with_context(|| format!("Failed to convert cells to grid:\n{dynamic_cells:#?}"))?;
 
-        ensure!(grid == &parsed_grid, "Mismatched grid:\n{parsed_grid}");
+        ensure!(
+            expected_grid == &parsed_grid,
+            "Mismatched grids; expected:\n{expected_grid}\nParsed:\n{parsed_grid}"
+        );
 
         Ok(())
     }
 
     pub(crate) fn assert_grid_format_roundtrip<Base: SudokuBase, F: GridFormat>(
-        grid: &Grid<Base>,
         grid_format: F,
+        detect_parse_format: bool,
+        grid_to_render: &Grid<Base>,
+        expected_parsed_grid: &Grid<Base>,
     ) -> Result<()> {
         (|| {
-            let grid_string = grid_format.render(grid);
+            let grid_string = grid_format.render(grid_to_render);
 
-            let cell_views = grid_format
-                .parse(&grid_string)
-                .with_context(|| format!("Failed to parse grid_string:\n{grid_string}"))?;
+            let parsed_cells = if detect_parse_format {
+                GridFormatEnum::detect_and_parse(&grid_string).with_context(|| {
+                    format!("Failed to detect and parse grid string:\n{grid_string}")
+                })?
+            } else {
+                grid_format
+                    .parse_and_validate_cell_count(&grid_string)
+                    .with_context(|| format!("Failed to parse grid string:\n{grid_string}"))?
+            };
 
-            assert_grid_equals_cell_views(grid, &cell_views)
+            assert_grid_equals_dynamic_cells(expected_parsed_grid, &parsed_cells).with_context(
+                || {
+                    format!(
+                        "Failed to compare parsed cells to expected parsed grid:\n{grid_string}"
+                    )
+                },
+            )
         })()
-        .with_context(|| format!("Failed to roundtrip format {grid_format:?} with grid:\n{grid}"))
+        .with_context(|| {
+            format!(
+                "Failed to roundtrip format {} with grid:\n{grid_to_render}",
+                grid_format.name()
+            )
+        })
+    }
+
+    pub(crate) fn assert_grid_format_roundtrip_unchanged<Base: SudokuBase, F: GridFormat>(
+        grid_format: F,
+        grid: &Grid<Base>,
+    ) -> Result<()> {
+        assert_grid_format_roundtrip(grid_format, false, grid, grid)
+    }
+
+    pub(crate) fn assert_grid_format_roundtrip_unchanged_detect<Base: SudokuBase>(
+        grid_format: GridFormatEnum,
+        grid: &Grid<Base>,
+    ) -> Result<()> {
+        assert_grid_format_roundtrip(grid_format, true, grid, grid)
     }
 }
