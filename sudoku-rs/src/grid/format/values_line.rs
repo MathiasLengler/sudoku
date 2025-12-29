@@ -60,14 +60,10 @@ impl GridFormat for ValuesLine {
 
 #[cfg(test)]
 mod tests {
-    use crate::samples;
-
     use super::*;
-
-    pub(crate) static INPUT_GIVENS_LINE: &str = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/tests/res/grid_formats/givens_line.txt"
-    ));
+    use crate::{
+        base::consts::Base3, grid::format::test_util::assert_grid_equals_dynamic_cells, samples,
+    };
 
     #[test]
     fn test_render_givens_line() {
@@ -80,20 +76,19 @@ mod tests {
     }
 
     #[test]
-    fn test_from_givens_line() -> Result<()> {
-        let cells = ValuesLine.parse(INPUT_GIVENS_LINE)?;
+    fn test_from_givens_line() {
+        let cells = ValuesLine
+            .parse(
+                "6....23..1256.......47...2.73....84...........46....15.5...81.......3472..72....8",
+            )
+            .unwrap();
 
-        let expected_cells = vec![
+        let expected_grid = Grid::<Base3>::try_from(vec![
             6, 0, 0, 0, 0, 2, 3, 0, 0, 1, 2, 5, 6, 0, 0, 0, 0, 0, 0, 0, 4, 7, 0, 0, 0, 2, 0, 7, 3,
             0, 0, 0, 0, 8, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 6, 0, 0, 0, 0, 1, 5, 0, 5, 0, 0,
             0, 8, 1, 0, 0, 0, 0, 0, 0, 0, 3, 4, 7, 2, 0, 0, 7, 2, 0, 0, 0, 0, 8,
-        ]
-        .into_iter()
-        .map(crate::cell::dynamic::v)
-        .collect::<Vec<_>>();
-
-        assert_eq!(cells, expected_cells);
-
-        Ok(())
+        ])
+        .unwrap();
+        assert_grid_equals_dynamic_cells(&expected_grid, &cells).unwrap();
     }
 }

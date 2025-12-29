@@ -77,14 +77,11 @@ impl GridFormat for ValuesGrid {
 
 #[cfg(test)]
 mod tests {
-    use crate::samples;
-
     use super::*;
-
-    pub(crate) static INPUT_GIVENS_GRID: &str = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/tests/res/grid_formats/givens_grid.txt"
-    ));
+    use crate::{
+        base::consts::Base3, grid::format::test_util::assert_grid_equals_dynamic_cells, samples,
+    };
+    use indoc::indoc;
 
     #[test]
     fn test_render_givens_grid() {
@@ -92,33 +89,55 @@ mod tests {
 
         assert_eq!(
             ValuesGrid.render(&grid),
-            " 8 0 0 │ 0 0 0 │ 0 0 0 
- 0 0 3 │ 6 0 0 │ 0 0 0 
- 0 7 0 │ 0 9 0 │ 2 0 0 
-───────┼───────┼───────
- 0 5 0 │ 0 0 7 │ 0 0 0 
- 0 0 0 │ 0 4 5 │ 7 0 0 
- 0 0 0 │ 1 0 0 │ 0 3 0 
-───────┼───────┼───────
- 0 0 1 │ 0 0 0 │ 0 6 8 
- 0 0 8 │ 5 0 0 │ 0 1 0 
- 0 9 0 │ 0 0 0 │ 4 0 0 "
+            indoc! {"
+                 8 0 0 │ 0 0 0 │ 0 0 0 
+                 0 0 3 │ 6 0 0 │ 0 0 0 
+                 0 7 0 │ 0 9 0 │ 2 0 0 
+                ───────┼───────┼───────
+                 0 5 0 │ 0 0 7 │ 0 0 0 
+                 0 0 0 │ 0 4 5 │ 7 0 0 
+                 0 0 0 │ 1 0 0 │ 0 3 0 
+                ───────┼───────┼───────
+                 0 0 1 │ 0 0 0 │ 0 6 8 
+                 0 0 8 │ 5 0 0 │ 0 1 0 
+                 0 9 0 │ 0 0 0 │ 4 0 0 "
+            }
         );
     }
 
     #[test]
     fn test_from_givens_grid() {
-        let cells = ValuesGrid.parse(INPUT_GIVENS_GRID).unwrap();
+        let cells = ValuesGrid
+            .parse(indoc! {"
+                *-----------*
+                |.8.|5.3|.7.|
+                |.27|...|38.|
+                |...|...|...|
+                |---+---+---|
+                |..5|.9.|6..|
+                |...|1.2|...|
+                |..4|.6.|9..|
+                |---+---+---|
+                |...|...|...|
+                |.32|...|45.|
+                |.5.|9.7|.2.|
+                *-----------*"
+            })
+            .unwrap();
 
-        let expected_cells = vec![
-            0, 8, 0, 5, 0, 3, 0, 7, 0, 0, 2, 7, 0, 0, 0, 3, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            5, 0, 9, 0, 6, 0, 0, 0, 0, 0, 1, 0, 2, 0, 0, 0, 0, 0, 4, 0, 6, 0, 9, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 3, 2, 0, 0, 0, 4, 5, 0, 0, 5, 0, 9, 0, 7, 0, 2, 0,
-        ]
-        .into_iter()
-        .map(crate::cell::dynamic::v)
-        .collect::<Vec<_>>();
+        let expected_grid = Grid::<Base3>::try_from(vec![
+            vec![0, 8, 0, 5, 0, 3, 0, 7, 0],
+            vec![0, 2, 7, 0, 0, 0, 3, 8, 0],
+            vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+            vec![0, 0, 5, 0, 9, 0, 6, 0, 0],
+            vec![0, 0, 0, 1, 0, 2, 0, 0, 0],
+            vec![0, 0, 4, 0, 6, 0, 9, 0, 0],
+            vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+            vec![0, 3, 2, 0, 0, 0, 4, 5, 0],
+            vec![0, 5, 0, 9, 0, 7, 0, 2, 0],
+        ])
+        .unwrap();
 
-        assert_eq!(cells, expected_cells);
+        assert_grid_equals_dynamic_cells(&expected_grid, &cells).unwrap();
     }
 }
