@@ -7,8 +7,16 @@ use crate::error::{Error, Result};
 use crate::grid::Grid;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(try_from = "Vec<T>", into = "Vec<T>", rename_all = "camelCase")]
-pub struct DynamicGrid<T: Clone = DynamicCell> {
+#[serde(
+    try_from = "Vec<T>",
+    into = "Vec<T>",
+    rename_all = "camelCase",
+    bound(
+        serialize = "T: Serialize + Clone",
+        deserialize = "T: Deserialize<'de>"
+    )
+)]
+pub struct DynamicGrid<T = DynamicCell> {
     base: BaseEnum,
     cells: Vec<T>,
 }
@@ -22,14 +30,14 @@ impl<T: Default + Clone> DynamicGrid<T> {
     }
 }
 
-impl<T: Clone> DynamicGrid<T> {
+impl<T> DynamicGrid<T> {
     pub fn base(&self) -> BaseEnum {
         self.base
     }
 }
 
 // interop `Grid<Base>`
-impl<Base: SudokuBase, T: Clone + Into<DynamicCell>> TryFrom<DynamicGrid<T>> for Grid<Base> {
+impl<Base: SudokuBase, T: Into<DynamicCell>> TryFrom<DynamicGrid<T>> for Grid<Base> {
     type Error = Error;
 
     fn try_from(dynamic_grid: DynamicGrid<T>) -> Result<Self> {
@@ -39,7 +47,7 @@ impl<Base: SudokuBase, T: Clone + Into<DynamicCell>> TryFrom<DynamicGrid<T>> for
     }
 }
 
-impl<Base: SudokuBase, T, U: Clone + From<T>> From<Grid<Base, T>> for DynamicGrid<U> {
+impl<Base: SudokuBase, T, U: From<T>> From<Grid<Base, T>> for DynamicGrid<U> {
     fn from(value: Grid<Base, T>) -> Self {
         Self {
             base: Base::ENUM,
@@ -52,7 +60,7 @@ impl<Base: SudokuBase, T, U: Clone + From<T>> From<Grid<Base, T>> for DynamicGri
     }
 }
 
-impl<Base: SudokuBase, T, U: Clone + for<'a> From<&'a T>> From<&Grid<Base, T>> for DynamicGrid<U> {
+impl<Base: SudokuBase, T, U: for<'a> From<&'a T>> From<&Grid<Base, T>> for DynamicGrid<U> {
     fn from(grid: &Grid<Base, T>) -> Self {
         Self {
             base: Base::ENUM,
@@ -62,13 +70,13 @@ impl<Base: SudokuBase, T, U: Clone + for<'a> From<&'a T>> From<&Grid<Base, T>> f
 }
 
 // interop `Vec<T>`
-impl<T: Clone> From<DynamicGrid<T>> for Vec<T> {
+impl<T> From<DynamicGrid<T>> for Vec<T> {
     fn from(grid: DynamicGrid<T>) -> Self {
         grid.cells
     }
 }
 
-impl<T: Clone> TryFrom<Vec<T>> for DynamicGrid<T> {
+impl<T> TryFrom<Vec<T>> for DynamicGrid<T> {
     type Error = Error;
 
     fn try_from(cells: Vec<T>) -> Result<Self> {
@@ -96,7 +104,7 @@ mod wasm {
     // Recursive expansion of TS macro
     // ================================
 
-    impl<T: Clone> ::ts_rs::TS for DynamicGrid<T>
+    impl<T> ::ts_rs::TS for DynamicGrid<T>
     where
         T: ::ts_rs::TS,
     {
