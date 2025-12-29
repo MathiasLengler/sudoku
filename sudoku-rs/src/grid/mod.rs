@@ -585,6 +585,11 @@ impl<Base: SudokuBase> Grid<Base> {
             self.get_mut(pos).delete();
         }
     }
+    pub fn delete_all_candidates(&mut self) {
+        for pos in self.all_candidates_positions() {
+            self.get_mut(pos).delete();
+        }
+    }
 }
 
 /// Cell iterators

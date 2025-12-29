@@ -340,20 +340,84 @@ mod tests {
     mod via_capabilities {
         use super::*;
         use crate::{
-            cell::{Cell, Value},
+            cell::{Candidates, Cell, Value},
             grid::format::test_util::{
                 assert_grid_format_roundtrip, assert_grid_format_roundtrip_unchanged,
             },
         };
 
-        // TODO: GridFormatPreservesCellCandidates
         // TODO: test with detect_parse_format = true
+
+        mod cell_candidates {
+            use super::*;
+            use crate::test_util::test_all_bases;
+
+            fn assert_preserves_cell_candidates<Base: SudokuBase, F: GridFormat>(
+                grid_format: F,
+                grid_with_candidates: &Grid<Base>,
+            ) {
+                assert!(
+                    grid_with_candidates.all_value_positions().is_empty(),
+                    "Not all values are empty in grid:\n{grid_with_candidates}"
+                );
+
+                let capabilities = grid_format.capabilities();
+                match capabilities.preserves_cell_candidates {
+                    GridFormatPreservesCellCandidates::Empty => {
+                        let empty_grid = Grid::<Base>::new();
+                        assert_grid_format_roundtrip(
+                            grid_format,
+                            false,
+                            grid_with_candidates,
+                            &empty_grid,
+                        )
+                        .unwrap();
+                    }
+                    GridFormatPreservesCellCandidates::OnlyMultiple => {
+                        let grid_without_single_candidates = {
+                            let mut grid = grid_with_candidates.clone();
+                            for pos in grid.all_candidates_positions() {
+                                if grid.get(pos).candidates().unwrap().is_single() {
+                                    grid.get_mut(pos).delete();
+                                }
+                            }
+                            grid
+                        };
+
+                        assert_grid_format_roundtrip_unchanged(
+                            grid_format,
+                            &grid_without_single_candidates,
+                        )
+                        .unwrap();
+                    }
+                    GridFormatPreservesCellCandidates::All => {
+                        assert_grid_format_roundtrip_unchanged(grid_format, grid_with_candidates)
+                            .unwrap();
+                    }
+                }
+            }
+
+            mod lexicographical_filled {
+                use super::*;
+
+                test_all_bases!({
+                    for grid_format in GridFormatEnum::all() {
+                        let grid = Grid::<Base>::with(
+                            Candidates::iter_all_lexicographical()
+                                .take(Base::CELL_COUNT.into())
+                                .map(Cell::with_candidates)
+                                .collect(),
+                        )
+                        .unwrap();
+                        assert_preserves_cell_candidates(grid_format, &grid);
+                    }
+                });
+            }
+        }
 
         mod cell_value {
             use super::*;
             use crate::test_util::test_all_bases;
-
-            // TODO: use rstest
 
             fn assert_preserves_cell_value<Base: SudokuBase, F: GridFormat>(
                 grid_format: F,
