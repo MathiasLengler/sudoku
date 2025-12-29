@@ -406,12 +406,9 @@ mod tests {
             mod filled {
                 use super::*;
 
-                // TODO: only test base5 in release mode:
-                //  PASS [   1.421s] sudoku grid::format::tests::via_capabilities::cell_value::filled::test_base5
-                //  #[cfg(not(debug_assertions))]
                 test_all_bases!({
                     for grid_format in GridFormatEnum::all() {
-                        for value in Value::all() {
+                        for value in [Value::default(), Value::middle(), Value::max()] {
                             let grid_with_fixed_values =
                                 Grid::<Base>::filled_with(Cell::with_value(value, true));
                             assert_preserves_cell_value(grid_format, &grid_with_fixed_values);
