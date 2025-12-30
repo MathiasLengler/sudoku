@@ -46,8 +46,7 @@ impl GridFormat for CandidatesGridANSIStyled {
     }
 
     fn parse(self, input: &str) -> Result<DynamicGrid> {
-        let stripped_input_bytes = strip_ansi_escapes::strip(input.as_bytes());
-        let stripped_input = String::from_utf8(stripped_input_bytes)?;
+        let stripped_input = strip_ansi_escapes::strip_str(input);
 
         CandidatesGridPlain.parse(&stripped_input)
     }
