@@ -86,6 +86,46 @@ impl<T> TryFrom<Vec<T>> for DynamicGrid<T> {
     }
 }
 
+// Iterators
+impl DynamicGrid<DynamicCell> {
+    pub fn iter(&self) -> <&Self as IntoIterator>::IntoIter {
+        self.into_iter()
+    }
+
+    pub fn iter_mut(&mut self) -> <&mut Self as IntoIterator>::IntoIter {
+        self.into_iter()
+    }
+}
+
+impl<T> IntoIterator for DynamicGrid<T> {
+    type Item = T;
+
+    type IntoIter = std::vec::IntoIter<T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.cells.into_iter()
+    }
+}
+
+impl<'a, T> IntoIterator for &'a DynamicGrid<T> {
+    type Item = &'a T;
+
+    type IntoIter = std::slice::Iter<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.cells.iter()
+    }
+}
+impl<'a, T> IntoIterator for &'a mut DynamicGrid<T> {
+    type Item = &'a mut T;
+
+    type IntoIter = std::slice::IterMut<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.cells.iter_mut()
+    }
+}
+
 #[cfg(feature = "wasm")]
 mod wasm {
     #![allow(clippy::all)]

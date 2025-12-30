@@ -3,6 +3,7 @@ use crate::base::SudokuBase;
 use crate::cell::dynamic::{char_value_to_u8, DynamicCandidates, DynamicCell};
 use crate::cell::{CellState, Value};
 use crate::error::Result;
+use crate::grid::dynamic::DynamicGrid;
 use crate::grid::format::GridFormat;
 use crate::grid::format::GridFormatCapabilities;
 use crate::grid::format::GridFormatPreservesCellCandidates;
@@ -44,7 +45,7 @@ impl GridFormat for CandidatesGridANSIStyled {
         render_candidates_grid(grid, true)
     }
 
-    fn parse(self, input: &str) -> Result<Vec<DynamicCell>> {
+    fn parse(self, input: &str) -> Result<DynamicGrid> {
         let stripped_input_bytes = strip_ansi_escapes::strip(input.as_bytes());
         let stripped_input = String::from_utf8(stripped_input_bytes)?;
 
@@ -167,7 +168,7 @@ impl GridFormat for CandidatesGridPlain {
         render_candidates_grid(grid, false)
     }
 
-    fn parse(self, input: &str) -> Result<Vec<DynamicCell>> {
+    fn parse(self, input: &str) -> Result<DynamicGrid> {
         fn ensure_same_line_char_count(input: &str) -> Result<usize> {
             let mut line_char_count = None;
             for line in input.lines() {
@@ -317,7 +318,7 @@ impl GridFormat for CandidatesGridPlain {
         let cell_str_fragments_transposed: Vec<_> =
             cell_str_fragments.into_iter().map(transpose2).collect();
 
-        cell_str_fragments_transposed
+        let dynamic_cells = cell_str_fragments_transposed
             .into_iter()
             .flatten()
             .map(|cell_fragments| {
@@ -356,7 +357,9 @@ impl GridFormat for CandidatesGridPlain {
                     .into())
                 }
             })
-            .collect::<Result<Vec<_>>>()
+            .collect::<Result<Vec<_>>>()?;
+
+        dynamic_cells.try_into()
     }
 }
 

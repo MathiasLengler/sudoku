@@ -1,8 +1,9 @@
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
 use crate::error::{Error, Result};
+use crate::grid::dynamic::DynamicGrid;
 use crate::grid::Grid;
-use anyhow::{bail, ensure, format_err};
+use anyhow::{bail, format_err};
 use enum_dispatch::enum_dispatch;
 use serde::de::Visitor;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -55,25 +56,16 @@ pub struct GridFormatCapabilities {
 pub trait GridFormat: Debug + Copy + Clone + Eq + Sized {
     fn render<Base: SudokuBase>(self, grid: &Grid<Base>) -> String;
 
-    fn parse(self, input: &str) -> Result<Vec<DynamicCell>>;
+    fn parse(self, input: &str) -> Result<DynamicGrid>;
 
     fn capabilities(self) -> GridFormatCapabilities;
 
-    fn parse_and_validate_cell_count(self, input: &str) -> Result<Vec<DynamicCell>> {
-        use crate::base::consts::ALL_CELL_COUNTS;
-
-        let mut dynamic_cells = GridFormat::parse(self, input)?;
-
-        let actual_cell_count = dynamic_cells.len().try_into()?;
-
-        ensure!(
-            ALL_CELL_COUNTS.contains(&actual_cell_count),
-            "Unexpected cell count {actual_cell_count}, expected one of: {ALL_CELL_COUNTS:?}"
-        );
+    fn parse_and_post_process(self, input: &str) -> Result<DynamicGrid> {
+        let mut dynamic_grid = GridFormat::parse(self, input)?;
 
         if self.capabilities().preserves_cell_value == GridFormatPreservesCellValue::ValueOnly {
             // If the format does not preserve fixed state, assume all values are fixed.
-            for dynamic_cell in &mut dynamic_cells {
+            for dynamic_cell in &mut dynamic_grid {
                 if let DynamicCell::Value { fixed, value } = dynamic_cell {
                     if value.0 != 0 {
                         *fixed = true;
@@ -82,7 +74,7 @@ pub trait GridFormat: Debug + Copy + Clone + Eq + Sized {
             }
         }
 
-        Ok(dynamic_cells)
+        Ok(dynamic_grid)
     }
 
     fn name(self) -> String {
@@ -118,25 +110,25 @@ impl GridFormatEnum {
         ]
     }
 
-    pub fn detect_and_parse(input: &str) -> Result<Vec<DynamicCell>> {
+    pub fn detect_and_parse(input: &str) -> Result<DynamicGrid> {
         let input = input.trim();
         if input.is_empty() {
             bail!("Unexpected empty input")
         }
 
-        let cell_views = if input.contains('\n') {
+        let parsed_grid = if input.contains('\n') {
             CandidatesGridANSIStyled
-                .parse_and_validate_cell_count(input)
-                .or_else(|_| CandidatesGridCompact.parse_and_validate_cell_count(input))
-                .or_else(|_| ValuesGrid.parse_and_validate_cell_count(input))?
+                .parse_and_post_process(input)
+                .or_else(|_| CandidatesGridCompact.parse_and_post_process(input))
+                .or_else(|_| ValuesGrid.parse_and_post_process(input))?
         } else {
-            ValuesLine
-                .parse_and_validate_cell_count(input)
-                .or_else(|_| BinaryFixedCandidatesLine.parse_and_validate_cell_count(input))
-                .or_else(|_| BinaryCandidatesLine.parse_and_validate_cell_count(input))?
+            Json.parse_and_post_process(input)
+                .or_else(|_| BinaryFixedCandidatesLine.parse_and_post_process(input))
+                .or_else(|_| BinaryCandidatesLine.parse_and_post_process(input))
+                .or_else(|_| ValuesLine.parse_and_post_process(input))?
         };
 
-        Ok(cell_views)
+        Ok(parsed_grid)
     }
 }
 
@@ -489,16 +481,16 @@ mod tests {
 #[cfg(test)]
 mod test_util {
     use super::*;
-    use anyhow::Context;
+    use anyhow::{ensure, Context};
 
-    pub(crate) fn assert_grid_equals_dynamic_cells<Base: SudokuBase>(
+    pub(crate) fn assert_parsed_grid<Base: SudokuBase>(
         expected_grid: &Grid<Base>,
-        dynamic_cells: &[DynamicCell],
+        parsed_grid: &DynamicGrid,
     ) -> Result<()> {
-        let parsed_grid: Grid<Base> = dynamic_cells
-            .to_vec()
+        let parsed_grid: Grid<Base> = parsed_grid
+            .clone()
             .try_into()
-            .with_context(|| format!("Failed to convert cells to grid:\n{dynamic_cells:#?}"))?;
+            .with_context(|| format!("Failed to convert cells to grid:\n{parsed_grid:#?}"))?;
 
         ensure!(
             expected_grid == &parsed_grid,
@@ -517,23 +509,19 @@ mod test_util {
         (|| {
             let grid_string = grid_format.render(grid_to_render);
 
-            let parsed_cells = if detect_parse_format {
+            let parsed_grid = if detect_parse_format {
                 GridFormatEnum::detect_and_parse(&grid_string).with_context(|| {
                     format!("Failed to detect and parse grid string:\n{grid_string}")
                 })?
             } else {
                 grid_format
-                    .parse_and_validate_cell_count(&grid_string)
+                    .parse_and_post_process(&grid_string)
                     .with_context(|| format!("Failed to parse grid string:\n{grid_string}"))?
             };
 
-            assert_grid_equals_dynamic_cells(expected_parsed_grid, &parsed_cells).with_context(
-                || {
-                    format!(
-                        "Failed to compare parsed cells to expected parsed grid:\n{grid_string}"
-                    )
-                },
-            )
+            assert_parsed_grid(expected_parsed_grid, &parsed_grid).with_context(|| {
+                format!("Failed to compare parsed cells to expected parsed grid:\n{grid_string}")
+            })
         })()
         .with_context(|| {
             format!(

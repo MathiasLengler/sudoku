@@ -1,11 +1,15 @@
-use crate::base::SudokuBase;
-use crate::cell::dynamic::DynamicCell;
-use crate::error;
-use crate::grid::format::{
-    GridFormat, GridFormatCapabilities, GridFormatPreservesCellCandidates,
-    GridFormatPreservesCellValue,
+use crate::{
+    base::SudokuBase,
+    error::Result,
+    grid::{
+        dynamic::DynamicGrid,
+        format::{
+            GridFormat, GridFormatCapabilities, GridFormatPreservesCellCandidates,
+            GridFormatPreservesCellValue,
+        },
+        Grid,
+    },
 };
-use crate::grid::Grid;
 
 /// Compact candidates grid format used by [sudokuwiki.org](https://www.sudokuwiki.org/sudoku.htm)
 /// for the search parameter "n".
@@ -47,7 +51,7 @@ impl GridFormat for BinaryCandidatesLine {
             .join(",")
     }
 
-    fn parse(self, input: &str) -> error::Result<Vec<DynamicCell>> {
+    fn parse(self, input: &str) -> Result<DynamicGrid> {
         let mut cell_views = vec![];
 
         for cell_str in input.split(',') {
@@ -55,7 +59,7 @@ impl GridFormat for BinaryCandidatesLine {
             cell_views.push(bits.try_into()?);
         }
 
-        Ok(cell_views)
+        cell_views.try_into()
     }
 }
 

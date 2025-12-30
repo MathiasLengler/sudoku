@@ -1,6 +1,7 @@
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
 use crate::error::Result;
+use crate::grid::dynamic::DynamicGrid;
 use crate::grid::format::GridFormat;
 use crate::grid::format::GridFormatCapabilities;
 use crate::grid::format::GridFormatPreservesCellCandidates;
@@ -66,21 +67,20 @@ impl GridFormat for ValuesGrid {
             .to_string()
     }
 
-    fn parse(self, input: &str) -> Result<Vec<DynamicCell>> {
-        Ok(input
+    fn parse(self, input: &str) -> Result<DynamicGrid> {
+        input
             .chars()
             .map(TryInto::<DynamicCell>::try_into)
             .filter_map(Result::ok)
-            .collect::<Vec<_>>())
+            .collect::<Vec<_>>()
+            .try_into()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        base::consts::Base3, grid::format::test_util::assert_grid_equals_dynamic_cells, samples,
-    };
+    use crate::{base::consts::Base3, grid::format::test_util::assert_parsed_grid, samples};
     use indoc::indoc;
 
     #[test]
@@ -138,6 +138,6 @@ mod tests {
         ])
         .unwrap();
 
-        assert_grid_equals_dynamic_cells(&expected_grid, &cells).unwrap();
+        assert_parsed_grid(&expected_grid, &cells).unwrap();
     }
 }

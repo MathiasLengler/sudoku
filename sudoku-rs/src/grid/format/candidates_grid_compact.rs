@@ -2,6 +2,7 @@ use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
 use crate::cell::CellState;
 use crate::error::Result;
+use crate::grid::dynamic::DynamicGrid;
 use crate::grid::format::GridFormat;
 use crate::grid::format::GridFormatCapabilities;
 use crate::grid::format::GridFormatPreservesCellCandidates;
@@ -89,7 +90,7 @@ impl GridFormat for CandidatesGridCompact {
             .to_string()
     }
 
-    fn parse(self, input: &str) -> Result<Vec<DynamicCell>> {
+    fn parse(self, input: &str) -> Result<DynamicGrid> {
         static GRID_BORDER_CHARS: &[char] = &['-', '|', '│', ':', '+', '\'', '\n', '*'];
 
         input
@@ -102,16 +103,15 @@ impl GridFormat for CandidatesGridCompact {
             // Split and trim groups of numbers
             .flat_map(|s| s.split_whitespace())
             .map(TryInto::<DynamicCell>::try_into)
-            .collect::<Result<Vec<_>>>()
+            .collect::<Result<Vec<_>>>()?
+            .try_into()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        base::consts::Base3, grid::format::test_util::assert_grid_equals_dynamic_cells, samples,
-    };
+    use crate::{base::consts::Base3, grid::format::test_util::assert_parsed_grid, samples};
     use indoc::indoc;
 
     #[test]
@@ -251,6 +251,6 @@ mod tests {
             ],
         ])
         .unwrap();
-        assert_grid_equals_dynamic_cells(&expected_grid, &cells).unwrap();
+        assert_parsed_grid(&expected_grid, &cells).unwrap();
     }
 }

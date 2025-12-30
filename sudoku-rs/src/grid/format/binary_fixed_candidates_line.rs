@@ -3,6 +3,7 @@ use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
 use crate::cell::{Candidates, Cell};
 use crate::error::Result;
+use crate::grid::dynamic::DynamicGrid;
 use crate::grid::format::GridFormat;
 use crate::grid::format::GridFormatCapabilities;
 use crate::grid::format::GridFormatPreservesCellCandidates;
@@ -63,7 +64,7 @@ impl GridFormat for BinaryFixedCandidatesLine {
         })
     }
 
-    fn parse(self, input: &str) -> Result<Vec<DynamicCell>> {
+    fn parse(self, input: &str) -> Result<DynamicGrid> {
         fn parse_base<Base: SudokuBase>(input: &str) -> Result<Vec<DynamicCell>> {
             input
                 .as_bytes()
@@ -92,13 +93,14 @@ impl GridFormat for BinaryFixedCandidatesLine {
         const BASE_5_CHAR_COUNT: usize =
             (Base5::CELL_COUNT as usize) * Base5::BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS;
 
-        match input.chars().count() {
+        let dynamic_cells = match input.chars().count() {
             BASE_2_CHAR_COUNT => parse_base::<Base2>(input),
             BASE_3_CHAR_COUNT => parse_base::<Base3>(input),
             BASE_4_CHAR_COUNT => parse_base::<Base4>(input),
             BASE_5_CHAR_COUNT => parse_base::<Base5>(input),
             unexpected_char_count => bail!("Unexpected char count: {unexpected_char_count}"),
-        }
+        }?;
+        dynamic_cells.try_into()
     }
 }
 

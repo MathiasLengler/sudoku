@@ -27,7 +27,7 @@ impl GridFormat for Json {
         serde_json::to_string(&dynamic_grid).expect("serialization to JSON should not fail")
     }
 
-    fn parse(self, input: &str) -> Result<Vec<DynamicCell>> {
+    fn parse(self, input: &str) -> Result<DynamicGrid> {
         Ok(serde_json::from_str(input)?)
     }
 }
