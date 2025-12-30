@@ -32,7 +32,7 @@ Ideas:
 //  Reference: https://github.com/t-dillon/tdoku/blob/master/src/solver_dpll_triad_simd.cc#L707
 //  The constrained sudoku is not guaranteed to be minimal.
 //  This has an advantage of providing a "almost" minimal sudoku way faster,
-//  since checking for an ambiguous solution is way faster (early abort) than proofing a unique solution.
+//  since checking for an ambiguous solution is way faster (early abort) than proving a unique solution.
 //  The near minimal sudoku can then be minimized as usual.
 
 #[derive(Debug, Default, Clone)]
