@@ -105,6 +105,7 @@ impl GridFormat for BinaryCandidatesLineV1 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::grid::format::test_util::assert_parsed_grid;
     use crate::position::Position;
     use crate::samples;
 
@@ -125,9 +126,105 @@ mod tests {
 
     #[test]
     fn test_parse() {
-        let grid = BinaryCandidatesLineV1.parse(
+        use crate::cell::dynamic::{c, f, v};
+
+        let parsed_grid = BinaryCandidatesLineV1.parse(
             // Source: "Alternatively, with candidates (old style)" https://www.sudokuwiki.org/Test_Strings
-            "41051g02g1211g9009io22gq05c011mic0iij881ha08400hn205j29850dcg0cmc0he21h603g021110409810g41980hdci0e6c0he18h63g095g8130027kg13krg32pi4130053o183g0570500h09g0700381").unwrap();
+            "41051g02g1211g9009io22gq05c011mic0iij881ha08400hn205j29850dcg0cmc0he21h603g021110409810g41980hdci0e6c0he18h63g095g8130027kg13krg32pi4130053o183g0570500h09g0700381"
+        ).unwrap();
+        let expected_grid = Grid::<Base3>::try_from(vec![
+            vec![
+                f(7),
+                f(2),
+                c(vec![4, 5]),
+                v(1),
+                f(9),
+                f(6),
+                c(vec![4, 5]),
+                c(vec![5, 8]),
+                f(3),
+            ],
+            vec![
+                c(vec![3, 4, 6, 9]),
+                c(vec![1, 6]),
+                c(vec![1, 3, 4, 9]),
+                f(2),
+                c(vec![7, 8]),
+                f(5),
+                c(vec![1, 4, 6, 7, 9]),
+                c(vec![7, 8]),
+                c(vec![1, 4, 6, 9]),
+            ],
+            vec![
+                c(vec![3, 5, 6, 9]),
+                f(8),
+                c(vec![1, 3, 5, 9]),
+                v(3),
+                v(7),
+                f(4),
+                c(vec![1, 5, 6, 7, 9]),
+                f(2),
+                c(vec![1, 5, 6, 9]),
+            ],
+            vec![
+                c(vec![3, 5, 8]),
+                c(vec![5, 7]),
+                c(vec![2, 3, 5, 7, 8]),
+                v(9),
+                c(vec![1, 2, 4, 7, 8]),
+                c(vec![7, 8]),
+                c(vec![1, 2, 3, 5, 9]),
+                f(6),
+                c(vec![1, 2, 5, 9]),
+            ],
+            vec![f(1), v(9), f(6), f(5), v(2), f(3), f(8), v(4), f(7)],
+            vec![
+                c(vec![3, 5, 8]),
+                f(4),
+                c(vec![2, 3, 5, 7, 8]),
+                c(vec![6, 9]),
+                c(vec![1, 2, 6, 7, 8]),
+                c(vec![7, 8]),
+                c(vec![1, 2, 3, 5, 9]),
+                c(vec![3, 5]),
+                c(vec![1, 2, 5, 9]),
+            ],
+            vec![
+                c(vec![4, 5, 6]),
+                f(3),
+                c(vec![4, 5, 7]),
+                f(8),
+                c(vec![5, 6]),
+                v(1),
+                c(vec![2, 4, 5, 6, 7]),
+                f(9),
+                c(vec![2, 4, 5, 6]),
+            ],
+            vec![
+                c(vec![4, 5, 6, 8, 9]),
+                c(vec![1, 5, 6]),
+                c(vec![1, 4, 5, 8, 9]),
+                f(7),
+                c(vec![5, 6]),
+                f(2),
+                c(vec![3, 4, 5, 6]),
+                c(vec![3, 5]),
+                c(vec![4, 5, 6]),
+            ],
+            vec![
+                f(2),
+                c(vec![5, 6, 7]),
+                c(vec![5, 7]),
+                f(4),
+                f(3),
+                v(9),
+                c(vec![5, 6, 7]),
+                f(1),
+                f(8),
+            ],
+        ])
+        .unwrap();
+        assert_parsed_grid(&expected_grid, &parsed_grid).unwrap();
     }
 
     #[test]
