@@ -236,9 +236,6 @@ mod tests {
     }
 
     #[test]
-    fn test_render_cell() {}
-
-    #[test]
     fn test_parse() {
         use crate::cell::dynamic::{c, f, v};
 
