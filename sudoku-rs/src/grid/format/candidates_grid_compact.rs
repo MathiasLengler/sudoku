@@ -143,7 +143,7 @@ mod tests {
     fn test_parse() {
         use crate::cell::dynamic::{c, v};
 
-        let cells = CandidatesGridCompact
+        let parsed_grid = CandidatesGridCompact
             .parse(indoc! {"
                 .--------------.----------------.------------.
                 | 6   7    89  | 189  19   2    | 3   5   4  |
@@ -253,6 +253,6 @@ mod tests {
             ],
         ])
         .unwrap();
-        assert_parsed_grid(&expected_grid, &cells).unwrap();
+        assert_parsed_grid(&expected_grid, &parsed_grid).unwrap();
     }
 }
