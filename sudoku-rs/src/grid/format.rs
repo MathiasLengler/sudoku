@@ -5,7 +5,6 @@ use crate::grid::dynamic::DynamicGrid;
 use crate::grid::Grid;
 use anyhow::{bail, format_err};
 use enum_dispatch::enum_dispatch;
-use log::trace;
 use serde::de::Visitor;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt;
@@ -48,9 +47,22 @@ pub enum GridFormatPreservesCellCandidates {
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum GridFormatDetectAndParseCapability {
+    /// Detects and parses on its own.
+    Detectable,
+    /// Is detected as another format, but roundtrips correctly.
+    DetectableViaOtherFormat,
+    /// The format cannot be detected and parsed without loss.
+    Lossy,
+    /// The format is not supported by `detect_and_parse`.
+    Unsupported,
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct GridFormatCapabilities {
     pub preserves_cell_value: GridFormatPreservesCellValue,
     pub preserves_cell_candidates: GridFormatPreservesCellCandidates,
+    pub detect_and_parse: GridFormatDetectAndParseCapability,
 }
 
 #[enum_dispatch(GridFormatEnum)]
@@ -63,8 +75,6 @@ pub trait GridFormat: Debug + Copy + Clone + Eq + Sized + Into<GridFormatEnum> {
 
     fn parse_and_post_process(self, input: &str) -> Result<DynamicGrid> {
         let mut dynamic_grid = GridFormat::parse(self, input)?;
-
-        trace!("Successfully parsed grid using format {}", self.name());
 
         if self.capabilities().preserves_cell_value == GridFormatPreservesCellValue::ValueOnly {
             // If the format does not preserve fixed state, assume all values are fixed.
@@ -126,25 +136,44 @@ impl GridFormatEnum {
         })
     }
 
+    fn try_detect_and_parse_list(
+        input: &str,
+        formats: &[GridFormatEnum],
+    ) -> Result<DetectAndParseReturn> {
+        assert!(!formats.is_empty());
+
+        let first_format = formats.first().expect("Formats list is non-empty");
+        formats[1..]
+            .iter()
+            .fold(first_format.try_detect_and_parse(input), |acc, format| {
+                acc.or_else(|_| format.try_detect_and_parse(input))
+            })
+    }
+
     pub fn detect_and_parse(input: &str) -> Result<DetectAndParseReturn> {
         let input = input.trim();
         if input.is_empty() {
             bail!("Unexpected empty input")
         }
 
-        if input.starts_with('{') {
-            Self::from(Json).try_detect_and_parse(input)
-        } else if input.contains('\n') {
-            Self::from(CandidatesGridANSIStyled)
-                .try_detect_and_parse(input)
-                .or_else(|_| Self::from(CandidatesGridCompact).try_detect_and_parse(input))
-                .or_else(|_| Self::from(ValuesGrid).try_detect_and_parse(input))
-        } else {
-            Self::from(BinaryFixedCandidatesLine)
-                .try_detect_and_parse(input)
-                .or_else(|_| Self::from(BinaryCandidatesLine).try_detect_and_parse(input))
-                .or_else(|_| Self::from(ValuesLine).try_detect_and_parse(input))
-        }
+        Self::try_detect_and_parse_list(
+            input,
+            &if input.starts_with('[') {
+                vec![Json.into()]
+            } else if input.contains('\n') {
+                vec![
+                    CandidatesGridANSIStyled.into(),
+                    CandidatesGridCompact.into(),
+                    ValuesGrid.into(),
+                ]
+            } else {
+                vec![
+                    BinaryCandidatesLine.into(),
+                    ValuesLine.into(),
+                    BinaryFixedCandidatesLine.into(),
+                ]
+            },
+        )
     }
 }
 
@@ -540,12 +569,16 @@ mod test_util {
                     format!("Failed to detect and parse grid string:\n{grid_string}")
                 })?;
 
-                ensure!(
-                    detected_format == grid_format.into(),
-                    "Detected format {} does not match expected format {}",
-                    detected_format.name(),
-                    grid_format.name()
-                );
+                if grid_format.capabilities().detect_and_parse
+                    == GridFormatDetectAndParseCapability::Detectable
+                {
+                    ensure!(
+                        detected_format == grid_format.into(),
+                        "Detected format {} does not match expected format {}",
+                        detected_format.name(),
+                        grid_format.name()
+                    );
+                }
                 parsed_grid
             } else {
                 grid_format
@@ -570,12 +603,27 @@ mod test_util {
         })
     }
 
+    pub(crate) fn assert_grid_format_roundtrip_expected<Base: SudokuBase, F: GridFormat>(
+        grid_format: F,
+        grid: &Grid<Base>,
+        expected_parsed_grid: &Grid<Base>,
+    ) -> Result<()> {
+        assert_grid_format_roundtrip(grid_format, false, grid, expected_parsed_grid)?;
+
+        let capabilities = grid_format.capabilities();
+        if let GridFormatDetectAndParseCapability::Detectable
+        | GridFormatDetectAndParseCapability::DetectableViaOtherFormat =
+            capabilities.detect_and_parse
+        {
+            assert_grid_format_roundtrip(grid_format, true, grid, expected_parsed_grid)?;
+        }
+        Ok(())
+    }
+
     pub(crate) fn assert_grid_format_roundtrip_unchanged<Base: SudokuBase, F: GridFormat>(
         grid_format: F,
         grid: &Grid<Base>,
     ) -> Result<()> {
-        assert_grid_format_roundtrip(grid_format, false, grid, grid)?;
-        assert_grid_format_roundtrip(grid_format, true, grid, grid)?;
-        Ok(())
+        assert_grid_format_roundtrip_expected(grid_format, grid, grid)
     }
 }

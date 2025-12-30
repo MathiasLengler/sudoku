@@ -5,8 +5,8 @@ use crate::{
     grid::{
         dynamic::DynamicGrid,
         format::{
-            GridFormat, GridFormatCapabilities, GridFormatPreservesCellCandidates,
-            GridFormatPreservesCellValue,
+            GridFormat, GridFormatCapabilities, GridFormatDetectAndParseCapability,
+            GridFormatPreservesCellCandidates, GridFormatPreservesCellValue,
         },
         Grid,
     },
@@ -20,6 +20,7 @@ impl GridFormat for Json {
         GridFormatCapabilities {
             preserves_cell_value: GridFormatPreservesCellValue::ValueAndFixedState,
             preserves_cell_candidates: GridFormatPreservesCellCandidates::All,
+            detect_and_parse: GridFormatDetectAndParseCapability::Detectable,
         }
     }
     fn render<Base: SudokuBase>(self, grid: &Grid<Base>) -> String {

@@ -4,8 +4,8 @@ use crate::{
     grid::{
         dynamic::DynamicGrid,
         format::{
-            GridFormat, GridFormatCapabilities, GridFormatPreservesCellCandidates,
-            GridFormatPreservesCellValue,
+            GridFormat, GridFormatCapabilities, GridFormatDetectAndParseCapability,
+            GridFormatPreservesCellCandidates, GridFormatPreservesCellValue,
         },
         Grid,
     },
@@ -34,6 +34,7 @@ impl GridFormat for BinaryCandidatesLine {
         GridFormatCapabilities {
             preserves_cell_value: GridFormatPreservesCellValue::ValueOnly,
             preserves_cell_candidates: GridFormatPreservesCellCandidates::OnlyMultiple,
+            detect_and_parse: GridFormatDetectAndParseCapability::Detectable,
         }
     }
 

@@ -4,10 +4,10 @@ use crate::cell::dynamic::{char_value_to_u8, DynamicCandidates, DynamicCell};
 use crate::cell::{CellState, Value};
 use crate::error::Result;
 use crate::grid::dynamic::DynamicGrid;
-use crate::grid::format::GridFormat;
 use crate::grid::format::GridFormatCapabilities;
 use crate::grid::format::GridFormatPreservesCellCandidates;
 use crate::grid::format::GridFormatPreservesCellValue;
+use crate::grid::format::{GridFormat, GridFormatDetectAndParseCapability};
 use crate::grid::Grid;
 use anyhow::{bail, ensure, Context};
 use itertools::Itertools;
@@ -38,6 +38,7 @@ impl GridFormat for CandidatesGridANSIStyled {
             preserves_cell_value: GridFormatPreservesCellValue::ValueOnly,
             // The representation of a single candidate 5 in base 3 is indistinguishable from a value 5; both are a centered "5".
             preserves_cell_candidates: GridFormatPreservesCellCandidates::OnlyMultiple,
+            detect_and_parse: GridFormatDetectAndParseCapability::Detectable,
         }
     }
 
@@ -160,6 +161,8 @@ impl GridFormat for CandidatesGridPlain {
         GridFormatCapabilities {
             preserves_cell_value: GridFormatPreservesCellValue::ValueOnly,
             preserves_cell_candidates: GridFormatPreservesCellCandidates::OnlyMultiple,
+            // Is detected as `CandidatesGridANSIStyled`, since we don't implement ANSII escape code parsing.
+            detect_and_parse: GridFormatDetectAndParseCapability::DetectableViaOtherFormat,
         }
     }
 

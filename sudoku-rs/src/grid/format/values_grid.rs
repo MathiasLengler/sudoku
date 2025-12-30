@@ -4,6 +4,7 @@ use crate::error::Result;
 use crate::grid::dynamic::DynamicGrid;
 use crate::grid::format::GridFormat;
 use crate::grid::format::GridFormatCapabilities;
+use crate::grid::format::GridFormatDetectAndParseCapability;
 use crate::grid::format::GridFormatPreservesCellCandidates;
 use crate::grid::format::GridFormatPreservesCellValue;
 use crate::grid::Grid;
@@ -34,6 +35,8 @@ impl GridFormat for ValuesGrid {
         GridFormatCapabilities {
             preserves_cell_value: GridFormatPreservesCellValue::ValueOnly,
             preserves_cell_candidates: GridFormatPreservesCellCandidates::Empty,
+            // Detected and parsed as `CandidatesGridCompact`
+            detect_and_parse: GridFormatDetectAndParseCapability::DetectableViaOtherFormat,
         }
     }
 

@@ -6,6 +6,7 @@ use crate::error::Result;
 use crate::grid::dynamic::DynamicGrid;
 use crate::grid::format::GridFormat;
 use crate::grid::format::GridFormatCapabilities;
+use crate::grid::format::GridFormatDetectAndParseCapability;
 use crate::grid::format::GridFormatPreservesCellCandidates;
 use crate::grid::format::GridFormatPreservesCellValue;
 use crate::grid::Grid;
@@ -43,6 +44,8 @@ impl GridFormat for BinaryFixedCandidatesLine {
         GridFormatCapabilities {
             preserves_cell_value: GridFormatPreservesCellValue::ValueAndFixedState,
             preserves_cell_candidates: GridFormatPreservesCellCandidates::OnlyMultiple,
+            // Is confused with `ValuesLine` in base 2 for a grid containing only candidates.
+            detect_and_parse: GridFormatDetectAndParseCapability::Lossy,
         }
     }
     fn render<Base: SudokuBase>(self, grid: &Grid<Base>) -> String {
