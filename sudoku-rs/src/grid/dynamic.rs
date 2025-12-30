@@ -6,7 +6,7 @@ use crate::cell::dynamic::DynamicCell;
 use crate::error::{Error, Result};
 use crate::grid::Grid;
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(
     try_from = "Vec<T>",
     into = "Vec<T>",

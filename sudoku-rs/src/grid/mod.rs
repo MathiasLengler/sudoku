@@ -799,7 +799,9 @@ impl<Base: SudokuBase> FromStr for Grid<Base> {
     type Err = Error;
 
     fn from_str(input: &str) -> Result<Self> {
-        GridFormatEnum::detect_and_parse(input)?.try_into()
+        GridFormatEnum::detect_and_parse(input)?
+            .parsed_grid
+            .try_into()
     }
 }
 

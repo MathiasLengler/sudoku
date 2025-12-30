@@ -5,6 +5,7 @@ use crate::grid::dynamic::DynamicGrid;
 use crate::grid::Grid;
 use anyhow::{bail, format_err};
 use enum_dispatch::enum_dispatch;
+use log::trace;
 use serde::de::Visitor;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt;
@@ -53,7 +54,7 @@ pub struct GridFormatCapabilities {
 }
 
 #[enum_dispatch(GridFormatEnum)]
-pub trait GridFormat: Debug + Copy + Clone + Eq + Sized {
+pub trait GridFormat: Debug + Copy + Clone + Eq + Sized + Into<GridFormatEnum> {
     fn render<Base: SudokuBase>(self, grid: &Grid<Base>) -> String;
 
     fn parse(self, input: &str) -> Result<DynamicGrid>;
@@ -62,6 +63,8 @@ pub trait GridFormat: Debug + Copy + Clone + Eq + Sized {
 
     fn parse_and_post_process(self, input: &str) -> Result<DynamicGrid> {
         let mut dynamic_grid = GridFormat::parse(self, input)?;
+
+        trace!("Successfully parsed grid using format {}", self.name());
 
         if self.capabilities().preserves_cell_value == GridFormatPreservesCellValue::ValueOnly {
             // If the format does not preserve fixed state, assume all values are fixed.
@@ -80,6 +83,12 @@ pub trait GridFormat: Debug + Copy + Clone + Eq + Sized {
     fn name(self) -> String {
         format!("{self:?}")
     }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct DetectAndParseReturn {
+    pub detected_format: GridFormatEnum,
+    pub parsed_grid: DynamicGrid,
 }
 
 #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
@@ -110,25 +119,32 @@ impl GridFormatEnum {
         ]
     }
 
-    pub fn detect_and_parse(input: &str) -> Result<DynamicGrid> {
+    fn try_detect_and_parse(self, input: &str) -> Result<DetectAndParseReturn> {
+        Ok(DetectAndParseReturn {
+            detected_format: self,
+            parsed_grid: self.parse_and_post_process(input)?,
+        })
+    }
+
+    pub fn detect_and_parse(input: &str) -> Result<DetectAndParseReturn> {
         let input = input.trim();
         if input.is_empty() {
             bail!("Unexpected empty input")
         }
 
-        let parsed_grid = if input.contains('\n') {
-            CandidatesGridANSIStyled
-                .parse_and_post_process(input)
-                .or_else(|_| CandidatesGridCompact.parse_and_post_process(input))
-                .or_else(|_| ValuesGrid.parse_and_post_process(input))?
+        if input.starts_with('{') {
+            Self::from(Json).try_detect_and_parse(input)
+        } else if input.contains('\n') {
+            Self::from(CandidatesGridANSIStyled)
+                .try_detect_and_parse(input)
+                .or_else(|_| Self::from(CandidatesGridCompact).try_detect_and_parse(input))
+                .or_else(|_| Self::from(ValuesGrid).try_detect_and_parse(input))
         } else {
-            Json.parse_and_post_process(input)
-                .or_else(|_| BinaryFixedCandidatesLine.parse_and_post_process(input))
-                .or_else(|_| BinaryCandidatesLine.parse_and_post_process(input))
-                .or_else(|_| ValuesLine.parse_and_post_process(input))?
-        };
-
-        Ok(parsed_grid)
+            Self::from(BinaryFixedCandidatesLine)
+                .try_detect_and_parse(input)
+                .or_else(|_| Self::from(BinaryCandidatesLine).try_detect_and_parse(input))
+                .or_else(|_| Self::from(ValuesLine).try_detect_and_parse(input))
+        }
     }
 }
 
@@ -191,7 +207,10 @@ impl FromStr for GridFormatEnum {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{grid::format::test_util::assert_grid_format_roundtrip_unchanged_detect, samples};
+    use crate::{
+        grid::format::test_util::assert_grid_format_roundtrip_unchanged, samples,
+        test_util::init_test_logger,
+    };
     use anyhow::Context;
 
     mod grid_format_enum {
@@ -211,6 +230,8 @@ mod tests {
 
     #[test]
     fn test_detect_and_parse_cells_roundtrip() {
+        init_test_logger();
+
         // TODO: move format capabilities to the format itself
         //  declare unit test for each format
         //  define helper which tests based on the declared capabilities
@@ -245,7 +266,7 @@ mod tests {
             for_test_grids!(|grid| {
                 grid.fix_all_values();
 
-                assert_grid_format_roundtrip_unchanged_detect(grid_format, &grid)
+                assert_grid_format_roundtrip_unchanged(grid_format, &grid)
                     .with_context(|| "Test cell value roundtrip".to_string())
                     .unwrap();
             });
@@ -267,11 +288,11 @@ mod tests {
         for grid_format in grid_formats {
             for_test_grids!(|grid| {
                 grid.fix_all_values();
-                assert_grid_format_roundtrip_unchanged_detect(grid_format, &grid)
+                assert_grid_format_roundtrip_unchanged(grid_format, &grid)
                     .with_context(|| "Test cell fixed value roundtrip".to_string())
                     .unwrap();
                 grid.unfix_all_values();
-                assert_grid_format_roundtrip_unchanged_detect(grid_format, &grid)
+                assert_grid_format_roundtrip_unchanged(grid_format, &grid)
                     .with_context(|| "Test cell unfixed value roundtrip".to_string())
                     .unwrap();
             });
@@ -291,7 +312,7 @@ mod tests {
         ];
         for grid_format in grid_formats {
             for_test_grids!(|grid| {
-                assert_grid_format_roundtrip_unchanged_detect(grid_format, &grid)
+                assert_grid_format_roundtrip_unchanged(grid_format, &grid)
                     .with_context(|| "Test cell candidates roundtrip".to_string())
                     .unwrap();
             });
@@ -324,7 +345,7 @@ mod tests {
                     .enumerate()
                     .filter(|&(i, _)| i % 2 == 0)
                     .for_each(|(_, pos)| grid.get_mut(pos).unfix());
-                assert_grid_format_roundtrip_unchanged_detect(grid_format, &grid)
+                assert_grid_format_roundtrip_unchanged(grid_format, &grid)
                     .with_context(|| "Test cell multiple candidates roundtrip".to_string())
                     .unwrap();
             });
@@ -340,7 +361,7 @@ mod tests {
             },
         };
 
-        // TODO: test with detect_parse_format = true
+        // TODO: test via all sample grids
 
         mod cell_candidates {
             use super::*;
@@ -391,10 +412,12 @@ mod tests {
                 }
             }
 
-            mod lexicographical_filled {
+            mod lexicographical {
                 use super::*;
 
                 test_all_bases!({
+                    init_test_logger();
+
                     for grid_format in GridFormatEnum::all() {
                         let grid = Grid::<Base>::with(
                             Candidates::iter_all_lexicographical()
@@ -459,12 +482,12 @@ mod tests {
                 }
             }
 
-            // TODO: test via all sample grids
-
             mod filled {
                 use super::*;
 
                 test_all_bases!({
+                    init_test_logger();
+
                     for grid_format in GridFormatEnum::all() {
                         for value in [Value::default(), Value::middle(), Value::max()] {
                             let grid_with_fixed_values =
@@ -510,9 +533,20 @@ mod test_util {
             let grid_string = grid_format.render(grid_to_render);
 
             let parsed_grid = if detect_parse_format {
-                GridFormatEnum::detect_and_parse(&grid_string).with_context(|| {
+                let DetectAndParseReturn {
+                    detected_format,
+                    parsed_grid,
+                } = GridFormatEnum::detect_and_parse(&grid_string).with_context(|| {
                     format!("Failed to detect and parse grid string:\n{grid_string}")
-                })?
+                })?;
+
+                ensure!(
+                    detected_format == grid_format.into(),
+                    "Detected format {} does not match expected format {}",
+                    detected_format.name(),
+                    grid_format.name()
+                );
+                parsed_grid
             } else {
                 grid_format
                     .parse_and_post_process(&grid_string)
@@ -525,8 +559,13 @@ mod test_util {
         })()
         .with_context(|| {
             format!(
-                "Failed to roundtrip format {} with grid:\n{grid_to_render}",
-                grid_format.name()
+                "Failed to roundtrip format {} {} parse detection with grid:\n{grid_to_render}",
+                grid_format.name(),
+                if detect_parse_format {
+                    "with"
+                } else {
+                    "without"
+                }
             )
         })
     }
@@ -535,13 +574,8 @@ mod test_util {
         grid_format: F,
         grid: &Grid<Base>,
     ) -> Result<()> {
-        assert_grid_format_roundtrip(grid_format, false, grid, grid)
-    }
-
-    pub(crate) fn assert_grid_format_roundtrip_unchanged_detect<Base: SudokuBase>(
-        grid_format: GridFormatEnum,
-        grid: &Grid<Base>,
-    ) -> Result<()> {
-        assert_grid_format_roundtrip(grid_format, true, grid, grid)
+        assert_grid_format_roundtrip(grid_format, false, grid, grid)?;
+        assert_grid_format_roundtrip(grid_format, true, grid, grid)?;
+        Ok(())
     }
 }

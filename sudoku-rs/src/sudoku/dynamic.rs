@@ -134,7 +134,9 @@ impl TryFrom<&str> for DynamicSudoku {
     type Error = Error;
 
     fn try_from(input: &str) -> Result<Self> {
-        GridFormatEnum::detect_and_parse(input)?.try_into()
+        GridFormatEnum::detect_and_parse(input)?
+            .parsed_grid
+            .try_into()
     }
 }
 
