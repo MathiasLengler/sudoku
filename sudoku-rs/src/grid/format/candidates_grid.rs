@@ -365,7 +365,7 @@ impl GridFormat for CandidatesGridPlain {
     }
 }
 
-pub fn render_candidates_grid<Base: SudokuBase>(
+fn render_candidates_grid<Base: SudokuBase>(
     grid: &Grid<Base>,
     enable_terminal_styling: bool,
 ) -> String {

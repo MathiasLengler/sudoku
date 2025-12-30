@@ -27,9 +27,9 @@ use crate::{
 /// # Example
 /// `1,2,4,8,16,32,64,128,256,3,5,9,17,33,65,129,257,511,3,7,15,31,63,127,255,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511,511`
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub struct BinaryCandidatesLine;
+pub struct BinaryCandidatesLineV0;
 
-impl GridFormat for BinaryCandidatesLine {
+impl GridFormat for BinaryCandidatesLineV0 {
     fn capabilities(self) -> GridFormatCapabilities {
         GridFormatCapabilities {
             preserves_cell_value: GridFormatPreservesCellValue::ValueOnly,
@@ -66,9 +66,8 @@ impl GridFormat for BinaryCandidatesLine {
 
 #[cfg(test)]
 mod tests {
-    use crate::samples;
-
     use super::*;
+    use crate::samples;
 
     #[test]
     fn test_render_binary_candidates_line() {
@@ -76,7 +75,7 @@ mod tests {
         grid.set_all_direct_candidates();
 
         assert_eq!(
-            BinaryCandidatesLine.render(&grid),
+            BinaryCandidatesLineV0.render(&grid),
             "128,43,314,78,87,15,309,344,381,283,11,4,32,211,139,401,472,345,57,64,56,140,256,141,2,152,61,303,16,298,390,166,64,417,394,299,295,167,290,390,8,16,64,386,291,362,170,362,1,162,418,432,4,314,94,14,1,334,70,270,276,32,128,110,46,128,16,102,302,260,1,326,118,256,114,198,231,167,8,82,86"
         );
     }

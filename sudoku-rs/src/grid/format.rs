@@ -11,21 +11,21 @@ use std::fmt;
 use std::fmt::Debug;
 use std::str::FromStr;
 
-pub use binary_candidates_line::*;
-pub use binary_fixed_candidates_line::*;
-pub use candidates_grid::*;
-pub use candidates_grid_compact::*;
+pub use candidates_grid::{CandidatesGridANSIStyled, CandidatesGridPlain};
+pub use candidates_grid_compact::CandidatesGridCompact;
 pub use json::Json;
-pub use values_grid::*;
+pub use values_grid::ValuesGrid;
 pub use values_line::ValuesLine;
+pub use wiki::v0::BinaryCandidatesLineV0;
+pub use wiki::v1::BinaryCandidatesLineV1;
+pub use wiki::v2::BinaryCandidatesLineV2;
 
-mod binary_candidates_line;
-mod binary_fixed_candidates_line;
 mod candidates_grid;
 mod candidates_grid_compact;
 mod json;
 mod values_grid;
 mod values_line;
+mod wiki;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum GridFormatPreservesCellValue {
@@ -105,27 +105,29 @@ pub struct DetectAndParseReturn {
 #[enum_dispatch]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum GridFormatEnum {
-    BinaryCandidatesLine,
-    BinaryFixedCandidatesLine,
+    BinaryCandidatesLineV0,
+    BinaryCandidatesLineV1,
+    BinaryCandidatesLineV2,
     CandidatesGridANSIStyled,
-    CandidatesGridPlain,
     CandidatesGridCompact,
-    ValuesLine,
-    ValuesGrid,
+    CandidatesGridPlain,
     Json,
+    ValuesGrid,
+    ValuesLine,
 }
 
 impl GridFormatEnum {
     pub fn all() -> Vec<Self> {
         vec![
-            BinaryCandidatesLine.into(),
-            BinaryFixedCandidatesLine.into(),
+            BinaryCandidatesLineV0.into(),
+            BinaryCandidatesLineV1.into(),
+            BinaryCandidatesLineV2.into(),
             CandidatesGridANSIStyled.into(),
-            CandidatesGridPlain.into(),
             CandidatesGridCompact.into(),
-            ValuesLine.into(),
-            ValuesGrid.into(),
+            CandidatesGridPlain.into(),
             Json.into(),
+            ValuesGrid.into(),
+            ValuesLine.into(),
         ]
     }
 
@@ -168,9 +170,9 @@ impl GridFormatEnum {
                 ]
             } else {
                 vec![
-                    BinaryCandidatesLine.into(),
+                    BinaryCandidatesLineV0.into(),
                     ValuesLine.into(),
-                    BinaryFixedCandidatesLine.into(),
+                    BinaryCandidatesLineV1.into(),
                 ]
             },
         )
@@ -183,14 +185,15 @@ impl Serialize for GridFormatEnum {
         S: Serializer,
     {
         let (variant_index, variant) = match *self {
-            Self::BinaryCandidatesLine(_) => (0, "BinaryCandidatesLine"),
-            Self::BinaryFixedCandidatesLine(_) => (1, "BinaryFixedCandidatesLine"),
-            Self::CandidatesGridANSIStyled(_) => (2, "CandidatesGridANSIStyled"),
-            Self::CandidatesGridPlain(_) => (3, "CandidatesGridPlain"),
+            Self::BinaryCandidatesLineV0(_) => (0, "BinaryCandidatesLineV0"),
+            Self::BinaryCandidatesLineV1(_) => (1, "BinaryCandidatesLineV1"),
+            Self::BinaryCandidatesLineV2(_) => (2, "BinaryCandidatesLineV2"),
+            Self::CandidatesGridANSIStyled(_) => (3, "CandidatesGridANSIStyled"),
             Self::CandidatesGridCompact(_) => (4, "CandidatesGridCompact"),
-            Self::ValuesLine(_) => (5, "ValuesLine"),
-            Self::ValuesGrid(_) => (6, "ValuesGrid"),
-            Self::Json(_) => (7, "Json"),
+            Self::CandidatesGridPlain(_) => (5, "CandidatesGridPlain"),
+            Self::Json(_) => (6, "Json"),
+            Self::ValuesGrid(_) => (7, "ValuesGrid"),
+            Self::ValuesLine(_) => (8, "ValuesLine"),
         };
 
         serializer.serialize_unit_variant("Strategy", variant_index, variant)
@@ -237,10 +240,12 @@ impl FromStr for GridFormatEnum {
 mod tests {
     use super::*;
     use crate::{
-        grid::format::test_util::assert_grid_format_roundtrip_unchanged, samples,
-        test_util::init_test_logger,
+        cell::{Candidates, Cell, Value},
+        grid::format::test_util::{
+            assert_grid_format_roundtrip, assert_grid_format_roundtrip_unchanged,
+        },
+        test_util::{init_test_logger, test_all_bases},
     };
-    use anyhow::Context;
 
     mod grid_format_enum {
         use super::*;
@@ -257,144 +262,13 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_detect_and_parse_cells_roundtrip() {
-        init_test_logger();
-
-        // TODO: move format capabilities to the format itself
-        //  declare unit test for each format
-        //  define helper which tests based on the declared capabilities
-
-        // Grid formats which preserve:
-        // - cell value
-        let grid_formats: Vec<GridFormatEnum> = vec![
-            BinaryCandidatesLine.into(),
-            BinaryFixedCandidatesLine.into(),
-            CandidatesGridANSIStyled.into(),
-            CandidatesGridPlain.into(),
-            CandidatesGridCompact.into(),
-            ValuesLine.into(),
-            ValuesGrid.into(),
-        ];
-
-        // TODO: refactor other duplicated base handling code
-        macro_rules! for_test_grids {
-            (|$grid:ident| $block:block) => {
-                #[allow(unused_mut)]
-                for mut $grid in samples::base_2() $block
-                #[allow(unused_mut)]
-                for mut $grid in samples::base_3() $block
-                #[allow(unused_mut)]
-                for mut $grid in samples::base_4() $block
-                #[allow(unused_mut)]
-                for mut $grid in samples::base_5() $block
-            };
-        }
-
-        for grid_format in grid_formats {
-            for_test_grids!(|grid| {
-                grid.fix_all_values();
-
-                assert_grid_format_roundtrip_unchanged(grid_format, &grid)
-                    .with_context(|| "Test cell value roundtrip".to_string())
-                    .unwrap();
-            });
-        }
-
-        // Grid formats which preserve:
-        // - cell value
-        // - cell value fixed state
-        let grid_formats: Vec<GridFormatEnum> = vec![
-            // BinaryCandidatesLine.into(),
-            BinaryFixedCandidatesLine.into(),
-            // CandidatesGridANSIStyled.into(),
-            // CandidatesGridPlain.into(),
-            // CandidatesGridCompact.into(),
-            // ValuesLine.into(),
-            // ValuesGrid.into(),
-        ];
-
-        for grid_format in grid_formats {
-            for_test_grids!(|grid| {
-                grid.fix_all_values();
-                assert_grid_format_roundtrip_unchanged(grid_format, &grid)
-                    .with_context(|| "Test cell fixed value roundtrip".to_string())
-                    .unwrap();
-                grid.unfix_all_values();
-                assert_grid_format_roundtrip_unchanged(grid_format, &grid)
-                    .with_context(|| "Test cell unfixed value roundtrip".to_string())
-                    .unwrap();
-            });
-        }
-
-        // Grid formats which preserve:
-        // - cell value
-        // - cell candidates
-        let grid_formats: Vec<GridFormatEnum> = vec![
-            // BinaryCandidatesLine.into(),
-            // BinaryFixedCandidatesLine.into(),
-            CandidatesGridANSIStyled.into(),
-            CandidatesGridPlain.into(),
-            CandidatesGridCompact.into(),
-            // ValuesLine.into(),
-            // ValuesGrid.into(),
-        ];
-        for grid_format in grid_formats {
-            for_test_grids!(|grid| {
-                assert_grid_format_roundtrip_unchanged(grid_format, &grid)
-                    .with_context(|| "Test cell candidates roundtrip".to_string())
-                    .unwrap();
-            });
-        }
-
-        // Grid formats which preserve:
-        // - cell value
-        // - cell value fixed state
-        // - cell multiple candidates
-        let grid_formats: Vec<GridFormatEnum> = vec![
-            // BinaryCandidatesLine.into(),
-            BinaryFixedCandidatesLine.into(),
-            // CandidatesGridANSIStyled.into(),
-            // CandidatesGridPlain.into(),
-            // CandidatesGridCompact.into(),
-            // ValuesLine.into(),
-            // ValuesGrid.into(),
-        ];
-        for grid_format in grid_formats {
-            for_test_grids!(|grid| {
-                // Delete single candidates which would get converted to a value.
-                grid.all_candidates_positions().into_iter().for_each(|pos| {
-                    if grid.get(pos).candidates().unwrap().to_single().is_some() {
-                        grid.get_mut(pos).delete();
-                    }
-                });
-                // Unfix each second value.
-                grid.all_value_positions()
-                    .into_iter()
-                    .enumerate()
-                    .filter(|&(i, _)| i % 2 == 0)
-                    .for_each(|(_, pos)| grid.get_mut(pos).unfix());
-                assert_grid_format_roundtrip_unchanged(grid_format, &grid)
-                    .with_context(|| "Test cell multiple candidates roundtrip".to_string())
-                    .unwrap();
-            });
-        }
-    }
-
     mod via_capabilities {
         use super::*;
-        use crate::{
-            cell::{Candidates, Cell, Value},
-            grid::format::test_util::{
-                assert_grid_format_roundtrip, assert_grid_format_roundtrip_unchanged,
-            },
-        };
 
         // TODO: test via all sample grids
 
         mod cell_candidates {
             use super::*;
-            use crate::test_util::test_all_bases;
 
             fn assert_preserves_cell_candidates<Base: SudokuBase, F: GridFormat>(
                 grid_format: F,
@@ -463,7 +337,6 @@ mod tests {
 
         mod cell_value {
             use super::*;
-            use crate::test_util::test_all_bases;
 
             fn assert_preserves_cell_value<Base: SudokuBase, F: GridFormat>(
                 grid_format: F,

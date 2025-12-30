@@ -13,11 +13,6 @@ use crate::grid::Grid;
 use anyhow::bail;
 use std::fmt::Write;
 
-// FIXME: sudokuwiki's format has changed again:
-//  https://www.sudokuwiki.org/Sudoku_String_Definitions
-//  https://blueant1.github.io/puzzle-coding/documentation/puzzlecoding/encodingformats/
-//  => Implement as a new format
-
 /// Compact candidates grid format defined by [sudokuwiki.org](https://www.sudokuwiki.org/Sudoku_String_Definitions) as "Version 1".
 ///
 /// Used by their solver via the search parameter `bd`.
@@ -37,9 +32,9 @@ use std::fmt::Write;
 /// # Example
 /// `8104jk4s5e0ujalgnqhm0m0921d68mp2tgli3i413g8og18q059g3qiu11ikocac41q2okimieaei4oc0h1141o4i6mkakmk03a4q4r009jk5s0s03ks4cgsh821816s2s81116cisg803kc7cg174cceeae0h545c`
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub struct BinaryFixedCandidatesLine;
+pub struct BinaryCandidatesLineV1;
 
-impl GridFormat for BinaryFixedCandidatesLine {
+impl GridFormat for BinaryCandidatesLineV1 {
     fn capabilities(self) -> GridFormatCapabilities {
         GridFormatCapabilities {
             preserves_cell_value: GridFormatPreservesCellValue::ValueAndFixedState,
@@ -109,19 +104,11 @@ impl GridFormat for BinaryFixedCandidatesLine {
 
 #[cfg(test)]
 mod tests {
-    use crate::grid::format::test_util::assert_grid_format_roundtrip_unchanged;
+    use super::*;
     use crate::position::Position;
     use crate::samples;
 
-    use super::*;
-
-    // TODO: https://www.sudokuwiki.org/Test_Strings
-
-    #[ignore = "New format with header, not yet implemented"]
-    #[test]
-    fn test_parse_example() {
-        BinaryFixedCandidatesLine.parse("S9B015y2e685w68050609040i022e0e0f0a2e085y050f0a5u090b042e2u2e0i06042c0810012q0f0dd0015w9i102e020a089e03050f9e0d5y042e05d0609i010f095y0e5y0f0a045y0206020166cy669id205").unwrap();
-    }
+    // TODO:
 
     #[test]
     fn test_render() {
@@ -131,9 +118,16 @@ mod tests {
             .set_value(2.try_into().unwrap());
 
         assert_eq!(
-            BinaryFixedCandidatesLine.render(&grid),
+            BinaryCandidatesLineV1.render(&grid),
             "8104jk4s5e0ujalgnqhm0m0921d68mp2tgli3i413g8og18q059g3qiu11ikocac41q2okimieaei4oc0h1141o4i6mkakmk03a4q4r009jk5s0s03ks4cgsh821816s2s81116cisg803kc7cg174cceeae0h545c"
         );
+    }
+
+    #[test]
+    fn test_parse() {
+        let grid = BinaryCandidatesLineV1.parse(
+            // Source: "Alternatively, with candidates (old style)" https://www.sudokuwiki.org/Test_Strings
+            "41051g02g1211g9009io22gq05c011mic0iij881ha08400hn205j29850dcg0cmc0he21h603g021110409810g41980hdci0e6c0he18h63g095g8130027kg13krg32pi4130053o183g0570500h09g0700381").unwrap();
     }
 
     #[test]
@@ -147,8 +141,8 @@ mod tests {
         };
 
         let grid_roundtrip = Grid::<Base>::try_from(
-            BinaryFixedCandidatesLine
-                .parse(&BinaryFixedCandidatesLine.render(&grid))
+            BinaryCandidatesLineV1
+                .parse(&BinaryCandidatesLineV1.render(&grid))
                 .unwrap(),
         )
         .unwrap();
@@ -157,24 +151,5 @@ mod tests {
             grid_roundtrip[Position::top_left()],
             Cell::with_value(1.try_into().unwrap(), false)
         );
-    }
-
-    #[test]
-    fn test_roundtrip() {
-        for grid in samples::base_2() {
-            assert_grid_format_roundtrip_unchanged(BinaryFixedCandidatesLine, &grid).unwrap();
-        }
-
-        for grid in samples::base_3() {
-            assert_grid_format_roundtrip_unchanged(BinaryFixedCandidatesLine, &grid).unwrap();
-        }
-
-        let mut grid = Grid::<Base4>::new();
-        grid.set_all_direct_candidates();
-        assert_grid_format_roundtrip_unchanged(BinaryFixedCandidatesLine, &grid).unwrap();
-
-        let mut grid = Grid::<Base5>::new();
-        grid.set_all_direct_candidates();
-        assert_grid_format_roundtrip_unchanged(BinaryFixedCandidatesLine, &grid).unwrap();
     }
 }
