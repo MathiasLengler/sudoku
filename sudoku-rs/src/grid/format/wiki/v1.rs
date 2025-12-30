@@ -109,8 +109,6 @@ mod tests {
     use crate::position::Position;
     use crate::samples;
 
-    // TODO:
-
     #[test]
     fn test_render() {
         let mut grid = samples::base_3().into_iter().next().unwrap();
