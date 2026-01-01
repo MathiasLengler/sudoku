@@ -56,7 +56,7 @@ impl GridFormat for BinaryCandidatesLineV1 {
                 bits += 1;
             }
             let base32string = format!("{}", radix_32(bits));
-            let width = Base::BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS;
+            let width = Base::ENUM.binary_fixed_candidates_line_cell_chars();
             let _ = write!(output, "{base32string:0>width$}");
             output
         })
@@ -66,7 +66,7 @@ impl GridFormat for BinaryCandidatesLineV1 {
         fn parse_base<Base: SudokuBase>(input: &str) -> Result<Vec<DynamicCell>> {
             input
                 .as_bytes()
-                .chunks(Base::BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS)
+                .chunks(Base::ENUM.binary_fixed_candidates_line_cell_chars())
                 .map(|cell_bytes_chunk| -> Result<DynamicCell> {
                     let mut bits = u32::from_str_radix(std::str::from_utf8(cell_bytes_chunk)?, 32)?;
 
@@ -83,13 +83,13 @@ impl GridFormat for BinaryCandidatesLineV1 {
         }
 
         const BASE_2_CHAR_COUNT: usize =
-            (Base2::CELL_COUNT as usize) * Base2::BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS;
+            (Base2::CELL_COUNT as usize) * Base2::ENUM.binary_fixed_candidates_line_cell_chars();
         const BASE_3_CHAR_COUNT: usize =
-            (Base3::CELL_COUNT as usize) * Base3::BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS;
+            (Base3::CELL_COUNT as usize) * Base3::ENUM.binary_fixed_candidates_line_cell_chars();
         const BASE_4_CHAR_COUNT: usize =
-            (Base4::CELL_COUNT as usize) * Base4::BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS;
+            (Base4::CELL_COUNT as usize) * Base4::ENUM.binary_fixed_candidates_line_cell_chars();
         const BASE_5_CHAR_COUNT: usize =
-            (Base5::CELL_COUNT as usize) * Base5::BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS;
+            (Base5::CELL_COUNT as usize) * Base5::ENUM.binary_fixed_candidates_line_cell_chars();
 
         let dynamic_cells = match input.chars().count() {
             BASE_2_CHAR_COUNT => parse_base::<Base2>(input),

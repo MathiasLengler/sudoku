@@ -204,13 +204,6 @@ where
     /// - must equal `(base as u16).pow(4)`
     const CELL_COUNT: u16;
 
-    /// Used by `BinaryCandidatesLineV1`
-    ///
-    /// Defines how many chars are representing a single cell in this grid format.
-    const BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS: usize;
-
-    const MINIMUM_CLUE_COUNT_FOR_UNIQUE_SOLUTION: u16;
-
     /// Bit field type for candidates storage.
     ///
     /// # Safety
@@ -296,8 +289,6 @@ unsafe impl SudokuBase for $type_num {
     const SIDE_LENGTH: u8 = Self::ENUM.side_length();
     const MAX_VALUE: u8 = Self::ENUM.max_value();
     const CELL_COUNT: u16 = Self::ENUM.cell_count();
-    const BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS: usize = Self::ENUM.binary_fixed_candidates_line_cell_chars();
-    const MINIMUM_CLUE_COUNT_FOR_UNIQUE_SOLUTION: u16 = Self::ENUM.minimum_clue_count_for_unique_solution();
 
     type CandidatesIntegral = $type_integral;
 
@@ -409,6 +400,9 @@ mod enum_impl {
             (self.into_u8() as u16).pow(4)
         }
 
+        /// Used by `BinaryCandidatesLineV1`
+        ///
+        /// Defines how many chars are representing a single cell in this grid format.
         pub const fn binary_fixed_candidates_line_cell_chars(self) -> usize {
             match self {
                 BaseEnum::Base2 => 1,
@@ -418,6 +412,7 @@ mod enum_impl {
             }
         }
 
+        /// Minimum clue count for a unique solution.
         pub const fn minimum_clue_count_for_unique_solution(self) -> u16 {
             match self {
                 // Reference: https://math.stackexchange.com/questions/2170944/sudoku-what-is-the-relationship-between-minimum-number-of-clues-and-order-n
@@ -729,7 +724,6 @@ mod tests {
         assert_eq!(Base::SIDE_LENGTH, 4);
         assert_eq!(Base::MAX_VALUE, 4);
         assert_eq!(Base::CELL_COUNT, 16);
-        assert_eq!(Base::BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS, 1);
 
         assert_type_equals::<<Base as SudokuBase>::CandidatesIntegral, u8>();
 
@@ -745,7 +739,6 @@ mod tests {
         assert_eq!(Base::SIDE_LENGTH, 9);
         assert_eq!(Base::MAX_VALUE, 9);
         assert_eq!(Base::CELL_COUNT, 81);
-        assert_eq!(Base::BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS, 2);
 
         assert_type_equals::<<Base as SudokuBase>::CandidatesIntegral, u16>();
 
@@ -761,7 +754,6 @@ mod tests {
         assert_eq!(Base::SIDE_LENGTH, 16);
         assert_eq!(Base::MAX_VALUE, 16);
         assert_eq!(Base::CELL_COUNT, 256);
-        assert_eq!(Base::BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS, 4);
 
         assert_type_equals::<<Base as SudokuBase>::CandidatesIntegral, u16>();
 
@@ -777,7 +769,6 @@ mod tests {
         assert_eq!(Base::SIDE_LENGTH, 25);
         assert_eq!(Base::MAX_VALUE, 25);
         assert_eq!(Base::CELL_COUNT, 625);
-        assert_eq!(Base::BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS, 6);
 
         assert_type_equals::<<Base as SudokuBase>::CandidatesIntegral, u32>();
 

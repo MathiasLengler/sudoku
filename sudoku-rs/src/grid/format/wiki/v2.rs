@@ -45,7 +45,7 @@ impl GridFormat for BinaryCandidatesLineV2 {
             let integer = cell_to_integer(cell);
 
             let serialized_integer = format!("{}", radix_36(integer));
-            let width = Base::BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS;
+            let width = Base::ENUM.binary_fixed_candidates_line_cell_chars();
             let _ = write!(output, "{serialized_integer:0>width$}");
             output
         });
@@ -61,7 +61,7 @@ impl GridFormat for BinaryCandidatesLineV2 {
         fn parse_base<Base: SudokuBase>(input: &str) -> Result<Vec<DynamicCell>> {
             input
                 .as_bytes()
-                .chunks(Base::BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS)
+                .chunks(Base::ENUM.binary_fixed_candidates_line_cell_chars())
                 .map(|cell_bytes_chunk| -> Result<DynamicCell> {
                     let integer = u32::from_str_radix(std::str::from_utf8(cell_bytes_chunk)?, 36)?;
 

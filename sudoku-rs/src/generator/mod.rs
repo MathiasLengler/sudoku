@@ -246,7 +246,7 @@ impl<Base: SudokuBase> Generator<Base> {
 
                 let restored_value_count = pruning_position_i + non_pruning_position_count;
                 let minimum_clue_count_for_unique_solution =
-                    Base::MINIMUM_CLUE_COUNT_FOR_UNIQUE_SOLUTION;
+                    Base::ENUM.minimum_clue_count_for_unique_solution();
                 if restored_value_count < minimum_clue_count_for_unique_solution {
                     // FIXME: breaks rustfmt
                     // debug!("Skip check for unique solution, since restored value count {restored_value_count} is less than minimum clue count for unique solution {minimum_clue_count_for_unique_solution}");
