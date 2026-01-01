@@ -211,12 +211,6 @@ where
 
     const MINIMUM_CLUE_COUNT_FOR_UNIQUE_SOLUTION: u16;
 
-    /// For a given cell position, returns the coordinate of the block it is contained in.
-    fn pos_to_block(pos: Position<Self>) -> Coordinate<Self>;
-
-    /// For a given block, returns the position of the top left cell in this block.
-    fn block_to_top_left_pos(block: Coordinate<Self>) -> Position<Self>;
-
     /// Bit field type for candidates storage.
     ///
     /// # Safety
@@ -277,6 +271,12 @@ where
     where
         T: Send + Sync + Copy + Clone + Debug;
 
+    /// For a given cell position, returns the coordinate of the block it is contained in.
+    fn pos_to_block(pos: Position<Self>) -> Coordinate<Self>;
+
+    /// For a given block, returns the position of the top left cell in this block.
+    fn block_to_top_left_pos(block: Coordinate<Self>) -> Position<Self>;
+
     fn group_default<T: Send + Sync + Copy + Clone + Debug + Default>() -> Self::Group<T>;
     fn group_uninit<T: Send + Sync + Copy + Clone + Debug>() -> Self::Group<MaybeUninit<T>>;
     fn group_map<T: Send + Sync + Copy + Clone + Debug, U: Send + Sync + Copy + Clone + Debug>(
@@ -287,17 +287,21 @@ where
 }
 
 macro_rules! impl_sudoku_base {
-    ($($type_num:ty,$base_u8:expr,$type_integral:ty,$CELL_INDEX_TO_BLOCK_INDEX:expr,$BLOCK_INDEX_TO_TOP_LEFT_CELL_INDEX:expr,$GRID_SAMPLES_ITER:expr;)+) => {
+    ($($type_num:ty,$base_enum:expr,$type_integral:ty,$CELL_INDEX_TO_BLOCK_INDEX:expr,$BLOCK_INDEX_TO_TOP_LEFT_CELL_INDEX:expr,$GRID_SAMPLES_ITER:expr;)+) => {
         $(
 // Safety: this private macro is only instantiated below and the correctness of the generated impls is tested.
 unsafe impl SudokuBase for $type_num {
-    const ENUM: BaseEnum = BaseEnum::assert_from_base_u8($base_u8);
-    const BASE: u8 = $base_u8;
+    const ENUM: BaseEnum = $base_enum;
+    const BASE: u8 = Self::ENUM.into_u8();
     const SIDE_LENGTH: u8 = Self::ENUM.side_length();
     const MAX_VALUE: u8 = Self::ENUM.max_value();
     const CELL_COUNT: u16 = Self::ENUM.cell_count();
     const BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS: usize = Self::ENUM.binary_fixed_candidates_line_cell_chars();
     const MINIMUM_CLUE_COUNT_FOR_UNIQUE_SOLUTION: u16 = Self::ENUM.minimum_clue_count_for_unique_solution();
+
+    type CandidatesIntegral = $type_integral;
+
+    type Group<T: Send + Sync + Copy + Clone + Debug> = [T; Self::SIDE_LENGTH as usize];
 
     fn pos_to_block(pos: Position<Self>) -> Coordinate<Self> {
         let cell_index = usize::from(pos.cell_index());
@@ -322,9 +326,6 @@ unsafe impl SudokuBase for $type_num {
         unsafe { Position::new_unchecked(*cell_index) }
     }
 
-    type CandidatesIntegral = $type_integral;
-
-    type Group<T: Send + Sync + Copy + Clone + Debug> = [T; Self::SIDE_LENGTH as usize];
 
     fn group_default<T: Send + Sync + Copy + Clone + Debug + Default>() -> Self::Group<T> {
         [Default::default(); Self::SIDE_LENGTH as usize]
@@ -348,10 +349,10 @@ unsafe impl SudokuBase for $type_num {
 
 // Implement `SudokuBase` for all base structs
 impl_sudoku_base!(
-    Base2, 2, u8, cell_index_to_block_index::BASE_2, block_index_to_top_left_cell_index::BASE_2, samples::base_2().into_iter();
-    Base3, 3, u16, cell_index_to_block_index::BASE_3, block_index_to_top_left_cell_index::BASE_3, samples::base_3().into_iter();
-    Base4, 4, u16, cell_index_to_block_index::BASE_4, block_index_to_top_left_cell_index::BASE_4, samples::base_4().into_iter();
-    Base5, 5, u32, cell_index_to_block_index::BASE_5, block_index_to_top_left_cell_index::BASE_5, samples::base_5().into_iter();
+    Base2, BaseEnum::Base2, u8, cell_index_to_block_index::BASE_2, block_index_to_top_left_cell_index::BASE_2, samples::base_2().into_iter();
+    Base3, BaseEnum::Base3, u16, cell_index_to_block_index::BASE_3, block_index_to_top_left_cell_index::BASE_3, samples::base_3().into_iter();
+    Base4, BaseEnum::Base4, u16, cell_index_to_block_index::BASE_4, block_index_to_top_left_cell_index::BASE_4, samples::base_4().into_iter();
+    Base5, BaseEnum::Base5, u32, cell_index_to_block_index::BASE_5, block_index_to_top_left_cell_index::BASE_5, samples::base_5().into_iter();
 );
 
 mod enum_impl {
