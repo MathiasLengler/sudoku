@@ -167,7 +167,7 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + H
 }
 
 impl<Base: SudokuBase> CandidatesGroup<Base> {
-    // TODO: bench/optimize
+    // TODO: optimize
     #[must_use]
     pub fn transpose(&self) -> CandidatesGroup<Base> {
         let mut transposed = Self::default();
