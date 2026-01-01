@@ -11,7 +11,7 @@ use crate::{
     },
 };
 
-/// Compact candidates grid format used by [sudokuwiki.org](https://www.sudokuwiki.org/sudoku.htm)
+/// Grid format used by [sudokuwiki.org](https://www.sudokuwiki.org/sudoku.htm)
 /// for the search parameter "n".
 ///
 /// # Encoding

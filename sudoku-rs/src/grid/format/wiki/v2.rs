@@ -1,8 +1,3 @@
-// FIXME: sudokuwiki's format has changed again:
-//  https://www.sudokuwiki.org/Sudoku_String_Definitions
-//  https://blueant1.github.io/puzzle-coding/documentation/puzzlecoding/encodingformats/
-//  => Implement as a new format
-
 use crate::base::BaseEnum;
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
@@ -25,8 +20,13 @@ use anyhow::Context;
 use std::fmt::Display;
 use std::fmt::Write;
 
-const HEADER_LENGTH: usize = 3;
-
+/// Grid format "Version B" defined by [sudokuwiki.org](https://www.sudokuwiki.org/Sudoku_String_Definitions).
+///
+/// [Documentation](https://blueant1.github.io/puzzle-coding/documentation/puzzlecoding/encodingformats/)
+///
+/// This format has all current capabilities:
+/// - preserves cell values and fixed state
+/// - preserves all cell candidates (empty, single, multiple)
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct BinaryCandidatesLineV2;
 
@@ -76,6 +76,8 @@ impl GridFormat for BinaryCandidatesLineV2 {
         dynamic_cells.try_into()
     }
 }
+
+const HEADER_LENGTH: usize = 3;
 
 // Format header: https://blueant1.github.io/puzzle-coding/documentation/puzzlecoding/encodingformats#Header
 #[derive(Debug)]

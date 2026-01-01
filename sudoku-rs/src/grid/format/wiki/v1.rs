@@ -14,11 +14,11 @@ use crate::grid::Grid;
 use anyhow::bail;
 use std::fmt::Write;
 
-/// Compact candidates grid format defined by [sudokuwiki.org](https://www.sudokuwiki.org/Sudoku_String_Definitions) as "Version 1".
+/// Grid format defined by [sudokuwiki.org](https://www.sudokuwiki.org/Sudoku_String_Definitions) as "Version 1".
 ///
 /// Used by their solver via the search parameter `bd`.
 ///
-/// Differences from `BinaryCandidatesLine`:
+/// Differences from `BinaryCandidatesLineV0`:
 /// - additional bit in the candidates bitset indicating a clue (fixed value)
 /// - candidates bitset is encoded in base32 and padded with leading zeros to a fixed length:
 ///   - Base 2: 1
