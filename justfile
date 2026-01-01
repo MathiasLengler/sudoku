@@ -50,8 +50,8 @@ upgrade-latest:
     cargo upgrade -i --verbose
     cargo update
 
-bench:
-    cargo bench --bench sudoku_benchmark -- --quick
+bench *bench-args:
+    cargo bench --bench sudoku_benchmark -- {{bench-args}}
 
 # Serve vite on tailscale
 web-ts-serve:
