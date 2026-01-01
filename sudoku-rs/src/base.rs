@@ -388,28 +388,19 @@ mod enum_impl {
 
     /// const definitions
     impl BaseEnum {
+        /// The side length of the complete sudoku.
         pub const fn side_length(self) -> u8 {
             self.into_u8().pow(2)
         }
 
+        /// The max value a value can be set to.
         pub const fn max_value(self) -> u8 {
             self.side_length()
         }
 
+        /// The total cell count of the sudoku.
         pub const fn cell_count(self) -> u16 {
             (self.into_u8() as u16).pow(4)
-        }
-
-        /// Used by `BinaryCandidatesLineV1`
-        ///
-        /// Defines how many chars are representing a single cell in this grid format.
-        pub const fn binary_fixed_candidates_line_cell_chars(self) -> usize {
-            match self {
-                BaseEnum::Base2 => 1,
-                BaseEnum::Base3 => 2,
-                BaseEnum::Base4 => 4,
-                BaseEnum::Base5 => 6,
-            }
         }
 
         /// Minimum clue count for a unique solution.

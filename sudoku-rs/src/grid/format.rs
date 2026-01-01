@@ -170,7 +170,12 @@ impl GridFormatEnum {
                 ]
             } else {
                 vec![
+                    // Contains header
+                    BinaryCandidatesLineV2.into(),
+                    // Comma delimited
                     BinaryCandidatesLineV0.into(),
+                    // Both formats can be confused with each other.
+                    // Try `ValuesLine` first, since it produces more predictable results.
                     ValuesLine.into(),
                     BinaryCandidatesLineV1.into(),
                 ]

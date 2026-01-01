@@ -1,4 +1,5 @@
 use crate::base::consts::*;
+use crate::base::BaseEnum;
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
 use crate::cell::{Candidates, Cell};
@@ -56,7 +57,7 @@ impl GridFormat for BinaryCandidatesLineV1 {
                 bits += 1;
             }
             let base32string = format!("{}", radix_32(bits));
-            let width = Base::ENUM.binary_fixed_candidates_line_cell_chars();
+            let width = cell_char_count(Base::ENUM);
             let _ = write!(output, "{base32string:0>width$}");
             output
         })
@@ -66,7 +67,7 @@ impl GridFormat for BinaryCandidatesLineV1 {
         fn parse_base<Base: SudokuBase>(input: &str) -> Result<Vec<DynamicCell>> {
             input
                 .as_bytes()
-                .chunks(Base::ENUM.binary_fixed_candidates_line_cell_chars())
+                .chunks(cell_char_count(Base::ENUM))
                 .map(|cell_bytes_chunk| -> Result<DynamicCell> {
                     let mut bits = u32::from_str_radix(std::str::from_utf8(cell_bytes_chunk)?, 32)?;
 
@@ -83,13 +84,13 @@ impl GridFormat for BinaryCandidatesLineV1 {
         }
 
         const BASE_2_CHAR_COUNT: usize =
-            (Base2::CELL_COUNT as usize) * Base2::ENUM.binary_fixed_candidates_line_cell_chars();
+            (Base2::CELL_COUNT as usize) * cell_char_count(Base2::ENUM);
         const BASE_3_CHAR_COUNT: usize =
-            (Base3::CELL_COUNT as usize) * Base3::ENUM.binary_fixed_candidates_line_cell_chars();
+            (Base3::CELL_COUNT as usize) * cell_char_count(Base3::ENUM);
         const BASE_4_CHAR_COUNT: usize =
-            (Base4::CELL_COUNT as usize) * Base4::ENUM.binary_fixed_candidates_line_cell_chars();
+            (Base4::CELL_COUNT as usize) * cell_char_count(Base4::ENUM);
         const BASE_5_CHAR_COUNT: usize =
-            (Base5::CELL_COUNT as usize) * Base5::ENUM.binary_fixed_candidates_line_cell_chars();
+            (Base5::CELL_COUNT as usize) * cell_char_count(Base5::ENUM);
 
         let dynamic_cells = match input.chars().count() {
             BASE_2_CHAR_COUNT => parse_base::<Base2>(input),
@@ -99,6 +100,15 @@ impl GridFormat for BinaryCandidatesLineV1 {
             unexpected_char_count => bail!("Unexpected char count: {unexpected_char_count}"),
         }?;
         dynamic_cells.try_into()
+    }
+}
+
+const fn cell_char_count(base: BaseEnum) -> usize {
+    match base {
+        BaseEnum::Base2 => 1,
+        BaseEnum::Base3 => 2,
+        BaseEnum::Base4 => 4,
+        BaseEnum::Base5 => 6,
     }
 }
 

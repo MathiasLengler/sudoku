@@ -25,7 +25,7 @@ use anyhow::Context;
 use std::fmt::Display;
 use std::fmt::Write;
 
-const EXPECTED_HEADER_LENGTH: usize = 3;
+const HEADER_LENGTH: usize = 3;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct BinaryCandidatesLineV2;
@@ -45,7 +45,7 @@ impl GridFormat for BinaryCandidatesLineV2 {
             let integer = cell_to_integer(cell);
 
             let serialized_integer = format!("{}", radix_36(integer));
-            let width = Base::ENUM.binary_fixed_candidates_line_cell_chars();
+            let width = cell_char_count(Base::ENUM);
             let _ = write!(output, "{serialized_integer:0>width$}");
             output
         });
@@ -61,7 +61,7 @@ impl GridFormat for BinaryCandidatesLineV2 {
         fn parse_base<Base: SudokuBase>(input: &str) -> Result<Vec<DynamicCell>> {
             input
                 .as_bytes()
-                .chunks(Base::ENUM.binary_fixed_candidates_line_cell_chars())
+                .chunks(cell_char_count(Base::ENUM))
                 .map(|cell_bytes_chunk| -> Result<DynamicCell> {
                     let integer = u32::from_str_radix(std::str::from_utf8(cell_bytes_chunk)?, 36)?;
 
@@ -69,7 +69,6 @@ impl GridFormat for BinaryCandidatesLineV2 {
                 })
                 .collect()
         }
-
         let header: HeaderWithPayload = input.try_into()?;
 
         let dynamic_cells = match_base_enum!(header.base, parse_base::<Base>(header.payload)?);
@@ -89,15 +88,12 @@ impl<'a> TryFrom<&'a str> for HeaderWithPayload<'a> {
     type Error = Error;
 
     fn try_from(input: &'a str) -> Result<Self> {
-        ensure!(
-            input.len() >= EXPECTED_HEADER_LENGTH,
-            "Input too short for header"
-        );
+        ensure!(input.len() >= HEADER_LENGTH, "Input too short for header");
         let (header, payload) = input
-            .split_at_checked(EXPECTED_HEADER_LENGTH)
+            .split_at_checked(HEADER_LENGTH)
             .with_context(|| anyhow!("Failed to split input at header length"))?;
         let chars_vec: Vec<_> = header.chars().take(3).collect();
-        let [puzzle_type_code, puzzle_size_code, encoding_version]: [char; EXPECTED_HEADER_LENGTH] =
+        let [puzzle_type_code, puzzle_size_code, encoding_version]: [char; HEADER_LENGTH] =
             chars_vec.try_into().map_err(|chars_vec: Vec<char>| {
                 anyhow!(
                     "Header length must be 3 characters, instead got {}",
@@ -138,6 +134,15 @@ impl Display for HeaderWithPayload<'_> {
             BaseEnum::Base5 => 'P',
         };
         write!(f, "S{size_code}B{payload}")
+    }
+}
+
+const fn cell_char_count(base: BaseEnum) -> usize {
+    match base {
+        BaseEnum::Base2 => 1,
+        BaseEnum::Base3 => 2,
+        BaseEnum::Base4 => 4,
+        BaseEnum::Base5 => 5,
     }
 }
 
@@ -218,6 +223,19 @@ mod tests {
         base::SudokuBase,
         test_util::{test_all_bases, test_max_base4},
     };
+
+    mod cell_char_count {
+        use super::*;
+        use radix_fmt::radix_36;
+
+        test_all_bases!({
+            // https://blueant1.github.io/puzzle-coding/documentation/puzzlecoding/fieldcoding
+            let max_integer = Offsets::new::<Base>().max_value;
+            let serialized = format!("{}", radix_36(max_integer));
+            let expected_char_count = cell_char_count(Base::ENUM);
+            assert_eq!(serialized.chars().count(), expected_char_count,);
+        });
+    }
 
     mod offsets {
         use super::*;
