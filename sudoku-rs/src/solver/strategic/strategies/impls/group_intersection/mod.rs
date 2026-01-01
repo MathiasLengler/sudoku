@@ -254,9 +254,9 @@ impl<Base: SudokuBase> GroupCandidateIndexes<Base> {
 
 #[cfg(test)]
 mod tests {
-    use crate::base::consts::*;
-
     use super::*;
+    use crate::base::consts::*;
+    use indoc::indoc;
 
     fn expected_deduction<Base: SudokuBase>(
         candidate: u8,
@@ -283,25 +283,27 @@ mod tests {
 
             #[test]
             fn test() {
-                let grid: Grid<Base2> = "╔═══════════╦═══════════╗
-║ 1   │     ║     │ 1   ║
-║     │  2  ║  3  │     ║
-║   4 │     ║     │   4 ║
-║─────┼─────║─────┼─────║
-║     │ 1   ║ 1 2 │ 1   ║
-║  3  │     ║     │     ║
-║     │   4 ║     │   4 ║
-╠═══════════╬═══════════╣
-║ 1   │ 1   ║     │     ║
-║     │     ║  4  │  2  ║
-║     │ 3   ║     │     ║
-║─────┼─────║─────┼─────║
-║ 1 2 │ 1   ║ 1   │ 1   ║
-║     │     ║     │     ║
-║   4 │ 3 4 ║     │ 3   ║
-╚═══════════╩═══════════╝"
-                    .parse()
-                    .unwrap();
+                let grid: Grid<Base2> = indoc! {"
+                    ╔═══════════╦═══════════╗
+                    ║ 1   │     ║     │ 1   ║
+                    ║     │  2  ║  3  │     ║
+                    ║   4 │     ║     │   4 ║
+                    ║─────┼─────║─────┼─────║
+                    ║     │ 1   ║ 1 2 │ 1   ║
+                    ║  3  │     ║     │     ║
+                    ║     │   4 ║     │   4 ║
+                    ╠═══════════╬═══════════╣
+                    ║ 1   │ 1   ║     │     ║
+                    ║     │     ║  4  │  2  ║
+                    ║     │ 3   ║     │     ║
+                    ║─────┼─────║─────┼─────║
+                    ║ 1 2 │ 1   ║ 1   │ 1   ║
+                    ║     │     ║     │     ║
+                    ║   4 │ 3 4 ║     │ 3   ║
+                    ╚═══════════╩═══════════╝"
+                }
+                .parse()
+                .unwrap();
 
                 let expected_deduction_block_to_row = Deduction::try_from_iters(
                     vec![
