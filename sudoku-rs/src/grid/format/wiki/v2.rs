@@ -3,10 +3,12 @@
 //  https://blueant1.github.io/puzzle-coding/documentation/puzzlecoding/encodingformats/
 //  => Implement as a new format
 
+use crate::base::BaseEnum;
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
 use crate::cell::CellState;
 use crate::cell::{Candidates, Cell};
+use crate::error::Error;
 use crate::error::Result;
 use crate::grid::dynamic::DynamicGrid;
 use crate::grid::format::GridFormat;
@@ -15,9 +17,15 @@ use crate::grid::format::GridFormatDetectAndParseCapability;
 use crate::grid::format::GridFormatPreservesCellCandidates;
 use crate::grid::format::GridFormatPreservesCellValue;
 use crate::grid::Grid;
+use crate::match_base_enum;
+use anyhow::anyhow;
 use anyhow::bail;
 use anyhow::ensure;
+use anyhow::Context;
+use std::fmt::Display;
 use std::fmt::Write;
+
+const EXPECTED_HEADER_LENGTH: usize = 3;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct BinaryCandidatesLineV2;
@@ -31,31 +39,105 @@ impl GridFormat for BinaryCandidatesLineV2 {
         }
     }
     fn render<Base: SudokuBase>(self, grid: &Grid<Base>) -> String {
-        todo!();
-        // use radix_fmt::radix_36;
+        use radix_fmt::radix_36;
 
-        // grid.all_cells().fold(String::new(), |mut output, cell| {
-        //     let cell_output = match cell.state() {
-        //         CellState::Value(value) => u32::from(value.get()),
-        //         CellState::FixedValue(value) => u32::from(value.get()) + u32::from(Base::MAX_VALUE),
-        //         CellState::Candidates(candidates) => todo!(),
-        //     };
+        let payload = grid.all_cells().fold(String::new(), |mut output, cell| {
+            let integer = cell_to_integer(cell);
 
-        //     let mut bits: u32 = candidates.integral().into();
-        //     // Make space for fixed value bit
-        //     bits <<= 1;
-        //     if cell.has_fixed_value() {
-        //         bits += 1;
-        //     }
-        //     let base32string = format!("{}", radix_32(bits));
-        //     let width = Base::BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS;
-        //     let _ = write!(output, "{base32string:0>width$}");
-        //     output
-        // })
+            let serialized_integer = format!("{}", radix_36(integer));
+            let width = Base::BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS;
+            let _ = write!(output, "{serialized_integer:0>width$}");
+            output
+        });
+
+        HeaderWithPayload {
+            base: Base::ENUM,
+            payload: &payload,
+        }
+        .to_string()
     }
 
     fn parse(self, input: &str) -> Result<DynamicGrid> {
-        todo!()
+        fn parse_base<Base: SudokuBase>(input: &str) -> Result<Vec<DynamicCell>> {
+            input
+                .as_bytes()
+                .chunks(Base::BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS)
+                .map(|cell_bytes_chunk| -> Result<DynamicCell> {
+                    let integer = u32::from_str_radix(std::str::from_utf8(cell_bytes_chunk)?, 36)?;
+
+                    Ok(integer_to_cell::<Base>(integer)?.into())
+                })
+                .collect()
+        }
+
+        let header: HeaderWithPayload = input.try_into()?;
+
+        let dynamic_cells = match_base_enum!(header.base, parse_base::<Base>(header.payload)?);
+
+        dynamic_cells.try_into()
+    }
+}
+
+// Format header: https://blueant1.github.io/puzzle-coding/documentation/puzzlecoding/encodingformats#Header
+#[derive(Debug)]
+struct HeaderWithPayload<'a> {
+    base: BaseEnum,
+    payload: &'a str,
+}
+
+impl<'a> TryFrom<&'a str> for HeaderWithPayload<'a> {
+    type Error = Error;
+
+    fn try_from(input: &'a str) -> Result<Self> {
+        ensure!(
+            input.len() >= EXPECTED_HEADER_LENGTH,
+            "Input too short for header"
+        );
+        let (header, payload) = input
+            .split_at_checked(EXPECTED_HEADER_LENGTH)
+            .with_context(|| anyhow!("Failed to split input at header length"))?;
+        let chars_vec: Vec<_> = header.chars().take(3).collect();
+        let [puzzle_type_code, puzzle_size_code, encoding_version]: [char; EXPECTED_HEADER_LENGTH] =
+            chars_vec.try_into().map_err(|chars_vec: Vec<char>| {
+                anyhow!(
+                    "Header length must be 3 characters, instead got {}",
+                    chars_vec.len()
+                )
+            })?;
+        ensure!(
+            puzzle_type_code == 'S',
+            "Unexpected puzzle type code: {puzzle_type_code}"
+        );
+        ensure!(
+            encoding_version == 'B',
+            "Unexpected encoding version: {encoding_version}"
+        );
+
+        Ok(Self {
+            base: match puzzle_size_code {
+                '4' => BaseEnum::Base2,
+                '9' => BaseEnum::Base3,
+                'G' => BaseEnum::Base4,
+                'P' => BaseEnum::Base5,
+                unexpected_size_code => {
+                    bail!("Unexpected puzzle size code: {unexpected_size_code}")
+                }
+            },
+            payload,
+        })
+    }
+}
+
+impl Display for HeaderWithPayload<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let Self { base, payload } = self;
+        let size_code = match base {
+            BaseEnum::Base2 => '4',
+            BaseEnum::Base3 => '9',
+            BaseEnum::Base4 => 'G',
+            BaseEnum::Base5 => 'P',
+        };
+        write!(f, "S{size_code}B{payload}")
     }
 }
 
@@ -84,7 +166,7 @@ impl Offsets {
 fn cell_to_integer<Base: SudokuBase>(cell: &Cell<Base>) -> u32 {
     let offsets = const { Offsets::new::<Base>() };
 
-    match cell.state() {
+    let integer = match cell.state() {
         CellState::FixedValue(value) => u32::from(value.get()),
         CellState::Value(value) => u32::from(value.get()) + offsets.solution,
         CellState::Candidates(candidates) => {
@@ -94,7 +176,13 @@ fn cell_to_integer<Base: SudokuBase>(cell: &Cell<Base>) -> u32 {
                 Into::<u32>::into(candidates.integral()) + offsets.candidates
             }
         }
-    }
+    };
+    debug_assert!(
+        integer <= offsets.max_value,
+        "Cell integer value {integer} exceeds maximum value {}",
+        offsets.max_value
+    );
+    integer
 }
 
 // https://blueant1.github.io/puzzle-coding/documentation/puzzlecoding/cellcontenttransform#Decode
@@ -235,15 +323,13 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_parse() {
+    // Source: "Alternatively, with candidates (Version B)" https://www.sudokuwiki.org/Test_Strings
+    static RENDERED_TEST_GRID: &str = "S9B0702160a0906164i038u1f7z025u05aj5u8r9208870m2a04ar028z4m2q6g7m655u890685010i06050k03080d074m046g8i6t5u89128522032y081u0a3w0924cq1vbv071u02261222023m2q04030i3m0108";
+
+    fn get_test_grid() -> Grid<Base3> {
         use crate::cell::dynamic::{c, f, v};
 
-        let parsed_grid = BinaryCandidatesLineV2.parse(
-            // Source: "Alternatively, with candidates (Version B)" https://www.sudokuwiki.org/Test_Strings
-            "S9B0702160a0906164i038u1f7z025u05aj5u8r9208870m2a04ar028z4m2q6g7m655u890685010i06050k03080d074m046g8i6t5u89128522032y081u0a3w0924cq1vbv071u02261222023m2q04030i3m0108"
-        ).unwrap();
-        let expected_grid = Grid::<Base3>::try_from(vec![
+        Grid::<Base3>::try_from(vec![
             vec![
                 f(7),
                 f(2),
@@ -334,7 +420,20 @@ mod tests {
                 f(8),
             ],
         ])
-        .unwrap();
+        .unwrap()
+    }
+
+    #[test]
+    fn test_render() {
+        let test_grid = get_test_grid();
+        let rendered_grid = BinaryCandidatesLineV2.render(&test_grid);
+        assert_eq!(rendered_grid, RENDERED_TEST_GRID);
+    }
+
+    #[test]
+    fn test_parse() {
+        let parsed_grid = BinaryCandidatesLineV2.parse(RENDERED_TEST_GRID).unwrap();
+        let expected_grid = get_test_grid();
         assert_parsed_grid(&expected_grid, &parsed_grid).unwrap();
     }
 }
