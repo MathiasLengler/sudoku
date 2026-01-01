@@ -1,19 +1,15 @@
-use std::fmt::Debug;
-
-use enum_dispatch::enum_dispatch;
-
 use crate::base::SudokuBase;
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::solver::strategic::deduction::Deductions;
+use enum_dispatch::enum_dispatch;
+use std::fmt::Debug;
 
 pub use impls::*;
-
 pub use strategy_enum::*;
 
-mod strategy_enum;
-
 mod impls;
+mod strategy_enum;
 
 pub type StrategyScore = u64;
 
@@ -22,6 +18,7 @@ pub trait Strategy: Debug + Copy + Clone + Eq + Sized {
     /// The name of the strategy.
     fn name(self) -> &'static str;
 
+    // TODO: compare current scores with: https://www.sudokuwiki.org/Grading_Puzzles
     /// The score/difficulty of the strategy.
     /// Higher scores are more difficult.
     fn score(self) -> StrategyScore;
