@@ -157,13 +157,13 @@ fn bench_solver_tdoku_group(solver_tdoku_group: &mut BenchmarkGroup<WallTime>) {
 
     let tdoku_datasets = vec![
         "puzzles0_kaggle",
-        "puzzles1_unbiased",
-        "puzzles2_17_clue",
-        "puzzles3_magictour_top1465",
-        "puzzles4_forum_hardest_1905",
-        "puzzles5_forum_hardest_1905_11+",
-        "puzzles6_forum_hardest_1106",
-        "puzzles7_serg_benchmark",
+        // "puzzles1_unbiased",
+        // "puzzles2_17_clue",
+        // "puzzles3_magictour_top1465",
+        // "puzzles4_forum_hardest_1905",
+        // "puzzles5_forum_hardest_1905_11+",
+        // "puzzles6_forum_hardest_1106",
+        // "puzzles7_serg_benchmark",
         // invalid puzzles with no solutions
         // "puzzles8_gen_puzzles",
     ];
