@@ -1,6 +1,15 @@
+use std::collections::BTreeMap;
+
+use itertools::izip;
+
 use crate::base::SudokuBase;
+use crate::cell::Candidates;
+use crate::cell::Value;
 use crate::error::Result;
+use crate::grid::group::CandidatesGroup;
 use crate::grid::Grid;
+use crate::position::Coordinate;
+use crate::position::Position;
 use crate::solver::strategic::deduction::Deductions;
 use crate::solver::strategic::strategies::Strategy;
 use crate::solver::strategic::strategies::StrategyScore;
@@ -74,7 +83,107 @@ impl Strategy for XWing {
         200
     }
 
-    fn execute<Base: SudokuBase>(self, _grid: &Grid<Base>) -> Result<Deductions<Base>> {
-        todo!("X-Wing strategy not yet implemented")
+    fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
+        let candidate_to_group_candidate_indexes = GroupCandidateIndexes::with_grid(grid);
+
+        Ok(
+            izip!(Value::<Base>::all(), candidate_to_group_candidate_indexes)
+                .flat_map(|(candidate, group_candidate_indexes)| {
+                    // row to column eliminations
+
+                    let locked_pairs: Vec<_> = group_candidate_indexes
+                        .rows
+                        .iter_enumerate()
+                        .filter(|(_, candidates)| candidates.count() == 2)
+                        .collect();
+
+                    let mut locked_pair_pattern_to_row_coordinates: BTreeMap<
+                        Candidates<_>,
+                        Vec<Coordinate<_>>,
+                    > = BTreeMap::new();
+
+                    for (row_coordinate, locked_pair_pattern) in locked_pairs {
+                        locked_pair_pattern_to_row_coordinates
+                            .entry(locked_pair_pattern)
+                            .and_modify(|row_coordinates| row_coordinates.push(row_coordinate))
+                            .or_insert(vec![row_coordinate]);
+                    }
+
+                    let x_wing_candidates: Vec<XWingPattern<Base>> =
+                        locked_pair_pattern_to_row_coordinates
+                            .into_iter()
+                            .filter_map(|(locked_pair_pattern, row_coordinates)| {
+                                    // 
+                                match row_coordinates.as_slice() {
+                                    [] => {
+                                        panic!(
+                                            "Expected at least one coordinate for pattern {locked_pair_pattern}",
+                                        )
+                                    },
+                                    [_] => None,
+                                    [first_row_coordinate, second_row_coordinate] => {
+                                        // X-Wing candidate found
+                                        Some(XWingPattern {
+                                            candidate,
+                                            row_coordinates: todo!(),
+                                            column_coordinates: todo!(),
+                                        })
+                                    },
+                                    conflicting_row_coordinates => {
+                                            // TODO: return an Error instead of panicking
+                                        panic!(
+                                            "Sudoku is unsolvable: conflicting row coordinates {conflicting_row_coordinates:?} for locked pair pattern {locked_pair_pattern}"
+                                        )
+                                    }
+                                }
+                            })
+                            .collect();
+
+                    vec![]
+                })
+                .collect(),
+        )
     }
+}
+
+/// For a single candidate, where in each group is this candidate set?
+#[derive(Debug, Clone, Default)]
+struct GroupCandidateIndexes<Base: SudokuBase> {
+    rows: CandidatesGroup<Base>,
+    columns: CandidatesGroup<Base>,
+}
+
+impl<Base: SudokuBase> GroupCandidateIndexes<Base> {
+    fn with_grid(grid: &Grid<Base>) -> Vec<Self> {
+        let mut candidate_to_group_candidate_indexes =
+            vec![GroupCandidateIndexes::<Base>::default(); usize::from(Base::SIDE_LENGTH)];
+
+        for pos in Position::<Base>::all() {
+            if let Some(candidates) = grid[pos].candidates() {
+                for candidate in candidates {
+                    let group_candidate_indexes =
+                        &mut candidate_to_group_candidate_indexes[usize::from(candidate.get() - 1)];
+
+                    let row_index = pos.to_column();
+                    group_candidate_indexes
+                        .rows
+                        .get_mut(pos.to_row())
+                        .insert(row_index);
+                    let column_index = pos.to_row();
+                    group_candidate_indexes
+                        .columns
+                        .get_mut(pos.to_column())
+                        .insert(column_index);
+                }
+            }
+        }
+        candidate_to_group_candidate_indexes
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct XWingPattern<Base: SudokuBase> {
+    candidate: Value<Base>,
+    row_coordinates: [Coordinate<Base>; 2],
+    column_coordinates: [Coordinate<Base>; 2],
 }
