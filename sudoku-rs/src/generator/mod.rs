@@ -746,7 +746,7 @@ mod tests {
 
             for (input, expected_output) in test_cases {
                 for seed in 0..10 {
-                    let gen = Generator::with_settings(GeneratorSettings {
+                    let generator = Generator::with_settings(GeneratorSettings {
                         prune: Some(PruningSettings {
                             order: input.order.clone(),
                             ..Default::default()
@@ -761,10 +761,12 @@ mod tests {
 
                     let mut rng = new_crate_rng_with_seed(Some(seed));
 
-                    let prune_settings = gen.settings.prune.as_ref().unwrap().clone();
-                    let pruning_positions =
-                        gen.pruning_positions(&prune_settings, &mut rng).unwrap();
-                    let non_pruning_positions = gen.non_pruning_positions(&prune_settings).unwrap();
+                    let prune_settings = generator.settings.prune.as_ref().unwrap().clone();
+                    let pruning_positions = generator
+                        .pruning_positions(&prune_settings, &mut rng)
+                        .unwrap();
+                    let non_pruning_positions =
+                        generator.non_pruning_positions(&prune_settings).unwrap();
 
                     assert!(pruning_positions.iter().all_unique());
                     assert!(non_pruning_positions.iter().all_unique());
@@ -935,10 +937,10 @@ mod tests {
 
         #[test]
         fn test_no_seed() {
-            let gen = Generator::<Base3>::default();
+            let generator = Generator::<Base3>::default();
 
-            let grid1 = gen.generate().unwrap();
-            let grid2 = gen.generate().unwrap();
+            let grid1 = generator.generate().unwrap();
+            let grid2 = generator.generate().unwrap();
 
             assert!(grid1.is_solved());
             assert!(grid2.is_solved());
