@@ -10,10 +10,10 @@ use strategies::{Strategy, StrategyScore};
 use crate::base::SudokuBase;
 use crate::error::{Error, Result};
 use crate::grid::Grid;
+use crate::solver::FallibleSolver;
 use crate::solver::backtracking::CandidatesFilter;
 use crate::solver::strategic::deduction::Deductions;
 use crate::solver::strategic::strategies::StrategyEnum;
-use crate::solver::FallibleSolver;
 
 pub mod deduction;
 pub mod strategies;

@@ -59,7 +59,7 @@ mod serialization {
     mod tests {
         use super::*;
         use crate::base::consts::*;
-        use serde_test::{assert_tokens, Token};
+        use serde_test::{Token, assert_tokens};
 
         #[test]
         fn test_ser_de_zero() {
@@ -656,13 +656,17 @@ mod tests {
                 range: impl RangeBounds<Value<Base>> + Clone + Debug,
             ) {
                 let candidates = Candidates::with_range(range.clone());
-                assert!(candidates
-                    .into_iter()
-                    .all(|candidate| range.contains(&candidate)));
+                assert!(
+                    candidates
+                        .into_iter()
+                        .all(|candidate| range.contains(&candidate))
+                );
                 let inverted_candidates = candidates.invert();
-                assert!(inverted_candidates
-                    .into_iter()
-                    .all(|candidate| !range.contains(&candidate)));
+                assert!(
+                    inverted_candidates
+                        .into_iter()
+                        .all(|candidate| !range.contains(&candidate))
+                );
             }
 
             fn all_bounds<Base: SudokuBase>() -> impl Iterator<Item = Bound<Value<Base>>> + Clone {

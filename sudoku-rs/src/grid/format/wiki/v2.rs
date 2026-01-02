@@ -1,22 +1,22 @@
 use crate::base::BaseEnum;
 use crate::base::SudokuBase;
-use crate::cell::dynamic::DynamicCell;
 use crate::cell::CellState;
+use crate::cell::dynamic::DynamicCell;
 use crate::cell::{Candidates, Cell};
 use crate::error::Error;
 use crate::error::Result;
+use crate::grid::Grid;
 use crate::grid::dynamic::DynamicGrid;
 use crate::grid::format::GridFormat;
 use crate::grid::format::GridFormatCapabilities;
 use crate::grid::format::GridFormatDetectAndParseCapability;
 use crate::grid::format::GridFormatPreservesCellCandidates;
 use crate::grid::format::GridFormatPreservesCellValue;
-use crate::grid::Grid;
 use crate::match_base_enum;
+use anyhow::Context;
 use anyhow::anyhow;
 use anyhow::bail;
 use anyhow::ensure;
-use anyhow::Context;
 use std::fmt::Display;
 use std::fmt::Write;
 
@@ -217,8 +217,8 @@ fn integer_to_cell<Base: SudokuBase>(input: u32) -> Result<Cell<Base>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::base::consts::*;
     use crate::base::BaseEnum;
+    use crate::base::consts::*;
     use crate::cell::Value;
     use crate::grid::format::test_util::assert_parsed_grid;
     use crate::{
@@ -299,9 +299,11 @@ mod tests {
             test_max_base4!({
                 use itertools::Itertools;
 
-                assert!((0..=Offsets::new::<Base>().max_value)
-                    .map(|integer| { integer_to_cell::<Base>(integer).unwrap() })
-                    .all_unique());
+                assert!(
+                    (0..=Offsets::new::<Base>().max_value)
+                        .map(|integer| { integer_to_cell::<Base>(integer).unwrap() })
+                        .all_unique()
+                );
 
                 integer_to_cell::<Base>(Offsets::new::<Base>().max_value + 1).unwrap_err();
             });

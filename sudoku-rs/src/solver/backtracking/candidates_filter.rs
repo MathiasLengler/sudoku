@@ -185,9 +185,11 @@ mod tests {
             assert!(filter.denied_candidates(pos).is_empty());
         }
 
-        assert!(CandidatesFilter::<Base2>::all_denied_candidates(&filter)
-            .next()
-            .is_none());
+        assert!(
+            CandidatesFilter::<Base2>::all_denied_candidates(&filter)
+                .next()
+                .is_none()
+        );
 
         let grid = base_2_candidates_coordinates();
         let filtered_grid = {

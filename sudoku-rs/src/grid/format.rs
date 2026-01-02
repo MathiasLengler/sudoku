@@ -1,8 +1,8 @@
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicCell;
 use crate::error::{Error, Result};
-use crate::grid::dynamic::DynamicGrid;
 use crate::grid::Grid;
+use crate::grid::dynamic::DynamicGrid;
 use anyhow::{bail, format_err};
 use enum_dispatch::enum_dispatch;
 use serde::de::Visitor;
@@ -411,7 +411,7 @@ mod tests {
 #[cfg(test)]
 mod test_util {
     use super::*;
-    use anyhow::{ensure, Context};
+    use anyhow::{Context, ensure};
 
     pub(crate) fn assert_parsed_grid<Base: SudokuBase>(
         expected_grid: &Grid<Base>,

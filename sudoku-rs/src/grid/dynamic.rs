@@ -1,7 +1,7 @@
 use anyhow::ensure;
 use serde::{Deserialize, Serialize};
 
-use crate::base::{match_base_enum, BaseEnum, SudokuBase};
+use crate::base::{BaseEnum, SudokuBase, match_base_enum};
 use crate::cell::dynamic::DynamicCell;
 use crate::error::{Error, Result};
 use crate::grid::Grid;
@@ -246,7 +246,7 @@ mod tests {
 
     #[test]
     fn test_serde_from_array() {
-        use serde_json::{from_value, json, Value};
+        use serde_json::{Value, from_value, json};
 
         let grid: DynamicGrid = from_value(Value::Array(vec![
             json!({ "kind": "candidates", "candidates": [] });

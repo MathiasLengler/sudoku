@@ -1,14 +1,14 @@
 use crate::base::SudokuBase;
-use crate::cell::dynamic::DynamicCell;
 use crate::cell::CellState;
+use crate::cell::dynamic::DynamicCell;
 use crate::error::Result;
+use crate::grid::Grid;
 use crate::grid::dynamic::DynamicGrid;
 use crate::grid::format::GridFormat;
 use crate::grid::format::GridFormatCapabilities;
 use crate::grid::format::GridFormatDetectAndParseCapability;
 use crate::grid::format::GridFormatPreservesCellCandidates;
 use crate::grid::format::GridFormatPreservesCellValue;
-use crate::grid::Grid;
 use itertools::Itertools;
 use tabled::builder::Builder;
 use tabled::settings::Style;

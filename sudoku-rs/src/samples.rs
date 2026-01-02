@@ -1,5 +1,5 @@
-use crate::base::consts::*;
 use crate::base::SudokuBase;
+use crate::base::consts::*;
 use crate::cell::Candidates;
 use crate::cell::Cell;
 use crate::error::Result;

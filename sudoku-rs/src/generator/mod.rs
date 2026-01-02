@@ -10,7 +10,7 @@ use crate::cell::Value;
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
-use crate::rng::{new_crate_rng_with_seed, CrateRng};
+use crate::rng::{CrateRng, new_crate_rng_with_seed};
 use crate::solver::backtracking::DisallowedCandidateAtPosition;
 use crate::solver::strategic::strategies::BruteForce;
 use crate::solver::{backtracking, introspective};
@@ -215,7 +215,10 @@ impl<Base: SudokuBase> Generator<Base> {
                 restored_positions.push(pruning_position);
 
                 let solution_value = solved_grid[pruning_position].clone();
-                debug!("Restoring pruning position #{}/{pruning_position_count}: {solution_value} at {pruning_position}", restored_positions.len());
+                debug!(
+                    "Restoring pruning position #{}/{pruning_position_count}: {solution_value} at {pruning_position}",
+                    restored_positions.len()
+                );
                 debug_assert!(solution_value.has_value());
                 near_minimal_grid[pruning_position] = solution_value;
             }
@@ -264,7 +267,9 @@ impl<Base: SudokuBase> Generator<Base> {
                 if self.settings.solution.is_some() {
                     bail!("'solution.values_grid' has no solution")
                 } else {
-                    panic!("Expected adding of pruning positions to eventually result in a unique solution")
+                    panic!(
+                        "Expected adding of pruning positions to eventually result in a unique solution"
+                    )
                 }
             };
 
@@ -377,7 +382,9 @@ impl<Base: SudokuBase> Generator<Base> {
 
     fn get_solution_values_grid(&self) -> Result<&Grid<Base>> {
         let Some(SolutionSettings { values_grid }) = &self.settings.solution else {
-            bail!("'PruningOrder::SolutionUnfixedValues' requires 'settings.solution.values_grid' to be defined")
+            bail!(
+                "'PruningOrder::SolutionUnfixedValues' requires 'settings.solution.values_grid' to be defined"
+            )
         };
         Ok(values_grid)
     }
@@ -474,7 +481,9 @@ impl<Base: SudokuBase> Generator<Base> {
 
             if Self::try_delete_cell_at_pos(&mut grid, pos, prune_settings).is_some() {
                 deleted_count += 1;
-                debug!("Position {pruning_position_index}/{pruning_position_count} deleted, totaling {deleted_count}/{distance_from_filled} deleted positions");
+                debug!(
+                    "Position {pruning_position_index}/{pruning_position_count} deleted, totaling {deleted_count}/{distance_from_filled} deleted positions"
+                );
             } else {
                 debug!(
                     "Position {pruning_position_index}/{pruning_position_count} is required for unique solution"
@@ -529,7 +538,9 @@ impl<Base: SudokuBase> Generator<Base> {
             }
         };
 
-        debug!("Pruning grid by trying to delete values at positions {remaining_pruning_positions:?} in grid:\n{grid}");
+        debug!(
+            "Pruning grid by trying to delete values at positions {remaining_pruning_positions:?} in grid:\n{grid}"
+        );
 
         let remaining_pruning_position_count = remaining_pruning_positions.len();
 
@@ -542,7 +553,9 @@ impl<Base: SudokuBase> Generator<Base> {
             if let Some(deleted_value) =
                 Self::try_delete_cell_at_pos(&mut grid, pos, prune_settings)
             {
-                debug!("Position {pruning_position_index}/{remaining_pruning_position_count} deleted, totaling {deleted_count} deleted positions");
+                debug!(
+                    "Position {pruning_position_index}/{remaining_pruning_position_count} deleted, totaling {deleted_count} deleted positions"
+                );
 
                 deleted.push((pos, deleted_value));
             } else {
@@ -562,7 +575,9 @@ impl<Base: SudokuBase> Generator<Base> {
         for (restore_i, (deleted_pos, deleted_value)) in
             (1..).zip(deleted.into_iter().rev().take(distance_from_minimal.into()))
         {
-            debug!("Restoring deleted value #{restore_i}/{distance_from_minimal}: {deleted_value} at {deleted_pos}");
+            debug!(
+                "Restoring deleted value #{restore_i}/{distance_from_minimal}: {deleted_value} at {deleted_pos}"
+            );
 
             grid.get_mut(deleted_pos).set_value(deleted_value);
         }
@@ -770,10 +785,12 @@ mod tests {
 
                     assert!(pruning_positions.iter().all_unique());
                     assert!(non_pruning_positions.iter().all_unique());
-                    assert!(pruning_positions
-                        .iter()
-                        .chain(&non_pruning_positions)
-                        .all_unique());
+                    assert!(
+                        pruning_positions
+                            .iter()
+                            .chain(&non_pruning_positions)
+                            .all_unique()
+                    );
 
                     assert_eq!(
                         pruning_positions.len() + non_pruning_positions.len(),
@@ -892,10 +909,11 @@ mod tests {
                 for i in 1..default_strategies.len() {
                     let strategies = default_strategies.clone().into_iter().take(i).collect_vec();
                     let grid = generate(target, strategies.clone());
-                    assert!(grid
-                        .is_solvable_with_strategies(strategies)
-                        .unwrap()
-                        .is_some());
+                    assert!(
+                        grid.is_solvable_with_strategies(strategies)
+                            .unwrap()
+                            .is_some()
+                    );
                 }
             }
         }

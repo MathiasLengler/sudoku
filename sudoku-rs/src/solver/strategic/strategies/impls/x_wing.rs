@@ -6,8 +6,8 @@ use crate::base::SudokuBase;
 use crate::cell::Candidates;
 use crate::cell::Value;
 use crate::error::Result;
-use crate::grid::group::CandidatesGroup;
 use crate::grid::Grid;
+use crate::grid::group::CandidatesGroup;
 use crate::position::Coordinate;
 use crate::position::Position;
 use crate::solver::strategic::deduction::Deductions;
@@ -113,7 +113,7 @@ impl Strategy for XWing {
                         locked_pair_pattern_to_row_coordinates
                             .into_iter()
                             .filter_map(|(locked_pair_pattern, row_coordinates)| {
-                                    // 
+                                        // 
                                 match row_coordinates.as_slice() {
                                     [] => {
                                         panic!(

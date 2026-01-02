@@ -2,12 +2,12 @@ use crate::{
     base::SudokuBase,
     error::Result,
     grid::{
+        Grid,
         dynamic::DynamicGrid,
         format::{
             GridFormat, GridFormatCapabilities, GridFormatDetectAndParseCapability,
             GridFormatPreservesCellCandidates, GridFormatPreservesCellValue,
         },
-        Grid,
     },
 };
 

@@ -5,18 +5,18 @@ use crate::position::Position;
 use crate::samples;
 use crate::unsafe_utils::get_unchecked;
 use consts::*;
+use num::PrimInt;
 use num::traits::{
     CheckedShl, CheckedShr, ConstOne, ConstZero, NumAssignOps, Unsigned, WrappingAdd, WrappingMul,
     WrappingNeg, WrappingShl, WrappingShr, WrappingSub,
 };
-use num::PrimInt;
 use std::fmt::{Binary, Debug, Display};
 use std::hash::Hash;
 use std::mem::MaybeUninit;
 use std::ops::{BitAndAssign, BitOrAssign, BitXorAssign, Shl};
 
-pub use enum_impl::match_base_enum;
 pub use enum_impl::BaseEnum;
+pub use enum_impl::match_base_enum;
 
 pub mod consts {
     // Aliases
@@ -75,8 +75,8 @@ mod cell_index_to_block_index {
         }
     }
 
-    const fn const_generate_cell_index_to_block_index<Base: SudokuBase, const CELL_COUNT: usize>(
-    ) -> [u8; CELL_COUNT] {
+    const fn const_generate_cell_index_to_block_index<Base: SudokuBase, const CELL_COUNT: usize>()
+    -> [u8; CELL_COUNT] {
         assert!(
             Base::CELL_COUNT as usize == CELL_COUNT,
             "Invalid CELL_COUNT for BASE"

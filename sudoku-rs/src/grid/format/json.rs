@@ -3,12 +3,12 @@ use crate::{
     cell::dynamic::DynamicCell,
     error::Result,
     grid::{
+        Grid,
         dynamic::DynamicGrid,
         format::{
             GridFormat, GridFormatCapabilities, GridFormatDetectAndParseCapability,
             GridFormatPreservesCellCandidates, GridFormatPreservesCellValue,
         },
-        Grid,
     },
 };
 

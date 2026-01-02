@@ -1,4 +1,4 @@
-use crate::base::{consts::*, BaseEnum};
+use crate::base::{BaseEnum, consts::*};
 use crate::cell::dynamic::DynamicCell;
 use crate::error::Result;
 use crate::grid::dynamic::DynamicGrid;

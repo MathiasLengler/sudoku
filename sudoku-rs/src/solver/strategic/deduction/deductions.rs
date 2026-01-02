@@ -1,4 +1,4 @@
-use std::collections::{btree_set, BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, btree_set};
 use std::fmt::{Display, Formatter};
 
 use crate::base::SudokuBase;

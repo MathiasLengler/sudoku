@@ -1,4 +1,4 @@
-use anyhow::{ensure, Context};
+use anyhow::{Context, ensure};
 use itertools::Itertools;
 use std::{fs::read_dir, path::Path, process::Command};
 use sudoku::error::{Error, Result};

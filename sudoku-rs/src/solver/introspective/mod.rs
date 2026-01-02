@@ -3,7 +3,7 @@ use crate::cell::CandidatesAscIter;
 use crate::grid::Grid;
 use crate::solver::backtracking::CandidatesFilter;
 use crate::solver::sat;
-use crate::solver::{backtracking, InfallibleSolver};
+use crate::solver::{InfallibleSolver, backtracking};
 
 #[derive(Debug, Default)]
 enum SolverImpl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, Filter: CandidatesFilter<Base>> {

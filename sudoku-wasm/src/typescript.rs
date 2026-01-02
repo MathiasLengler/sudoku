@@ -9,19 +9,19 @@ use sudoku::{
     cell::dynamic::{DynamicCandidates, DynamicCell, DynamicValue},
     error::Error as SudokuError,
     generator::{
-        multi_shot::{DynamicMultiShotGeneratorSettings, MultiShotGeneratorProgress},
         DynamicGeneratorSettings, DynamicPruningOrder, DynamicPruningSettings,
         DynamicSolutionSettings, GeneratorProgress, PruningGroupBehaviour, PruningTarget,
+        multi_shot::{DynamicMultiShotGeneratorSettings, MultiShotGeneratorProgress},
     },
     grid::{dynamic::DynamicGrid, format::GridFormatEnum},
     position::DynamicPosition,
     solver::strategic::{
+        DynamicSolveStep,
         deduction::transport::{
             PositionedTransportAction, PositionedTransportReason, TransportAction,
             TransportDeduction, TransportDeductions, TransportReason,
         },
         strategies::StrategyEnum,
-        DynamicSolveStep,
     },
     transport::{TransportCell, TransportSudoku},
     world::{

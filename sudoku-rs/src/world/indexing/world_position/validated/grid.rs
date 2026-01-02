@@ -1,4 +1,4 @@
-use ndarray::{s, Dim, SliceInfo, SliceInfoElem};
+use ndarray::{Dim, SliceInfo, SliceInfoElem, s};
 
 use crate::{
     base::SudokuBase,

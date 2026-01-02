@@ -5,9 +5,9 @@ use indicatif::ProgressIterator;
 
 use sudoku::base::consts::Base3;
 use sudoku::error::Result;
-use sudoku::grid::deserialization::read_grids_from_file;
 use sudoku::grid::Grid;
-use sudoku::solver::{backtracking, FallibleSolver, InfallibleSolver};
+use sudoku::grid::deserialization::read_grids_from_file;
+use sudoku::solver::{FallibleSolver, InfallibleSolver, backtracking};
 use sudoku::solver::{sat, strategic};
 
 #[allow(dead_code)]

@@ -1,15 +1,15 @@
 use crate::base::SudokuBase;
-use crate::cell::dynamic::DynamicCell;
 use crate::cell::Candidates;
 use crate::cell::Cell;
 use crate::cell::CellState;
 use crate::cell::Value;
+use crate::cell::dynamic::DynamicCell;
 use crate::error::{Error, Result};
 use crate::grid::format::{CandidatesGridANSIStyled, GridFormat, GridFormatEnum};
 use crate::position::Coordinate;
 use crate::position::Position;
 use crate::solver::strategic::strategies::StrategyEnum;
-use crate::solver::{introspective, strategic, FallibleSolver};
+use crate::solver::{FallibleSolver, introspective, strategic};
 use crate::unsafe_utils::{get_unchecked, get_unchecked_mut};
 use anyhow::ensure;
 use ndarray::{Array2, ArrayView2, ArrayViewMut2};
@@ -700,8 +700,8 @@ impl<Base: SudokuBase, T> Grid<Base, T> {
         Position::all_blocks()
     }
 
-    pub fn all_group_positions(
-    ) -> impl Iterator<Item = impl Iterator<Item = Position<Base>> + Clone> {
+    pub fn all_group_positions()
+    -> impl Iterator<Item = impl Iterator<Item = Position<Base>> + Clone> {
         Position::all_groups()
     }
 }
@@ -814,7 +814,7 @@ impl<Base: SudokuBase> Display for Grid<Base> {
 #[cfg(test)]
 mod tests {
 
-    use itertools::{assert_equal, Itertools};
+    use itertools::{Itertools, assert_equal};
 
     use crate::base::consts::*;
     use crate::position::DynamicPosition;

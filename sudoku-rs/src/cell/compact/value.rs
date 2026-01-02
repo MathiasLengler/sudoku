@@ -202,7 +202,7 @@ mod tests {
     mod serde {
         use super::*;
         use crate::test_util::test_all_bases;
-        use serde_test::{assert_tokens, Token};
+        use serde_test::{Token, assert_tokens};
 
         mod default {
             use super::*;

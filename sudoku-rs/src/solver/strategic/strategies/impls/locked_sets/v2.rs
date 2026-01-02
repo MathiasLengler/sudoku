@@ -106,11 +106,15 @@ pub fn find_locked_set<Base: SudokuBase>(
 
             let locked_candidates_count = locked_candidates.count();
             if locked_candidates_count > set_size {
-                trace!("Not a valid locked set, locked candidates count {locked_candidates_count} > set size {set_size_value}");
+                trace!(
+                    "Not a valid locked set, locked candidates count {locked_candidates_count} > set size {set_size_value}"
+                );
                 continue;
             }
 
-            trace!("Potential locked set, locked candidates count {locked_candidates_count} <= set size {set_size_value}");
+            trace!(
+                "Potential locked set, locked candidates count {locked_candidates_count} <= set size {set_size_value}"
+            );
 
             let outside_set_indexes = locked_set_indexes.invert();
 
@@ -147,7 +151,9 @@ pub fn find_locked_set<Base: SudokuBase>(
                 candidates_group = candidates_group.transpose();
             }
 
-            trace!("evaluated_locked_set_count_per_set_size: {evaluated_locked_set_count_per_set_size}");
+            trace!(
+                "evaluated_locked_set_count_per_set_size: {evaluated_locked_set_count_per_set_size}"
+            );
             return candidates_group;
         }
     }

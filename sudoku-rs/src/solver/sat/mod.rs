@@ -13,9 +13,9 @@ use crate::cell::{Cell, Value};
 use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::position::Position;
+use crate::solver::FallibleSolver;
 use crate::solver::backtracking::CandidatesFilter;
 use crate::solver::sat::cell_variable::CellVariable;
-use crate::solver::FallibleSolver;
 
 mod initialized_sat_solver {
     use once_cell::sync::Lazy;
@@ -448,14 +448,16 @@ mod tests {
         let solver = Solver::new_with_candidates_filter(&grid, &denylist);
 
         for solution in solver.clone() {
-            assert!(![1, 3].contains(
-                &solution
-                    .unwrap()
-                    .get(Position::top_left())
-                    .value()
-                    .unwrap()
-                    .get()
-            ));
+            assert!(
+                ![1, 3].contains(
+                    &solution
+                        .unwrap()
+                        .get(Position::top_left())
+                        .value()
+                        .unwrap()
+                        .get()
+                )
+            );
         }
 
         assert_eq!(solver.clone().into_iter().count(), 144);

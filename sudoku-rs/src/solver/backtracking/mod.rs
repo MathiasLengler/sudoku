@@ -129,11 +129,11 @@ mod builder {
     }
 
     impl<
-            Base: SudokuBase,
-            GridRef: AsRef<Grid<Base>>,
-            ICandidates: CandidatesIterator<Base>,
-            Filter: CandidatesFilter<Base>,
-        > SolverBuilder<Base, GridRef, ICandidates, Filter>
+        Base: SudokuBase,
+        GridRef: AsRef<Grid<Base>>,
+        ICandidates: CandidatesIterator<Base>,
+        Filter: CandidatesFilter<Base>,
+    > SolverBuilder<Base, GridRef, ICandidates, Filter>
     {
         pub fn build(self) -> Solver<Base, GridRef, ICandidates, Filter> {
             let SolverBuilder {
@@ -167,11 +167,11 @@ enum StepResult<Base: SudokuBase> {
 }
 
 impl<
-        Base: SudokuBase,
-        GridRef: AsRef<Grid<Base>>,
-        ICandidates: CandidatesIterator<Base>,
-        Filter: CandidatesFilter<Base>,
-    > Solver<Base, GridRef, ICandidates, Filter>
+    Base: SudokuBase,
+    GridRef: AsRef<Grid<Base>>,
+    ICandidates: CandidatesIterator<Base>,
+    Filter: CandidatesFilter<Base>,
+> Solver<Base, GridRef, ICandidates, Filter>
 {
     fn new_with(
         grid: GridRef,
@@ -338,11 +338,11 @@ impl<
 }
 
 impl<
-        Base: SudokuBase,
-        GridRef: AsRef<Grid<Base>>,
-        ICandidates: CandidatesIterator<Base>,
-        Filter: CandidatesFilter<Base>,
-    > InfallibleSolver<Base> for Solver<Base, GridRef, ICandidates, Filter>
+    Base: SudokuBase,
+    GridRef: AsRef<Grid<Base>>,
+    ICandidates: CandidatesIterator<Base>,
+    Filter: CandidatesFilter<Base>,
+> InfallibleSolver<Base> for Solver<Base, GridRef, ICandidates, Filter>
 {
     fn solve(&mut self) -> Option<Grid<Base>> {
         loop {
@@ -356,11 +356,11 @@ impl<
 }
 
 impl<
-        Base: SudokuBase,
-        GridRef: AsRef<Grid<Base>>,
-        ICandidates: CandidatesIterator<Base>,
-        Filter: CandidatesFilter<Base>,
-    > Iterator for Solver<Base, GridRef, ICandidates, Filter>
+    Base: SudokuBase,
+    GridRef: AsRef<Grid<Base>>,
+    ICandidates: CandidatesIterator<Base>,
+    Filter: CandidatesFilter<Base>,
+> Iterator for Solver<Base, GridRef, ICandidates, Filter>
 {
     type Item = Grid<Base>;
 
@@ -370,11 +370,11 @@ impl<
 }
 
 impl<
-        Base: SudokuBase,
-        GridRef: AsRef<Grid<Base>>,
-        ICandidates: CandidatesIterator<Base>,
-        Filter: CandidatesFilter<Base>,
-    > Display for Solver<Base, GridRef, ICandidates, Filter>
+    Base: SudokuBase,
+    GridRef: AsRef<Grid<Base>>,
+    ICandidates: CandidatesIterator<Base>,
+    Filter: CandidatesFilter<Base>,
+> Display for Solver<Base, GridRef, ICandidates, Filter>
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         use tabled::{Table, Tabled};
@@ -416,7 +416,10 @@ impl<
 
         let backtracking_stack_table = Table::new(backtracking_stack);
 
-        write!(f, "{backtracking_stack_table}\nbacktrack_count: {backtrack_count}, has_returned_pre_filled_grid_solution: {has_returned_pre_filled_grid_solution}")
+        write!(
+            f,
+            "{backtracking_stack_table}\nbacktrack_count: {backtrack_count}, has_returned_pre_filled_grid_solution: {has_returned_pre_filled_grid_solution}"
+        )
     }
 }
 
@@ -496,7 +499,7 @@ where
 
 #[cfg(feature = "parallel")]
 mod parallel {
-    use rayon::iter::{split, Split};
+    use rayon::iter::{Split, split};
     use rayon::prelude::*;
 
     use super::*;

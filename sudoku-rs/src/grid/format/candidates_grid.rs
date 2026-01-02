@@ -1,15 +1,15 @@
-use crate::base::consts::ALL_SIDE_LENGTHS;
 use crate::base::SudokuBase;
-use crate::cell::dynamic::{char_value_to_u8, DynamicCandidates, DynamicCell};
+use crate::base::consts::ALL_SIDE_LENGTHS;
+use crate::cell::dynamic::{DynamicCandidates, DynamicCell, char_value_to_u8};
 use crate::cell::{CellState, Value};
 use crate::error::Result;
+use crate::grid::Grid;
 use crate::grid::dynamic::DynamicGrid;
 use crate::grid::format::GridFormatCapabilities;
 use crate::grid::format::GridFormatPreservesCellCandidates;
 use crate::grid::format::GridFormatPreservesCellValue;
 use crate::grid::format::{GridFormat, GridFormatDetectAndParseCapability};
-use crate::grid::Grid;
-use anyhow::{bail, ensure, Context};
+use anyhow::{Context, bail, ensure};
 use itertools::Itertools;
 use num::Integer;
 use owo_colors::Style as OwoStyle;
@@ -180,7 +180,9 @@ impl GridFormat for CandidatesGridPlain {
                 }
                 if let Some(previous_line_char_count) = line_char_count {
                     if current_line_char_count != previous_line_char_count {
-                        bail!("Expected line char count {previous_line_char_count}, instead got: {current_line_char_count}")
+                        bail!(
+                            "Expected line char count {previous_line_char_count}, instead got: {current_line_char_count}"
+                        )
                     }
                 } else {
                     line_char_count = Some(current_line_char_count);

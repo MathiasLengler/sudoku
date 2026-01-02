@@ -1,4 +1,4 @@
-use super::{impls::*, Strategy};
+use super::{Strategy, impls::*};
 use std::fmt::Debug;
 use std::fmt::{self, Display};
 use std::str::FromStr;

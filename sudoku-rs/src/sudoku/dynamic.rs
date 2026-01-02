@@ -1,6 +1,6 @@
+use crate::base::BaseEnum;
 use crate::base::consts::*;
 use crate::base::match_base_enum;
-use crate::base::BaseEnum;
 use crate::cell::dynamic::DynamicCandidates;
 use crate::cell::dynamic::DynamicCell;
 use crate::cell::dynamic::DynamicValue;
@@ -8,15 +8,15 @@ use crate::error::{Error, Result};
 use crate::generator::multi_shot::DynamicMultiShotGeneratorSettings;
 use crate::generator::multi_shot::MultiShotGeneratorProgress;
 use crate::generator::{DynamicGeneratorSettings, GeneratorProgress};
+use crate::grid::Grid;
 use crate::grid::dynamic::DynamicGrid;
 use crate::grid::format::GridFormatEnum;
-use crate::grid::Grid;
 use crate::position::DynamicPosition;
+use crate::solver::strategic::DynamicSolveStep;
 use crate::solver::strategic::deduction::transport::TransportDeductions;
 use crate::solver::strategic::strategies::StrategyEnum;
-use crate::solver::strategic::DynamicSolveStep;
-use crate::sudoku::settings::Settings as SudokuSettings;
 use crate::sudoku::Sudoku;
+use crate::sudoku::settings::Settings as SudokuSettings;
 use enum_dispatch::enum_dispatch;
 use serde::{Deserialize, Serialize};
 
@@ -30,13 +30,13 @@ pub trait DynamicSudokuActions {
     fn set_value(&mut self, pos: DynamicPosition, value: DynamicValue) -> Result<()>;
     fn set_or_toggle_value(&mut self, pos: DynamicPosition, value: DynamicValue) -> Result<()>;
     fn set_candidates(&mut self, pos: DynamicPosition, candidates: DynamicCandidates)
-        -> Result<()>;
+    -> Result<()>;
     fn toggle_candidate(&mut self, pos: DynamicPosition, candidate: DynamicValue) -> Result<()>;
     fn set_candidate(&mut self, pos: DynamicPosition, candidate: DynamicValue) -> Result<()>;
     fn delete_candidate(&mut self, pos: DynamicPosition, candidate: DynamicValue) -> Result<()>;
     fn delete(&mut self, pos: DynamicPosition) -> Result<()>;
     fn try_strategies(&mut self, strategies: Vec<StrategyEnum>)
-        -> Result<Option<DynamicSolveStep>>;
+    -> Result<Option<DynamicSolveStep>>;
     fn apply_deductions(&mut self, deductions: TransportDeductions) -> Result<()>;
 
     // actions that don't depend on base
