@@ -1,18 +1,16 @@
 #![allow(deprecated)]
 
-use rayon::prelude::*;
-use serde::{Deserialize, Serialize};
-use std::cmp;
-use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
-
-use anyhow::{ensure, Context};
-use log::*;
-
 use crate::base::SudokuBase;
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::solver::strategic::{self, strategies::StrategyEnum};
-use crate::solver::{backtracking, sat, FallibleSolver, InfallibleSolver};
+use crate::solver::{FallibleSolver, InfallibleSolver, backtracking, sat};
+use anyhow::{Context, ensure};
+use log::*;
+use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
+use std::cmp;
+use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 
 use super::{Generator, GeneratorSettings};
 
@@ -313,7 +311,7 @@ impl<Base: SudokuBase> MultiShotGenerator<Base> {
         Ok(Self { settings })
     }
 
-    fn iterations_iter(&self) -> impl Iterator<Item = IterationsCounter> {
+    fn iterations_iter(&self) -> impl Iterator<Item = IterationsCounter> + use<Base> {
         0..self.settings.iterations
     }
 
@@ -333,7 +331,9 @@ impl<Base: SudokuBase> MultiShotGenerator<Base> {
         })
     }
 
-    fn iterations_par_iter(&self) -> impl IndexedParallelIterator<Item = IterationsCounter> {
+    fn iterations_par_iter(
+        &self,
+    ) -> impl IndexedParallelIterator<Item = IterationsCounter> + use<Base> {
         (0..self.settings.iterations).into_par_iter()
     }
 
@@ -472,8 +472,8 @@ impl<Base: SudokuBase> MultiShotGenerator<Base> {
         &self,
         inspect_iteration_start: impl Fn(IterationsCounter) -> Result<()> + Sync + Send,
         inspect_evaluated_grids: impl Fn(IterationsCounter, &EvaluatedGrid<Base>) -> Result<()>
-            + Sync
-            + Send,
+        + Sync
+        + Send,
     ) -> Result<EvaluatedGrid<Base>> {
         let process_iteration = |iteration| -> Result<_> {
             inspect_iteration_start(iteration)?;
