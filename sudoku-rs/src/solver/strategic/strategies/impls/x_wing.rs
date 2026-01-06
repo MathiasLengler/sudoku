@@ -1,7 +1,3 @@
-use std::collections::BTreeMap;
-
-use itertools::izip;
-
 use crate::base::SudokuBase;
 use crate::cell::Candidates;
 use crate::cell::Value;
@@ -10,9 +6,14 @@ use crate::grid::Grid;
 use crate::grid::group::CandidatesGroup;
 use crate::position::Coordinate;
 use crate::position::Position;
+use crate::solver::strategic::deduction::Action;
+use crate::solver::strategic::deduction::Deduction;
 use crate::solver::strategic::deduction::Deductions;
+use crate::solver::strategic::deduction::Reason;
 use crate::solver::strategic::strategies::Strategy;
 use crate::solver::strategic::strategies::StrategyScore;
+use itertools::izip;
+use std::collections::BTreeMap;
 
 // TODO: implement: https://www.sudokuwiki.org/X_Wing_Strategy
 
@@ -90,6 +91,8 @@ impl Strategy for XWing {
             izip!(Value::<Base>::all(), candidate_to_group_candidate_indexes)
                 .flat_map(|(candidate, group_candidate_indexes)| {
                     // row to column eliminations
+                    // TODO: implement / abstract other axis direction
+                    //  dumb idea: transpose grid and execute again?
 
                     let locked_pairs: Vec<_> = group_candidate_indexes
                         .rows
@@ -99,50 +102,114 @@ impl Strategy for XWing {
 
                     let mut locked_pair_pattern_to_row_coordinates: BTreeMap<
                         Candidates<_>,
-                        Vec<Coordinate<_>>,
+                        Candidates<_>,
                     > = BTreeMap::new();
 
                     for (row_coordinate, locked_pair_pattern) in locked_pairs {
                         locked_pair_pattern_to_row_coordinates
                             .entry(locked_pair_pattern)
-                            .and_modify(|row_coordinates| row_coordinates.push(row_coordinate))
-                            .or_insert(vec![row_coordinate]);
+                            .and_modify(|row_coordinates| row_coordinates.set(row_coordinate, true))
+                            .or_insert(Candidates::with_single(row_coordinate.into()));
                     }
 
                     let x_wing_candidates: Vec<XWingPattern<Base>> =
                         locked_pair_pattern_to_row_coordinates
                             .into_iter()
                             .filter_map(|(locked_pair_pattern, row_coordinates)| {
-                                        // 
-                                match row_coordinates.as_slice() {
-                                    [] => {
-                                        panic!(
-                                            "Expected at least one coordinate for pattern {locked_pair_pattern}",
-                                        )
-                                    },
-                                    [_] => None,
-                                    [first_row_coordinate, second_row_coordinate] => {
-                                        // X-Wing candidate found
-                                        Some(XWingPattern {
-                                            candidate,
-                                            row_coordinates: todo!(),
-                                            column_coordinates: todo!(),
-                                        })
-                                    },
-                                    conflicting_row_coordinates => {
-                                            // TODO: return an Error instead of panicking
-                                        panic!(
-                                            "Sudoku is unsolvable: conflicting row coordinates {conflicting_row_coordinates:?} for locked pair pattern {locked_pair_pattern}"
-                                        )
-                                    }
-                                }
+                                find_x_wing_candidate(
+                                    locked_pair_pattern,
+                                    row_coordinates,
+                                    candidate,
+                                )
                             })
                             .collect();
 
-                    vec![]
+                    x_wing_candidates
+                        .into_iter()
+                        .filter_map(move |x_wing_candidate| {
+                            let candiates_positions_to_delete: Vec<_> = x_wing_candidate
+                                .column_coordinates
+                                .into_iter()
+                                .filter_map(|column_coordinate| {
+                                    let row_coordinates = group_candidate_indexes
+                                        .columns
+                                        .get(column_coordinate.into());
+
+                                    let row_coordinates_to_delete =
+                                        row_coordinates.without(x_wing_candidate.row_coordinates);
+
+                                    if row_coordinates_to_delete.is_empty() {
+                                        None
+                                    } else {
+                                        Some(row_coordinates_to_delete.into_iter().map(
+                                            move |row_coordinate_to_delete| {
+                                                Position::from((
+                                                    Coordinate::from(row_coordinate_to_delete),
+                                                    Coordinate::from(column_coordinate),
+                                                ))
+                                            },
+                                        ))
+                                    }
+                                })
+                                .flatten()
+                                .collect();
+
+                            if candiates_positions_to_delete.is_empty() {
+                                return None;
+                            }
+
+                            Some(
+                                Deduction::try_from_iters(
+                                    candiates_positions_to_delete.into_iter().map(
+                                        |candiates_position_to_delete| {
+                                            (
+                                                candiates_position_to_delete,
+                                                Action::delete_candidate(
+                                                    x_wing_candidate.candidate,
+                                                ),
+                                            )
+                                        },
+                                    ),
+                                    x_wing_candidate.to_positions().map(|pos| {
+                                        (pos, Reason::candidate(x_wing_candidate.candidate))
+                                    }),
+                                )
+                                .unwrap(),
+                            )
+                        })
                 })
                 .collect(),
         )
+    }
+}
+
+fn find_x_wing_candidate<Base: SudokuBase>(
+    locked_pair_pattern: Candidates<Base>,
+    row_coordinates: Candidates<Base>,
+    candidate: Value<Base>,
+) -> Option<XWingPattern<Base>> {
+    match row_coordinates.count() {
+        0 => {
+            panic!("Expected at least one coordinate for pattern {locked_pair_pattern}",)
+        }
+        1 => None,
+        2 => {
+            // X-Wing candidate found
+            assert!(
+                locked_pair_pattern.count() == 2,
+                "Expected locked pair pattern to have exactly two candidates set, got {locked_pair_pattern}"
+            );
+            Some(XWingPattern::new(
+                candidate,
+                row_coordinates,
+                locked_pair_pattern,
+            ))
+        }
+        _ => {
+            panic!(
+                "Sudoku is unsolvable: conflicting row coordinates {row_coordinates} for locked pair pattern {locked_pair_pattern}"
+            )
+        }
     }
 }
 
@@ -181,9 +248,95 @@ impl<Base: SudokuBase> GroupCandidateIndexes<Base> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// A detected X-Wing pattern in a sudoku grid.
+///
+/// It consists of a candidate in 4 cells, forming a rectangle. In one axis, the candidates of the X-Wing are the only ones remaining.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 struct XWingPattern<Base: SudokuBase> {
+    /// The candidate which forms the X-Wing.
     candidate: Value<Base>,
-    row_coordinates: [Coordinate<Base>; 2],
-    column_coordinates: [Coordinate<Base>; 2],
+    /// The two row coordinates of the X-Wing rectangle.
+    row_coordinates: Candidates<Base>,
+    /// The two column coordinates of the X-Wing rectangle.
+    column_coordinates: Candidates<Base>,
+}
+
+impl<Base: SudokuBase> XWingPattern<Base> {
+    fn new(
+        candidate: Value<Base>,
+        row_coordinates: Candidates<Base>,
+        column_coordinates: Candidates<Base>,
+    ) -> Self {
+        debug_assert_eq!(row_coordinates.count(), 2);
+        debug_assert_eq!(column_coordinates.count(), 2);
+        Self {
+            candidate,
+            row_coordinates,
+            column_coordinates,
+        }
+    }
+
+    fn to_positions(self) -> impl Iterator<Item = Position<Base>> {
+        self.row_coordinates
+            .into_iter()
+            .flat_map(move |row_coordinate| {
+                self.column_coordinates
+                    .into_iter()
+                    .map(move |column_coordinate| {
+                        Position::from((
+                            Coordinate::from(row_coordinate),
+                            Coordinate::from(column_coordinate),
+                        ))
+                    })
+            })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        base::consts::*, cell::Cell, solver::strategic::strategies::test_util::assert_deductions,
+    };
+    use indoc::indoc;
+
+    #[test]
+    fn test_synthetic_base_2_row_to_columns() {
+        let mut grid: Grid<Base2> = indoc! {"
+                0100
+                0101
+                0101
+                0001"
+        }
+        .parse()
+        .unwrap();
+        for pos in grid.all_value_positions() {
+            grid[pos] = Cell::with_candidates(grid[pos].to_candidates());
+        }
+
+        let deductions = XWing.execute(&grid).unwrap();
+
+        let candidate = Value::try_from(1).unwrap();
+        let action = Action::delete_candidate(candidate);
+        let reason = Reason::candidate(candidate);
+        let expected_deductions = std::iter::once(
+            Deduction::try_from_iters(
+                vec![
+                    //
+                    ((0, 1), action),
+                    ((3, 3), action),
+                ],
+                vec![
+                    ((1, 1), reason),
+                    ((1, 3), reason),
+                    ((2, 1), reason),
+                    ((2, 3), reason),
+                ],
+            )
+            .unwrap(),
+        )
+        .collect();
+
+        assert_deductions(&deductions, &expected_deductions);
+    }
 }
