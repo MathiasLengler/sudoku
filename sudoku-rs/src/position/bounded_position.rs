@@ -20,6 +20,11 @@ pub struct Position<Base: SudokuBase> {
     _base: PhantomData<Base>,
 }
 
+// TODO: impl FromString
+// supported formats:
+// - "r{row}c{column}": "r0c0", "r8c8", "r4c5"
+// - "{row letter}{column 1-based number}": "A1", "C9", "J5"
+//   at least for Base2/3, used by sudokuwiki
 impl<Base: SudokuBase> Display for Position<Base> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let dynamic_pos: DynamicPosition = (*self).into();
