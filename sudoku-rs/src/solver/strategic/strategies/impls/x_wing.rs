@@ -154,10 +154,10 @@ fn find_x_wings_axis<Base: SudokuBase>(
                     } else {
                         Some(axis_coordinates_to_delete.into_iter().map(
                             move |axis_coordinate_to_delete| {
-                                Position::from((
+                                axis.coordinates_to_pos(
                                     Coordinate::from(axis_coordinate_to_delete),
                                     Coordinate::from(other_axis_coordinate),
-                                ))
+                                )
                             },
                         ))
                     }
@@ -271,6 +271,17 @@ impl Axis {
         match self {
             Axis::Row => Axis::Column,
             Axis::Column => Axis::Row,
+        }
+    }
+
+    fn coordinates_to_pos<Base: SudokuBase>(
+        self,
+        axis_coordinate: Coordinate<Base>,
+        other_axis_coordinate: Coordinate<Base>,
+    ) -> Position<Base> {
+        match self {
+            Axis::Row => Position::from((axis_coordinate, other_axis_coordinate)),
+            Axis::Column => Position::from((other_axis_coordinate, axis_coordinate)),
         }
     }
 }
