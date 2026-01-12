@@ -164,3 +164,9 @@ impl<Base: SudokuBase> FromIterator<Deduction<Base>> for Deductions<Base> {
         }
     }
 }
+
+impl<Base: SudokuBase> From<Deduction<Base>> for Deductions<Base> {
+    fn from(value: Deduction<Base>) -> Self {
+        std::iter::once(value).collect()
+    }
+}

@@ -342,87 +342,169 @@ impl<Base: SudokuBase> XWingPattern<Base> {
 mod tests {
     use super::*;
     use crate::{
-        base::consts::*, cell::Cell, solver::strategic::strategies::test_util::assert_deductions,
+        base::consts::*,
+        cell::Cell,
+        solver::strategic::strategies::test_util::{
+            assert_deductions, assert_deductions_with_grid,
+        },
     };
     use indoc::indoc;
+    use std::fmt::Debug;
 
-    #[test]
-    fn test_synthetic_base_2_row_to_column() {
-        let mut grid: Grid<Base2> = indoc! {"
+    fn x_wing_deduction<Base: SudokuBase>(
+        candidate: impl TryInto<Value<Base>, Error: Debug>,
+        positions_to_delete: impl IntoIterator<Item = (u8, u8)>,
+        x_wing_positions: impl IntoIterator<Item = (u8, u8)>,
+    ) -> Deduction<Base> {
+        let candidate = candidate.try_into().unwrap();
+        Deduction::try_from_iters(
+            positions_to_delete
+                .into_iter()
+                .map(|pos| (pos, Action::delete_candidate(candidate))),
+            x_wing_positions
+                .into_iter()
+                .map(|pos| (pos, Reason::candidate(candidate))),
+        )
+        .unwrap()
+    }
+
+    mod synthetic {
+        use super::*;
+
+        #[test]
+        fn test_synthetic_base_2_row_to_column() {
+            let mut grid: Grid<Base2> = indoc! {"
             0100
             0101
             0101
             0001"
-        }
-        .parse()
-        .unwrap();
-        for pos in grid.all_value_positions() {
-            grid[pos] = Cell::with_candidates(grid[pos].to_candidates());
-        }
+            }
+            .parse()
+            .unwrap();
+            for pos in grid.all_value_positions() {
+                grid[pos] = Cell::with_candidates(grid[pos].to_candidates());
+            }
 
-        let deductions = XWing.execute(&grid).unwrap();
+            let deductions = XWing.execute(&grid).unwrap();
 
-        let candidate = Value::try_from(1).unwrap();
-        let action = Action::delete_candidate(candidate);
-        let reason = Reason::candidate(candidate);
-        let expected_deductions = std::iter::once(
-            Deduction::try_from_iters(
-                vec![
-                    //
-                    ((0, 1), action),
-                    ((3, 3), action),
-                ],
-                vec![
-                    ((1, 1), reason),
-                    ((1, 3), reason),
-                    ((2, 1), reason),
-                    ((2, 3), reason),
-                ],
+            let expected_deductions = x_wing_deduction(
+                1,
+                vec![(0, 1), (3, 3)],
+                vec![(1, 1), (1, 3), (2, 1), (2, 3)],
             )
-            .unwrap(),
-        )
-        .collect();
+            .into();
 
-        assert_deductions(&deductions, &expected_deductions);
-    }
+            assert_deductions(&deductions, &expected_deductions);
+        }
 
-    #[test]
-    fn test_synthetic_base_2_column_to_row() {
-        let mut grid: Grid<Base2> = indoc! {"
+        #[test]
+        fn test_base_2_column_to_row() {
+            let mut grid: Grid<Base2> = indoc! {"
             1000
             1101
             0111
             0010"
-        }
-        .parse()
-        .unwrap();
-        for pos in grid.all_value_positions() {
-            grid[pos] = Cell::with_candidates(grid[pos].to_candidates());
-        }
+            }
+            .parse()
+            .unwrap();
+            for pos in grid.all_value_positions() {
+                grid[pos] = Cell::with_candidates(grid[pos].to_candidates());
+            }
 
-        let deductions = XWing.execute(&grid).unwrap();
+            let deductions = XWing.execute(&grid).unwrap();
 
-        let candidate = Value::try_from(1).unwrap();
-        let action = Action::delete_candidate(candidate);
-        let reason = Reason::candidate(candidate);
-        let expected_deductions = std::iter::once(
-            Deduction::try_from_iters(
-                vec![
-                    //
-                    ((1, 0), action),
-                    ((2, 2), action),
-                ],
-                vec![
-                    ((1, 1), reason),
-                    ((1, 3), reason),
-                    ((2, 1), reason),
-                    ((2, 3), reason),
-                ],
+            let expected_deductions = x_wing_deduction(
+                1,
+                vec![(1, 0), (2, 2)],
+                vec![(1, 1), (1, 3), (2, 1), (2, 3)],
             )
-            .unwrap(),
-        )
-        .collect();
+            .into();
 
-        assert_deductions(&deductions, &expected_deductions);
+            assert_deductions(&deductions, &expected_deductions);
+        }
+    }
+
+    mod sudokuwiki_examples {
+        use super::*;
+
+        #[test]
+        fn test_example_1() {
+            // Reference: https://www.sudokuwiki.org/X_Wing_Strategy#:~:text=at%20a%20time.-,X%2DWing%20example%201,-%3A%20Load%20Example
+            let mut grid: Grid<Base3> = "S9B015y2e685w68050609040i022e0e0f0a2e085y050f0a5u090b042e2u2e0i06042c0810012q0f0dd0015w9i102e020a089e03050f9e0d5y042e05d0609i010f095y0e5y0f0a045y0206020166cy669id205".parse().unwrap();
+
+            let deductions = XWing.execute(&grid).unwrap();
+
+            let expected_deductions = x_wing_deduction(
+                7,
+                vec![
+                    // Left column
+                    (0, 3),
+                    (4, 3),
+                    (7, 3),
+                    (8, 3),
+                    // Right column
+                    (7, 7),
+                    (8, 7),
+                ],
+                vec![(1, 3), (1, 7), (5, 3), (5, 7)],
+            )
+            .into();
+
+            assert_deductions_with_grid(&deductions, &expected_deductions, &mut grid);
+        }
+
+        #[test]
+        fn test_example_2() {
+            // Reference: https://www.sudokuwiki.org/X_Wing_Strategy#:~:text=an%20example%20next.-,X%2DWing%20example%202,-%3A%20Load%20Example
+            let mut grid: Grid<Base3> = "S9B4n144p5i6q7a360i0407064a0i014a0o050o1a091a263e023608011q078w580556bk01bc2714290758094w0o4816088c0s030a8c060g02045i014y5iba07c652016u54096u48040509127a5s707i0a0o54".parse().unwrap();
+
+            let deductions = XWing.execute(&grid).unwrap();
+
+            let expected_deductions = x_wing_deduction(
+                2,
+                vec![
+                    // Top row
+                    (4, 1),
+                    (4, 2),
+                    (4, 6),
+                    (4, 8),
+                    // Bottom row
+                    (8, 3),
+                    (8, 8),
+                ],
+                vec![(4, 4), (4, 7), (8, 4), (8, 7)],
+            )
+            .into();
+
+            assert_deductions_with_grid(&deductions, &expected_deductions, &mut grid);
+        }
+
+        #[test]
+        fn test_example_3() {
+            // Reference: https://www.sudokuwiki.org/X_Wing_Strategy#:~:text=yellow%20highlighted%20numbers.-,X%2DWing%20example%203,-%3A%20Load%20Example
+            let mut grid: Grid<Base3> = "S9B4n0b4n5i6q7a360i0407064a0i014a0o050o1a091a263e023608011q077o580556bk01bc2712270758094u0o4616087o0s030a8c060g02045i014y5iba07c652016u54096u48040509127a5q707i0a0o52".parse().unwrap();
+
+            let deductions = XWing.execute(&grid).unwrap();
+
+            let expected_deductions = x_wing_deduction(
+                3,
+                vec![
+                    // Top row
+                    (4, 0),
+                    (4, 2),
+                    (4, 6),
+                    (4, 8),
+                    // Bottom row
+                    (8, 2),
+                    (8, 3),
+                    (8, 5),
+                    (8, 8),
+                ],
+                vec![(4, 1), (4, 7), (8, 1), (8, 7)],
+            )
+            .into();
+
+            assert_deductions_with_grid(&deductions, &expected_deductions, &mut grid);
+        }
     }
 }
