@@ -661,9 +661,9 @@ mod enum_impl {
 
 #[cfg(test)]
 mod tests {
-    use crate::position::DynamicPosition;
-
     use super::*;
+    use crate::position::DynamicPosition;
+    use std::iter::repeat_n;
 
     // Fork of https://docs.rs/type-equals/0.1.0/type_equals/
     trait TypeEquals {
@@ -769,14 +769,13 @@ mod tests {
     #[test]
     fn test_cell_index_to_block_index_generator() {
         fn generate_cell_index_to_block_index(base: u8) -> Vec<u8> {
-            use std::iter::repeat;
             let base_usize = usize::from(base);
             let block_row_cell_count = base_usize * base_usize * base_usize;
             (0..base)
                 .flat_map(|row| {
                     let starting_block_index = row * base;
                     (starting_block_index..(starting_block_index + base))
-                        .flat_map(|i| repeat(i).take(base_usize))
+                        .flat_map(|i| repeat_n(i, base_usize))
                         .cycle()
                         .take(block_row_cell_count)
                 })

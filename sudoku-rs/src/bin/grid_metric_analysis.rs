@@ -151,7 +151,7 @@ fn calculate_metric_stats(values: &[EvaluatedGridMetric]) -> MetricStats {
 
     let mut sorted_values = f64_values.clone();
     sorted_values.sort_by(|a, b| a.partial_cmp(b).unwrap());
-    let median = if sorted_values.len() % 2 == 0 {
+    let median = if sorted_values.len().is_multiple_of(2) {
         (sorted_values[sorted_values.len() / 2 - 1] + sorted_values[sorted_values.len() / 2]) / 2.0
     } else {
         sorted_values[sorted_values.len() / 2]
@@ -375,7 +375,7 @@ fn print_analysis_summary(analysis: &CorrelationAnalysis) {
     let high_correlations: Vec<_> = analysis
         .pearson_correlations
         .iter()
-        .filter(|(_, &corr)| corr.abs() > 0.8)
+        .filter(|&(_, corr)| corr.abs() > 0.8)
         .collect();
 
     if !high_correlations.is_empty() {

@@ -79,10 +79,10 @@ pub trait GridFormat: Debug + Copy + Clone + Eq + Sized + Into<GridFormatEnum> {
         if self.capabilities().preserves_cell_value == GridFormatPreservesCellValue::ValueOnly {
             // If the format does not preserve fixed state, assume all values are fixed.
             for dynamic_cell in &mut dynamic_grid {
-                if let DynamicCell::Value { fixed, value } = dynamic_cell {
-                    if value.0 != 0 {
-                        *fixed = true;
-                    }
+                if let DynamicCell::Value { fixed, value } = dynamic_cell
+                    && value.0 != 0
+                {
+                    *fixed = true;
                 }
             }
         }

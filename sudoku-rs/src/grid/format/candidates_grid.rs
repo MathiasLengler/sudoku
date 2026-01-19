@@ -414,7 +414,7 @@ fn render_candidates_grid<Base: SudokuBase>(
                                 .to_string();
                                 let value_table_builder: Builder =
                                     iter::once(iter::once(value_string_colored)).collect();
-                                let value_string_with_padding = value_table_builder
+                                value_table_builder
                                     .build()
                                     .with(if is_compact {
                                         Padding::zero()
@@ -427,8 +427,7 @@ fn render_candidates_grid<Base: SudokuBase>(
                                         Padding::new(padding, padding, padding, padding)
                                     })
                                     .with(Style::empty())
-                                    .to_string();
-                                value_string_with_padding
+                                    .to_string()
                             }
                             CellState::Candidates(candidates) => {
                                 if is_compact {

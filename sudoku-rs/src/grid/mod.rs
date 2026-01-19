@@ -544,9 +544,7 @@ impl<Base: SudokuBase, T> Grid<Base, T> {
         // Safety:
         // - `cell_index < Base::CELL_COUNT` is guaranteed by `Position`
         // - `cells.len() == Base::CELL_COUNT` is guaranteed by `Grid`
-        let cell = unsafe { get_unchecked(cells_slice, cell_index) };
-
-        cell
+        unsafe { get_unchecked(cells_slice, cell_index) }
     }
 
     pub fn get_mut(&mut self, pos: Position<Base>) -> &mut T {
@@ -561,9 +559,7 @@ impl<Base: SudokuBase, T> Grid<Base, T> {
         // Safety:
         // - `cell_index < Base::CELL_COUNT` is guaranteed by `Position`
         // - `cells.len() == Base::CELL_COUNT` is guaranteed by `Grid`
-        let cell = unsafe { get_unchecked_mut(cells_slice, cell_index) };
-
-        cell
+        unsafe { get_unchecked_mut(cells_slice, cell_index) }
     }
 }
 

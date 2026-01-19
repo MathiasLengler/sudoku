@@ -18,16 +18,18 @@ use crate::solver::backtracking::CandidatesFilter;
 use crate::solver::sat::cell_variable::CellVariable;
 
 mod initialized_sat_solver {
-    use once_cell::sync::Lazy;
-
-    use crate::base::consts::*;
-
     use super::*;
+    use crate::base::consts::*;
+    use std::sync::LazyLock;
 
-    pub(super) static SOLVER_BASE_2: Lazy<SatSolver> = Lazy::new(Solver::<Base2>::init_sat_solver);
-    pub(super) static SOLVER_BASE_3: Lazy<SatSolver> = Lazy::new(Solver::<Base3>::init_sat_solver);
-    pub(super) static SOLVER_BASE_4: Lazy<SatSolver> = Lazy::new(Solver::<Base4>::init_sat_solver);
-    pub(super) static SOLVER_BASE_5: Lazy<SatSolver> = Lazy::new(Solver::<Base5>::init_sat_solver);
+    pub(super) static SOLVER_BASE_2: LazyLock<SatSolver> =
+        LazyLock::new(Solver::<Base2>::init_sat_solver);
+    pub(super) static SOLVER_BASE_3: LazyLock<SatSolver> =
+        LazyLock::new(Solver::<Base3>::init_sat_solver);
+    pub(super) static SOLVER_BASE_4: LazyLock<SatSolver> =
+        LazyLock::new(Solver::<Base4>::init_sat_solver);
+    pub(super) static SOLVER_BASE_5: LazyLock<SatSolver> =
+        LazyLock::new(Solver::<Base5>::init_sat_solver);
 }
 
 type Clause = Vec<Lit>;

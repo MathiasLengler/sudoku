@@ -1,11 +1,10 @@
-use itertools::Itertools;
-use log::{debug, trace};
-
 use crate::{
     base::SudokuBase,
     cell::{Candidates, Value},
     grid::group::{CandidatesGroup, Group},
 };
+use itertools::Itertools;
+use log::{debug, trace};
 
 // TODO: change API: return deduction
 // => Deduction are currently hard-coded for Position.
@@ -1029,14 +1028,14 @@ pub mod test_utils {
 
 #[cfg(test)]
 mod tests {
-    use log::info;
-
     use super::test_utils::*;
     use super::*;
     use crate::base::consts::*;
     use crate::cell::Candidates;
     use crate::solver::strategic::strategies::LockedSets;
     use crate::test_util::init_test_logger;
+    use log::info;
+    use std::iter::repeat_n;
 
     fn assert_find_locked_set<Base: SudokuBase>(
         (base_test_case_name, input, expected_output): TestCase<Base>,
@@ -1108,8 +1107,7 @@ mod tests {
 
         let mut i = 0;
 
-        for input in std::iter::repeat(Candidates::<Base>::iter_all_lexicographical())
-            .take(4)
+        for input in repeat_n(Candidates::<Base>::iter_all_lexicographical(), 4)
             .multi_cartesian_product()
             .map(|candidates_group| CandidatesGroup::<Base>::try_from(candidates_group).unwrap())
         {
