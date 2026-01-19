@@ -7,13 +7,13 @@ pub use builder::SolverBuilder;
 pub use step::{DynamicSolveStep, SolveStep};
 use strategies::{Strategy, StrategyScore};
 
-use crate::base::SudokuBase;
 use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::solver::FallibleSolver;
 use crate::solver::backtracking::CandidatesFilter;
 use crate::solver::strategic::deduction::Deductions;
 use crate::solver::strategic::strategies::StrategyEnum;
+use crate::{base::SudokuBase, solver::strategic::strategies::STRATEGY_SCORE_FIXED_POINT_SCALE};
 
 pub mod deduction;
 pub mod strategies;
@@ -314,10 +314,8 @@ pub struct SolverPathAllIter<'a, Base: SudokuBase, GridMut: AsMut<Grid<Base>> + 
 impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>>
     SolverPathAllIter<'_, Base, GridMut>
 {
-    /// The average number of strategies available to make progress. Scaled by a factor of `1_000`.
+    /// The average number of strategies available to make progress. Scaled by a factor of `STRATEGY_SCORE_FIXED_POINT_SCALE`.
     pub fn average_options(mut self) -> Result<Option<StrategyScore>> {
-        const SCALE: StrategyScore = 1_000;
-
         let (step_count, total_options) =
             self.try_fold::<_, _, Result<_>>((0u64, 0u64), |(acc_count, acc_options), res| {
                 let possible_solve_steps = res?;
@@ -328,7 +326,7 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>>
             })?;
 
         Ok(self.is_solved.then_some(StrategyScore::try_from(
-            (total_options * SCALE) / step_count,
+            (total_options * STRATEGY_SCORE_FIXED_POINT_SCALE) / step_count,
         )?))
     }
 }

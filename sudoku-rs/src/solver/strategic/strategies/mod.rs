@@ -13,6 +13,8 @@ mod strategy_enum;
 
 pub type StrategyScore = u64;
 
+pub const STRATEGY_SCORE_FIXED_POINT_SCALE: StrategyScore = 1_000;
+
 #[enum_dispatch(StrategyEnum)]
 pub trait Strategy: Debug + Copy + Clone + Eq + Sized {
     /// The name of the strategy.
