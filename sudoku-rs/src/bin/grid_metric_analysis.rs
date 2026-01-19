@@ -87,9 +87,9 @@ fn analyze_single_grid<Base: SudokuBase>(
 ) -> Result<MetricResult> {
     let strategy_score = evaluate_metric_with_timing(GridMetric::StrategyScore, &grid, strategies)?;
     let strategy_application_count =
-        evaluate_metric_with_timing(GridMetric::StrategyApplicationCount, &grid, strategies)?;
+        evaluate_metric_with_timing(GridMetric::StrategyApplicationCountAny, &grid, strategies)?;
     let strategy_deduction_count =
-        evaluate_metric_with_timing(GridMetric::StrategyDeductionCount, &grid, strategies)?;
+        evaluate_metric_with_timing(GridMetric::StrategyDeductionCountAny, &grid, strategies)?;
     let strategy_average_options =
         evaluate_metric_with_timing(GridMetric::StrategyAverageOptions, &grid, strategies)?;
     let sat_step_count = evaluate_metric_with_timing(GridMetric::SatStepCount, &grid, strategies)?;

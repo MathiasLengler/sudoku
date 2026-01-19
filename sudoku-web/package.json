@@ -17,6 +17,7 @@
         "preview": "vite preview",
         "test": "vitest",
         "test:bench": "vitest bench",
+        "test:types": "vitest --project typecheck",
         "lint": "npm run lint:tsc && npm run lint:eslint && npm run lint:prettier",
         "lint:tsc": "tsgo -b",
         "lint:tsc:watch": "npm run lint:tsc -- --watch",

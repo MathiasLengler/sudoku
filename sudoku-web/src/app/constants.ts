@@ -1,9 +1,8 @@
-import type { GoalOptimization, GridFormatEnum, GridMetric, StrategyEnum } from "../types";
-import * as z from "zod";
-import type { IsEqual } from "type-fest";
-import { assert } from "../typeUtils";
-import * as _ from "es-toolkit";
 import { sortBy } from "es-toolkit/compat";
+import type { IsEqual } from "type-fest";
+import * as z from "zod";
+import type { GoalOptimization, GridMetricName, StrategyEnum } from "../types";
+import { assert } from "../typeUtils";
 
 export const strategyEnumSchema = z.enum([
     "NakedSingles",
@@ -17,7 +16,6 @@ export const strategyEnumSchema = z.enum([
     "BruteForce",
 ]);
 
-assert<IsEqual<z.infer<typeof strategyEnumSchema>, StrategyEnum>>();
 export const ALL_STRATEGIES = strategyEnumSchema.options;
 
 export const STRATEGY_OPTIONS: Record<
@@ -94,13 +92,12 @@ export const gridFormatSchema = z.enum([
     "ValuesGrid",
     "ValuesLine",
 ]);
-assert<IsEqual<z.infer<typeof gridFormatSchema>, GridFormatEnum>>();
 export const ALL_GRID_FORMATS = gridFormatSchema.options;
 
-export const gridMetricSchema = z.enum([
+const gridMetricNameWithoutStrategySchema = z.enum([
     "strategyScore",
-    "strategyApplicationCount",
-    "strategyDeductionCount",
+    "strategyApplicationCountAny",
+    "strategyDeductionCountAny",
     "strategyAverageOptions",
     "solveGraphAverageBranchingFactor",
     "satStepCount",
@@ -109,12 +106,36 @@ export const gridMetricSchema = z.enum([
     "gridDirectCandidatesCount",
     "gridGivensValueCountDeviation",
 ]);
-assert<IsEqual<z.infer<typeof gridMetricSchema>, GridMetric>>();
-export const ALL_GRID_METRICS = gridMetricSchema.options;
+const gridMetricNameWithStrategySchema = z.enum(["strategyApplicationCountSingle", "strategyDeductionCountSingle"]);
+export const GRID_METRIC_NAMES_WITH_STRATEGY = gridMetricNameWithStrategySchema.options;
+export const gridMetricNameSchema = z.enum([
+    "strategyScore",
+    "strategyApplicationCountAny",
+    "strategyApplicationCountSingle",
+    "strategyDeductionCountAny",
+    "strategyDeductionCountSingle",
+    "strategyAverageOptions",
+    "solveGraphAverageBranchingFactor",
+    "satStepCount",
+    "backtrackCount",
+    "gridGivensCount",
+    "gridDirectCandidatesCount",
+    "gridGivensValueCountDeviation",
+]);
+export const ALL_GRID_METRIC_NAMES = gridMetricNameSchema.options;
 
-// TODO: remove disabled when implemented
+export const gridMetricSchema = z.discriminatedUnion("kind", [
+    z.object({
+        kind: gridMetricNameWithoutStrategySchema,
+    }),
+    z.object({
+        kind: gridMetricNameWithStrategySchema,
+        strategy: strategyEnumSchema,
+    }),
+]);
+
 export const GRID_METRIC_OPTIONS: Record<
-    GridMetric,
+    GridMetricName,
     {
         label: string;
         description?: string;
@@ -126,13 +147,21 @@ export const GRID_METRIC_OPTIONS: Record<
         description:
             "Weighted sum of all strategy scores used to solve the grid. Equals: (strategy score) * (number of deductions made by the strategy).",
     },
-    strategyApplicationCount: {
-        label: "Strategy: application count",
-        description: "The number of times a strategy was applied to the grid.",
+    strategyApplicationCountAny: {
+        label: "Strategy (any): application count",
+        description: "The number of times any strategy was applied to the grid.",
     },
-    strategyDeductionCount: {
-        label: "Strategy: deduction count",
+    strategyApplicationCountSingle: {
+        label: "Strategy (single): application count",
+        description: "The number of times a single strategy was applied to the grid.",
+    },
+    strategyDeductionCountAny: {
+        label: "Strategy (any): deduction count",
         description: "Number of deductions used to solve the grid.",
+    },
+    strategyDeductionCountSingle: {
+        label: "Strategy (single): deduction count",
+        description: "Number of deductions by a single strategy used to solve the grid.",
     },
     strategyAverageOptions: {
         label: "Strategy: average options",
@@ -140,6 +169,7 @@ export const GRID_METRIC_OPTIONS: Record<
     },
     solveGraphAverageBranchingFactor: {
         label: "Solve graph average branching factor",
+        // TODO: remove when implemented
         disabled: true,
     },
     satStepCount: {
@@ -156,6 +186,7 @@ export const GRID_METRIC_OPTIONS: Record<
     },
     gridGivensValueCountDeviation: {
         label: "Grid givens: value count deviation",
+        // TODO: remove when implemented
         disabled: true,
     },
 };

@@ -38,22 +38,26 @@ static GENERATE_NO_GRIDS: &str = "at least one generation result";
 /// A metric used to evaluate the difficulty of a grid.
 #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
 #[derive(Debug, Copy, Clone, Default, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", tag = "kind")]
 pub enum GridMetric {
     // Based on `strategic::SolverPathIter` - a single solve path determined by the solver.
     /// Weighted sum of all strategy scores used to solve the grid. `Strategy::score() * Number of deductions made by the strategy`
     #[default]
     StrategyScore,
-    /// The number of times a strategy was applied to the grid.
-    StrategyApplicationCount,
+    /// The number of times any strategy was applied to the grid.
+    StrategyApplicationCountAny,
+    /// The number of times a single strategy was applied to the grid.
+    StrategyApplicationCountSingle { strategy: StrategyEnum },
     /// Number of deductions used to solve the grid.
-    StrategyDeductionCount,
+    StrategyDeductionCountAny,
+    /// Number of deductions by a single strategy used to solve the grid.
+    StrategyDeductionCountSingle { strategy: StrategyEnum },
     // FIXME: this produces counterintuitive results
     //  if there are only single candidates left, all strategies except for *Singles don't make progress.
     //  The intention was to measure "needle point" strategies, which block further progress until spotted,
     //  but this metric does not reflect that.
     //  We need to somehow weigh the available strategies by their difficulty.
-    /// The average number of strategies available to make progress. Scaled by a factor of `1_000`.
+    /// The average number of strategies available to make progress. Scaled by a factor of `STRATEGY_SCORE_FIXED_POINT_SCALE`.
     StrategyAverageOptions,
 
     // Based on the PoC bin `solve_graph` - a graph of all possible solve paths.
@@ -98,14 +102,20 @@ impl GridMetric {
                 .solve_path()
                 .total_score()?
                 .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?,
-            GridMetric::StrategyApplicationCount => get_strategic_solver(strategies)
+            GridMetric::StrategyApplicationCountAny => get_strategic_solver(strategies)
                 .solve_path()
                 .application_count()?
                 .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?,
-            GridMetric::StrategyDeductionCount => get_strategic_solver(strategies)
+            GridMetric::StrategyApplicationCountSingle { strategy } => {
+                todo!()
+            }
+            GridMetric::StrategyDeductionCountAny => get_strategic_solver(strategies)
                 .solve_path()
                 .deduction_count()?
                 .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?,
+            GridMetric::StrategyDeductionCountSingle { strategy } => {
+                todo!()
+            }
             GridMetric::StrategyAverageOptions => get_strategic_solver(strategies)
                 .solve_path_all()
                 .average_options()?
@@ -542,12 +552,12 @@ mod tests {
             #[case::strategy_score(0, GridMetric::StrategyScore, 8)]
             #[case::strategy_score(1, GridMetric::StrategyScore, 12)]
             #[case::strategy_score(2, GridMetric::StrategyScore, 12)]
-            #[case::strategy_application_count(0, GridMetric::StrategyApplicationCount, 1)]
-            #[case::strategy_application_count(1, GridMetric::StrategyApplicationCount, 4)]
-            #[case::strategy_application_count(2, GridMetric::StrategyApplicationCount, 2)]
-            #[case::strategy_deduction_count(0, GridMetric::StrategyDeductionCount, 8)]
-            #[case::strategy_deduction_count(1, GridMetric::StrategyDeductionCount, 12)]
-            #[case::strategy_deduction_count(2, GridMetric::StrategyDeductionCount, 12)]
+            #[case::strategy_application_count(0, GridMetric::StrategyApplicationCountAny, 1)]
+            #[case::strategy_application_count(1, GridMetric::StrategyApplicationCountAny, 4)]
+            #[case::strategy_application_count(2, GridMetric::StrategyApplicationCountAny, 2)]
+            #[case::strategy_deduction_count(0, GridMetric::StrategyDeductionCountAny, 8)]
+            #[case::strategy_deduction_count(1, GridMetric::StrategyDeductionCountAny, 12)]
+            #[case::strategy_deduction_count(2, GridMetric::StrategyDeductionCountAny, 12)]
             #[case::strategy_average_options(0, GridMetric::StrategyAverageOptions, 2000)]
             #[case::strategy_average_options(1, GridMetric::StrategyAverageOptions, 2750)]
             #[case::strategy_average_options(2, GridMetric::StrategyAverageOptions, 3000)]
@@ -589,8 +599,8 @@ mod tests {
 
             #[rstest]
             #[case::strategy_score(1, GridMetric::StrategyScore, 47)]
-            #[case::strategy_application_count(1, GridMetric::StrategyApplicationCount, 4)]
-            #[case::strategy_deduction_count(1, GridMetric::StrategyDeductionCount, 47)]
+            #[case::strategy_application_count(1, GridMetric::StrategyApplicationCountAny, 4)]
+            #[case::strategy_deduction_count(1, GridMetric::StrategyDeductionCountAny, 47)]
             #[case::strategy_average_options(1, GridMetric::StrategyAverageOptions, 3500)]
             #[case::sat_step_count(0, GridMetric::SatStepCount, 77)]
             #[case::sat_step_count(1, GridMetric::SatStepCount, 1)]

@@ -1,9 +1,8 @@
 import { atomWithStorage } from "jotai/utils";
 import * as z from "zod";
-
 import { goalOptimizationSchema, gridMetricSchema, selectedStrategiesSchema } from "../../constants";
-import { getZodLocalStorage } from "../localStorageEffect";
 import { baseSchema } from "../../utils/base";
+import { getZodLocalStorage } from "../localStorageEffect";
 
 export const SEED_MAX = Number.MAX_SAFE_INTEGER;
 
@@ -67,7 +66,7 @@ export const GENERATE_FORM_DEFAULT_VALUES = {
     seed: "0",
     multiShot: false,
     iterationsIndex: 8,
-    metric: "strategyScore",
+    metric: { kind: "strategyScore" },
     optimize: "maximize",
     parallel: true,
 } satisfies GenerateFormValues;

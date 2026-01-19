@@ -13,9 +13,15 @@ import type { DynamicGeneratorSettings, GeneratorProgress } from "../../../types
 import { useGenerate, useGenerateMultiShot, type TrackedMultiShotGeneratorProgress } from "../../actions/sudokuActions";
 import { Fieldset } from "../../components/Fieldset";
 import SelectStrategies from "../../components/formFragments/SelectStrategies";
+import SelectStrategy from "../../components/formFragments/SelectStrategy";
 import MyIconButton from "../../components/MyIconButton";
 import { ResetFormButton } from "../../components/ResetFormButton";
-import { ALL_GOAL_OPTIMIZATIONS, ALL_GRID_METRICS, GRID_METRIC_OPTIONS } from "../../constants";
+import {
+    ALL_GOAL_OPTIMIZATIONS,
+    ALL_GRID_METRIC_NAMES,
+    GRID_METRIC_NAMES_WITH_STRATEGY,
+    GRID_METRIC_OPTIONS,
+} from "../../constants";
 import {
     GENERATE_FORM_DEFAULT_VALUES,
     generateFormValuesSchema,
@@ -307,11 +313,11 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
                                     />
                                     <SelectElement
                                         control={control}
-                                        name="metric"
+                                        name="metric.kind"
                                         label="Metric"
                                         disabled={!multiShot}
-                                        helperText={GRID_METRIC_OPTIONS[metric]?.description}
-                                        options={ALL_GRID_METRICS.map((gridMetric) => {
+                                        helperText={GRID_METRIC_OPTIONS[metric.kind]?.description}
+                                        options={ALL_GRID_METRIC_NAMES.map((gridMetric) => {
                                             const option = GRID_METRIC_OPTIONS[gridMetric];
                                             return {
                                                 id: gridMetric,
@@ -320,6 +326,9 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
                                             };
                                         })}
                                     />
+                                    {(GRID_METRIC_NAMES_WITH_STRATEGY as string[]).includes(metric.kind) && (
+                                        <SelectStrategy control={control} name="metric.strategy" />
+                                    )}
                                     <SelectElement
                                         control={control}
                                         name="optimize"
