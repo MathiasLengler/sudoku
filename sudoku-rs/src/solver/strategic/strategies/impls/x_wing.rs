@@ -15,8 +15,6 @@ use crate::solver::strategic::strategies::StrategyScore;
 use itertools::izip;
 use std::collections::BTreeMap;
 
-// TODO: implement: https://www.sudokuwiki.org/X_Wing_Strategy
-
 /*
 Logic:
 

@@ -13,6 +13,7 @@ export const strategyEnumSchema = z.enum([
     "GroupIntersectionBlockToAxis",
     "GroupIntersectionAxisToBlock",
     "GroupIntersectionBoth",
+    "XWing",
     "BruteForce",
 ]);
 
@@ -62,6 +63,11 @@ export const STRATEGY_OPTIONS: Record<
         label: "Intersection Removal",
         description: "A combination of pointing pairs/triples and box line reduction.",
         link: "https://www.sudokuwiki.org/Intersection_Removal",
+    },
+    XWing: {
+        label: "X-Wing",
+        description: "A candidate appears in exactly two cells in two different rows and columns, forming a rectangle.",
+        link: "https://www.sudokuwiki.org/X_Wing_Strategy",
     },
     BruteForce: {
         label: "Brute Force",

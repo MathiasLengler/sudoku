@@ -29,6 +29,7 @@ pub enum StrategyEnum {
     GroupIntersectionBlockToAxis,
     GroupIntersectionAxisToBlock,
     GroupIntersectionBoth,
+    XWing,
     BruteForce,
 }
 
@@ -48,6 +49,7 @@ impl StrategyEnum {
             GroupIntersectionBlockToAxis.into(),
             GroupIntersectionAxisToBlock.into(),
             GroupIntersectionBoth.into(),
+            XWing.into(),
             BruteForce.into(),
         ]
     }
