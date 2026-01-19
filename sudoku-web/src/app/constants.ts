@@ -78,13 +78,15 @@ export const selectedStrategiesSchema = strategyEnumSchema
     .overwrite((strategies) => sortBy(strategies, (strategy) => strategyEnumSchema.options.indexOf(strategy)));
 
 export const gridFormatSchema = z.enum([
-    "CandidatesGridPlain",
-    "CandidatesGridCompact",
+    "BinaryCandidatesLineV0",
+    "BinaryCandidatesLineV1",
+    "BinaryCandidatesLineV2",
     "CandidatesGridANSIStyled",
-    "ValuesLine",
+    "CandidatesGridCompact",
+    "CandidatesGridPlain",
+    "Json",
     "ValuesGrid",
-    "BinaryCandidatesLine",
-    "BinaryFixedCandidatesLine",
+    "ValuesLine",
 ]);
 assert<IsEqual<z.infer<typeof gridFormatSchema>, GridFormatEnum>>();
 export const ALL_GRID_FORMATS = gridFormatSchema.options;

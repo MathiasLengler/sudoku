@@ -21,14 +21,10 @@ export function ShareMenu() {
                         label: "SudokuWiki",
                         icon: <OpenInNewIcon />,
                         onClick: async () => {
-                            const binaryFixedCandidatesLine = await exportSudokuString("BinaryFixedCandidatesLine");
-                            window.open(
-                                // Template string, since URLSearchParams encodes the reserved character ",".
-                                // sudokuwiki.org expects these characters to be unencoded.
-                                `https://www.sudokuwiki.org/sudoku.htm?bd=${binaryFixedCandidatesLine}`,
-                                "_blank",
-                                "noopener",
-                            );
+                            const bd = await exportSudokuString("BinaryCandidatesLineV2");
+                            const url = new URL("https://www.sudokuwiki.org/sudoku.htm");
+                            url.searchParams.set("bd", bd);
+                            window.open(url.toString(), "_blank", "noopener");
                         },
                     },
                     {
