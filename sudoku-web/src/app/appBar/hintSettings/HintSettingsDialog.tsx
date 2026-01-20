@@ -21,6 +21,16 @@ type HintSettingsDialogProps = {
     onClose: () => void;
 };
 
+// FIXME: error on submit:
+//  {
+//    "expected": "number",
+//    "code": "invalid_type",
+//    "path": [
+//      "loopDelayIndex"
+//    ],
+//    "message": "Invalid input"
+//  }
+// Probably disabled field issue again
 export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
     const [hintSettingsFormValues, setHintSettingsFormValues] = useAtom(hintSettingsState);
 
