@@ -16,24 +16,10 @@ use super::{Generator, GeneratorSettings};
 
 pub use dynamic_settings::*;
 
-// FIXME: Change to f64
-//  https://docs.rs/atomic_float/latest/atomic_float/struct.AtomicF64.html
-//  Disadvantages:
-//  - u64 => f64 try into not available
-//  - f64 does not implement Ord, only PartialOrd
 pub type EvaluatedGridMetric = u64;
 type AtomicEvaluatedGridMetric = AtomicU64;
 
 static GENERATE_NO_GRIDS: &str = "at least one generation result";
-
-// TODO: statistical analysis of metrics
-//  which metrics correlate?
-//  which metrics are redundant?
-//  which metrics are fast to compute?
-//  which metrics correlate with human difficulty ratings?
-// =>
-//  Generate and score a large number of grids
-//  Analyze the results
 
 /// A metric used to evaluate the difficulty of a grid.
 #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
@@ -104,17 +90,23 @@ impl GridMetric {
                 .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?,
             GridMetric::StrategyApplicationCountAny => get_strategic_solver(strategies)
                 .solve_path()
-                .application_count()?
+                .application_count_any()?
                 .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?,
             GridMetric::StrategyApplicationCountSingle { strategy } => {
-                todo!()
+                get_strategic_solver(strategies)
+                    .solve_path()
+                    .application_count_single(strategy)?
+                    .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?
             }
             GridMetric::StrategyDeductionCountAny => get_strategic_solver(strategies)
                 .solve_path()
-                .deduction_count()?
+                .deduction_count_any()?
                 .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?,
             GridMetric::StrategyDeductionCountSingle { strategy } => {
-                todo!()
+                get_strategic_solver(strategies)
+                    .solve_path()
+                    .deduction_count_single(strategy)?
+                    .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?
             }
             GridMetric::StrategyAverageOptions => get_strategic_solver(strategies)
                 .solve_path_all()
@@ -536,7 +528,7 @@ mod tests {
     use crate::{
         base::consts::*,
         generator::{Generator, PruningSettings},
-        solver::strategic::strategies::NakedSingles,
+        solver::strategic::strategies::*,
     };
 
     mod grid_metric {
@@ -552,12 +544,22 @@ mod tests {
             #[case::strategy_score(0, GridMetric::StrategyScore, 8)]
             #[case::strategy_score(1, GridMetric::StrategyScore, 12)]
             #[case::strategy_score(2, GridMetric::StrategyScore, 12)]
-            #[case::strategy_application_count(0, GridMetric::StrategyApplicationCountAny, 1)]
-            #[case::strategy_application_count(1, GridMetric::StrategyApplicationCountAny, 4)]
-            #[case::strategy_application_count(2, GridMetric::StrategyApplicationCountAny, 2)]
+            #[case::strategy_application_count_any(0, GridMetric::StrategyApplicationCountAny, 1)]
+            #[case::strategy_application_count_any(1, GridMetric::StrategyApplicationCountAny, 4)]
+            #[case::strategy_application_count_any(2, GridMetric::StrategyApplicationCountAny, 2)]
+            #[case::strategy_application_count_single_naked_singles(0, GridMetric::StrategyApplicationCountSingle {strategy: NakedSingles.into() }, 1)]
+            #[case::strategy_application_count_single_naked_singles(1, GridMetric::StrategyApplicationCountSingle {strategy: NakedSingles.into() }, 4)]
+            #[case::strategy_application_count_single_naked_singles(2, GridMetric::StrategyApplicationCountSingle {strategy: NakedSingles.into() }, 2)]
+            #[case::strategy_application_count_single_hidden_singles(0, GridMetric::StrategyApplicationCountSingle {strategy: HiddenSingles.into() }, 0)]
+            #[case::strategy_application_count_single_hidden_singles(1, GridMetric::StrategyApplicationCountSingle {strategy: HiddenSingles.into() }, 0)]
+            #[case::strategy_application_count_single_hidden_singles(2, GridMetric::StrategyApplicationCountSingle {strategy: HiddenSingles.into() }, 0)]
+            #[case::strategy_application_count_single_naked_pairs(0, GridMetric::StrategyApplicationCountSingle {strategy: NakedPairs.into() }, 0)]
+            #[case::strategy_application_count_single_naked_pairs(1, GridMetric::StrategyApplicationCountSingle {strategy: NakedPairs.into() }, 0)]
+            #[case::strategy_application_count_single_naked_pairs(2, GridMetric::StrategyApplicationCountSingle {strategy: NakedPairs.into() }, 0)]
             #[case::strategy_deduction_count(0, GridMetric::StrategyDeductionCountAny, 8)]
             #[case::strategy_deduction_count(1, GridMetric::StrategyDeductionCountAny, 12)]
             #[case::strategy_deduction_count(2, GridMetric::StrategyDeductionCountAny, 12)]
+            // TODO: StrategyDeductionCountSingle
             #[case::strategy_average_options(0, GridMetric::StrategyAverageOptions, 2000)]
             #[case::strategy_average_options(1, GridMetric::StrategyAverageOptions, 2750)]
             #[case::strategy_average_options(2, GridMetric::StrategyAverageOptions, 3000)]
@@ -599,9 +601,19 @@ mod tests {
 
             #[rstest]
             #[case::strategy_score(1, GridMetric::StrategyScore, 47)]
-            #[case::strategy_application_count(1, GridMetric::StrategyApplicationCountAny, 4)]
-            #[case::strategy_deduction_count(1, GridMetric::StrategyDeductionCountAny, 47)]
-            #[case::strategy_average_options(1, GridMetric::StrategyAverageOptions, 3500)]
+            #[case::strategy_application_count_any(1, GridMetric::StrategyApplicationCountAny, 4)]
+            #[case::strategy_application_count_single_naked_singles(1, GridMetric::StrategyApplicationCountSingle {strategy: NakedSingles.into() }, 4)]
+            #[case::strategy_application_count_single_hidden_singles(1, GridMetric::StrategyApplicationCountSingle {strategy: HiddenSingles.into() }, 0)]
+            #[case::strategy_application_count_single_naked_pairs(1, GridMetric::StrategyApplicationCountSingle {strategy: NakedPairs.into() }, 0)]
+            #[case::strategy_application_count_single_naked_singles(6, GridMetric::StrategyApplicationCountSingle {strategy: NakedSingles.into() }, 19)]
+            #[case::strategy_application_count_single_hidden_singles(6, GridMetric::StrategyApplicationCountSingle {strategy: HiddenSingles.into() }, 10)]
+            #[case::strategy_application_count_single_naked_pairs(6, GridMetric::StrategyApplicationCountSingle {strategy: NakedPairs.into() }, 1)]
+            #[case::strategy_application_count_single_locked_sets(6, GridMetric::StrategyApplicationCountSingle {strategy: LockedSets.into() }, 2)]
+            #[case::strategy_application_count_single_group_intersection_both(6, GridMetric::StrategyApplicationCountSingle {strategy: GroupIntersectionBoth.into() }, 2)]
+            #[case::strategy_application_count_single_x_wing(6, GridMetric::StrategyApplicationCountSingle {strategy: XWing.into() }, 0)]
+            #[case::strategy_deduction_count_any(1, GridMetric::StrategyDeductionCountAny, 47)]
+            // TODO: StrategyDeductionCountSingle
+            #[case::strategy_average_options(1, GridMetric::StrategyAverageOptions, 4000)]
             #[case::sat_step_count(0, GridMetric::SatStepCount, 77)]
             #[case::sat_step_count(1, GridMetric::SatStepCount, 1)]
             #[case::backtrack_count(0, GridMetric::BacktrackCount, 13357)]

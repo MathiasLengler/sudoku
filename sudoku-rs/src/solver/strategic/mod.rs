@@ -7,13 +7,16 @@ pub use builder::SolverBuilder;
 pub use step::{DynamicSolveStep, SolveStep};
 use strategies::{Strategy, StrategyScore};
 
-use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::solver::FallibleSolver;
 use crate::solver::backtracking::CandidatesFilter;
 use crate::solver::strategic::deduction::Deductions;
 use crate::solver::strategic::strategies::StrategyEnum;
 use crate::{base::SudokuBase, solver::strategic::strategies::STRATEGY_SCORE_FIXED_POINT_SCALE};
+use crate::{
+    error::{Error, Result},
+    solver::strategic::strategies::map::StrategyMap,
+};
 
 pub mod deduction;
 pub mod strategies;
@@ -136,7 +139,7 @@ mod builder {
 #[derive(Debug, Clone)]
 pub struct Solver<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> {
     grid: GridRef,
-    // TODO: generic: AsRef: IntoIterator<DynamicStrategy>
+    // TODO: change to StrategyMap<bool>
     //  `Generator::try_delete_cell_at_pos` would not need to clone its strategies
     strategies: Vec<StrategyEnum>,
     _base: PhantomData<Base>,
@@ -248,24 +251,60 @@ impl<Base: SudokuBase, GridMut: AsMut<Grid<Base>> + AsRef<Grid<Base>>>
         Ok(self.is_solved.then_some(total_score))
     }
 
-    /// The number of times a strategy was applied to the grid.
-    pub fn application_count(mut self) -> Result<Option<StrategyScore>> {
-        let application_count = self.try_fold::<_, _, Result<_>>(0, |acc, res| {
-            res?;
-            Ok(acc + 1)
+    /// The number of times each strategy was applied to the grid.
+    pub fn application_count(mut self) -> Result<Option<StrategyMap<StrategyScore>>> {
+        let mut strategy_map = StrategyMap::default();
+
+        self.try_for_each(|res| {
+            let SolveStep { strategy, .. } = res?;
+            *strategy_map.get_mut(strategy) += 1;
+            Ok::<(), Error>(())
         })?;
 
-        Ok(self.is_solved.then_some(application_count))
+        Ok(self.is_solved.then_some(strategy_map))
+    }
+
+    /// The number of times any strategy was applied to the grid.
+    pub fn application_count_any(self) -> Result<Option<StrategyScore>> {
+        Ok(self
+            .application_count()?
+            .map(|strategy_map| strategy_map.into_values().into_iter().sum()))
+    }
+
+    /// The number of times a strategy was applied to the grid.
+    pub fn application_count_single(self, strategy: StrategyEnum) -> Result<Option<StrategyScore>> {
+        Ok(self
+            .application_count()?
+            .map(|strategy_map| *strategy_map.get(strategy)))
+    }
+
+    /// Number of deductions by each strategy used to solve the grid.
+    pub fn deduction_count(mut self) -> Result<Option<StrategyMap<StrategyScore>>> {
+        let mut strategy_map = StrategyMap::default();
+
+        self.try_for_each(|res| {
+            let SolveStep {
+                strategy,
+                deductions,
+            } = res?;
+            *strategy_map.get_mut(strategy) += StrategyScore::try_from(deductions.count())?;
+            Ok::<(), Error>(())
+        })?;
+
+        Ok(self.is_solved.then_some(strategy_map))
     }
 
     /// Number of deductions used to solve the grid.
-    pub fn deduction_count(mut self) -> Result<Option<StrategyScore>> {
-        let deduction_count = self.try_fold::<_, _, Result<_>>(0, |acc, res| {
-            let SolveStep { deductions, .. } = res?;
-            Ok(acc + StrategyScore::try_from(deductions.count())?)
-        })?;
-
-        Ok(self.is_solved.then_some(deduction_count))
+    pub fn deduction_count_any(self) -> Result<Option<StrategyScore>> {
+        Ok(self
+            .deduction_count()?
+            .map(|strategy_map| strategy_map.into_values().into_iter().sum()))
+    }
+    /// Number of deductions by a single strategy used to solve the grid.
+    pub fn deduction_count_single(self, strategy: StrategyEnum) -> Result<Option<StrategyScore>> {
+        Ok(self
+            .deduction_count()?
+            .map(|strategy_map| *strategy_map.get(strategy)))
     }
 }
 
