@@ -90,12 +90,17 @@ impl<Base: SudokuBase> Sudoku<Base> {
     ) -> Result<Self> {
         info!("multi_shot_generator_settings {multi_shot_generator_settings:#?}");
 
+        let metric = multi_shot_generator_settings.metric;
         let generator = MultiShotGenerator::with_settings(multi_shot_generator_settings)?;
 
-        Ok(Self::with_grid_and_settings(
-            generator.generate_with_progress(on_progress)?.grid,
-            settings,
-        ))
+        let evaluated_grid = generator.generate_with_progress(on_progress)?;
+
+        info!(
+            "Grid generated with a final metric {:?} of {}",
+            metric, evaluated_grid.evaluated_grid_metric
+        );
+
+        Ok(Self::with_grid_and_settings(evaluated_grid.grid, settings))
     }
 }
 
