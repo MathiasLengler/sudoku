@@ -120,7 +120,8 @@ impl<Base: SudokuBase> Coordinate<Base> {
         #[allow(clippy::cast_possible_truncation)]
         let coordinate = coordinate as u8;
 
-        Self::new_unchecked(coordinate)
+        // Safety: caller has guaranteed `coordinate < Base::SIDE_LENGTH`.
+        unsafe { Self::new_unchecked(coordinate) }
     }
 }
 

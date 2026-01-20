@@ -4,8 +4,8 @@ use crate::base::SudokuBase;
 use crate::cell::Candidates;
 use crate::cell::Value;
 use crate::error::Result;
-use crate::grid::group::CandidatesGroup;
 use crate::grid::Grid;
+use crate::grid::group::CandidatesGroup;
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions};
 use crate::solver::strategic::strategies::Strategy;
 use crate::solver::strategic::strategies::StrategyScore;
@@ -17,7 +17,6 @@ pub mod v2;
 //  - https://opensourc.es/blog/sudoku/
 //  This seems to be the bottleneck for the goal generator
 // TODO: produce decuction reasons
-// TODO: rename LockedSet
 // TODO: parameterize strategy
 //  set size
 //  naked/hidden

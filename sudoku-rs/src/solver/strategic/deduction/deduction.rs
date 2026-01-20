@@ -107,27 +107,27 @@ impl<Base: SudokuBase> Deduction<Base> {
     }
 
     pub fn try_from_iters<
-        IReasons,
-        IntoReasonsPos,
-        IntoReason,
         IActions,
         IntoActionsPos,
         IntoAction,
+        IReasons,
+        IntoReasonsPos,
+        IntoReason,
     >(
         actions: IActions,
         reasons: IReasons,
     ) -> Result<Self>
     where
-        IReasons: IntoIterator<Item = (IntoReasonsPos, IntoReason)>,
-        IntoReasonsPos: TryInto<Position<Base>>,
-        IntoReason: TryInto<Reason<Base>>,
-        Error: From<IntoReasonsPos::Error>,
-        Error: From<IntoReason::Error>,
         IActions: IntoIterator<Item = (IntoActionsPos, IntoAction)>,
         IntoActionsPos: TryInto<Position<Base>>,
         IntoAction: TryInto<Action<Base>>,
         Error: From<IntoActionsPos::Error>,
         Error: From<IntoAction::Error>,
+        IReasons: IntoIterator<Item = (IntoReasonsPos, IntoReason)>,
+        IntoReasonsPos: TryInto<Position<Base>>,
+        IntoReason: TryInto<Reason<Base>>,
+        Error: From<IntoReasonsPos::Error>,
+        Error: From<IntoReason::Error>,
     {
         Ok(Self {
             reasons: PositionMap::try_from_iter(reasons)?,

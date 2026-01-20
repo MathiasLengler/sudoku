@@ -1,13 +1,13 @@
 use itertools::iproduct;
 use rayon::prelude::*;
 
-use sudoku::base::consts::*;
 use sudoku::base::SudokuBase;
+use sudoku::base::consts::*;
 use sudoku::error::Result;
-use sudoku::world::dynamic::DynamicCellWorldActions;
 use sudoku::world::CellWorld;
 use sudoku::world::GridOverlap;
 use sudoku::world::WorldGridDim;
+use sudoku::world::dynamic::DynamicCellWorldActions;
 
 fn main() -> Result<()> {
     fn gen_worlds_stats<Base: SudokuBase>() {

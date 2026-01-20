@@ -64,6 +64,12 @@ impl<Base: SudokuBase> Value<Base> {
         // Safety: `Base::MAX_VALUE` is in the range `1..=(Base::MAX_VALUE)`
         unsafe { Self::new_unchecked(Base::MAX_VALUE) }
     }
+
+    pub fn middle() -> Self {
+        let middle_value = Base::MAX_VALUE.div_ceil(2);
+        // Safety: `middle_value` is in the range `1..=(Base::MAX_VALUE)`
+        unsafe { Self::new_unchecked(middle_value) }
+    }
 }
 
 /// Validation
@@ -185,10 +191,18 @@ mod tests {
         Ok(())
     }
 
+    #[test]
+    fn test_middle() {
+        assert_eq!(Value::<Base2>::middle().get(), 2);
+        assert_eq!(Value::<Base3>::middle().get(), 5);
+        assert_eq!(Value::<Base4>::middle().get(), 8);
+        assert_eq!(Value::<Base5>::middle().get(), 13);
+    }
+
     mod serde {
         use super::*;
         use crate::test_util::test_all_bases;
-        use serde_test::{assert_tokens, Token};
+        use serde_test::{Token, assert_tokens};
 
         mod default {
             use super::*;
@@ -201,6 +215,14 @@ mod tests {
             use super::*;
             test_all_bases!({
                 let value = Value::<Base>::default();
+                assert_tokens(&value, &[Token::U8(value.get())]);
+            });
+        }
+
+        mod middle {
+            use super::*;
+            test_all_bases!({
+                let value = Value::<Base>::middle();
                 assert_tokens(&value, &[Token::U8(value.get())]);
             });
         }

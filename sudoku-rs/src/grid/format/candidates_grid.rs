@@ -1,19 +1,21 @@
-use std::iter;
-
-use anyhow::{bail, ensure, Context};
+use crate::base::SudokuBase;
+use crate::base::consts::ALL_SIDE_LENGTHS;
+use crate::cell::dynamic::{DynamicCandidates, DynamicCell, char_value_to_u8};
+use crate::cell::{CellState, Value};
+use crate::error::Result;
+use crate::grid::Grid;
+use crate::grid::dynamic::DynamicGrid;
+use crate::grid::format::GridFormatCapabilities;
+use crate::grid::format::GridFormatPreservesCellCandidates;
+use crate::grid::format::GridFormatPreservesCellValue;
+use crate::grid::format::{GridFormat, GridFormatDetectAndParseCapability};
+use anyhow::{Context, bail, ensure};
 use itertools::Itertools;
 use num::Integer;
 use owo_colors::Style as OwoStyle;
+use std::iter;
 use tabled::builder::Builder;
 use tabled::settings::{Padding, Style};
-
-use crate::base::consts::ALL_SIDE_LENGTHS;
-use crate::base::SudokuBase;
-use crate::cell::dynamic::{char_value_to_u8, DynamicCandidates, DynamicCell};
-use crate::cell::{CellState, Value};
-use crate::error::Result;
-use crate::grid::format::GridFormat;
-use crate::grid::Grid;
 
 /// A grid of cells.
 /// Values are centered.
@@ -30,21 +32,25 @@ use crate::grid::Grid;
 pub struct CandidatesGridANSIStyled;
 
 impl GridFormat for CandidatesGridANSIStyled {
+    fn capabilities(self) -> GridFormatCapabilities {
+        GridFormatCapabilities {
+            // Could support `ValueAndFixedState`, but parsing of ansii escape codes is not implemented.
+            preserves_cell_value: GridFormatPreservesCellValue::ValueOnly,
+            // The representation of a single candidate 5 in base 3 is indistinguishable from a value 5; both are a centered "5".
+            preserves_cell_candidates: GridFormatPreservesCellCandidates::OnlyMultiple,
+            detect_and_parse: GridFormatDetectAndParseCapability::Detectable,
+        }
+    }
+
     fn render<Base: SudokuBase>(self, grid: &Grid<Base>) -> String {
         render_candidates_grid(grid, true)
     }
 
-    fn parse(self, input: &str) -> Result<Vec<DynamicCell>> {
-        let stripped_input_bytes = strip_ansi_escapes::strip(input.as_bytes());
-        let stripped_input = String::from_utf8(stripped_input_bytes)?;
+    fn parse(self, input: &str) -> Result<DynamicGrid> {
+        let stripped_input = strip_ansi_escapes::strip_str(input);
 
         CandidatesGridPlain.parse(&stripped_input)
     }
-
-    // TODO: uncomment after parsing of ANSI escapes for fixed values
-    // fn do_fix_all_values(self) -> bool {
-    //     false
-    // }
 }
 
 /// The same as `CandidatesGridANSIStyled`, but without terminal styling.
@@ -151,11 +157,20 @@ impl GridFormat for CandidatesGridANSIStyled {
 pub struct CandidatesGridPlain;
 
 impl GridFormat for CandidatesGridPlain {
+    fn capabilities(self) -> GridFormatCapabilities {
+        GridFormatCapabilities {
+            preserves_cell_value: GridFormatPreservesCellValue::ValueOnly,
+            preserves_cell_candidates: GridFormatPreservesCellCandidates::OnlyMultiple,
+            // Is detected as `CandidatesGridANSIStyled`, since we don't implement ANSII escape code parsing.
+            detect_and_parse: GridFormatDetectAndParseCapability::DetectableViaOtherFormat,
+        }
+    }
+
     fn render<Base: SudokuBase>(self, grid: &Grid<Base>) -> String {
         render_candidates_grid(grid, false)
     }
 
-    fn parse(self, input: &str) -> Result<Vec<DynamicCell>> {
+    fn parse(self, input: &str) -> Result<DynamicGrid> {
         fn ensure_same_line_char_count(input: &str) -> Result<usize> {
             let mut line_char_count = None;
             for line in input.lines() {
@@ -165,7 +180,9 @@ impl GridFormat for CandidatesGridPlain {
                 }
                 if let Some(previous_line_char_count) = line_char_count {
                     if current_line_char_count != previous_line_char_count {
-                        bail!("Expected line char count {previous_line_char_count}, instead got: {current_line_char_count}")
+                        bail!(
+                            "Expected line char count {previous_line_char_count}, instead got: {current_line_char_count}"
+                        )
                     }
                 } else {
                     line_char_count = Some(current_line_char_count);
@@ -305,7 +322,7 @@ impl GridFormat for CandidatesGridPlain {
         let cell_str_fragments_transposed: Vec<_> =
             cell_str_fragments.into_iter().map(transpose2).collect();
 
-        cell_str_fragments_transposed
+        let dynamic_cells = cell_str_fragments_transposed
             .into_iter()
             .flatten()
             .map(|cell_fragments| {
@@ -344,11 +361,13 @@ impl GridFormat for CandidatesGridPlain {
                     .into())
                 }
             })
-            .collect::<Result<Vec<_>>>()
+            .collect::<Result<Vec<_>>>()?;
+
+        dynamic_cells.try_into()
     }
 }
 
-pub fn render_candidates_grid<Base: SudokuBase>(
+fn render_candidates_grid<Base: SudokuBase>(
     grid: &Grid<Base>,
     enable_terminal_styling: bool,
 ) -> String {
@@ -395,7 +414,7 @@ pub fn render_candidates_grid<Base: SudokuBase>(
                                 .to_string();
                                 let value_table_builder: Builder =
                                     iter::once(iter::once(value_string_colored)).collect();
-                                let value_string_with_padding = value_table_builder
+                                value_table_builder
                                     .build()
                                     .with(if is_compact {
                                         Padding::zero()
@@ -408,8 +427,7 @@ pub fn render_candidates_grid<Base: SudokuBase>(
                                         Padding::new(padding, padding, padding, padding)
                                     })
                                     .with(Style::empty())
-                                    .to_string();
-                                value_string_with_padding
+                                    .to_string()
                             }
                             CellState::Candidates(candidates) => {
                                 if is_compact {

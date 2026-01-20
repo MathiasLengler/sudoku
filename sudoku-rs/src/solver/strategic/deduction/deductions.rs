@@ -1,4 +1,4 @@
-use std::collections::{btree_set, BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, btree_set};
 use std::fmt::{Display, Formatter};
 
 use crate::base::SudokuBase;
@@ -162,5 +162,11 @@ impl<Base: SudokuBase> FromIterator<Deduction<Base>> for Deductions<Base> {
         Self {
             deductions: iter.into_iter().collect(),
         }
+    }
+}
+
+impl<Base: SudokuBase> From<Deduction<Base>> for Deductions<Base> {
+    fn from(value: Deduction<Base>) -> Self {
+        std::iter::once(value).collect()
     }
 }

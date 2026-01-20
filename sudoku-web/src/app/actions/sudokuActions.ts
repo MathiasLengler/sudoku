@@ -501,8 +501,11 @@ export function useGenerateMultiShot() {
 export function useImportSudokuString() {
     return useAtomCallback(
         useCallback(async (get, set, input: string, setAllDirectCandidates: boolean) => {
-            const wasmSudokuProxy = await get(remoteWasmSudokuState);
-            await wasmSudokuProxy.import(input);
+            const RemoteWasmSudoku = await get(remoteWasmSudokuClassState);
+            const unsafeWasmSudokuProxy = await RemoteWasmSudoku.import(input);
+            const wasmSudokuProxy = fixupComlinkRemote(unsafeWasmSudokuProxy);
+            set(remoteWasmSudokuState, wasmSudokuProxy);
+
             if (setAllDirectCandidates) {
                 await wasmSudokuProxy.setAllDirectCandidates();
             }

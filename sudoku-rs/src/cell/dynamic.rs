@@ -1,8 +1,8 @@
 use anyhow::bail;
 use serde::{Deserialize, Serialize};
 
-use crate::base::consts::BaseMax;
 use crate::base::SudokuBase;
+use crate::base::consts::BaseMax;
 use crate::cell::{Candidates, Cell, CellState, Value};
 use crate::error::{Error, Result};
 

@@ -326,9 +326,11 @@ mod tests {
                 for world_grid_cell_axis_index in
                     WorldGridCellAxisIndex::<Base>::all(world_grid_axis_count)
                 {
-                    assert!(world_grid_cell_axis_index
-                        .overlap_neighbor(world_grid_axis_count, overlap)
-                        .is_none());
+                    assert!(
+                        world_grid_cell_axis_index
+                            .overlap_neighbor(world_grid_axis_count, overlap)
+                            .is_none()
+                    );
                 }
             }
 

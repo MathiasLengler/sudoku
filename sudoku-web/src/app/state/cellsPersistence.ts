@@ -16,7 +16,7 @@ export function loadCells(): DynamicCells | undefined {
     try {
         return DynamicCellsSchema.parse(JSON.parse(cellsString));
     } catch (err) {
-        console.error("Error while parsing persisted cellViews:", err);
+        console.error("Error while parsing persisted cells:", err);
         localStorage.removeItem(KEY_CELLS);
         return undefined;
     }

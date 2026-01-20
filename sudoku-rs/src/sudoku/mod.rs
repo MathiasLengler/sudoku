@@ -6,14 +6,14 @@ use crate::generator::multi_shot::{
     MultiShotGenerator, MultiShotGeneratorProgress, MultiShotGeneratorSettings,
 };
 use crate::generator::{Generator, GeneratorProgress, GeneratorSettings};
+use crate::grid::Grid;
 use crate::grid::dynamic::DynamicGrid;
 use crate::grid::format::GridFormat;
 use crate::grid::format::GridFormatEnum;
 use crate::grid::solution_state::SolutionState;
-use crate::grid::Grid;
 use crate::position::{DynamicPosition, Position};
-use crate::solver::strategic::deduction::transport::TransportDeductions;
 use crate::solver::strategic::deduction::Deductions;
+use crate::solver::strategic::deduction::transport::TransportDeductions;
 use crate::solver::strategic::strategies::StrategyEnum;
 use crate::solver::strategic::{DynamicSolveStep, SolveStep, Solver as StrategicSolver};
 use history::History;

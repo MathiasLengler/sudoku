@@ -6,17 +6,17 @@ default:
     @just --list
 
 # Run nextest
-test test-name="":
-    cargo nextest run {{test-name}}
+test *test-args:
+    cargo nextest run {{test-args}}
 
 # https://github.com/taiki-e/cargo-llvm-cov
 # Run nextest with coverage
-test-cov test-name="":
-    cargo llvm-cov nextest --lcov --output-path lcov.info -- {{test-name}}
+test-cov *test-args:
+    cargo llvm-cov nextest --lcov --output-path lcov.info -- {{test-args}}
 
 # Run nextest with coverage and generate HTML report
-test-cov-html test-name="":
-    cargo llvm-cov nextest --branch --html --open -- {{test-name}}
+test-cov-html *test-args:
+    cargo llvm-cov nextest --branch --html --open -- {{test-args}}
 
 clippy: (_clippy)
 clippy-ci: (_clippy "--" "-D" "warnings")
@@ -50,8 +50,8 @@ upgrade-latest:
     cargo upgrade -i --verbose
     cargo update
 
-bench:
-    cargo bench --bench sudoku_benchmark -- --quick
+bench *bench-args:
+    cargo bench --bench sudoku_benchmark -- {{bench-args}}
 
 # Serve vite on tailscale
 web-ts-serve:

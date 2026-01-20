@@ -6,17 +6,17 @@ use crate::generator::{
     Generator, GeneratorSettings, PruningGroupBehaviour, PruningOrder, PruningSettings,
     PruningTarget, SolutionSettings,
 };
-use crate::grid::dynamic::DynamicGrid;
 use crate::grid::Grid;
+use crate::grid::dynamic::DynamicGrid;
 use crate::position::Position;
-use crate::rng::{new_crate_rng_with_seed, CrateRng};
+use crate::rng::{CrateRng, new_crate_rng_with_seed};
 use crate::solver::backtracking;
 use crate::solver::backtracking::candidates_filter::DeniedCandidatesGrid;
 use crate::world::RelativeDir::TopRight;
 use anyhow::{bail, ensure};
 use dynamic::DynamicCellWorldActions;
 use log::{info, trace};
-use ndarray::{s, Array2, ArrayView2, ArrayViewMut2, Axis};
+use ndarray::{Array2, ArrayView2, ArrayViewMut2, Axis, s};
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
 use serialization::SerializedCellWorld;
@@ -433,7 +433,9 @@ impl<Base: SudokuBase> CellWorld<Base> {
         self.grid_dim.all_positions()
     }
 
-    fn all_validated_grid_positions(&self) -> impl Iterator<Item = ValidatedWorldGridPosition> {
+    fn all_validated_grid_positions(
+        &self,
+    ) -> impl Iterator<Item = ValidatedWorldGridPosition> + use<Base> {
         self.grid_dim.all_validated_positions()
     }
 }
@@ -520,10 +522,13 @@ impl<Base: SudokuBase> CellWorld<Base> {
         let row_bands =
             Self::split_cells_into_overlap_segments_single_axis(grid_cells, Axis(0), overlap);
 
-        let [[top_left, top, top_right], [left, middle, right], [bottom_left, bottom, bottom_right]] =
-            row_bands.map(|row_band| {
-                Self::split_cells_into_overlap_segments_single_axis(row_band, Axis(1), overlap)
-            });
+        let [
+            [top_left, top, top_right],
+            [left, middle, right],
+            [bottom_left, bottom, bottom_right],
+        ] = row_bands.map(|row_band| {
+            Self::split_cells_into_overlap_segments_single_axis(row_band, Axis(1), overlap)
+        });
 
         OverlapSegments {
             top_left,

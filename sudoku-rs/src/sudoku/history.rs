@@ -54,10 +54,10 @@ impl<T: Eq> History<T> {
     pub(super) fn push(&mut self, record: T) {
         self.future_records.clear();
 
-        if let Some(past_record) = self.past_records.front() {
-            if &record == past_record {
-                return;
-            }
+        if let Some(past_record) = self.past_records.front()
+            && &record == past_record
+        {
+            return;
         }
 
         self.push_bounded(true, record);

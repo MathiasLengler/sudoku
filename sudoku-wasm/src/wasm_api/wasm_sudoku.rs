@@ -65,7 +65,7 @@ impl WasmSudoku {
         .into())
     }
 
-    pub fn import(&mut self, input: &str) -> Result<Self> {
+    pub fn import(input: &str) -> Result<Self> {
         Ok(DynamicSudoku::import(input)?.into())
     }
 }

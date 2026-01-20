@@ -8,17 +8,17 @@ use num::Integer;
 use rand::prelude::*;
 use std::hint::black_box;
 use std::path::Path;
-use sudoku::base::{consts::*, SudokuBase};
+use sudoku::base::{SudokuBase, consts::*};
 use sudoku::cell::Candidates;
 use sudoku::cell::Value;
 use sudoku::generator::{Generator, GeneratorSettings, PruningSettings, PruningTarget};
+use sudoku::grid::Grid;
 use sudoku::grid::deserialization::read_grids_from_file;
 use sudoku::grid::group::CandidatesGroup;
-use sudoku::grid::Grid;
-use sudoku::position::test_utils::{consume_iter, consume_nested_iter};
 use sudoku::position::Coordinate;
 use sudoku::position::Position;
-use sudoku::rng::{new_crate_rng_with_seed, CrateRng};
+use sudoku::position::test_utils::{consume_iter, consume_nested_iter};
+use sudoku::rng::{CrateRng, new_crate_rng_with_seed};
 use sudoku::samples;
 use sudoku::solver::sat;
 use sudoku::solver::strategic::strategies::locked_sets::v2::find_locked_set;
@@ -26,7 +26,7 @@ use sudoku::solver::strategic::strategies::locked_sets::v2::test_utils::locked_s
 use sudoku::solver::strategic::strategies::{
     GroupIntersectionBoth, HiddenSingles, LockedSets, Strategy, StrategyEnum,
 };
-use sudoku::solver::{backtracking, introspective, strategic, FallibleSolver, InfallibleSolver};
+use sudoku::solver::{FallibleSolver, InfallibleSolver, backtracking, introspective, strategic};
 
 fn sample_grid<Base: SudokuBase>() -> Grid<Base> {
     samples::grid::<Base>(0)
@@ -157,13 +157,13 @@ fn bench_solver_tdoku_group(solver_tdoku_group: &mut BenchmarkGroup<WallTime>) {
 
     let tdoku_datasets = vec![
         "puzzles0_kaggle",
-        "puzzles1_unbiased",
-        "puzzles2_17_clue",
-        "puzzles3_magictour_top1465",
-        "puzzles4_forum_hardest_1905",
-        "puzzles5_forum_hardest_1905_11+",
-        "puzzles6_forum_hardest_1106",
-        "puzzles7_serg_benchmark",
+        // "puzzles1_unbiased",
+        // "puzzles2_17_clue",
+        // "puzzles3_magictour_top1465",
+        // "puzzles4_forum_hardest_1905",
+        // "puzzles5_forum_hardest_1905_11+",
+        // "puzzles6_forum_hardest_1106",
+        // "puzzles7_serg_benchmark",
         // invalid puzzles with no solutions
         // "puzzles8_gen_puzzles",
     ];

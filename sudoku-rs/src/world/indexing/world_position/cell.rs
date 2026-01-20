@@ -247,9 +247,11 @@ mod tests {
                 WorldGridPosition::from(expected_world_grid_position),
                 Position::try_from(expected_position).unwrap(),
             ));
-            assert!(expected_world_grid_cell_position
-                .to_world_cell_pos(overlap)
-                .contained_in(cell_dim));
+            assert!(
+                expected_world_grid_cell_position
+                    .to_world_cell_pos(overlap)
+                    .contained_in(cell_dim)
+            );
 
             (
                 (world_cell_pos, tie_break),

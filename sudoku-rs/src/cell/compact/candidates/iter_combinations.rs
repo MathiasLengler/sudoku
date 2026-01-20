@@ -1,6 +1,6 @@
 use crate::base::SudokuBase;
-use crate::cell::compact::candidates::Candidates;
 use crate::cell::Value;
+use crate::cell::compact::candidates::Candidates;
 use num::traits::{
     CheckedShl, ConstOne, ConstZero, PrimInt, WrappingAdd, WrappingNeg, WrappingShr, WrappingSub,
     Zero,

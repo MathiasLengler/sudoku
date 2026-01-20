@@ -1,61 +1,49 @@
 #![allow(deprecated)]
 
+use crate::base::SudokuBase;
+use crate::error::Result;
+use crate::grid::Grid;
+use crate::solver::strategic::{self, strategies::StrategyEnum};
+use crate::solver::{FallibleSolver, InfallibleSolver, backtracking, sat};
+use anyhow::{Context, ensure};
+use log::*;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::cmp;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 
-use anyhow::{ensure, Context};
-use log::*;
-
-use crate::base::SudokuBase;
-use crate::error::Result;
-use crate::grid::Grid;
-use crate::solver::strategic::{self, strategies::StrategyEnum};
-use crate::solver::{backtracking, sat, FallibleSolver, InfallibleSolver};
-
 use super::{Generator, GeneratorSettings};
 
 pub use dynamic_settings::*;
 
-// FIXME: Change to f64
-//  https://docs.rs/atomic_float/latest/atomic_float/struct.AtomicF64.html
-//  Disadvantages:
-//  - u64 => f64 try into not available
-//  - f64 does not implement Ord, only PartialOrd
 pub type EvaluatedGridMetric = u64;
 type AtomicEvaluatedGridMetric = AtomicU64;
 
 static GENERATE_NO_GRIDS: &str = "at least one generation result";
 
-// TODO: statistical analysis of metrics
-//  which metrics correlate?
-//  which metrics are redundant?
-//  which metrics are fast to compute?
-//  which metrics correlate with human difficulty ratings?
-// =>
-//  Generate and score a large number of grids
-//  Analyze the results
-
 /// A metric used to evaluate the difficulty of a grid.
 #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
 #[derive(Debug, Copy, Clone, Default, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", tag = "kind")]
 pub enum GridMetric {
     // Based on `strategic::SolverPathIter` - a single solve path determined by the solver.
     /// Weighted sum of all strategy scores used to solve the grid. `Strategy::score() * Number of deductions made by the strategy`
     #[default]
     StrategyScore,
-    /// The number of times a strategy was applied to the grid.
-    StrategyApplicationCount,
+    /// The number of times any strategy was applied to the grid.
+    StrategyApplicationCountAny,
+    /// The number of times a single strategy was applied to the grid.
+    StrategyApplicationCountSingle { strategy: StrategyEnum },
     /// Number of deductions used to solve the grid.
-    StrategyDeductionCount,
+    StrategyDeductionCountAny,
+    /// Number of deductions by a single strategy used to solve the grid.
+    StrategyDeductionCountSingle { strategy: StrategyEnum },
     // FIXME: this produces counterintuitive results
     //  if there are only single candidates left, all strategies except for *Singles don't make progress.
     //  The intention was to measure "needle point" strategies, which block further progress until spotted,
     //  but this metric does not reflect that.
     //  We need to somehow weigh the available strategies by their difficulty.
-    /// The average number of strategies available to make progress. Scaled by a factor of `1_000`.
+    /// The average number of strategies available to make progress. Scaled by a factor of `STRATEGY_SCORE_FIXED_POINT_SCALE`.
     StrategyAverageOptions,
 
     // Based on the PoC bin `solve_graph` - a graph of all possible solve paths.
@@ -100,14 +88,26 @@ impl GridMetric {
                 .solve_path()
                 .total_score()?
                 .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?,
-            GridMetric::StrategyApplicationCount => get_strategic_solver(strategies)
+            GridMetric::StrategyApplicationCountAny => get_strategic_solver(strategies)
                 .solve_path()
-                .application_count()?
+                .application_count_any()?
                 .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?,
-            GridMetric::StrategyDeductionCount => get_strategic_solver(strategies)
+            GridMetric::StrategyApplicationCountSingle { strategy } => {
+                get_strategic_solver(strategies)
+                    .solve_path()
+                    .application_count_single(strategy)?
+                    .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?
+            }
+            GridMetric::StrategyDeductionCountAny => get_strategic_solver(strategies)
                 .solve_path()
-                .deduction_count()?
+                .deduction_count_any()?
                 .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?,
+            GridMetric::StrategyDeductionCountSingle { strategy } => {
+                get_strategic_solver(strategies)
+                    .solve_path()
+                    .deduction_count_single(strategy)?
+                    .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?
+            }
             GridMetric::StrategyAverageOptions => get_strategic_solver(strategies)
                 .solve_path_all()
                 .average_options()?
@@ -313,7 +313,7 @@ impl<Base: SudokuBase> MultiShotGenerator<Base> {
         Ok(Self { settings })
     }
 
-    fn iterations_iter(&self) -> impl Iterator<Item = IterationsCounter> {
+    fn iterations_iter(&self) -> impl Iterator<Item = IterationsCounter> + use<Base> {
         0..self.settings.iterations
     }
 
@@ -333,7 +333,9 @@ impl<Base: SudokuBase> MultiShotGenerator<Base> {
         })
     }
 
-    fn iterations_par_iter(&self) -> impl IndexedParallelIterator<Item = IterationsCounter> {
+    fn iterations_par_iter(
+        &self,
+    ) -> impl IndexedParallelIterator<Item = IterationsCounter> + use<Base> {
         (0..self.settings.iterations).into_par_iter()
     }
 
@@ -472,8 +474,8 @@ impl<Base: SudokuBase> MultiShotGenerator<Base> {
         &self,
         inspect_iteration_start: impl Fn(IterationsCounter) -> Result<()> + Sync + Send,
         inspect_evaluated_grids: impl Fn(IterationsCounter, &EvaluatedGrid<Base>) -> Result<()>
-            + Sync
-            + Send,
+        + Sync
+        + Send,
     ) -> Result<EvaluatedGrid<Base>> {
         let process_iteration = |iteration| -> Result<_> {
             inspect_iteration_start(iteration)?;
@@ -522,49 +524,42 @@ impl<Base: SudokuBase> MultiShotGenerator<Base> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::{
         base::consts::*,
         generator::{Generator, PruningSettings},
-        solver::strategic::strategies::NakedSingles,
+        solver::strategic::strategies::*,
     };
 
-    use super::*;
-
-    // TODO: test other GridMetrics
-    // TODO: parametrize tests
     mod grid_metric {
         use super::*;
-
         use crate::samples;
-        use rstest::{fixture, rstest};
+        use rstest::rstest;
 
         mod evaluate {
-            use crate::test_util::init_test_logger;
-
             use super::*;
-
-            #[test]
-            fn debug_grid() {
-                let mut grid = samples::grid::<Base3>(1);
-                grid.set_all_direct_candidates();
-                println!("Grid:\n{grid}");
-            }
-
-            #[fixture]
-            fn grid_sample_base_3(#[default(0)] index: usize) -> Grid<Base3> {
-                samples::base_3().into_iter().nth(index).unwrap()
-            }
+            use crate::test_util::init_test_logger;
 
             #[rstest]
             #[case::strategy_score(0, GridMetric::StrategyScore, 8)]
             #[case::strategy_score(1, GridMetric::StrategyScore, 12)]
             #[case::strategy_score(2, GridMetric::StrategyScore, 12)]
-            #[case::strategy_application_count(0, GridMetric::StrategyApplicationCount, 1)]
-            #[case::strategy_application_count(1, GridMetric::StrategyApplicationCount, 4)]
-            #[case::strategy_application_count(2, GridMetric::StrategyApplicationCount, 2)]
-            #[case::strategy_deduction_count(0, GridMetric::StrategyDeductionCount, 8)]
-            #[case::strategy_deduction_count(1, GridMetric::StrategyDeductionCount, 12)]
-            #[case::strategy_deduction_count(2, GridMetric::StrategyDeductionCount, 12)]
+            #[case::strategy_application_count_any(0, GridMetric::StrategyApplicationCountAny, 1)]
+            #[case::strategy_application_count_any(1, GridMetric::StrategyApplicationCountAny, 4)]
+            #[case::strategy_application_count_any(2, GridMetric::StrategyApplicationCountAny, 2)]
+            #[case::strategy_application_count_single_naked_singles(0, GridMetric::StrategyApplicationCountSingle {strategy: NakedSingles.into() }, 1)]
+            #[case::strategy_application_count_single_naked_singles(1, GridMetric::StrategyApplicationCountSingle {strategy: NakedSingles.into() }, 4)]
+            #[case::strategy_application_count_single_naked_singles(2, GridMetric::StrategyApplicationCountSingle {strategy: NakedSingles.into() }, 2)]
+            #[case::strategy_application_count_single_hidden_singles(0, GridMetric::StrategyApplicationCountSingle {strategy: HiddenSingles.into() }, 0)]
+            #[case::strategy_application_count_single_hidden_singles(1, GridMetric::StrategyApplicationCountSingle {strategy: HiddenSingles.into() }, 0)]
+            #[case::strategy_application_count_single_hidden_singles(2, GridMetric::StrategyApplicationCountSingle {strategy: HiddenSingles.into() }, 0)]
+            #[case::strategy_application_count_single_naked_pairs(0, GridMetric::StrategyApplicationCountSingle {strategy: NakedPairs.into() }, 0)]
+            #[case::strategy_application_count_single_naked_pairs(1, GridMetric::StrategyApplicationCountSingle {strategy: NakedPairs.into() }, 0)]
+            #[case::strategy_application_count_single_naked_pairs(2, GridMetric::StrategyApplicationCountSingle {strategy: NakedPairs.into() }, 0)]
+            #[case::strategy_deduction_count(0, GridMetric::StrategyDeductionCountAny, 8)]
+            #[case::strategy_deduction_count(1, GridMetric::StrategyDeductionCountAny, 12)]
+            #[case::strategy_deduction_count(2, GridMetric::StrategyDeductionCountAny, 12)]
+            // TODO: StrategyDeductionCountSingle
             #[case::strategy_average_options(0, GridMetric::StrategyAverageOptions, 2000)]
             #[case::strategy_average_options(1, GridMetric::StrategyAverageOptions, 2750)]
             #[case::strategy_average_options(2, GridMetric::StrategyAverageOptions, 3000)]
@@ -606,9 +601,19 @@ mod tests {
 
             #[rstest]
             #[case::strategy_score(1, GridMetric::StrategyScore, 47)]
-            #[case::strategy_application_count(1, GridMetric::StrategyApplicationCount, 4)]
-            #[case::strategy_deduction_count(1, GridMetric::StrategyDeductionCount, 47)]
-            #[case::strategy_average_options(1, GridMetric::StrategyAverageOptions, 3500)]
+            #[case::strategy_application_count_any(1, GridMetric::StrategyApplicationCountAny, 4)]
+            #[case::strategy_application_count_single_naked_singles(1, GridMetric::StrategyApplicationCountSingle {strategy: NakedSingles.into() }, 4)]
+            #[case::strategy_application_count_single_hidden_singles(1, GridMetric::StrategyApplicationCountSingle {strategy: HiddenSingles.into() }, 0)]
+            #[case::strategy_application_count_single_naked_pairs(1, GridMetric::StrategyApplicationCountSingle {strategy: NakedPairs.into() }, 0)]
+            #[case::strategy_application_count_single_naked_singles(6, GridMetric::StrategyApplicationCountSingle {strategy: NakedSingles.into() }, 19)]
+            #[case::strategy_application_count_single_hidden_singles(6, GridMetric::StrategyApplicationCountSingle {strategy: HiddenSingles.into() }, 10)]
+            #[case::strategy_application_count_single_naked_pairs(6, GridMetric::StrategyApplicationCountSingle {strategy: NakedPairs.into() }, 1)]
+            #[case::strategy_application_count_single_locked_sets(6, GridMetric::StrategyApplicationCountSingle {strategy: LockedSets.into() }, 2)]
+            #[case::strategy_application_count_single_group_intersection_both(6, GridMetric::StrategyApplicationCountSingle {strategy: GroupIntersectionBoth.into() }, 2)]
+            #[case::strategy_application_count_single_x_wing(6, GridMetric::StrategyApplicationCountSingle {strategy: XWing.into() }, 0)]
+            #[case::strategy_deduction_count_any(1, GridMetric::StrategyDeductionCountAny, 47)]
+            // TODO: StrategyDeductionCountSingle
+            #[case::strategy_average_options(1, GridMetric::StrategyAverageOptions, 4000)]
             #[case::sat_step_count(0, GridMetric::SatStepCount, 77)]
             #[case::sat_step_count(1, GridMetric::SatStepCount, 1)]
             #[case::backtrack_count(0, GridMetric::BacktrackCount, 13357)]

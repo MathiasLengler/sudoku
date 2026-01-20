@@ -1,20 +1,20 @@
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { Stack, Tooltip } from "@mui/material";
 import type { Control, FieldValues, Path } from "react-hook-form";
-import { CheckboxButtonGroup } from "react-hook-form-mui";
 import { ALL_STRATEGIES, STRATEGY_OPTIONS } from "../../constants";
+import { SelectElement } from "react-hook-form-mui";
 import { ExternalLink } from "../ExternalLink";
 
-type SelectStrategiesProps<T extends FieldValues> = {
+type SelectStrategyProps<T extends FieldValues> = {
     control: Control<T>;
     name: Path<T>;
 };
-function SelectStrategies<T extends FieldValues>({ control, name }: SelectStrategiesProps<T>) {
+function SelectStrategy<T extends FieldValues>({ control, name }: SelectStrategyProps<T>) {
     return (
-        <CheckboxButtonGroup
+        <SelectElement
             control={control}
             name={name}
-            label="Strategies"
+            label="Strategy"
             options={ALL_STRATEGIES.map((strategy) => {
                 const option = STRATEGY_OPTIONS[strategy];
                 return {
@@ -34,4 +34,4 @@ function SelectStrategies<T extends FieldValues>({ control, name }: SelectStrate
     );
 }
 
-export default SelectStrategies;
+export default SelectStrategy;

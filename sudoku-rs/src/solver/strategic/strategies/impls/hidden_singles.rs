@@ -1,7 +1,7 @@
 use crate::base::SudokuBase;
 use crate::error::Result;
-use crate::grid::group::Group;
 use crate::grid::Grid;
+use crate::grid::group::Group;
 use crate::position::Position;
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions};
 use crate::solver::strategic::strategies::{Strategy, StrategyScore};

@@ -59,7 +59,7 @@ mod serialization {
     mod tests {
         use super::*;
         use crate::base::consts::*;
-        use serde_test::{assert_tokens, Token};
+        use serde_test::{Token, assert_tokens};
 
         #[test]
         fn test_ser_de_zero() {
@@ -578,18 +578,7 @@ impl<Base: SudokuBase> TryFrom<DynamicCandidates> for Candidates<Base> {
 
 impl<Base: SudokuBase> Display for Candidates<Base> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        if f.alternate() {
-            write!(f, "{}", self.to_vec_value().into_iter().join(","))
-        } else {
-            write!(
-                f,
-                "{}",
-                self.to_vec_value()
-                    .into_iter()
-                    .map(|value| value.to_string())
-                    .join(",")
-            )
-        }
+        write!(f, "{}", self.to_vec_value().into_iter().join(","))
     }
 }
 
@@ -667,13 +656,17 @@ mod tests {
                 range: impl RangeBounds<Value<Base>> + Clone + Debug,
             ) {
                 let candidates = Candidates::with_range(range.clone());
-                assert!(candidates
-                    .into_iter()
-                    .all(|candidate| range.contains(&candidate)));
+                assert!(
+                    candidates
+                        .into_iter()
+                        .all(|candidate| range.contains(&candidate))
+                );
                 let inverted_candidates = candidates.invert();
-                assert!(inverted_candidates
-                    .into_iter()
-                    .all(|candidate| !range.contains(&candidate)));
+                assert!(
+                    inverted_candidates
+                        .into_iter()
+                        .all(|candidate| !range.contains(&candidate))
+                );
             }
 
             fn all_bounds<Base: SudokuBase>() -> impl Iterator<Item = Bound<Value<Base>>> + Clone {
@@ -991,66 +984,69 @@ mod tests {
             assert_eq!(all.last(), Some(Value::try_from(4).unwrap()));
         }
 
-        fn assert_block_segmentation<Base: SudokuBase>(
-            segmented_candidates: Vec<(Base::CandidatesIntegral, u8)>,
-        ) {
-            for (segmented_candidates_integral, segment_index) in
-                segmented_candidates.iter().copied()
-            {
-                assert_eq!(
-                    Candidates::<Base>::with_integral(segmented_candidates_integral)
-                        .unwrap()
-                        .block_segmentation(),
-                    Some(BlockCoordinate::new(segment_index).unwrap())
-                );
+        mod block_segmentation {
+            use super::*;
+
+            fn assert_block_segmentation<Base: SudokuBase>(
+                segmented_candidates: Vec<(Base::CandidatesIntegral, u8)>,
+            ) {
+                for (segmented_candidates_integral, segment_index) in
+                    segmented_candidates.iter().copied()
+                {
+                    assert_eq!(
+                        Candidates::<Base>::with_integral(segmented_candidates_integral)
+                            .unwrap()
+                            .block_segmentation(),
+                        Some(BlockCoordinate::new(segment_index).unwrap())
+                    );
+                }
+
+                let segmented_integrals: BTreeSet<_> = segmented_candidates
+                    .into_iter()
+                    .map(|(integral, _)| integral)
+                    .collect();
+
+                for non_segmented_integral in num::range(
+                    Base::CandidatesIntegral::ZERO,
+                    Candidates::<Base>::all_candidates_mask(),
+                )
+                .filter(|integral| !segmented_integrals.contains(integral))
+                {
+                    assert_eq!(
+                        Candidates::<Base>::with_integral(non_segmented_integral)
+                            .unwrap()
+                            .block_segmentation(),
+                        None,
+                        "Non segmented integral: {non_segmented_integral:b}"
+                    );
+                }
+            }
+            #[test]
+            fn test_base_2() {
+                let segmented_candidates = vec![(0b0011, 0), (0b1100, 1)];
+
+                assert_block_segmentation::<Base2>(segmented_candidates);
             }
 
-            let segmented_integrals: BTreeSet<_> = segmented_candidates
-                .into_iter()
-                .map(|(integral, _)| integral)
-                .collect();
+            #[test]
+            fn test_base_3() {
+                let segmented_candidates = vec![
+                    (0b000_000_011, 0),
+                    (0b000_000_101, 0),
+                    (0b000_000_110, 0),
+                    (0b000_000_111, 0),
+                    (0b000_011_000, 1),
+                    (0b000_101_000, 1),
+                    (0b000_110_000, 1),
+                    (0b000_111_000, 1),
+                    (0b011_000_000, 2),
+                    (0b101_000_000, 2),
+                    (0b110_000_000, 2),
+                    (0b111_000_000, 2),
+                ];
 
-            for non_segmented_integral in num::range(
-                Base::CandidatesIntegral::ZERO,
-                Candidates::<Base>::all_candidates_mask(),
-            )
-            .filter(|integral| !segmented_integrals.contains(integral))
-            {
-                assert_eq!(
-                    Candidates::<Base>::with_integral(non_segmented_integral)
-                        .unwrap()
-                        .block_segmentation(),
-                    None,
-                    "Non segmented integral: {non_segmented_integral:b}"
-                );
+                assert_block_segmentation::<Base3>(segmented_candidates);
             }
-        }
-
-        #[test]
-        fn test_block_segmentation_base_2() {
-            let segmented_candidates = vec![(0b0011, 0), (0b1100, 1)];
-
-            assert_block_segmentation::<Base2>(segmented_candidates);
-        }
-
-        #[test]
-        fn test_block_segmentation_base_3() {
-            let segmented_candidates = vec![
-                (0b000_000_011, 0),
-                (0b000_000_101, 0),
-                (0b000_000_110, 0),
-                (0b000_000_111, 0),
-                (0b000_011_000, 1),
-                (0b000_101_000, 1),
-                (0b000_110_000, 1),
-                (0b000_111_000, 1),
-                (0b011_000_000, 2),
-                (0b101_000_000, 2),
-                (0b110_000_000, 2),
-                (0b111_000_000, 2),
-            ];
-
-            assert_block_segmentation::<Base3>(segmented_candidates);
         }
 
         #[test]
@@ -1138,6 +1134,22 @@ mod tests {
                 candidates.combinations(value),
                 CandidatesCombinationsIter::<Base2>::new(candidates, value)
             );
+        }
+
+        mod display {
+            use super::*;
+
+            #[test]
+            fn test_standard() {
+                let candidates = Candidates::<Base2>::try_from(vec![2, 4]).unwrap();
+                assert_eq!(format!("{candidates}"), "2,4");
+            }
+
+            #[test]
+            fn test_alternate() {
+                let candidates = Candidates::<Base2>::try_from(vec![2, 4]).unwrap();
+                assert_eq!(format!("{candidates:#}"), "2,4");
+            }
         }
     }
 

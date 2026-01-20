@@ -4,7 +4,7 @@ use std::time::Instant;
 use sudoku::error::Result;
 use sudoku::grid::Grid;
 use sudoku::samples;
-use sudoku::solver::backtracking::{Solver, SPLIT_COUNT};
+use sudoku::solver::backtracking::{SPLIT_COUNT, Solver};
 
 fn main() -> Result<()> {
     let before = Instant::now();

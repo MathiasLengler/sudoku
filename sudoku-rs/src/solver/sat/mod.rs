@@ -13,21 +13,23 @@ use crate::cell::{Cell, Value};
 use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::position::Position;
+use crate::solver::FallibleSolver;
 use crate::solver::backtracking::CandidatesFilter;
 use crate::solver::sat::cell_variable::CellVariable;
-use crate::solver::FallibleSolver;
 
 mod initialized_sat_solver {
-    use once_cell::sync::Lazy;
-
-    use crate::base::consts::*;
-
     use super::*;
+    use crate::base::consts::*;
+    use std::sync::LazyLock;
 
-    pub(super) static SOLVER_BASE_2: Lazy<SatSolver> = Lazy::new(Solver::<Base2>::init_sat_solver);
-    pub(super) static SOLVER_BASE_3: Lazy<SatSolver> = Lazy::new(Solver::<Base3>::init_sat_solver);
-    pub(super) static SOLVER_BASE_4: Lazy<SatSolver> = Lazy::new(Solver::<Base4>::init_sat_solver);
-    pub(super) static SOLVER_BASE_5: Lazy<SatSolver> = Lazy::new(Solver::<Base5>::init_sat_solver);
+    pub(super) static SOLVER_BASE_2: LazyLock<SatSolver> =
+        LazyLock::new(Solver::<Base2>::init_sat_solver);
+    pub(super) static SOLVER_BASE_3: LazyLock<SatSolver> =
+        LazyLock::new(Solver::<Base3>::init_sat_solver);
+    pub(super) static SOLVER_BASE_4: LazyLock<SatSolver> =
+        LazyLock::new(Solver::<Base4>::init_sat_solver);
+    pub(super) static SOLVER_BASE_5: LazyLock<SatSolver> =
+        LazyLock::new(Solver::<Base5>::init_sat_solver);
 }
 
 type Clause = Vec<Lit>;
@@ -448,14 +450,16 @@ mod tests {
         let solver = Solver::new_with_candidates_filter(&grid, &denylist);
 
         for solution in solver.clone() {
-            assert!(![1, 3].contains(
-                &solution
-                    .unwrap()
-                    .get(Position::top_left())
-                    .value()
-                    .unwrap()
-                    .get()
-            ));
+            assert!(
+                ![1, 3].contains(
+                    &solution
+                        .unwrap()
+                        .get(Position::top_left())
+                        .value()
+                        .unwrap()
+                        .get()
+                )
+            );
         }
 
         assert_eq!(solver.clone().into_iter().count(), 144);
