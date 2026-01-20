@@ -885,6 +885,12 @@ mod tests {
             }
         }
 
+        // FIXME: currently the slowest test
+        //  PASS [   2.334s] sudoku generator::tests::prune::test_strategies
+        // Either:
+        //  optimize
+        //  split into smaller tests (parallelize, rstest)
+        //  reduce search space
         #[test]
         fn test_strategies() {
             use crate::solver::strategic::strategies::*;
