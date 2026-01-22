@@ -21,16 +21,6 @@ type HintSettingsDialogProps = {
     onClose: () => void;
 };
 
-// FIXME: error on submit:
-//  {
-//    "expected": "number",
-//    "code": "invalid_type",
-//    "path": [
-//      "loopDelayIndex"
-//    ],
-//    "message": "Invalid input"
-//  }
-// Probably disabled field issue again
 export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
     const [hintSettingsFormValues, setHintSettingsFormValues] = useAtom(hintSettingsState);
 
@@ -94,7 +84,6 @@ export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
                                     control={control}
                                     name="loopDelayIndex"
                                     label="Loop delay"
-                                    disabled={mode === "toggleHint" || !doLoop}
                                     step={1}
                                     min={0}
                                     max={MAX_LOOP_DELAY_INDEX}

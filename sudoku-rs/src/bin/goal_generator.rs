@@ -6,7 +6,7 @@ use sudoku::generator::multi_shot::{
     EvaluatedGrid, GoalOptimization, GridMetric, MultiShotGenerator, MultiShotGeneratorSettings,
 };
 use sudoku::generator::{GeneratorSettings, PruningSettings};
-use sudoku::solver::strategic::strategies::StrategyEnum;
+use sudoku::solver::strategic::strategies::*;
 
 type Base = Base3;
 
@@ -25,8 +25,10 @@ fn main() -> Result<()> {
             }),
             ..Default::default()
         },
-        iterations: 10_000,
-        metric: GridMetric::StrategyScore,
+        iterations: 100_000,
+        metric: GridMetric::StrategyDeductionCountSingle {
+            strategy: XWing.into(),
+        },
         optimize: GoalOptimization::Maximize,
         parallel: true,
     })?;

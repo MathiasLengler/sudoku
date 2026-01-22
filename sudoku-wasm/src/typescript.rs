@@ -61,7 +61,7 @@ macro_rules! serde_wasm_bindgen_interop {
     };
     ($($ty_name:ty),* $(,)?) => {
         paste! {
-            // wasm_bindgen interfaces "ITypeName" refercing bindings from ts_rs "bindings.TypeName"
+            // wasm_bindgen interfaces "ITypeName" referencing bindings from ts_rs "bindings.TypeName"
             #[wasm_bindgen]
             extern "C" {
                 $(
