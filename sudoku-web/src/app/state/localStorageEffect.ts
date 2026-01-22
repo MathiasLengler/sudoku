@@ -27,14 +27,20 @@ export function getZodLocalStorage<Schema extends z.ZodTypeAny>(schema: Schema):
     return {
         getItem(key, initialValue) {
             const storedValue = localStorage.getItem(key);
+            if (!storedValue) {
+                return initialValue;
+            }
             try {
-                return jsonSchema.decode(storedValue ?? "");
-            } catch {
+                return jsonSchema.decode(storedValue, { reportInput: true });
+            } catch (err) {
+                console.error("Error decoding localStorage item", key, err);
+                localStorage.removeItem(key);
                 return initialValue;
             }
         },
         setItem(key, value) {
-            localStorage.setItem(key, jsonSchema.encode(value));
+            const encoded = jsonSchema.encode(value, { reportInput: true });
+            localStorage.setItem(key, encoded);
         },
         removeItem(key) {
             localStorage.removeItem(key);
