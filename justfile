@@ -65,3 +65,6 @@ ci-local:
     cd sudoku-web && npm ci
     cd sudoku-web && npm run lint
     cd sudoku-web && npm run docker:dev
+
+generate-tsrs-bindings:
+    cargo run --bin generate_tsrs_bindings
