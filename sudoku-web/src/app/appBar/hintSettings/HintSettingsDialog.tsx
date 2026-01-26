@@ -35,7 +35,7 @@ export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
         resolver: zodResolver(hintSettingsSchema),
     });
 
-    const [mode, doLoop] = watch(["mode", "doLoop"]);
+    const [mode] = watch(["mode"]);
     return (
         <>
             <DialogTitle>Hint settings</DialogTitle>
