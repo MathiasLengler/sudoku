@@ -53,7 +53,7 @@ pub trait DynamicSudokuActions {
         &self,
         metric: GridMetric,
         strategies: impl StrategySelection,
-    ) -> EvaluatedGridMetric;
+    ) -> Result<EvaluatedGridMetric>;
 
     fn to_dynamic_grid(&self) -> DynamicGrid;
 }

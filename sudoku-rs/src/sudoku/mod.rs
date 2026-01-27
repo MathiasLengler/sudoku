@@ -310,8 +310,8 @@ impl<Base: SudokuBase> DynamicSudokuActions for Sudoku<Base> {
         &self,
         metric: GridMetric,
         strategies: impl StrategySelection,
-    ) -> EvaluatedGridMetric {
-        todo!()
+    ) -> Result<EvaluatedGridMetric> {
+        metric.evaluate(&self.grid, strategies)
     }
 }
 
