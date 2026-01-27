@@ -1,4 +1,3 @@
-use crate::base::SudokuBase;
 use crate::cell::Candidates;
 use crate::cell::Cell;
 use crate::cell::CellState;
@@ -8,9 +7,9 @@ use crate::error::{Error, Result};
 use crate::grid::format::{CandidatesGridANSIStyled, GridFormat, GridFormatEnum};
 use crate::position::Coordinate;
 use crate::position::Position;
-use crate::solver::strategic::strategies::StrategyEnum;
 use crate::solver::{FallibleSolver, introspective, strategic};
 use crate::unsafe_utils::{get_unchecked, get_unchecked_mut};
+use crate::{base::SudokuBase, solver::strategic::strategies::selection::StrategySelection};
 use anyhow::ensure;
 use ndarray::{Array2, ArrayView2, ArrayViewMut2};
 use serde::{Deserialize, Serialize};
@@ -437,12 +436,12 @@ impl<Base: SudokuBase> Grid<Base> {
 
     pub fn is_solvable_with_strategies(
         &self,
-        strategies: Vec<StrategyEnum>,
+        strategies: impl StrategySelection,
     ) -> Result<Option<Self>> {
         let mut clone = self.clone();
         clone.fix_all_values();
         clone.set_all_direct_candidates();
-        let mut solver = strategic::Solver::new_with_strategies(&mut clone, strategies);
+        let mut solver = strategic::Solver::with_strategies(&mut clone, strategies);
 
         solver.try_solve()
     }

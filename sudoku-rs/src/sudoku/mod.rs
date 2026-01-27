@@ -1,5 +1,3 @@
-use crate::base::SudokuBase;
-use crate::cell::dynamic::{DynamicCandidates, DynamicValue};
 use crate::cell::{Candidates, Value};
 use crate::error::Result;
 use crate::generator::multi_shot::{
@@ -16,6 +14,14 @@ use crate::solver::strategic::deduction::Deductions;
 use crate::solver::strategic::deduction::transport::TransportDeductions;
 use crate::solver::strategic::strategies::StrategyEnum;
 use crate::solver::strategic::{DynamicSolveStep, SolveStep, Solver as StrategicSolver};
+use crate::{
+    base::SudokuBase,
+    generator::multi_shot::{EvaluatedGridMetric, GridMetric},
+};
+use crate::{
+    cell::dynamic::{DynamicCandidates, DynamicValue},
+    solver::strategic::strategies::selection::StrategySelection,
+};
 use history::History;
 use log::info;
 use serde::{Deserialize, Serialize};
@@ -170,7 +176,7 @@ impl<Base: SudokuBase> Sudoku<Base> {
             self.push_history();
         }
 
-        let solver = StrategicSolver::new_with_strategies(&mut self.grid, strategies);
+        let solver = StrategicSolver::with_strategies(&mut self.grid, strategies);
         solver.try_strategies()
     }
 
@@ -298,6 +304,14 @@ impl<Base: SudokuBase> DynamicSudokuActions for Sudoku<Base> {
 
     fn to_dynamic_grid(&self) -> DynamicGrid {
         self.grid.clone().into()
+    }
+
+    fn evaluate_metric(
+        &self,
+        metric: GridMetric,
+        strategies: impl StrategySelection,
+    ) -> EvaluatedGridMetric {
+        todo!()
     }
 }
 

@@ -1,5 +1,3 @@
-use crate::base::BaseEnum;
-use crate::base::consts::*;
 use crate::base::match_base_enum;
 use crate::cell::dynamic::DynamicCandidates;
 use crate::cell::dynamic::DynamicCell;
@@ -17,6 +15,11 @@ use crate::solver::strategic::deduction::transport::TransportDeductions;
 use crate::solver::strategic::strategies::StrategyEnum;
 use crate::sudoku::Sudoku;
 use crate::sudoku::settings::Settings as SudokuSettings;
+use crate::{
+    base::BaseEnum,
+    generator::multi_shot::{EvaluatedGridMetric, GridMetric},
+};
+use crate::{base::consts::*, solver::strategic::strategies::selection::StrategySelection};
 use enum_dispatch::enum_dispatch;
 use serde::{Deserialize, Serialize};
 
@@ -46,6 +49,11 @@ pub trait DynamicSudokuActions {
     fn settings(&self) -> SudokuSettings;
     fn update_settings(&mut self, settings: SudokuSettings);
     fn export(&self, format: GridFormatEnum) -> String;
+    fn evaluate_metric(
+        &self,
+        metric: GridMetric,
+        strategies: impl StrategySelection,
+    ) -> EvaluatedGridMetric;
 
     fn to_dynamic_grid(&self) -> DynamicGrid;
 }

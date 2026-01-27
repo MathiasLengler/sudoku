@@ -5,7 +5,6 @@ use rand::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 
-use crate::base::SudokuBase;
 use crate::cell::Value;
 use crate::error::Result;
 use crate::grid::Grid;
@@ -14,6 +13,7 @@ use crate::rng::{CrateRng, new_crate_rng_with_seed};
 use crate::solver::backtracking::DisallowedCandidateAtPosition;
 use crate::solver::strategic::strategies::BruteForce;
 use crate::solver::{backtracking, introspective};
+use crate::{base::SudokuBase, solver::strategic::strategies::selection::StrategySet};
 
 pub use settings::*;
 #[cfg(feature = "parallel")]
@@ -347,14 +347,14 @@ impl<Base: SudokuBase> Generator<Base> {
 
         let can_be_deleted: bool = (
             // Either default strategies
-            prune_settings.strategies == [BruteForce.into()]
+            prune_settings.strategies == StrategySet::with_single(BruteForce.into())
             ||
                 // Or ensure the grid remains solvable with the non-default strategies
                 grid
-                .is_solvable_with_strategies(prune_settings.strategies.clone())
+                .is_solvable_with_strategies(prune_settings.strategies)
                 .is_ok_and(|solution| solution.is_some())
         ) && {
-            let mut solver = introspective::Solver::new_with_filter(
+            let mut solver = introspective::Solver::with_filter(
                 grid.clone(),
                 DisallowedCandidateAtPosition {
                     pos,
@@ -834,6 +834,7 @@ mod tests {
 
     mod prune {
         use super::*;
+        use crate::solver::strategic::strategies::selection::StrategySelection;
 
         mod target {
             use super::*;
@@ -895,7 +896,7 @@ mod tests {
         fn test_strategies() {
             use crate::solver::strategic::strategies::*;
 
-            fn generate(target: PruningTarget, strategies: Vec<StrategyEnum>) -> Grid<Base3> {
+            fn generate(target: PruningTarget, strategies: StrategySet) -> Grid<Base3> {
                 Generator::<Base3>::with_pruning(PruningSettings {
                     strategies,
                     target,
@@ -908,13 +909,13 @@ mod tests {
             let targets = vec![PruningTarget::Minimal, PruningTarget::MaxEmptyCellCount(20)];
 
             for target in targets {
-                let grid = generate(target, vec![]);
+                let grid = generate(target, StrategySet::with_all(false));
                 assert!(grid.is_solved());
 
                 let default_strategies = StrategyEnum::default_solver_strategies();
-                for i in 1..default_strategies.len() {
-                    let strategies = default_strategies.clone().into_iter().take(i).collect_vec();
-                    let grid = generate(target, strategies.clone());
+                for i in 1..default_strategies.count() {
+                    let strategies = default_strategies.iter_strategies().take(i).collect();
+                    let grid = generate(target, strategies);
                     assert!(
                         grid.is_solvable_with_strategies(strategies)
                             .unwrap()

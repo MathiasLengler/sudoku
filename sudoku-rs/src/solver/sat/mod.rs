@@ -54,13 +54,10 @@ impl<Base: SudokuBase> Debug for Solver<Base> {
 /// Public API
 impl<Base: SudokuBase> Solver<Base> {
     pub fn new<GridRef: AsRef<Grid<Base>>>(grid: GridRef) -> Self {
-        Self::new_with_candidates_filter(grid, &())
+        Self::with_candidates_filter(grid, &())
     }
 
-    pub fn new_with_candidates_filter<
-        GridRef: AsRef<Grid<Base>>,
-        Filter: CandidatesFilter<Base>,
-    >(
+    pub fn with_candidates_filter<GridRef: AsRef<Grid<Base>>, Filter: CandidatesFilter<Base>>(
         grid: GridRef,
         filter: &Filter,
     ) -> Self {
@@ -447,7 +444,7 @@ mod tests {
             .into_iter()
             .map(|v| Value::try_from(v).unwrap())
             .collect();
-        let solver = Solver::new_with_candidates_filter(&grid, &denylist);
+        let solver = Solver::with_candidates_filter(&grid, &denylist);
 
         for solution in solver.clone() {
             assert!(

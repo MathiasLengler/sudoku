@@ -1,14 +1,16 @@
 use super::{Strategy, impls::*};
-use std::fmt::Debug;
-use std::fmt::{self, Display};
-use std::str::FromStr;
-
+use crate::solver::strategic::strategies::map::StrategyMap;
+use crate::{
+    error::{Error, Result},
+    solver::strategic::strategies::selection::StrategySet,
+};
 use anyhow::format_err;
 use enum_dispatch::enum_dispatch;
 use serde::de::Visitor;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-
-use crate::error::{Error, Result};
+use std::fmt::Debug;
+use std::fmt::{self, Display};
+use std::str::FromStr;
 
 const STRATEGY_COUNT: usize = 9;
 
@@ -23,21 +25,22 @@ pub mod map {
     //   - application count
     //   - deduction count
 
-    #[derive(Debug, Default, Copy, Clone, Eq, PartialEq)]
+    #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+    #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
     pub struct StrategyMap<T> {
-        naked_singles: T,
-        hidden_singles: T,
-        naked_pairs: T,
-        locked_sets: T,
-        group_intersection_block_to_axis: T,
-        group_intersection_axis_to_block: T,
-        group_intersection_both: T,
-        x_wing: T,
-        brute_force: T,
+        pub naked_singles: T,
+        pub hidden_singles: T,
+        pub naked_pairs: T,
+        pub locked_sets: T,
+        pub group_intersection_block_to_axis: T,
+        pub group_intersection_axis_to_block: T,
+        pub group_intersection_both: T,
+        pub x_wing: T,
+        pub brute_force: T,
     }
 
     impl<T> StrategyMap<T> {
-        pub fn new_with(value: T) -> Self
+        pub const fn with_all(value: T) -> Self
         where
             T: Copy,
         {
@@ -54,7 +57,7 @@ pub mod map {
             }
         }
 
-        pub fn get(&self, strategy: StrategyEnum) -> &T {
+        pub const fn get(&self, strategy: StrategyEnum) -> &T {
             match strategy {
                 StrategyEnum::NakedSingles(_) => &self.naked_singles,
                 StrategyEnum::HiddenSingles(_) => &self.hidden_singles,
@@ -71,7 +74,7 @@ pub mod map {
                 StrategyEnum::BruteForce(_) => &self.brute_force,
             }
         }
-        pub fn get_mut(&mut self, strategy: StrategyEnum) -> &mut T {
+        pub const fn get_mut(&mut self, strategy: StrategyEnum) -> &mut T {
             match strategy {
                 StrategyEnum::NakedSingles(_) => &mut self.naked_singles,
                 StrategyEnum::HiddenSingles(_) => &mut self.hidden_singles,
@@ -104,18 +107,6 @@ pub mod map {
         }
     }
 
-    // TODO: alias?
-    //  - StrategySelection (could imply singular selection)
-    //  - StrategySet (mathematically correct, but less clear)
-    //  - SelectedStrategies (the "list" of strategies are usually "selected" by the user, but not always)
-    //  - Strategies
-    impl StrategyMap<bool> {
-        pub fn selected_strategies(self) -> impl Iterator<Item = StrategyEnum> {
-            self.into_iter()
-                .filter_map(|(strategy, selected)| selected.then_some(strategy))
-        }
-    }
-
     impl<T> IntoIterator for StrategyMap<T> {
         type Item = (StrategyEnum, T);
 
@@ -126,6 +117,62 @@ pub mod map {
 
         fn into_iter(self) -> Self::IntoIter {
             StrategyEnum::all().into_iter().zip(self.into_values())
+        }
+    }
+}
+
+pub mod selection {
+    use super::*;
+
+    /// A selection of strategies in canonical order.
+    pub type StrategySet = StrategyMap<bool>;
+    /// A selection of strategies in a specific order.
+    pub type StrategyList = Vec<StrategyEnum>;
+
+    /// A selection of strategies.
+    ///
+    /// Primarily used specify the strategies used by `strategic::Solver`.
+    pub trait StrategySelection {
+        fn iter_strategies(&self) -> impl Iterator<Item = StrategyEnum>;
+    }
+
+    impl StrategySelection for StrategySet {
+        /// Iterates over the selected strategies in "canonical" (`StrategyEnum::all()`) order.
+        fn iter_strategies(&self) -> impl Iterator<Item = StrategyEnum> {
+            self.into_iter()
+                .filter_map(|(strategy, selected)| selected.then_some(strategy))
+        }
+    }
+
+    impl StrategySelection for StrategyList {
+        /// Iterates over the selected strategies in the order they are stored in the vec.
+        fn iter_strategies(&self) -> impl Iterator<Item = StrategyEnum> {
+            self.iter().copied()
+        }
+    }
+
+    impl StrategySet {
+        pub const fn with_single(strategy: StrategyEnum) -> Self {
+            let mut this = Self::with_all(false);
+            *this.get_mut(strategy) = true;
+            this
+        }
+
+        pub fn count(&self) -> usize {
+            self.into_values()
+                .into_iter()
+                .map(Into::<usize>::into)
+                .sum()
+        }
+    }
+
+    impl FromIterator<StrategyEnum> for StrategySet {
+        fn from_iter<TIter: IntoIterator<Item = StrategyEnum>>(iter: TIter) -> Self {
+            let mut this = StrategySet::with_all(false);
+            for strategy in iter {
+                *this.get_mut(strategy) = true;
+            }
+            this
         }
     }
 }
@@ -167,44 +214,23 @@ impl StrategyEnum {
         ]
     }
 
-    // TODO: change to StrategyMap<bool>
-    pub fn default_solver_strategies() -> Vec<Self> {
-        vec![
-            NakedSingles.into(),
-            HiddenSingles.into(),
-            NakedPairs.into(),
-            LockedSets.into(),
-            GroupIntersectionBoth.into(),
-            XWing.into(),
-            BruteForce.into(),
-        ]
+    pub const fn default_solver_strategies() -> StrategySet {
+        StrategySet {
+            naked_singles: true,
+            hidden_singles: true,
+            naked_pairs: true,
+            locked_sets: true,
+            group_intersection_both: true,
+            x_wing: true,
+            brute_force: true,
+            ..StrategySet::with_all(false)
+        }
     }
 
-    // TODO: change to StrategyMap<bool>
-    pub fn default_solver_strategies_no_brute_force() -> Vec<Self> {
-        vec![
-            NakedSingles.into(),
-            HiddenSingles.into(),
-            NakedPairs.into(),
-            LockedSets.into(),
-            GroupIntersectionBoth.into(),
-            XWing.into(),
-        ]
-    }
-
-    // TODO: change to StrategyMap<bool>
-    pub fn introspective_solver_base_4_plus_strategies() -> Vec<Self> {
-        // TODO: benchmark
-        vec![
-            NakedSingles.into(),
-            HiddenSingles.into(),
-            NakedPairs.into(),
-            // FIXME: Slow for empty groups
-            //  also slow for base 3, but impact is worse for larger bases
-            // LockedSets.into(),
-            GroupIntersectionBoth.into(),
-            XWing.into(),
-        ]
+    pub fn default_solver_strategies_no_brute_force() -> StrategySet {
+        let mut strategies = Self::default_solver_strategies();
+        strategies.brute_force = false;
+        strategies
     }
 
     fn variant_index(&self) -> u32 {
