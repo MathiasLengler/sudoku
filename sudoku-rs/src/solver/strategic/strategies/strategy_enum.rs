@@ -12,7 +12,7 @@ use std::fmt::Debug;
 use std::fmt::{self, Display};
 use std::str::FromStr;
 
-const STRATEGY_COUNT: usize = 9;
+const STRATEGY_COUNT: usize = 10;
 
 pub mod map {
     use super::*;
@@ -36,6 +36,7 @@ pub mod map {
         pub group_intersection_axis_to_block: T,
         pub group_intersection_both: T,
         pub x_wing: T,
+        pub y_wing: T,
         pub brute_force: T,
     }
 
@@ -53,6 +54,7 @@ pub mod map {
                 group_intersection_axis_to_block: value,
                 group_intersection_both: value,
                 x_wing: value,
+                y_wing: value,
                 brute_force: value,
             }
         }
@@ -71,6 +73,7 @@ pub mod map {
                 }
                 StrategyEnum::GroupIntersectionBoth(_) => &self.group_intersection_both,
                 StrategyEnum::XWing(_) => &self.x_wing,
+                StrategyEnum::YWing(_) => &self.y_wing,
                 StrategyEnum::BruteForce(_) => &self.brute_force,
             }
         }
@@ -88,6 +91,7 @@ pub mod map {
                 }
                 StrategyEnum::GroupIntersectionBoth(_) => &mut self.group_intersection_both,
                 StrategyEnum::XWing(_) => &mut self.x_wing,
+                StrategyEnum::YWing(_) => &mut self.y_wing,
                 StrategyEnum::BruteForce(_) => &mut self.brute_force,
             }
         }
@@ -102,6 +106,7 @@ pub mod map {
                 self.group_intersection_axis_to_block,
                 self.group_intersection_both,
                 self.x_wing,
+                self.y_wing,
                 self.brute_force,
             ]
         }
@@ -190,6 +195,7 @@ pub enum StrategyEnum {
     GroupIntersectionAxisToBlock,
     GroupIntersectionBoth,
     XWing,
+    YWing,
     BruteForce,
 }
 
@@ -210,6 +216,7 @@ impl StrategyEnum {
             GroupIntersectionAxisToBlock.into(),
             GroupIntersectionBoth.into(),
             XWing.into(),
+            YWing.into(),
             BruteForce.into(),
         ]
     }
@@ -222,6 +229,7 @@ impl StrategyEnum {
             locked_sets: true,
             group_intersection_both: true,
             x_wing: true,
+            y_wing: true,
             brute_force: true,
             ..StrategySet::with_all(false)
         }
