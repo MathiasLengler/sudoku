@@ -1,4 +1,5 @@
 pub use brute_force::BruteForce;
+pub use bug::Bug;
 pub use group_intersection::{
     GroupIntersectionAxisToBlock, GroupIntersectionBlockToAxis, GroupIntersectionBoth,
 };
@@ -10,6 +11,7 @@ pub use x_wing::XWing;
 
 // Strategies
 mod brute_force;
+mod bug;
 mod group_intersection;
 mod hidden_singles;
 pub mod locked_sets;
