@@ -83,7 +83,6 @@ impl Strategy for Bug {
         for candidate in trivalue_candidates {
             // Check row
             if count_candidate_in_group(grid, Position::row(trivalue_pos.to_row()), candidate) == 3
-                && is_valid_bug_state(grid, &candidate_positions, candidate)
             {
                 return Ok(vec![Deduction::with_action(
                     trivalue_pos,
@@ -99,7 +98,6 @@ impl Strategy for Bug {
                 Position::column(trivalue_pos.to_column()),
                 candidate,
             ) == 3
-                && is_valid_bug_state(grid, &candidate_positions, candidate)
             {
                 return Ok(vec![Deduction::with_action(
                     trivalue_pos,
@@ -112,7 +110,6 @@ impl Strategy for Bug {
             // Check block
             if count_candidate_in_group(grid, Position::block(trivalue_pos.to_block()), candidate)
                 == 3
-                && is_valid_bug_state(grid, &candidate_positions, candidate)
             {
                 return Ok(vec![Deduction::with_action(
                     trivalue_pos,
@@ -137,24 +134,6 @@ fn count_candidate_in_group<Base: SudokuBase>(
         .filter_map(|pos| grid.get(pos).candidates())
         .filter(|candidates| candidates.has(candidate))
         .count()
-}
-
-/// Verify the BUG state is valid by checking that the candidate counts make sense.
-/// For a proper BUG+1, the validation would check that each candidate appears exactly 2 times
-/// in each group, but we relax this slightly to be more permissive.
-fn is_valid_bug_state<Base: SudokuBase>(
-    _grid: &Grid<Base>,
-    _candidate_positions: &[Position<Base>],
-    _trivalue_candidate: Value<Base>,
-) -> bool {
-    // For the basic BUG+1 implementation, we've already verified:
-    // 1. All cells are bivalue except one trivalue cell
-    // 2. The trivalue candidate appears 3 times in at least one group
-    // 
-    // This is sufficient for the basic BUG+1 detection.
-    // A more strict validation could verify that all other candidates appear exactly 2 times
-    // in each group, but that's optional for the core functionality.
-    true
 }
 
 #[cfg(test)]
