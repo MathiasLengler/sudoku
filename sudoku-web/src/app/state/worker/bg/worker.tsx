@@ -157,6 +157,9 @@ function markObjectAsComlinkProxy(obj: { prototype: { [Comlink.proxyMarker]: tru
 markObjectAsComlinkProxy(WasmSudoku);
 markObjectAsComlinkProxy(WasmCellWorld);
 
+// Mark expensiveOperations object as a Comlink proxy so its methods can be called remotely
+(expensiveOperations as Record<symbol, boolean>)[Comlink.proxyMarker] = true;
+
 // Use declaration merging (Module Augmentation) to reflect this modification.
 // This corrects the inferred type of `Comlink.Remote`
 declare module "sudoku-wasm" {
