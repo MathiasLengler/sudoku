@@ -3,7 +3,7 @@ import * as Comlink from "comlink";
 import type { Getter, Setter } from "jotai";
 import { useAtomCallback } from "jotai/utils";
 import { inRange, isEqual } from "es-toolkit";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type {
     DynamicGeneratorSettings,
     DynamicMultiShotGeneratorSettings,
@@ -411,6 +411,10 @@ export type TrackedMultiShotGeneratorProgress = {
     finishedIterationsCount: number;
 };
 
+export type MultiShotGenerationResult = {
+    bestEvaluatedGridMetric: bigint;
+};
+
 export function useGenerateMultiShot() {
     const generateImpl = useAtomCallback(
         useCallback(
@@ -455,12 +459,17 @@ export function useGenerateMultiShot() {
     const [trackedMultiShotGeneratorProgress, setTrackedMultiShotGeneratorProgress] =
         useState<TrackedMultiShotGeneratorProgress>();
 
+    // Track the best evaluated grid metric from the final progress update
+    const bestEvaluatedGridMetricRef = useRef<bigint | undefined>(undefined);
+
     const { mutation, cancel: cancelGenerateMultiShot } = useCancelableMutation<
         DynamicMultiShotGeneratorSettings,
         MultiShotGeneratorProgress
     >({
         cancelableMutationFn: useCallback(
             async ({ variables: settings, abortPromise, onProgress }) => {
+                // Reset the metric ref before starting new generation
+                bestEvaluatedGridMetricRef.current = undefined;
                 await generateImpl(settings, abortPromise, onProgress);
             },
             [generateImpl],
@@ -472,6 +481,8 @@ export function useGenerateMultiShot() {
                 isFinished = false;
             } else if (progress.kind === "finished") {
                 isFinished = true;
+                // Capture the best evaluated grid metric from the finished progress
+                bestEvaluatedGridMetricRef.current = progress.bestEvaluatedGridMetric;
             } else {
                 assertNever(progress);
             }
@@ -488,11 +499,24 @@ export function useGenerateMultiShot() {
         onCancel: useCallback(() => {
             console.info("MultiShot generation was canceled.");
             setTrackedMultiShotGeneratorProgress(undefined);
+            bestEvaluatedGridMetricRef.current = undefined;
         }, []),
     });
 
+    const generateMultiShot = useCallback(
+        async (settings: DynamicMultiShotGeneratorSettings): Promise<MultiShotGenerationResult | undefined> => {
+            await mutation.mutateAsync(settings);
+            // Return the result with the final best metric
+            if (bestEvaluatedGridMetricRef.current !== undefined) {
+                return { bestEvaluatedGridMetric: bestEvaluatedGridMetricRef.current };
+            }
+            return undefined;
+        },
+        [mutation],
+    );
+
     return {
-        generateMultiShot: mutation.mutateAsync,
+        generateMultiShot,
         trackedMultiShotGeneratorProgress,
         cancelGenerateMultiShot,
     };

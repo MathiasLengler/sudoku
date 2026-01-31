@@ -5,6 +5,7 @@ import TabPanel from "@mui/lab/TabPanel";
 import { Box, DialogContent, FormGroup, LinearProgress, Stack, Typography } from "@mui/material";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
+import { useNotifications } from "@toolpad/core/useNotifications";
 import * as _ from "es-toolkit";
 import { useAtom } from "jotai";
 import { useEffect } from "react";
@@ -117,6 +118,7 @@ type GenerateFormProps = {
     onClose: () => void;
 };
 export function GenerateForm({ onClose }: GenerateFormProps) {
+    const notifications = useNotifications();
     const [generateFormValues, setGenerateFormValues] = useAtom(generateFormValuesState);
 
     const {
@@ -199,13 +201,26 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
 
                             try {
                                 if (multiShot) {
-                                    await generateMultiShot({
+                                    const result = await generateMultiShot({
                                         generatorSettings,
                                         iterations: iterationsIndexToIterations(iterationsIndex),
                                         metric,
                                         optimize,
                                         parallel,
                                     });
+
+                                    // Show notification with final grid metric
+                                    if (result?.bestEvaluatedGridMetric !== undefined) {
+                                        const metricLabel = GRID_METRIC_OPTIONS[metric.kind]?.label ?? metric.kind;
+                                        notifications.show(
+                                            `Grid metric: ${metricLabel} = ${result.bestEvaluatedGridMetric.toString()}`,
+                                            {
+                                                key: "multi-shot-result",
+                                                severity: "info",
+                                                autoHideDuration: 5000,
+                                            },
+                                        );
+                                    }
                                 } else {
                                     await generate(generatorSettings);
                                 }
