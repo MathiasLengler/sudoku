@@ -459,7 +459,9 @@ export function useGenerateMultiShot() {
     const [trackedMultiShotGeneratorProgress, setTrackedMultiShotGeneratorProgress] =
         useState<TrackedMultiShotGeneratorProgress>();
 
-    // Track the best evaluated grid metric from the final progress update
+    // Ref to capture the best evaluated grid metric from the last "finished" progress event.
+    // This is safe because progress events are fired during WASM execution,
+    // before the mutation promise resolves, ensuring the value is set when we read it.
     const bestEvaluatedGridMetricRef = useRef<bigint | undefined>(undefined);
 
     const { mutation, cancel: cancelGenerateMultiShot } = useCancelableMutation<
@@ -506,7 +508,8 @@ export function useGenerateMultiShot() {
     const generateMultiShot = useCallback(
         async (settings: DynamicMultiShotGeneratorSettings): Promise<MultiShotGenerationResult | undefined> => {
             await mutation.mutateAsync(settings);
-            // Return the result with the final best metric
+            // Return the result with the final best metric.
+            // This is safe because progress events are fired before the mutation resolves.
             if (bestEvaluatedGridMetricRef.current !== undefined) {
                 return { bestEvaluatedGridMetric: bestEvaluatedGridMetricRef.current };
             }
