@@ -132,18 +132,18 @@ impl GridMetric {
                 .sum(),
             GridMetric::GridGivensValueCountDeviation => {
                 // Count occurrences of each value in the grid's givens
-                let value_counts: Vec<u64> = Value::<Base>::all()
+                let value_counts: Vec<EvaluatedGridMetric> = Value::<Base>::all()
                     .map(|value| {
                         grid.all_value_positions()
                             .iter()
                             .filter(|&&pos| grid.get(pos).value() == Some(value))
-                            .count() as u64
+                            .count()
                     })
-                    .collect();
+                    .map(EvaluatedGridMetric::try_from)
+                    .collect::<std::result::Result<_, _>>()?;
 
-                // These casts are safe: value_counts.len() <= 25 (max base 5), counts are small
-                #[allow(clippy::cast_precision_loss)]
-                let n = value_counts.len() as f64;
+                // value_counts.len() <= 25 (max base 5), fits in u8 which converts losslessly to f64
+                let n = f64::from(u8::try_from(value_counts.len())?);
 
                 let sum: u64 = value_counts.iter().sum();
                 #[allow(clippy::cast_precision_loss)]
