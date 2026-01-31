@@ -12,7 +12,7 @@ const baseInputSchema = z.object({
     stickyMode: z.boolean(),
     candidateMode: z.boolean(),
     // Color mode:
-    //  Each value (1-9) has a unique color
+    //  Each value has a unique color
     colorMode: z.boolean(),
 });
 export type BaseInput = z.infer<typeof baseInputSchema>;

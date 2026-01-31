@@ -34,6 +34,7 @@ function WorldCellVirtualized({ rowIndex, columnIndex, style }: CellComponentPro
 
     const worldCell = useAtomValue(worldCellState(cellWorldPosition));
     const input = useAtomValue(inputState);
+    const sideLength = useAtomValue(sudokuSideLengthState);
 
     const worldCellBorderClasses = useAtomValue(worldCellBorderClassesState(cellWorldPosition));
 
@@ -97,7 +98,7 @@ function WorldCellVirtualized({ rowIndex, columnIndex, style }: CellComponentPro
             <div className={cellClassNames}>
                 {/* <Code wrap>{debug}</Code> */}
                 {worldCell.kind === "value" ? (
-                    <CellValue value={worldCell.value} colorMode={input.colorMode} />
+                    <CellValue value={worldCell.value} colorMode={input.colorMode} sideLength={sideLength} />
                 ) : (
                     <Candidates
                         candidates={worldCell.candidates}

@@ -11,9 +11,21 @@ export function cellColorClass(fixed: boolean, incorrectValue: boolean) {
     }
 }
 
-export function getValueColorClass(value: number): string | undefined {
-    if (value >= 1 && value <= 9) {
-        return `cell-value--color-${value}`;
+export function getValueColorStyle(value: number, sideLength: number): string | undefined {
+    if (value >= 1 && value <= sideLength) {
+        // Distribute hues evenly across the color wheel (0-360 degrees)
+        // Starting from red (0°) and rotating through the spectrum
+        const hue = Math.round(((value - 1) / sideLength) * 360);
+        return `hsl(${hue}, 70%, 45%)`;
+    }
+    return undefined;
+}
+
+export function getValueColorStyleDark(value: number, sideLength: number): string | undefined {
+    if (value >= 1 && value <= sideLength) {
+        // Same hue distribution but with higher lightness for dark mode
+        const hue = Math.round(((value - 1) / sideLength) * 360);
+        return `hsl(${hue}, 70%, 60%)`;
     }
     return undefined;
 }
