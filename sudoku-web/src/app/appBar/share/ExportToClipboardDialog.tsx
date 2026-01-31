@@ -5,7 +5,7 @@ import { Button, DialogActions, DialogContent, DialogTitle, LinearProgress, Stac
 import { useAtom, useAtomValue } from "jotai";
 import { useAtomCallback } from "jotai/utils";
 import { Suspense, useCallback, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { Code } from "../../components/Code";
 import { MySelect } from "../../components/formFragments/mui-rhf/MySelect";
 import { ResetFormButton } from "../../components/ResetFormButton";
@@ -40,14 +40,17 @@ export function ExportToClipboardDialog({ onClose }: ExportToClipboardDialogProp
     const {
         control,
         handleSubmit,
-        watch,
         formState: { isSubmitting },
         reset,
     } = useForm<ExportToClipboardFormValues>({
         values: exportToClipboardFormValues,
         resolver: zodResolver(exportToClipboardFormValuesSchema),
     });
-    const gridFormat = watch("gridFormat");
+
+    const gridFormat = useWatch({
+        control,
+        name: "gridFormat",
+    });
 
     // Always update selected gridFormat
     useEffect(() => {

@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import SaveIcon from "@mui/icons-material/Save";
 import { Box, Button, DialogActions, DialogContent, DialogTitle } from "@mui/material";
 import { Stack } from "@mui/material";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { useAtom } from "jotai";
 import { Fieldset } from "../../components/Fieldset";
 import { MyRadioGroup } from "../../components/formFragments/mui-rhf/MyRadioGroup";
@@ -30,7 +30,6 @@ export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
     const {
         control,
         handleSubmit,
-        watch,
         formState: { isSubmitting },
         reset,
     } = useForm({
@@ -38,7 +37,10 @@ export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
         resolver: zodResolver(hintSettingsSchema),
     });
 
-    const [mode] = watch(["mode"]);
+    const mode = useWatch({
+        control,
+        name: "mode",
+    });
     return (
         <>
             <DialogTitle>Hint settings</DialogTitle>
