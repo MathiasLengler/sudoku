@@ -2,7 +2,7 @@ import { atom, type Atom } from "jotai";
 import { atomFamily, RESET } from "jotai/utils";
 import * as _ from "es-toolkit";
 import { WasmCellWorld } from "sudoku-wasm";
-import type { CellWorldDimensions, DynamicCell, DynamicCells, DynamicPosition } from "../../../types";
+import type { CellWorldDimensions, DynamicCell, DynamicCells, DynamicPosition, WorldCellRegion } from "../../../types";
 import { init } from "../../state/worker/bg/init";
 import { validateCellWorldPosition } from "../../utils/world";
 import { gameState, type Game } from "../gameMode";
@@ -55,11 +55,66 @@ export const emptyWasmCellWorldState = atom<Promise<WasmCellWorld>>(async (get) 
 
 export const allWorldCellsInvalidateCounterState = atom<number>(0);
 
-export const allWorldCellsState = atom<Promise<DynamicCells>>(async (get) => {
-    get(allWorldCellsInvalidateCounterState);
-    const remoteWasmCellWorld = await get(remoteWasmCellWorldState);
-    return await remoteWasmCellWorld.allWorldCells();
-});
+// Tile size for cell region fetching. The tile size determines the granularity of data fetching.
+// A larger tile size means fewer requests but more data per request.
+export const TILE_SIZE = 16;
+
+/**
+ * Key for identifying a tile in the tile cache.
+ * Uses the tile's starting row and column indices.
+ */
+export type TileKey = { tileRow: number; tileColumn: number };
+
+/**
+ * Creates a tile key from a cell position.
+ */
+function cellPositionToTileKey(position: WorldCellPosition): TileKey {
+    return {
+        tileRow: Math.floor(position.row / TILE_SIZE),
+        tileColumn: Math.floor(position.column / TILE_SIZE),
+    };
+}
+
+/**
+ * Creates a WorldCellRegion from a tile key.
+ */
+function tileKeyToRegion(tileKey: TileKey): WorldCellRegion {
+    const startRow = tileKey.tileRow * TILE_SIZE;
+    const startColumn = tileKey.tileColumn * TILE_SIZE;
+    return {
+        start: { row: startRow, column: startColumn },
+        end: { row: startRow + TILE_SIZE, column: startColumn + TILE_SIZE },
+    };
+}
+
+/**
+ * Converts a cell position within world coordinates to an index within a tile.
+ */
+function cellPositionToTileIndex(position: WorldCellPosition, cellDim: WorldCellDim): number {
+    const localRow = position.row % TILE_SIZE;
+    const localColumn = position.column % TILE_SIZE;
+    // Calculate the actual tile width (may be smaller at edges)
+    const tileKey = cellPositionToTileKey(position);
+    const tileStartColumn = tileKey.tileColumn * TILE_SIZE;
+    const tileEndColumn = Math.min(tileStartColumn + TILE_SIZE, cellDim.columnCount);
+    const tileWidth = tileEndColumn - tileStartColumn;
+    return localRow * tileWidth + localColumn;
+}
+
+/**
+ * Atom family for fetching cell tiles.
+ * Each tile is a rectangular region of cells that is fetched on demand.
+ */
+export const worldCellTileState = atomFamily<TileKey, Atom<Promise<DynamicCells>>>(
+    (tileKey) =>
+        atom(async (get) => {
+            get(allWorldCellsInvalidateCounterState);
+            const remoteWasmCellWorld = await get(remoteWasmCellWorldState);
+            const region = tileKeyToRegion(tileKey);
+            return await remoteWasmCellWorld.worldCellsInRegion(region);
+        }),
+    _.isEqual,
+);
 
 export const worldCellSizeState = atom<number>(100);
 
@@ -133,7 +188,20 @@ export const worldCellState = atomFamily<WorldCellPosition, Atom<Promise<Dynamic
 
         validateCellWorldPosition({ cellWorldPosition, cellDim });
 
-        const allWorldCells = await get(allWorldCellsState);
-        return allWorldCells[cellWorldPosition.row * cellDim.columnCount + cellWorldPosition.column]!;
+        // Get the tile containing this cell
+        const tileKey = cellPositionToTileKey(cellWorldPosition);
+        const tileCells = await get(worldCellTileState(tileKey));
+        
+        // Calculate the index within the tile
+        const tileIndex = cellPositionToTileIndex(cellWorldPosition, cellDim);
+        const cell = tileCells[tileIndex];
+        
+        if (!cell) {
+            throw new Error(
+                `Cell not found at position (${cellWorldPosition.row}, ${cellWorldPosition.column}) in tile (${tileKey.tileRow}, ${tileKey.tileColumn})`,
+            );
+        }
+        
+        return cell;
     }),
 );
