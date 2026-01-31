@@ -1,8 +1,6 @@
 import { useExportSudokuString } from "../../actions/sudokuActions";
 import { MyMenu } from "../../components/MyMenu";
-import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import ShareIcon from "@mui/icons-material/Share";
+import { IconExternalLink, IconCopy, IconShare } from "@tabler/icons-react";
 
 import { MyDialog } from "../../components/MyDialog";
 import { ExportToClipboardDialog } from "./ExportToClipboardDialog";
@@ -19,7 +17,7 @@ export function ShareMenu() {
                 menuItems={[
                     {
                         label: "SudokuWiki",
-                        icon: <OpenInNewIcon />,
+                        icon: <IconExternalLink size={18} />,
                         onClick: async () => {
                             const bd = await exportSudokuString("BinaryCandidatesLineV2");
                             const url = new URL("https://www.sudokuwiki.org/sudoku.htm");
@@ -29,7 +27,7 @@ export function ShareMenu() {
                     },
                     {
                         label: "Clipboard",
-                        icon: <ContentCopyIcon />,
+                        icon: <IconCopy size={18} />,
                         onClick: () => {
                             setIsExportToClipboardDialogOpen(true);
                         },
@@ -37,7 +35,7 @@ export function ShareMenu() {
                 ]}
             >
                 {({ onMenuOpen }) => (
-                    <MyIconButton label="Share" icon={ShareIcon} color="inherit" size="large" onClick={onMenuOpen} />
+                    <MyIconButton label="Share" icon={IconShare} color="inherit" size="lg" onClick={onMenuOpen} />
                 )}
             </MyMenu>
             <MyDialog open={isExportToClipboardDialogOpen} onClose={() => setIsExportToClipboardDialogOpen(false)}>

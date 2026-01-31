@@ -1,21 +1,9 @@
-import { Box, Stack } from "@mui/material";
-
-import CircularProgress from "@mui/material/CircularProgress";
+import { Center, Loader } from "@mantine/core";
 
 export function FullScreenSpinner() {
     return (
-        <Box className="app-spinner" sx={{ height: 1 }}>
-            <Stack
-                direction="column"
-                spacing={2}
-                sx={{
-                    justifyContent: "center",
-                    alignItems: "center",
-                    height: 1,
-                }}
-            >
-                <CircularProgress />
-            </Stack>
-        </Box>
+        <Center className="app-spinner" h="100%">
+            <Loader size="lg" />
+        </Center>
     );
 }

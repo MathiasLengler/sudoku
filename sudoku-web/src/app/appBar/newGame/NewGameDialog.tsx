@@ -1,7 +1,4 @@
-import TabContext from "@mui/lab/TabContext";
-import TabList from "@mui/lab/TabList";
-import { DialogTitle } from "@mui/material";
-import Tab from "@mui/material/Tab";
+import { Tabs, Text } from "@mantine/core";
 import { useState } from "react";
 import { GenerateForm } from "./GenerateForm";
 import { ImportForm } from "./ImportForm";
@@ -15,19 +12,22 @@ export function NewGameDialog({ onClose }: NewGameTabsProps) {
     const [tabValue, setTabValue] = useState<NewGameTabValue>("generate-form");
 
     return (
-        <TabContext value={tabValue}>
-            <DialogTitle>New game</DialogTitle>
-            <TabList
-                onChange={(_ev, newTabIndex: NewGameTabValue) => {
-                    setTabValue(newTabIndex);
-                }}
-                aria-label="New game forms"
-                variant="fullWidth"
-            >
-                <Tab label="Generate" value="generate-form" />
-                <Tab label="Import" value="import-form" />
-            </TabList>
-            {tabValue === "generate-form" ? <GenerateForm onClose={onClose} /> : <ImportForm onClose={onClose} />}
-        </TabContext>
+        <>
+            <Text size="lg" fw={500} mb="md">
+                New game
+            </Text>
+            <Tabs value={tabValue} onChange={(val) => setTabValue(val as NewGameTabValue)}>
+                <Tabs.List grow>
+                    <Tabs.Tab value="generate-form">Generate</Tabs.Tab>
+                    <Tabs.Tab value="import-form">Import</Tabs.Tab>
+                </Tabs.List>
+                <Tabs.Panel value="generate-form" pt="md">
+                    <GenerateForm onClose={onClose} />
+                </Tabs.Panel>
+                <Tabs.Panel value="import-form" pt="md">
+                    <ImportForm onClose={onClose} />
+                </Tabs.Panel>
+            </Tabs>
+        </>
     );
 }

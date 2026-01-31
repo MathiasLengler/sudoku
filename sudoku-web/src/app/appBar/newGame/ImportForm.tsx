@@ -1,33 +1,25 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import SaveAltIcon from "@mui/icons-material/SaveAlt";
-import TabPanel from "@mui/lab/TabPanel";
-import { DialogContent, Stack, Typography } from "@mui/material";
-import Accordion from "@mui/material/Accordion";
-import AccordionDetails from "@mui/material/AccordionDetails";
-import AccordionSummary from "@mui/material/AccordionSummary";
-import Button from "@mui/material/Button";
-import DialogActions from "@mui/material/DialogActions";
-import { useForm } from "react-hook-form";
-import { SwitchElement, TextFieldElement } from "react-hook-form-mui";
+import { IconChevronDown, IconDownload } from "@tabler/icons-react";
+import { Accordion, Button, Group, Stack, Switch, Text, Textarea } from "@mantine/core";
+import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
 import { useImportSudokuString } from "../../actions/sudokuActions";
 import { Code } from "../../components/Code";
 import { Fieldset } from "../../components/Fieldset";
 import { ResetFormButton } from "../../components/ResetFormButton";
-import type { NewGameTabValue } from "./NewGameDialog";
 
 function SupportedFormats() {
     return (
-        <Accordion>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography>Supported formats</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-                <Typography variant="h6">List of givens</Typography>
-                <Code>{"6....23..1256.......47...2.73....84...........46....15.5...81.......3472..72....8"}</Code>
-                <Typography variant="h6">Grid of givens</Typography>
-                <Code>{`*-----------*
+        <Accordion chevron={<IconChevronDown size={16} />}>
+            <Accordion.Item value="formats">
+                <Accordion.Control>
+                    <Text>Supported formats</Text>
+                </Accordion.Control>
+                <Accordion.Panel>
+                    <Text size="lg" fw={500}>List of givens</Text>
+                    <Code>{"6....23..1256.......47...2.73....84...........46....15.5...81.......3472..72....8"}</Code>
+                    <Text size="lg" fw={500} mt="md">Grid of givens</Text>
+                    <Code>{`*-----------*
 |.8.|5.3|.7.|
 |.27|...|38.|
 |...|...|...|
@@ -40,9 +32,9 @@ function SupportedFormats() {
 |.32|...|45.|
 |.5.|9.7|.2.|
 *-----------*`}</Code>
-                <Typography variant="h6">Grid of candidates</Typography>
-                <Code>
-                    {`.--------------.----------------.------------.
+                    <Text size="lg" fw={500} mt="md">Grid of candidates</Text>
+                    <Code>
+                        {`.--------------.----------------.------------.
 | 6   7    89  | 189  19   2    | 3   5   4  |
 | 1   2    5   | .    3    4    | 9   8   7  |
 | 3   89   4   | 7    58   59   | 6   2   1  |
@@ -55,10 +47,11 @@ function SupportedFormats() {
 | 89  689  1   | 5    69   3    | 4   0   2  |
 | 4   69   7   | 2    169  169  | 5   3   8  |
 '--------------'----------------'------------'`}
-                </Code>
-                <Typography variant="h6">Empty cells can be expressed as</Typography>
-                <Code>{". 0"}</Code>
-            </AccordionDetails>
+                    </Code>
+                    <Text size="lg" fw={500} mt="md">Empty cells can be expressed as</Text>
+                    <Code>{". 0"}</Code>
+                </Accordion.Panel>
+            </Accordion.Item>
         </Accordion>
     );
 }
@@ -79,7 +72,7 @@ export function ImportForm({ onClose }: ImportFormProps) {
     const {
         control,
         handleSubmit,
-        formState: { isSubmitting },
+        formState: { isSubmitting, errors },
         reset,
         setError,
     } = useForm<ImportFormValues>({
@@ -92,67 +85,67 @@ export function ImportForm({ onClose }: ImportFormProps) {
 
     return (
         <>
-            <DialogContent>
-                <TabPanel value={"import-form" satisfies NewGameTabValue} sx={{ p: 0 }}>
-                    <form
-                        id="import-form"
-                        onSubmit={handleSubmit(async ({ input, setAllDirectCandidates }) => {
-                            try {
-                                await importSudokuString(input, setAllDirectCandidates);
-                                onClose();
-                            } catch (err) {
-                                console.error("Unable to parse input sudoku string:", input, err);
-                                if (err instanceof Error) {
-                                    setError("input", { type: "custom", message: err.message });
-                                }
-                            }
-                        })}
-                    >
-                        <Stack spacing={2}>
-                            <TextFieldElement
-                                control={control}
-                                name="input"
+            <form
+                id="import-form"
+                onSubmit={handleSubmit(async ({ input, setAllDirectCandidates }) => {
+                    try {
+                        await importSudokuString(input, setAllDirectCandidates);
+                        onClose();
+                    } catch (err) {
+                        console.error("Unable to parse input sudoku string:", input, err);
+                        if (err instanceof Error) {
+                            setError("input", { type: "custom", message: err.message });
+                        }
+                    }
+                })}
+            >
+                <Stack gap="md">
+                    <Controller
+                        name="input"
+                        control={control}
+                        render={({ field }) => (
+                            <Textarea
+                                {...field}
                                 label="Formatted Sudoku"
-                                multiline
-                                fullWidth
-                                slotProps={{
-                                    input: {
-                                        sx: {
-                                            fontFamily: "monospace",
-                                        },
-                                        readOnly: isSubmitting,
-                                    },
-                                }}
+                                autosize
+                                minRows={4}
+                                error={errors.input?.message}
+                                styles={{ input: { fontFamily: "monospace" } }}
+                                readOnly={isSubmitting}
                             />
-                            <SupportedFormats />
-                            <Fieldset label="Post import">
-                                <SwitchElement
-                                    control={control}
-                                    name="setAllDirectCandidates"
+                        )}
+                    />
+                    <SupportedFormats />
+                    <Fieldset label="Post import">
+                        <Controller
+                            name="setAllDirectCandidates"
+                            control={control}
+                            render={({ field: { value, onChange, ...field } }) => (
+                                <Switch
+                                    {...field}
+                                    checked={value}
+                                    onChange={(e) => onChange(e.currentTarget.checked)}
                                     label="Fill candidates"
                                 />
-                            </Fieldset>
-                        </Stack>
-                    </form>
-                </TabPanel>
-            </DialogContent>
-            <DialogActions>
+                            )}
+                        />
+                    </Fieldset>
+                </Stack>
+            </form>
+            <Group justify="space-between" mt="md">
                 <ResetFormButton disabled={isSubmitting} onClick={reset} />
-                <Button onClick={onClose} disabled={isSubmitting}>
+                <Button onClick={onClose} disabled={isSubmitting} variant="subtle">
                     Cancel
                 </Button>
                 <Button
                     type="submit"
                     form="import-form"
-                    color="primary"
-                    variant="contained"
-                    endIcon={<SaveAltIcon />}
+                    rightSection={<IconDownload size={18} />}
                     loading={isSubmitting}
-                    loadingPosition="end"
                 >
-                    <span>Import</span>
+                    Import
                 </Button>
-            </DialogActions>
+            </Group>
         </>
     );
 }

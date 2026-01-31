@@ -1,4 +1,4 @@
-import { Slider } from "@mui/material";
+import { Slider as MantineSlider } from "@mantine/core";
 import classNames from "classnames";
 import type * as CSS from "csstype";
 import * as _ from "es-toolkit";
@@ -137,7 +137,7 @@ export function WorldMap() {
 
     return (
         <div className="world-map" style={cssVariables}>
-            <Slider min={1} max={200} value={cellSize} onChange={(_e, value) => setCellSize(value)} />
+            <MantineSlider min={1} max={200} value={cellSize} onChange={(value) => setCellSize(value)} />
             <WorldMapVirtualized />
         </div>
     );

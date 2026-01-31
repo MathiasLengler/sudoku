@@ -1,4 +1,5 @@
-import { Alert, Button, Stack } from "@mui/material";
+import { Alert, Button, Stack } from "@mantine/core";
+import { IconAlertCircle } from "@tabler/icons-react";
 
 import type { ReactNode } from "react";
 import { ErrorBoundary } from "react-error-boundary";
@@ -41,17 +42,24 @@ function ThemeFallback({ error, resetErrorBoundary, inline }: FallbackProps & { 
 
     return (
         <Stack
-            direction={inline ? "row" : "column"}
-            spacing={2}
-            sx={{
-                width: 1,
-                height: 1,
-                justifyContent: "center",
-                alignItems: "center",
+            align="center"
+            justify="center"
+            gap="md"
+            style={{
+                width: "100%",
+                height: "100%",
+                flexDirection: inline ? "row" : "column",
             }}
         >
-            <Alert severity="error">Unexpected error: {message}</Alert>
-            <Button onClick={resetErrorBoundary} variant="contained">
+            <Alert
+                variant="light"
+                color="red"
+                title="Unexpected error"
+                icon={<IconAlertCircle size={16} />}
+            >
+                {message}
+            </Alert>
+            <Button onClick={resetErrorBoundary} variant="filled">
                 Try again
             </Button>
         </Stack>
@@ -62,7 +70,7 @@ export function ThemeErrorBoundary({ children, inline }: { children: ReactNode; 
     return (
         <ErrorBoundary
             fallbackRender={({ error, resetErrorBoundary }) => (
-                <ThemeFallback error={error as unknown} resetErrorBoundary={resetErrorBoundary} inline={inline} />
+                <ThemeFallback error={error} resetErrorBoundary={resetErrorBoundary} inline={inline} />
             )}
         >
             {children}

@@ -1,6 +1,5 @@
-import Dialog from "@mui/material/Dialog";
-import { useTheme } from "@mui/material/styles";
-import useMediaQuery from "@mui/material/useMediaQuery";
+import { Modal } from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
 import type { ReactNode } from "react";
 
 type MyDialogProps = {
@@ -10,8 +9,7 @@ type MyDialogProps = {
 };
 
 export function MyDialog({ open, onClose, children }: MyDialogProps) {
-    const theme = useTheme();
-    const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
+    const isMobile = useMediaQuery("(max-width: 768px)");
 
     return (
         <div
@@ -20,9 +18,15 @@ export function MyDialog({ open, onClose, children }: MyDialogProps) {
                 e.stopPropagation();
             }}
         >
-            <Dialog open={open} onClose={onClose} fullWidth fullScreen={fullScreen} scroll="paper">
+            <Modal
+                opened={open}
+                onClose={onClose}
+                fullScreen={isMobile}
+                size="lg"
+                overlayProps={{ backgroundOpacity: 0.55, blur: 3 }}
+            >
                 {children(onClose)}
-            </Dialog>
+            </Modal>
         </div>
     );
 }

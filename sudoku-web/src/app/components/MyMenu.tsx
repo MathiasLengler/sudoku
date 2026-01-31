@@ -1,7 +1,6 @@
 import { useState, type MouseEventHandler } from "react";
 
-import { ListItemIcon, ListItemText, Menu } from "@mui/material";
-import MenuItem from "@mui/material/MenuItem";
+import { Menu } from "@mantine/core";
 
 type MyMenuProps = {
     children: (params: { onMenuOpen: MouseEventHandler<HTMLButtonElement> }) => React.ReactNode;
@@ -14,10 +13,10 @@ type MyMenuProps = {
 };
 
 export function MyMenu({ children, menuItems }: MyMenuProps) {
-    const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+    const [opened, setOpened] = useState(false);
 
     const makeHandleMenuClose = (action?: () => Promise<void> | void) => async () => {
-        setMenuAnchorEl(null);
+        setOpened(false);
         if (action) {
             try {
                 await action();
@@ -27,19 +26,23 @@ export function MyMenu({ children, menuItems }: MyMenuProps) {
         }
     };
 
-    const onMenuOpen: MouseEventHandler<HTMLButtonElement> = (e) => setMenuAnchorEl(e.currentTarget);
+    const onMenuOpen: MouseEventHandler<HTMLButtonElement> = () => setOpened(true);
 
     return (
-        <>
-            {children({ onMenuOpen })}
-            <Menu open={!!menuAnchorEl} anchorEl={menuAnchorEl} onClose={makeHandleMenuClose()}>
+        <Menu opened={opened} onClose={() => setOpened(false)} shadow="md" width={200}>
+            <Menu.Target>{children({ onMenuOpen })}</Menu.Target>
+            <Menu.Dropdown>
                 {menuItems.map((menuItem, i) => (
-                    <MenuItem key={i} onClick={makeHandleMenuClose(menuItem.onClick)} disabled={menuItem.disabled}>
-                        {menuItem.icon && <ListItemIcon>{menuItem.icon}</ListItemIcon>}
-                        <ListItemText>{menuItem.label}</ListItemText>
-                    </MenuItem>
+                    <Menu.Item
+                        key={i}
+                        onClick={makeHandleMenuClose(menuItem.onClick)}
+                        disabled={menuItem.disabled}
+                        leftSection={menuItem.icon}
+                    >
+                        {menuItem.label}
+                    </Menu.Item>
                 ))}
-            </Menu>
-        </>
+            </Menu.Dropdown>
+        </Menu>
     );
 }

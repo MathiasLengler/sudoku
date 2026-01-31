@@ -1,4 +1,4 @@
-import { Typography } from "@mui/material";
+import { Code as MantineCode } from "@mantine/core";
 
 type CodeProps = {
     children: string;
@@ -7,22 +7,16 @@ type CodeProps = {
 
 export function Code({ children, wrap = false }: CodeProps) {
     return (
-        <Typography
-            sx={[
-                {
-                    minHeight: "1lh",
-                },
-                wrap
-                    ? {
-                          whiteSpace: "pre-wrap",
-                      }
-                    : {
-                          whiteSpace: "pre",
-                      },
-            ]}
-            variant="code"
+        <MantineCode
+            block
+            style={{
+                minHeight: "1lh",
+                whiteSpace: wrap ? "pre-wrap" : "pre",
+                overflowWrap: "break-word",
+                overflowX: "auto",
+            }}
         >
             {children}
-        </Typography>
+        </MantineCode>
     );
 }

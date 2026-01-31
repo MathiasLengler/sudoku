@@ -1,4 +1,4 @@
-import LanguageIcon from "@mui/icons-material/Language";
+import { IconWorld } from "@tabler/icons-react";
 import assertNever from "assert-never";
 import { useAtom } from "jotai";
 import * as _ from "es-toolkit";
@@ -84,9 +84,8 @@ export function WorldSettingsButton() {
             {({ onMenuOpen }) => (
                 <MyIconButton
                     label="World settings"
-                    icon={LanguageIcon}
-                    size="large"
-                    color="inherit"
+                    icon={IconWorld}
+                    size="lg"
                     onClick={onMenuOpen}
                 />
             )}

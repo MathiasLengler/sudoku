@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { NotificationsProvider } from "@toolpad/core/useNotifications";
+import { Notifications } from "@mantine/notifications";
 import { Provider as JotaiProvider } from "jotai";
 import { DevTools } from "jotai-devtools";
 import jotaiDevToolsCss from "jotai-devtools/styles.css?inline";
@@ -43,12 +43,11 @@ export function App() {
                 <QueryClientProvider client={queryClient}>
                     <MyTheme>
                         <ThemeErrorBoundary>
-                            <NotificationsProvider slotProps={{ snackbar: { autoHideDuration: 3000 } }}>
-                                <Suspense fallback={<FullScreenSpinner />}>
-                                    <Sudoku />
-                                </Suspense>
-                                <SwManager />
-                            </NotificationsProvider>
+                            <Notifications position="top-right" autoClose={3000} />
+                            <Suspense fallback={<FullScreenSpinner />}>
+                                <Sudoku />
+                            </Suspense>
+                            <SwManager />
                         </ThemeErrorBoundary>
                     </MyTheme>
                 </QueryClientProvider>

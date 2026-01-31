@@ -1,11 +1,11 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import { Button, DialogActions, DialogContent, DialogTitle, LinearProgress, Stack } from "@mui/material";
+import { IconCopy } from "@tabler/icons-react";
+import { Button, Group, Loader, Select, Stack, Text } from "@mantine/core";
 
 import { useAtom, useAtomValue } from "jotai";
 import { useAtomCallback } from "jotai/utils";
 import { Suspense, useCallback, useEffect } from "react";
-import { SelectElement, useForm } from "react-hook-form-mui";
+import { Controller, useForm } from "react-hook-form";
 import { Code } from "../../components/Code";
 import { ResetFormButton } from "../../components/ResetFormButton";
 import { ALL_GRID_FORMATS } from "../../constants";
@@ -66,48 +66,41 @@ export function ExportToClipboardDialog({ onClose }: ExportToClipboardDialogProp
 
     return (
         <>
-            <DialogTitle>Export Sudoku to Clipboard</DialogTitle>
-            <DialogContent>
-                <form
-                    id="export-to-clipboard-form"
-                    noValidate
-                    onSubmit={handleSubmit(onSubmit)}
-                    style={{ display: "sticky" }}
-                >
-                    <Stack spacing={2}>
-                        <SelectElement
-                            control={control}
-                            name="gridFormat"
-                            label="Format"
-                            fullWidth
-                            options={ALL_GRID_FORMATS.map((gridFormat) => ({
-                                id: gridFormat,
-                                label: gridFormat,
-                            }))}
-                        />
-                        <Suspense fallback={<LinearProgress variant="indeterminate" />}>
-                            <DisplayExportedGridString gridFormat={gridFormat} />
-                        </Suspense>
-                    </Stack>
-                </form>
-            </DialogContent>
-            <DialogActions sx={{ justifyContent: "space-between" }}>
+            <Text size="lg" fw={500} mb="md">
+                Export Sudoku to Clipboard
+            </Text>
+            <form id="export-to-clipboard-form" noValidate onSubmit={handleSubmit(onSubmit)}>
+                <Stack gap="md">
+                    <Controller
+                        name="gridFormat"
+                        control={control}
+                        render={({ field }) => (
+                            <Select
+                                {...field}
+                                label="Format"
+                                data={ALL_GRID_FORMATS.map((format) => ({ value: format, label: format }))}
+                            />
+                        )}
+                    />
+                    <Suspense fallback={<Loader size="sm" />}>
+                        <DisplayExportedGridString gridFormat={gridFormat} />
+                    </Suspense>
+                </Stack>
+            </form>
+            <Group justify="space-between" mt="md">
                 <ResetFormButton disabled={isSubmitting} onClick={() => reset()} />
-                <Button onClick={onClose} disabled={isSubmitting}>
+                <Button onClick={onClose} disabled={isSubmitting} variant="subtle">
                     Cancel
                 </Button>
                 <Button
                     type="submit"
                     form="export-to-clipboard-form"
-                    color="primary"
-                    variant="contained"
-                    endIcon={<ContentCopyIcon />}
+                    rightSection={<IconCopy size={18} />}
                     loading={isSubmitting}
-                    loadingPosition="end"
                 >
                     Copy to Clipboard
                 </Button>
-            </DialogActions>
+            </Group>
         </>
     );
 }

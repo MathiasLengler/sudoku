@@ -1,8 +1,5 @@
-import CreateIcon from "@mui/icons-material/Create";
-import GestureIcon from "@mui/icons-material/Gesture";
-import UndoIcon from "@mui/icons-material/Undo";
-import { ToggleButton } from "@mui/material";
-import Tooltip from "@mui/material/Tooltip";
+import { IconPencil, IconScribble, IconArrowBackUp } from "@tabler/icons-react";
+import { ActionIcon, Tooltip } from "@mantine/core";
 import { useAtomValue } from "jotai";
 import { useToggleCandidateMode, useToggleStickyMode } from "../actions/inputActions";
 import { useUndo } from "../actions/sudokuActions";
@@ -24,32 +21,32 @@ export function Toolbar() {
 
     return (
         <div className="toolbar">
-            <Tooltip title="Toggle candidate mode [space bar]">
-                <ToggleButton
-                    value="candidateMode"
-                    selected={inputCandidateMode}
-                    onChange={() => toggleCandidateMode()}
-                    color="primary"
-                    size="large"
+            <Tooltip label="Toggle candidate mode [space bar]">
+                <ActionIcon
+                    variant={inputCandidateMode ? "filled" : "subtle"}
+                    color="blue"
+                    size="lg"
+                    onClick={() => toggleCandidateMode()}
+                    aria-label="Toggle candidate mode"
                 >
-                    <CreateIcon fontSize="large" />
-                </ToggleButton>
+                    <IconPencil size={26} />
+                </ActionIcon>
             </Tooltip>
-            <Tooltip title="Toggle sticky mode [+]">
-                <ToggleButton
-                    value="stickyMode"
-                    selected={inputStickyMode}
-                    onChange={() => toggleStickyMode()}
-                    color="primary"
-                    size="large"
+            <Tooltip label="Toggle sticky mode [+]">
+                <ActionIcon
+                    variant={inputStickyMode ? "filled" : "subtle"}
+                    color="blue"
+                    size="lg"
+                    onClick={() => toggleStickyMode()}
+                    aria-label="Toggle sticky mode"
                 >
-                    <GestureIcon fontSize="large" />
-                </ToggleButton>
+                    <IconScribble size={26} />
+                </ActionIcon>
             </Tooltip>
             <MyIconButton
                 label="Undo [backspace]"
-                icon={UndoIcon}
-                size="large"
+                icon={IconArrowBackUp}
+                size="lg"
                 disabled={!canUndo}
                 onClick={async () => {
                     await undo();

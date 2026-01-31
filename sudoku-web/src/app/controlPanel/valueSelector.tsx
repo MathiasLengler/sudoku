@@ -1,4 +1,4 @@
-import ButtonBase from "@mui/material/ButtonBase";
+import { UnstyledButton } from "@mantine/core";
 import classNames from "classnames";
 import * as _ from "es-toolkit";
 import { atom, useAtomValue, type Atom } from "jotai";
@@ -29,15 +29,14 @@ function ValueButton({ value }: SelectorValueProps) {
     });
 
     return (
-        <ButtonBase
+        <UnstyledButton
             className={buttonClassNames}
-            sx={{ typography: "button" }}
             onClick={async () => {
                 await handleValue(value);
             }}
         >
             <span className="selector-value-text">{valueToString(value)}</span>
-        </ButtonBase>
+        </UnstyledButton>
     );
 }
 

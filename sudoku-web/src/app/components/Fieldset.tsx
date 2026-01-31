@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { FormControl, FormLabel } from "@mui/material";
+import { Fieldset as MantineFieldset } from "@mantine/core";
 
 type FieldsetProps = {
     label: string;
@@ -10,9 +10,8 @@ type FieldsetProps = {
 
 export function Fieldset({ label, disabled, children }: FieldsetProps) {
     return (
-        <FormControl component="fieldset" disabled={disabled}>
-            <FormLabel component="legend">{label}</FormLabel>
+        <MantineFieldset legend={label} disabled={disabled}>
             {children}
-        </FormControl>
+        </MantineFieldset>
     );
 }

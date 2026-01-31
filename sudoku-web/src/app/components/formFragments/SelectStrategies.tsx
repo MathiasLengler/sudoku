@@ -1,7 +1,7 @@
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import { Stack, Tooltip } from "@mui/material";
+import { IconInfoCircle } from "@tabler/icons-react";
+import { Checkbox, Group, Stack, Text, Tooltip } from "@mantine/core";
 import type { Control, FieldValues, Path } from "react-hook-form";
-import { CheckboxButtonGroup } from "react-hook-form-mui";
+import { Controller } from "react-hook-form";
 import { ALL_STRATEGIES, STRATEGY_OPTIONS } from "../../constants";
 import { ExternalLink } from "../ExternalLink";
 
@@ -11,25 +11,36 @@ type SelectStrategiesProps<T extends FieldValues> = {
 };
 function SelectStrategies<T extends FieldValues>({ control, name }: SelectStrategiesProps<T>) {
     return (
-        <CheckboxButtonGroup
+        <Controller
             control={control}
             name={name}
-            label="Strategies"
-            options={ALL_STRATEGIES.map((strategy) => {
-                const option = STRATEGY_OPTIONS[strategy];
-                return {
-                    id: strategy,
-                    label: (
-                        <Stack direction="row" alignItems="center" gap={1}>
-                            {option.label}
-                            <Tooltip title={<ExternalLink href={option.link}>{option.description}</ExternalLink>}>
-                                <InfoOutlinedIcon fontSize="small" />
-                            </Tooltip>
-                        </Stack>
-                    ),
-                };
-            })}
-            required
+            render={({ field: { value, onChange } }) => (
+                <Checkbox.Group
+                    value={value as string[]}
+                    onChange={onChange}
+                    label="Strategies"
+                >
+                    <Stack gap="xs" mt="xs">
+                        {ALL_STRATEGIES.map((strategy) => {
+                            const option = STRATEGY_OPTIONS[strategy];
+                            return (
+                                <Checkbox
+                                    key={strategy}
+                                    value={strategy}
+                                    label={
+                                        <Group gap="xs">
+                                            <Text size="sm">{option.label}</Text>
+                                            <Tooltip label={<ExternalLink href={option.link}>{option.description}</ExternalLink>}>
+                                                <IconInfoCircle size={16} style={{ opacity: 0.6 }} />
+                                            </Tooltip>
+                                        </Group>
+                                    }
+                                />
+                            );
+                        })}
+                    </Stack>
+                </Checkbox.Group>
+            )}
         />
     );
 }

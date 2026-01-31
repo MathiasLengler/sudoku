@@ -1,4 +1,4 @@
-import { useNotifications } from "@toolpad/core/useNotifications";
+import { notifications } from "@mantine/notifications";
 import * as _ from "es-toolkit";
 import { Suspense, useCallback, useEffect } from "react";
 import { useAtomValue, useSetAtom } from "jotai";
@@ -53,25 +53,27 @@ function SudokuBaseEffect() {
 }
 
 function SolutionEffect() {
-    const notifications = useNotifications();
-
     const solution = useAtomValue(sudokuSolutionState);
     const gameCounter = useAtomValue(gameCounterState);
 
     useEffect(() => {
         if (solution === "noSolution") {
-            notifications.show("Sudoku has no solutions", {
-                key: "no-solution",
-                severity: "warning",
+            notifications.show({
+                id: "no-solution",
+                title: "Sudoku has no solutions",
+                message: "",
+                color: "yellow",
             });
         }
         if (solution === "multipleSolutions") {
-            notifications.show("Sudoku has multiple solutions", {
-                key: "multiple-solutions",
-                severity: "warning",
+            notifications.show({
+                id: "multiple-solutions",
+                title: "Sudoku has multiple solutions",
+                message: "",
+                color: "yellow",
             });
         }
-    }, [notifications, solution, gameCounter]);
+    }, [solution, gameCounter]);
 
     return null;
 }

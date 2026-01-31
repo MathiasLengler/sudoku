@@ -1,14 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import CasinoIcon from "@mui/icons-material/Casino";
-import PlayArrowIcon from "@mui/icons-material/PlayArrow";
-import TabPanel from "@mui/lab/TabPanel";
-import { Box, DialogContent, FormGroup, LinearProgress, Stack, Typography } from "@mui/material";
-import Button from "@mui/material/Button";
-import DialogActions from "@mui/material/DialogActions";
+import { IconDice, IconPlayerPlay } from "@tabler/icons-react";
+import { Box, Button, Group, Progress, Select, Slider, Stack, Switch, Text, TextInput } from "@mantine/core";
 import * as _ from "es-toolkit";
 import { useAtom } from "jotai";
 import { useEffect } from "react";
-import { SelectElement, SliderElement, SwitchElement, TextFieldElement, useForm } from "react-hook-form-mui";
+import { Controller, useForm } from "react-hook-form";
 import type { DynamicGeneratorSettings, GeneratorProgress } from "../../../types";
 import { useGenerate, useGenerateMultiShot, type TrackedMultiShotGeneratorProgress } from "../../actions/sudokuActions";
 import { Fieldset } from "../../components/Fieldset";
@@ -34,7 +30,6 @@ import {
 } from "../../state/forms/generate";
 import { BASE_MARKS, BASE_MAX, BASE_MIN, baseToLabel, parseBase } from "../../utils/base";
 import { baseToCellCount } from "../../utils/sudoku";
-import type { NewGameTabValue } from "./NewGameDialog";
 
 function GenerateProgressLayout({
     linearProgress,
@@ -44,16 +39,11 @@ function GenerateProgressLayout({
     description: string;
 }) {
     return (
-        <Box sx={{ display: "flex", alignItems: "center", pt: 2, flexDirection: "column" }}>
-            <Box sx={{ width: 1, pb: 1 }}>{linearProgress}</Box>
-            <Typography
-                variant="body2"
-                sx={{
-                    color: "text.secondary",
-                }}
-            >
+        <Box pt="md">
+            <Box pb="xs">{linearProgress}</Box>
+            <Text size="sm" c="dimmed" ta="center">
                 {description}
-            </Typography>
+            </Text>
         </Box>
     );
 }
@@ -64,7 +54,7 @@ type GenerateProgressProps = {
 };
 function GenerateProgress({ progress, cellCount }: GenerateProgressProps) {
     if (!progress) {
-        return <GenerateProgressLayout linearProgress={<LinearProgress />} description={"Generating solution"} />;
+        return <GenerateProgressLayout linearProgress={<Progress value={100} animated />} description={"Generating solution"} />;
     }
 
     const { pruningPositionCount, pruningPositionIndex, deletedCount } = progress;
@@ -72,7 +62,7 @@ function GenerateProgress({ progress, cellCount }: GenerateProgressProps) {
 
     return (
         <GenerateProgressLayout
-            linearProgress={<LinearProgress variant="determinate" value={value} />}
+            linearProgress={<Progress value={value} />}
             description={`Cell ${pruningPositionIndex}/${pruningPositionCount} - deleted ${deletedCount}, remaining ${
                 cellCount - deletedCount
             }`}
@@ -87,7 +77,7 @@ function GenerateMultiShotProgress({ trackedMultiShotGeneratorProgress }: Genera
     if (!trackedMultiShotGeneratorProgress) {
         return (
             <GenerateProgressLayout
-                linearProgress={<LinearProgress />}
+                linearProgress={<Progress value={100} animated />}
                 description={"Initializing multi-shot generator"}
             />
         );
@@ -95,19 +85,14 @@ function GenerateMultiShotProgress({ trackedMultiShotGeneratorProgress }: Genera
 
     const { totalIterations } = trackedMultiShotGeneratorProgress.latestProgress;
 
-    const seenIterationsCount = trackedMultiShotGeneratorProgress.seenIterationsCount;
-    const processingPercentage = (seenIterationsCount / totalIterations) * 100;
-
     const finishedIterationsCount = trackedMultiShotGeneratorProgress.finishedIterationsCount;
     const finishedPercentage = (finishedIterationsCount / totalIterations) * 100;
 
-    const inProgressCount = seenIterationsCount - finishedIterationsCount;
+    const inProgressCount = trackedMultiShotGeneratorProgress.seenIterationsCount - finishedIterationsCount;
 
     return (
         <GenerateProgressLayout
-            linearProgress={
-                <LinearProgress variant="buffer" value={finishedPercentage} valueBuffer={processingPercentage} />
-            }
+            linearProgress={<Progress value={finishedPercentage} />}
             description={`Iteration ${finishedIterationsCount}/${totalIterations}, in progress: ${inProgressCount}`}
         />
     );
@@ -162,234 +147,286 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
 
     return (
         <>
-            <DialogContent>
-                <TabPanel value={"generate-form" satisfies NewGameTabValue} sx={{ p: 0 }}>
-                    <form
-                        id="generate-form"
-                        onSubmit={handleSubmit(async () => {
-                            const {
-                                base,
-                                minGivens,
-                                setAllDirectCandidates,
-                                strategies,
-                                seed,
-                                useSeed,
-                                multiShot,
-                                iterationsIndex,
+            <form
+                id="generate-form"
+                onSubmit={handleSubmit(async () => {
+                    const {
+                        base,
+                        minGivens,
+                        setAllDirectCandidates,
+                        strategies,
+                        seed,
+                        useSeed,
+                        multiShot,
+                        iterationsIndex,
+                        metric,
+                        optimize,
+                        parallel,
+                    } = formValues;
+
+                    const generatorSettings: DynamicGeneratorSettings = {
+                        base: parseBase(base),
+                        prune: {
+                            target: {
+                                minClueCount: minGivens,
+                            },
+                            strategies,
+                            setAllDirectCandidates,
+                            // TODO: expose
+                            order: "random",
+                            startFromNearMinimalGrid: false,
+                        },
+                        solution: undefined,
+                        seed: useSeed && !_.isUndefined(seed) ? BigInt(seed) : undefined,
+                    };
+
+                    try {
+                        if (multiShot) {
+                            await generateMultiShot({
+                                generatorSettings,
+                                iterations: iterationsIndexToIterations(iterationsIndex),
                                 metric,
                                 optimize,
                                 parallel,
-                            } = formValues;
+                            });
+                        } else {
+                            await generate(generatorSettings);
+                        }
+                    } catch (err) {
+                        if (!(err instanceof DOMException && err.name === "AbortError")) {
+                            throw err;
+                        }
+                        console.info("Generate form submission aborted");
+                        return;
+                    }
 
-                            const generatorSettings: DynamicGeneratorSettings = {
-                                base: parseBase(base),
-                                prune: {
-                                    target: {
-                                        minClueCount: minGivens,
-                                    },
-                                    strategies,
-                                    setAllDirectCandidates,
-                                    // TODO: expose
-                                    order: "random",
-                                    startFromNearMinimalGrid: false,
-                                },
-                                solution: undefined,
-                                seed: useSeed && !_.isUndefined(seed) ? BigInt(seed) : undefined,
-                            };
+                    setGenerateFormValues(formValues);
 
-                            try {
-                                if (multiShot) {
-                                    await generateMultiShot({
-                                        generatorSettings,
-                                        iterations: iterationsIndexToIterations(iterationsIndex),
-                                        metric,
-                                        optimize,
-                                        parallel,
-                                    });
-                                } else {
-                                    await generate(generatorSettings);
-                                }
-                            } catch (err) {
-                                if (!(err instanceof DOMException && err.name === "AbortError")) {
-                                    throw err;
-                                }
-                                console.info("Generate form submission aborted");
-                                return;
-                            }
+                    onClose();
+                })}
+            >
+                <Stack gap="md">
+                    <Box>
+                        <Text size="sm" fw={500} mb="xs">Size</Text>
+                        <Controller
+                            name="base"
+                            control={control}
+                            render={({ field: { value, onChange } }) => (
+                                <Slider
+                                    value={value}
+                                    onChange={onChange}
+                                    label={baseToLabel}
+                                    min={BASE_MIN}
+                                    max={BASE_MAX}
+                                    marks={BASE_MARKS.map(m => ({ value: m.value, label: m.label }))}
+                                />
+                            )}
+                        />
+                    </Box>
+                    <Box>
+                        <Text size="sm" fw={500} mb="xs">Minimum number of givens</Text>
+                        <Controller
+                            name="minGivens"
+                            control={control}
+                            render={({ field: { value, onChange } }) => (
+                                <Slider
+                                    value={value}
+                                    onChange={onChange}
+                                    step={1}
+                                    min={0}
+                                    max={cellCount}
+                                    marks={[
+                                        { value: 0, label: "0" },
+                                        { value: cellCount, label: `${cellCount}` },
+                                    ]}
+                                />
+                            )}
+                        />
+                    </Box>
+                    <SelectStrategies control={control} name="strategies" />
 
-                            setGenerateFormValues(formValues);
-
-                            onClose();
-                        })}
-                    >
-                        <Stack spacing={2}>
-                            <SliderElement
-                                control={control}
-                                name="base"
-                                label="Size"
-                                min={BASE_MIN}
-                                max={BASE_MAX}
-                                marks={BASE_MARKS}
-                                valueLabelDisplay="auto"
-                                getAriaLabel={() => "Size"}
-                                getAriaValueText={(base) => baseToLabel(base)}
-                            />
-                            <SliderElement
-                                control={control}
-                                name="minGivens"
-                                label="Minimum number of givens"
-                                step={1}
-                                min={0}
-                                max={cellCount}
-                                marks={[
-                                    { value: 0, label: 0 },
-                                    { value: cellCount, label: cellCount },
-                                ]}
-                                valueLabelDisplay="auto"
-                                getAriaLabel={() => "Minimum number of givens"}
-                                getAriaValueText={(minGivens) => `${minGivens}`}
-                            />
-                            <SelectStrategies control={control} name="strategies" />
-
-                            <Fieldset label="Post generation">
-                                <SwitchElement
-                                    control={control}
-                                    name="setAllDirectCandidates"
+                    <Fieldset label="Post generation">
+                        <Controller
+                            name="setAllDirectCandidates"
+                            control={control}
+                            render={({ field: { value, onChange, ...field } }) => (
+                                <Switch
+                                    {...field}
+                                    checked={value}
+                                    onChange={(e) => onChange(e.currentTarget.checked)}
                                     label="Fill candidates"
                                 />
-                            </Fieldset>
+                            )}
+                        />
+                    </Fieldset>
 
-                            <Fieldset label="Random seed">
-                                <FormGroup row>
-                                    <SwitchElement control={control} name="useSeed" label="Use seed" />
-                                    <TextFieldElement
-                                        sx={{ flex: 1 }}
-                                        control={control}
-                                        name="seed"
+                    <Fieldset label="Random seed">
+                        <Group align="flex-end">
+                            <Controller
+                                name="useSeed"
+                                control={control}
+                                render={({ field: { value, onChange, ...field } }) => (
+                                    <Switch
+                                        {...field}
+                                        checked={value}
+                                        onChange={(e) => onChange(e.currentTarget.checked)}
+                                        label="Use seed"
+                                    />
+                                )}
+                            />
+                            <Controller
+                                name="seed"
+                                control={control}
+                                render={({ field }) => (
+                                    <TextInput
+                                        {...field}
+                                        value={field.value ?? ""}
                                         label="Seed"
                                         disabled={!useSeed}
-                                        slotProps={{
-                                            htmlInput: { inputMode: "numeric" },
-                                            input: {
-                                                startAdornment: (
-                                                    <MyIconButton
-                                                        label="Generate random seed"
-                                                        icon={CasinoIcon}
-                                                        disabled={!useSeed}
-                                                        onClick={() => {
-                                                            setValue(
-                                                                "seed",
-                                                                Math.trunc(Math.random() * SEED_MAX).toFixed(0),
-                                                            );
-                                                        }}
-                                                    />
-                                                ),
-                                            },
-                                        }}
+                                        style={{ flex: 1 }}
+                                        leftSection={
+                                            <MyIconButton
+                                                label="Generate random seed"
+                                                icon={IconDice}
+                                                size="sm"
+                                                disabled={!useSeed}
+                                                onClick={() => {
+                                                    setValue(
+                                                        "seed",
+                                                        Math.trunc(Math.random() * SEED_MAX).toFixed(0),
+                                                    );
+                                                }}
+                                            />
+                                        }
                                     />
-                                </FormGroup>
-                            </Fieldset>
-                            <Fieldset label="Multi-shot settings">
-                                <SwitchElement control={control} name="multiShot" label="Multi-shot" />
-                                <SwitchElement
-                                    control={control}
-                                    name="parallel"
-                                    label="Parallel"
-                                    disabled={!multiShot}
-                                />
-                                <Stack spacing={2}>
-                                    <SliderElement
-                                        control={control}
-                                        name="iterationsIndex"
-                                        label="Iterations"
+                                )}
+                            />
+                        </Group>
+                    </Fieldset>
+                    <Fieldset label="Multi-shot settings">
+                        <Stack gap="sm">
+                            <Controller
+                                name="multiShot"
+                                control={control}
+                                render={({ field: { value, onChange, ...field } }) => (
+                                    <Switch
+                                        {...field}
+                                        checked={value}
+                                        onChange={(e) => onChange(e.currentTarget.checked)}
+                                        label="Multi-shot"
+                                    />
+                                )}
+                            />
+                            <Controller
+                                name="parallel"
+                                control={control}
+                                render={({ field: { value, onChange, ...field } }) => (
+                                    <Switch
+                                        {...field}
+                                        checked={value}
+                                        onChange={(e) => onChange(e.currentTarget.checked)}
+                                        label="Parallel"
                                         disabled={!multiShot}
-                                        step={1}
-                                        min={MIN_ITERATIONS_INDEX}
-                                        max={MAX_ITERATIONS_INDEX}
-                                        scale={iterationsIndexToIterations}
-                                        valueLabelDisplay="auto"
-                                        getAriaLabel={() => "Iterations"}
-                                        getAriaValueText={(iterations) => `${iterations}`}
                                     />
-                                    <SelectElement
-                                        control={control}
-                                        name="metric.kind"
+                                )}
+                            />
+                            <Box>
+                                <Text size="sm" fw={500} mb="xs">Iterations</Text>
+                                <Controller
+                                    name="iterationsIndex"
+                                    control={control}
+                                    render={({ field: { value, onChange } }) => (
+                                        <Slider
+                                            value={value}
+                                            onChange={onChange}
+                                            label={(v) => `${iterationsIndexToIterations(v)}`}
+                                            disabled={!multiShot}
+                                            step={1}
+                                            min={MIN_ITERATIONS_INDEX}
+                                            max={MAX_ITERATIONS_INDEX}
+                                        />
+                                    )}
+                                />
+                            </Box>
+                            <Controller
+                                name="metric.kind"
+                                control={control}
+                                render={({ field }) => (
+                                    <Select
+                                        {...field}
                                         label="Metric"
                                         disabled={!multiShot}
-                                        helperText={GRID_METRIC_OPTIONS[metric.kind]?.description}
-                                        options={ALL_GRID_METRIC_NAMES.map((gridMetric) => {
+                                        description={GRID_METRIC_OPTIONS[metric.kind]?.description}
+                                        data={ALL_GRID_METRIC_NAMES.map((gridMetric) => {
                                             const option = GRID_METRIC_OPTIONS[gridMetric];
                                             return {
-                                                id: gridMetric,
+                                                value: gridMetric,
                                                 label: option.label,
                                                 disabled: option.disabled,
                                             };
                                         })}
                                     />
-                                    {(GRID_METRIC_NAMES_WITH_STRATEGY as string[]).includes(metric.kind) && (
-                                        <SelectStrategy control={control} name="metric.strategy" />
-                                    )}
-                                    <SelectElement
-                                        control={control}
-                                        name="optimize"
+                                )}
+                            />
+                            {(GRID_METRIC_NAMES_WITH_STRATEGY as string[]).includes(metric.kind) && (
+                                <SelectStrategy control={control} name="metric.strategy" />
+                            )}
+                            <Controller
+                                name="optimize"
+                                control={control}
+                                render={({ field }) => (
+                                    <Select
+                                        {...field}
                                         label="Optimize"
                                         disabled={!multiShot}
-                                        options={ALL_GOAL_OPTIMIZATIONS.map((goalOptimizations) => ({
-                                            id: goalOptimizations,
-                                            label: goalOptimizations,
+                                        data={ALL_GOAL_OPTIMIZATIONS.map((goalOptimization) => ({
+                                            value: goalOptimization,
+                                            label: goalOptimization,
                                         }))}
                                     />
-                                </Stack>
-                            </Fieldset>
-                        </Stack>
-                    </form>
-                </TabPanel>
-            </DialogContent>
-            <DialogActions>
-                <Stack direction="column" sx={{ width: 1 }}>
-                    {isSubmitting &&
-                        (multiShot ? (
-                            <GenerateMultiShotProgress
-                                trackedMultiShotGeneratorProgress={trackedMultiShotGeneratorProgress}
+                                )}
                             />
-                        ) : (
-                            <GenerateProgress progress={generateProgress} cellCount={cellCount} />
-                        ))}
-                    <Stack
-                        direction="row"
-                        sx={{ width: 1, flex: 1, alignItems: "center", justifyContent: "space-between" }}
-                    >
-                        <ResetFormButton disabled={isSubmitting} onClick={() => reset(GENERATE_FORM_DEFAULT_VALUES)} />
-                        <Button
-                            type="button"
-                            onClick={() => {
-                                if (isSubmitting) {
-                                    if (multiShot) {
-                                        cancelGenerateMultiShot();
-                                    } else {
-                                        cancelGenerate();
-                                    }
-                                } else {
-                                    onClose();
-                                }
-                            }}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            type="submit"
-                            form="generate-form"
-                            color="primary"
-                            variant="contained"
-                            endIcon={<PlayArrowIcon />}
-                            loading={isSubmitting}
-                            loadingPosition="end"
-                        >
-                            <span>Generate</span>
-                        </Button>
-                    </Stack>
+                        </Stack>
+                    </Fieldset>
                 </Stack>
-            </DialogActions>
+            </form>
+            <Stack gap="sm" mt="md">
+                {isSubmitting &&
+                    (multiShot ? (
+                        <GenerateMultiShotProgress
+                            trackedMultiShotGeneratorProgress={trackedMultiShotGeneratorProgress}
+                        />
+                    ) : (
+                        <GenerateProgress progress={generateProgress} cellCount={cellCount} />
+                    ))}
+                <Group justify="space-between">
+                    <ResetFormButton disabled={isSubmitting} onClick={() => reset(GENERATE_FORM_DEFAULT_VALUES)} />
+                    <Button
+                        variant="subtle"
+                        onClick={() => {
+                            if (isSubmitting) {
+                                if (multiShot) {
+                                    cancelGenerateMultiShot();
+                                } else {
+                                    cancelGenerate();
+                                }
+                            } else {
+                                onClose();
+                            }
+                        }}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        type="submit"
+                        form="generate-form"
+                        rightSection={<IconPlayerPlay size={18} />}
+                        loading={isSubmitting}
+                    >
+                        Generate
+                    </Button>
+                </Group>
+            </Stack>
         </>
     );
 }

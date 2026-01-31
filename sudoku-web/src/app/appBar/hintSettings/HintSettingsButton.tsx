@@ -1,8 +1,7 @@
 import MyIconButton from "../../components/MyIconButton";
 import { MyDialog } from "../../components/MyDialog";
-import LightbulbIcon from "@mui/icons-material/Lightbulb";
+import { IconBulb, IconSettings } from "@tabler/icons-react";
 import { HintSettingsDialog } from "./HintSettingsDialog";
-import SettingsIcon from "@mui/icons-material/Settings";
 import { useState } from "react";
 
 export function HintSettingsButton() {
@@ -12,11 +11,10 @@ export function HintSettingsButton() {
         <>
             <MyIconButton
                 label="Hint settings"
-                icon={LightbulbIcon}
-                size="large"
-                color="inherit"
+                icon={IconBulb}
+                size="lg"
                 onClick={() => setIsSolverConfigDialogOpen(true)}
-                badge={<SettingsIcon fontSize="inherit" />}
+                badge={<IconSettings size={10} />}
             />
             <MyDialog open={isSolverConfigDialogOpen} onClose={() => setIsSolverConfigDialogOpen(false)}>
                 {(onClose) => <HintSettingsDialog onClose={onClose} />}

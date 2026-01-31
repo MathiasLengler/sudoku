@@ -1,7 +1,4 @@
-import DeleteIcon from "@mui/icons-material/Delete";
-import InfoIcon from "@mui/icons-material/Info";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import RedoIcon from "@mui/icons-material/Redo";
+import { IconTrash, IconInfoCircle, IconDotsVertical, IconArrowForwardUp } from "@tabler/icons-react";
 import { useAtomValue } from "jotai";
 import { useDeleteSelectedCell, useRedo, useSetAllDirectCandidates } from "../actions/sudokuActions";
 import MyIconButton from "../components/MyIconButton";
@@ -21,7 +18,7 @@ export function ToolbarMenu() {
             menuItems={[
                 {
                     label: "Redo",
-                    icon: <RedoIcon />,
+                    icon: <IconArrowForwardUp size={18} />,
                     disabled: !canRedo,
                     onClick: async () => {
                         await redo();
@@ -30,7 +27,7 @@ export function ToolbarMenu() {
                 {
                     // TODO: show KB shortcut [Delete]
                     label: "Delete selected cell",
-                    icon: <DeleteIcon />,
+                    icon: <IconTrash size={18} />,
                     disabled: inputStickyMode,
                     onClick: async () => {
                         await deleteSelectedCell();
@@ -39,13 +36,13 @@ export function ToolbarMenu() {
                 {
                     // TODO: show KB shortcut [Insert]
                     label: "Fill candidates",
-                    icon: <InfoIcon />,
+                    icon: <IconInfoCircle size={18} />,
                     onClick: async () => await setAllDirectCandidates(),
                 },
             ]}
         >
             {({ onMenuOpen }) => (
-                <MyIconButton label="Other actions" icon={MoreVertIcon} size="large" onClick={onMenuOpen} />
+                <MyIconButton label="Other actions" icon={IconDotsVertical} size="lg" onClick={onMenuOpen} />
             )}
         </MyMenu>
     );

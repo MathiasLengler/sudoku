@@ -1,4 +1,4 @@
-import ReplayIcon from "@mui/icons-material/Replay";
+import { IconRefresh } from "@tabler/icons-react";
 import MyIconButton from "./MyIconButton";
 
 type ResetFormButtonProps = {
@@ -7,5 +7,5 @@ type ResetFormButtonProps = {
 };
 
 export function ResetFormButton({ disabled, onClick }: ResetFormButtonProps) {
-    return <MyIconButton icon={ReplayIcon} label="Reset to default" disabled={disabled} onClick={() => onClick()} />;
+    return <MyIconButton icon={IconRefresh} label="Reset to default" disabled={disabled} onClick={() => onClick()} />;
 }

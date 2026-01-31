@@ -1,4 +1,4 @@
-import AddCircleIcon from "@mui/icons-material/AddCircle";
+import { IconCirclePlus } from "@tabler/icons-react";
 import { MyDialog } from "../../components/MyDialog";
 import { NewGameDialog } from "./NewGameDialog";
 import MyIconButton from "../../components/MyIconButton";
@@ -10,10 +10,9 @@ export function NewGameButton() {
     return (
         <>
             <MyIconButton
-                icon={AddCircleIcon}
-                size="large"
+                icon={IconCirclePlus}
+                size="lg"
                 label="New game"
-                color="inherit"
                 onClick={() => setIsNewGameDialogOpen(true)}
             />
             <MyDialog open={isNewGameDialogOpen} onClose={() => setIsNewGameDialogOpen(false)}>

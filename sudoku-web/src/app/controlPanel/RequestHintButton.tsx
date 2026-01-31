@@ -1,9 +1,8 @@
-import LightbulbIcon from "@mui/icons-material/Lightbulb";
-import CircularProgress from "@mui/material/CircularProgress";
-import type { IconButtonProps } from "@mui/material/IconButton";
+import { IconBulb } from "@tabler/icons-react";
+import { Loader } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import assertNever from "assert-never";
 import * as _ from "es-toolkit";
-import { useNotifications } from "@toolpad/core/useNotifications";
 import { useCallback, useState } from "react";
 import { useAtomValue } from "jotai";
 import { useApplyDeductions, useTryStrategies } from "../actions/sudokuActions";
@@ -21,8 +20,6 @@ export function RequestHintButton() {
     const applyDeductions = useApplyDeductions();
     const sudokuIsSolved = useAtomValue(sudokuIsSolvedState);
 
-    const notifications = useNotifications();
-
     const hideHint = useAtomCallback(
         useCallback((_get, set) => {
             set(hintState, RESET);
@@ -34,9 +31,11 @@ export function RequestHintButton() {
             async (get): Promise<OptionalHint> => {
                 const sudokuIsSolved = await get(sudokuIsSolvedState);
                 if (sudokuIsSolved) {
-                    notifications.show("Sudoku is solved", {
-                        key: "solved",
-                        severity: "success",
+                    notifications.show({
+                        id: "solved",
+                        title: "Sudoku is solved",
+                        message: "",
+                        color: "green",
                     });
                     return;
                 }
@@ -48,13 +47,19 @@ export function RequestHintButton() {
                 } catch (err) {
                     if (!(err instanceof Error)) throw err;
                     console.error("Failed to execute strategies", hintSettings.strategies, ":", err);
-                    notifications.show(err.message, { severity: "error" });
+                    notifications.show({
+                        title: "Error",
+                        message: err.message,
+                        color: "red",
+                    });
                     return;
                 }
                 if (!tryStrategiesResult) {
-                    notifications.show("No strategy made progress", {
-                        key: "no-progress",
-                        severity: "warning",
+                    notifications.show({
+                        id: "no-progress",
+                        title: "No strategy made progress",
+                        message: "",
+                        color: "yellow",
                     });
                     return;
                 }
@@ -77,7 +82,7 @@ export function RequestHintButton() {
                     return { strategy, deductions: [deduction] };
                 }
             },
-            [notifications, tryStrategies],
+            [tryStrategies],
         ),
     );
 
@@ -108,14 +113,18 @@ export function RequestHintButton() {
             } catch (err) {
                 if (!(err instanceof Error)) throw err;
                 console.error("Failed to apply deductions", deductions, ":", err);
-                notifications.show(`Failed to apply hint: ${err.message}`, { severity: "error" });
+                notifications.show({
+                    title: "Failed to apply hint",
+                    message: err.message,
+                    color: "red",
+                });
                 madeProgress = false;
             }
 
             hideHint();
             return madeProgress;
         },
-        [applyDeductions, notifications, hideHint],
+        [applyDeductions, hideHint],
     );
 
     const requestSingleHint = useAtomCallback(
@@ -194,21 +203,21 @@ export function RequestHintButton() {
         ),
     );
 
-    let iconColor: IconButtonProps["color"];
+    let iconColor: string | undefined;
     if (isRequestingHint) {
-        iconColor = "warning";
+        iconColor = "yellow";
     } else if (sudokuIsSolved) {
-        iconColor = "success";
+        iconColor = "green";
     } else {
-        iconColor = "default";
+        iconColor = undefined;
     }
     return (
         <MyIconButton
             label="Request Hint [_]"
-            icon={LightbulbIcon}
+            icon={IconBulb}
             color={iconColor}
-            size="large"
-            badge={isRequestingHint ? <CircularProgress size="1rem" color="warning" /> : null}
+            size="lg"
+            badge={isRequestingHint ? <Loader size="xs" color="yellow" /> : null}
             onClick={async () => {
                 if (isRequestingHint) {
                     requestHintAbortController.abort();

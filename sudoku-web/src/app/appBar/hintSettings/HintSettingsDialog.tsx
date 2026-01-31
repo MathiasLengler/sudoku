@@ -1,8 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import SaveIcon from "@mui/icons-material/Save";
-import { Box, Button, DialogActions, DialogContent, DialogTitle } from "@mui/material";
-import { Stack } from "@mui/material";
-import { RadioButtonGroup, SliderElement, SwitchElement, useForm } from "react-hook-form-mui";
+import { IconDeviceFloppy } from "@tabler/icons-react";
+import { Box, Button, Group, Radio, Slider, Stack, Switch, Text } from "@mantine/core";
+import { Controller, useForm } from "react-hook-form";
 import { useAtom } from "jotai";
 import { Fieldset } from "../../components/Fieldset";
 import { ResetFormButton } from "../../components/ResetFormButton";
@@ -38,94 +37,100 @@ export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
     const [mode] = watch(["mode"]);
     return (
         <>
-            <DialogTitle>Hint settings</DialogTitle>
-            <DialogContent>
-                <form
-                    id="hint-settings-form"
-                    noValidate
-                    onSubmit={handleSubmit((hintSettings) => {
-                        setHintSettingsFormValues(hintSettings);
-                        onClose();
-                    })}
-                    style={{ display: "sticky" }}
-                >
-                    <Stack spacing={2}>
-                        <SelectStrategies control={control} name="strategies" />
-                        <RadioButtonGroup
+            <Text size="lg" fw={500} mb="md">
+                Hint settings
+            </Text>
+            <form
+                id="hint-settings-form"
+                noValidate
+                onSubmit={handleSubmit((hintSettings) => {
+                    setHintSettingsFormValues(hintSettings);
+                    onClose();
+                })}
+            >
+                <Stack gap="md">
+                    <SelectStrategies control={control} name="strategies" />
+                    <Controller
+                        name="mode"
+                        control={control}
+                        render={({ field }) => (
+                            <Radio.Group
+                                {...field}
+                                label="Mode"
+                                required
+                            >
+                                <Stack gap="xs" mt="xs">
+                                    <Radio value="toggleHint" label="Toggle hint" />
+                                    <Radio value="hintApply" label="Show hint, then apply it" />
+                                    <Radio value="apply" label="Apply hint directly" />
+                                </Stack>
+                            </Radio.Group>
+                        )}
+                    />
+                    <Fieldset label="Loop" disabled={mode === "toggleHint"}>
+                        <Controller
+                            name="doLoop"
                             control={control}
-                            name="mode"
-                            label="Mode"
-                            options={
-                                [
-                                    {
-                                        id: "toggleHint",
-                                        label: "Toggle hint",
-                                    },
-                                    {
-                                        id: "hintApply",
-                                        label: "Show hint, then apply it",
-                                    },
-                                    {
-                                        id: "apply",
-                                        label: "Apply hint directly",
-                                    },
-                                ] satisfies { id: HintSettings["mode"]; label: string }[]
-                            }
-                            required
-                        />
-                        <Fieldset label="Loop" disabled={mode === "toggleHint"}>
-                            <SwitchElement
-                                control={control}
-                                name="doLoop"
-                                label="Loop until strategies make no further progress"
-                            />
-                            <Box sx={{ mx: 2 }}>
-                                <SliderElement
-                                    control={control}
-                                    name="loopDelayIndex"
-                                    label="Loop delay"
-                                    step={1}
-                                    min={0}
-                                    max={MAX_LOOP_DELAY_INDEX}
-                                    marks={[0, MAX_LOOP_DELAY_INDEX].map((loopDelayMs) => ({
-                                        value: loopDelayMs,
-                                        label: formatDurationMs(scaleLoopDelayIndex(loopDelayMs)),
-                                    }))}
-                                    scale={scaleLoopDelayIndex}
-                                    valueLabelDisplay="auto"
-                                    valueLabelFormat={(loopDelayMs) => formatDurationMs(loopDelayMs)}
-                                    getAriaLabel={() => "Delay"}
-                                    getAriaValueText={(loopDelayMs) => formatDurationMs(loopDelayMs)}
+                            render={({ field: { value, onChange, ...field } }) => (
+                                <Switch
+                                    {...field}
+                                    checked={value}
+                                    onChange={(e) => onChange(e.currentTarget.checked)}
+                                    label="Loop until strategies make no further progress"
                                 />
-                            </Box>
-                        </Fieldset>
-                        <Fieldset label="Deductions">
-                            <SwitchElement
+                            )}
+                        />
+                        <Box px="md" mt="md">
+                            <Controller
+                                name="loopDelayIndex"
                                 control={control}
-                                name="multipleDeductions"
-                                label="Apply multiple deductions"
+                                render={({ field: { value, onChange } }) => (
+                                    <Slider
+                                        value={value}
+                                        onChange={onChange}
+                                        label={(v) => formatDurationMs(scaleLoopDelayIndex(v))}
+                                        step={1}
+                                        min={0}
+                                        max={MAX_LOOP_DELAY_INDEX}
+                                        marks={[
+                                            { value: 0, label: formatDurationMs(scaleLoopDelayIndex(0)) },
+                                            { value: MAX_LOOP_DELAY_INDEX, label: formatDurationMs(scaleLoopDelayIndex(MAX_LOOP_DELAY_INDEX)) },
+                                        ]}
+                                    />
+                                )}
                             />
-                        </Fieldset>
-                    </Stack>
-                </form>
-            </DialogContent>
-            <DialogActions>
+                        </Box>
+                    </Fieldset>
+                    <Fieldset label="Deductions">
+                        <Controller
+                            name="multipleDeductions"
+                            control={control}
+                            render={({ field: { value, onChange, ...field } }) => (
+                                <Switch
+                                    {...field}
+                                    checked={value}
+                                    onChange={(e) => onChange(e.currentTarget.checked)}
+                                    label="Apply multiple deductions"
+                                />
+                            )}
+                        />
+                    </Fieldset>
+                </Stack>
+            </form>
+            <Group justify="space-between" mt="md">
                 <ResetFormButton disabled={isSubmitting} onClick={() => reset(DEFAULT_HINT_SETTINGS)} />
-                <Button onClick={onClose} disabled={isSubmitting}>
+                <Button onClick={onClose} disabled={isSubmitting} variant="subtle">
                     Cancel
                 </Button>
                 <Button
                     type="submit"
                     form="hint-settings-form"
-                    color="primary"
-                    variant="contained"
-                    endIcon={<SaveIcon />}
+                    rightSection={<IconDeviceFloppy size={18} />}
                     loading={isSubmitting}
-                    loadingPosition="end"
                 >
-                    <span>Save settings</span>
+                    Save settings
                 </Button>
-            </DialogActions>
+            </Group>
         </>
     );
 }
