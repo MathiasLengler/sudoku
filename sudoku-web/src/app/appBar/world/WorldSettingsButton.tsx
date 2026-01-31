@@ -3,6 +3,7 @@ import assertNever from "assert-never";
 import { useAtom } from "jotai";
 import * as _ from "es-toolkit";
 import * as z from "zod";
+import { useNavigate } from "@tanstack/react-router";
 import { usePlaySelectedGrid, useShowWorldMap } from "../../actions/worldActions";
 import MyIconButton from "../../components/MyIconButton";
 import { MyMenu } from "../../components/MyMenu";
@@ -18,6 +19,7 @@ const gridDims = z.array(worldGridDimSchema).parse([
 ]);
 
 export function WorldSettingsButton() {
+    const navigate = useNavigate();
     const [game, setGame] = useAtom(gameState);
     const [requestedGridDim, setRequestedGridDim] = useAtom(requestedGridDimState);
 
@@ -54,8 +56,10 @@ export function WorldSettingsButton() {
                               onClick: async () => {
                                   if (game.view === "sudoku") {
                                       await showWorldMap();
+                                      void navigate({ to: "/world" });
                                   } else if (game.view === "map") {
                                       await playSelectedGrid();
+                                      void navigate({ to: "/" });
                                   } else {
                                       assertNever(game.view);
                                   }
