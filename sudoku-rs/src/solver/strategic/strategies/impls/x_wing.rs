@@ -3,16 +3,17 @@ use crate::cell::Candidates;
 use crate::cell::Value;
 use crate::error::Result;
 use crate::grid::Grid;
-use crate::grid::group::CandidatesGroup;
 use crate::position::Coordinate;
 use crate::position::Position;
 use crate::solver::strategic::deduction::Action;
 use crate::solver::strategic::deduction::Deduction;
 use crate::solver::strategic::deduction::Deductions;
 use crate::solver::strategic::deduction::Reason;
+use crate::solver::strategic::group_candidate_availability::{
+    Axis, GroupCandidateAvailability, StrategicGroupAvailability,
+};
 use crate::solver::strategic::strategies::Strategy;
 use crate::solver::strategic::strategies::StrategyScore;
-use itertools::izip;
 use std::collections::BTreeMap;
 
 /*
@@ -83,38 +84,44 @@ impl Strategy for XWing {
     }
 
     fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
-        let candidate_to_group_candidate_indexes = GroupCandidateIndexes::with_grid(grid);
+        // Fall back to building the availability from scratch when not provided
+        let availability = StrategicGroupAvailability::from_grid(grid);
+        self.execute_with_availability(grid, &availability)
+    }
 
-        Ok(izip!(
-            Value::<Base>::all(),
-            candidate_to_group_candidate_indexes.iter()
-        )
-        .flat_map(|(candidate, group_candidate_indexes)| {
-            find_x_wings(candidate, group_candidate_indexes)
-        })
-        .collect())
+    fn execute_with_availability<Base: SudokuBase>(
+        self,
+        _grid: &Grid<Base>,
+        group_availability: &StrategicGroupAvailability<Base>,
+    ) -> Result<Deductions<Base>> {
+        Ok(group_availability
+            .iter()
+            .flat_map(|(candidate, candidate_availability)| {
+                find_x_wings(candidate, candidate_availability)
+            })
+            .collect())
     }
 }
 
 fn find_x_wings<Base: SudokuBase>(
     candidate: Value<Base>,
-    group_candidate_indexes: &GroupCandidateIndexes<Base>,
+    candidate_availability: &GroupCandidateAvailability<Base>,
 ) -> impl Iterator<Item = Deduction<Base>> + '_ {
-    find_x_wings_axis(candidate, group_candidate_indexes, Axis::Row).chain(find_x_wings_axis(
+    find_x_wings_axis(candidate, candidate_availability, Axis::Row).chain(find_x_wings_axis(
         candidate,
-        group_candidate_indexes,
+        candidate_availability,
         Axis::Column,
     ))
 }
 
 fn find_x_wings_axis<Base: SudokuBase>(
     candidate: Value<Base>,
-    group_candidate_indexes: &GroupCandidateIndexes<Base>,
+    candidate_availability: &GroupCandidateAvailability<Base>,
     axis: Axis,
 ) -> impl Iterator<Item = Deduction<Base>> + '_ {
     let opposite_axis = axis.other();
 
-    let locked_pairs: Vec<_> = group_candidate_indexes
+    let locked_pairs: Vec<_> = candidate_availability
         .axis(axis)
         .iter_enumerate()
         .filter(|(_, candidates)| candidates.count() == 2)
@@ -140,7 +147,7 @@ fn find_x_wings_axis<Base: SudokuBase>(
                 .axis_coordinates(opposite_axis)
                 .into_iter()
                 .filter_map(|other_axis_coordinate| {
-                    let axis_coordinates = group_candidate_indexes
+                    let axis_coordinates = candidate_availability
                         .axis(opposite_axis)
                         .get(other_axis_coordinate.into());
 
@@ -212,74 +219,6 @@ fn find_x_wing_candidate<Base: SudokuBase>(
             panic!(
                 "Sudoku is unsolvable: conflicting axis coordinates {axis_coordinates} for locked pair pattern {locked_pair_pattern}"
             )
-        }
-    }
-}
-
-/// For a single candidate, where in each group is this candidate set?
-#[derive(Debug, Clone, Default)]
-struct GroupCandidateIndexes<Base: SudokuBase> {
-    rows: CandidatesGroup<Base>,
-    columns: CandidatesGroup<Base>,
-}
-
-impl<Base: SudokuBase> GroupCandidateIndexes<Base> {
-    fn with_grid(grid: &Grid<Base>) -> Vec<Self> {
-        let mut candidate_to_group_candidate_indexes =
-            vec![GroupCandidateIndexes::<Base>::default(); usize::from(Base::SIDE_LENGTH)];
-
-        for pos in Position::<Base>::all() {
-            if let Some(candidates) = grid[pos].candidates() {
-                for candidate in candidates {
-                    let group_candidate_indexes =
-                        &mut candidate_to_group_candidate_indexes[usize::from(candidate.get() - 1)];
-
-                    let row_index = pos.to_column();
-                    group_candidate_indexes
-                        .rows
-                        .get_mut(pos.to_row())
-                        .insert(row_index);
-                    let column_index = pos.to_row();
-                    group_candidate_indexes
-                        .columns
-                        .get_mut(pos.to_column())
-                        .insert(column_index);
-                }
-            }
-        }
-        candidate_to_group_candidate_indexes
-    }
-
-    fn axis(&self, axis: Axis) -> &CandidatesGroup<Base> {
-        match axis {
-            Axis::Row => &self.rows,
-            Axis::Column => &self.columns,
-        }
-    }
-}
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-enum Axis {
-    Row,
-    Column,
-}
-
-impl Axis {
-    fn other(self) -> Self {
-        match self {
-            Axis::Row => Axis::Column,
-            Axis::Column => Axis::Row,
-        }
-    }
-
-    fn coordinates_to_pos<Base: SudokuBase>(
-        self,
-        axis_coordinate: Coordinate<Base>,
-        other_axis_coordinate: Coordinate<Base>,
-    ) -> Position<Base> {
-        match self {
-            Axis::Row => Position::from((axis_coordinate, other_axis_coordinate)),
-            Axis::Column => Position::from((other_axis_coordinate, axis_coordinate)),
         }
     }
 }

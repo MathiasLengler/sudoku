@@ -1,12 +1,12 @@
-use itertools::izip;
-
 use crate::base::SudokuBase;
 use crate::cell::Value;
 use crate::error::Result;
 use crate::grid::Grid;
-use crate::grid::group::CandidatesGroup;
-use crate::position::{BlockSegment, CellOrder, Coordinate, Position};
+use crate::position::{BlockSegment, CellOrder, Coordinate};
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions, Reason};
+use crate::solver::strategic::group_candidate_availability::{
+    GroupCandidateAvailability, StrategicGroupAvailability,
+};
 use crate::solver::strategic::strategies::{Strategy, StrategyScore};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -19,7 +19,16 @@ impl Strategy for GroupIntersectionBlockToAxis {
         100
     }
     fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
-        GroupIntersection(GroupIntersectionTypeFilter::BlockToAxis).execute(grid)
+        let availability = StrategicGroupAvailability::from_grid(grid);
+        self.execute_with_availability(grid, &availability)
+    }
+    fn execute_with_availability<Base: SudokuBase>(
+        self,
+        _grid: &Grid<Base>,
+        group_availability: &StrategicGroupAvailability<Base>,
+    ) -> Result<Deductions<Base>> {
+        GroupIntersection(GroupIntersectionTypeFilter::BlockToAxis)
+            .execute_with_availability(group_availability)
     }
 }
 
@@ -33,7 +42,16 @@ impl Strategy for GroupIntersectionAxisToBlock {
         100
     }
     fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
-        GroupIntersection(GroupIntersectionTypeFilter::AxisToBlock).execute(grid)
+        let availability = StrategicGroupAvailability::from_grid(grid);
+        self.execute_with_availability(grid, &availability)
+    }
+    fn execute_with_availability<Base: SudokuBase>(
+        self,
+        _grid: &Grid<Base>,
+        group_availability: &StrategicGroupAvailability<Base>,
+    ) -> Result<Deductions<Base>> {
+        GroupIntersection(GroupIntersectionTypeFilter::AxisToBlock)
+            .execute_with_availability(group_availability)
     }
 }
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -46,7 +64,16 @@ impl Strategy for GroupIntersectionBoth {
         100
     }
     fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
-        GroupIntersection(GroupIntersectionTypeFilter::Both).execute(grid)
+        let availability = StrategicGroupAvailability::from_grid(grid);
+        self.execute_with_availability(grid, &availability)
+    }
+    fn execute_with_availability<Base: SudokuBase>(
+        self,
+        _grid: &Grid<Base>,
+        group_availability: &StrategicGroupAvailability<Base>,
+    ) -> Result<Deductions<Base>> {
+        GroupIntersection(GroupIntersectionTypeFilter::Both)
+            .execute_with_availability(group_availability)
     }
 }
 
@@ -94,162 +121,112 @@ enum GroupIntersectionType {
     AxisToBlock,
 }
 
-impl Strategy for GroupIntersection {
-    fn name(self) -> &'static str {
-        "GroupIntersection"
-    }
-    fn score(self) -> StrategyScore {
-        100
-    }
-    fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
+impl GroupIntersection {
+    fn execute_with_availability<Base: SudokuBase>(
+        self,
+        group_availability: &StrategicGroupAvailability<Base>,
+    ) -> Result<Deductions<Base>> {
         let group_intersection_type_filter = self.0;
 
-        let candidate_to_group_candidate_indexes = GroupCandidateIndexes::with_grid(grid);
-
-        Ok(
-            izip!(Value::<Base>::all(), candidate_to_group_candidate_indexes)
-                .flat_map(|(candidate, group_candidate_indexes)| {
-                    BlockSegment::<Base>::all().filter_map(move |block_segment| {
-                        group_candidate_indexes.evaluate(
-                            candidate,
-                            block_segment,
-                            group_intersection_type_filter,
-                        )
-                    })
+        Ok(group_availability
+            .iter()
+            .flat_map(|(candidate, candidate_availability)| {
+                BlockSegment::<Base>::all().filter_map(move |block_segment| {
+                    evaluate_candidate(
+                        candidate,
+                        candidate_availability,
+                        block_segment,
+                        group_intersection_type_filter,
+                    )
                 })
-                .collect(),
-        )
+            })
+            .collect())
+    }
+
+    #[cfg(test)]
+    fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
+        let availability = StrategicGroupAvailability::from_grid(grid);
+        self.execute_with_availability(&availability)
     }
 }
 
-/// For a single candidate, where in each group is this candidate set?
-#[derive(Debug, Clone, Default)]
-struct GroupCandidateIndexes<Base: SudokuBase> {
-    /// intersects with `self.row_major_blocks`
-    rows: CandidatesGroup<Base>,
-    /// intersects with `self.column_major_blocks`
-    columns: CandidatesGroup<Base>,
-    /// intersects with `self.rows`
-    row_major_blocks: CandidatesGroup<Base>,
-    /// intersects with `self.columns`
-    column_major_blocks: CandidatesGroup<Base>,
-}
+fn evaluate_candidate<Base: SudokuBase>(
+    candidate: Value<Base>,
+    candidate_availability: &GroupCandidateAvailability<Base>,
+    block_segment: BlockSegment<Base>,
+    group_intersection_type_filter: GroupIntersectionTypeFilter,
+) -> Option<Deduction<Base>> {
+    let (axis_candidate_positions, block_candidate_positions) = match block_segment.orientation() {
+        CellOrder::RowMajor => {
+            let row_candidate_positions = candidate_availability.rows.get(block_segment.axis());
+            let block_candidate_positions =
+                candidate_availability.row_major_blocks.get(block_segment.block());
 
-impl<Base: SudokuBase> GroupCandidateIndexes<Base> {
-    fn with_grid(grid: &Grid<Base>) -> Vec<Self> {
-        let mut candidate_to_group_candidate_indexes =
-            vec![GroupCandidateIndexes::<Base>::default(); usize::from(Base::SIDE_LENGTH)];
-
-        for pos in Position::<Base>::all() {
-            if let Some(candidates) = grid[pos].candidates() {
-                for candidate in candidates {
-                    let group_candidate_indexes =
-                        &mut candidate_to_group_candidate_indexes[usize::from(candidate.get() - 1)];
-
-                    let row_index = pos.to_column();
-                    group_candidate_indexes
-                        .rows
-                        .get_mut(pos.to_row())
-                        .insert(row_index);
-                    let column_index = pos.to_row();
-                    group_candidate_indexes
-                        .columns
-                        .get_mut(pos.to_column())
-                        .insert(column_index);
-
-                    let (block, row_major_block_index, column_major_block_index) =
-                        pos.to_block_and_indexes();
-
-                    group_candidate_indexes
-                        .row_major_blocks
-                        .get_mut(block)
-                        .insert(row_major_block_index);
-                    group_candidate_indexes
-                        .column_major_blocks
-                        .get_mut(block)
-                        .insert(column_major_block_index);
-                }
-            }
+            (row_candidate_positions, block_candidate_positions)
         }
-        candidate_to_group_candidate_indexes
-    }
+        CellOrder::ColumnMajor => {
+            let column_candidate_positions =
+                candidate_availability.columns.get(block_segment.axis());
+            let block_candidate_positions = candidate_availability
+                .column_major_blocks
+                .get(block_segment.block());
+            (column_candidate_positions, block_candidate_positions)
+        }
+    };
 
-    fn evaluate(
-        &self,
-        candidate: Value<Base>,
-        block_segment: BlockSegment<Base>,
-        group_intersection_type_filter: GroupIntersectionTypeFilter,
-    ) -> Option<Deduction<Base>> {
-        let (axis_candidate_positions, block_candidate_positions) = match block_segment
-            .orientation()
+    let group_intersection_type = match (
+        axis_candidate_positions.block_segmentation(),
+        block_candidate_positions.block_segmentation(),
+    ) {
+        (Some(axis_segment_index), None)
+            if axis_segment_index == block_segment.axis_segment_index() =>
         {
-            CellOrder::RowMajor => {
-                let row_candidate_positions = self.rows.get(block_segment.axis());
-                let block_candidate_positions = self.row_major_blocks.get(block_segment.block());
-
-                (row_candidate_positions, block_candidate_positions)
-            }
-            CellOrder::ColumnMajor => {
-                let column_candidate_positions = self.columns.get(block_segment.axis());
-                let block_candidate_positions = self.column_major_blocks.get(block_segment.block());
-                (column_candidate_positions, block_candidate_positions)
-            }
-        };
-
-        let group_intersection_type = match (
-            axis_candidate_positions.block_segmentation(),
-            block_candidate_positions.block_segmentation(),
-        ) {
-            (Some(axis_segment_index), None)
-                if axis_segment_index == block_segment.axis_segment_index() =>
-            {
-                GroupIntersectionType::AxisToBlock
-            }
-            (None, Some(block_segment_index))
-                if block_segment_index == block_segment.block_segment_index() =>
-            {
-                GroupIntersectionType::BlockToAxis
-            }
-            _ => {
-                return None;
-            }
-        };
-
-        if !group_intersection_type_filter.includes(group_intersection_type) {
+            GroupIntersectionType::AxisToBlock
+        }
+        (None, Some(block_segment_index))
+            if block_segment_index == block_segment.block_segment_index() =>
+        {
+            GroupIntersectionType::BlockToAxis
+        }
+        _ => {
             return None;
         }
+    };
 
-        let action = Action::delete_candidate(candidate);
-        let reason = Reason::candidate(candidate);
-        Some(match group_intersection_type {
-            GroupIntersectionType::BlockToAxis => Deduction::try_from_iters(
-                axis_candidate_positions
-                    .without(block_segment.axis_mask())
-                    .into_iter()
-                    .map(Coordinate::from)
-                    .map(|axis_index| (block_segment.axis_position(axis_index), action)),
-                block_candidate_positions
-                    .intersection(block_segment.block_mask())
-                    .into_iter()
-                    .map(Coordinate::from)
-                    .map(|block_index| (block_segment.block_position(block_index), reason)),
-            )
-            .unwrap(),
-            GroupIntersectionType::AxisToBlock => Deduction::try_from_iters(
-                block_candidate_positions
-                    .without(block_segment.block_mask())
-                    .into_iter()
-                    .map(Coordinate::from)
-                    .map(|block_index| (block_segment.block_position(block_index), action)),
-                axis_candidate_positions
-                    .intersection(block_segment.axis_mask())
-                    .into_iter()
-                    .map(Coordinate::from)
-                    .map(|axis_index| (block_segment.axis_position(axis_index), reason)),
-            )
-            .unwrap(),
-        })
+    if !group_intersection_type_filter.includes(group_intersection_type) {
+        return None;
     }
+
+    let action = Action::delete_candidate(candidate);
+    let reason = Reason::candidate(candidate);
+    Some(match group_intersection_type {
+        GroupIntersectionType::BlockToAxis => Deduction::try_from_iters(
+            axis_candidate_positions
+                .without(block_segment.axis_mask())
+                .into_iter()
+                .map(Coordinate::from)
+                .map(|axis_index| (block_segment.axis_position(axis_index), action)),
+            block_candidate_positions
+                .intersection(block_segment.block_mask())
+                .into_iter()
+                .map(Coordinate::from)
+                .map(|block_index| (block_segment.block_position(block_index), reason)),
+        )
+        .unwrap(),
+        GroupIntersectionType::AxisToBlock => Deduction::try_from_iters(
+            block_candidate_positions
+                .without(block_segment.block_mask())
+                .into_iter()
+                .map(Coordinate::from)
+                .map(|block_index| (block_segment.block_position(block_index), action)),
+            axis_candidate_positions
+                .intersection(block_segment.axis_mask())
+                .into_iter()
+                .map(Coordinate::from)
+                .map(|axis_index| (block_segment.axis_position(axis_index), reason)),
+        )
+        .unwrap(),
+    })
 }
 
 #[cfg(test)]
