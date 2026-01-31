@@ -30,11 +30,29 @@ impl From<DynamicCellWorld> for WasmCellWorld {
 /// Constructors
 #[wasm_bindgen]
 impl WasmCellWorld {
+    /// Creates a new `WasmCellWorld` with the Regular tiling pattern (default).
     pub fn new(base: IBaseEnum, grid_dim: IWorldGridDim, overlap: u8) -> Result<Self> {
         Ok(DynamicCellWorld::new(
             import_base_enum(base)?,
             import_world_grid_dim(grid_dim)?,
             overlap,
+        )?
+        .into())
+    }
+
+    /// Creates a new `WasmCellWorld` with the specified tiling pattern.
+    #[wasm_bindgen(js_name = newWithPattern)]
+    pub fn new_with_pattern(
+        base: IBaseEnum,
+        grid_dim: IWorldGridDim,
+        overlap: u8,
+        tiling_pattern: ITilingPattern,
+    ) -> Result<Self> {
+        Ok(DynamicCellWorld::new_with_pattern(
+            import_base_enum(base)?,
+            import_world_grid_dim(grid_dim)?,
+            overlap,
+            import_tiling_pattern(tiling_pattern)?,
         )?
         .into())
     }
@@ -54,11 +72,31 @@ impl WasmCellWorld {
         .into())
     }
 
+    /// Creates a `WasmCellWorld` from cells with the specified tiling pattern.
+    #[wasm_bindgen(js_name = withPattern)]
+    pub fn with_pattern(
+        base: IBaseEnum,
+        grid_dim: IWorldGridDim,
+        overlap: u8,
+        tiling_pattern: ITilingPattern,
+        cells: IDynamicCells,
+    ) -> Result<Self> {
+        Ok(DynamicCellWorld::with_pattern(
+            import_base_enum(base)?,
+            import_world_grid_dim(grid_dim)?,
+            overlap,
+            import_tiling_pattern(tiling_pattern)?,
+            import_dynamic_cells(cells)?,
+        )?
+        .into())
+    }
+
     #[wasm_bindgen(constructor)]
     pub fn default() -> Self {
         Default::default()
     }
 
+    /// Generates a new `WasmCellWorld` with the Regular tiling pattern (default).
     pub fn generate(
         base: IBaseEnum,
         grid_dim: IWorldGridDim,
@@ -66,6 +104,21 @@ impl WasmCellWorld {
         seed: Option<u64>,
     ) -> Result<Self> {
         let mut this = Self::new(base, grid_dim, overlap)?;
+        this.generate_solved(seed)?;
+        this.prune(seed)?;
+        Ok(this)
+    }
+
+    /// Generates a new `WasmCellWorld` with the specified tiling pattern.
+    #[wasm_bindgen(js_name = generateWithPattern)]
+    pub fn generate_with_pattern(
+        base: IBaseEnum,
+        grid_dim: IWorldGridDim,
+        overlap: u8,
+        tiling_pattern: ITilingPattern,
+        seed: Option<u64>,
+    ) -> Result<Self> {
+        let mut this = Self::new_with_pattern(base, grid_dim, overlap, tiling_pattern)?;
         this.generate_solved(seed)?;
         this.prune(seed)?;
         Ok(this)
