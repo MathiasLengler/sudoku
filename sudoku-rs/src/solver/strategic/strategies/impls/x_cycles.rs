@@ -485,11 +485,10 @@ mod tests {
     mod synthetic {
         use super::*;
 
-        /// Test basic discontinuous loop with weak links - elimination at discontinuity
+        /// Test that X-Cycles strategy executes without errors on a grid with candidates
         #[test]
-        fn test_synthetic_base_2_discontinuous_weak() {
-            // A 4x4 grid where candidate 1 forms a cycle with discontinuity
-            // The pattern: a cell sees itself through alternating links
+        fn test_x_cycles_executes_without_error() {
+            // A 4x4 grid with candidate patterns
             let mut grid: Grid<Base2> = indoc! {"
             1100
             0010
@@ -504,11 +503,9 @@ mod tests {
                 grid[pos] = Cell::with_candidates(grid[pos].to_candidates());
             }
 
-            let deductions = XCycles.execute(&grid).unwrap();
-
-            // Should find deductions or be empty depending on the cycle structure
-            // This is a basic smoke test
-            println!("Deductions found: {:?}", deductions);
+            // Verify the strategy executes successfully
+            let result = XCycles.execute(&grid);
+            assert!(result.is_ok(), "XCycles should execute without error");
         }
 
         /// Test that X-Cycles finds no deductions when there are no cycles
@@ -530,7 +527,7 @@ mod tests {
             let deductions = XCycles.execute(&grid).unwrap();
 
             // With only two isolated cells, no cycle is possible
-            assert!(deductions.is_empty());
+            assert!(deductions.is_empty(), "No cycles should be found with isolated cells");
         }
     }
 
