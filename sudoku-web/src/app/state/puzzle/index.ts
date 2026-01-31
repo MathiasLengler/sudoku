@@ -73,3 +73,17 @@ export const puzzleStatusState = atom<PuzzleStatus | undefined>((get) => {
     }
     return undefined;
 });
+
+/**
+ * Strategies available for puzzle mode (excluding BruteForce which is not a real strategy to practice)
+ */
+export const PUZZLE_STRATEGIES = [
+    "NakedSingles",
+    "HiddenSingles",
+    "NakedPairs",
+    "LockedSets",
+    "GroupIntersectionBlockToAxis",
+    "GroupIntersectionAxisToBlock",
+    "GroupIntersectionBoth",
+    "XWing",
+] as const satisfies readonly StrategyEnum[];

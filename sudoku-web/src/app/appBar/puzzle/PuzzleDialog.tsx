@@ -19,6 +19,7 @@ import { STRATEGY_OPTIONS } from "../../constants";
 import {
     getStrategyStats,
     isPuzzleModeState,
+    PUZZLE_STRATEGIES,
     puzzleStatsState,
     puzzleStatusState,
     puzzleTargetStrategyState,
@@ -141,7 +142,7 @@ export function PuzzleDialog({ onClose }: PuzzleDialogProps) {
 
                         {isPuzzleMode && <ActivePuzzleStatus />}
 
-                        <SelectStrategy control={control} name="strategy" />
+                        <SelectStrategy control={control} name="strategy" strategies={PUZZLE_STRATEGIES} />
 
                         <Box>
                             <Typography variant="subtitle2" gutterBottom>
