@@ -1,4 +1,4 @@
-//! Parallel generation and pruning strategies for CellWorld.
+//! Parallel generation and pruning strategies for `CellWorld`.
 //!
 //! This module provides parallel implementations for generating and pruning
 //! cell worlds. The key challenge is handling overlapping grids while still
@@ -39,10 +39,11 @@ use serde::{Deserialize, Serialize};
 
 /// Status of a grid tile during generation/pruning.
 #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", tag = "status")]
 pub enum GridTileStatus {
     /// Grid is empty, not yet generated.
+    #[default]
     Empty,
     /// Grid is currently being filled.
     Filling,
@@ -52,12 +53,6 @@ pub enum GridTileStatus {
     Pruning,
     /// Grid has been pruned to create a puzzle.
     Pruned,
-}
-
-impl Default for GridTileStatus {
-    fn default() -> Self {
-        Self::Empty
-    }
 }
 
 /// Progress information for world generation.
@@ -136,7 +131,8 @@ pub enum IslandStrategy {
 
 impl IslandStrategy {
     /// Segment the world grid into islands based on this strategy.
-    pub fn segment(&self, grid_dim: WorldGridDim) -> Vec<GridIsland> {
+    #[must_use]
+    pub fn segment(self, grid_dim: WorldGridDim) -> Vec<GridIsland> {
         match self {
             IslandStrategy::Single => {
                 vec![GridIsland::new(grid_dim.all_positions().collect())]
@@ -170,7 +166,7 @@ impl IslandStrategy {
     }
 }
 
-/// Parallel generation and pruning implementation for CellWorld.
+/// Parallel generation and pruning implementation for `CellWorld`.
 impl<Base: SudokuBase> CellWorld<Base> {
     /// Generate a solved world using parallel island processing.
     ///
@@ -239,7 +235,6 @@ impl<Base: SudokuBase> CellWorld<Base> {
         seed: Option<u64>,
     ) -> Result<u32> {
         let mut rng = new_crate_rng_with_seed(seed);
-        let backtrack_count = 0;
 
         // Get diagonal constraints
         let denylist = self.combined_diagonal_denylist(grid_position);
@@ -252,7 +247,8 @@ impl<Base: SudokuBase> CellWorld<Base> {
 
         if let Some(solution) = solver.next() {
             self.set_grid_at_validated(&solution, grid_position);
-            Ok(backtrack_count)
+            // Get actual backtrack count from the solver
+            Ok(solver.backtrack_count.try_into().unwrap_or(u32::MAX))
         } else {
             bail!(
                 "Failed to generate grid at {:?}: no solution found",
@@ -279,14 +275,15 @@ impl<Base: SudokuBase> CellWorld<Base> {
         assert!(self.is_solved());
 
         // Get positions that are in the middle (not in overlap regions)
-        let (middle_positions, _overlap_positions): (Vec<_>, Vec<_>) = Position::<Base>::all()
-            .partition(|pos| {
+        let middle_positions: Vec<_> = Position::<Base>::all()
+            .filter(|pos| {
                 let (row, column) = pos.to_row_and_column();
                 let (row, column) = (row.get(), column.get());
                 let middle_axis_range =
                     self.overlap.get()..(Base::SIDE_LENGTH - self.overlap.get());
                 middle_axis_range.contains(&row) && middle_axis_range.contains(&column)
-            });
+            })
+            .collect();
 
         let islands = strategy.segment(self.grid_dim);
 
