@@ -1,6 +1,6 @@
 import { Alert, Button, Stack } from "@mui/material";
 
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { useSetAtom } from "jotai";
 import * as z from "zod";
@@ -66,7 +66,7 @@ export function BasicErrorBoundary({ children }: { children: ReactNode }) {
 
 function ThemeFallback({ error, resetErrorBoundary, inline }: FallbackProps & { inline?: boolean }) {
     const message = errorToMessageSchema.parse(error);
-    const isPanic = isProbablyWasmPanic(error);
+    const isPanic = useMemo(() => isProbablyWasmPanic(error), [error]);
     const resetWorker = useSetAtom(resetWorkerAfterPanicAction);
 
     const handleRetry = () => {
