@@ -4,6 +4,7 @@ use std::ops::Deref;
 use std::ops::Not;
 use std::path::Path;
 
+use derive_more::Debug as DeriveDebug;
 use itertools::Itertools;
 use log::trace;
 use varisat::{CnfFormula, ExtendFormula, Lit, Solver as SatSolver};
@@ -392,24 +393,13 @@ impl<Base: SudokuBase> Iterator for SolverIter<Base> {
 ///
 /// The checker efficiently determines if there exists an alternative solution
 /// when a cell is removed from the puzzle.
+#[derive(DeriveDebug)]
 pub struct AmbiguousSolutionChecker<Base: SudokuBase> {
+    #[debug(skip)]
     sat_solver: SatSolver<'static>,
     /// Stores the current grid value assumptions (positions that still have values in the puzzle)
     current_value_assumptions: Vec<Lit>,
     _base: PhantomData<Base>,
-}
-
-impl<Base: SudokuBase> Debug for AmbiguousSolutionChecker<Base> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("AmbiguousSolutionChecker")
-            .field("sat_solver", &"<varisat::Solver>")
-            .field(
-                "current_value_assumptions_count",
-                &self.current_value_assumptions.len(),
-            )
-            .field("_base", &self._base)
-            .finish()
-    }
 }
 
 impl<Base: SudokuBase> AmbiguousSolutionChecker<Base> {

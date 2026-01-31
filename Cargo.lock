@@ -456,6 +456,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.111",
+ "unicode-xid",
 ]
 
 [[package]]
@@ -1635,6 +1636,7 @@ dependencies = [
  "clap",
  "criterion",
  "crossterm",
+ "derive_more",
  "enum_dispatch",
  "env_logger",
  "getrandom",
