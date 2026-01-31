@@ -390,16 +390,17 @@ mod tests {
 
         let deductions = WWing.execute(&grid).unwrap();
 
-        // Filter deductions to only those involving our specific bivalue cells
-        let _has_w_wing_with_seeing_cells = deductions.iter().any(|d| {
-            d.reasons.iter().filter(|(_, reason)| {
+        // A W-Wing should never include two bivalue cells that see each other.
+        // Filter deductions to check none use both pos_a and pos_b as bivalue cells.
+        let has_invalid_w_wing = deductions.iter().any(|d| {
+            let bivalue_positions: Vec<_> = d.reasons.iter().filter(|(_, reason)| {
                 matches!(reason, Reason::Candidates(cands) if cands.count() == 2)
-            }).any(|(pos, _)| pos == pos_a || pos == pos_b)
+            }).map(|(pos, _)| pos).collect();
+            
+            // Check if both pos_a and pos_b are used as bivalue cells in the same deduction
+            bivalue_positions.contains(&pos_a) && bivalue_positions.contains(&pos_b)
         });
 
-        // Note: The grid might find OTHER W-Wings, but not one using pos_a and pos_b
-        // since they see each other. Actually, since we fill with all candidates,
-        // there might be many W-Wings. This test mainly verifies the logic doesn't
-        // create invalid W-Wings.
+        assert!(!has_invalid_w_wing, "W-Wing should never use two bivalue cells that see each other");
     }
 }
