@@ -1,5 +1,6 @@
 #![allow(deprecated)]
 
+use crate::cell::Value;
 use crate::grid::Grid;
 use crate::solver::strategic::{self, strategies::StrategyEnum};
 use crate::solver::{FallibleSolver, InfallibleSolver, backtracking, sat};
@@ -129,7 +130,48 @@ impl GridMetric {
                 .into_iter()
                 .map(|pos| EvaluatedGridMetric::from(grid.direct_candidates(pos).count()))
                 .sum(),
-            GridMetric::GridGivensValueCountDeviation => todo!(),
+            GridMetric::GridGivensValueCountDeviation => {
+                // Count occurrences of each value in the grid's givens
+                let value_counts: Vec<u64> = Value::<Base>::all()
+                    .map(|value| {
+                        grid.all_value_positions()
+                            .iter()
+                            .filter(|&&pos| grid.get(pos).value() == Some(value))
+                            .count() as u64
+                    })
+                    .collect();
+
+                // These casts are safe: value_counts.len() <= 25 (max base 5), counts are small
+                #[allow(clippy::cast_precision_loss)]
+                let n = value_counts.len() as f64;
+                if n == 0.0 {
+                    return Ok(0);
+                }
+
+                let sum: u64 = value_counts.iter().sum();
+                #[allow(clippy::cast_precision_loss)]
+                let mean = sum as f64 / n;
+
+                // Calculate variance: sum of squared differences from mean
+                #[allow(clippy::cast_precision_loss)]
+                let variance: f64 = value_counts
+                    .iter()
+                    .map(|&count| {
+                        let diff = count as f64 - mean;
+                        diff * diff
+                    })
+                    .sum::<f64>()
+                    / n;
+
+                // Standard deviation
+                let std_dev = variance.sqrt();
+
+                // Scale by 1000 for precision (similar to STRATEGY_SCORE_FIXED_POINT_SCALE)
+                // std_dev is always non-negative, and scaled value fits in u64
+                #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+                let result = (std_dev * 1000.0) as u64;
+                result
+            }
         })
     }
 }
@@ -575,7 +617,9 @@ mod tests {
             #[case::grid_givens_count(2, GridMetric::GridGivensCount, 4)]
             #[case::grid_direct_candidates_count(0, GridMetric::GridDirectCandidatesCount, 8)]
             #[case::grid_direct_candidates_count(1, GridMetric::GridDirectCandidatesCount, 28)]
-            // #[case::grid_givens_value_count_deviation(0, GridMetric::GridGivensValueCountDeviation, 0)]
+            #[case::grid_givens_value_count_deviation(0, GridMetric::GridGivensValueCountDeviation, 0)]
+            #[case::grid_givens_value_count_deviation(1, GridMetric::GridGivensValueCountDeviation, 707)]
+            #[case::grid_givens_value_count_deviation(2, GridMetric::GridGivensValueCountDeviation, 0)]
             fn test_base_2(
                 #[case] grid_sample_index: usize,
                 #[case] grid_metric: GridMetric,
