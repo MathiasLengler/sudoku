@@ -52,7 +52,7 @@ pub trait DynamicSudokuActions {
     fn evaluate_metric(
         &self,
         metric: GridMetric,
-        strategies: impl StrategySelection,
+        strategies: impl StrategySelection + Copy,
     ) -> Result<EvaluatedGridMetric>;
 
     fn to_dynamic_grid(&self) -> DynamicGrid;

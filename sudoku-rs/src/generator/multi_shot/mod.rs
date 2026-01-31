@@ -2,6 +2,7 @@
 
 use crate::grid::Grid;
 use crate::solver::strategic::{self, strategies::StrategyEnum};
+use crate::solver::strategic::strategies::STRATEGY_SCORE_FIXED_POINT_SCALE;
 use crate::solver::{FallibleSolver, InfallibleSolver, backtracking, sat};
 use crate::{base::SudokuBase, solver::strategic::strategies::selection::StrategySet};
 use crate::{error::Result, solver::strategic::strategies::selection::StrategySelection};
@@ -10,6 +11,7 @@ use log::*;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::cmp;
+use std::collections::HashSet;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 
 use super::{Generator, GeneratorSettings};
@@ -73,7 +75,7 @@ impl GridMetric {
     pub fn evaluate<Base: SudokuBase>(
         self,
         grid: &Grid<Base>,
-        strategies: impl StrategySelection,
+        strategies: impl StrategySelection + Copy,
     ) -> Result<EvaluatedGridMetric> {
         static STRATEGIC_SOLVER_ERROR_MESSAGE: &str = "Strategic solver failed to solve the grid";
         let get_strategic_solver = || {
@@ -108,7 +110,66 @@ impl GridMetric {
                 .solve_path_all()
                 .average_options()?
                 .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?,
-            GridMetric::SolveGraphAverageBranchingFactor => todo!(),
+            GridMetric::SolveGraphAverageBranchingFactor => {
+                // Build a solve graph by exploring all possible strategy applications from each grid state.
+                // The solve graph is a directed graph where:
+                // - Nodes are unique grid states
+                // - Edges represent strategy applications (one edge per SolveStep)
+                //
+                // The average branching factor is: (total edges / total non-leaf nodes) * STRATEGY_SCORE_FIXED_POINT_SCALE
+                // A non-leaf node is a node with at least one outgoing edge (i.e., a node where strategies can make progress)
+
+                let mut visited: HashSet<Grid<Base>> = HashSet::new();
+                let mut nodes_to_process: Vec<Grid<Base>> = vec![grid.clone()];
+
+                let mut total_edges: u64 = 0;
+                let mut non_leaf_node_count: u64 = 0;
+
+                while let Some(current_grid) = nodes_to_process.pop() {
+                    if !visited.insert(current_grid.clone()) {
+                        // Grid already visited
+                        continue;
+                    }
+
+                    if current_grid.is_solved() {
+                        // Solved grids are leaf nodes, no strategies apply
+                        continue;
+                    }
+
+                    let mut grid_for_solver = current_grid.clone();
+                    let solver = strategic::Solver::with_strategies(&mut grid_for_solver, strategies);
+                    let solve_steps = solver.try_all_strategies()?;
+
+                    if solve_steps.is_empty() {
+                        // No strategies apply, this is a leaf node (unsolvable state)
+                        continue;
+                    }
+
+                    // Count edges (one edge per solve step)
+                    let edge_count: u64 = solve_steps.len().try_into()?;
+                    total_edges += edge_count;
+                    non_leaf_node_count += 1;
+
+                    // Add all reachable grids to the processing queue
+                    for solve_step in solve_steps {
+                        // Clone grid_for_solver which has candidates set up,
+                        // since deductions.apply() requires candidates to be present
+                        let mut new_grid = grid_for_solver.clone();
+                        solve_step.deductions.apply(&mut new_grid)?;
+                        if !visited.contains(&new_grid) {
+                            nodes_to_process.push(new_grid);
+                        }
+                    }
+                }
+
+                // Calculate average branching factor
+                // If there are no non-leaf nodes, the branching factor is 0
+                if non_leaf_node_count == 0 {
+                    0
+                } else {
+                    (total_edges * STRATEGY_SCORE_FIXED_POINT_SCALE) / non_leaf_node_count
+                }
+            }
             GridMetric::SatStepCount => {
                 let mut solver = sat::Solver::new(grid);
                 solver
@@ -559,11 +620,9 @@ mod tests {
             #[case::strategy_average_options(0, GridMetric::StrategyAverageOptions, 2000)]
             #[case::strategy_average_options(1, GridMetric::StrategyAverageOptions, 2750)]
             #[case::strategy_average_options(2, GridMetric::StrategyAverageOptions, 3000)]
-            // #[case::solve_graph_average_branching_factor(
-            //     0,
-            //     GridMetric::SolveGraphAverageBranchingFactor,
-            //     0
-            // )]
+            #[case::solve_graph_average_branching_factor(0, GridMetric::SolveGraphAverageBranchingFactor, 2000)]
+            #[case::solve_graph_average_branching_factor(1, GridMetric::SolveGraphAverageBranchingFactor, 2647)]
+            #[case::solve_graph_average_branching_factor(2, GridMetric::SolveGraphAverageBranchingFactor, 2500)]
             #[case::sat_step_count(0, GridMetric::SatStepCount, 1)]
             #[case::sat_step_count(1, GridMetric::SatStepCount, 1)]
             #[case::sat_step_count(2, GridMetric::SatStepCount, 1)]

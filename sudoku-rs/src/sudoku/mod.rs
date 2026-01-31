@@ -309,7 +309,7 @@ impl<Base: SudokuBase> DynamicSudokuActions for Sudoku<Base> {
     fn evaluate_metric(
         &self,
         metric: GridMetric,
-        strategies: impl StrategySelection,
+        strategies: impl StrategySelection + Copy,
     ) -> Result<EvaluatedGridMetric> {
         metric.evaluate(&self.grid, strategies)
     }
