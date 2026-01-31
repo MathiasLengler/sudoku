@@ -166,9 +166,10 @@ impl WorldPruningSettings {
 
     /// Returns true if all grids use the same biome settings.
     pub fn is_uniform(&self) -> bool {
-        self.grid_biome_assignments.is_empty() || {
-            let first_id = self.grid_biome_assignments.values().next();
-            first_id.is_some() && self.grid_biome_assignments.values().all(|id| Some(id) == first_id)
+        let mut values = self.grid_biome_assignments.values();
+        match values.next() {
+            None => true,
+            Some(first_id) => values.all(|id| id == first_id),
         }
     }
 }
