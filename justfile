@@ -9,6 +9,13 @@ default:
 test *test-args:
     cargo nextest run {{test-args}}
 
+# Run all linters
+lint: rust-lint web-lint
+
+# Run all rust linters
+[parallel]
+rust-lint: clippy-ci test pack-prod
+
 # https://github.com/taiki-e/cargo-llvm-cov
 # Run nextest with coverage
 test-cov *test-args:
@@ -18,7 +25,9 @@ test-cov *test-args:
 test-cov-html *test-args:
     cargo llvm-cov nextest --branch --html --open -- {{test-args}}
 
+# Run clippy
 clippy: (_clippy)
+# Run clippy for CI (treat warnings as errors)
 clippy-ci: (_clippy "--" "-D" "warnings")
 
 _clippy *clippy-args:
@@ -66,5 +75,23 @@ ci-local:
     cd sudoku-web && npm run lint
     cd sudoku-web && npm run docker:dev
 
+# Generate TypeScript bindings from Rust ("ts_rs" crate)
 generate-tsrs-bindings:
     cargo run --bin generate_tsrs_bindings
+
+# Run all web linters
+[parallel]
+[working-directory: 'sudoku-web']
+web-lint: web-lint-tsc web-lint-eslint web-lint-prettier
+# TypeScript compiler
+[working-directory: 'sudoku-web']
+web-lint-tsc:
+    npm run lint:tsc
+# ESLint
+[working-directory: 'sudoku-web']
+web-lint-eslint:
+    npm run lint:eslint
+# Prettier
+[working-directory: 'sudoku-web']
+web-lint-prettier:
+    npm run lint:prettier
