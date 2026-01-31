@@ -5,6 +5,7 @@ import { useAtomValue } from "jotai";
 import SudokuAppBar from "./appBar/sudokuAppBar";
 import { ThemeErrorBoundary } from "./components/ErrorFallback";
 import { FullScreenSpinner } from "./components/FullScreenSpinner";
+import { PuzzleOverlay } from "./components/puzzle/PuzzleOverlay";
 import { WorldMap } from "./components/world/WorldMap";
 import { Toolbar } from "./controlPanel/toolbar";
 import { ValueSelector } from "./controlPanel/valueSelector";
@@ -36,7 +37,8 @@ function SudokuGame() {
     };
 
     return (
-        <div className="sudoku-game" style={cssVariables}>
+        <div className="sudoku-game" style={{ ...cssVariables, position: "relative" }}>
+            <PuzzleOverlay />
             <Grid gridRef={gridRef} />
             <Toolbar />
             <ValueSelector />
