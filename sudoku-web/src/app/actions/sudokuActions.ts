@@ -23,6 +23,7 @@ import {
     mainThreadWasmSudokuState,
     deserializeFromTransfer,
     serializeForTransfer,
+    WasmSudoku as WasmSudokuClass,
 } from "../state/mainThread";
 import { gameCounterState, sudokuSideLengthState, sudokuState } from "../state/sudoku";
 import {
@@ -333,6 +334,10 @@ export function useRedo() {
     );
 }
 
+/**
+ * Reboot the worker after an abort. The worker is stateless - all expensive operations
+ * receive serialized sudoku state and return serialized results, so no state sync is needed.
+ */
 const rebootWorker = withMeasure({ name: "rebootWorker" }, async ({ get, set }: { get: Getter; set: Setter }) => {
     console.info("Rebooting worker");
     const currentWorker = get(workerState);
@@ -504,16 +509,18 @@ export function useGenerateMultiShot() {
 
 export function useImportSudokuString() {
     return useAtomCallback(
-        useCallback(async (_get, set, input: string, setAllDirectCandidates: boolean) => {
+        useCallback((_get, set, input: string, setAllDirectCandidates: boolean): Promise<void> => {
             // Import is done on main thread since it's a relatively fast operation
-            const { WasmSudoku } = await import("../state/mainThread");
-            const wasmSudoku = WasmSudoku.import(input);
-            set(mainThreadWasmSudokuState, wasmSudoku);
+            // Return Promise to maintain consistent error handling for callers
+            return Promise.resolve().then(() => {
+                const wasmSudoku = WasmSudokuClass.import(input);
+                set(mainThreadWasmSudokuState, wasmSudoku);
 
-            if (setAllDirectCandidates) {
-                wasmSudoku.setAllDirectCandidates();
-            }
-            updateSudokuFromMainThread({ set, wasmSudoku }, true);
+                if (setAllDirectCandidates) {
+                    wasmSudoku.setAllDirectCandidates();
+                }
+                updateSudokuFromMainThread({ set, wasmSudoku }, true);
+            });
         }, []),
     );
 }
