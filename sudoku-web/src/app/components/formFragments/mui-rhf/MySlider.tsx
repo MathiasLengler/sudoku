@@ -1,5 +1,5 @@
-import { type SliderProps, Slider, FormControl, FormLabel, type FormControlProps } from "@mui/material";
-import { type FieldValues, type FieldPath, type Control, useController, useFormState } from "react-hook-form";
+import { type SliderProps, FormControl, FormLabel, Slider } from "@mui/material";
+import { type Control, type FieldPath, type FieldValues, useController, useFormState } from "react-hook-form";
 
 export type MySliderProps<
     TFieldValues extends FieldValues = FieldValues,
@@ -9,15 +9,14 @@ export type MySliderProps<
     control: Control<TFieldValues, unknown, TTransformedValues>;
     name: TName;
     label?: React.ReactNode;
-} & Omit<SliderProps, "name" | "value" | "onChange" | "onBlur"> &
-    Pick<FormControlProps, "fullWidth">;
+} & Omit<SliderProps, "name" | "value" | "onChange" | "onBlur">;
 
 export function MySlider<
     TFieldValues extends FieldValues = FieldValues,
     TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
     TTransformedValues = TFieldValues,
 >(props: MySliderProps<TFieldValues, TName, TTransformedValues>) {
-    const { control, name, label, disabled = false, fullWidth, ...restProps } = props;
+    const { control, name, label, disabled = false, ...restProps } = props;
 
     const { field } = useController({
         name,
@@ -31,7 +30,7 @@ export function MySlider<
     const isDisabled = disabled || isSubmitting;
 
     return (
-        <FormControl fullWidth={fullWidth}>
+        <FormControl fullWidth>
             {label && <FormLabel>{label}</FormLabel>}
             <Slider
                 {...restProps}
