@@ -1,8 +1,8 @@
 import assertNever from "assert-never";
 import * as Comlink from "comlink";
+import { inRange, isEqual } from "es-toolkit";
 import type { Getter, Setter } from "jotai";
 import { useAtomCallback } from "jotai/utils";
-import { inRange, isEqual } from "es-toolkit";
 import { useCallback, useState } from "react";
 import type {
     DynamicGeneratorSettings,
@@ -11,7 +11,7 @@ import type {
     GeneratorProgress,
     GridFormatEnum,
     MultiShotGeneratorProgress,
-    StrategyEnums,
+    StrategySet,
     TransportDeductions,
 } from "../../types";
 import { cellAtGridPositionState } from "../state/cellIndexing";
@@ -524,7 +524,7 @@ export function useExportSudokuString() {
 
 export function useTryStrategies() {
     return useAtomCallback(
-        useCallback(async (get, set, strategies: StrategyEnums) => {
+        useCallback(async (get, set, strategies: StrategySet) => {
             const wasmSudokuProxy = await get(remoteWasmSudokuState);
             const res = await wasmSudokuProxy.tryStrategies(strategies);
             await updateSudoku({ set, wasmSudokuProxy });
