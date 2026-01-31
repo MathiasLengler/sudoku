@@ -39,18 +39,21 @@ export function MySwitch<
         control,
     });
 
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+    const isDisabled = disabled || isSubmitting;
+
     return (
         <FormControlLabel
             {...restProps}
             label={label}
-            // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-            disabled={disabled || isSubmitting}
+            disabled={isDisabled}
             control={
                 <Switch
                     name={field.name}
                     checked={!!field.value}
                     onChange={field.onChange}
                     onBlur={field.onBlur}
+                    disabled={isDisabled}
                 />
             }
         />
