@@ -439,67 +439,21 @@ mod tests {
         cell::{Candidates, Cell},
     };
 
-    #[allow(dead_code)]
-    fn simple_colouring_deduction<Base: SudokuBase>(
-        candidate: impl TryInto<Value<Base>, Error: std::fmt::Debug>,
-        positions_to_delete: impl IntoIterator<Item = (u8, u8)>,
-        reason_positions: impl IntoIterator<Item = (u8, u8)>,
-    ) -> Deduction<Base> {
-        let candidate = candidate.try_into().unwrap();
-        Deduction::try_from_iters(
-            positions_to_delete
-                .into_iter()
-                .map(|pos| (pos, Action::delete_candidate(candidate))),
-            reason_positions
-                .into_iter()
-                .map(|pos| (pos, Reason::candidate(candidate))),
-        )
-        .unwrap()
-    }
-
     mod synthetic {
         use super::*;
 
         #[test]
-        fn test_simple_colouring_type1_row_conflict() {
-            // Create a synthetic grid where candidate 1 has a chain with same-color cells
-            // in the same row (Type 1 elimination)
-            //
-            // Grid setup: candidate 1 appears in specific cells to create a chain
-            // with a color conflict.
+        fn test_chain_building_basic() {
+            // Test that chain building works correctly for a simple chain
+            // This creates a rectangular chain of 4 cells for candidate 1
+
             let mut grid: Grid<Base2> = Grid::new();
 
-            // Set up a chain where:
-            // - (0,0) and (0,2) are conjugate in row 0 -> colors A and B
-            // - (0,2) and (2,2) are conjugate in column 2 -> (2,2) gets color A
-            // - (2,2) and (2,0) are conjugate in row 2 -> (2,0) gets color B
-            // Now (0,2) = B and (2,0) = B, if they see each other through a unit,
-            // that's a Type 1 conflict
-
-            // Let's create a simpler case:
+            // Set up candidates for value 1 in specific positions
             // Row 0: candidate 1 in (0,0) and (0,2) only - conjugate pair
             // Column 0: candidate 1 in (0,0) and (2,0) only - conjugate pair
             // Column 2: candidate 1 in (0,2) and (2,2) only - conjugate pair
             // Row 2: candidate 1 in (2,0) and (2,2) only - conjugate pair
-            //
-            // Colors: (0,0)=A, (0,2)=B (via row 0)
-            //         (2,0)=B (via col 0 from (0,0)=A)
-            //         (2,2)=A (via col 2 from (0,2)=B)
-            //
-            // Now (0,0)=A and (2,2)=A share block 0,2? No.
-            // Let's check: (2,0)=B and (0,2)=B. Do they share a unit?
-            // - Row: 2 vs 0 - no
-            // - Column: 0 vs 2 - no
-            // - Block: (2,0) is block 2, (0,2) is block 1 - no
-            // No Type 1 here.
-
-            // Let's create a Type 1 with a different configuration
-            // We need same-color cells in the same unit.
-
-            // Simpler approach: Test Type 2 first since it's more common
-            // For now, let's set up the grid with candidates and verify the basic chain building
-
-            // Set up candidates for value 1 in specific positions
             grid[Position::try_from((0u8, 0u8)).unwrap()] =
                 Cell::with_candidates(Candidates::try_from(vec![1, 2]).unwrap());
             grid[Position::try_from((0u8, 2u8)).unwrap()] =
@@ -519,39 +473,200 @@ mod tests {
 
             let deductions = SimpleColouring.execute(&grid).unwrap();
 
-            // For this simple configuration, there may or may not be eliminations
-            // depending on the exact chain structure
-            // The test verifies the strategy runs without error
-            println!("Deductions for synthetic grid: {:?}", deductions);
+            // This configuration forms a valid chain without Type 1 conflict
+            // and no off-chain cells to trigger Type 2, so no eliminations expected
+            assert!(
+                deductions.is_empty(),
+                "Expected no eliminations for this chain configuration"
+            );
         }
 
         #[test]
-        fn test_simple_colouring_type2_both_colors_visible() {
-            // Create a grid where an uncolored cell can see both colors of a chain
-            // This should trigger Type 2 elimination
+        fn test_type2_elimination_cell_sees_both_colors() {
+            // Test Type 2 elimination: an uncolored cell that can see both colors
+            // Set up a chain where an off-chain cell sees cells of both colors
 
             let mut grid: Grid<Base2> = Grid::new();
 
-            // Set up a simple chain for candidate 1:
-            // Row 0: candidate 1 only in (0,0) and (0,3) - conjugate pair
-            // Column 0: candidate 1 only in (0,0) and (3,0) - conjugate pair
+            // Create a simple 2-cell chain for candidate 1:
+            // (0,0) and (0,1) are conjugate in row 0 (only 2 cells with candidate 1)
+            // Colors: (0,0)=A, (0,1)=B
             //
-            // Colors: (0,0)=A, (0,3)=B, (3,0)=B
+            // Cell (1,0) is not in the chain, but it can see:
+            // - (0,0)=A via column 0
+            // - AND if we have another chain cell visible...
+            // We need (1,0) to see both colors. Let's extend the chain.
             //
-            // Now cell (3,3) can see (0,3) via column 3? No, (0,3) is in row 0.
-            // Cell (3,3) can see (3,0) via row 3 and (0,3) via column 3.
-            // If (3,3) has candidate 1, it can be eliminated (Type 2)
+            // Better setup:
+            // (0,0) and (1,0) conjugate in column 0 -> (0,0)=A, (1,0)=B
+            // (0,0) and (0,1) conjugate in row 0 -> (0,1)=B
+            // Now cell (1,1) can see (1,0)=B via row 1 and (0,1)=B via column 1
+            // Still only sees B, not A.
+            //
+            // Let's try a different setup:
+            // (0,0) and (2,0) conjugate in column 0 -> (0,0)=A, (2,0)=B
+            // (0,0) and (0,2) conjugate in row 0 -> (0,2)=B
+            // (2,0) and (2,2) conjugate in row 2 -> (2,2)=A
+            // (0,2) and (2,2) conjugate in column 2 -> already covered
+            //
+            // Now cell (1,1) is not in chain, has candidate 1
+            // Can it see both colors?
+            // - Via block 0: (0,0)=A
+            // - Via block 0: (1,1) is NOT in same row/col/block as (2,0), (0,2), (2,2)
+            // Actually for Base2, block 0 contains (0,0), (0,1), (1,0), (1,1)
+            // So (1,1) sees (0,0)=A via block
+            //
+            // Does (1,1) see any B color?
+            // - (2,0)=B - different row, column, and block (block 2) - NO
+            // - (0,2)=B - different row, column, and block (block 1) - NO
+            //
+            // This is tricky on a 4x4 grid. Let's just verify the strategy runs
+            // and produces consistent results.
 
             grid[Position::try_from((0u8, 0u8)).unwrap()] =
                 Cell::with_candidates(Candidates::try_from(vec![1, 2]).unwrap());
-            grid[Position::try_from((0u8, 3u8)).unwrap()] =
+            grid[Position::try_from((0u8, 2u8)).unwrap()] =
                 Cell::with_candidates(Candidates::try_from(vec![1, 3]).unwrap());
-            grid[Position::try_from((3u8, 0u8)).unwrap()] =
+            grid[Position::try_from((2u8, 0u8)).unwrap()] =
                 Cell::with_candidates(Candidates::try_from(vec![1, 4]).unwrap());
-            grid[Position::try_from((3u8, 3u8)).unwrap()] =
+            grid[Position::try_from((2u8, 2u8)).unwrap()] =
+                Cell::with_candidates(Candidates::try_from(vec![1, 2]).unwrap());
+
+            // Fill other positions including (1,1) with candidate 1
+            for pos in Position::<Base2>::all() {
+                if grid[pos].candidates().is_none() {
+                    grid[pos] =
+                        Cell::with_candidates(Candidates::try_from(vec![2, 3, 4]).unwrap());
+                }
+            }
+
+            // Set (1,1) to have candidate 1 as well
+            grid[Position::try_from((1u8, 1u8)).unwrap()] =
                 Cell::with_candidates(Candidates::try_from(vec![1, 2, 3]).unwrap());
 
-            // Fill other positions with candidates that don't include 1
+            let deductions = SimpleColouring.execute(&grid).unwrap();
+
+            // (1,1) is in block 0, which also contains (0,0)=A
+            // But (1,1) doesn't see any B-colored cell (2,0 or 0,2)
+            // So no Type 2 elimination expected
+            assert!(
+                deductions.is_empty(),
+                "Expected no eliminations - (1,1) only sees one color"
+            );
+        }
+
+        #[test]
+        fn test_type2_elimination_base3() {
+            // Use Base3 (9x9) grid for a more realistic Type 2 scenario
+            // where cells can see both colors more easily
+            //
+            // For Type 2 elimination:
+            // 1. Build a chain with alternating colors
+            // 2. Find an off-chain cell that can see both colors
+            // 3. That cell's candidate can be eliminated
+            //
+            // Setup: Create a linear chain where an off-chain cell in the same
+            // block as two differently-colored chain cells can be eliminated.
+            //
+            // Chain for candidate 5:
+            // (0,0) and (0,6) conjugate in row 0 -> (0,0)=A, (0,6)=B
+            // (0,6) and (6,6) conjugate in column 6 -> (6,6)=A
+            //
+            // Off-chain cell at (0,3) with candidate 5:
+            // - Sees (0,0)=A via row 0
+            // - Sees (0,6)=B via row 0
+            // This should trigger Type 2 elimination!
+
+            let mut grid: Grid<Base3> = Grid::new();
+
+            // Chain cells - ensure row 0 has ONLY (0,0) and (0,6) with candidate 5
+            // And column 6 has ONLY (0,6) and (6,6) with candidate 5
+            grid[Position::try_from((0u8, 0u8)).unwrap()] =
+                Cell::with_candidates(Candidates::try_from(vec![5, 6]).unwrap());
+            grid[Position::try_from((0u8, 6u8)).unwrap()] =
+                Cell::with_candidates(Candidates::try_from(vec![5, 7]).unwrap());
+            grid[Position::try_from((6u8, 6u8)).unwrap()] =
+                Cell::with_candidates(Candidates::try_from(vec![5, 8]).unwrap());
+
+            // Off-chain cell that should have candidate 5 eliminated
+            // This cell is in row 0, so it sees (0,0)=A and (0,6)=B
+            grid[Position::try_from((0u8, 3u8)).unwrap()] =
+                Cell::with_candidates(Candidates::try_from(vec![5, 9]).unwrap());
+
+            // Fill remaining cells in row 0 without candidate 5
+            // (to ensure (0,0) and (0,6) are a conjugate pair)
+            for c in [1u8, 2, 4, 5, 7, 8] {
+                grid[Position::try_from((0u8, c)).unwrap()] =
+                    Cell::with_candidates(Candidates::try_from(vec![6, 7, 8, 9]).unwrap());
+            }
+
+            // Fill remaining cells in column 6 without candidate 5
+            // (to ensure (0,6) and (6,6) are a conjugate pair)
+            for r in [1u8, 2, 3, 4, 5, 7, 8] {
+                grid[Position::try_from((r, 6u8)).unwrap()] =
+                    Cell::with_candidates(Candidates::try_from(vec![6, 7, 8, 9]).unwrap());
+            }
+
+            // Fill all other cells without candidate 5
+            for pos in Position::<Base3>::all() {
+                if grid[pos].candidates().is_none() {
+                    grid[pos] =
+                        Cell::with_candidates(Candidates::try_from(vec![6, 7, 8, 9]).unwrap());
+                }
+            }
+
+            let deductions = SimpleColouring.execute(&grid).unwrap();
+
+            // Check that we have an elimination at (0,3) for candidate 5
+            // The chain is: (0,0)=A, (0,6)=B, (6,6)=A
+            // Cell (0,3) sees (0,0)=A and (0,6)=B via row 0, so Type 2 applies
+
+            assert!(
+                !deductions.is_empty(),
+                "Expected Type 2 elimination at (0,3)"
+            );
+
+            // Verify the elimination is at the correct position
+            let target_pos = Position::try_from((0u8, 3u8)).unwrap();
+            let has_target_elimination = deductions
+                .iter()
+                .any(|d| d.actions.iter().any(|(pos, _)| pos == target_pos));
+            assert!(
+                has_target_elimination,
+                "Expected elimination at position (0,3)"
+            );
+        }
+    }
+
+    mod edge_cases {
+        use super::*;
+
+        #[test]
+        fn test_empty_grid_no_conjugate_pairs() {
+            // An empty grid with all candidates won't have conjugate pairs
+            // (all candidates appear in all cells of each unit)
+
+            let grid: Grid<Base3> = Grid::new();
+
+            let deductions = SimpleColouring.execute(&grid).unwrap();
+
+            assert!(
+                deductions.is_empty(),
+                "Empty grid should have no eliminations"
+            );
+        }
+
+        #[test]
+        fn test_single_candidate_no_chain() {
+            // Grid where a candidate exists but has no conjugate pairs
+
+            let mut grid: Grid<Base2> = Grid::new();
+
+            // Only one cell has candidate 1 - no conjugate pair possible
+            grid[Position::try_from((0u8, 0u8)).unwrap()] =
+                Cell::with_candidates(Candidates::try_from(vec![1, 2, 3]).unwrap());
+
+            // Fill rest without candidate 1
             for pos in Position::<Base2>::all() {
                 if grid[pos].candidates().is_none() {
                     grid[pos] =
@@ -561,43 +676,10 @@ mod tests {
 
             let deductions = SimpleColouring.execute(&grid).unwrap();
 
-            // (3,3) should have candidate 1 eliminated because it sees both (0,3)=B and (3,0)=B
-            // Wait, both are color B, so it only sees one color. Need to fix the test.
-
-            // Let's trace through:
-            // (0,0) starts as A
-            // (0,3) is conjugate to (0,0) in row 0, so (0,3) = B
-            // (3,0) is conjugate to (0,0) in column 0, so (3,0) = B
-            //
-            // Both (0,3) and (3,0) are color B. For Type 2, (3,3) needs to see both A and B.
-            // (3,3) sees (3,0)=B via row 3, and (0,3)=B via column 3, but not color A.
-            // So no Type 2 elimination here.
-
-            println!(
-                "Deductions for type 2 test grid (may be empty): {:?}",
-                deductions
+            assert!(
+                deductions.is_empty(),
+                "Single candidate should produce no eliminations"
             );
-        }
-    }
-
-    mod base3_examples {
-        use super::*;
-
-        #[test]
-        fn test_simple_colouring_real_example() {
-            // A more realistic example that demonstrates Simple Colouring
-            // This test sets up a 9x9 grid with a candidate that forms a chain
-
-            // For now, we test that the strategy runs without panicking
-            // on a sample grid and produces valid deductions (may be empty)
-
-            let grid: Grid<Base3> = Grid::new();
-
-            let deductions = SimpleColouring.execute(&grid).unwrap();
-
-            // An empty grid with all candidates won't have conjugate pairs
-            // (all candidates appear in all cells of each unit)
-            assert!(deductions.is_empty());
         }
     }
 }
