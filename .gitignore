@@ -6,6 +6,9 @@ sudoku-bubblewrap/*
 !sudoku-bubblewrap/twa-manifest.json
 !sudoku-bubblewrap/gradle.properties
 
+# wasm-pack build output
+sudoku-wasm/pkg/
+
 # cargo asm
 /*.asm
 
