@@ -5,6 +5,7 @@ use crate::{
 use serde::{Deserialize, Serialize};
 use std::{
     fmt::{self, Debug, Display, Formatter},
+    hash::Hash,
     marker::PhantomData,
 };
 
@@ -17,7 +18,7 @@ use super::ValidatedWorldPosition;
 
 /// A position of a `WorldObject`.
 #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export), ts(concrete(T = crate::world::CellMarker)))]
-#[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
+#[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub struct WorldPosition<T: WorldObject> {
     pub row: usize,
     pub column: usize,

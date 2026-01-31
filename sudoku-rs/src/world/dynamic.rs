@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use super::{
     CellWorld, CellWorldDimensions, DynamicWorldGridCellPosition, Quadrant, WorldCellPosition,
-    WorldGenerationResult, WorldGridDim, WorldGridPosition,
+    WorldGenerationResult, WorldGridDim, WorldGridPosition, WorldPruningSettings,
 };
 
 #[enum_dispatch]
@@ -16,6 +16,11 @@ pub trait DynamicCellWorldActions {
     // Generation
     fn generate_solved(&mut self, seed: Option<u64>) -> Result<WorldGenerationResult>;
     fn prune(&mut self, seed: Option<u64>) -> Result<()>;
+    fn prune_with_settings(
+        &mut self,
+        seed: Option<u64>,
+        settings: WorldPruningSettings,
+    ) -> Result<()>;
 
     // DynamicGrid interop
     fn to_grid_at(&self, grid_position: WorldGridPosition) -> Result<DynamicGrid<DynamicCell>>;

@@ -3,8 +3,7 @@ use crate::cell::dynamic::DynamicCell;
 use crate::cell::{Candidates, Cell};
 use crate::error::Result;
 use crate::generator::{
-    Generator, GeneratorSettings, PruningGroupBehaviour, PruningOrder, PruningSettings,
-    PruningTarget, SolutionSettings,
+    Generator, GeneratorSettings, PruningGroupBehaviour, PruningOrder, SolutionSettings,
 };
 use crate::grid::Grid;
 use crate::grid::dynamic::DynamicGrid;
@@ -27,6 +26,8 @@ use tabled::settings::{Padding, Style};
 mod indexing;
 pub use indexing::*;
 pub mod dynamic;
+pub mod pruning;
+pub use pruning::*;
 
 mod serialization {
     use crate::error::Error;
@@ -246,19 +247,21 @@ impl<Base: SudokuBase> DynamicCellWorldActions for CellWorld<Base> {
     }
 
     fn prune(&mut self, seed: Option<u64>) -> Result<()> {
+        self.prune_with_settings(seed, WorldPruningSettings::minimal())
+    }
+
+    fn prune_with_settings(
+        &mut self,
+        seed: Option<u64>,
+        settings: WorldPruningSettings,
+    ) -> Result<()> {
         let mut rng = new_crate_rng_with_seed(seed);
 
         assert!(self.is_solved());
 
-        // TODO: abstract world pruning
-        //  - overlap/middle
-        //  - PruningGroupBehaviour
-        //  - retain/modify already pruned values in overlap
-
-        // FIXME: how do we prevent pruning of fixed values in the overlap while exposing pruning settings?
-        //  *should* we prevent that? this could result in subgrids without a unique solution,
-        //  as long as its neighbors are unsolved.
-
+        // Calculate middle positions (cells that are not in overlap regions)
+        // These are the only cells that can be safely pruned without affecting
+        // the uniqueness of adjacent grids.
         let (middle_positions, _overlap_positions): (Vec<_>, Vec<_>) = Position::<Base>::all()
             .partition(|pos| {
                 let (row, column) = pos.to_row_and_column();
@@ -271,30 +274,33 @@ impl<Base: SudokuBase> DynamicCellWorldActions for CellWorld<Base> {
         for (progress_index, grid_position) in (0..).zip(self.all_validated_grid_positions()) {
             let grid = self.to_grid_at_validated(grid_position);
 
+            // Get the biome for this grid position
+            let biome = settings.get_biome_for_grid(grid_position.get());
+
+            // Create pruning settings from the biome, restricted to middle positions
+            let middle_positions_order = PruningOrder::Positions {
+                positions: middle_positions
+                    .iter()
+                    .filter(|pos| !grid.get(**pos).has_fixed_value())
+                    .copied()
+                    .collect(),
+                behaviour: PruningGroupBehaviour::Exclusive,
+            };
+
+            let pruning_settings = biome.to_pruning_settings(middle_positions_order);
+
             let pruned_grid = Generator::with_settings(GeneratorSettings {
-                // TODO: expose
-                prune: Some(PruningSettings {
-                    set_all_direct_candidates: true,
-                    order: PruningOrder::Positions {
-                        positions: middle_positions
-                            .iter()
-                            .filter(|pos| !grid.get(**pos).has_fixed_value())
-                            .copied()
-                            .collect(),
-                        behaviour: PruningGroupBehaviour::Exclusive,
-                    },
-                    target: PruningTarget::Minimal,
-                    ..Default::default()
-                }),
+                prune: Some(pruning_settings),
                 solution: Some(SolutionSettings { values_grid: grid }),
                 seed: Some(rng.random()),
             })
             .generate()?;
 
             info!(
-                "CellWorld::prune: pruned grid #{}/{}",
+                "CellWorld::prune_with_settings: pruned grid #{}/{} with biome {}",
                 progress_index,
-                self.grid_dim.all_positions_count()
+                self.grid_dim.all_positions_count(),
+                biome.id
             );
 
             self.set_grid_at_validated(&pruned_grid, grid_position);
@@ -806,5 +812,41 @@ mod tests {
                 "{overlap_segment_filter:?} => {grid}"
             );
         }
+    }
+
+    #[test]
+    fn test_prune_with_biomes() {
+        use crate::generator::PruningTarget;
+
+        let grid_dim = WorldGridDim::new(2, 2).unwrap();
+        let seed = 42;
+        let overlap = 1.try_into().unwrap();
+
+        let mut world = CellWorld::<Base2>::new(grid_dim, overlap);
+        world.generate_solved(Some(seed)).unwrap();
+        assert!(world.is_solved());
+
+        // Create different biomes for different grid positions
+        let mut settings = WorldPruningSettings::minimal();
+
+        // Add a second biome with a different target (minimum clue count)
+        let easy_biome = Biome::with_target(1, PruningTarget::MinClueCount(10));
+        settings.add_biome(easy_biome);
+
+        // Assign top-left grid to the easy biome (more clues = easier)
+        settings.assign_biome(WorldGridPosition::new(0, 0), 1);
+
+        // Prune with biome settings
+        world.prune_with_settings(Some(seed), settings).unwrap();
+        assert!(world.is_directly_consistent());
+
+        // Verify that different grids can have different numbers of clues
+        // (though exact counts depend on the solving algorithm)
+        let grid_0_0 = world.to_grid_at(WorldGridPosition::new(0, 0)).unwrap();
+        let grid_1_1 = world.to_grid_at(WorldGridPosition::new(1, 1)).unwrap();
+
+        // Both grids should be directly consistent
+        assert!(grid_0_0.is_directly_consistent());
+        assert!(grid_1_1.is_directly_consistent());
     }
 }

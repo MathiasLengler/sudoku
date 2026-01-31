@@ -10,7 +10,7 @@ use crate::{base::SudokuBase, solver::strategic::strategies::selection::Strategy
 pub use dynamic_settings::*;
 
 #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
-#[derive(Debug, Copy, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum PruningTarget {
     #[default]

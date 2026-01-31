@@ -25,8 +25,9 @@ use sudoku::{
     },
     transport::{TransportCell, TransportSudoku},
     world::{
-        CellWorldDimensions, DynamicWorldGridCellPosition, Quadrant, RelativeDir, WorldCellDim,
-        WorldCellPosition, WorldGenerationResult, WorldGridDim, WorldGridPosition,
+        Biome, CellWorldDimensions, DynamicWorldGridCellPosition, Quadrant, RelativeDir,
+        WorldCellDim, WorldCellPosition, WorldGenerationResult, WorldGridDim, WorldGridPosition,
+        WorldPruningSettings,
     },
 };
 use wasm_bindgen::prelude::*;
@@ -93,6 +94,7 @@ macro_rules! serde_wasm_bindgen_interop {
 serde_wasm_bindgen_interop! {
     IMPORT_TS_RS_BINDINGS;
     BaseEnum,
+    Biome,
     CellWorldDimensions,
     DynamicCandidates,
     DynamicCell,
@@ -123,6 +125,7 @@ serde_wasm_bindgen_interop! {
     TransportReason,
     TransportSudoku,
     WorldGenerationResult,
+    WorldPruningSettings,
 }
 
 // Serde-compatbile aliases
