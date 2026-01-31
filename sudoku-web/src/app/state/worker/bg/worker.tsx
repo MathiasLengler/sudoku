@@ -101,6 +101,21 @@ const expensiveOperations = {
             result,
         };
     },
+
+    /**
+     * Import a sudoku from a string. This is an expensive operation since it
+     * needs to solve the grid to determine its properties.
+     */
+    importSudoku(input: string, setAllDirectCandidates: boolean): SerializedDynamicSudoku {
+        console.debug("Worker: importSudoku");
+        const wasmSudoku = WasmSudoku.import(input);
+        if (setAllDirectCandidates) {
+            wasmSudoku.setAllDirectCandidates();
+        }
+        const serialized = wasmSudoku.serialize();
+        wasmSudoku.free();
+        return Comlink.transfer(serialized, [serialized.buffer]);
+    },
 };
 
 /**
@@ -122,6 +137,8 @@ export type ExpensiveOperationsApi = {
         serializedSudoku: SerializedDynamicSudoku,
         strategies: StrategyEnums,
     ) => Promise<ExpensiveOperationResult<DynamicSolveStep | undefined>>;
+
+    importSudoku: (input: string, setAllDirectCandidates: boolean) => Promise<SerializedDynamicSudoku>;
 };
 
 // Cast to satisfy the type (Comlink will promisify these)

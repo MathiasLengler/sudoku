@@ -23,7 +23,6 @@ import {
     mainThreadWasmSudokuState,
     deserializeFromTransfer,
     serializeForTransfer,
-    WasmSudoku as WasmSudokuClass,
 } from "../state/mainThread";
 import { gameCounterState, sudokuSideLengthState, sudokuState } from "../state/sudoku";
 import { isWorkerReadyState, remoteExpensiveOperationsState, workerState } from "../state/worker";
@@ -505,18 +504,16 @@ export function useGenerateMultiShot() {
 
 export function useImportSudokuString() {
     return useAtomCallback(
-        useCallback((_get, set, input: string, setAllDirectCandidates: boolean): Promise<void> => {
-            // Import is done on main thread since it's a relatively fast operation
-            // Return Promise to maintain consistent error handling for callers
-            return Promise.resolve().then(() => {
-                const wasmSudoku = WasmSudokuClass.import(input);
-                set(mainThreadWasmSudokuState, wasmSudoku);
+        useCallback(async (get, set, input: string, setAllDirectCandidates: boolean): Promise<void> => {
+            // Import is an expensive operation since it needs to solve the grid
+            // Run on worker and transfer result back
+            const expensiveOps = await get(remoteExpensiveOperationsState);
+            const serializedResult = await expensiveOps.importSudoku(input, setAllDirectCandidates);
 
-                if (setAllDirectCandidates) {
-                    wasmSudoku.setAllDirectCandidates();
-                }
-                updateSudokuFromMainThread({ set, wasmSudoku }, true);
-            });
+            // Deserialize result on main thread
+            const wasmSudoku = await deserializeFromTransfer(serializedResult);
+            set(mainThreadWasmSudokuState, wasmSudoku);
+            updateSudokuFromMainThread({ set, wasmSudoku }, true);
         }, []),
     );
 }
