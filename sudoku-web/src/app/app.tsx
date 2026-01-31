@@ -10,6 +10,7 @@ import { FullScreenSpinner } from "./components/FullScreenSpinner";
 import { store } from "./state/store";
 import { Sudoku } from "./sudoku";
 import { MyTheme } from "./theme/myTheme";
+import { DebugForm } from "./DebugForm";
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -46,6 +47,7 @@ export function App() {
                             <NotificationsProvider slotProps={{ snackbar: { autoHideDuration: 3000 } }}>
                                 <Suspense fallback={<FullScreenSpinner />}>
                                     <Sudoku />
+                                    {/* <DebugForm /> */}
                                 </Suspense>
                                 <SwManager />
                             </NotificationsProvider>

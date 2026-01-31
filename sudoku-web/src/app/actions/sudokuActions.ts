@@ -1,8 +1,8 @@
 import assertNever from "assert-never";
 import * as Comlink from "comlink";
+import { inRange, isEqual } from "es-toolkit";
 import type { Getter, Setter } from "jotai";
 import { useAtomCallback } from "jotai/utils";
-import { inRange, isEqual } from "es-toolkit";
 import { useCallback, useState } from "react";
 import type {
     DynamicGeneratorSettings,
@@ -11,7 +11,7 @@ import type {
     GeneratorProgress,
     GridFormatEnum,
     MultiShotGeneratorProgress,
-    StrategyEnums,
+    StrategySet,
     TransportDeductions,
     WasmSudoku,
 } from "../../types";
@@ -26,11 +26,7 @@ import {
     WasmSudoku as WasmSudokuClass,
 } from "../state/mainThread";
 import { gameCounterState, sudokuSideLengthState, sudokuState } from "../state/sudoku";
-import {
-    isWorkerReadyState,
-    remoteExpensiveOperationsState,
-    workerState,
-} from "../state/worker";
+import { isWorkerReadyState, remoteExpensiveOperationsState, workerState } from "../state/worker";
 import { useCancelableMutation } from "../useCancelableMutation";
 import { measure, withMeasure } from "../utils/measure";
 
@@ -535,7 +531,7 @@ export function useExportSudokuString() {
 
 export function useTryStrategies() {
     return useAtomCallback(
-        useCallback(async (get, set, strategies: StrategyEnums) => {
+        useCallback(async (get, set, strategies: StrategySet) => {
             // tryStrategies is an expensive operation - run on worker
             const wasmSudoku = await get(mainThreadWasmSudokuState);
             const serializedSudoku = serializeForTransfer(wasmSudoku);
