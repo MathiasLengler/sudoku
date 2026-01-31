@@ -111,66 +111,7 @@ impl GridMetric {
                 .average_options()?
                 .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?,
             GridMetric::SolveGraphAverageBranchingFactor => {
-                // Build a solve graph by exploring all possible strategy applications from each grid state.
-                // The solve graph is a directed graph where:
-                // - Nodes are unique grid states
-                // - Edges represent strategy applications (one edge per SolveStep)
-                //
-                // The average branching factor is: (total edges / total non-leaf nodes) * STRATEGY_SCORE_FIXED_POINT_SCALE
-                // A non-leaf node is a node with at least one outgoing edge (i.e., a node where strategies can make progress)
-                //
-                // Note: We use DFS traversal (stack with pop()), but the traversal order doesn't affect
-                // the result since we're computing a property over all nodes in the graph.
-
-                let mut visited: HashSet<Grid<Base>> = HashSet::new();
-                let mut stack: Vec<Grid<Base>> = vec![grid.clone()];
-
-                let mut total_edges: u64 = 0;
-                let mut non_leaf_node_count: u64 = 0;
-
-                while let Some(current_grid) = stack.pop() {
-                    if !visited.insert(current_grid.clone()) {
-                        // Grid already visited
-                        continue;
-                    }
-
-                    if current_grid.is_solved() {
-                        // Solved grids are leaf nodes, no strategies apply
-                        continue;
-                    }
-
-                    let mut grid_for_solver = current_grid.clone();
-                    let solver = strategic::Solver::with_strategies(&mut grid_for_solver, strategies);
-                    let solve_steps = solver.try_all_strategies()?;
-
-                    if solve_steps.is_empty() {
-                        // No strategies apply, this is a leaf node (unsolvable state)
-                        continue;
-                    }
-
-                    // Count edges (one edge per solve step)
-                    total_edges += solve_steps.len() as u64;
-                    non_leaf_node_count += 1;
-
-                    // Add all reachable grids to the stack
-                    for solve_step in solve_steps {
-                        // Clone grid_for_solver which has candidates set up,
-                        // since deductions.apply() requires candidates to be present
-                        let mut new_grid = grid_for_solver.clone();
-                        solve_step.deductions.apply(&mut new_grid)?;
-                        if !visited.contains(&new_grid) {
-                            stack.push(new_grid);
-                        }
-                    }
-                }
-
-                // Calculate average branching factor
-                // If there are no non-leaf nodes, the branching factor is 0
-                if non_leaf_node_count == 0 {
-                    0
-                } else {
-                    (total_edges * STRATEGY_SCORE_FIXED_POINT_SCALE) / non_leaf_node_count
-                }
+                solve_graph_average_branching_factor(grid, strategies)?
             }
             GridMetric::SatStepCount => {
                 let mut solver = sat::Solver::new(grid);
@@ -195,6 +136,73 @@ impl GridMetric {
             GridMetric::GridGivensValueCountDeviation => todo!(),
         })
     }
+}
+
+/// Computes the average branching factor of the solve graph.
+///
+/// Builds a solve graph by exploring all possible strategy applications from each grid state.
+/// The solve graph is a directed graph where:
+/// - Nodes are unique grid states
+/// - Edges represent strategy applications (one edge per `SolveStep`)
+///
+/// The average branching factor is: `(total edges / total non-leaf nodes) * STRATEGY_SCORE_FIXED_POINT_SCALE`
+/// A non-leaf node is a node with at least one outgoing edge (i.e., a node where strategies can make progress)
+///
+/// Note: We use DFS traversal (stack with `pop()`), but the traversal order doesn't affect
+/// the result since we're computing a property over all nodes in the graph.
+fn solve_graph_average_branching_factor<Base: SudokuBase>(
+    grid: &Grid<Base>,
+    strategies: impl StrategySelection + Copy,
+) -> Result<EvaluatedGridMetric> {
+    let mut visited: HashSet<Grid<Base>> = HashSet::new();
+    let mut stack: Vec<Grid<Base>> = vec![grid.clone()];
+
+    let mut total_edges: u64 = 0;
+    let mut non_leaf_node_count: u64 = 0;
+
+    while let Some(current_grid) = stack.pop() {
+        if !visited.insert(current_grid.clone()) {
+            // Grid already visited
+            continue;
+        }
+
+        if current_grid.is_solved() {
+            // Solved grids are leaf nodes, no strategies apply
+            continue;
+        }
+
+        let mut grid_for_solver = current_grid.clone();
+        let solver = strategic::Solver::with_strategies(&mut grid_for_solver, strategies);
+        let solve_steps = solver.try_all_strategies()?;
+
+        if solve_steps.is_empty() {
+            // No strategies apply, this is a leaf node (unsolvable state)
+            continue;
+        }
+
+        // Count edges (one edge per solve step)
+        total_edges += solve_steps.len() as u64;
+        non_leaf_node_count += 1;
+
+        // Add all reachable grids to the stack
+        for solve_step in solve_steps {
+            // Clone grid_for_solver which has candidates set up,
+            // since deductions.apply() requires candidates to be present
+            let mut new_grid = grid_for_solver.clone();
+            solve_step.deductions.apply(&mut new_grid)?;
+            if !visited.contains(&new_grid) {
+                stack.push(new_grid);
+            }
+        }
+    }
+
+    // Calculate average branching factor
+    // If there are no non-leaf nodes, the branching factor is 0
+    Ok(if non_leaf_node_count == 0 {
+        0
+    } else {
+        (total_edges * STRATEGY_SCORE_FIXED_POINT_SCALE) / non_leaf_node_count
+    })
 }
 
 #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
