@@ -8,10 +8,13 @@ import DialogActions from "@mui/material/DialogActions";
 import * as _ from "es-toolkit";
 import { useAtom } from "jotai";
 import { useEffect } from "react";
-import { SelectElement, SliderElement, SwitchElement, useForm } from "react-hook-form-mui";
+import { useForm } from "react-hook-form";
 import type { DynamicGeneratorSettings, GeneratorProgress } from "../../../types";
 import { useGenerate, useGenerateMultiShot, type TrackedMultiShotGeneratorProgress } from "../../actions/sudokuActions";
 import { Fieldset } from "../../components/Fieldset";
+import { MySelect } from "../../components/formFragments/mui-rhf/MySelect";
+import { MySlider } from "../../components/formFragments/mui-rhf/MySlider";
+import { MySwitch } from "../../components/formFragments/mui-rhf/MySwitch";
 import { MyTextField } from "../../components/formFragments/mui-rhf/MyTextField";
 import SelectStrategies from "../../components/formFragments/SelectStrategies";
 import SelectStrategy from "../../components/formFragments/SelectStrategy";
@@ -223,7 +226,7 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
                         })}
                     >
                         <Stack spacing={2}>
-                            <SliderElement
+                            <MySlider
                                 control={control}
                                 name="base"
                                 label="Size"
@@ -234,7 +237,7 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
                                 getAriaLabel={() => "Size"}
                                 getAriaValueText={(base) => baseToLabel(base)}
                             />
-                            <SliderElement
+                            <MySlider
                                 control={control}
                                 name="minGivens"
                                 label="Minimum number of givens"
@@ -252,7 +255,7 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
                             <SelectStrategies control={control} name="strategies" />
 
                             <Fieldset label="Post generation">
-                                <SwitchElement
+                                <MySwitch
                                     control={control}
                                     name="setAllDirectCandidates"
                                     label="Fill candidates"
@@ -261,7 +264,7 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
 
                             <Fieldset label="Random seed">
                                 <FormGroup row>
-                                    <SwitchElement control={control} name="useSeed" label="Use seed" />
+                                    <MySwitch control={control} name="useSeed" label="Use seed" />
                                     <MyTextField
                                         sx={{ flex: 1 }}
                                         control={control}
@@ -290,15 +293,15 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
                                 </FormGroup>
                             </Fieldset>
                             <Fieldset label="Multi-shot settings">
-                                <SwitchElement control={control} name="multiShot" label="Multi-shot" />
-                                <SwitchElement
+                                <MySwitch control={control} name="multiShot" label="Multi-shot" />
+                                <MySwitch
                                     control={control}
                                     name="parallel"
                                     label="Parallel"
                                     disabled={!multiShot}
                                 />
                                 <Stack spacing={2}>
-                                    <SliderElement
+                                    <MySlider
                                         control={control}
                                         name="iterationsIndex"
                                         label="Iterations"
@@ -311,7 +314,7 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
                                         getAriaLabel={() => "Iterations"}
                                         getAriaValueText={(iterations) => `${iterations}`}
                                     />
-                                    <SelectElement
+                                    <MySelect
                                         control={control}
                                         name="metric.kind"
                                         label="Metric"
@@ -329,7 +332,7 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
                                     {(GRID_METRIC_NAMES_WITH_STRATEGY as string[]).includes(metric.kind) && (
                                         <SelectStrategy control={control} name="metric.strategy" />
                                     )}
-                                    <SelectElement
+                                    <MySelect
                                         control={control}
                                         name="optimize"
                                         label="Optimize"

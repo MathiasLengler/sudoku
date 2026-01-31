@@ -2,9 +2,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import SaveIcon from "@mui/icons-material/Save";
 import { Box, Button, DialogActions, DialogContent, DialogTitle } from "@mui/material";
 import { Stack } from "@mui/material";
-import { RadioButtonGroup, SliderElement, SwitchElement, useForm } from "react-hook-form-mui";
+import { useForm } from "react-hook-form";
 import { useAtom } from "jotai";
 import { Fieldset } from "../../components/Fieldset";
+import { MyRadioGroup } from "../../components/formFragments/mui-rhf/MyRadioGroup";
+import { MySlider } from "../../components/formFragments/mui-rhf/MySlider";
+import { MySwitch } from "../../components/formFragments/mui-rhf/MySwitch";
 import { ResetFormButton } from "../../components/ResetFormButton";
 import SelectStrategies from "../../components/formFragments/SelectStrategies";
 import { formatDurationMs } from "../../i18n";
@@ -51,7 +54,7 @@ export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
                 >
                     <Stack spacing={2}>
                         <SelectStrategies control={control} name="strategies" />
-                        <RadioButtonGroup
+                        <MyRadioGroup
                             control={control}
                             name="mode"
                             label="Mode"
@@ -74,13 +77,13 @@ export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
                             required
                         />
                         <Fieldset label="Loop" disabled={mode === "toggleHint"}>
-                            <SwitchElement
+                            <MySwitch
                                 control={control}
                                 name="doLoop"
                                 label="Loop until strategies make no further progress"
                             />
                             <Box sx={{ mx: 2 }}>
-                                <SliderElement
+                                <MySlider
                                     control={control}
                                     name="loopDelayIndex"
                                     label="Loop delay"
@@ -100,7 +103,7 @@ export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
                             </Box>
                         </Fieldset>
                         <Fieldset label="Deductions">
-                            <SwitchElement
+                            <MySwitch
                                 control={control}
                                 name="multipleDeductions"
                                 label="Apply multiple deductions"

@@ -5,8 +5,9 @@ import { Button, DialogActions, DialogContent, DialogTitle, LinearProgress, Stac
 import { useAtom, useAtomValue } from "jotai";
 import { useAtomCallback } from "jotai/utils";
 import { Suspense, useCallback, useEffect } from "react";
-import { SelectElement, useForm } from "react-hook-form-mui";
+import { useForm } from "react-hook-form";
 import { Code } from "../../components/Code";
+import { MySelect } from "../../components/formFragments/mui-rhf/MySelect";
 import { ResetFormButton } from "../../components/ResetFormButton";
 import { ALL_GRID_FORMATS } from "../../constants";
 import {
@@ -75,7 +76,7 @@ export function ExportToClipboardDialog({ onClose }: ExportToClipboardDialogProp
                     style={{ display: "sticky" }}
                 >
                     <Stack spacing={2}>
-                        <SelectElement
+                        <MySelect
                             control={control}
                             name="gridFormat"
                             label="Format"
