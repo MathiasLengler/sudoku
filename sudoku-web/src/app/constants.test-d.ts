@@ -21,4 +21,8 @@ test("sudoku-rs bindings match zod schema types", () => {
     expectTypeOf<GridMetric>().toExtend<z.output<typeof gridMetricSchema>>();
 
     expectTypeOf<z.output<typeof goalOptimizationSchema>>().toEqualTypeOf<GoalOptimization>();
+
+    // TODO: assert:
+    //  strategyMapKeySchema
+    //  strategySetSchema
 });

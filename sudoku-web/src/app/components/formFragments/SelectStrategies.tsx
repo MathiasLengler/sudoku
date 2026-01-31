@@ -1,17 +1,26 @@
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { Stack, Tooltip } from "@mui/material";
-import type { Control, FieldValues, Path } from "react-hook-form";
+import type { Control, FieldPath, FieldValues } from "react-hook-form";
 import { CheckboxButtonGroup } from "react-hook-form-mui";
 import { ALL_STRATEGIES, STRATEGY_OPTIONS } from "../../constants";
 import { ExternalLink } from "../ExternalLink";
 
-type SelectStrategiesProps<T extends FieldValues> = {
-    control: Control<T>;
-    name: Path<T>;
+type SelectStrategiesProps<
+    TFieldValues extends FieldValues = FieldValues,
+    TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+    TTransformedValues = TFieldValues,
+> = {
+    control: Control<TFieldValues, unknown, TTransformedValues>;
+    name: TName;
 };
-function SelectStrategies<T extends FieldValues>({ control, name }: SelectStrategiesProps<T>) {
+function SelectStrategies<
+    TFieldValues extends FieldValues = FieldValues,
+    TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+    TTransformedValues = TFieldValues,
+>({ control, name }: SelectStrategiesProps<TFieldValues, TName, TTransformedValues>) {
     return (
         <CheckboxButtonGroup
+            // @ts-expect-error TS2345: Argument of type 'TName' is not assignable to parameter of type 'FieldPath<TFieldValues>'.
             control={control}
             name={name}
             label="Strategies"

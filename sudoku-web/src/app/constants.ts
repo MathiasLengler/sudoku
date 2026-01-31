@@ -1,22 +1,24 @@
-import { sortBy } from "es-toolkit/compat";
 import type { IsEqual } from "type-fest";
 import * as z from "zod";
-import type { GoalOptimization, GridMetricName, StrategyEnum } from "../types";
+import type { GoalOptimization, GridMetricName, StrategyEnum, StrategyMap } from "../types";
 import { assert } from "../typeUtils";
 
-export const strategyEnumSchema = z.enum([
-    "NakedSingles",
-    "HiddenSingles",
-    "NakedPairs",
-    "LockedSets",
-    "GroupIntersectionBlockToAxis",
-    "GroupIntersectionAxisToBlock",
-    "GroupIntersectionBoth",
-    "XWing",
-    "BruteForce",
-]);
+export const STRATEGY_NAMES = [
+    { strategyEnum: "NakedSingles", mapKey: "naked_singles" },
+    { strategyEnum: "HiddenSingles", mapKey: "hidden_singles" },
+    { strategyEnum: "NakedPairs", mapKey: "naked_pairs" },
+    { strategyEnum: "LockedSets", mapKey: "locked_sets" },
+    { strategyEnum: "GroupIntersectionBlockToAxis", mapKey: "group_intersection_block_to_axis" },
+    { strategyEnum: "GroupIntersectionAxisToBlock", mapKey: "group_intersection_axis_to_block" },
+    { strategyEnum: "GroupIntersectionBoth", mapKey: "group_intersection_both" },
+    { strategyEnum: "XWing", mapKey: "x_wing" },
+    { strategyEnum: "BruteForce", mapKey: "brute_force" },
+] satisfies { strategyEnum: StrategyEnum; mapKey: keyof StrategyMap<boolean> }[];
 
+export const strategyEnumSchema = z.enum(STRATEGY_NAMES.map((s) => s.strategyEnum));
 export const ALL_STRATEGIES = strategyEnumSchema.options;
+
+export const strategyMapKeySchema = z.enum(STRATEGY_NAMES.map((s) => s.mapKey));
 
 export const STRATEGY_OPTIONS: Record<
     StrategyEnum,
@@ -75,11 +77,23 @@ export const STRATEGY_OPTIONS: Record<
     },
 };
 
+export const strategyListSchema = strategyEnumSchema.array().min(1);
+
+export const strategySetSchema = z.record(strategyMapKeySchema, z.boolean());
+
 export type SelectedStrategies = z.infer<typeof selectedStrategiesSchema>;
-export const selectedStrategiesSchema = strategyEnumSchema
-    .array()
-    .min(1)
-    .overwrite((strategies) => sortBy(strategies, (strategy) => strategyEnumSchema.options.indexOf(strategy)));
+export const selectedStrategiesSchema = z.codec(strategyListSchema, strategySetSchema, {
+    encode: (strategySet) => {
+        return STRATEGY_NAMES.filter(({ mapKey }) => strategySet[mapKey]).map(({ enum: strategyEnum }) => strategyEnum);
+    },
+    decode: (strategyList) => {
+        return Object.fromEntries(
+            STRATEGY_NAMES.map(({ enum: strategyEnum, mapKey }) => {
+                return [mapKey, strategyList.includes(strategyEnum)];
+            }),
+        ) as StrategyMap<boolean>;
+    },
+});
 
 export const gridFormatSchema = z.enum([
     "BinaryCandidatesLineV0",

@@ -127,12 +127,10 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
         formState: { isSubmitting },
         setValue,
         reset,
-    } = useForm<GenerateFormValues>({
-        values: generateFormValues,
+    } = useForm({
+        values: generateFormValuesSchema.encode(generateFormValues),
         resolver: zodResolver(generateFormValuesSchema),
     });
-
-    const formValues = watch();
 
     const [base, minGivens, useSeed, multiShot, metric] = watch([
         "base",
@@ -141,6 +139,7 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
         "multiShot",
         "metric",
     ]);
+
     const cellCount = baseToCellCount(base);
 
     useEffect(() => {
@@ -167,7 +166,7 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
                 <TabPanel value={"generate-form" satisfies NewGameTabValue} sx={{ p: 0 }}>
                     <form
                         id="generate-form"
-                        onSubmit={handleSubmit(async () => {
+                        onSubmit={handleSubmit(async (formValues) => {
                             const {
                                 base,
                                 minGivens,

@@ -30,8 +30,8 @@ export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
         watch,
         formState: { isSubmitting },
         reset,
-    } = useForm<HintSettings>({
-        values: hintSettingsFormValues,
+    } = useForm({
+        values: hintSettingsSchema.encode(hintSettingsFormValues),
         resolver: zodResolver(hintSettingsSchema),
     });
 
