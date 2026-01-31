@@ -13,6 +13,7 @@ pub enum Axis {
 
 impl Axis {
     /// Get the other axis.
+    #[must_use]
     pub fn other(self) -> Self {
         match self {
             Axis::Row => Axis::Column,
@@ -37,9 +38,9 @@ impl Axis {
 ///
 /// This is the "transposed" view of the grid:
 /// - Grid: Position (row, column) → Cell → Candidates
-/// - GroupCandidateAvailability: Candidate → Group type (row/column/block) → GroupIndex → bool is set
+/// - `GroupCandidateAvailability`: Candidate → Group type (row/column/block) → `GroupIndex` → bool is set
 ///
-/// Used by strategies like XWing and GroupIntersection to efficiently answer questions like:
+/// Used by strategies like `XWing` and `GroupIntersection` to efficiently answer questions like:
 /// - In which rows/columns/blocks is a specific candidate available?
 /// - For a given row, which columns have a specific candidate?
 #[derive(Debug, Clone, Default)]
