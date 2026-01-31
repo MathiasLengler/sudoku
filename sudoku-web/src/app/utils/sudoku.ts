@@ -15,6 +15,7 @@ export function getValueColorStyle(value: number, sideLength: number): string | 
     if (value >= 1 && value <= sideLength) {
         // Distribute hues evenly across the color wheel (0-360 degrees)
         // Starting from red (0°) and rotating through the spectrum
+        // Use (sideLength) as divisor so colors don't wrap back to start
         const hue = Math.round(((value - 1) / sideLength) * 360);
         return `hsl(${hue}, 70%, 45%)`;
     }
