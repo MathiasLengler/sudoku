@@ -9,11 +9,12 @@ import AccordionSummary from "@mui/material/AccordionSummary";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import { useForm } from "react-hook-form";
-import { SwitchElement, TextFieldElement } from "react-hook-form-mui";
+import { SwitchElement } from "react-hook-form-mui";
 import * as z from "zod";
 import { useImportSudokuString } from "../../actions/sudokuActions";
 import { Code } from "../../components/Code";
 import { Fieldset } from "../../components/Fieldset";
+import { MyTextField } from "../../components/formFragments/mui-rhf/MyTextField";
 import { ResetFormButton } from "../../components/ResetFormButton";
 import type { NewGameTabValue } from "./NewGameDialog";
 
@@ -109,7 +110,7 @@ export function ImportForm({ onClose }: ImportFormProps) {
                         })}
                     >
                         <Stack spacing={2}>
-                            <TextFieldElement
+                            <MyTextField
                                 control={control}
                                 name="input"
                                 label="Formatted Sudoku"

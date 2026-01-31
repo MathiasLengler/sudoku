@@ -8,10 +8,11 @@ import DialogActions from "@mui/material/DialogActions";
 import * as _ from "es-toolkit";
 import { useAtom } from "jotai";
 import { useEffect } from "react";
-import { SelectElement, SliderElement, SwitchElement, TextFieldElement, useForm } from "react-hook-form-mui";
+import { SelectElement, SliderElement, SwitchElement, useForm } from "react-hook-form-mui";
 import type { DynamicGeneratorSettings, GeneratorProgress } from "../../../types";
 import { useGenerate, useGenerateMultiShot, type TrackedMultiShotGeneratorProgress } from "../../actions/sudokuActions";
 import { Fieldset } from "../../components/Fieldset";
+import { MyTextField } from "../../components/formFragments/mui-rhf/MyTextField";
 import SelectStrategies from "../../components/formFragments/SelectStrategies";
 import SelectStrategy from "../../components/formFragments/SelectStrategy";
 import MyIconButton from "../../components/MyIconButton";
@@ -262,7 +263,7 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
                             <Fieldset label="Random seed">
                                 <FormGroup row>
                                     <SwitchElement control={control} name="useSeed" label="Use seed" />
-                                    <TextFieldElement
+                                    <MyTextField
                                         sx={{ flex: 1 }}
                                         control={control}
                                         name="seed"
