@@ -16,27 +16,29 @@ export function MyTextField<
     TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
     TTransformedValues = TFieldValues,
 >(props: MyTextFieldProps<TFieldValues, TName, TTransformedValues>) {
+    const { control, name, disabled = false, ...restProps } = props;
+
     const {
         field,
         fieldState: { error },
     } = useController({
-        name: props.name,
-        control: props.control,
+        name,
+        control,
     });
 
     const { isSubmitting } = useFormState({
-        control: props.control,
+        control,
     });
 
+    const isDisabled = disabled || isSubmitting;
     return (
         <TextField
-            {...props}
+            {...restProps}
             name={field.name}
             value={field.value}
             onChange={field.onChange}
             onBlur={field.onBlur}
-            // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-            disabled={props.disabled || isSubmitting}
+            disabled={isDisabled}
             error={!!error}
             helperText={getFieldErrorMessage(error)}
         />

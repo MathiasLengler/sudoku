@@ -1,16 +1,5 @@
-import {
-    type FormControlLabelProps,
-    FormControlLabel,
-    Switch,
-    type SwitchProps,
-} from "@mui/material";
-import {
-    type FieldValues,
-    type FieldPath,
-    type Control,
-    useController,
-    useFormState,
-} from "react-hook-form";
+import { type FormControlLabelProps, FormControlLabel, Switch, type SwitchProps } from "@mui/material";
+import { type FieldValues, type FieldPath, type Control, useController, useFormState } from "react-hook-form";
 
 export type MySwitchProps<
     TFieldValues extends FieldValues = FieldValues,
@@ -28,7 +17,7 @@ export function MySwitch<
     TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
     TTransformedValues = TFieldValues,
 >(props: MySwitchProps<TFieldValues, TName, TTransformedValues>) {
-    const { control, name, label, disabled, ...restProps } = props;
+    const { control, name, label, disabled = false, ...restProps } = props;
 
     const { field } = useController({
         name,
@@ -39,7 +28,6 @@ export function MySwitch<
         control,
     });
 
-    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
     const isDisabled = disabled || isSubmitting;
 
     return (

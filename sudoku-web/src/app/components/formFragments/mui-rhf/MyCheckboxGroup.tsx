@@ -1,18 +1,5 @@
-import {
-    FormControl,
-    FormControlLabel,
-    FormLabel,
-    Checkbox,
-    FormGroup,
-    type FormControlProps,
-} from "@mui/material";
-import {
-    type FieldValues,
-    type FieldPath,
-    type Control,
-    useController,
-    useFormState,
-} from "react-hook-form";
+import { FormControl, FormControlLabel, FormLabel, Checkbox, FormGroup, type FormControlProps } from "@mui/material";
+import { type FieldValues, type FieldPath, type Control, useController, useFormState } from "react-hook-form";
 
 export type MyCheckboxOption = {
     id: string | number;
@@ -38,7 +25,7 @@ export function MyCheckboxGroup<
     TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
     TTransformedValues = TFieldValues,
 >(props: MyCheckboxGroupProps<TFieldValues, TName, TTransformedValues>) {
-    const { control, name, label, options, required, row, disabled, fullWidth } = props;
+    const { control, name, label, options, required, row, disabled = false, fullWidth } = props;
 
     const { field } = useController({
         name,
@@ -49,7 +36,6 @@ export function MyCheckboxGroup<
         control,
     });
 
-    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
     const isDisabled = disabled || isSubmitting;
 
     // The field value should be an array of selected option ids

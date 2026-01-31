@@ -1,17 +1,5 @@
-import {
-    type SliderProps,
-    Slider,
-    FormControl,
-    FormLabel,
-    type FormControlProps,
-} from "@mui/material";
-import {
-    type FieldValues,
-    type FieldPath,
-    type Control,
-    useController,
-    useFormState,
-} from "react-hook-form";
+import { type SliderProps, Slider, FormControl, FormLabel, type FormControlProps } from "@mui/material";
+import { type FieldValues, type FieldPath, type Control, useController, useFormState } from "react-hook-form";
 
 export type MySliderProps<
     TFieldValues extends FieldValues = FieldValues,
@@ -29,7 +17,7 @@ export function MySlider<
     TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
     TTransformedValues = TFieldValues,
 >(props: MySliderProps<TFieldValues, TName, TTransformedValues>) {
-    const { control, name, label, disabled, fullWidth, ...restProps } = props;
+    const { control, name, label, disabled = false, fullWidth, ...restProps } = props;
 
     const { field } = useController({
         name,
@@ -40,7 +28,6 @@ export function MySlider<
         control,
     });
 
-    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
     const isDisabled = disabled || isSubmitting;
 
     return (

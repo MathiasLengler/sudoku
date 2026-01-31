@@ -7,13 +7,7 @@ import {
     FormHelperText,
     type FormControlProps,
 } from "@mui/material";
-import {
-    type FieldValues,
-    type FieldPath,
-    type Control,
-    useController,
-    useFormState,
-} from "react-hook-form";
+import { type FieldValues, type FieldPath, type Control, useController, useFormState } from "react-hook-form";
 import { getFieldErrorMessage } from "./util";
 
 export type MySelectOption = {
@@ -41,8 +35,7 @@ export function MySelect<
     TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
     TTransformedValues = TFieldValues,
 >(props: MySelectProps<TFieldValues, TName, TTransformedValues>) {
-    const { control, name, label, options, helperText, required, disabled, fullWidth, ...restProps } =
-        props;
+    const { control, name, label, options, helperText, required, disabled = false, fullWidth, ...restProps } = props;
 
     const {
         field,
@@ -56,7 +49,6 @@ export function MySelect<
         control,
     });
 
-    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
     const isDisabled = disabled || isSubmitting;
     const hasError = !!error;
     const displayHelperText = getFieldErrorMessage(error) ?? helperText;
