@@ -29,12 +29,10 @@ function SelectStrategy<T extends FieldValues>({ control, name }: SelectStrategy
                         const strategyOption = STRATEGY_OPTIONS[option.value as keyof typeof STRATEGY_OPTIONS];
                         return (
                             <Group gap="xs">
-                                <Text size="sm">{strategyOption?.label ?? option.label}</Text>
-                                {strategyOption && (
-                                    <Tooltip label={<ExternalLink href={strategyOption.link}>{strategyOption.description}</ExternalLink>}>
-                                        <IconInfoCircle size={16} style={{ opacity: 0.6 }} />
-                                    </Tooltip>
-                                )}
+                                <Text size="sm">{strategyOption.label}</Text>
+                                <Tooltip label={<ExternalLink href={strategyOption.link}>{strategyOption.description}</ExternalLink>}>
+                                    <IconInfoCircle size={16} style={{ opacity: 0.6 }} />
+                                </Tooltip>
                             </Group>
                         );
                     }}

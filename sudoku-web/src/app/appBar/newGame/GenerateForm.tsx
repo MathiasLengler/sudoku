@@ -218,7 +218,7 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
                                     label={baseToLabel}
                                     min={BASE_MIN}
                                     max={BASE_MAX}
-                                    marks={BASE_MARKS.map(m => ({ value: m.value, label: m.label }))}
+                                    marks={BASE_MARKS}
                                 />
                             )}
                         />

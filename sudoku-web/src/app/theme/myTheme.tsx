@@ -2,7 +2,6 @@ import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
 
 import { createTheme, MantineProvider } from "@mantine/core";
-import { useColorScheme } from "@mantine/hooks";
 import type { ReactNode } from "react";
 
 type MyThemeProps = {
@@ -28,10 +27,8 @@ const theme = createTheme({
 });
 
 export function MyTheme({ children }: MyThemeProps) {
-    const colorScheme = useColorScheme();
-
     return (
-        <MantineProvider theme={theme} defaultColorScheme="auto" forceColorScheme={colorScheme}>
+        <MantineProvider theme={theme} defaultColorScheme="auto">
             {children}
         </MantineProvider>
     );

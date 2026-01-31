@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { IconChevronDown, IconDownload } from "@tabler/icons-react";
-import { Accordion, Button, Group, Stack, Switch, Text, Textarea } from "@mantine/core";
+import { Accordion, Button, Group, Stack, Switch, Text, Textarea, Title } from "@mantine/core";
 import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
 import { useImportSudokuString } from "../../actions/sudokuActions";
@@ -16,9 +16,9 @@ function SupportedFormats() {
                     <Text>Supported formats</Text>
                 </Accordion.Control>
                 <Accordion.Panel>
-                    <Text size="lg" fw={500}>List of givens</Text>
+                    <Title order={6}>List of givens</Title>
                     <Code>{"6....23..1256.......47...2.73....84...........46....15.5...81.......3472..72....8"}</Code>
-                    <Text size="lg" fw={500} mt="md">Grid of givens</Text>
+                    <Title order={6} mt="md">Grid of givens</Title>
                     <Code>{`*-----------*
 |.8.|5.3|.7.|
 |.27|...|38.|
@@ -32,7 +32,7 @@ function SupportedFormats() {
 |.32|...|45.|
 |.5.|9.7|.2.|
 *-----------*`}</Code>
-                    <Text size="lg" fw={500} mt="md">Grid of candidates</Text>
+                    <Title order={6} mt="md">Grid of candidates</Title>
                     <Code>
                         {`.--------------.----------------.------------.
 | 6   7    89  | 189  19   2    | 3   5   4  |
@@ -48,7 +48,7 @@ function SupportedFormats() {
 | 4   69   7   | 2    169  169  | 5   3   8  |
 '--------------'----------------'------------'`}
                     </Code>
-                    <Text size="lg" fw={500} mt="md">Empty cells can be expressed as</Text>
+                    <Title order={6} mt="md">Empty cells can be expressed as</Title>
                     <Code>{". 0"}</Code>
                 </Accordion.Panel>
             </Accordion.Item>
