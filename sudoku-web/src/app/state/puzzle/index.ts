@@ -1,6 +1,7 @@
 import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 import type { StrategyEnum, TransportDeduction } from "../../../types";
+import { ALL_STRATEGIES } from "../../constants";
 import { getZodLocalStorage } from "../localStorageEffect";
 import { gameState, type Game } from "../gameMode";
 import {
@@ -77,13 +78,4 @@ export const puzzleStatusState = atom<PuzzleStatus | undefined>((get) => {
 /**
  * Strategies available for puzzle mode (excluding BruteForce which is not a real strategy to practice)
  */
-export const PUZZLE_STRATEGIES = [
-    "NakedSingles",
-    "HiddenSingles",
-    "NakedPairs",
-    "LockedSets",
-    "GroupIntersectionBlockToAxis",
-    "GroupIntersectionAxisToBlock",
-    "GroupIntersectionBoth",
-    "XWing",
-] as const satisfies readonly StrategyEnum[];
+export const PUZZLE_STRATEGIES = ALL_STRATEGIES.filter((s) => s !== "BruteForce");
