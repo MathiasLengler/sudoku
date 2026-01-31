@@ -162,16 +162,10 @@ pub fn find_locked_set<Base: SudokuBase>(
                 // For hidden sets: locked_set_indexes contains the candidate values that are locked.
                 // The cell positions are the intersection of positions where these candidates appear.
                 // We need to find which cells contain the locked candidates.
-                locked_candidates
-                    .iter()
-                    .map(|candidate| Coordinate::from(candidate))
-                    .collect()
+                locked_candidates.iter().map(Coordinate::from).collect()
             } else {
                 // For naked sets: locked_set_indexes directly represents cell positions
-                locked_set_indexes
-                    .iter()
-                    .map(|value| Coordinate::from(value))
-                    .collect()
+                locked_set_indexes.iter().map(Coordinate::from).collect()
             };
 
             if is_transposed {
@@ -189,12 +183,7 @@ pub fn find_locked_set<Base: SudokuBase>(
                         // For hidden sets: the locked "candidates" from the transposed view
                         // are actually the cell position indexes. The actual locked candidates
                         // are the locked_set_indexes (which represent candidate values).
-                        locked_set_indexes
-                            .iter()
-                            .map(|coord| coord.into())
-                            .fold(Candidates::new(), |acc, val| {
-                                acc.union(Candidates::with_single(val))
-                            })
+                        locked_set_indexes.iter().collect()
                     } else {
                         locked_candidates
                     },
