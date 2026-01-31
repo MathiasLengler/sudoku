@@ -4,7 +4,7 @@ import { atomWithDefault, atomWithRefresh } from "jotai/utils";
 import type { DynamicGrid, WasmCellWorld, WasmSudoku } from "../../../types";
 import { loadCells } from "../cellsPersistence";
 import { GENERATE_FORM_DEFAULT_VALUES } from "../forms/generate";
-import type { WorkerApi } from "./bg/worker";
+import type { ExpensiveOperationsApi, WorkerApi } from "./bg/worker";
 import { fixupComlinkRemote, type SaveComlinkRemote } from "./comlinkProxyWrapper";
 import { spawnWorker } from "./spawn";
 
@@ -16,6 +16,7 @@ export type RemoteWasmSudoku = SaveComlinkRemote<WasmSudoku>;
 export type RemoteWasmSudokuClass = SaveComlinkRemote<typeof WasmSudoku>;
 export type RemoteWasmCellWorld = SaveComlinkRemote<WasmCellWorld>;
 export type RemoteWasmCellWorldClass = SaveComlinkRemote<typeof WasmCellWorld>;
+export type RemoteExpensiveOperations = Comlink.Remote<ExpensiveOperationsApi>;
 
 export const remoteWorkerApiState = atom<Promise<RemoteWorkerApi>>(async (get) => {
     const worker = get(workerState);
@@ -74,4 +75,13 @@ export const remoteWasmSudokuState = atomWithDefault<RemoteWasmSudoku | Promise<
 export const remoteWasmCellWorldClassState = atom<Promise<RemoteWasmCellWorldClass>>(async (get) => {
     const remoteWorkerApi = await get(remoteWorkerApiState);
     return fixupComlinkRemote(remoteWorkerApi.WasmCellWorld);
+});
+
+/**
+ * Expensive operations API for operations that should run on the worker.
+ * These operations receive serialized state, execute on worker, and return serialized result.
+ */
+export const remoteExpensiveOperationsState = atom(async (get) => {
+    const remoteWorkerApi = await get(remoteWorkerApiState);
+    return remoteWorkerApi.expensiveOperations;
 });

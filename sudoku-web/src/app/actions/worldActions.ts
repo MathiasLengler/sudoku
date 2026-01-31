@@ -1,24 +1,23 @@
 import { useAtomCallback } from "jotai/utils";
 import { useCallback } from "react";
 import { gameState } from "../state/gameMode";
-import { remoteWasmSudokuClassState, remoteWasmSudokuState } from "../state/worker";
-import { fixupComlinkRemote } from "../state/worker/comlinkProxyWrapper";
+import { mainThreadWasmSudokuState, WasmSudoku } from "../state/mainThread";
 import {
     allWorldCellsInvalidateCounterState,
     assertGameModeWorld,
     remoteWasmCellWorldState,
     selectedGridPositionState,
 } from "../state/world";
-import { updateSudoku } from "./sudokuActions";
+import { updateSudokuFromMainThread } from "./sudokuActions";
 
 export function useShowWorldMap() {
     return useAtomCallback(
         useCallback(async (get, set) => {
-            const remoteWasmSudoku = await get(remoteWasmSudokuState);
+            const wasmSudoku = await get(mainThreadWasmSudokuState);
             const remoteWasmCellWorld = await get(remoteWasmCellWorldState);
             const selectedGridPosition = get(selectedGridPositionState);
 
-            const dynamicGrid = await remoteWasmSudoku.toDynamicGrid();
+            const dynamicGrid = wasmSudoku.toDynamicGrid();
 
             await remoteWasmCellWorld.setGridAt(dynamicGrid, selectedGridPosition);
 
@@ -41,14 +40,12 @@ export function usePlaySelectedGrid() {
             const selectedGridPosition = get(selectedGridPositionState);
             const newGrid = await remoteWasmCellWorld.toGridAt(selectedGridPosition);
 
-            const RemoteWasmSudoku = await get(remoteWasmSudokuClassState);
+            const newWasmSudoku = WasmSudoku.fromDynamicGrid(newGrid);
+            set(mainThreadWasmSudokuState, newWasmSudoku);
 
-            const newRemoteWasmSudoku = fixupComlinkRemote(await RemoteWasmSudoku.fromDynamicGrid(newGrid));
-            set(remoteWasmSudokuState, newRemoteWasmSudoku);
-
-            await updateSudoku({
+            updateSudokuFromMainThread({
                 set,
-                wasmSudokuProxy: newRemoteWasmSudoku,
+                wasmSudoku: newWasmSudoku,
             });
 
             // Switch view to sudoku

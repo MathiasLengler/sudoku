@@ -1,5 +1,13 @@
 import * as Comlink from "comlink";
 import { WasmCellWorld, WasmSudoku } from "sudoku-wasm";
+import type {
+    DynamicGeneratorSettings,
+    DynamicMultiShotGeneratorSettings,
+    DynamicSolveStep,
+    GeneratorProgress,
+    MultiShotGeneratorProgress,
+    StrategyEnums,
+} from "../../../../types";
 import type { SerializedDynamicCellWorld, SerializedDynamicSudoku } from "../../../utils/serializedData";
 import { init } from "./init";
 
@@ -34,6 +42,91 @@ class WasmCellWorldWithTransfer extends WasmCellWorld {
     }
 }
 
+/**
+ * Result of an expensive operation that returns both result and updated sudoku state.
+ */
+export type ExpensiveOperationResult<T> = {
+    serializedSudoku: SerializedDynamicSudoku;
+    result: T;
+};
+
+/**
+ * Expensive operations API that receives serialized state, executes operation,
+ * and returns serialized result. This avoids keeping WasmSudoku instances on the worker.
+ */
+const expensiveOperations = {
+    /**
+     * Generate a new sudoku grid.
+     */
+    generate(
+        settings: DynamicGeneratorSettings,
+        onProgress: (progress: GeneratorProgress) => void,
+    ): SerializedDynamicSudoku {
+        console.debug("Worker: generate", settings);
+        const wasmSudoku = WasmSudoku.generate(settings, onProgress);
+        const serialized = wasmSudoku.serialize();
+        wasmSudoku.free();
+        return Comlink.transfer(serialized, [serialized.buffer]);
+    },
+
+    /**
+     * Generate a new sudoku grid using multi-shot generation.
+     */
+    generateMultiShot(
+        settings: DynamicMultiShotGeneratorSettings,
+        onProgress: (progress: MultiShotGeneratorProgress) => void,
+    ): SerializedDynamicSudoku {
+        console.debug("Worker: generateMultiShot", settings);
+        const wasmSudoku = WasmSudoku.generateMultiShot(settings, onProgress);
+        const serialized = wasmSudoku.serialize();
+        wasmSudoku.free();
+        return Comlink.transfer(serialized, [serialized.buffer]);
+    },
+
+    /**
+     * Try strategies on the sudoku.
+     * Receives serialized sudoku, applies strategies, returns updated state and result.
+     */
+    tryStrategies(
+        serializedSudoku: SerializedDynamicSudoku,
+        strategies: StrategyEnums,
+    ): ExpensiveOperationResult<DynamicSolveStep | undefined> {
+        console.debug("Worker: tryStrategies", strategies);
+        const wasmSudoku = WasmSudoku.deserialize(serializedSudoku);
+        const result = wasmSudoku.tryStrategies(strategies) ?? undefined;
+        const serialized = wasmSudoku.serialize();
+        wasmSudoku.free();
+        return {
+            serializedSudoku: Comlink.transfer(serialized, [serialized.buffer]),
+            result,
+        };
+    },
+};
+
+/**
+ * Type for expensive operations that are called via Comlink.
+ * All methods return Promises because Comlink promisifies all calls.
+ */
+export type ExpensiveOperationsApi = {
+    generate: (
+        settings: DynamicGeneratorSettings,
+        onProgress: (progress: GeneratorProgress) => void,
+    ) => Promise<SerializedDynamicSudoku>;
+
+    generateMultiShot: (
+        settings: DynamicMultiShotGeneratorSettings,
+        onProgress: (progress: MultiShotGeneratorProgress) => void,
+    ) => Promise<SerializedDynamicSudoku>;
+
+    tryStrategies: (
+        serializedSudoku: SerializedDynamicSudoku,
+        strategies: StrategyEnums,
+    ) => Promise<ExpensiveOperationResult<DynamicSolveStep | undefined>>;
+};
+
+// Cast to satisfy the type (Comlink will promisify these)
+const expensiveOperationsImpl: ExpensiveOperationsApi = expensiveOperations as unknown as ExpensiveOperationsApi;
+
 export type WorkerApi = {
     init: typeof init;
     // expose class constructors directly
@@ -42,6 +135,8 @@ export type WorkerApi = {
     WasmSudokuWithTransfer: typeof WasmSudokuWithTransfer;
     WasmCellWorld: typeof WasmCellWorld;
     WasmCellWorldWithTransfer: typeof WasmCellWorldWithTransfer;
+    // Expensive operations API for stateless operations
+    expensiveOperations: ExpensiveOperationsApi;
 };
 
 const workerApi: WorkerApi = {
@@ -50,6 +145,7 @@ const workerApi: WorkerApi = {
     WasmSudokuWithTransfer,
     WasmCellWorld,
     WasmCellWorldWithTransfer,
+    expensiveOperations: expensiveOperationsImpl,
 };
 
 // The type of `obj` ensures that only module-augmented classed can be patched with the marker.
