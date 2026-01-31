@@ -107,7 +107,7 @@ fn find_unique_rectangles<Base: SudokuBase>(grid: &Grid<Base>) -> Deductions<Bas
                 let c2 = *col_pair[1];
 
                 if let Some(new_deductions) =
-                    find_rectangle_deduction(grid, *bi_value, r1, r2, c1, c2, true)
+                    find_rectangle_deduction(grid, *bi_value, r1, r2, c1, c2)
                 {
                     for d in new_deductions {
                         deductions.push(d);
@@ -135,7 +135,7 @@ fn find_unique_rectangles<Base: SudokuBase>(grid: &Grid<Base>) -> Deductions<Bas
                             continue;
                         }
                         if let Some(new_deductions) =
-                            find_rectangle_deduction(grid, *bi_value, floor_row, other_row_coord, floor_col, other_col, true)
+                            find_rectangle_deduction(grid, *bi_value, floor_row, other_row_coord, floor_col, other_col)
                         {
                             for d in new_deductions {
                                 deductions.push(d);
@@ -149,7 +149,7 @@ fn find_unique_rectangles<Base: SudokuBase>(grid: &Grid<Base>) -> Deductions<Bas
                             continue;
                         }
                         if let Some(new_deductions) =
-                            find_rectangle_deduction(grid, *bi_value, floor_row, other_row, floor_col, other_col_coord, false)
+                            find_rectangle_deduction(grid, *bi_value, floor_row, other_row, floor_col, other_col_coord)
                         {
                             for d in new_deductions {
                                 deductions.push(d);
@@ -172,7 +172,6 @@ fn find_rectangle_deduction<Base: SudokuBase>(
     row2: Coordinate<Base>,
     col1: Coordinate<Base>,
     col2: Coordinate<Base>,
-    _same_row: bool,
 ) -> Option<Deductions<Base>> {
     let positions = [
         Position::from((row1, col1)),
@@ -225,7 +224,7 @@ fn find_rectangle_deduction<Base: SudokuBase>(
     // Try different types based on the configuration
     if floor_cells.len() == 3 && roof_cells.len() == 1 {
         // Type 1: Three floor cells, one roof cell with extras
-        return try_type_1(grid, positions, &candidates, bi_value, roof_cells[0]);
+        return try_type_1(positions, &candidates, bi_value, roof_cells[0]);
     } else if floor_cells.len() == 2 && roof_cells.len() == 2 {
         // Type 2 or Type 4
         let result = try_type_2(grid, positions, &candidates, bi_value, &roof_cells);
@@ -241,7 +240,6 @@ fn find_rectangle_deduction<Base: SudokuBase>(
 /// Type 1: Three cells are floor cells (contain only bi-value), one cell is a roof cell with extras.
 /// We can eliminate the bi-value candidates from the roof cell.
 fn try_type_1<Base: SudokuBase>(
-    _grid: &Grid<Base>,
     positions: [Position<Base>; 4],
     candidates: &[Candidates<Base>],
     bi_value: Candidates<Base>,
