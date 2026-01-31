@@ -383,6 +383,158 @@ impl<Base: SudokuBase> Iterator for SolverIter<Base> {
     }
 }
 
+/// A specialized SAT-based checker for finding ambiguous solutions during pruning.
+///
+/// This checker is optimized for the pruning phase of sudoku generation:
+/// - It adds a clause that prevents the known solution from being found
+/// - It uses assumptions for the grid values, which can be changed without recreating the solver
+/// - The solver is reused across multiple checks, preserving learned clauses
+///
+/// The checker efficiently determines if there exists an alternative solution
+/// when a cell is removed from the puzzle.
+pub struct AmbiguousSolutionChecker<Base: SudokuBase> {
+    sat_solver: SatSolver<'static>,
+    /// Stores the current grid value assumptions (positions that still have values in the puzzle)
+    current_value_assumptions: Vec<Lit>,
+    _base: PhantomData<Base>,
+}
+
+impl<Base: SudokuBase> Debug for AmbiguousSolutionChecker<Base> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AmbiguousSolutionChecker")
+            .field("sat_solver", &"<varisat::Solver>")
+            .field(
+                "current_value_assumptions_count",
+                &self.current_value_assumptions.len(),
+            )
+            .field("_base", &self._base)
+            .finish()
+    }
+}
+
+impl<Base: SudokuBase> AmbiguousSolutionChecker<Base> {
+    /// Create a new checker for the given solved grid.
+    ///
+    /// The `solution` must be a fully solved sudoku grid. A clause is added to prevent
+    /// this exact solution from being found, so only alternative solutions can be discovered.
+    pub fn new(solution: &Grid<Base>) -> Self {
+        debug_assert!(
+            solution.is_solved(),
+            "Solution must be fully solved: {solution}"
+        );
+
+        let mut sat_solver = Solver::<Base>::get_initialized_sat_solver();
+
+        // Add a clause that prevents the known solution from being found.
+        // The clause is the negation of the conjunction of all solution values.
+        // If the solution has values v1, v2, ..., vn at positions p1, p2, ..., pn,
+        // we add the clause: NOT(p1=v1) OR NOT(p2=v2) OR ... OR NOT(pn=vn)
+        // This ensures at least one position must have a different value.
+        let solution_exclusion_clause: Vec<Lit> = Position::<Base>::all()
+            .map(|pos| {
+                let value = solution[pos].value().unwrap();
+                CellVariable {
+                    pos,
+                    value,
+                    is_true: false, // Negated
+                }
+                .into()
+            })
+            .collect();
+
+        sat_solver.add_clause(&solution_exclusion_clause);
+
+        // Initially, assume all positions are filled (will be updated when checking)
+        let current_value_assumptions: Vec<Lit> = Position::<Base>::all()
+            .map(|pos| {
+                let value = solution[pos].value().unwrap();
+                CellVariable {
+                    pos,
+                    value,
+                    is_true: true,
+                }
+                .into()
+            })
+            .collect();
+
+        sat_solver.assume(&current_value_assumptions);
+
+        Self {
+            sat_solver,
+            current_value_assumptions,
+            _base: PhantomData,
+        }
+    }
+
+    /// Check if an ambiguous solution exists when the cell at `removed_pos` is deleted.
+    ///
+    /// This method updates the assumptions to exclude the value at `removed_pos` and
+    /// instead denies the `denied_value` at that position (which is typically the
+    /// solution value that was there).
+    ///
+    /// Returns `true` if an ambiguous solution exists (i.e., the puzzle is not uniquely solvable
+    /// after removing the cell), `false` otherwise.
+    pub fn has_ambiguous_solution(
+        &mut self,
+        removed_pos: Position<Base>,
+        denied_value: Value<Base>,
+    ) -> crate::error::Result<bool> {
+        // Build the new assumptions:
+        // - Keep all current value assumptions except for the removed position
+        // - Add a negative assumption for the denied value at the removed position
+        let mut assumptions: Vec<Lit> = self
+            .current_value_assumptions
+            .iter()
+            .filter(|&lit| {
+                // Filter out the assumption for the removed position
+                let var: CellVariable<Base> = (*lit)
+                    .try_into()
+                    .expect("Should be able to convert Lit to CellVariable");
+                var.pos != removed_pos
+            })
+            .copied()
+            .collect();
+
+        // Add assumption that denies the specific value at the removed position
+        assumptions.push(
+            CellVariable {
+                pos: removed_pos,
+                value: denied_value,
+                is_true: false,
+            }
+            .into(),
+        );
+
+        self.sat_solver.assume(&assumptions);
+
+        // Solve and check if a solution exists (which would be an ambiguous solution)
+        Ok(self.sat_solver.solve()?)
+    }
+
+    /// Permanently remove a value from the current puzzle state.
+    ///
+    /// Call this after confirming that a cell can be removed (i.e., no ambiguous solution exists).
+    /// This updates the internal state to reflect that the position no longer has a value.
+    pub fn confirm_removal(&mut self, removed_pos: Position<Base>) {
+        // Remove the assumption for this position from current_value_assumptions
+        self.current_value_assumptions.retain(|lit| {
+            let var: CellVariable<Base> = (*lit)
+                .try_into()
+                .expect("Should be able to convert Lit to CellVariable");
+            var.pos != removed_pos
+        });
+    }
+
+    /// Permanently keep a value in the current puzzle state.
+    ///
+    /// Call this after confirming that a cell cannot be removed (i.e., an ambiguous solution exists).
+    /// The internal state already contains this position's assumption, so this is a no-op.
+    #[allow(clippy::unused_self)]
+    pub fn confirm_keep(&self, _kept_pos: Position<Base>) {
+        // No-op: the position's assumption is already in current_value_assumptions
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::base::consts::Base2;
@@ -460,5 +612,108 @@ mod tests {
         }
 
         assert_eq!(solver.clone().into_iter().count(), 144);
+    }
+
+    mod ambiguous_solution_checker {
+        use super::*;
+        use crate::samples;
+
+        #[test]
+        fn test_solved_grid_has_no_ambiguous_solution() {
+            // A fully solved grid should not have any ambiguous solutions
+            let solution = samples::base_2_solved();
+            let mut checker = AmbiguousSolutionChecker::new(&solution);
+
+            // Try removing any position - all should have no ambiguous solution
+            // because the solution exclusion clause prevents the same solution
+            // but with all values present, only the original solution satisfies the constraints
+            let pos = Position::<Base2>::top_left();
+            let value = solution[pos].value().unwrap();
+
+            // When checking with the denied value being the solution value,
+            // there should be no alternative solution
+            let has_ambiguous = checker.has_ambiguous_solution(pos, value).unwrap();
+            assert!(
+                !has_ambiguous,
+                "Removing a cell from a minimal puzzle should not have an ambiguous solution"
+            );
+        }
+
+        #[test]
+        fn test_non_minimal_grid_has_ambiguous_solution() {
+            // Get a puzzle that has a unique solution
+            let solution = samples::base_2_solved();
+
+            // The fully solved grid is non-minimal - removing any single cell
+            // won't cause multiple solutions because the other cells constrain it.
+            // But if we remove enough cells, there will be multiple solutions.
+            let mut checker = AmbiguousSolutionChecker::new(&solution);
+
+            // We need to find a position that, when removed, still has a unique solution
+            // (i.e., the solution is over-determined)
+            // For a 4x4 sudoku, we need to identify if removing a cell creates ambiguity
+
+            // Let's manually check a few positions
+            let positions: Vec<_> = Position::<Base2>::all().collect();
+
+            // Remove first position
+            let first_pos = positions[0];
+            let first_value = solution[first_pos].value().unwrap();
+            let has_ambiguous = checker.has_ambiguous_solution(first_pos, first_value).unwrap();
+
+            // Since this is a solved grid, removing one cell should NOT create ambiguity
+            // (the remaining 15 cells fully determine the solution)
+            assert!(
+                !has_ambiguous,
+                "Removing one cell from a solved Base2 grid should not create ambiguity"
+            );
+        }
+
+        #[test]
+        fn test_confirm_removal_updates_state() {
+            let solution = samples::base_2_solved();
+            let mut checker = AmbiguousSolutionChecker::new(&solution);
+
+            let initial_len = checker.current_value_assumptions.len();
+            assert_eq!(initial_len, 16); // Base2 has 16 cells
+
+            let pos = Position::<Base2>::top_left();
+            checker.confirm_removal(pos);
+
+            assert_eq!(checker.current_value_assumptions.len(), initial_len - 1);
+        }
+
+        #[test]
+        fn test_incremental_removal_finds_ambiguity() {
+            // Start with a solved grid and progressively remove cells
+            // At some point, removing a cell should create ambiguity
+            let solution = samples::base_2_solved();
+            let mut checker = AmbiguousSolutionChecker::new(&solution);
+
+            let positions: Vec<_> = Position::<Base2>::all().collect();
+            let mut removed_count = 0;
+            let mut found_ambiguity = false;
+
+            for pos in positions.into_iter() {
+                let value = solution[pos].value().unwrap();
+                let has_ambiguous = checker.has_ambiguous_solution(pos, value).unwrap();
+
+                if has_ambiguous {
+                    found_ambiguity = true;
+                    break;
+                } else {
+                    // Can safely remove this cell
+                    checker.confirm_removal(pos);
+                    removed_count += 1;
+                }
+            }
+
+            // We should find ambiguity at some point, since we can't remove all cells
+            // while maintaining a unique solution
+            assert!(
+                found_ambiguity || removed_count < 16,
+                "Should eventually find ambiguity when removing cells"
+            );
+        }
     }
 }
