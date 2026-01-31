@@ -104,8 +104,8 @@ The frontend offloads all WASM/sudoku operations to a web worker using `comlink`
 # List all available recipes
 just
 
-# Run tests
-just test
+# Run all tests and linters (for rust and web)
+just lint
 
 # Build WASM (development)
 just pack-dev
@@ -113,14 +113,8 @@ just pack-dev
 # Build WASM with file watching
 just pack-dev-watch
 
-# Run clippy lints
-just clippy
-
 # Generate TypeScript bindings from Rust
 just generate-tsrs-bindings
-
-# Run full CI locally
-just ci-local
 ```
 
 ### Frontend (sudoku-web)
@@ -129,7 +123,7 @@ just ci-local
 cd sudoku-web
 
 # Install dependencies
-npm ci
+npm i
 
 # Start dev server
 npm run dev
@@ -137,7 +131,7 @@ npm run dev
 # Run lints (includes type checking, eslint and prettier)
 npm run lint
 
-# Run tests
+# Run vitest browser tests
 npm test
 ```
 
