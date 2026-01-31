@@ -11,8 +11,11 @@ export function cellColorClass(fixed: boolean, incorrectValue: boolean) {
     }
 }
 
-export function getValueColorClass(value: number): string {
-    return `cell-value--color-${value}`;
+export function getValueColorClass(value: number): string | undefined {
+    if (value >= 1 && value <= 9) {
+        return `cell-value--color-${value}`;
+    }
+    return undefined;
 }
 
 export function indexToPosition({
