@@ -289,6 +289,34 @@ export function useValidatePuzzleMove() {
 }
 
 /**
+ * Hook to apply deductions with puzzle mode validation.
+ * In puzzle mode, validates that the player's deductions match the expected ones.
+ */
+export function usePuzzleAwareApplyDeductions() {
+    const validatePuzzleMove = useValidatePuzzleMove();
+
+    return useAtomCallback(
+        useCallback(
+            async (get, set, playerDeductions: TransportDeduction[]) => {
+                const game = get(gameState);
+                const wasmSudokuProxy = await get(remoteWasmSudokuState);
+
+                // Apply the deductions
+                await wasmSudokuProxy.applyDeductions({ deductions: playerDeductions });
+                const newSudoku = await wasmSudokuProxy.getTransportSudoku();
+                set(sudokuState, newSudoku);
+
+                // If in puzzle mode, validate the move
+                if (game.mode === "puzzle" && game.status === "active") {
+                    await validatePuzzleMove(playerDeductions);
+                }
+            },
+            [validatePuzzleMove],
+        ),
+    );
+}
+
+/**
  * Hook to exit puzzle mode and return to normal sudoku mode
  */
 export function useExitPuzzleMode() {
