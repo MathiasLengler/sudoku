@@ -3,5 +3,6 @@ dev-dist/
 node_modules/
 .swc/
 
-# TanStack Router generated route tree
+# TanStack Router generated files
 src/routeTree.gen.ts
+.tanstack/
