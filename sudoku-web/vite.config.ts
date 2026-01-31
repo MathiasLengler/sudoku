@@ -62,7 +62,7 @@ export default defineConfig(({ mode }) => ({
                       registerType: "autoUpdate",
                       devOptions: {
                           enabled: true,
-                          navigateFallback: "index.html",
+                          navigateFallback: "/index.html",
                       },
                       filename: "service-worker.js",
                       manifestFilename: "manifest.json",
@@ -77,7 +77,7 @@ export default defineConfig(({ mode }) => ({
                       workbox: {
                           globPatterns: ["**/*.{js,wasm,css,html,png,svg,ico,woff2}"],
                           // SPA router support
-                          navigateFallback: "index.html",
+                          navigateFallback: "/index.html",
                           maximumFileSizeToCacheInBytes: 20 * 1024 * 1024, // 20 MiB
                       },
                       pwaAssets: {

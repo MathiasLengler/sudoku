@@ -83,6 +83,7 @@ function ImportPage() {
     const { sudoku, fillCandidates } = Route.useSearch();
     const importSudokuString = useImportSudokuString();
     const autoImportAttempted = useRef(false);
+    const isMounted = useRef(true);
 
     const {
         control,
@@ -103,17 +104,27 @@ function ImportPage() {
         void navigate({ to: "/" });
     };
 
+    // Track component mount state
+    useEffect(() => {
+        isMounted.current = true;
+        return () => {
+            isMounted.current = false;
+        };
+    }, []);
+
     // Auto-import if sudoku query parameter is provided
     useEffect(() => {
         if (sudoku && !autoImportAttempted.current) {
             autoImportAttempted.current = true;
             importSudokuString(sudoku, fillCandidates ?? false)
                 .then(() => {
-                    void navigate({ to: "/" });
+                    if (isMounted.current) {
+                        void navigate({ to: "/" });
+                    }
                 })
                 .catch((err) => {
                     console.error("Unable to auto-import sudoku string:", sudoku, err);
-                    if (err instanceof Error) {
+                    if (isMounted.current && err instanceof Error) {
                         setError("input", { type: "custom", message: err.message });
                     }
                 });
