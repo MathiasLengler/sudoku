@@ -144,9 +144,6 @@ impl GridMetric {
                 // These casts are safe: value_counts.len() <= 25 (max base 5), counts are small
                 #[allow(clippy::cast_precision_loss)]
                 let n = value_counts.len() as f64;
-                if n == 0.0 {
-                    return Ok(0);
-                }
 
                 let sum: u64 = value_counts.iter().sum();
                 #[allow(clippy::cast_precision_loss)]
@@ -163,14 +160,11 @@ impl GridMetric {
                     .sum::<f64>()
                     / n;
 
-                // Standard deviation
-                let std_dev = variance.sqrt();
-
-                // Scale by 1000 for precision (similar to STRATEGY_SCORE_FIXED_POINT_SCALE)
+                // Standard deviation, scaled by 1000 for precision
+                // (similar to STRATEGY_SCORE_FIXED_POINT_SCALE)
                 // std_dev is always non-negative, and scaled value fits in u64
                 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-                let result = (std_dev * 1000.0) as u64;
-                result
+                { (variance.sqrt() * 1000.0) as u64 }
             }
         })
     }
