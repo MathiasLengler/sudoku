@@ -248,16 +248,16 @@ This generates types in [sudoku-rs/bindings/](sudoku-rs/bindings/) from Rust str
 
 ## Important Files
 
-| File                                                                   | Purpose                                |
-| ---------------------------------------------------------------------- | -------------------------------------- |
-| [justfile](justfile)                                                   | All development task recipes           |
-| [Cargo.toml](Cargo.toml)                                               | Workspace configuration                |
-| `sudoku-rs/Cargo.toml`                                                 | Workspace configuration                |
-| [sudoku-rs/src/lib.rs](sudoku-rs/src/lib.rs)                           | Core library entry, lint configuration |
-| [sudoku-rs/src/base.rs](sudoku-rs/src/base.rs)                         | Base type definitions (grid sizes)     |
-| [sudoku-wasm/src/wasm_api/](sudoku-wasm/src/wasm_api/)                 | WASM-exposed API                       |
-| [sudoku-web/vite.config.ts](sudoku-web/vite.config.ts)                 | Vite build configuration               |
-| [sudoku-web/src/app/state/store.ts](sudoku-web/src/app/state/store.ts) | Jotai state setup                      |
+| File                                | Purpose                                                            |
+| ----------------------------------- | ------------------------------------------------------------------ |
+| `justfile`                          | All development task recipes                                       |
+| `Cargo.toml`                        | Workspace configuration                                            |
+| `sudoku-rs/Cargo.toml`              | Core library configuration: feature flags, core dependencies, bins |
+| `sudoku-rs/src/lib.rs`              | Core library entry, lint configuration                             |
+| `sudoku-rs/src/base.rs`             | Base type definitions (grid sizes)                                 |
+| `sudoku-wasm/src/wasm_api/`         | WASM-exposed API                                                   |
+| `sudoku-web/vite.config.ts`         | Vite build configuration                                           |
+| `sudoku-web/src/app/state/store.ts` | Jotai state setup                                                  |
 
 ## Gotchas & Tips
 
