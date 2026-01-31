@@ -34,7 +34,6 @@ export function App() {
                             <NotificationsProvider slotProps={{ snackbar: { autoHideDuration: 3000 } }}>
                                 <Suspense fallback={<FullScreenSpinner />}>
                                     <Sudoku />
-                                    {/* <DebugForm /> */}
                                 </Suspense>
                                 <SwManager />
                             </NotificationsProvider>
