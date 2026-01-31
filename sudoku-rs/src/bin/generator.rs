@@ -4,7 +4,7 @@ use env_logger::Env;
 
 use sudoku::error::Result;
 use sudoku::generator::{
-    Generator, GeneratorSettings, PruningOrder, PruningSettings, PruningTarget,
+    Generator, GeneratorSettings, PruningOrder, PruningSettings, PruningSymmetry, PruningTarget,
 };
 use sudoku::grid::format::{GridFormat, ValuesLine};
 use sudoku::{base::consts::*, solver::strategic::strategies::selection::StrategySet};
@@ -33,6 +33,7 @@ fn main() -> Result<()> {
             target: PruningTarget::MinClueCount(0),
             order: PruningOrder::Random,
             start_from_near_minimal_grid: false,
+            symmetry: PruningSymmetry::None,
         }),
         solution: None,
         seed: None,
