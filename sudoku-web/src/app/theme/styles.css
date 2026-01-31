@@ -73,6 +73,7 @@ body,
 }
 
 .sudoku-game {
+    position: relative;
     display: flex;
     height: 100%;
     flex-direction: var(--sudoku-content-direction);

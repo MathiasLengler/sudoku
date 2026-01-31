@@ -1,7 +1,6 @@
 import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 import type { StrategyEnum, TransportDeduction } from "../../../types";
-import { strategyEnumSchema } from "../../constants";
 import { getZodLocalStorage } from "../localStorageEffect";
 import { gameState, type Game } from "../gameMode";
 import {
@@ -74,8 +73,3 @@ export const puzzleStatusState = atom<PuzzleStatus | undefined>((get) => {
     }
     return undefined;
 });
-
-/**
- * Strategies available for puzzle mode (excluding BruteForce which is not a real strategy)
- */
-export const PUZZLE_STRATEGIES = strategyEnumSchema.options.filter((s) => s !== "BruteForce");

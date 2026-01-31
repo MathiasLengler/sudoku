@@ -5,23 +5,20 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
-    FormControl,
-    InputLabel,
     LinearProgress,
-    MenuItem,
-    Select,
     Stack,
     Typography,
 } from "@mui/material";
 import { useAtomValue } from "jotai";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form-mui";
 import type { StrategyEnum } from "../../../types";
 import { useStartPuzzle, useExitPuzzleMode } from "../../actions/puzzleActions";
+import SelectStrategy from "../../components/formFragments/SelectStrategy";
 import { STRATEGY_OPTIONS } from "../../constants";
 import {
     getStrategyStats,
     isPuzzleModeState,
-    PUZZLE_STRATEGIES,
     puzzleStatsState,
     puzzleStatusState,
     puzzleTargetStrategyState,
@@ -29,6 +26,10 @@ import {
 
 type PuzzleDialogProps = {
     onClose: () => void;
+};
+
+type PuzzleFormValues = {
+    strategy: StrategyEnum;
 };
 
 function StrategyStatsDisplay({ strategy }: { strategy: StrategyEnum }) {
@@ -93,10 +94,21 @@ function ActivePuzzleStatus() {
 }
 
 export function PuzzleDialog({ onClose }: PuzzleDialogProps) {
-    const [selectedStrategy, setSelectedStrategy] = useState<StrategyEnum>("HiddenSingles");
     const isPuzzleMode = useAtomValue(isPuzzleModeState);
     const { startPuzzle, generateProgress, cancelGenerate } = useStartPuzzle();
-    const [isGenerating, setIsGenerating] = useState(false);
+
+    const {
+        control,
+        handleSubmit,
+        watch,
+        formState: { isSubmitting },
+    } = useForm<PuzzleFormValues>({
+        defaultValues: {
+            strategy: "HiddenSingles",
+        },
+    });
+
+    const selectedStrategy = watch("strategy");
 
     // Cancel generation on unmount
     useEffect(() => {
@@ -105,17 +117,14 @@ export function PuzzleDialog({ onClose }: PuzzleDialogProps) {
         };
     }, [cancelGenerate]);
 
-    const handleStartPuzzle = async () => {
-        setIsGenerating(true);
+    const onSubmit = async (data: PuzzleFormValues) => {
         try {
-            await startPuzzle(selectedStrategy);
+            await startPuzzle(data.strategy);
             onClose();
         } catch (err) {
             if (!(err instanceof DOMException && err.name === "AbortError")) {
                 console.error("Failed to start puzzle:", err);
             }
-        } finally {
-            setIsGenerating(false);
         }
     };
 
@@ -123,88 +132,69 @@ export function PuzzleDialog({ onClose }: PuzzleDialogProps) {
         <>
             <DialogTitle>Challenge Mode</DialogTitle>
             <DialogContent>
-                <Stack spacing={3} sx={{ pt: 1 }}>
-                    <Typography variant="body1">
-                        Test your puzzle-solving skills! Select a strategy and we&apos;ll generate a puzzle that
-                        requires that specific technique. Your goal is to spot and apply the correct deduction.
-                    </Typography>
-
-                    {isPuzzleMode && <ActivePuzzleStatus />}
-
-                    <FormControl fullWidth>
-                        <InputLabel id="strategy-select-label">Strategy to Practice</InputLabel>
-                        <Select
-                            labelId="strategy-select-label"
-                            value={selectedStrategy}
-                            label="Strategy to Practice"
-                            onChange={(e) => setSelectedStrategy(e.target.value as StrategyEnum)}
-                            disabled={isGenerating}
-                        >
-                            {PUZZLE_STRATEGIES.map((strategy) => (
-                                <MenuItem key={strategy} value={strategy}>
-                                    <Box>
-                                        <Typography variant="body1">
-                                            {STRATEGY_OPTIONS[strategy]?.label ?? strategy}
-                                        </Typography>
-                                        <Typography variant="caption" color="text.secondary">
-                                            {STRATEGY_OPTIONS[strategy]?.description}
-                                        </Typography>
-                                    </Box>
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-
-                    <Box>
-                        <Typography variant="subtitle2" gutterBottom>
-                            Your stats for {STRATEGY_OPTIONS[selectedStrategy]?.label ?? selectedStrategy}:
+                <form id="puzzle-form" onSubmit={handleSubmit(onSubmit)}>
+                    <Stack spacing={3} sx={{ pt: 1 }}>
+                        <Typography variant="body1">
+                            Test your puzzle-solving skills! Select a strategy and we&apos;ll generate a puzzle that
+                            requires that specific technique. Your goal is to spot and apply the correct deduction.
                         </Typography>
-                        <StrategyStatsDisplay strategy={selectedStrategy} />
-                    </Box>
 
-                    {isGenerating && generateProgress && (
+                        {isPuzzleMode && <ActivePuzzleStatus />}
+
+                        <SelectStrategy control={control} name="strategy" />
+
                         <Box>
-                            <Typography variant="body2" color="text.secondary" gutterBottom>
-                                Generating puzzle...
+                            <Typography variant="subtitle2" gutterBottom>
+                                Your stats for {STRATEGY_OPTIONS[selectedStrategy]?.label ?? selectedStrategy}:
                             </Typography>
-                            <LinearProgress
-                                variant="determinate"
-                                value={
-                                    (generateProgress.pruningPositionIndex / generateProgress.pruningPositionCount) *
-                                    100
-                                }
-                            />
+                            <StrategyStatsDisplay strategy={selectedStrategy} />
                         </Box>
-                    )}
-                    {isGenerating && !generateProgress && (
-                        <Box>
-                            <Typography variant="body2" color="text.secondary" gutterBottom>
-                                Generating solution...
-                            </Typography>
-                            <LinearProgress />
-                        </Box>
-                    )}
-                </Stack>
+
+                        {isSubmitting && generateProgress && (
+                            <Box>
+                                <Typography variant="body2" color="text.secondary" gutterBottom>
+                                    Generating puzzle...
+                                </Typography>
+                                <LinearProgress
+                                    variant="determinate"
+                                    value={
+                                        (generateProgress.pruningPositionIndex / generateProgress.pruningPositionCount) *
+                                        100
+                                    }
+                                />
+                            </Box>
+                        )}
+                        {isSubmitting && !generateProgress && (
+                            <Box>
+                                <Typography variant="body2" color="text.secondary" gutterBottom>
+                                    Generating solution...
+                                </Typography>
+                                <LinearProgress />
+                            </Box>
+                        )}
+                    </Stack>
+                </form>
             </DialogContent>
             <DialogActions>
                 <Button
                     onClick={() => {
-                        if (isGenerating) {
+                        if (isSubmitting) {
                             cancelGenerate();
                         } else {
                             onClose();
                         }
                     }}
                 >
-                    {isGenerating ? "Cancel" : "Close"}
+                    {isSubmitting ? "Cancel" : "Close"}
                 </Button>
                 <Button
+                    type="submit"
+                    form="puzzle-form"
                     variant="contained"
                     color="primary"
                     endIcon={<PlayArrowIcon />}
-                    onClick={handleStartPuzzle}
-                    disabled={isGenerating}
-                    loading={isGenerating}
+                    disabled={isSubmitting}
+                    loading={isSubmitting}
                     loadingPosition="end"
                 >
                     <span>Start Puzzle</span>

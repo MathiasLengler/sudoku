@@ -1,5 +1,5 @@
 import * as Comlink from "comlink";
-import { isEqual } from "es-toolkit";
+import { isEqual, sortBy, zip } from "es-toolkit";
 import type { Getter, Setter } from "jotai";
 import { useAtomCallback } from "jotai/utils";
 import { useCallback, useState } from "react";
@@ -9,6 +9,7 @@ import type {
     StrategyEnum,
     TransportDeduction,
 } from "../../types";
+import { ALL_STRATEGIES } from "../constants";
 import { gameState } from "../state/gameMode";
 import {
     expectedDeductionsState,
@@ -36,22 +37,11 @@ import { hintState } from "../state/hint";
  * These are all strategies that come before the target in the strategy order.
  */
 function getPrerequisiteStrategies(targetStrategy: StrategyEnum): StrategyEnum[] {
-    const strategyOrder: StrategyEnum[] = [
-        "NakedSingles",
-        "HiddenSingles",
-        "NakedPairs",
-        "LockedSets",
-        "GroupIntersectionBlockToAxis",
-        "GroupIntersectionAxisToBlock",
-        "GroupIntersectionBoth",
-        "XWing",
-        "BruteForce",
-    ];
-    const targetIndex = strategyOrder.indexOf(targetStrategy);
+    const targetIndex = ALL_STRATEGIES.indexOf(targetStrategy);
     if (targetIndex === -1) {
         return [];
     }
-    return strategyOrder.slice(0, targetIndex);
+    return ALL_STRATEGIES.slice(0, targetIndex);
 }
 
 /**
@@ -219,29 +209,22 @@ function compareDeductions(
         return false;
     }
 
-    // Sort deductions by position for comparison
+    // Sort deductions by position for comparison using es-toolkit sortBy
     const sortDeductions = (deductions: TransportDeduction[]) =>
-        [...deductions].sort((a, b) => {
-            const aPos = a.actions[0]?.position;
-            const bPos = b.actions[0]?.position;
-            if (!aPos || !bPos) return 0;
-            return aPos.row - bPos.row || aPos.column - bPos.column;
-        });
+        sortBy(deductions, [
+            (d) => d.actions[0]?.position?.row ?? 0,
+            (d) => d.actions[0]?.position?.column ?? 0,
+        ]);
 
     const sortedPlayer = sortDeductions(playerDeductions);
     const sortedExpected = sortDeductions(expectedDeductions);
 
-    // Compare each deduction's actions
-    for (let i = 0; i < sortedPlayer.length; i++) {
-        const playerActions = sortedPlayer[i]?.actions ?? [];
-        const expectedActions = sortedExpected[i]?.actions ?? [];
-
-        if (!isEqual(playerActions, expectedActions)) {
-            return false;
-        }
-    }
-
-    return true;
+    // Compare each deduction's actions using functional style with zip
+    return zip(sortedPlayer, sortedExpected).every(([player, expected]) => {
+        const playerActions = player?.actions ?? [];
+        const expectedActions = expected?.actions ?? [];
+        return isEqual(playerActions, expectedActions);
+    });
 }
 
 /**

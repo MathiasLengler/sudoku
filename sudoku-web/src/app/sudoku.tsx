@@ -37,7 +37,7 @@ function SudokuGame() {
     };
 
     return (
-        <div className="sudoku-game" style={{ ...cssVariables, position: "relative" }}>
+        <div className="sudoku-game" style={cssVariables}>
             <PuzzleOverlay />
             <Grid gridRef={gridRef} />
             <Toolbar />
