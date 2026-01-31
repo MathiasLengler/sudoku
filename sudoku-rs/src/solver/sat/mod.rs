@@ -515,6 +515,9 @@ impl<Base: SudokuBase> AmbiguousSolutionChecker<Base> {
     ///
     /// Call this after confirming that a cell can be removed (i.e., no ambiguous solution exists).
     /// This updates the internal state to reflect that the position no longer has a value.
+    ///
+    /// Note: If a cell cannot be removed (i.e., an ambiguous solution exists), no action is needed
+    /// since the checker's internal state already correctly reflects that the position has a value.
     pub fn confirm_removal(&mut self, removed_pos: Position<Base>) {
         // Remove the assumption for this position from current_value_assumptions
         self.current_value_assumptions.retain(|lit| {
@@ -523,15 +526,6 @@ impl<Base: SudokuBase> AmbiguousSolutionChecker<Base> {
                 .expect("Should be able to convert Lit to CellVariable");
             var.pos != removed_pos
         });
-    }
-
-    /// Permanently keep a value in the current puzzle state.
-    ///
-    /// Call this after confirming that a cell cannot be removed (i.e., an ambiguous solution exists).
-    /// The internal state already contains this position's assumption, so this is a no-op.
-    #[allow(clippy::unused_self)]
-    pub fn confirm_keep(&self, _kept_pos: Position<Base>) {
-        // No-op: the position's assumption is already in current_value_assumptions
     }
 }
 

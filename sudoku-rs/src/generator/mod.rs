@@ -369,8 +369,8 @@ impl<Base: SudokuBase> Generator<Base> {
             Ok(Some(deleted_value))
         } else {
             // current position is necessary for unique solution
+            // No checker update needed - its state already reflects the position has a value
             grid.get_mut(pos).set_value(deleted_value);
-            checker.confirm_keep(pos);
             Ok(None)
         }
     }
