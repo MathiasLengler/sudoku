@@ -7,7 +7,7 @@ import { useHandlePosition } from "../actions/sudokuActions";
 import { hintState } from "../state/hint";
 import { inputState } from "../state/input";
 import { sudokuBaseState } from "../state/sudoku";
-import { cellColorClass, indexToPosition, valueToString } from "../utils/sudoku";
+import { cellColorClass, getValueColorClass, indexToPosition, valueToString } from "../utils/sudoku";
 
 function cellBackgroundClass(isSelected: boolean, isGuide: boolean) {
     if (isSelected) {
@@ -20,10 +20,12 @@ function cellBackgroundClass(isSelected: boolean, isGuide: boolean) {
 
 type CellValueProps = {
     value: DynamicCellValue["value"];
+    colorMode: boolean;
 };
 
-export function CellValue({ value }: CellValueProps) {
-    return <div className="cell-value">{valueToString(value)}</div>;
+export function CellValue({ value, colorMode }: CellValueProps) {
+    const cellValueClassName = classNames("cell-value", colorMode && getValueColorClass(value));
+    return <div className={cellValueClassName}>{valueToString(value)}</div>;
 }
 
 type CandidatesProps = {
@@ -93,6 +95,7 @@ export function Cell(props: CellProps) {
     const { cell, isSelected, isGuide } = props;
 
     const { position: gridPosition } = cell;
+    const input = useAtomValue(inputState);
 
     const cellClassNames = classNames(
         "cell",
@@ -137,7 +140,7 @@ export function Cell(props: CellProps) {
             }}
         >
             {cell.kind === "value" ? (
-                <CellValue value={cell.value} />
+                <CellValue value={cell.value} colorMode={input.colorMode} />
             ) : (
                 <Candidates candidates={cell.candidates} gridPosition={gridPosition} />
             )}

@@ -9,6 +9,7 @@ import { Grid, type CellComponentProps } from "react-window";
 import type { Quadrant } from "../../../types";
 import { usePlaySelectedGrid } from "../../actions/worldActions";
 import { Candidates, CellValue } from "../../grid/cell";
+import { inputState } from "../../state/input";
 import { sudokuBaseState, sudokuSideLengthState } from "../../state/sudoku";
 import {
     cellWorldDimensionsState,
@@ -32,6 +33,7 @@ function WorldCellVirtualized({ rowIndex, columnIndex, style }: CellComponentPro
     );
 
     const worldCell = useAtomValue(worldCellState(cellWorldPosition));
+    const input = useAtomValue(inputState);
 
     const worldCellBorderClasses = useAtomValue(worldCellBorderClassesState(cellWorldPosition));
 
@@ -95,7 +97,7 @@ function WorldCellVirtualized({ rowIndex, columnIndex, style }: CellComponentPro
             <div className={cellClassNames}>
                 {/* <Code wrap>{debug}</Code> */}
                 {worldCell.kind === "value" ? (
-                    <CellValue value={worldCell.value} />
+                    <CellValue value={worldCell.value} colorMode={input.colorMode} />
                 ) : (
                     <Candidates
                         candidates={worldCell.candidates}

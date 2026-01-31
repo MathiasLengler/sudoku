@@ -11,6 +11,9 @@ const baseInputSchema = z.object({
     //  Select cell position, then value
     stickyMode: z.boolean(),
     candidateMode: z.boolean(),
+    // Color mode:
+    //  Each value (1-9) has a unique color
+    colorMode: z.boolean(),
 });
 export type BaseInput = z.infer<typeof baseInputSchema>;
 
@@ -55,6 +58,7 @@ export const inputState = atomWithStorage<Input>(
         stickyMode: false,
         selectedPos: { column: 0, row: 0 },
         candidateMode: false,
+        colorMode: false,
         previouslySelectedValue: 1,
     },
     getZodLocalStorage(inputSchema),
@@ -72,3 +76,5 @@ export const selectedPosState = atom<DynamicPosition | undefined>((get) => {
 export const inputCandidateModeState = atom<Input["candidateMode"]>((get) => get(inputState).candidateMode);
 
 export const inputStickyModeState = atom<Input["stickyMode"]>((get) => get(inputState).stickyMode);
+
+export const inputColorModeState = atom<Input["colorMode"]>((get) => get(inputState).colorMode);

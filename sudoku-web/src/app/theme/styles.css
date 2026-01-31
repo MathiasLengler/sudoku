@@ -24,6 +24,17 @@
     --candidate-bg-color-deduction-delete: hsl(60, 100%, 50%);
     --bg-color: hsl(0, 0%, 100%);
 
+    /* Color mode: unique colors for values 1-9 */
+    --value-color-1: hsl(0, 80%, 45%);     /* Red */
+    --value-color-2: hsl(30, 80%, 45%);    /* Orange */
+    --value-color-3: hsl(55, 80%, 38%);    /* Yellow */
+    --value-color-4: hsl(120, 60%, 35%);   /* Green */
+    --value-color-5: hsl(175, 70%, 35%);   /* Teal */
+    --value-color-6: hsl(210, 80%, 45%);   /* Blue */
+    --value-color-7: hsl(260, 60%, 50%);   /* Purple */
+    --value-color-8: hsl(300, 50%, 45%);   /* Magenta */
+    --value-color-9: hsl(340, 70%, 45%);   /* Pink */
+
     --sudoku-content-direction: column;
     --sudoku-toolbar-direction: row;
 }
@@ -42,6 +53,17 @@
         --candidate-bg-color-deduction-reason: hsl(120, 100%, 25%);
         --candidate-bg-color-deduction-delete: hsl(60, 100%, 25%);
         --bg-color: hsl(0, 0%, 7%);
+
+        /* Color mode: unique colors for values 1-9 (dark mode) */
+        --value-color-1: hsl(0, 80%, 60%);     /* Red */
+        --value-color-2: hsl(30, 80%, 60%);    /* Orange */
+        --value-color-3: hsl(55, 80%, 55%);    /* Yellow */
+        --value-color-4: hsl(120, 60%, 55%);   /* Green */
+        --value-color-5: hsl(175, 70%, 55%);   /* Teal */
+        --value-color-6: hsl(210, 80%, 65%);   /* Blue */
+        --value-color-7: hsl(260, 60%, 70%);   /* Purple */
+        --value-color-8: hsl(300, 50%, 65%);   /* Magenta */
+        --value-color-9: hsl(340, 70%, 60%);   /* Pink */
     }
 }
 
@@ -187,6 +209,17 @@ body,
     text-align: center;
     font-size: 100cqmin;
 }
+
+/* Color mode classes for values 1-9 */
+.cell-value--color-1 { color: var(--value-color-1); }
+.cell-value--color-2 { color: var(--value-color-2); }
+.cell-value--color-3 { color: var(--value-color-3); }
+.cell-value--color-4 { color: var(--value-color-4); }
+.cell-value--color-5 { color: var(--value-color-5); }
+.cell-value--color-6 { color: var(--value-color-6); }
+.cell-value--color-7 { color: var(--value-color-7); }
+.cell-value--color-8 { color: var(--value-color-8); }
+.cell-value--color-9 { color: var(--value-color-9); }
 
 .candidates {
     display: grid;

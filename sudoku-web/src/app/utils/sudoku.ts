@@ -11,6 +11,10 @@ export function cellColorClass(fixed: boolean, incorrectValue: boolean) {
     }
 }
 
+export function getValueColorClass(value: number): string {
+    return `cell-value--color-${value}`;
+}
+
 export function indexToPosition({
     blockIndex,
     base,
