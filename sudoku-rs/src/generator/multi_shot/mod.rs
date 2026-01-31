@@ -118,14 +118,17 @@ impl GridMetric {
                 //
                 // The average branching factor is: (total edges / total non-leaf nodes) * STRATEGY_SCORE_FIXED_POINT_SCALE
                 // A non-leaf node is a node with at least one outgoing edge (i.e., a node where strategies can make progress)
+                //
+                // Note: We use DFS traversal (stack with pop()), but the traversal order doesn't affect
+                // the result since we're computing a property over all nodes in the graph.
 
                 let mut visited: HashSet<Grid<Base>> = HashSet::new();
-                let mut nodes_to_process: Vec<Grid<Base>> = vec![grid.clone()];
+                let mut stack: Vec<Grid<Base>> = vec![grid.clone()];
 
                 let mut total_edges: u64 = 0;
                 let mut non_leaf_node_count: u64 = 0;
 
-                while let Some(current_grid) = nodes_to_process.pop() {
+                while let Some(current_grid) = stack.pop() {
                     if !visited.insert(current_grid.clone()) {
                         // Grid already visited
                         continue;
@@ -146,18 +149,17 @@ impl GridMetric {
                     }
 
                     // Count edges (one edge per solve step)
-                    let edge_count: u64 = solve_steps.len().try_into()?;
-                    total_edges += edge_count;
+                    total_edges += solve_steps.len() as u64;
                     non_leaf_node_count += 1;
 
-                    // Add all reachable grids to the processing queue
+                    // Add all reachable grids to the stack
                     for solve_step in solve_steps {
                         // Clone grid_for_solver which has candidates set up,
                         // since deductions.apply() requires candidates to be present
                         let mut new_grid = grid_for_solver.clone();
                         solve_step.deductions.apply(&mut new_grid)?;
                         if !visited.contains(&new_grid) {
-                            nodes_to_process.push(new_grid);
+                            stack.push(new_grid);
                         }
                     }
                 }
