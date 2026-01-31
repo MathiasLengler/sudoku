@@ -36,6 +36,7 @@ export type * from "./TransportHistory";
 export type * from "./TransportReason";
 export type * from "./TransportSolutionState";
 export type * from "./TransportSudoku";
+export type * from "./WorldCellRegion";
 export type * from "./WorldDim";
 export type * from "./WorldGenerationResult";
 export type * from "./WorldPosition";
