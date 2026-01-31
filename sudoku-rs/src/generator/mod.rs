@@ -588,7 +588,7 @@ impl<Base: SudokuBase> Generator<Base> {
         let pruning_positions: Vec<_> = self.pruning_positions(prune_settings, rng)?;
         let pruning_position_count = pruning_positions.len();
 
-        let mut deleted_count = 0u16;
+        let mut deleted_count: u16 = 0;
         for (i, pos) in pruning_positions.into_iter().enumerate() {
             let pruning_position_index = i + 1;
 
@@ -696,9 +696,8 @@ impl<Base: SudokuBase> Generator<Base> {
 
         // Restore the required amount of values, specified by distance.
         // When symmetry is enabled, we should restore in pairs to maintain symmetry
-        let restore_count = usize::from(distance_from_minimal);
         for (restore_i, (deleted_pos, deleted_value)) in
-            (1..).zip(deleted.into_iter().rev().take(restore_count))
+            (1..).zip(deleted.into_iter().rev().take(distance_from_minimal.into()))
         {
             debug!(
                 "Restoring deleted value #{restore_i}/{distance_from_minimal}: {deleted_value} at {deleted_pos}"
@@ -1365,8 +1364,8 @@ mod tests {
                 has_symmetric_clues(&grid, PruningSymmetry::Rotational180),
                 "Grid should have 180° rotational symmetry"
             );
-            // With symmetric deletion, we should have an even number of empty cells
-            // (pairs are deleted together)
+            // We should have some cells deleted (at least 2, could be up to 4 depending on unique solution constraint)
+            // Note: For rotational symmetry, center cells (if any) are deleted individually, so odd counts are possible
             let empty_count = grid.all_candidates_positions().len();
             assert!(empty_count >= 2 && empty_count <= 4);
         }
