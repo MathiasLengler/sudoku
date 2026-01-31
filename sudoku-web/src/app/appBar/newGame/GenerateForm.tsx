@@ -255,11 +255,7 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
                             <SelectStrategies control={control} name="strategies" />
 
                             <Fieldset label="Post generation">
-                                <MySwitch
-                                    control={control}
-                                    name="setAllDirectCandidates"
-                                    label="Fill candidates"
-                                />
+                                <MySwitch control={control} name="setAllDirectCandidates" label="Fill candidates" />
                             </Fieldset>
 
                             <Fieldset label="Random seed">
@@ -294,12 +290,7 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
                             </Fieldset>
                             <Fieldset label="Multi-shot settings">
                                 <MySwitch control={control} name="multiShot" label="Multi-shot" />
-                                <MySwitch
-                                    control={control}
-                                    name="parallel"
-                                    label="Parallel"
-                                    disabled={!multiShot}
-                                />
+                                <MySwitch control={control} name="parallel" label="Parallel" disabled={!multiShot} />
                                 <Stack spacing={2}>
                                     <MySlider
                                         control={control}
@@ -362,7 +353,10 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
                         direction="row"
                         sx={{ width: 1, flex: 1, alignItems: "center", justifyContent: "space-between" }}
                     >
-                        <ResetFormButton disabled={isSubmitting} onClick={() => reset(GENERATE_FORM_DEFAULT_VALUES)} />
+                        <ResetFormButton
+                            disabled={isSubmitting}
+                            onClick={() => reset(generateFormValuesSchema.encode(GENERATE_FORM_DEFAULT_VALUES))}
+                        />
                         <Button
                             type="button"
                             onClick={() => {

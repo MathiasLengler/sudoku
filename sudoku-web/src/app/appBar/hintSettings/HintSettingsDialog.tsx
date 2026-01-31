@@ -103,17 +103,16 @@ export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
                             </Box>
                         </Fieldset>
                         <Fieldset label="Deductions">
-                            <MySwitch
-                                control={control}
-                                name="multipleDeductions"
-                                label="Apply multiple deductions"
-                            />
+                            <MySwitch control={control} name="multipleDeductions" label="Apply multiple deductions" />
                         </Fieldset>
                     </Stack>
                 </form>
             </DialogContent>
             <DialogActions>
-                <ResetFormButton disabled={isSubmitting} onClick={() => reset(DEFAULT_HINT_SETTINGS)} />
+                <ResetFormButton
+                    disabled={isSubmitting}
+                    onClick={() => reset(hintSettingsSchema.encode(DEFAULT_HINT_SETTINGS))}
+                />
                 <Button onClick={onClose} disabled={isSubmitting}>
                     Cancel
                 </Button>

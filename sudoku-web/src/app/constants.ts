@@ -84,11 +84,11 @@ export const strategySetSchema = z.record(strategyMapKeySchema, z.boolean());
 export type SelectedStrategies = z.infer<typeof selectedStrategiesSchema>;
 export const selectedStrategiesSchema = z.codec(strategyListSchema, strategySetSchema, {
     encode: (strategySet) => {
-        return STRATEGY_NAMES.filter(({ mapKey }) => strategySet[mapKey]).map(({ enum: strategyEnum }) => strategyEnum);
+        return STRATEGY_NAMES.filter(({ mapKey }) => strategySet[mapKey]).map(({ strategyEnum }) => strategyEnum);
     },
     decode: (strategyList) => {
         return Object.fromEntries(
-            STRATEGY_NAMES.map(({ enum: strategyEnum, mapKey }) => {
+            STRATEGY_NAMES.map(({ strategyEnum, mapKey }) => {
                 return [mapKey, strategyList.includes(strategyEnum)];
             }),
         ) as StrategyMap<boolean>;
