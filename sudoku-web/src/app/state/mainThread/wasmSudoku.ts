@@ -116,7 +116,7 @@ function createInstanceProxy(get: Getter, wasmSudoku: WasmSudoku): MainThreadWas
                     return res;
                 }) satisfies Asyncify<WasmSudoku["tryStrategies"]>;
             }
-            // Assert we have delegated all non-expensive methods
+            // Assert we have delegated all expensive methods
             prop satisfies Exclude<keyof WasmSudoku, ExpensiveMethods>;
             return Reflect.get(wasmSudoku, prop, receiver) as unknown;
         },
