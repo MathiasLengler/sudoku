@@ -3,6 +3,10 @@ import type { Asyncify, SetReturnType } from "type-fest";
 import type { DynamicGeneratorSettings, DynamicSolveStep, StrategySet } from "../../../types";
 import { type RemoteWasmSudokuClass } from "../worker";
 
+// FIXME: model from rust side
+//  sudoku-wasm could export two different WasmSudoku classes: expensive/cheap
+
+
 type ExpensiveMethods = "tryStrategies";
 type ExpensiveConstructorFunctions = "generate" | "generateMultiShot" | "import";
 
