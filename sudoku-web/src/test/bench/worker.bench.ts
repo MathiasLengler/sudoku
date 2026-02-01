@@ -46,7 +46,7 @@ describe("worker", async () => {
                         const remoteWasmSudoku = await remoteWorkerApi.WasmSudokuWithTransfer.deserialize(
                             Comlink.transfer(serializedDynamicSudoku, [serializedDynamicSudoku.buffer]),
                         );
-                        const roundTrippedSerializedDynamicSudoku = await remoteWasmSudoku.serializeWithTransfer();
+                        const roundTrippedSerializedDynamicSudoku = await remoteWasmSudoku.serialize();
                         const _roundTrippedWasmSudoku = WasmSudoku.deserialize(roundTrippedSerializedDynamicSudoku);
                     });
                 });
@@ -92,8 +92,7 @@ describe("worker", async () => {
                                 const remoteWasmCellWorld = await remoteWorkerApi.WasmCellWorldWithTransfer.deserialize(
                                     Comlink.transfer(serializedDynamicCellWorld, [serializedDynamicCellWorld.buffer]),
                                 );
-                                const roundTrippedSerializedDynamicCellWorld =
-                                    await remoteWasmCellWorld.serializeWithTransfer();
+                                const roundTrippedSerializedDynamicCellWorld = await remoteWasmCellWorld.serialize();
                                 const _roundTrippedWasmCellWorld = WasmCellWorld.deserialize(
                                     roundTrippedSerializedDynamicCellWorld,
                                 );

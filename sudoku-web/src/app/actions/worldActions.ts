@@ -1,7 +1,7 @@
 import { useAtomCallback } from "jotai/utils";
 import { useCallback } from "react";
 import { gameState } from "../state/gameMode";
-import { wasmSudokuState } from "../state/mainThread";
+import { mainThreadWasmSudokuClassState, wasmSudokuState } from "../state/mainThread/wasmSudoku";
 import {
     allWorldCellsInvalidateCounterState,
     assertGameModeWorld,
@@ -9,7 +9,6 @@ import {
     selectedGridPositionState,
 } from "../state/world";
 import { updateSudoku } from "./sudokuActions";
-import { WasmSudoku } from "sudoku-wasm";
 
 export function useShowWorldMap() {
     return useAtomCallback(
@@ -41,7 +40,9 @@ export function usePlaySelectedGrid() {
             const selectedGridPosition = get(selectedGridPositionState);
             const newGrid = await remoteWasmCellWorld.toGridAt(selectedGridPosition);
 
-            const newWasmSudoku = WasmSudoku.fromDynamicGrid(newGrid);
+            const MainThreadWasmSudoku = await get(mainThreadWasmSudokuClassState);
+
+            const newWasmSudoku = await MainThreadWasmSudoku.fromDynamicGrid(newGrid);
             set(wasmSudokuState, newWasmSudoku);
 
             updateSudoku({

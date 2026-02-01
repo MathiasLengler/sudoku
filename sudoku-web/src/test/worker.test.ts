@@ -49,7 +49,7 @@ describe("worker communication", async () => {
                         );
                         // Transferred
                         expect(serializedDynamicSudoku.length).toBe(0);
-                        const roundTrippedSerializedDynamicSudoku = await remoteWasmSudoku.serializeWithTransfer();
+                        const roundTrippedSerializedDynamicSudoku = await remoteWasmSudoku.serialize();
                         const roundTrippedWasmSudoku = WasmSudoku.deserialize(roundTrippedSerializedDynamicSudoku);
                         expect(wasmSudoku.equals(roundTrippedWasmSudoku)).toBe(true);
                     });
@@ -106,8 +106,7 @@ describe("worker communication", async () => {
                         );
                         // Transferred
                         expect(serializedDynamicCellWorld.length).toBe(0);
-                        const roundTrippedSerializedDynamicCellWorld =
-                            await remoteWasmCellWorld.serializeWithTransfer();
+                        const roundTrippedSerializedDynamicCellWorld = await remoteWasmCellWorld.serialize();
                         const roundTrippedWasmCellWorld = WasmCellWorld.deserialize(
                             roundTrippedSerializedDynamicCellWorld,
                         );

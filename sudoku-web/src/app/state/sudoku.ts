@@ -6,7 +6,7 @@ import * as z from "zod";
 import type { BaseEnum, DynamicCells, DynamicGrid, TransportCell, TransportSudoku } from "../../types";
 import { assert } from "../../typeUtils";
 import { hintState } from "./hint";
-import { wasmSudokuState } from "./mainThread";
+import { wasmSudokuState } from "./mainThread/wasmSudoku";
 
 const valueSchema = z.int().positive();
 

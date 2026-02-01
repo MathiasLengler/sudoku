@@ -3,7 +3,7 @@ import { atomWithStorage } from "jotai/utils";
 import * as z from "zod";
 import { gridFormatSchema } from "../../constants";
 import { getZodLocalStorage } from "../localStorageEffect";
-import { wasmSudokuState } from "../mainThread";
+import { wasmSudokuState } from "../mainThread/wasmSudoku";
 import { sudokuState } from "../sudoku";
 
 export type ExportToClipboardFormValues = z.infer<typeof exportToClipboardFormValuesSchema>;
