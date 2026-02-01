@@ -6,7 +6,7 @@ import * as z from "zod";
 import type { BaseEnum, DynamicCells, DynamicGrid, TransportCell, TransportSudoku } from "../../types";
 import { assert } from "../../typeUtils";
 import { hintState } from "./hint";
-import { mainThreadWasmSudokuState } from "./mainThread";
+import { wasmSudokuState } from "./mainThread";
 
 const valueSchema = z.int().positive();
 
@@ -28,7 +28,7 @@ assert<IsEqual<z.infer<typeof DynamicCellsSchema>, DynamicGrid>>();
 
 export const sudokuState = atomWithDefault<TransportSudoku | Promise<TransportSudoku>>(async (get) => {
     console.info("sudokuState: fetching initial sudoku");
-    const wasmSudoku = await get(mainThreadWasmSudokuState);
+    const wasmSudoku = await get(wasmSudokuState);
     return wasmSudoku.getTransportSudoku();
 });
 

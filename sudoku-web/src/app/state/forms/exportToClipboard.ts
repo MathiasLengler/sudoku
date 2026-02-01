@@ -3,7 +3,7 @@ import { atomWithStorage } from "jotai/utils";
 import * as z from "zod";
 import { gridFormatSchema } from "../../constants";
 import { getZodLocalStorage } from "../localStorageEffect";
-import { mainThreadWasmSudokuState } from "../mainThread";
+import { wasmSudokuState } from "../mainThread";
 import { sudokuState } from "../sudoku";
 
 export type ExportToClipboardFormValues = z.infer<typeof exportToClipboardFormValuesSchema>;
@@ -23,7 +23,7 @@ export const exportToClipboardFormValuesState = atomWithStorage<ExportToClipboar
 export const exportedGridStringState = atom<Promise<string>>(async (get) => {
     // The exported grid string depends on the sudoku state.
     await get(sudokuState);
-    const wasmSudoku = await get(mainThreadWasmSudokuState);
+    const wasmSudoku = await get(wasmSudokuState);
     const { gridFormat } = get(exportToClipboardFormValuesState);
     return wasmSudoku.export(gridFormat);
 });

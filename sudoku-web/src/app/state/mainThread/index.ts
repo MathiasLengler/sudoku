@@ -1,29 +1,14 @@
-import wbgInit, { init as wasmInit, WasmSudoku } from "sudoku-wasm";
 import { atom } from "jotai";
 import { atomWithDefault } from "jotai/utils";
+import { WasmSudoku } from "sudoku-wasm";
 import type { DynamicGrid } from "../../../types";
 import type { SerializedDynamicSudoku } from "../../utils/serializedData";
 import { loadCells } from "../cellsPersistence";
 import { GENERATE_FORM_DEFAULT_VALUES } from "../forms/generate";
-
-let isInitialized = false;
+import { initWasm } from "../wasm/init";
 
 async function initMainThreadWasm(): Promise<void> {
-    if (isInitialized) {
-        return;
-    }
-
-    // wasm-bindgen with `--target web` requires manual initialization of the module
-    console.debug("Initialize wasm-bindgen (main thread)");
-    await wbgInit();
-
-    // Our own init function (`console_error_panic_hook` and `console_log`)
-    console.debug("Initialize sudoku-wasm (main thread)");
-    wasmInit();
-
-    console.debug("WASM initialized (main thread)");
-
-    isInitialized = true;
+    await initWasm();
 }
 
 async function createMainThreadWasmSudoku(dynamicGrid?: DynamicGrid): Promise<WasmSudoku> {
@@ -51,7 +36,7 @@ export const isMainThreadWasmReadyState = atom<Promise<boolean>>(async () => {
  * Main thread WasmSudoku instance for cheap operations.
  * Expensive operations (generate, tryStrategies) should use the worker.
  */
-export const mainThreadWasmSudokuState = atomWithDefault<WasmSudoku | Promise<WasmSudoku>>(async () => {
+export const wasmSudokuState = atomWithDefault<WasmSudoku | Promise<WasmSudoku>>(async () => {
     const cells = loadCells();
     return await createMainThreadWasmSudoku(cells);
 });
@@ -71,7 +56,3 @@ export async function deserializeFromTransfer(bytes: SerializedDynamicSudoku): P
     await initMainThreadWasm();
     return WasmSudoku.deserialize(bytes);
 }
-
-// Re-export for convenience
-export { WasmSudoku };
-export { initMainThreadWasm };

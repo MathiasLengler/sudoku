@@ -1,14 +1,14 @@
 import * as Comlink from "comlink";
 import { WasmCellWorld, WasmSudoku } from "sudoku-wasm";
 import { describe, expect } from "vitest";
-import { init } from "../app/state/worker/bg/init";
+import { initWasm } from "../app/state/wasm/init";
 import { getWasmCellWorldSamples } from "./util/cellWorld";
 import { getWasmSudokuSamples } from "./util/sudoku";
 import { test } from "./util/fixtures";
 
 describe("worker communication", async () => {
     // Init foreground WASM.
-    await init(1);
+    await initWasm(1);
 
     const base = 3;
     const seed = 42n;

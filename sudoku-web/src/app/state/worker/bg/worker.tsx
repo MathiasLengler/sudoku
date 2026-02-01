@@ -7,9 +7,10 @@ import type {
     GeneratorProgress,
     MultiShotGeneratorProgress,
     StrategyEnums,
+    StrategySet,
 } from "../../../../types";
 import type { SerializedDynamicCellWorld, SerializedDynamicSudoku } from "../../../utils/serializedData";
-import { init } from "./init";
+import { initWasm } from "../../wasm/init";
 
 if (import.meta.env.MODE === "development") {
     self.addEventListener("message", (ev) => {
@@ -89,7 +90,7 @@ const expensiveOperations = {
      */
     tryStrategies(
         serializedSudoku: SerializedDynamicSudoku,
-        strategies: StrategyEnums,
+        strategies: StrategySet,
     ): ExpensiveOperationResult<DynamicSolveStep | undefined> {
         console.debug("Worker: tryStrategies", strategies);
         const wasmSudoku = WasmSudoku.deserialize(serializedSudoku);
@@ -135,17 +136,18 @@ export type ExpensiveOperationsApi = {
 
     tryStrategies: (
         serializedSudoku: SerializedDynamicSudoku,
-        strategies: StrategyEnums,
+        strategies: StrategySet,
     ) => Promise<ExpensiveOperationResult<DynamicSolveStep | undefined>>;
 
     importSudoku: (input: string, setAllDirectCandidates: boolean) => Promise<SerializedDynamicSudoku>;
 };
 
+// FIXME: this is unsound
 // Cast to satisfy the type (Comlink will promisify these)
 const expensiveOperationsImpl: ExpensiveOperationsApi = expensiveOperations as unknown as ExpensiveOperationsApi;
 
 export type WorkerApi = {
-    init: typeof init;
+    init: typeof initWasm;
     // expose class constructors directly
     // Reference: https://github.com/GoogleChromeLabs/comlink/tree/main/docs/examples/03-classes-example
     WasmSudoku: typeof WasmSudoku;
@@ -157,7 +159,7 @@ export type WorkerApi = {
 };
 
 const workerApi: WorkerApi = {
-    init,
+    init: initWasm,
     WasmSudoku,
     WasmSudokuWithTransfer,
     WasmCellWorld,

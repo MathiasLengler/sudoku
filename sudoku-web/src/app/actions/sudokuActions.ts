@@ -4,26 +4,22 @@ import { inRange, isEqual } from "es-toolkit";
 import type { Getter, Setter } from "jotai";
 import { useAtomCallback } from "jotai/utils";
 import { useCallback, useState } from "react";
-import type {
-    DynamicGeneratorSettings,
-    DynamicMultiShotGeneratorSettings,
-    DynamicPosition,
-    GeneratorProgress,
-    GridFormatEnum,
-    MultiShotGeneratorProgress,
-    StrategySet,
-    TransportDeductions,
-    WasmSudoku,
+import { WasmSudoku } from "sudoku-wasm";
+import {
+    type DynamicGeneratorSettings,
+    type DynamicMultiShotGeneratorSettings,
+    type DynamicPosition,
+    type GeneratorProgress,
+    type GridFormatEnum,
+    type MultiShotGeneratorProgress,
+    type StrategySet,
+    type TransportDeductions,
 } from "../../types";
 import { cellAtGridPositionState } from "../state/cellIndexing";
 import { hintState } from "../state/hint";
 import type { CellAction } from "../state/input";
 import { inputState } from "../state/input";
-import {
-    mainThreadWasmSudokuState,
-    deserializeFromTransfer,
-    serializeForTransfer,
-} from "../state/mainThread";
+import { wasmSudokuState, deserializeFromTransfer, serializeForTransfer } from "../state/mainThread";
 import { gameCounterState, sudokuSideLengthState, sudokuState } from "../state/sudoku";
 import { isWorkerReadyState, remoteExpensiveOperationsState, workerState } from "../state/worker";
 import { useCancelableMutation } from "../useCancelableMutation";
@@ -69,14 +65,7 @@ async function isInvalidGridPosition({ get, gridPosition }: { get: Getter; gridP
 }
 
 // Mutation helpers
-/**
- * Update sudoku state from the main thread WasmSudoku.
- * Cheap operation - runs on main thread.
- */
-export function updateSudokuFromMainThread(
-    { set, wasmSudoku }: { set: Setter; wasmSudoku: WasmSudoku },
-    isNewGame = false,
-) {
+export function updateSudoku({ set, wasmSudoku }: { set: Setter; wasmSudoku: WasmSudoku }, isNewGame = false) {
     const newSudoku = wasmSudoku.getTransportSudoku();
     set(sudokuState, newSudoku);
     if (isNewGame) {
@@ -99,7 +88,7 @@ async function applyValueAtGridPosition({
     if (await isFixedValueCell({ get, gridPosition })) {
         return;
     }
-    const wasmSudoku = await get(mainThreadWasmSudokuState);
+    const wasmSudoku = await get(wasmSudokuState);
     const input = get(inputState);
 
     if (input.stickyMode) {
@@ -237,7 +226,7 @@ async function applyValueAtGridPosition({
         }
     }
 
-    updateSudokuFromMainThread({ set, wasmSudoku });
+    updateSudoku({ set, wasmSudoku });
 }
 
 // Public action hooks
@@ -294,9 +283,9 @@ export function useDeleteSelectedCell() {
 export function useSetAllDirectCandidates() {
     return useAtomCallback(
         useCallback(async (get, set) => {
-            const wasmSudoku = await get(mainThreadWasmSudokuState);
+            const wasmSudoku = await get(wasmSudokuState);
             wasmSudoku.setAllDirectCandidates();
-            updateSudokuFromMainThread({ set, wasmSudoku });
+            updateSudoku({ set, wasmSudoku });
         }, []),
     );
 }
@@ -313,18 +302,18 @@ export function useUndo() {
                 return;
             }
 
-            const wasmSudoku = await get(mainThreadWasmSudokuState);
+            const wasmSudoku = await get(wasmSudokuState);
             wasmSudoku.undo();
-            updateSudokuFromMainThread({ set, wasmSudoku });
+            updateSudoku({ set, wasmSudoku });
         }, []),
     );
 }
 export function useRedo() {
     return useAtomCallback(
         useCallback(async (get, set) => {
-            const wasmSudoku = await get(mainThreadWasmSudokuState);
+            const wasmSudoku = await get(wasmSudokuState);
             wasmSudoku.redo();
-            updateSudokuFromMainThread({ set, wasmSudoku });
+            updateSudoku({ set, wasmSudoku });
         }, []),
     );
 }
@@ -378,9 +367,9 @@ export function useGenerate() {
 
                     // Deserialize result on main thread
                     const wasmSudoku = await deserializeFromTransfer(serializedResult);
-                    set(mainThreadWasmSudokuState, wasmSudoku);
+                    set(wasmSudokuState, wasmSudoku);
 
-                    updateSudokuFromMainThread({ set, wasmSudoku }, true);
+                    updateSudoku({ set, wasmSudoku }, true);
                 });
             },
             [],
@@ -447,9 +436,9 @@ export function useGenerateMultiShot() {
 
                     // Deserialize result on main thread
                     const wasmSudoku = await deserializeFromTransfer(serializedResult);
-                    set(mainThreadWasmSudokuState, wasmSudoku);
+                    set(wasmSudokuState, wasmSudoku);
 
-                    updateSudokuFromMainThread({ set, wasmSudoku }, true);
+                    updateSudoku({ set, wasmSudoku }, true);
                 });
             },
             [],
@@ -512,15 +501,15 @@ export function useImportSudokuString() {
 
             // Deserialize result on main thread
             const wasmSudoku = await deserializeFromTransfer(serializedResult);
-            set(mainThreadWasmSudokuState, wasmSudoku);
-            updateSudokuFromMainThread({ set, wasmSudoku }, true);
+            set(wasmSudokuState, wasmSudoku);
+            updateSudoku({ set, wasmSudoku }, true);
         }, []),
     );
 }
 export function useExportSudokuString() {
     return useAtomCallback(
         useCallback(async (get, _set, format: GridFormatEnum) => {
-            const wasmSudoku = await get(mainThreadWasmSudokuState);
+            const wasmSudoku = await get(wasmSudokuState);
             return wasmSudoku.export(format);
         }, []),
     );
@@ -530,7 +519,7 @@ export function useTryStrategies() {
     return useAtomCallback(
         useCallback(async (get, set, strategies: StrategySet) => {
             // tryStrategies is an expensive operation - run on worker
-            const wasmSudoku = await get(mainThreadWasmSudokuState);
+            const wasmSudoku = await get(wasmSudokuState);
             const serializedSudoku = serializeForTransfer(wasmSudoku);
 
             const expensiveOps = await get(remoteExpensiveOperationsState);
@@ -541,8 +530,8 @@ export function useTryStrategies() {
 
             // Deserialize result on main thread
             const newWasmSudoku = await deserializeFromTransfer(resultSerialized);
-            set(mainThreadWasmSudokuState, newWasmSudoku);
-            updateSudokuFromMainThread({ set, wasmSudoku: newWasmSudoku });
+            set(wasmSudokuState, newWasmSudoku);
+            updateSudoku({ set, wasmSudoku: newWasmSudoku });
 
             return result;
         }, []),
@@ -552,9 +541,9 @@ export function useTryStrategies() {
 export function useApplyDeductions() {
     return useAtomCallback(
         useCallback(async (get, set, deductions: TransportDeductions) => {
-            const wasmSudoku = await get(mainThreadWasmSudokuState);
+            const wasmSudoku = await get(wasmSudokuState);
             wasmSudoku.applyDeductions(deductions);
-            updateSudokuFromMainThread({ set, wasmSudoku });
+            updateSudoku({ set, wasmSudoku });
         }, []),
     );
 }

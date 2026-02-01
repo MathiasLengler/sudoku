@@ -3,7 +3,7 @@ import { atomFamily, RESET } from "jotai/utils";
 import * as _ from "es-toolkit";
 import { WasmCellWorld } from "sudoku-wasm";
 import type { CellWorldDimensions, DynamicCell, DynamicCells, DynamicPosition } from "../../../types";
-import { init } from "../../state/worker/bg/init";
+import { initWasm } from "../wasm/init";
 import { validateCellWorldPosition } from "../../utils/world";
 import { gameState, type Game } from "../gameMode";
 import { sudokuBaseState, sudokuSideLengthState } from "../sudoku";
@@ -44,7 +44,7 @@ export const remoteWasmCellWorldState = atom<Promise<RemoteWasmCellWorld>>(async
 });
 
 export const emptyWasmCellWorldState = atom<Promise<WasmCellWorld>>(async (get) => {
-    await init(1);
+    await initWasm(1);
 
     const requestedWorldBase = await get(sudokuBaseState);
     const requestedGridDim = get(requestedGridDimState);

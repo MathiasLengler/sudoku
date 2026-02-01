@@ -1,7 +1,7 @@
 import * as Comlink from "comlink";
 import { WasmCellWorld, WasmSudoku } from "sudoku-wasm";
 import { bench, describe } from "vitest";
-import { init } from "../../app/state/worker/bg/init";
+import { initWasm } from "../../app/state/wasm/init";
 import type { WorkerApi } from "../../app/state/worker/bg/worker";
 import { spawnWorker } from "../../app/state/worker/spawn";
 import { getWasmCellWorldSamples } from "../util/cellWorld";
@@ -9,7 +9,7 @@ import { getWasmSudokuSamples } from "../util/sudoku";
 
 describe("worker", async () => {
     // Init foreground WASM.
-    await init(1);
+    await initWasm(1);
 
     const base = 3;
     const seed = 42n;
