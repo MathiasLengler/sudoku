@@ -8,7 +8,7 @@ import DialogActions from "@mui/material/DialogActions";
 import * as _ from "es-toolkit";
 import { useAtom } from "jotai";
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import type { DynamicGeneratorSettings, GeneratorProgress } from "../../../types";
 import { useGenerate, useGenerateMultiShot, type TrackedMultiShotGeneratorProgress } from "../../actions/sudokuActions";
 import { Fieldset } from "../../components/Fieldset";
@@ -34,7 +34,6 @@ import {
     MAX_ITERATIONS_INDEX,
     MIN_ITERATIONS_INDEX,
     SEED_MAX,
-    type GenerateFormValues,
 } from "../../state/forms/generate";
 import { BASE_MARKS, BASE_MAX, BASE_MIN, baseToLabel, parseBase } from "../../utils/base";
 import { baseToCellCount } from "../../utils/sudoku";
@@ -126,7 +125,6 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
     const {
         control,
         handleSubmit,
-        watch,
         formState: { isSubmitting },
         setValue,
         reset,
@@ -135,13 +133,10 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
         resolver: zodResolver(generateFormValuesSchema),
     });
 
-    const [base, minGivens, useSeed, multiShot, metric] = watch([
-        "base",
-        "minGivens",
-        "useSeed",
-        "multiShot",
-        "metric",
-    ]);
+    const [base, minGivens, useSeed, multiShot, metric] = useWatch({
+        control,
+        name: ["base", "minGivens", "useSeed", "multiShot", "metric"],
+    });
 
     const cellCount = baseToCellCount(base);
 

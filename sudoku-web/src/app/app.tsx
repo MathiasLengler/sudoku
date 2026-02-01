@@ -1,8 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { NotificationsProvider } from "@toolpad/core/useNotifications";
 import { Provider as JotaiProvider } from "jotai";
-import { DevTools } from "jotai-devtools";
-import jotaiDevToolsCss from "jotai-devtools/styles.css?inline";
 import { Suspense } from "react";
 import { SwManager } from "./SwManager";
 import { BasicErrorBoundary, ThemeErrorBoundary } from "./components/ErrorFallback";
@@ -10,7 +8,6 @@ import { FullScreenSpinner } from "./components/FullScreenSpinner";
 import { store } from "./state/store";
 import { Sudoku } from "./sudoku";
 import { MyTheme } from "./theme/myTheme";
-import { DebugForm } from "./DebugForm";
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -27,27 +24,16 @@ const queryClient = new QueryClient({
     },
 });
 
-function JotaiDevTools() {
-    return import.meta.env.DEV ? (
-        <>
-            <style>{jotaiDevToolsCss}</style>
-            <DevTools store={store} />
-        </>
-    ) : null;
-}
-
 export function App() {
     return (
         <BasicErrorBoundary>
             <JotaiProvider store={store}>
-                <JotaiDevTools />
                 <QueryClientProvider client={queryClient}>
                     <MyTheme>
                         <ThemeErrorBoundary>
                             <NotificationsProvider slotProps={{ snackbar: { autoHideDuration: 3000 } }}>
                                 <Suspense fallback={<FullScreenSpinner />}>
                                     <Sudoku />
-                                    {/* <DebugForm /> */}
                                 </Suspense>
                                 <SwManager />
                             </NotificationsProvider>

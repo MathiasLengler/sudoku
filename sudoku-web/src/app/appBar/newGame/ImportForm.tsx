@@ -127,11 +127,7 @@ export function ImportForm({ onClose }: ImportFormProps) {
                             />
                             <SupportedFormats />
                             <Fieldset label="Post import">
-                                <MySwitch
-                                    control={control}
-                                    name="setAllDirectCandidates"
-                                    label="Fill candidates"
-                                />
+                                <MySwitch control={control} name="setAllDirectCandidates" label="Fill candidates" />
                             </Fieldset>
                         </Stack>
                     </form>
