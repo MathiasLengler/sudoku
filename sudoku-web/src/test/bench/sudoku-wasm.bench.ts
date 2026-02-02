@@ -5,7 +5,7 @@ import { getWasmCellWorldSamples } from "../util/cellWorld";
 import { getWasmSudokuSamples } from "../util/sudoku";
 
 describe("sudoku-wasm", async () => {
-    await initWasm(1);
+    await initWasm();
 
     const base = 3;
     const seed = 42n;

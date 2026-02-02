@@ -8,7 +8,7 @@ import { test } from "./util/fixtures";
 
 describe("worker communication", async () => {
     // Init foreground WASM.
-    await initWasm(1);
+    await initWasm();
 
     const base = 3;
     const seed = 42n;

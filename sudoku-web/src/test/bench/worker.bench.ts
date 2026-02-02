@@ -9,7 +9,7 @@ import { getWasmSudokuSamples } from "../util/sudoku";
 
 describe("worker", async () => {
     // Init foreground WASM.
-    await initWasm(1);
+    await initWasm();
 
     const base = 3;
     const seed = 42n;
