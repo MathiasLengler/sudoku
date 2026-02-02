@@ -1,17 +1,25 @@
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { Stack, Tooltip } from "@mui/material";
-import type { Control, FieldValues, Path } from "react-hook-form";
+import type { Control, FieldPath, FieldValues } from "react-hook-form";
 import { ALL_STRATEGIES, STRATEGY_OPTIONS } from "../../constants";
-import { SelectElement } from "react-hook-form-mui";
 import { ExternalLink } from "../ExternalLink";
+import { MySelect } from "./mui-rhf/MySelect";
 
-type SelectStrategyProps<T extends FieldValues> = {
-    control: Control<T>;
-    name: Path<T>;
+type SelectStrategyProps<
+    TFieldValues extends FieldValues = FieldValues,
+    TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+    TTransformedValues = TFieldValues,
+> = {
+    control: Control<TFieldValues, unknown, TTransformedValues>;
+    name: TName;
 };
-function SelectStrategy<T extends FieldValues>({ control, name }: SelectStrategyProps<T>) {
+function SelectStrategy<
+    TFieldValues extends FieldValues = FieldValues,
+    TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+    TTransformedValues = TFieldValues,
+>({ control, name }: SelectStrategyProps<TFieldValues, TName, TTransformedValues>) {
     return (
-        <SelectElement
+        <MySelect
             control={control}
             name={name}
             label="Strategy"
