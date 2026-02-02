@@ -1,11 +1,11 @@
 use serde::{Deserialize, Serialize};
 
-use crate::base::SudokuBase;
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::rng::CrateRng;
-use crate::solver::strategic::strategies::{BruteForce, StrategyEnum};
+use crate::solver::strategic::strategies::BruteForce;
+use crate::{base::SudokuBase, solver::strategic::strategies::selection::StrategySet};
 
 pub use dynamic_settings::*;
 
@@ -103,10 +103,8 @@ pub enum PruningOrder<Base: SudokuBase> {
 pub struct PruningSettings<Base: SudokuBase> {
     /// Whether to set all direct candidates after pruning is done.
     pub set_all_direct_candidates: bool,
-    // TODO: bit field
-    //  this should make this struct cloneable
     /// With which strategies the sudoku should remain solvable for.
-    pub strategies: Vec<StrategyEnum>,
+    pub strategies: StrategySet,
     /// How much to prune the solution.
     pub target: PruningTarget,
     /// Adjust order in which cells are pruned.
@@ -120,7 +118,7 @@ pub struct PruningSettings<Base: SudokuBase> {
 impl<Base: SudokuBase> Default for PruningSettings<Base> {
     fn default() -> Self {
         Self {
-            strategies: vec![BruteForce.into()],
+            strategies: StrategySet::with_single(BruteForce.into()),
             set_all_direct_candidates: false,
             target: PruningTarget::default(),
             order: PruningOrder::default(),
@@ -217,7 +215,7 @@ mod dynamic_settings {
     #[serde(rename_all = "camelCase")]
     pub struct DynamicPruningSettings {
         pub set_all_direct_candidates: bool,
-        pub strategies: Vec<StrategyEnum>,
+        pub strategies: StrategySet,
         pub target: PruningTarget,
         pub order: DynamicPruningOrder,
         pub start_from_near_minimal_grid: bool,

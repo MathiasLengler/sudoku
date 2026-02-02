@@ -9,13 +9,13 @@ use indicatif::{ParallelProgressIterator, ProgressBar, ProgressStyle};
 use rayon::prelude::*;
 use serde::Serialize;
 
-use sudoku::base::BaseEnum;
 use sudoku::base::SudokuBase;
 use sudoku::generator::multi_shot::{EvaluatedGridMetric, GridMetric};
 use sudoku::generator::{Generator, GeneratorSettings, PruningSettings};
 use sudoku::grid::Grid;
 use sudoku::match_base_enum;
 use sudoku::solver::strategic::strategies::StrategyEnum;
+use sudoku::{base::BaseEnum, solver::strategic::strategies::selection::StrategySet};
 
 #[derive(Parser, Debug)]
 #[command(name = "metric_analysis")]
@@ -72,10 +72,10 @@ struct MetricStats {
 fn evaluate_metric_with_timing<Base: SudokuBase>(
     metric: GridMetric,
     grid: &Grid<Base>,
-    strategies: &[StrategyEnum],
+    strategies: StrategySet,
 ) -> Result<TimedEvaluatedGridMetric> {
     let start = Instant::now();
-    let value = metric.evaluate(grid, strategies.to_vec())?;
+    let value = metric.evaluate(grid, strategies)?;
     let duration = start.elapsed();
     Ok(TimedEvaluatedGridMetric { value, duration })
 }
@@ -83,7 +83,7 @@ fn evaluate_metric_with_timing<Base: SudokuBase>(
 fn analyze_single_grid<Base: SudokuBase>(
     grid_id: u64,
     grid: Grid<Base>,
-    strategies: &[StrategyEnum],
+    strategies: StrategySet,
 ) -> Result<MetricResult> {
     let strategy_score = evaluate_metric_with_timing(GridMetric::StrategyScore, &grid, strategies)?;
     let strategy_application_count =
@@ -420,7 +420,7 @@ fn run_analysis<Base: SudokuBase>() -> Result<()> {
 
     let generator_settings = GeneratorSettings {
         prune: Some(PruningSettings {
-            strategies: strategies.clone(),
+            strategies,
             ..Default::default()
         }),
         seed: args.seed,
@@ -448,7 +448,7 @@ fn run_analysis<Base: SudokuBase>() -> Result<()> {
             let generator = Generator::<Base>::with_settings(generator_settings);
             let grid = generator.generate()?;
 
-            analyze_single_grid(i, grid, &strategies)
+            analyze_single_grid(i, grid, strategies)
         })
         .collect();
 

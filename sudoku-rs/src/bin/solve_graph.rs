@@ -29,7 +29,7 @@ fn main() -> Result<()> {
 
     while let Some(node_index) = node_indexes_to_process.pop() {
         let grid = &mut graph[node_index];
-        let solver = Solver::new_with_strategies(
+        let solver = Solver::with_strategies(
             grid,
             StrategyEnum::default_solver_strategies_no_brute_force(),
         );

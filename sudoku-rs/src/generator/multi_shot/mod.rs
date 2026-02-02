@@ -1,10 +1,10 @@
 #![allow(deprecated)]
 
-use crate::base::SudokuBase;
-use crate::error::Result;
 use crate::grid::Grid;
 use crate::solver::strategic::{self, strategies::StrategyEnum};
 use crate::solver::{FallibleSolver, InfallibleSolver, backtracking, sat};
+use crate::{base::SudokuBase, solver::strategic::strategies::selection::StrategySet};
+use crate::{error::Result, solver::strategic::strategies::selection::StrategySelection};
 use anyhow::{Context, ensure};
 use log::*;
 use rayon::prelude::*;
@@ -73,10 +73,10 @@ impl GridMetric {
     pub fn evaluate<Base: SudokuBase>(
         self,
         grid: &Grid<Base>,
-        strategies: Vec<StrategyEnum>,
+        strategies: impl StrategySelection,
     ) -> Result<EvaluatedGridMetric> {
         static STRATEGIC_SOLVER_ERROR_MESSAGE: &str = "Strategic solver failed to solve the grid";
-        let get_strategic_solver = |strategies: Vec<StrategyEnum>| {
+        let get_strategic_solver = || {
             strategic::SolverBuilder::new(grid.clone())
                 .strategies(strategies)
                 .build()
@@ -84,31 +84,27 @@ impl GridMetric {
 
         // TODO: implement remaining metrics
         Ok(match self {
-            GridMetric::StrategyScore => get_strategic_solver(strategies)
+            GridMetric::StrategyScore => get_strategic_solver()
                 .solve_path()
                 .total_score()?
                 .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?,
-            GridMetric::StrategyApplicationCountAny => get_strategic_solver(strategies)
+            GridMetric::StrategyApplicationCountAny => get_strategic_solver()
                 .solve_path()
                 .application_count_any()?
                 .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?,
-            GridMetric::StrategyApplicationCountSingle { strategy } => {
-                get_strategic_solver(strategies)
-                    .solve_path()
-                    .application_count_single(strategy)?
-                    .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?
-            }
-            GridMetric::StrategyDeductionCountAny => get_strategic_solver(strategies)
+            GridMetric::StrategyApplicationCountSingle { strategy } => get_strategic_solver()
+                .solve_path()
+                .application_count_single(strategy)?
+                .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?,
+            GridMetric::StrategyDeductionCountAny => get_strategic_solver()
                 .solve_path()
                 .deduction_count_any()?
                 .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?,
-            GridMetric::StrategyDeductionCountSingle { strategy } => {
-                get_strategic_solver(strategies)
-                    .solve_path()
-                    .deduction_count_single(strategy)?
-                    .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?
-            }
-            GridMetric::StrategyAverageOptions => get_strategic_solver(strategies)
+            GridMetric::StrategyDeductionCountSingle { strategy } => get_strategic_solver()
+                .solve_path()
+                .deduction_count_single(strategy)?
+                .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?,
+            GridMetric::StrategyAverageOptions => get_strategic_solver()
                 .solve_path_all()
                 .average_options()?
                 .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?,
@@ -171,11 +167,11 @@ impl<Base: SudokuBase + Default> Default for MultiShotGeneratorSettings<Base> {
 }
 
 impl<Base: SudokuBase> MultiShotGeneratorSettings<Base> {
-    fn get_prune_strategies(&self) -> Vec<StrategyEnum> {
+    fn get_prune_strategies(&self) -> StrategySet {
         self.generator_settings
             .prune
             .as_ref()
-            .map(|prune| prune.strategies.clone())
+            .map(|prune| prune.strategies)
             .unwrap()
     }
 }
@@ -716,7 +712,7 @@ mod tests {
 
         let generator_settings = GeneratorSettings {
             prune: Some(PruningSettings {
-                strategies: vec![NakedSingles.into()],
+                strategies: StrategySet::with_single(NakedSingles.into()),
                 ..Default::default()
             }),
             solution: None,

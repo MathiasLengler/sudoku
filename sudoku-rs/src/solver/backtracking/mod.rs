@@ -141,7 +141,7 @@ mod builder {
                 availability,
                 candidates_iter_init_context,
             } = self;
-            Solver::new_with(grid, availability, candidates_iter_init_context)
+            Solver::with(grid, availability, candidates_iter_init_context)
         }
     }
 }
@@ -173,7 +173,7 @@ impl<
     Filter: CandidatesFilter<Base>,
 > Solver<Base, GridRef, ICandidates, Filter>
 {
-    fn new_with(
+    fn with(
         grid: GridRef,
         availability: GroupAvailability<Base, Filter>,
         candidates_iter_init_context: ICandidates::InitContext,

@@ -2,13 +2,12 @@ use std::time::Instant;
 
 use env_logger::Env;
 
-use sudoku::base::consts::*;
 use sudoku::error::Result;
 use sudoku::generator::{
     Generator, GeneratorSettings, PruningOrder, PruningSettings, PruningTarget,
 };
 use sudoku::grid::format::{GridFormat, ValuesLine};
-use sudoku::solver::strategic::strategies::*;
+use sudoku::{base::consts::*, solver::strategic::strategies::selection::StrategySet};
 
 type Base = Base4;
 
@@ -22,13 +21,15 @@ fn main() -> Result<()> {
     let grid = Generator::<Base>::with_settings(GeneratorSettings {
         prune: Some(PruningSettings {
             set_all_direct_candidates: true,
-            strategies: vec![
-                NakedSingles.into(),
-                HiddenSingles.into(),
-                NakedPairs.into(),
-                LockedSets.into(),
-                GroupIntersectionBoth.into(),
-            ],
+            strategies: StrategySet {
+                naked_singles: true,
+                hidden_singles: true,
+                naked_pairs: true,
+                locked_sets: true,
+                group_intersection_both: true,
+                x_wing: true,
+                ..Default::default()
+            },
             target: PruningTarget::MinClueCount(0),
             order: PruningOrder::Random,
             start_from_near_minimal_grid: false,

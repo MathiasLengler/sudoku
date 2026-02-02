@@ -1,5 +1,3 @@
-use crate::base::SudokuBase;
-use crate::cell::dynamic::{DynamicCandidates, DynamicValue};
 use crate::cell::{Candidates, Value};
 use crate::error::Result;
 use crate::generator::multi_shot::{
@@ -14,8 +12,15 @@ use crate::grid::solution_state::SolutionState;
 use crate::position::{DynamicPosition, Position};
 use crate::solver::strategic::deduction::Deductions;
 use crate::solver::strategic::deduction::transport::TransportDeductions;
-use crate::solver::strategic::strategies::StrategyEnum;
 use crate::solver::strategic::{DynamicSolveStep, SolveStep, Solver as StrategicSolver};
+use crate::{
+    base::SudokuBase,
+    generator::multi_shot::{EvaluatedGridMetric, GridMetric},
+};
+use crate::{
+    cell::dynamic::{DynamicCandidates, DynamicValue},
+    solver::strategic::strategies::selection::StrategySelection,
+};
 use history::History;
 use log::info;
 use serde::{Deserialize, Serialize};
@@ -162,7 +167,7 @@ impl<Base: SudokuBase> Sudoku<Base> {
 
     pub fn try_strategies(
         &mut self,
-        strategies: Vec<StrategyEnum>,
+        strategies: impl StrategySelection,
     ) -> Result<Option<SolveStep<Base>>> {
         // Only create history entry if all candidates are empty.
         // If this is the case, StrategicSolver will mutate the grid by setting all direct candidates.
@@ -170,7 +175,7 @@ impl<Base: SudokuBase> Sudoku<Base> {
             self.push_history();
         }
 
-        let solver = StrategicSolver::new_with_strategies(&mut self.grid, strategies);
+        let solver = StrategicSolver::with_strategies(&mut self.grid, strategies);
         solver.try_strategies()
     }
 
@@ -253,7 +258,7 @@ impl<Base: SudokuBase> DynamicSudokuActions for Sudoku<Base> {
 
     fn try_strategies(
         &mut self,
-        strategies: Vec<StrategyEnum>,
+        strategies: impl StrategySelection,
     ) -> Result<Option<DynamicSolveStep>> {
         Ok(self.try_strategies(strategies)?.map(Into::into))
     }
@@ -298,6 +303,14 @@ impl<Base: SudokuBase> DynamicSudokuActions for Sudoku<Base> {
 
     fn to_dynamic_grid(&self) -> DynamicGrid {
         self.grid.clone().into()
+    }
+
+    fn evaluate_metric(
+        &self,
+        metric: GridMetric,
+        strategies: impl StrategySelection,
+    ) -> Result<EvaluatedGridMetric> {
+        metric.evaluate(&self.grid, strategies)
     }
 }
 

@@ -98,10 +98,10 @@ use hdrhistogram::Histogram;
 use indicatif::{ParallelProgressIterator, ProgressBar, ProgressStyle};
 use rayon::prelude::*;
 
-use sudoku::base::consts::*;
 use sudoku::error::Result;
 use sudoku::generator::{Generator, GeneratorSettings, PruningSettings, PruningTarget};
 use sudoku::solver::strategic::strategies::{BruteForce, HiddenSingles, NakedSingles};
+use sudoku::{base::consts::*, solver::strategic::strategies::selection::StrategySet};
 
 type Base = Base4;
 
@@ -119,11 +119,10 @@ fn main() -> Result<()> {
         prune: Some(PruningSettings {
             set_all_direct_candidates: false,
             target: PruningTarget::Minimal,
-            strategies: vec![
-                // NakedSingles.into(),
-                // HiddenSingles.into(),
-                BruteForce.into(),
-            ],
+            strategies: StrategySet {
+                brute_force: true,
+                ..Default::default()
+            },
             ..Default::default()
         }),
         ..Default::default()

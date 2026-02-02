@@ -1,5 +1,3 @@
-use crate::base::BaseEnum;
-use crate::base::consts::*;
 use crate::base::match_base_enum;
 use crate::cell::dynamic::DynamicCandidates;
 use crate::cell::dynamic::DynamicCell;
@@ -14,9 +12,13 @@ use crate::grid::format::GridFormatEnum;
 use crate::position::DynamicPosition;
 use crate::solver::strategic::DynamicSolveStep;
 use crate::solver::strategic::deduction::transport::TransportDeductions;
-use crate::solver::strategic::strategies::StrategyEnum;
 use crate::sudoku::Sudoku;
 use crate::sudoku::settings::Settings as SudokuSettings;
+use crate::{
+    base::BaseEnum,
+    generator::multi_shot::{EvaluatedGridMetric, GridMetric},
+};
+use crate::{base::consts::*, solver::strategic::strategies::selection::StrategySelection};
 use enum_dispatch::enum_dispatch;
 use serde::{Deserialize, Serialize};
 
@@ -35,8 +37,10 @@ pub trait DynamicSudokuActions {
     fn set_candidate(&mut self, pos: DynamicPosition, candidate: DynamicValue) -> Result<()>;
     fn delete_candidate(&mut self, pos: DynamicPosition, candidate: DynamicValue) -> Result<()>;
     fn delete(&mut self, pos: DynamicPosition) -> Result<()>;
-    fn try_strategies(&mut self, strategies: Vec<StrategyEnum>)
-    -> Result<Option<DynamicSolveStep>>;
+    fn try_strategies(
+        &mut self,
+        strategies: impl StrategySelection,
+    ) -> Result<Option<DynamicSolveStep>>;
     fn apply_deductions(&mut self, deductions: TransportDeductions) -> Result<()>;
 
     // actions that don't depend on base
@@ -46,6 +50,11 @@ pub trait DynamicSudokuActions {
     fn settings(&self) -> SudokuSettings;
     fn update_settings(&mut self, settings: SudokuSettings);
     fn export(&self, format: GridFormatEnum) -> String;
+    fn evaluate_metric(
+        &self,
+        metric: GridMetric,
+        strategies: impl StrategySelection,
+    ) -> Result<EvaluatedGridMetric>;
 
     fn to_dynamic_grid(&self) -> DynamicGrid;
 }
