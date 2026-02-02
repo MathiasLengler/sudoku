@@ -1,12 +1,12 @@
 import * as Comlink from "comlink";
 import { atom, type Getter } from "jotai";
 import { atomWithDefault } from "jotai/utils";
-import { WasmSudoku as WasmSudokuMaybeUninit, type StrategySet, type WasmSudoku } from "sudoku-wasm";
+import { type WasmSudoku } from "sudoku-wasm";
 import type { Asyncify, SetReturnType } from "type-fest";
 import type { DynamicGrid } from "../../../types";
 import { loadCells } from "../cellsPersistence";
 import { GENERATE_FORM_DEFAULT_VALUES } from "../forms/generate";
-import { initWasm } from "../wasm/init";
+import { wasmSudokuClassState } from "../wasm/classes";
 import { remoteWasmSudokuClassState, type UnsafeRemoteWasmSudoku } from "../worker";
 
 type ExpensiveConstructorFunctions = "fromDynamicGrid" | "generate" | "generateMultiShot" | "import";
@@ -33,11 +33,6 @@ type ReplaceWasmSudokuReturnWithMainThreadWasmSudoku<T extends (...args: any) =>
 
 export type MainThreadWasmSudokuClass = MakeMainThreadWasmSudokuStatics<typeof WasmSudoku>;
 export type MainThreadWasmSudoku = MakeMainThreadWasmSudokuMethods<WasmSudoku>;
-
-const wasmSudokuClassState = atom<Promise<typeof WasmSudoku>>(async () => {
-    await initWasm();
-    return WasmSudokuMaybeUninit;
-});
 
 export const mainThreadWasmSudokuClassState = atom<Promise<MainThreadWasmSudokuClass>>(async (get) => {
     const WasmSudoku = await get(wasmSudokuClassState);
@@ -110,7 +105,7 @@ function createInstanceProxy(get: Getter, wasmSudoku: WasmSudoku): MainThreadWas
     const proxy = new Proxy(wasmSudoku, {
         get(wasmSudoku, prop: keyof WasmSudoku, receiver) {
             if (prop === "tryStrategies") {
-                return (async (strategies: StrategySet) => {
+                return (async (strategies) => {
                     const remoteWasmSudoku = await moveWasmSudokuToWorker();
                     const res = await remoteWasmSudoku.tryStrategies(strategies);
                     return res;
