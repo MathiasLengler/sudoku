@@ -199,9 +199,7 @@ export const GRID_METRIC_OPTIONS: Record<
         label: "Grid candidates: count",
     },
     gridGivensValueCountDeviation: {
-        label: "Grid givens: value count deviation",
-        // TODO: remove when implemented
-        disabled: true,
+        label: "Grid givens: value count standard deviation",
     },
 };
 

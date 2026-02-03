@@ -17,6 +17,7 @@ const STRATEGY_COUNT: usize = 9;
 pub mod map {
     use super::*;
 
+    /// A map of `StrategyEnum` to `T`.
     #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
     #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
     pub struct StrategyMap<T> {

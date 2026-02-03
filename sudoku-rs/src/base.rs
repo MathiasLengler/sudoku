@@ -271,6 +271,7 @@ where
     fn block_to_top_left_pos(block: Coordinate<Self>) -> Position<Self>;
 
     fn group_default<T: Send + Sync + Copy + Clone + Debug + Default>() -> Self::Group<T>;
+    fn group_with_all<T: Send + Sync + Copy + Clone + Debug + Copy>(element: T) -> Self::Group<T>;
     fn group_uninit<T: Send + Sync + Copy + Clone + Debug>() -> Self::Group<MaybeUninit<T>>;
     fn group_map<T: Send + Sync + Copy + Clone + Debug, U: Send + Sync + Copy + Clone + Debug>(
         group: Self::Group<T>,
@@ -320,6 +321,9 @@ unsafe impl SudokuBase for $type_num {
 
     fn group_default<T: Send + Sync + Copy + Clone + Debug + Default>() -> Self::Group<T> {
         [Default::default(); Self::SIDE_LENGTH as usize]
+    }
+    fn group_with_all<T: Send + Sync + Copy + Clone + Debug + Copy>(element: T) -> Self::Group<T> {
+        [element; Self::SIDE_LENGTH as usize]
     }
     fn group_uninit<T: Send + Sync + Copy + Clone + Debug>() -> Self::Group<MaybeUninit<T>> {
         [const { MaybeUninit::uninit() }; Self::SIDE_LENGTH as usize]
