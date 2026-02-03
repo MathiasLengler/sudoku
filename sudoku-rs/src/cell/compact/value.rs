@@ -58,6 +58,28 @@ pub mod map {
             self.values.get_mut(value.into())
         }
     }
+
+    pub type ValueCounts<Base> = ValueMap<Base, u16>;
+
+    impl<Base: SudokuBase> ValueCounts<Base> {
+        pub fn count(values: impl IntoIterator<Item = Value<Base>>) -> Self {
+            let mut this = Self::default();
+            for value in values {
+                *this.get_mut(value) += 1;
+            }
+            this
+        }
+
+        pub fn sum(&self) -> u16 {
+            self.values.iter().sum()
+        }
+
+        pub fn std_dev(&self) -> f64 {
+            use statrs::statistics::Statistics;
+
+            self.values.iter().map(f64::from).std_dev()
+        }
+    }
 }
 
 /// A valid sudoku value for a given base.

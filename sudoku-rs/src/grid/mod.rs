@@ -1,8 +1,8 @@
-use crate::cell::Candidates;
 use crate::cell::Cell;
 use crate::cell::CellState;
 use crate::cell::Value;
 use crate::cell::dynamic::DynamicCell;
+use crate::cell::{Candidates, map::ValueCounts};
 use crate::error::{Error, Result};
 use crate::grid::format::{CandidatesGridANSIStyled, GridFormat, GridFormatEnum};
 use crate::position::Coordinate;
@@ -562,6 +562,7 @@ impl<Base: SudokuBase, T> Grid<Base, T> {
     }
 }
 
+/// Cell bulk operations
 impl<Base: SudokuBase> Grid<Base> {
     pub fn fix_all_values(&mut self) {
         for pos in self.all_value_positions() {
@@ -746,6 +747,13 @@ impl<Base: SudokuBase, T> Grid<Base, T> {
         use itertools::Itertools;
 
         Self::neighbor_positions_with_duplicates(pos).unique()
+    }
+}
+
+/// Interop `ValueMap`
+impl<Base: SudokuBase> Grid<Base> {
+    pub fn count_values(&self) -> ValueCounts<Base> {
+        ValueCounts::count(self.all_cells().filter_map(|cell| cell.value()))
     }
 }
 

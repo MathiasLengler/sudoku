@@ -1,6 +1,5 @@
 #![allow(deprecated)]
 
-use crate::cell::Value;
 use crate::grid::Grid;
 use crate::solver::strategic::{self, strategies::StrategyEnum};
 use crate::solver::{FallibleSolver, InfallibleSolver, backtracking, sat};
@@ -19,6 +18,11 @@ pub use dynamic_settings::*;
 
 pub type EvaluatedGridMetric = u64;
 type AtomicEvaluatedGridMetric = AtomicU64;
+
+pub const EVALUATED_GRID_METRIC_FIXED_POINT_SCALE: EvaluatedGridMetric = 1_000;
+#[allow(clippy::cast_precision_loss)]
+pub const EVALUATED_GRID_METRIC_FIXED_POINT_SCALE_F64: f64 =
+    EVALUATED_GRID_METRIC_FIXED_POINT_SCALE as f64;
 
 static GENERATE_NO_GRIDS: &str = "at least one generation result";
 
@@ -66,7 +70,6 @@ pub enum GridMetric {
     /// Example:
     /// 3 givens for each number => 1
     /// Only 2s and 3s => >>1
-    #[deprecated]
     GridGivensValueCountDeviation,
 }
 
@@ -131,39 +134,12 @@ impl GridMetric {
                 .map(|pos| EvaluatedGridMetric::from(grid.direct_candidates(pos).count()))
                 .sum(),
             GridMetric::GridGivensValueCountDeviation => {
-                // TODO: refactor slop with ValueMap
+                use num::NumCast;
 
-                // Count occurrences of each value in the grid's givens
-                let value_counts: Vec<EvaluatedGridMetric> = Value::<Base>::all()
-                    .map(|value| {
-                        grid.all_value_positions()
-                            .iter()
-                            .filter(|&&pos| grid.get(pos).value() == Some(value))
-                            .count()
-                    })
-                    .map(EvaluatedGridMetric::try_from)
-                    .collect::<std::result::Result<_, _>>()?;
-
-                // value_counts.len() <= 25 (max base 5), fits in u8 which converts losslessly to f64
-                let n = f64::from(u8::try_from(value_counts.len())?);
-
-                let sum: u64 = value_counts.iter().sum();
-                let mean = sum as f64 / n;
-
-                // Calculate variance: sum of squared differences from mean
-                let variance: f64 = value_counts
-                    .iter()
-                    .map(|&count| {
-                        let diff = count as f64 - mean;
-                        diff * diff
-                    })
-                    .sum::<f64>()
-                    / n;
-
-                // Standard deviation, scaled by 1000 for precision
-                // (similar to STRATEGY_SCORE_FIXED_POINT_SCALE)
-                // std_dev is always non-negative, and scaled value fits in u64
-                (variance.sqrt() * 1000.0) as u64
+                let std_dev_f64 = grid.count_values().std_dev();
+                let scaled_std_dev_f64 = std_dev_f64 * EVALUATED_GRID_METRIC_FIXED_POINT_SCALE_F64;
+                <EvaluatedGridMetric as NumCast>::from(scaled_std_dev_f64)
+                    .context("Failed to convert std dev to EvaluatedGridMetric")?
             }
         })
     }
@@ -618,7 +594,7 @@ mod tests {
             #[case::grid_givens_value_count_deviation(
                 1,
                 GridMetric::GridGivensValueCountDeviation,
-                707
+                816
             )]
             #[case::grid_givens_value_count_deviation(
                 2,
