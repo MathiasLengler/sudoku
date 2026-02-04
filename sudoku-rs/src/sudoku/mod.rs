@@ -12,7 +12,6 @@ use crate::grid::solution_state::SolutionState;
 use crate::position::{DynamicPosition, Position};
 use crate::solver::strategic::deduction::Deductions;
 use crate::solver::strategic::deduction::transport::TransportDeductions;
-use crate::solver::strategic::strategies::StrategyEnum;
 use crate::solver::strategic::{DynamicSolveStep, SolveStep, Solver as StrategicSolver};
 use crate::{
     base::SudokuBase,
@@ -168,7 +167,7 @@ impl<Base: SudokuBase> Sudoku<Base> {
 
     pub fn try_strategies(
         &mut self,
-        strategies: Vec<StrategyEnum>,
+        strategies: impl StrategySelection,
     ) -> Result<Option<SolveStep<Base>>> {
         // Only create history entry if all candidates are empty.
         // If this is the case, StrategicSolver will mutate the grid by setting all direct candidates.
@@ -259,7 +258,7 @@ impl<Base: SudokuBase> DynamicSudokuActions for Sudoku<Base> {
 
     fn try_strategies(
         &mut self,
-        strategies: Vec<StrategyEnum>,
+        strategies: impl StrategySelection,
     ) -> Result<Option<DynamicSolveStep>> {
         Ok(self.try_strategies(strategies)?.map(Into::into))
     }

@@ -12,7 +12,6 @@ use crate::grid::format::GridFormatEnum;
 use crate::position::DynamicPosition;
 use crate::solver::strategic::DynamicSolveStep;
 use crate::solver::strategic::deduction::transport::TransportDeductions;
-use crate::solver::strategic::strategies::StrategyEnum;
 use crate::sudoku::Sudoku;
 use crate::sudoku::settings::Settings as SudokuSettings;
 use crate::{
@@ -38,8 +37,10 @@ pub trait DynamicSudokuActions {
     fn set_candidate(&mut self, pos: DynamicPosition, candidate: DynamicValue) -> Result<()>;
     fn delete_candidate(&mut self, pos: DynamicPosition, candidate: DynamicValue) -> Result<()>;
     fn delete(&mut self, pos: DynamicPosition) -> Result<()>;
-    fn try_strategies(&mut self, strategies: Vec<StrategyEnum>)
-    -> Result<Option<DynamicSolveStep>>;
+    fn try_strategies(
+        &mut self,
+        strategies: impl StrategySelection,
+    ) -> Result<Option<DynamicSolveStep>>;
     fn apply_deductions(&mut self, deductions: TransportDeductions) -> Result<()>;
 
     // actions that don't depend on base
