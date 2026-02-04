@@ -113,7 +113,6 @@ const gridMetricNameWithoutStrategySchema = z.enum([
     "strategyApplicationCountAny",
     "strategyDeductionCountAny",
     "strategyAverageOptions",
-    "solveGraphAverageBranchingFactor",
     "satStepCount",
     "backtrackCount",
     "gridGivensCount",
@@ -129,7 +128,6 @@ export const gridMetricNameSchema = z.enum([
     "strategyDeductionCountAny",
     "strategyDeductionCountSingle",
     "strategyAverageOptions",
-    "solveGraphAverageBranchingFactor",
     "satStepCount",
     "backtrackCount",
     "gridGivensCount",
@@ -180,11 +178,6 @@ export const GRID_METRIC_OPTIONS: Record<
     strategyAverageOptions: {
         label: "Strategy: average options",
         description: "The average number of strategies available to make progress.",
-    },
-    solveGraphAverageBranchingFactor: {
-        label: "Solve graph average branching factor",
-        // TODO: remove when implemented
-        disabled: true,
     },
     satStepCount: {
         label: "SAT solver: step count",

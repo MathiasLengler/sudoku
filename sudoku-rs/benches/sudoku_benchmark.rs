@@ -8,7 +8,6 @@ use num::Integer;
 use rand::prelude::*;
 use std::hint::black_box;
 use std::path::Path;
-use sudoku::base::{SudokuBase, consts::*};
 use sudoku::cell::Candidates;
 use sudoku::cell::Value;
 use sudoku::generator::{Generator, GeneratorSettings, PruningSettings, PruningTarget};
@@ -24,9 +23,13 @@ use sudoku::solver::sat;
 use sudoku::solver::strategic::strategies::locked_sets::v2::find_locked_set;
 use sudoku::solver::strategic::strategies::locked_sets::v2::test_utils::locked_set_test_cases_base_3;
 use sudoku::solver::strategic::strategies::{
-    GroupIntersectionBoth, HiddenSingles, LockedSets, Strategy, StrategyEnum,
+    GroupIntersectionBoth, HiddenSingles, LockedSets, Strategy,
 };
 use sudoku::solver::{FallibleSolver, InfallibleSolver, backtracking, introspective, strategic};
+use sudoku::{
+    base::{SudokuBase, consts::*},
+    solver::strategic::strategies::selection::StrategySet,
+};
 
 fn sample_grid<Base: SudokuBase>() -> Grid<Base> {
     samples::grid::<Base>(0)
@@ -47,7 +50,7 @@ fn bench_generator_group<Base: SudokuBase>(generator_group: &mut BenchmarkGroup<
             "NoBacktracking Minimal",
             Some(PruningSettings::<Base> {
                 target: PruningTarget::Minimal,
-                strategies: StrategyEnum::default_solver_strategies_no_brute_force(),
+                strategies: StrategySet::default_solver_strategies_no_brute_force(),
                 ..Default::default()
             }),
         ),

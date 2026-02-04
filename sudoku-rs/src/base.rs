@@ -356,10 +356,11 @@ mod enum_impl {
     use serde_repr::{Deserialize_repr, Serialize_repr};
 
     #[cfg_attr(feature = "terminal", derive(clap::ValueEnum))]
-    #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize_repr, Deserialize_repr)]
+    #[derive(Debug, Copy, Clone, Default, Eq, PartialEq, Serialize_repr, Deserialize_repr)]
     #[repr(u8)]
     pub enum BaseEnum {
         Base2 = 2,
+        #[default]
         Base3 = 3,
         Base4 = 4,
         Base5 = 5,

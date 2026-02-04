@@ -21,6 +21,7 @@ use crate::{
 use crate::{base::consts::*, solver::strategic::strategies::selection::StrategySelection};
 use enum_dispatch::enum_dispatch;
 use serde::{Deserialize, Serialize};
+use std::fmt::Display;
 
 /// All methods provided by `Sudoku`, which:
 /// - do not depend on the generic `SudokuBase`
@@ -67,6 +68,17 @@ pub enum DynamicSudoku {
     Base3(Sudoku<Base3>),
     Base4(Sudoku<Base4>),
     Base5(Sudoku<Base5>),
+}
+
+impl Display for DynamicSudoku {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DynamicSudoku::Base2(sudoku) => write!(f, "{sudoku}"),
+            DynamicSudoku::Base3(sudoku) => write!(f, "{sudoku}"),
+            DynamicSudoku::Base4(sudoku) => write!(f, "{sudoku}"),
+            DynamicSudoku::Base5(sudoku) => write!(f, "{sudoku}"),
+        }
+    }
 }
 
 /// Constructors
