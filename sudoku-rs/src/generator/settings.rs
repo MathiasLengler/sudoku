@@ -9,14 +9,19 @@ use crate::{base::SudokuBase, solver::strategic::strategies::selection::Strategy
 
 pub use dynamic_settings::*;
 
+/// How much to prune the solution.
 #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
 #[derive(Debug, Copy, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum PruningTarget {
+    /// Prune until the grid is minimal, meaning that no clue can be removed without breaking uniqueness of the solution.
     #[default]
     Minimal,
+    /// Prune until the grid is minimal, but with N additional clues.
     MinimalPlusClueCunt(u16),
+    /// Prune until the grid has at most N empty cells or is minimal, whichever comes first.
     MaxEmptyCellCount(u16),
+    /// Prune until the grid has N clues left or is minimal, whichever comes first.
     MinClueCount(u16),
 }
 
