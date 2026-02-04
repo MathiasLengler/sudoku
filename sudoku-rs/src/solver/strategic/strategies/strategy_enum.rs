@@ -16,15 +16,8 @@ const STRATEGY_COUNT: usize = 9;
 
 pub mod map {
     use super::*;
-    // TODO: struct StrategyMap<T> {
-    //    naked_singles: T
-    //    ...
-    // Usecases:
-    // - Vec<StrategyEnum> => StrategyMap<bool> (for solver)
-    // - stats for strategies
-    //   - application count
-    //   - deduction count
 
+    /// A map of `StrategyEnum` to `T`.
     #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
     #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
     pub struct StrategyMap<T> {

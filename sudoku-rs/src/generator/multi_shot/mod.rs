@@ -19,6 +19,11 @@ pub use dynamic_settings::*;
 pub type EvaluatedGridMetric = u64;
 type AtomicEvaluatedGridMetric = AtomicU64;
 
+pub const EVALUATED_GRID_METRIC_FIXED_POINT_SCALE: EvaluatedGridMetric = 1_000;
+#[allow(clippy::cast_precision_loss)]
+pub const EVALUATED_GRID_METRIC_FIXED_POINT_SCALE_F64: f64 =
+    EVALUATED_GRID_METRIC_FIXED_POINT_SCALE as f64;
+
 static GENERATE_NO_GRIDS: &str = "at least one generation result";
 
 /// A metric used to evaluate the difficulty of a grid.
@@ -65,7 +70,6 @@ pub enum GridMetric {
     /// Example:
     /// 3 givens for each number => 1
     /// Only 2s and 3s => >>1
-    #[deprecated]
     GridGivensValueCountDeviation,
 }
 
@@ -129,7 +133,14 @@ impl GridMetric {
                 .into_iter()
                 .map(|pos| EvaluatedGridMetric::from(grid.direct_candidates(pos).count()))
                 .sum(),
-            GridMetric::GridGivensValueCountDeviation => todo!(),
+            GridMetric::GridGivensValueCountDeviation => {
+                use num::NumCast;
+
+                let std_dev_f64 = grid.count_values().std_dev();
+                let scaled_std_dev_f64 = std_dev_f64 * EVALUATED_GRID_METRIC_FIXED_POINT_SCALE_F64;
+                <EvaluatedGridMetric as NumCast>::from(scaled_std_dev_f64)
+                    .context("Failed to convert std dev to EvaluatedGridMetric")?
+            }
         })
     }
 }
@@ -575,7 +586,21 @@ mod tests {
             #[case::grid_givens_count(2, GridMetric::GridGivensCount, 4)]
             #[case::grid_direct_candidates_count(0, GridMetric::GridDirectCandidatesCount, 8)]
             #[case::grid_direct_candidates_count(1, GridMetric::GridDirectCandidatesCount, 28)]
-            // #[case::grid_givens_value_count_deviation(0, GridMetric::GridGivensValueCountDeviation, 0)]
+            #[case::grid_givens_value_count_deviation(
+                0,
+                GridMetric::GridGivensValueCountDeviation,
+                0
+            )]
+            #[case::grid_givens_value_count_deviation(
+                1,
+                GridMetric::GridGivensValueCountDeviation,
+                816
+            )]
+            #[case::grid_givens_value_count_deviation(
+                2,
+                GridMetric::GridGivensValueCountDeviation,
+                0
+            )]
             fn test_base_2(
                 #[case] grid_sample_index: usize,
                 #[case] grid_metric: GridMetric,
