@@ -174,7 +174,7 @@ mod dynamic_settings {
     use super::*;
 
     #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
-    #[derive(Debug, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub enum DynamicPruningOrder {
         Random,
@@ -211,7 +211,7 @@ mod dynamic_settings {
     }
 
     #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
-    #[derive(Debug, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct DynamicPruningSettings {
         pub set_all_direct_candidates: bool,
@@ -244,7 +244,7 @@ mod dynamic_settings {
     }
 
     #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
-    #[derive(Debug, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct DynamicSolutionSettings {
         pub values_grid: DynamicGrid<DynamicCell>,
@@ -262,7 +262,7 @@ mod dynamic_settings {
     }
 
     #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
-    #[derive(Debug, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct DynamicGeneratorSettings {
         pub base: BaseEnum,

@@ -83,10 +83,10 @@ required-features = ["parallel"]
 name = "cell_world_playground"
 required-features = ["parallel"]
 [[bin]]
-name = "generator"
+name = "generator_single"
 required-features = ["log", "parallel", "terminal"]
 [[bin]]
-name = "goal_generator"
+name = "generator_multi"
 required-features = ["log", "parallel", "terminal"]
 [[bin]]
 name = "generate_histogram"
