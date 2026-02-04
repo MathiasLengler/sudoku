@@ -1658,7 +1658,6 @@ dependencies = [
  "env_logger",
  "getrandom",
  "hdrhistogram",
- "indexmap",
  "indicatif",
  "indoc",
  "itertools 0.14.0",
