@@ -24,6 +24,16 @@ anyhow = { version = "1.0.100", features = ["backtrace"] }
 inherits = "release"
 debug = true
 
+# https://doc.rust-lang.org/cargo/guide/build-performance.html#reduce-amount-of-generated-debug-information
+[profile.dev]
+debug = "line-tables-only"
+[profile.dev.package."*"]
+debug = false
+[profile.debugging]
+inherits = "dev"
+debug = true
+
+
 [patch.crates-io]
 
 [patch.crates-io.varisat]
