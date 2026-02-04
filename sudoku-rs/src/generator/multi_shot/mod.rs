@@ -50,12 +50,6 @@ pub enum GridMetric {
     //  We need to somehow weigh the available strategies by their difficulty.
     /// The average number of strategies available to make progress. Scaled by a factor of `STRATEGY_SCORE_FIXED_POINT_SCALE`.
     StrategyAverageOptions,
-
-    // Based on the PoC bin `solve_graph` - a graph of all possible solve paths.
-    /// The average [branching factor](https://en.wikipedia.org/wiki/Branching_factor) of the strategy solve graph.
-    /// In other words: the average number of strategies available to make progress across all nodes in the solve graph.
-    #[deprecated]
-    SolveGraphAverageBranchingFactor,
     /// The number of steps taken by `sat::Solver` to solve the grid.
     SatStepCount,
     /// The number of backtracking steps taken by `backtracking::Solver` to solve the grid.
@@ -64,12 +58,7 @@ pub enum GridMetric {
     GridGivensCount,
     /// The number of candidates in the grid.
     GridDirectCandidatesCount,
-    // Use normalized metrics instead of standard deviation? (0-1, gini coefficient etc.)
     /// The standard deviation of the givens value counts in the grid.
-    /// E.g. how evenly distributed the givens values are.
-    /// Example:
-    /// 3 givens for each number => 1
-    /// Only 2s and 3s => >>1
     GridGivensValueCountDeviation,
 }
 
@@ -112,7 +101,6 @@ impl GridMetric {
                 .solve_path_all()
                 .average_options()?
                 .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?,
-            GridMetric::SolveGraphAverageBranchingFactor => todo!(),
             GridMetric::SatStepCount => {
                 let mut solver = sat::Solver::new(grid);
                 solver
