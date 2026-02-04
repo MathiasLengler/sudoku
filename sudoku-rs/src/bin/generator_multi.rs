@@ -12,7 +12,7 @@ type Base = Base3;
 
 fn main() -> Result<()> {
     env_logger::Builder::from_env(
-        Env::default().default_filter_or("info,varisat=warn,sudoku::generator::goal=debug"),
+        Env::default().default_filter_or("info,varisat=warn,sudoku::generator::multi_shot=debug"),
     )
     .format_indent(Some(0))
     .init();
