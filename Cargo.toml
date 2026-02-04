@@ -20,7 +20,7 @@ log = { version = "0.4.28" }
 serde = { version = "1.0.228" }
 anyhow = { version = "1.0.100", features = ["backtrace"] }
 
-[profile.release-with-debug]
+[profile.release-debug-full]
 inherits = "release"
 debug = true
 
@@ -29,7 +29,7 @@ debug = true
 debug = "line-tables-only"
 [profile.dev.package."*"]
 debug = false
-[profile.debugging]
+[profile.debug-full]
 inherits = "dev"
 debug = true
 
