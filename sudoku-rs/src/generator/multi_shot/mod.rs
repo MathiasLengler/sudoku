@@ -180,9 +180,10 @@ mod dynamic_settings {
 
     use crate::error::Error;
     use crate::generator::DynamicGeneratorSettings;
+    use std::fmt::Display;
 
     #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
-    #[derive(Debug, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct DynamicMultiShotGeneratorSettings {
         pub generator_settings: DynamicGeneratorSettings,
@@ -190,6 +191,17 @@ mod dynamic_settings {
         pub metric: GridMetric,
         pub optimize: GoalOptimization,
         pub parallel: bool,
+    }
+
+    // For `generator_multi` default CLI argument
+    impl Display for DynamicMultiShotGeneratorSettings {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(
+                f,
+                "{}",
+                serde_json::to_string_pretty(self).map_err(|_| std::fmt::Error)?
+            )
+        }
     }
 
     impl<Base: SudokuBase> TryFrom<DynamicMultiShotGeneratorSettings>
@@ -600,7 +612,7 @@ mod tests {
 
                 let grid_sample = samples::grid::<Base>(grid_sample_index);
 
-                let strategies = StrategyEnum::default_solver_strategies_no_brute_force();
+                let strategies = StrategySet::default_solver_strategies_no_brute_force();
 
                 assert_eq!(
                     grid_metric.evaluate(&grid_sample, strategies).unwrap(),
@@ -641,7 +653,7 @@ mod tests {
 
                 let grid_sample = samples::grid::<Base>(grid_sample_index);
 
-                let strategies = StrategyEnum::default_solver_strategies_no_brute_force();
+                let strategies = StrategySet::default_solver_strategies_no_brute_force();
 
                 assert_eq!(
                     grid_metric.evaluate(&grid_sample, strategies).unwrap(),
@@ -656,7 +668,7 @@ mod tests {
         type Base = Base2;
         let generator_settings = GeneratorSettings {
             prune: Some(PruningSettings {
-                strategies: StrategyEnum::default_solver_strategies_no_brute_force(),
+                strategies: StrategySet::default_solver_strategies_no_brute_force(),
                 ..Default::default()
             }),
             solution: None,
@@ -686,7 +698,7 @@ mod tests {
 
         let generator_settings = GeneratorSettings {
             prune: Some(PruningSettings {
-                strategies: StrategyEnum::default_solver_strategies_no_brute_force(),
+                strategies: StrategySet::default_solver_strategies_no_brute_force(),
                 ..Default::default()
             }),
             solution: None,

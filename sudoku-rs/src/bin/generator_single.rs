@@ -9,11 +9,11 @@ fn parse_generator_settings(s: &str) -> Result<DynamicGeneratorSettings> {
     Ok(settings)
 }
 
-/// Simple program to greet a person
+/// Generate a single Sudoku puzzle using the single-shot generator
 #[derive(Parser, Debug)]
 #[command(version, about)]
 struct Args {
-    /// Name of the person to greet
+    /// Generator settings in JSON format
     #[arg(short, long, value_parser = parse_generator_settings)]
     generator_settings: DynamicGeneratorSettings,
 }

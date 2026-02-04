@@ -1,11 +1,10 @@
 use serde::{Deserialize, Serialize};
 
-use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::rng::CrateRng;
-use crate::solver::strategic::strategies::BruteForce;
 use crate::{base::SudokuBase, solver::strategic::strategies::selection::StrategySet};
+use crate::{error::Result, solver::strategic::strategies::BruteForce};
 
 pub use dynamic_settings::*;
 
@@ -168,20 +167,20 @@ pub struct GeneratorSettings<Base: SudokuBase> {
 }
 
 mod dynamic_settings {
-    use anyhow::ensure;
-
     use crate::base::BaseEnum;
     use crate::cell::dynamic::DynamicCell;
     use crate::error::Error;
     use crate::grid::dynamic::DynamicGrid;
     use crate::position::DynamicPosition;
+    use anyhow::ensure;
 
     use super::*;
 
     #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
-    #[derive(Debug, Clone, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Default, Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub enum DynamicPruningOrder {
+        #[default]
         Random,
         Positions {
             positions: Vec<DynamicPosition>,
@@ -216,7 +215,7 @@ mod dynamic_settings {
     }
 
     #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
-    #[derive(Debug, Clone, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Default, Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct DynamicPruningSettings {
         pub set_all_direct_candidates: bool,
@@ -267,7 +266,7 @@ mod dynamic_settings {
     }
 
     #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
-    #[derive(Debug, Clone, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Default, Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct DynamicGeneratorSettings {
         pub base: BaseEnum,

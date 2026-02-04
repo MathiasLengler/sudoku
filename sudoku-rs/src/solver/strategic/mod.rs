@@ -122,7 +122,7 @@ mod builder {
 
         pub fn build(self) -> Solver<Base, GridMut, StrategySet> {
             let SolverBuilder { grid, _base } = self;
-            Solver::with_strategies(grid, StrategyEnum::default_solver_strategies())
+            Solver::with_strategies(grid, StrategySet::default_solver_strategies())
         }
     }
 
@@ -288,7 +288,7 @@ impl<
 
     /// The number of times each strategy was applied to the grid.
     pub fn application_count(mut self) -> Result<Option<StrategyMap<StrategyScore>>> {
-        let mut strategy_map = StrategyMap::default();
+        let mut strategy_map = StrategyMap::<StrategyScore>::default();
 
         self.try_for_each(|res| {
             let SolveStep { strategy, .. } = res?;
@@ -489,7 +489,7 @@ mod tests {
         // Solver can solve the input grid
         let mut solver = Solver::with_strategies(
             grid.clone(),
-            StrategyEnum::default_solver_strategies_no_brute_force(),
+            StrategySet::default_solver_strategies_no_brute_force(),
         );
         assert_fallible_solver_single_solution(&mut solver, &grid);
 
@@ -505,7 +505,7 @@ mod tests {
         // Solver can no longer solve it
         let mut solver = Solver::with_strategies(
             ambiguous_grid.clone(),
-            StrategyEnum::default_solver_strategies_no_brute_force(),
+            StrategySet::default_solver_strategies_no_brute_force(),
         );
         assert!(solver.try_solve().unwrap().is_none());
 
@@ -515,7 +515,7 @@ mod tests {
                 pos: Position::top_left(),
                 candidate: Value::default(),
             })
-            .strategies(StrategyEnum::default_solver_strategies_no_brute_force())
+            .strategies(StrategySet::default_solver_strategies_no_brute_force())
             .build();
         assert_fallible_solver_single_solution(&mut solver, &grid);
     }
@@ -525,7 +525,7 @@ mod tests {
         for grid in crate::samples::base_2() {
             let mut solver = Solver::with_strategies(
                 grid.clone(),
-                StrategyEnum::default_solver_strategies_no_brute_force(),
+                StrategySet::default_solver_strategies_no_brute_force(),
             );
             let solve_steps = solver.solve_path().collect::<Result<Vec<_>>>().unwrap();
             println!(
@@ -541,7 +541,7 @@ mod tests {
         for grid in crate::samples::base_2() {
             let mut solver = Solver::with_strategies(
                 grid.clone(),
-                StrategyEnum::default_solver_strategies_no_brute_force(),
+                StrategySet::default_solver_strategies_no_brute_force(),
             );
             let all_possible_solve_steps =
                 solver.solve_path_all().collect::<Result<Vec<_>>>().unwrap();
