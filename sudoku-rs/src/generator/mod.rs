@@ -894,8 +894,6 @@ mod tests {
         //  reduce search space
         #[test]
         fn test_strategies() {
-            use crate::solver::strategic::strategies::*;
-
             fn generate(target: PruningTarget, strategies: StrategySet) -> Grid<Base3> {
                 Generator::<Base3>::with_pruning(PruningSettings {
                     strategies,
@@ -912,7 +910,7 @@ mod tests {
                 let grid = generate(target, StrategySet::with_all(false));
                 assert!(grid.is_solved());
 
-                let default_strategies = StrategyEnum::default_solver_strategies();
+                let default_strategies = StrategySet::default_solver_strategies_no_brute_force();
                 for i in 1..default_strategies.count() {
                     let strategies = default_strategies.iter_strategies().take(i).collect();
                     let grid = generate(target, strategies);

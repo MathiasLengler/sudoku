@@ -66,6 +66,7 @@ export const GENERATE_FORM_DEFAULT_VALUES = {
         "NakedPairs",
         "LockedSets",
         "GroupIntersectionBoth",
+        "XWing",
     ]),
     setAllDirectCandidates: true,
     useSeed: false,

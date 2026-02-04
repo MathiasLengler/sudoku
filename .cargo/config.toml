@@ -1,3 +1,5 @@
+# WASM
+
 # Reference: https://github.com/RReverser/wasm-bindgen-rayon/tree/main?tab=readme-ov-file#using-config-files
 [target.wasm32-unknown-unknown]
 rustflags = [
@@ -26,3 +28,20 @@ rustflags = [
 # Workaround: pass as CLI args to wasm-pack
 #[unstable]
 #build-std = ["panic_abort", "std"]
+
+# LINUX
+# https://doc.rust-lang.org/cargo/guide/build-performance.html#use-an-alternative-linker
+
+# mold: slower than wild
+# [target.'cfg(target_os = "linux")']
+# rustflags = ["-C", "link-arg=-fuse-ld=mold"]
+
+# wild
+# `cargo binstall wild-linker`
+[target.x86_64-unknown-linux-gnu]
+linker = "clang"
+rustflags = ["-Clink-arg=--ld-path=wild"]
+
+# https://doc.rust-lang.org/cargo/guide/build-performance.html#enable-the-experimental-parallel-frontend
+[build]
+rustflags = "-Zthreads=8"

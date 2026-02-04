@@ -22,7 +22,6 @@ serde = { workspace = true, features = ["derive"] }
 serde_repr = "0.1.20"
 enum_dispatch = "0.3.13"
 getrandom = "0.3.4"
-indexmap = "2.11.4"
 itertools = "0.14.0"
 ndarray = { version = "0.17.1", features = ["serde"] }
 num = "0.4.3"
@@ -83,10 +82,10 @@ required-features = ["parallel"]
 name = "cell_world_playground"
 required-features = ["parallel"]
 [[bin]]
-name = "generator"
+name = "generator_single"
 required-features = ["log", "parallel", "terminal"]
 [[bin]]
-name = "goal_generator"
+name = "generator_multi"
 required-features = ["log", "parallel", "terminal"]
 [[bin]]
 name = "generate_histogram"

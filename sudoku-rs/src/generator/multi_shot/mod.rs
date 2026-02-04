@@ -50,12 +50,6 @@ pub enum GridMetric {
     //  We need to somehow weigh the available strategies by their difficulty.
     /// The average number of strategies available to make progress. Scaled by a factor of `STRATEGY_SCORE_FIXED_POINT_SCALE`.
     StrategyAverageOptions,
-
-    // Based on the PoC bin `solve_graph` - a graph of all possible solve paths.
-    /// The average [branching factor](https://en.wikipedia.org/wiki/Branching_factor) of the strategy solve graph.
-    /// In other words: the average number of strategies available to make progress across all nodes in the solve graph.
-    #[deprecated]
-    SolveGraphAverageBranchingFactor,
     /// The number of steps taken by `sat::Solver` to solve the grid.
     SatStepCount,
     /// The number of backtracking steps taken by `backtracking::Solver` to solve the grid.
@@ -64,12 +58,7 @@ pub enum GridMetric {
     GridGivensCount,
     /// The number of candidates in the grid.
     GridDirectCandidatesCount,
-    // Use normalized metrics instead of standard deviation? (0-1, gini coefficient etc.)
     /// The standard deviation of the givens value counts in the grid.
-    /// E.g. how evenly distributed the givens values are.
-    /// Example:
-    /// 3 givens for each number => 1
-    /// Only 2s and 3s => >>1
     GridGivensValueCountDeviation,
 }
 
@@ -112,7 +101,6 @@ impl GridMetric {
                 .solve_path_all()
                 .average_options()?
                 .context(STRATEGIC_SOLVER_ERROR_MESSAGE)?,
-            GridMetric::SolveGraphAverageBranchingFactor => todo!(),
             GridMetric::SatStepCount => {
                 let mut solver = sat::Solver::new(grid);
                 solver
@@ -192,9 +180,10 @@ mod dynamic_settings {
 
     use crate::error::Error;
     use crate::generator::DynamicGeneratorSettings;
+    use std::fmt::Display;
 
     #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
-    #[derive(Debug, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct DynamicMultiShotGeneratorSettings {
         pub generator_settings: DynamicGeneratorSettings,
@@ -202,6 +191,17 @@ mod dynamic_settings {
         pub metric: GridMetric,
         pub optimize: GoalOptimization,
         pub parallel: bool,
+    }
+
+    // For `generator_multi` default CLI argument
+    impl Display for DynamicMultiShotGeneratorSettings {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(
+                f,
+                "{}",
+                serde_json::to_string_pretty(self).map_err(|_| std::fmt::Error)?
+            )
+        }
     }
 
     impl<Base: SudokuBase> TryFrom<DynamicMultiShotGeneratorSettings>
@@ -612,7 +612,7 @@ mod tests {
 
                 let grid_sample = samples::grid::<Base>(grid_sample_index);
 
-                let strategies = StrategyEnum::default_solver_strategies_no_brute_force();
+                let strategies = StrategySet::default_solver_strategies_no_brute_force();
 
                 assert_eq!(
                     grid_metric.evaluate(&grid_sample, strategies).unwrap(),
@@ -653,7 +653,7 @@ mod tests {
 
                 let grid_sample = samples::grid::<Base>(grid_sample_index);
 
-                let strategies = StrategyEnum::default_solver_strategies_no_brute_force();
+                let strategies = StrategySet::default_solver_strategies_no_brute_force();
 
                 assert_eq!(
                     grid_metric.evaluate(&grid_sample, strategies).unwrap(),
@@ -668,7 +668,7 @@ mod tests {
         type Base = Base2;
         let generator_settings = GeneratorSettings {
             prune: Some(PruningSettings {
-                strategies: StrategyEnum::default_solver_strategies_no_brute_force(),
+                strategies: StrategySet::default_solver_strategies_no_brute_force(),
                 ..Default::default()
             }),
             solution: None,
@@ -698,7 +698,7 @@ mod tests {
 
         let generator_settings = GeneratorSettings {
             prune: Some(PruningSettings {
-                strategies: StrategyEnum::default_solver_strategies_no_brute_force(),
+                strategies: StrategySet::default_solver_strategies_no_brute_force(),
                 ..Default::default()
             }),
             solution: None,

@@ -1,9 +1,6 @@
 use super::{Strategy, impls::*};
+use crate::error::{Error, Result};
 use crate::solver::strategic::strategies::map::StrategyMap;
-use crate::{
-    error::{Error, Result},
-    solver::strategic::strategies::selection::StrategySet,
-};
 use anyhow::format_err;
 use enum_dispatch::enum_dispatch;
 use serde::de::Visitor;
@@ -16,10 +13,11 @@ const STRATEGY_COUNT: usize = 9;
 
 pub mod map {
     use super::*;
+    use crate::solver::strategic::strategies::StrategyScore;
 
     /// A map of `StrategyEnum` to `T`.
     #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
-    #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
+    #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
     pub struct StrategyMap<T> {
         pub naked_singles: T,
         pub hidden_singles: T,
@@ -112,6 +110,12 @@ pub mod map {
             StrategyEnum::all().into_iter().zip(self.into_values())
         }
     }
+
+    impl Default for StrategyMap<StrategyScore> {
+        fn default() -> Self {
+            Self::with_all(0)
+        }
+    }
 }
 
 pub mod selection {
@@ -144,6 +148,12 @@ pub mod selection {
         }
     }
 
+    impl Default for StrategySet {
+        fn default() -> Self {
+            Self::default_solver_strategies()
+        }
+    }
+
     impl StrategySet {
         pub const fn with_single(strategy: StrategyEnum) -> Self {
             let mut this = Self::with_all(false);
@@ -156,6 +166,25 @@ pub mod selection {
                 .into_iter()
                 .map(Into::<usize>::into)
                 .sum()
+        }
+
+        pub const fn default_solver_strategies() -> Self {
+            StrategySet {
+                naked_singles: true,
+                hidden_singles: true,
+                naked_pairs: true,
+                locked_sets: true,
+                group_intersection_both: true,
+                x_wing: true,
+                brute_force: true,
+                ..StrategySet::with_all(false)
+            }
+        }
+
+        pub fn default_solver_strategies_no_brute_force() -> Self {
+            let mut strategies = Self::default_solver_strategies();
+            strategies.brute_force = false;
+            strategies
         }
     }
 
@@ -205,25 +234,6 @@ impl StrategyEnum {
             XWing.into(),
             BruteForce.into(),
         ]
-    }
-
-    pub const fn default_solver_strategies() -> StrategySet {
-        StrategySet {
-            naked_singles: true,
-            hidden_singles: true,
-            naked_pairs: true,
-            locked_sets: true,
-            group_intersection_both: true,
-            x_wing: true,
-            brute_force: true,
-            ..StrategySet::with_all(false)
-        }
-    }
-
-    pub fn default_solver_strategies_no_brute_force() -> StrategySet {
-        let mut strategies = Self::default_solver_strategies();
-        strategies.brute_force = false;
-        strategies
     }
 
     fn variant_index(&self) -> u32 {
