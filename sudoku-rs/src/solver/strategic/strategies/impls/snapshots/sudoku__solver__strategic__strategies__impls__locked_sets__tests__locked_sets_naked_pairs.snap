@@ -1,0 +1,9 @@
+---
+source: sudoku-rs/src/solver/strategic/strategies/impls/locked_sets.rs
+expression: deductions.to_string()
+---
+r0c3: delete candidate 1, r0c4: delete candidates 1,6, r0c5: delete candidate 6, because of: 
+r2c0: delete candidate 1, because of: 
+r2c0: delete candidate 7, r2c4: delete candidates 6,7, because of: 
+r3c4: delete candidate 8, r5c4: delete candidate 8, because of: 
+r3c7: delete candidates 5,8, r5c8: delete candidate 5, because of:

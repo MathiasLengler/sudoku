@@ -1,0 +1,55 @@
+---
+source: sudoku-rs/src/solver/strategic/mod.rs
+expression: output
+---
+Strategy NakedSingles:
+r0c2: set value 2, because of: r0c2: candidate 2
+r0c6: set value 9, because of: r0c6: candidate 9
+r2c4: set value 7, because of: r2c4: candidate 7
+r4c0: set value 7, because of: r4c0: candidate 7
+r4c2: set value 1, because of: r4c2: candidate 1
+r7c1: set value 4, because of: r7c1: candidate 4
+r7c5: set value 1, because of: r7c5: candidate 1
+r8c1: set value 8, because of: r8c1: candidate 8
+r8c4: set value 5, because of: r8c4: candidate 5
+r8c7: set value 9, because of: r8c7: candidate 9
+Strategy NakedSingles:
+r0c0: set value 6, because of: r0c0: candidate 6
+r0c3: set value 4, because of: r0c3: candidate 4
+r1c2: set value 8, because of: r1c2: candidate 8
+r1c4: set value 6, because of: r1c4: candidate 6
+r2c1: set value 1, because of: r2c1: candidate 1
+r2c3: set value 9, because of: r2c3: candidate 9
+r2c7: set value 2, because of: r2c7: candidate 2
+r3c1: set value 2, because of: r3c1: candidate 2
+r3c5: set value 6, because of: r3c5: candidate 6
+r4c8: set value 3, because of: r4c8: candidate 3
+r5c4: set value 1, because of: r5c4: candidate 1
+r5c5: set value 9, because of: r5c5: candidate 9
+r6c4: set value 4, because of: r6c4: candidate 4
+r6c5: set value 8, because of: r6c5: candidate 8
+r7c0: set value 5, because of: r7c0: candidate 5
+r7c6: set value 3, because of: r7c6: candidate 3
+Strategy NakedSingles:
+r1c0: set value 9, because of: r1c0: candidate 9
+r1c1: set value 7, because of: r1c1: candidate 7
+r1c5: set value 2, because of: r1c5: candidate 2
+r1c7: set value 3, because of: r1c7: candidate 3
+r1c8: set value 5, because of: r1c8: candidate 5
+r3c2: set value 5, because of: r3c2: candidate 5
+r3c7: set value 4, because of: r3c7: candidate 4
+r4c7: set value 6, because of: r4c7: candidate 6
+r5c1: set value 3, because of: r5c1: candidate 3
+r5c3: set value 5, because of: r5c3: candidate 5
+r5c6: set value 8, because of: r5c6: candidate 8
+r5c8: set value 2, because of: r5c8: candidate 2
+r6c0: set value 2, because of: r6c0: candidate 2
+r6c1: set value 6, because of: r6c1: candidate 6
+r6c3: set value 3, because of: r6c3: candidate 3
+r6c8: set value 1, because of: r6c8: candidate 1
+Strategy NakedSingles:
+r3c0: set value 8, because of: r3c0: candidate 8
+r3c3: set value 7, because of: r3c3: candidate 7
+r3c6: set value 1, because of: r3c6: candidate 1
+r5c0: set value 4, because of: r5c0: candidate 4
+r6c6: set value 7, because of: r6c6: candidate 7

@@ -109,6 +109,13 @@ mod tests {
     }
 
     #[test]
+    fn test_render_snapshots() {
+        for (i, grid) in samples::base_3().into_iter().enumerate() {
+            insta::assert_snapshot!(format!("values_grid_base3_{i}"), ValuesGrid.render(&grid));
+        }
+    }
+
+    #[test]
     fn test_from_givens_grid() {
         let cells = ValuesGrid
             .parse(indoc! {"

@@ -552,4 +552,58 @@ mod tests {
             // TODO: assert
         }
     }
+
+    mod snapshots {
+        use super::*;
+        use insta::assert_snapshot;
+
+        #[test]
+        fn test_solve_path_base2() {
+            for (i, grid) in crate::samples::base_2().into_iter().enumerate() {
+                let mut solver = Solver::with_strategies(
+                    grid,
+                    StrategySet::default_solver_strategies_no_brute_force(),
+                );
+                let solve_steps = solver.solve_path().collect::<Result<Vec<_>>>().unwrap();
+                let output = solve_steps.into_iter().join("\n");
+                assert_snapshot!(format!("solve_path_base2_grid_{i}"), output);
+            }
+        }
+
+        #[test]
+        fn test_solve_path_all_base2() {
+            for (i, grid) in crate::samples::base_2().into_iter().enumerate() {
+                let mut solver = Solver::with_strategies(
+                    grid,
+                    StrategySet::default_solver_strategies_no_brute_force(),
+                );
+                let all_possible_solve_steps =
+                    solver.solve_path_all().collect::<Result<Vec<_>>>().unwrap();
+                let output = all_possible_solve_steps.into_iter().flatten().join("\n");
+                assert_snapshot!(format!("solve_path_all_base2_grid_{i}"), output);
+            }
+        }
+
+        #[test]
+        fn test_solve_path_base3() {
+            let grid = crate::samples::base_3().into_iter().next().unwrap();
+            let mut solver = Solver::with_strategies(
+                grid,
+                StrategySet::default_solver_strategies_no_brute_force(),
+            );
+            let solve_steps = solver.solve_path().collect::<Result<Vec<_>>>().unwrap();
+            let output = solve_steps.into_iter().join("\n");
+            assert_snapshot!(output);
+        }
+
+        #[test]
+        fn test_solve_path_base3_all_samples() {
+            for (i, grid) in crate::samples::base_3().into_iter().enumerate() {
+                let mut solver = Solver::new(grid);
+                let solve_steps = solver.solve_path().collect::<Result<Vec<_>>>().unwrap();
+                let output = solve_steps.into_iter().join("\n");
+                assert_snapshot!(format!("solve_path_base3_grid_{i}"), output);
+            }
+        }
+    }
 }

@@ -1,0 +1,5 @@
+---
+source: sudoku-rs/src/solver/strategic/strategies/impls/x_wing.rs
+expression: deductions.to_string()
+---
+r0c3: delete candidate 7, r4c3: delete candidate 7, r7c3: delete candidate 7, r7c7: delete candidate 7, r8c3: delete candidate 7, r8c7: delete candidate 7, because of: r1c3: candidate 7, r1c7: candidate 7, r5c3: candidate 7, r5c7: candidate 7

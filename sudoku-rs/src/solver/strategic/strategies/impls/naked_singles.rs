@@ -69,4 +69,13 @@ mod tests {
 
         assert!(grid.is_solved());
     }
+
+    #[test]
+    fn test_naked_singles_snapshot() {
+        let mut grid = samples::base_2().first().unwrap().clone();
+        grid.set_all_direct_candidates();
+        grid.fix_all_values();
+        let deductions = NakedSingles.execute(&grid).unwrap();
+        insta::assert_snapshot!(deductions);
+    }
 }

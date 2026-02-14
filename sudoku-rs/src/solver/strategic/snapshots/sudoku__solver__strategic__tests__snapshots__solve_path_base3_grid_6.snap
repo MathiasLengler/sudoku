@@ -1,0 +1,109 @@
+---
+source: sudoku-rs/src/solver/strategic/mod.rs
+expression: output
+---
+Strategy HiddenSingles:
+r3c4: set value 9, because of: r3c4: candidate 9
+r3c7: set value 5, because of: r3c7: candidate 5
+r4c0: set value 9, because of: r4c0: candidate 9
+r8c2: set value 8, because of: r8c2: candidate 8
+r8c6: set value 9, because of: r8c6: candidate 9
+Strategy HiddenSingles:
+r6c5: set value 9, because of: r6c5: candidate 9
+Strategy LockedSets:
+r1c1: delete candidates 1,2,7, r1c7: delete candidates 1,3,4, because of: 
+r7c1: delete candidates 2,7, r8c1: delete candidates 1,7, because of: 
+Strategy NakedPairs:
+r0c1: delete candidate 5, r2c1: delete candidate 5, r5c1: delete candidate 3, because of: r7c1: candidates 3,5, r8c1: candidates 3,5
+Strategy GroupIntersectionBoth:
+r0c2: delete candidate 2, r1c2: delete candidate 2, because of: r3c2: candidate 2, r4c2: candidate 2
+r0c7: delete candidate 4, r2c7: delete candidate 4, because of: r0c8: candidate 4, r1c8: candidate 4
+r0c7: delete candidate 4, r2c7: delete candidate 4, because of: r7c7: candidate 4, r8c7: candidate 4
+r2c0: delete candidate 4, because of: r0c2: candidate 4, r1c2: candidate 4, r2c2: candidate 4
+r2c0: delete candidate 4, because of: r7c0: candidate 4, r8c0: candidate 4
+r4c7: delete candidate 7, r5c7: delete candidate 7, because of: r3c8: candidate 7, r4c8: candidate 7
+r4c7: delete candidate 7, r5c7: delete candidate 7, because of: r6c7: candidate 7, r7c7: candidate 7, r8c7: candidate 7
+r6c1: delete candidate 2, because of: r6c0: candidate 2, r7c0: candidate 2
+Strategy HiddenSingles:
+r0c1: set value 2, because of: r0c1: candidate 2
+r1c3: set value 2, because of: r1c3: candidate 2
+Strategy HiddenSingles:
+r0c7: set value 9, because of: r0c7: candidate 9
+r1c1: set value 9, because of: r1c1: candidate 9
+Strategy NakedSingles:
+r1c7: set value 6, because of: r1c7: candidate 6
+Strategy HiddenSingles:
+r2c1: set value 6, because of: r2c1: candidate 6
+r4c6: set value 6, because of: r4c6: candidate 6
+r5c3: set value 6, because of: r5c3: candidate 6
+Strategy HiddenSingles:
+r7c5: set value 6, because of: r7c5: candidate 6
+Strategy LockedSets:
+r2c2: delete candidates 1,7, r2c5: delete candidates 1,3,7,8, because of: 
+Strategy GroupIntersectionBoth:
+r2c0: delete candidate 1, r2c4: delete candidate 1, because of: r2c6: candidate 1, r2c7: candidate 1
+Strategy NakedSingles:
+r2c0: set value 7, because of: r2c0: candidate 7
+Strategy HiddenSingles:
+r6c1: set value 7, because of: r6c1: candidate 7
+Strategy NakedSingles:
+r5c1: set value 1, because of: r5c1: candidate 1
+Strategy HiddenSingles:
+r1c4: set value 1, because of: r1c4: candidate 1
+Strategy NakedSingles:
+r1c2: set value 4, because of: r1c2: candidate 4
+Strategy NakedSingles:
+r1c8: set value 3, because of: r1c8: candidate 3
+r2c2: set value 5, because of: r2c2: candidate 5
+Strategy NakedSingles:
+r0c2: set value 1, because of: r0c2: candidate 1
+r1c5: set value 7, because of: r1c5: candidate 7
+r2c5: set value 4, because of: r2c5: candidate 4
+r4c8: set value 7, because of: r4c8: candidate 7
+Strategy NakedSingles:
+r3c8: set value 8, because of: r3c8: candidate 8
+Strategy NakedSingles:
+r0c8: set value 4, because of: r0c8: candidate 4
+r5c7: set value 3, because of: r5c7: candidate 3
+Strategy NakedSingles:
+r5c2: set value 7, because of: r5c2: candidate 7
+Strategy NakedSingles:
+r5c4: set value 8, because of: r5c4: candidate 8
+Strategy NakedSingles:
+r2c4: set value 3, because of: r2c4: candidate 3
+Strategy NakedSingles:
+r7c4: set value 7, because of: r7c4: candidate 7
+Strategy HiddenSingles:
+r0c5: set value 8, because of: r0c5: candidate 8
+r3c3: set value 7, because of: r3c3: candidate 7
+r4c3: set value 4, because of: r4c3: candidate 4
+r8c7: set value 7, because of: r8c7: candidate 7
+Strategy NakedSingles:
+r0c3: set value 5, because of: r0c3: candidate 5
+Strategy HiddenSingles:
+r7c1: set value 5, because of: r7c1: candidate 5
+r7c7: set value 4, because of: r7c7: candidate 4
+r8c0: set value 4, because of: r8c0: candidate 4
+r8c5: set value 5, because of: r8c5: candidate 5
+Strategy NakedSingles:
+r7c0: set value 2, because of: r7c0: candidate 2
+r8c1: set value 3, because of: r8c1: candidate 3
+Strategy NakedSingles:
+r6c0: set value 1, because of: r6c0: candidate 1
+r7c6: set value 8, because of: r7c6: candidate 8
+r8c3: set value 1, because of: r8c3: candidate 1
+Strategy NakedSingles:
+r2c6: set value 1, because of: r2c6: candidate 1
+r6c3: set value 8, because of: r6c3: candidate 8
+r6c7: set value 2, because of: r6c7: candidate 2
+r7c3: set value 3, because of: r7c3: candidate 3
+Strategy NakedSingles:
+r2c7: set value 8, because of: r2c7: candidate 8
+r3c6: set value 2, because of: r3c6: candidate 2
+r4c7: set value 1, because of: r4c7: candidate 1
+Strategy NakedSingles:
+r3c2: set value 3, because of: r3c2: candidate 3
+r4c5: set value 3, because of: r4c5: candidate 3
+Strategy NakedSingles:
+r3c5: set value 1, because of: r3c5: candidate 1
+r4c2: set value 2, because of: r4c2: candidate 2
