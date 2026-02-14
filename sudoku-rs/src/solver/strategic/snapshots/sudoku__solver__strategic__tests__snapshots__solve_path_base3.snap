@@ -1,5 +1,5 @@
 ---
 source: sudoku-rs/src/solver/strategic/mod.rs
-expression: output
+expression: solve_steps
 ---
-
+[]

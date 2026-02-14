@@ -1,6 +1,0 @@
----
-source: sudoku-rs/src/solver/strategic/strategies/impls/naked_pairs.rs
-expression: deductions.to_string()
----
-r0c4: delete candidates 1,2, because of: r0c0: candidates 1,2, r0c1: candidates 1,2
-r0c4: delete candidates 3,4, because of: r0c2: candidates 3,4, r0c3: candidates 3,4

@@ -1,5 +1,57 @@
 ---
 source: sudoku-rs/src/solver/strategic/strategies/impls/x_wing.rs
-expression: deductions.to_string()
+expression: "TransportDeductions::from(deductions)"
 ---
-r4c1: delete candidate 2, r4c2: delete candidate 2, r4c6: delete candidate 2, r4c8: delete candidate 2, r8c3: delete candidate 2, r8c8: delete candidate 2, because of: r4c4: candidate 2, r4c7: candidate 2, r8c4: candidate 2, r8c7: candidate 2
+deductions:
+  - reasons:
+      - position:
+          row: 4
+          column: 4
+        candidates:
+          - 2
+      - position:
+          row: 4
+          column: 7
+        candidates:
+          - 2
+      - position:
+          row: 8
+          column: 4
+        candidates:
+          - 2
+      - position:
+          row: 8
+          column: 7
+        candidates:
+          - 2
+    actions:
+      - position:
+          row: 4
+          column: 1
+        deleteCandidates:
+          - 2
+      - position:
+          row: 4
+          column: 2
+        deleteCandidates:
+          - 2
+      - position:
+          row: 4
+          column: 6
+        deleteCandidates:
+          - 2
+      - position:
+          row: 4
+          column: 8
+        deleteCandidates:
+          - 2
+      - position:
+          row: 8
+          column: 3
+        deleteCandidates:
+          - 2
+      - position:
+          row: 8
+          column: 8
+        deleteCandidates:
+          - 2

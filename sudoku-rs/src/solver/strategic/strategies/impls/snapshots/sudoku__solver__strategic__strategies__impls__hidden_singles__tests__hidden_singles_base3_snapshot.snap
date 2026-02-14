@@ -1,8 +1,0 @@
----
-source: sudoku-rs/src/solver/strategic/strategies/impls/hidden_singles.rs
-expression: deductions
----
-r0c4: set value 8, because of: r0c4: candidate 8
-r3c8: set value 6, because of: r3c8: candidate 6
-r5c5: set value 4, because of: r5c5: candidate 4
-r8c6: set value 4, because of: r8c6: candidate 4

@@ -644,24 +644,28 @@ mod tests {
 ╚═══════════╩═══════════╩═══════════╝"
             );
         }
-        #[test]
-        fn test_render_snapshots_compact() {
-            for (i, grid) in samples::base_3().into_iter().enumerate() {
-                insta::assert_snapshot!(
-                    format!("candidates_plain_compact_base3_{i}"),
-                    CandidatesGridPlain.render(&grid)
-                );
-            }
-        }
+        mod snapshots {
+            use super::*;
 
-        #[test]
-        fn test_render_snapshots_with_candidates() {
-            for (i, mut grid) in samples::base_3().into_iter().enumerate() {
-                grid.set_all_direct_candidates();
-                insta::assert_snapshot!(
-                    format!("candidates_plain_base3_{i}"),
-                    CandidatesGridPlain.render(&grid)
-                );
+            #[test]
+            fn test_render_compact_base3() {
+                for (i, grid) in samples::base_3().into_iter().enumerate() {
+                    insta::assert_snapshot!(
+                        format!("candidates_plain_compact_base3_{i}"),
+                        CandidatesGridPlain.render(&grid)
+                    );
+                }
+            }
+
+            #[test]
+            fn test_render_with_candidates_base3() {
+                for (i, mut grid) in samples::base_3().into_iter().enumerate() {
+                    grid.set_all_direct_candidates();
+                    insta::assert_snapshot!(
+                        format!("candidates_plain_base3_{i}"),
+                        CandidatesGridPlain.render(&grid)
+                    );
+                }
             }
         }
 

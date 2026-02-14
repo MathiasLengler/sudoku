@@ -118,24 +118,29 @@ mod tests {
         assert_deductions_with_grid(&deductions, &expected_deductions, &mut grid);
     }
 
-    #[test]
-    fn test_hidden_singles_base2_snapshot() {
-        let mut grid = samples::base_2().into_iter().nth(1).unwrap();
-        grid.set_all_direct_candidates();
-        grid.fix_all_values();
-        let deductions = HiddenSingles.execute(&grid).unwrap();
-        insta::assert_snapshot!(deductions);
-    }
+    mod snapshots {
+        use super::*;
+        use crate::solver::strategic::deduction::transport::TransportDeductions;
 
-    #[test]
-    fn test_hidden_singles_base3_snapshot() {
-        let mut grid: Grid<Base3> =
-            "000000300000071500002400018000009040094618230610700000430897600008140000009000000"
-                .parse()
-                .unwrap();
-        grid.set_all_direct_candidates();
-        grid.fix_all_values();
-        let deductions = HiddenSingles.execute(&grid).unwrap();
-        insta::assert_snapshot!(deductions);
+        #[test]
+        fn test_hidden_singles_base2() {
+            let mut grid = samples::base_2().into_iter().nth(1).unwrap();
+            grid.set_all_direct_candidates();
+            grid.fix_all_values();
+            let deductions = HiddenSingles.execute(&grid).unwrap();
+            insta::assert_yaml_snapshot!(TransportDeductions::from(deductions));
+        }
+
+        #[test]
+        fn test_hidden_singles_base3() {
+            let mut grid: Grid<Base3> =
+                "000000300000071500002400018000009040094618230610700000430897600008140000009000000"
+                    .parse()
+                    .unwrap();
+            grid.set_all_direct_candidates();
+            grid.fix_all_values();
+            let deductions = HiddenSingles.execute(&grid).unwrap();
+            insta::assert_yaml_snapshot!(TransportDeductions::from(deductions));
+        }
     }
 }

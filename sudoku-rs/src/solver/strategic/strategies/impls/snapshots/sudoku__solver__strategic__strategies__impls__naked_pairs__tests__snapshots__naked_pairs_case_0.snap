@@ -1,37 +1,35 @@
 ---
-source: sudoku-rs/src/solver/strategic/strategies/impls/x_wing.rs
+source: sudoku-rs/src/solver/strategic/strategies/impls/naked_pairs.rs
 expression: "TransportDeductions::from(deductions)"
 ---
 deductions:
   - reasons:
       - position:
-          row: 1
-          column: 1
+          row: 0
+          column: 0
         candidates:
           - 1
-      - position:
-          row: 1
-          column: 3
-        candidates:
-          - 1
-      - position:
-          row: 2
-          column: 1
-        candidates:
-          - 1
-      - position:
-          row: 2
-          column: 3
-        candidates:
-          - 1
-    actions:
+          - 6
       - position:
           row: 0
           column: 1
+        candidates:
+          - 1
+          - 6
+    actions:
+      - position:
+          row: 0
+          column: 2
         deleteCandidates:
           - 1
       - position:
-          row: 3
+          row: 0
           column: 3
         deleteCandidates:
           - 1
+          - 6
+      - position:
+          row: 0
+          column: 4
+        deleteCandidates:
+          - 6

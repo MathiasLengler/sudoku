@@ -10,7 +10,8 @@
       "Bash(ls:*)",
       "Bash(cargo test:*)",
       "Bash(just lint:*)",
-      "Bash(cargo insta test:*)"
+      "Bash(cargo insta test:*)",
+      "Bash(just clippy)"
     ]
   }
 }

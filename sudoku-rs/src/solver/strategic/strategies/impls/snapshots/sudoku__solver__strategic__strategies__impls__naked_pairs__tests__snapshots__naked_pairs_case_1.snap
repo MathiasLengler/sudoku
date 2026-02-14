@@ -1,0 +1,45 @@
+---
+source: sudoku-rs/src/solver/strategic/strategies/impls/naked_pairs.rs
+expression: "TransportDeductions::from(deductions)"
+---
+deductions:
+  - reasons:
+      - position:
+          row: 0
+          column: 0
+        candidates:
+          - 1
+          - 2
+      - position:
+          row: 0
+          column: 1
+        candidates:
+          - 1
+          - 2
+    actions:
+      - position:
+          row: 0
+          column: 4
+        deleteCandidates:
+          - 1
+          - 2
+  - reasons:
+      - position:
+          row: 0
+          column: 2
+        candidates:
+          - 3
+          - 4
+      - position:
+          row: 0
+          column: 3
+        candidates:
+          - 3
+          - 4
+    actions:
+      - position:
+          row: 0
+          column: 4
+        deleteCandidates:
+          - 3
+          - 4

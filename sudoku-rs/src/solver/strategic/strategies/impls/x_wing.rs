@@ -424,6 +424,7 @@ mod tests {
 
     mod snapshots {
         use super::*;
+        use crate::solver::strategic::deduction::transport::TransportDeductions;
 
         #[test]
         fn test_synthetic_base2_row_to_column_snapshot() {
@@ -439,7 +440,7 @@ mod tests {
                 grid[pos] = Cell::with_candidates(grid[pos].to_candidates());
             }
             let deductions = XWing.execute(&grid).unwrap();
-            insta::assert_snapshot!(deductions.to_string());
+            insta::assert_yaml_snapshot!(TransportDeductions::from(deductions));
         }
 
         #[test]
@@ -452,9 +453,9 @@ mod tests {
             for (i, grid_str) in grids.into_iter().enumerate() {
                 let grid: Grid<Base3> = grid_str.parse().unwrap();
                 let deductions = XWing.execute(&grid).unwrap();
-                insta::assert_snapshot!(
+                insta::assert_yaml_snapshot!(
                     format!("x_wing_sudokuwiki_{i}"),
-                    deductions.to_string()
+                    TransportDeductions::from(deductions)
                 );
             }
         }

@@ -70,12 +70,17 @@ mod tests {
         assert!(grid.is_solved());
     }
 
-    #[test]
-    fn test_naked_singles_snapshot() {
-        let mut grid = samples::base_2().first().unwrap().clone();
-        grid.set_all_direct_candidates();
-        grid.fix_all_values();
-        let deductions = NakedSingles.execute(&grid).unwrap();
-        insta::assert_snapshot!(deductions);
+    mod snapshots {
+        use super::*;
+        use crate::solver::strategic::deduction::transport::TransportDeductions;
+
+        #[test]
+        fn test_naked_singles() {
+            let mut grid = samples::base_2().first().unwrap().clone();
+            grid.set_all_direct_candidates();
+            grid.fix_all_values();
+            let deductions = NakedSingles.execute(&grid).unwrap();
+            insta::assert_yaml_snapshot!(TransportDeductions::from(deductions));
+        }
     }
 }
