@@ -168,10 +168,10 @@ mod tests {
 
     mod all_values_fixed {
         use super::*;
-        test_all_sample_grids!(|grid| {
+        test_all_sample_grids!(|grid, name| {
             assert!(
                 grid.all_unfixed_value_positions().is_empty(),
-                "Not all values are fixed in grid:\n{grid}"
+                "Not all values are fixed in grid {name}:\n{grid}"
             );
         });
     }

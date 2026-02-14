@@ -26,6 +26,9 @@ test-cov *test-args:
 test-cov-html *test-args:
     cargo llvm-cov nextest --branch --html --open -- {{ test-args }}
 
+test-insta-accept:
+    cargo insta test --unreferenced auto --accept
+
 test-insta-prune:
     cargo insta test --unreferenced auto
 

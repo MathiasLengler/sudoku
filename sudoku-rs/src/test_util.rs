@@ -80,6 +80,20 @@ macro_rules! test_all_sample_grids {
         });
     };
     (|$grid:ident, $name:ident| $block:block) => {
+        mod direct_candidates {
+            use super::*;
+
+            $crate::test_util::test_all_bases!({
+                #[allow(unused_mut)]
+                for (i, mut $grid) in Base::grid_samples().enumerate() {
+                    $grid.set_all_direct_candidates();
+
+                    let $name = format!("base_{}_sample_{i}_direct_candidates", Base::BASE);
+                    $block
+                }
+            });
+        }
+
         $crate::test_util::test_all_bases!({
             #[allow(unused_mut)]
             for (i, mut $grid) in Base::grid_samples().enumerate() {
@@ -87,6 +101,7 @@ macro_rules! test_all_sample_grids {
                 $block
             }
         });
+
         #[test]
         fn test_base_2_solved() {
             #[allow(unused_mut)]
