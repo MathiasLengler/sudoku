@@ -26,6 +26,12 @@ test-cov *test-args:
 test-cov-html *test-args:
     cargo llvm-cov nextest --branch --html --open -- {{ test-args }}
 
+test-insta-prune:
+    cargo insta test --unreferenced auto
+
+test-insta-review:
+    cargo insta review
+
 # Run clippy
 clippy: _clippy
 
