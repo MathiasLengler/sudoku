@@ -71,6 +71,40 @@ macro_rules! test_all_bases {
         }
     };
 }
+
+macro_rules! test_all_sample_grids {
+    (|$grid:ident| $block:block) => {
+        test_all_sample_grids!(|$grid, name| {
+            println!("Testing {name}");
+            $block
+        });
+    };
+    (|$grid:ident, $name:ident| $block:block) => {
+        $crate::test_util::test_all_bases!({
+            #[allow(unused_mut)]
+            for (i, mut $grid) in Base::grid_samples().enumerate() {
+                let $name = format!("base_{}_sample_{i}", Base::BASE);
+                $block
+            }
+        });
+        #[test]
+        fn test_base_2_solved() {
+            #[allow(unused_mut)]
+            let mut $grid = $crate::samples::base_2_solved();
+            let $name = "base_2_solved".to_owned();
+            $block
+        }
+        #[test]
+        fn test_base_2_candidates_coordinates() {
+            #[allow(unused_mut)]
+            let mut $grid = $crate::samples::base_2_candidates_coordinates();
+            let $name = "base_2_candidates_coordinates".to_owned();
+            $block
+        }
+    };
+}
+
 pub(crate) use test_all_bases;
+pub(crate) use test_all_sample_grids;
 pub(crate) use test_max_base3;
 pub(crate) use test_max_base4;
