@@ -74,37 +74,29 @@ mod tests {
 
         assert!(grid.is_solved());
     }
-    #[test]
-    fn test_base_3() {
-        let mut grid = samples::base_3().first().unwrap().clone();
-        grid.fix_all_values();
-        grid.set_all_direct_candidates();
-
-        let deductions = BruteForce.execute(&grid).unwrap();
-        deductions.apply(&mut grid).unwrap();
-        assert!(grid.is_solved());
-    }
 
     mod snapshots {
         use super::*;
         use crate::solver::strategic::deduction::transport::TransportDeductions;
 
-        #[test]
-        fn test_brute_force_base2() {
-            let mut grid = samples::base_2().first().unwrap().clone();
-            grid.fix_all_values();
-            grid.set_all_direct_candidates();
-            let deductions = BruteForce.execute(&grid).unwrap();
-            insta::assert_yaml_snapshot!(TransportDeductions::from(deductions));
-        }
+        mod execute {
+            use super::*;
+            use crate::test_util::test_max_base4;
 
-        #[test]
-        fn test_brute_force_base3() {
-            let mut grid = samples::base_3().first().unwrap().clone();
-            grid.fix_all_values();
-            grid.set_all_direct_candidates();
-            let deductions = BruteForce.execute(&grid).unwrap();
-            insta::assert_yaml_snapshot!(TransportDeductions::from(deductions));
+            test_max_base4!({
+                for (i, mut grid) in Base::grid_samples().enumerate() {
+                    grid.fix_all_values();
+                    grid.set_all_direct_candidates();
+
+                    let deductions = BruteForce.execute(&grid).unwrap();
+                    insta::assert_yaml_snapshot!(
+                        format!("base_{}_sample_{i}", Base::BASE),
+                        TransportDeductions::from(deductions.clone()),
+                    );
+                    deductions.apply(&mut grid).unwrap();
+                    assert!(grid.is_solved());
+                }
+            });
         }
     }
 }

@@ -1,0 +1,1754 @@
+---
+source: sudoku-rs/src/solver/strategic/strategies/impls/brute_force.rs
+expression: "TransportDeductions::from(deductions)"
+---
+deductions:
+  - reasons:
+      - position:
+          row: 0
+          column: 0
+        candidates:
+          - 16
+    actions:
+      - position:
+          row: 0
+          column: 0
+        setValue: 16
+  - reasons:
+      - position:
+          row: 0
+          column: 1
+        candidates:
+          - 9
+    actions:
+      - position:
+          row: 0
+          column: 1
+        setValue: 9
+  - reasons:
+      - position:
+          row: 0
+          column: 5
+        candidates:
+          - 7
+    actions:
+      - position:
+          row: 0
+          column: 5
+        setValue: 7
+  - reasons:
+      - position:
+          row: 0
+          column: 6
+        candidates:
+          - 4
+    actions:
+      - position:
+          row: 0
+          column: 6
+        setValue: 4
+  - reasons:
+      - position:
+          row: 0
+          column: 8
+        candidates:
+          - 10
+    actions:
+      - position:
+          row: 0
+          column: 8
+        setValue: 10
+  - reasons:
+      - position:
+          row: 0
+          column: 9
+        candidates:
+          - 3
+    actions:
+      - position:
+          row: 0
+          column: 9
+        setValue: 3
+  - reasons:
+      - position:
+          row: 0
+          column: 10
+        candidates:
+          - 8
+    actions:
+      - position:
+          row: 0
+          column: 10
+        setValue: 8
+  - reasons:
+      - position:
+          row: 0
+          column: 12
+        candidates:
+          - 12
+    actions:
+      - position:
+          row: 0
+          column: 12
+        setValue: 12
+  - reasons:
+      - position:
+          row: 0
+          column: 13
+        candidates:
+          - 2
+    actions:
+      - position:
+          row: 0
+          column: 13
+        setValue: 2
+  - reasons:
+      - position:
+          row: 0
+          column: 14
+        candidates:
+          - 5
+    actions:
+      - position:
+          row: 0
+          column: 14
+        setValue: 5
+  - reasons:
+      - position:
+          row: 0
+          column: 15
+        candidates:
+          - 13
+    actions:
+      - position:
+          row: 0
+          column: 15
+        setValue: 13
+  - reasons:
+      - position:
+          row: 1
+          column: 1
+        candidates:
+          - 6
+    actions:
+      - position:
+          row: 1
+          column: 1
+        setValue: 6
+  - reasons:
+      - position:
+          row: 1
+          column: 2
+        candidates:
+          - 2
+    actions:
+      - position:
+          row: 1
+          column: 2
+        setValue: 2
+  - reasons:
+      - position:
+          row: 1
+          column: 3
+        candidates:
+          - 15
+    actions:
+      - position:
+          row: 1
+          column: 3
+        setValue: 15
+  - reasons:
+      - position:
+          row: 1
+          column: 5
+        candidates:
+          - 10
+    actions:
+      - position:
+          row: 1
+          column: 5
+        setValue: 10
+  - reasons:
+      - position:
+          row: 1
+          column: 7
+        candidates:
+          - 3
+    actions:
+      - position:
+          row: 1
+          column: 7
+        setValue: 3
+  - reasons:
+      - position:
+          row: 1
+          column: 8
+        candidates:
+          - 9
+    actions:
+      - position:
+          row: 1
+          column: 8
+        setValue: 9
+  - reasons:
+      - position:
+          row: 1
+          column: 10
+        candidates:
+          - 12
+    actions:
+      - position:
+          row: 1
+          column: 10
+        setValue: 12
+  - reasons:
+      - position:
+          row: 1
+          column: 11
+        candidates:
+          - 5
+    actions:
+      - position:
+          row: 1
+          column: 11
+        setValue: 5
+  - reasons:
+      - position:
+          row: 1
+          column: 12
+        candidates:
+          - 16
+    actions:
+      - position:
+          row: 1
+          column: 12
+        setValue: 16
+  - reasons:
+      - position:
+          row: 2
+          column: 0
+        candidates:
+          - 7
+    actions:
+      - position:
+          row: 2
+          column: 0
+        setValue: 7
+  - reasons:
+      - position:
+          row: 2
+          column: 4
+        candidates:
+          - 2
+    actions:
+      - position:
+          row: 2
+          column: 4
+        setValue: 2
+  - reasons:
+      - position:
+          row: 2
+          column: 5
+        candidates:
+          - 15
+    actions:
+      - position:
+          row: 2
+          column: 5
+        setValue: 15
+  - reasons:
+      - position:
+          row: 2
+          column: 6
+        candidates:
+          - 5
+    actions:
+      - position:
+          row: 2
+          column: 6
+        setValue: 5
+  - reasons:
+      - position:
+          row: 2
+          column: 7
+        candidates:
+          - 8
+    actions:
+      - position:
+          row: 2
+          column: 7
+        setValue: 8
+  - reasons:
+      - position:
+          row: 2
+          column: 10
+        candidates:
+          - 11
+    actions:
+      - position:
+          row: 2
+          column: 10
+        setValue: 11
+  - reasons:
+      - position:
+          row: 2
+          column: 11
+        candidates:
+          - 16
+    actions:
+      - position:
+          row: 2
+          column: 11
+        setValue: 16
+  - reasons:
+      - position:
+          row: 2
+          column: 12
+        candidates:
+          - 9
+    actions:
+      - position:
+          row: 2
+          column: 12
+        setValue: 9
+  - reasons:
+      - position:
+          row: 2
+          column: 13
+        candidates:
+          - 1
+    actions:
+      - position:
+          row: 2
+          column: 13
+        setValue: 1
+  - reasons:
+      - position:
+          row: 2
+          column: 15
+        candidates:
+          - 6
+    actions:
+      - position:
+          row: 2
+          column: 15
+        setValue: 6
+  - reasons:
+      - position:
+          row: 3
+          column: 2
+        candidates:
+          - 10
+    actions:
+      - position:
+          row: 3
+          column: 2
+        setValue: 10
+  - reasons:
+      - position:
+          row: 3
+          column: 3
+        candidates:
+          - 8
+    actions:
+      - position:
+          row: 3
+          column: 3
+        setValue: 8
+  - reasons:
+      - position:
+          row: 3
+          column: 4
+        candidates:
+          - 12
+    actions:
+      - position:
+          row: 3
+          column: 4
+        setValue: 12
+  - reasons:
+      - position:
+          row: 3
+          column: 5
+        candidates:
+          - 9
+    actions:
+      - position:
+          row: 3
+          column: 5
+        setValue: 9
+  - reasons:
+      - position:
+          row: 3
+          column: 6
+        candidates:
+          - 13
+    actions:
+      - position:
+          row: 3
+          column: 6
+        setValue: 13
+  - reasons:
+      - position:
+          row: 3
+          column: 8
+        candidates:
+          - 1
+    actions:
+      - position:
+          row: 3
+          column: 8
+        setValue: 1
+  - reasons:
+      - position:
+          row: 3
+          column: 10
+        candidates:
+          - 2
+    actions:
+      - position:
+          row: 3
+          column: 10
+        setValue: 2
+  - reasons:
+      - position:
+          row: 3
+          column: 11
+        candidates:
+          - 6
+    actions:
+      - position:
+          row: 3
+          column: 11
+        setValue: 6
+  - reasons:
+      - position:
+          row: 3
+          column: 13
+        candidates:
+          - 3
+    actions:
+      - position:
+          row: 3
+          column: 13
+        setValue: 3
+  - reasons:
+      - position:
+          row: 3
+          column: 14
+        candidates:
+          - 14
+    actions:
+      - position:
+          row: 3
+          column: 14
+        setValue: 14
+  - reasons:
+      - position:
+          row: 3
+          column: 15
+        candidates:
+          - 11
+    actions:
+      - position:
+          row: 3
+          column: 15
+        setValue: 11
+  - reasons:
+      - position:
+          row: 4
+          column: 0
+        candidates:
+          - 8
+    actions:
+      - position:
+          row: 4
+          column: 0
+        setValue: 8
+  - reasons:
+      - position:
+          row: 4
+          column: 1
+        candidates:
+          - 2
+    actions:
+      - position:
+          row: 4
+          column: 1
+        setValue: 2
+  - reasons:
+      - position:
+          row: 4
+          column: 2
+        candidates:
+          - 3
+    actions:
+      - position:
+          row: 4
+          column: 2
+        setValue: 3
+  - reasons:
+      - position:
+          row: 4
+          column: 3
+        candidates:
+          - 4
+    actions:
+      - position:
+          row: 4
+          column: 3
+        setValue: 4
+  - reasons:
+      - position:
+          row: 4
+          column: 4
+        candidates:
+          - 11
+    actions:
+      - position:
+          row: 4
+          column: 4
+        setValue: 11
+  - reasons:
+      - position:
+          row: 4
+          column: 5
+        candidates:
+          - 5
+    actions:
+      - position:
+          row: 4
+          column: 5
+        setValue: 5
+  - reasons:
+      - position:
+          row: 4
+          column: 8
+        candidates:
+          - 12
+    actions:
+      - position:
+          row: 4
+          column: 8
+        setValue: 12
+  - reasons:
+      - position:
+          row: 4
+          column: 12
+        candidates:
+          - 7
+    actions:
+      - position:
+          row: 4
+          column: 12
+        setValue: 7
+  - reasons:
+      - position:
+          row: 4
+          column: 13
+        candidates:
+          - 15
+    actions:
+      - position:
+          row: 4
+          column: 13
+        setValue: 15
+  - reasons:
+      - position:
+          row: 4
+          column: 14
+        candidates:
+          - 9
+    actions:
+      - position:
+          row: 4
+          column: 14
+        setValue: 9
+  - reasons:
+      - position:
+          row: 5
+          column: 1
+        candidates:
+          - 10
+    actions:
+      - position:
+          row: 5
+          column: 1
+        setValue: 10
+  - reasons:
+      - position:
+          row: 5
+          column: 3
+        candidates:
+          - 12
+    actions:
+      - position:
+          row: 5
+          column: 3
+        setValue: 12
+  - reasons:
+      - position:
+          row: 5
+          column: 4
+        candidates:
+          - 13
+    actions:
+      - position:
+          row: 5
+          column: 4
+        setValue: 13
+  - reasons:
+      - position:
+          row: 5
+          column: 5
+        candidates:
+          - 3
+    actions:
+      - position:
+          row: 5
+          column: 5
+        setValue: 3
+  - reasons:
+      - position:
+          row: 5
+          column: 6
+        candidates:
+          - 14
+    actions:
+      - position:
+          row: 5
+          column: 6
+        setValue: 14
+  - reasons:
+      - position:
+          row: 5
+          column: 8
+        candidates:
+          - 11
+    actions:
+      - position:
+          row: 5
+          column: 8
+        setValue: 11
+  - reasons:
+      - position:
+          row: 5
+          column: 9
+        candidates:
+          - 9
+    actions:
+      - position:
+          row: 5
+          column: 9
+        setValue: 9
+  - reasons:
+      - position:
+          row: 5
+          column: 11
+        candidates:
+          - 7
+    actions:
+      - position:
+          row: 5
+          column: 11
+        setValue: 7
+  - reasons:
+      - position:
+          row: 5
+          column: 12
+        candidates:
+          - 4
+    actions:
+      - position:
+          row: 5
+          column: 12
+        setValue: 4
+  - reasons:
+      - position:
+          row: 5
+          column: 13
+        candidates:
+          - 16
+    actions:
+      - position:
+          row: 5
+          column: 13
+        setValue: 16
+  - reasons:
+      - position:
+          row: 5
+          column: 14
+        candidates:
+          - 8
+    actions:
+      - position:
+          row: 5
+          column: 14
+        setValue: 8
+  - reasons:
+      - position:
+          row: 6
+          column: 0
+        candidates:
+          - 9
+    actions:
+      - position:
+          row: 6
+          column: 0
+        setValue: 9
+  - reasons:
+      - position:
+          row: 6
+          column: 1
+        candidates:
+          - 7
+    actions:
+      - position:
+          row: 6
+          column: 1
+        setValue: 7
+  - reasons:
+      - position:
+          row: 6
+          column: 2
+        candidates:
+          - 13
+    actions:
+      - position:
+          row: 6
+          column: 2
+        setValue: 13
+  - reasons:
+      - position:
+          row: 6
+          column: 5
+        candidates:
+          - 16
+    actions:
+      - position:
+          row: 6
+          column: 5
+        setValue: 16
+  - reasons:
+      - position:
+          row: 6
+          column: 6
+        candidates:
+          - 15
+    actions:
+      - position:
+          row: 6
+          column: 6
+        setValue: 15
+  - reasons:
+      - position:
+          row: 6
+          column: 7
+        candidates:
+          - 12
+    actions:
+      - position:
+          row: 6
+          column: 7
+        setValue: 12
+  - reasons:
+      - position:
+          row: 6
+          column: 9
+        candidates:
+          - 6
+    actions:
+      - position:
+          row: 6
+          column: 9
+        setValue: 6
+  - reasons:
+      - position:
+          row: 6
+          column: 10
+        candidates:
+          - 3
+    actions:
+      - position:
+          row: 6
+          column: 10
+        setValue: 3
+  - reasons:
+      - position:
+          row: 6
+          column: 11
+        candidates:
+          - 4
+    actions:
+      - position:
+          row: 6
+          column: 11
+        setValue: 4
+  - reasons:
+      - position:
+          row: 6
+          column: 13
+        candidates:
+          - 14
+    actions:
+      - position:
+          row: 6
+          column: 13
+        setValue: 14
+  - reasons:
+      - position:
+          row: 6
+          column: 14
+        candidates:
+          - 11
+    actions:
+      - position:
+          row: 6
+          column: 14
+        setValue: 11
+  - reasons:
+      - position:
+          row: 7
+          column: 0
+        candidates:
+          - 14
+    actions:
+      - position:
+          row: 7
+          column: 0
+        setValue: 14
+  - reasons:
+      - position:
+          row: 7
+          column: 1
+        candidates:
+          - 1
+    actions:
+      - position:
+          row: 7
+          column: 1
+        setValue: 1
+  - reasons:
+      - position:
+          row: 7
+          column: 3
+        candidates:
+          - 16
+    actions:
+      - position:
+          row: 7
+          column: 3
+        setValue: 16
+  - reasons:
+      - position:
+          row: 7
+          column: 4
+        candidates:
+          - 8
+    actions:
+      - position:
+          row: 7
+          column: 4
+        setValue: 8
+  - reasons:
+      - position:
+          row: 7
+          column: 7
+        candidates:
+          - 9
+    actions:
+      - position:
+          row: 7
+          column: 7
+        setValue: 9
+  - reasons:
+      - position:
+          row: 7
+          column: 9
+        candidates:
+          - 2
+    actions:
+      - position:
+          row: 7
+          column: 9
+        setValue: 2
+  - reasons:
+      - position:
+          row: 7
+          column: 11
+        candidates:
+          - 10
+    actions:
+      - position:
+          row: 7
+          column: 11
+        setValue: 10
+  - reasons:
+      - position:
+          row: 7
+          column: 12
+        candidates:
+          - 13
+    actions:
+      - position:
+          row: 7
+          column: 12
+        setValue: 13
+  - reasons:
+      - position:
+          row: 7
+          column: 13
+        candidates:
+          - 6
+    actions:
+      - position:
+          row: 7
+          column: 13
+        setValue: 6
+  - reasons:
+      - position:
+          row: 7
+          column: 14
+        candidates:
+          - 3
+    actions:
+      - position:
+          row: 7
+          column: 14
+        setValue: 3
+  - reasons:
+      - position:
+          row: 8
+          column: 0
+        candidates:
+          - 2
+    actions:
+      - position:
+          row: 8
+          column: 0
+        setValue: 2
+  - reasons:
+      - position:
+          row: 8
+          column: 2
+        candidates:
+          - 15
+    actions:
+      - position:
+          row: 8
+          column: 2
+        setValue: 15
+  - reasons:
+      - position:
+          row: 8
+          column: 4
+        candidates:
+          - 7
+    actions:
+      - position:
+          row: 8
+          column: 4
+        setValue: 7
+  - reasons:
+      - position:
+          row: 8
+          column: 5
+        candidates:
+          - 11
+    actions:
+      - position:
+          row: 8
+          column: 5
+        setValue: 11
+  - reasons:
+      - position:
+          row: 8
+          column: 6
+        candidates:
+          - 9
+    actions:
+      - position:
+          row: 8
+          column: 6
+        setValue: 9
+  - reasons:
+      - position:
+          row: 8
+          column: 7
+        candidates:
+          - 4
+    actions:
+      - position:
+          row: 8
+          column: 7
+        setValue: 4
+  - reasons:
+      - position:
+          row: 8
+          column: 8
+        candidates:
+          - 5
+    actions:
+      - position:
+          row: 8
+          column: 8
+        setValue: 5
+  - reasons:
+      - position:
+          row: 8
+          column: 9
+        candidates:
+          - 8
+    actions:
+      - position:
+          row: 8
+          column: 9
+        setValue: 8
+  - reasons:
+      - position:
+          row: 8
+          column: 13
+        candidates:
+          - 10
+    actions:
+      - position:
+          row: 8
+          column: 13
+        setValue: 10
+  - reasons:
+      - position:
+          row: 8
+          column: 14
+        candidates:
+          - 1
+    actions:
+      - position:
+          row: 8
+          column: 14
+        setValue: 1
+  - reasons:
+      - position:
+          row: 8
+          column: 15
+        candidates:
+          - 3
+    actions:
+      - position:
+          row: 8
+          column: 15
+        setValue: 3
+  - reasons:
+      - position:
+          row: 9
+          column: 0
+        candidates:
+          - 10
+    actions:
+      - position:
+          row: 9
+          column: 0
+        setValue: 10
+  - reasons:
+      - position:
+          row: 9
+          column: 1
+        candidates:
+          - 3
+    actions:
+      - position:
+          row: 9
+          column: 1
+        setValue: 3
+  - reasons:
+      - position:
+          row: 9
+          column: 4
+        candidates:
+          - 16
+    actions:
+      - position:
+          row: 9
+          column: 4
+        setValue: 16
+  - reasons:
+      - position:
+          row: 9
+          column: 6
+        candidates:
+          - 2
+    actions:
+      - position:
+          row: 9
+          column: 6
+        setValue: 2
+  - reasons:
+      - position:
+          row: 9
+          column: 7
+        candidates:
+          - 15
+    actions:
+      - position:
+          row: 9
+          column: 7
+        setValue: 15
+  - reasons:
+      - position:
+          row: 9
+          column: 10
+        candidates:
+          - 6
+    actions:
+      - position:
+          row: 9
+          column: 10
+        setValue: 6
+  - reasons:
+      - position:
+          row: 9
+          column: 11
+        candidates:
+          - 14
+    actions:
+      - position:
+          row: 9
+          column: 11
+        setValue: 14
+  - reasons:
+      - position:
+          row: 9
+          column: 12
+        candidates:
+          - 5
+    actions:
+      - position:
+          row: 9
+          column: 12
+        setValue: 5
+  - reasons:
+      - position:
+          row: 10
+          column: 1
+        candidates:
+          - 4
+    actions:
+      - position:
+          row: 10
+          column: 1
+        setValue: 4
+  - reasons:
+      - position:
+          row: 10
+          column: 2
+        candidates:
+          - 5
+    actions:
+      - position:
+          row: 10
+          column: 2
+        setValue: 5
+  - reasons:
+      - position:
+          row: 10
+          column: 3
+        candidates:
+          - 1
+    actions:
+      - position:
+          row: 10
+          column: 3
+        setValue: 1
+  - reasons:
+      - position:
+          row: 10
+          column: 4
+        candidates:
+          - 14
+    actions:
+      - position:
+          row: 10
+          column: 4
+        setValue: 14
+  - reasons:
+      - position:
+          row: 10
+          column: 5
+        candidates:
+          - 6
+    actions:
+      - position:
+          row: 10
+          column: 5
+        setValue: 6
+  - reasons:
+      - position:
+          row: 10
+          column: 8
+        candidates:
+          - 7
+    actions:
+      - position:
+          row: 10
+          column: 8
+        setValue: 7
+  - reasons:
+      - position:
+          row: 10
+          column: 11
+        candidates:
+          - 9
+    actions:
+      - position:
+          row: 10
+          column: 11
+        setValue: 9
+  - reasons:
+      - position:
+          row: 10
+          column: 12
+        candidates:
+          - 8
+    actions:
+      - position:
+          row: 10
+          column: 12
+        setValue: 8
+  - reasons:
+      - position:
+          row: 10
+          column: 13
+        candidates:
+          - 13
+    actions:
+      - position:
+          row: 10
+          column: 13
+        setValue: 13
+  - reasons:
+      - position:
+          row: 10
+          column: 15
+        candidates:
+          - 16
+    actions:
+      - position:
+          row: 10
+          column: 15
+        setValue: 16
+  - reasons:
+      - position:
+          row: 11
+          column: 0
+        candidates:
+          - 11
+    actions:
+      - position:
+          row: 11
+          column: 0
+        setValue: 11
+  - reasons:
+      - position:
+          row: 11
+          column: 2
+        candidates:
+          - 9
+    actions:
+      - position:
+          row: 11
+          column: 2
+        setValue: 9
+  - reasons:
+      - position:
+          row: 11
+          column: 3
+        candidates:
+          - 14
+    actions:
+      - position:
+          row: 11
+          column: 3
+        setValue: 14
+  - reasons:
+      - position:
+          row: 11
+          column: 5
+        candidates:
+          - 12
+    actions:
+      - position:
+          row: 11
+          column: 5
+        setValue: 12
+  - reasons:
+      - position:
+          row: 11
+          column: 6
+        candidates:
+          - 8
+    actions:
+      - position:
+          row: 11
+          column: 6
+        setValue: 8
+  - reasons:
+      - position:
+          row: 11
+          column: 7
+        candidates:
+          - 1
+    actions:
+      - position:
+          row: 11
+          column: 7
+        setValue: 1
+  - reasons:
+      - position:
+          row: 11
+          column: 9
+        candidates:
+          - 10
+    actions:
+      - position:
+          row: 11
+          column: 9
+        setValue: 10
+  - reasons:
+      - position:
+          row: 11
+          column: 10
+        candidates:
+          - 13
+    actions:
+      - position:
+          row: 11
+          column: 10
+        setValue: 13
+  - reasons:
+      - position:
+          row: 11
+          column: 11
+        candidates:
+          - 3
+    actions:
+      - position:
+          row: 11
+          column: 11
+        setValue: 3
+  - reasons:
+      - position:
+          row: 11
+          column: 12
+        candidates:
+          - 6
+    actions:
+      - position:
+          row: 11
+          column: 12
+        setValue: 6
+  - reasons:
+      - position:
+          row: 12
+          column: 1
+        candidates:
+          - 15
+    actions:
+      - position:
+          row: 12
+          column: 1
+        setValue: 15
+  - reasons:
+      - position:
+          row: 12
+          column: 2
+        candidates:
+          - 4
+    actions:
+      - position:
+          row: 12
+          column: 2
+        setValue: 4
+  - reasons:
+      - position:
+          row: 12
+          column: 3
+        candidates:
+          - 13
+    actions:
+      - position:
+          row: 12
+          column: 3
+        setValue: 13
+  - reasons:
+      - position:
+          row: 12
+          column: 4
+        candidates:
+          - 3
+    actions:
+      - position:
+          row: 12
+          column: 4
+        setValue: 3
+  - reasons:
+      - position:
+          row: 12
+          column: 6
+        candidates:
+          - 16
+    actions:
+      - position:
+          row: 12
+          column: 6
+        setValue: 16
+  - reasons:
+      - position:
+          row: 12
+          column: 7
+        candidates:
+          - 11
+    actions:
+      - position:
+          row: 12
+          column: 7
+        setValue: 11
+  - reasons:
+      - position:
+          row: 12
+          column: 11
+        candidates:
+          - 1
+    actions:
+      - position:
+          row: 12
+          column: 11
+        setValue: 1
+  - reasons:
+      - position:
+          row: 12
+          column: 12
+        candidates:
+          - 2
+    actions:
+      - position:
+          row: 12
+          column: 12
+        setValue: 2
+  - reasons:
+      - position:
+          row: 13
+          column: 0
+        candidates:
+          - 6
+    actions:
+      - position:
+          row: 13
+          column: 0
+        setValue: 6
+  - reasons:
+      - position:
+          row: 13
+          column: 1
+        candidates:
+          - 11
+    actions:
+      - position:
+          row: 13
+          column: 1
+        setValue: 11
+  - reasons:
+      - position:
+          row: 13
+          column: 3
+        candidates:
+          - 2
+    actions:
+      - position:
+          row: 13
+          column: 3
+        setValue: 2
+  - reasons:
+      - position:
+          row: 13
+          column: 7
+        candidates:
+          - 7
+    actions:
+      - position:
+          row: 13
+          column: 7
+        setValue: 7
+  - reasons:
+      - position:
+          row: 13
+          column: 9
+        candidates:
+          - 5
+    actions:
+      - position:
+          row: 13
+          column: 9
+        setValue: 5
+  - reasons:
+      - position:
+          row: 13
+          column: 12
+        candidates:
+          - 10
+    actions:
+      - position:
+          row: 13
+          column: 12
+        setValue: 10
+  - reasons:
+      - position:
+          row: 13
+          column: 15
+        candidates:
+          - 14
+    actions:
+      - position:
+          row: 13
+          column: 15
+        setValue: 14
+  - reasons:
+      - position:
+          row: 14
+          column: 0
+        candidates:
+          - 1
+    actions:
+      - position:
+          row: 14
+          column: 0
+        setValue: 1
+  - reasons:
+      - position:
+          row: 14
+          column: 1
+        candidates:
+          - 8
+    actions:
+      - position:
+          row: 14
+          column: 1
+        setValue: 8
+  - reasons:
+      - position:
+          row: 14
+          column: 2
+        candidates:
+          - 7
+    actions:
+      - position:
+          row: 14
+          column: 2
+        setValue: 7
+  - reasons:
+      - position:
+          row: 14
+          column: 3
+        candidates:
+          - 10
+    actions:
+      - position:
+          row: 14
+          column: 3
+        setValue: 10
+  - reasons:
+      - position:
+          row: 14
+          column: 5
+        candidates:
+          - 2
+    actions:
+      - position:
+          row: 14
+          column: 5
+        setValue: 2
+  - reasons:
+      - position:
+          row: 14
+          column: 7
+        candidates:
+          - 5
+    actions:
+      - position:
+          row: 14
+          column: 7
+        setValue: 5
+  - reasons:
+      - position:
+          row: 14
+          column: 8
+        candidates:
+          - 14
+    actions:
+      - position:
+          row: 14
+          column: 8
+        setValue: 14
+  - reasons:
+      - position:
+          row: 14
+          column: 9
+        candidates:
+          - 13
+    actions:
+      - position:
+          row: 14
+          column: 9
+        setValue: 13
+  - reasons:
+      - position:
+          row: 14
+          column: 10
+        candidates:
+          - 4
+    actions:
+      - position:
+          row: 14
+          column: 10
+        setValue: 4
+  - reasons:
+      - position:
+          row: 14
+          column: 11
+        candidates:
+          - 11
+    actions:
+      - position:
+          row: 14
+          column: 11
+        setValue: 11
+  - reasons:
+      - position:
+          row: 14
+          column: 12
+        candidates:
+          - 3
+    actions:
+      - position:
+          row: 14
+          column: 12
+        setValue: 3
+  - reasons:
+      - position:
+          row: 14
+          column: 13
+        candidates:
+          - 12
+    actions:
+      - position:
+          row: 14
+          column: 13
+        setValue: 12
+  - reasons:
+      - position:
+          row: 14
+          column: 15
+        candidates:
+          - 15
+    actions:
+      - position:
+          row: 14
+          column: 15
+        setValue: 15
+  - reasons:
+      - position:
+          row: 15
+          column: 0
+        candidates:
+          - 3
+    actions:
+      - position:
+          row: 15
+          column: 0
+        setValue: 3
+  - reasons:
+      - position:
+          row: 15
+          column: 3
+        candidates:
+          - 9
+    actions:
+      - position:
+          row: 15
+          column: 3
+        setValue: 9
+  - reasons:
+      - position:
+          row: 15
+          column: 4
+        candidates:
+          - 4
+    actions:
+      - position:
+          row: 15
+          column: 4
+        setValue: 4
+  - reasons:
+      - position:
+          row: 15
+          column: 6
+        candidates:
+          - 10
+    actions:
+      - position:
+          row: 15
+          column: 6
+        setValue: 10
+  - reasons:
+      - position:
+          row: 15
+          column: 8
+        candidates:
+          - 16
+    actions:
+      - position:
+          row: 15
+          column: 8
+        setValue: 16
+  - reasons:
+      - position:
+          row: 15
+          column: 9
+        candidates:
+          - 15
+    actions:
+      - position:
+          row: 15
+          column: 9
+        setValue: 15
+  - reasons:
+      - position:
+          row: 15
+          column: 10
+        candidates:
+          - 7
+    actions:
+      - position:
+          row: 15
+          column: 10
+        setValue: 7
+  - reasons:
+      - position:
+          row: 15
+          column: 11
+        candidates:
+          - 2
+    actions:
+      - position:
+          row: 15
+          column: 11
+        setValue: 2
+  - reasons:
+      - position:
+          row: 15
+          column: 14
+        candidates:
+          - 6
+    actions:
+      - position:
+          row: 15
+          column: 14
+        setValue: 6
