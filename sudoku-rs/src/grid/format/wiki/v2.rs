@@ -458,4 +458,17 @@ mod tests {
         let expected_grid = get_test_grid();
         assert_parsed_grid(&expected_grid, &parsed_grid).unwrap();
     }
+
+    mod snapshots {
+        use super::*;
+
+        mod render {
+            use super::*;
+            use crate::test_util::test_all_sample_grids;
+
+            test_all_sample_grids!(|grid, name| {
+                insta::assert_snapshot!(name, BinaryCandidatesLineV2.render(&grid));
+            });
+        }
+    }
 }

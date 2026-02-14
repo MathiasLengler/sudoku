@@ -108,20 +108,6 @@ mod tests {
         );
     }
 
-    mod snapshots {
-        use super::*;
-
-        #[test]
-        fn test_render_base3() {
-            for (i, grid) in samples::base_3().into_iter().enumerate() {
-                insta::assert_snapshot!(
-                    format!("values_grid_base3_{i}"),
-                    ValuesGrid.render(&grid)
-                );
-            }
-        }
-    }
-
     #[test]
     fn test_from_givens_grid() {
         let cells = ValuesGrid
@@ -156,5 +142,18 @@ mod tests {
         .unwrap();
 
         assert_parsed_grid(&expected_grid, &cells).unwrap();
+    }
+
+    mod snapshots {
+        use super::*;
+
+        mod render {
+            use super::*;
+            use crate::test_util::test_all_sample_grids;
+
+            test_all_sample_grids!(|grid, name| {
+                insta::assert_snapshot!(name, ValuesGrid.render(&grid));
+            });
+        }
     }
 }

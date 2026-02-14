@@ -1,0 +1,5 @@
+---
+source: sudoku-rs/src/grid/format/wiki/v1.rs
+expression: BinaryCandidatesLineV1.render(&grid)
+---
+g0280h11080503418103a4f460g16g040930l42cnc814a62g4j00h210cgc0h11c2k8o008104118g180a00o0305810g0305400911ig200ha6e442c6d20810g10911040221gi810g4140g1c009cidi210512
