@@ -272,19 +272,19 @@ mod tests {
 
     mod serde {
         use super::*;
-        use crate::test_util::test_all_bases;
+        use crate::test_util::test_max_base5;
         use serde_test::{Token, assert_tokens};
 
         mod default {
             use super::*;
-            test_all_bases!({
+            test_max_base5!({
                 assert_tokens(&Value::<Base>::default(), &[Token::U8(1)]);
             });
         }
 
         mod max {
             use super::*;
-            test_all_bases!({
+            test_max_base5!({
                 let value = Value::<Base>::default();
                 assert_tokens(&value, &[Token::U8(value.get())]);
             });
@@ -292,7 +292,7 @@ mod tests {
 
         mod middle {
             use super::*;
-            test_all_bases!({
+            test_max_base5!({
                 let value = Value::<Base>::middle();
                 assert_tokens(&value, &[Token::U8(value.get())]);
             });

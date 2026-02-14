@@ -47,7 +47,7 @@ macro_rules! test_max_base4 {
     };
 }
 
-macro_rules! test_all_bases {
+macro_rules! test_max_base5 {
     ($using_base:block) => {
         #[test]
         fn test_base2() {
@@ -83,7 +83,7 @@ macro_rules! test_all_sample_grids {
         mod direct_candidates {
             use super::*;
 
-            $crate::test_util::test_all_bases!({
+            $crate::test_util::test_max_base5!({
                 #[allow(unused_mut)]
                 for (i, mut $grid) in Base::grid_samples().enumerate() {
                     $grid.set_all_direct_candidates();
@@ -94,7 +94,7 @@ macro_rules! test_all_sample_grids {
             });
         }
 
-        $crate::test_util::test_all_bases!({
+        $crate::test_util::test_max_base5!({
             #[allow(unused_mut)]
             for (i, mut $grid) in Base::grid_samples().enumerate() {
                 let $name = format!("base_{}_sample_{i}", Base::BASE);
@@ -119,7 +119,7 @@ macro_rules! test_all_sample_grids {
     };
 }
 
-pub(crate) use test_all_bases;
 pub(crate) use test_all_sample_grids;
 pub(crate) use test_max_base3;
 pub(crate) use test_max_base4;
+pub(crate) use test_max_base5;
