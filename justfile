@@ -84,7 +84,7 @@ web-ts-serve:
 # Run CI build/test/lint locally; fork of `.github/workflows/deploy_app.yml`
 ci-local:
     just clippy-ci
-    just test
+    just test-ci
     just pack-prod
     cd sudoku-web && npm ci
     cd sudoku-web && npm run lint
