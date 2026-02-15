@@ -53,12 +53,13 @@ impl Strategy for HiddenSingles {
 
 #[cfg(test)]
 mod tests {
-    use crate::base::consts::*;
+    use super::*;
     use crate::cell::Value;
     use crate::samples;
     use crate::solver::strategic::strategies::test_util::assert_deductions_with_grid;
-
-    use super::*;
+    use crate::{
+        base::consts::*, solver::strategic::strategies::test_util::strategy_snapshot_tests,
+    };
 
     #[test]
     fn test_hidden_singles_base2() {
@@ -118,50 +119,5 @@ mod tests {
         assert_deductions_with_grid(&deductions, &expected_deductions, &mut grid);
     }
 
-    mod snapshots {
-        use super::*;
-        // TODO: extract as common strategy snapshot test macro
-
-        use crate::{
-            grid::format::{CandidatesGridPlain, GridFormat},
-            solver::strategic::{
-                deduction::transport::TransportDeductions, strategies::test_util::DedudctionInfo,
-            },
-            test_util::test_max_base4,
-        };
-
-        test_max_base4!({
-            for (i, mut grid) in Base::grid_samples().enumerate() {
-                let grid_name = format!("base_{}_sample_{i}", Base::BASE);
-
-                grid.fix_all_values();
-                grid.set_all_direct_candidates();
-
-                let grid_input = CandidatesGridPlain.render(&grid);
-
-                let deductions = HiddenSingles.execute(&grid).unwrap();
-                deductions
-                    .apply(&mut grid)
-                    .expect("Deductions should be applicable to the grid they were generated from");
-
-                let grid_output = CandidatesGridPlain.render(&grid);
-                let deductions_str = deductions.to_string();
-                let info = DedudctionInfo {
-                    grid_input: grid_input.split('\n').collect(),
-                    deductions: deductions_str.split('\n').collect(),
-                    grid_output: grid_output.split('\n').collect(),
-                };
-
-                insta::with_settings!({
-                    description => format!("Strategy {} executed on grid {}", HiddenSingles.name(), grid_name),
-                    info => &info
-                }, {
-                    insta::assert_yaml_snapshot!(
-                        grid_name,
-                        TransportDeductions::from(deductions.clone()),
-                    );
-                });
-            }
-        });
-    }
+    strategy_snapshot_tests!(HiddenSingles);
 }

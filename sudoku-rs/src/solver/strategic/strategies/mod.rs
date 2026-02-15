@@ -76,7 +76,53 @@ mod test_util {
         deductions.apply(grid).unwrap();
     }
 
-    macro_rules! strategy_snapshot_test {
-        () => {};
+    macro_rules! strategy_snapshot_tests {
+        ($strategy:expr) => {
+            mod snapshots {
+                use super::*;
+                use $crate::{
+                    grid::format::{CandidatesGridPlain, GridFormat},
+                    solver::strategic::{
+                        deduction::transport::TransportDeductions, strategies::test_util::DedudctionInfo,
+                    },
+                    test_util::test_max_base4,
+                };
+
+                test_max_base4!({
+                    for (i, mut grid) in Base::grid_samples().enumerate() {
+                        let grid_name = format!("base_{}_sample_{i}", Base::BASE);
+
+                        grid.fix_all_values();
+                        grid.set_all_direct_candidates();
+
+                        let grid_input = CandidatesGridPlain.render(&grid);
+
+                        let deductions = $strategy.execute(&grid).unwrap();
+                        deductions
+                            .apply(&mut grid)
+                            .expect("Deductions should be applicable to the grid they were generated from");
+
+                        let grid_output = CandidatesGridPlain.render(&grid);
+                        let deductions_str = deductions.to_string();
+                        let info = DedudctionInfo {
+                            grid_input: grid_input.split('\n').collect(),
+                            deductions: deductions_str.split('\n').collect(),
+                            grid_output: grid_output.split('\n').collect(),
+                        };
+
+                        insta::with_settings!({
+                            description => format!("Strategy {} executed on grid {}", $strategy.name(), grid_name),
+                            info => &info
+                        }, {
+                            insta::assert_yaml_snapshot!(
+                                grid_name,
+                                TransportDeductions::from(deductions.clone()),
+                            );
+                        });
+                    }
+                });
+            }
+        };
     }
+    pub(crate) use strategy_snapshot_tests;
 }

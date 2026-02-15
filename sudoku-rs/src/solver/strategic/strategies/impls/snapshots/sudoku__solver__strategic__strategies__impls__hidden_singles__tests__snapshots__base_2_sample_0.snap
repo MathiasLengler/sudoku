@@ -1,7 +1,7 @@
 ---
 source: sudoku-rs/src/solver/strategic/strategies/impls/hidden_singles.rs
 description: Strategy HiddenSingles executed on grid base_2_sample_0
-expression: "TransportDeductions::from(deductions.clone())"
+expression: "TransportDeductions :: from(deductions.clone())"
 info:
   grid_input:
     - ╔═══════════╦═══════════╗
