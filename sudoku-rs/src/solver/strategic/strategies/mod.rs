@@ -78,6 +78,9 @@ mod test_util {
 
     macro_rules! strategy_snapshot_tests {
         ($strategy:expr) => {
+            strategy_snapshot_tests!($strategy, |_grid| {});
+        };
+        ($strategy:expr, |$grid:ident| $assertions:block) => {
             mod snapshots {
                 use super::*;
                 use $crate::{
@@ -89,20 +92,22 @@ mod test_util {
                 };
 
                 test_max_base4!({
-                    for (i, mut grid) in Base::grid_samples().enumerate() {
+                    for (i, mut $grid) in Base::grid_samples().enumerate() {
                         let grid_name = format!("base_{}_sample_{i}", Base::BASE);
 
-                        grid.fix_all_values();
-                        grid.set_all_direct_candidates();
+                        $grid.fix_all_values();
+                        $grid.set_all_direct_candidates();
 
-                        let grid_input = CandidatesGridPlain.render(&grid);
+                        let grid_input = CandidatesGridPlain.render(&$grid);
 
-                        let deductions = $strategy.execute(&grid).unwrap();
+                        let deductions = $strategy.execute(&$grid).unwrap();
                         deductions
-                            .apply(&mut grid)
+                            .apply(&mut $grid)
                             .expect("Deductions should be applicable to the grid they were generated from");
 
-                        let grid_output = CandidatesGridPlain.render(&grid);
+                        $assertions;
+
+                        let grid_output = CandidatesGridPlain.render(&$grid);
                         let deductions_str = deductions.to_string();
                         let info = DedudctionInfo {
                             grid_input: grid_input.split('\n').collect(),

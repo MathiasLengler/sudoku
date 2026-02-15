@@ -1,6 +1,127 @@
 ---
 source: sudoku-rs/src/solver/strategic/strategies/impls/brute_force.rs
-expression: "TransportDeductions::from(deductions.clone())"
+description: Strategy BruteForce executed on grid base_3_sample_0
+expression: "TransportDeductions :: from(deductions.clone())"
+info:
+  grid_input:
+    - ╔═════════════════╦═════════════════╦═════════════════╗
+    - ║     │ 12  │  2  ║  23 │ 123 │ 123 ║ 1 3 │     │ 1 3 ║
+    - ║  8  │ 4 6 │ 456 ║ 4   │  5  │ 4   ║  56 │ 45  │ 456 ║
+    - ║     │     │   9 ║ 7   │ 7   │     ║   9 │ 7 9 │ 7 9 ║
+    - ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+    - ║ 12  │ 12  │     ║     │ 12  │ 12  ║ 1   │     │ 1   ║
+    - ║ 45  │ 4   │  3  ║  6  │  5  │ 4   ║  5  │ 45  │ 45  ║
+    - ║   9 │     │     ║     │ 78  │  8  ║  89 │ 789 │ 7 9 ║
+    - ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+    - ║ 1   │     │     ║   3 │     │ 1 3 ║     │     │ 1 3 ║
+    - ║ 456 │  7  │ 456 ║ 4   │  9  │ 4   ║  2  │ 45  │ 456 ║
+    - ║     │     │     ║  8  │     │  8  ║     │  8  │     ║
+    - ╠═════════════════╬═════════════════╬═════════════════╣
+    - ║ 123 │     │  2  ║  23 │  23 │     ║ 1   │  2  │ 12  ║
+    - ║ 4 6 │  5  │ 4 6 ║     │   6 │  7  ║   6 │ 4   │ 4 6 ║
+    - ║   9 │     │   9 ║  89 │  8  │     ║  89 │  89 │   9 ║
+    - ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+    - ║ 123 │ 123 │  2  ║  23 │     │     ║     │  2  │ 12  ║
+    - ║   6 │   6 │   6 ║     │  4  │  5  ║  7  │     │   6 ║
+    - ║   9 │  8  │   9 ║  89 │     │     ║     │  89 │   9 ║
+    - ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+    - ║  2  │  2  │  2  ║     │  2  │  2  ║     │     │  2  ║
+    - ║ 4 6 │ 4 6 │ 4 6 ║  1  │   6 │   6 ║  56 │  3  │ 456 ║
+    - ║ 7 9 │  8  │ 7 9 ║     │  8  │  89 ║  89 │     │   9 ║
+    - ╠═════════════════╬═════════════════╬═════════════════╣
+    - ║  23 │  23 │     ║  23 │  23 │  23 ║   3 │     │     ║
+    - ║ 45  │ 4   │  1  ║ 4   │     │ 4   ║  5  │  6  │  8  ║
+    - ║ 7   │     │     ║ 7 9 │ 7   │   9 ║   9 │     │     ║
+    - ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+    - ║  23 │  23 │     ║     │  23 │  23 ║   3 │     │  23 ║
+    - ║ 4 6 │ 4 6 │  8  ║  5  │   6 │ 4 6 ║     │  1  │     ║
+    - ║ 7   │     │     ║     │ 7   │   9 ║   9 │     │ 7 9 ║
+    - ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+    - ║  23 │     │  2  ║  23 │ 123 │ 123 ║     │  2  │  23 ║
+    - ║  56 │  9  │  56 ║     │   6 │   6 ║  4  │  5  │  5  ║
+    - ║ 7   │     │ 7   ║ 78  │ 78  │  8  ║     │ 7   │ 7   ║
+    - ╚═════════════════╩═════════════════╩═════════════════╝
+  deductions:
+    - "r0c1: set value 1, because of: r0c1: candidate 1"
+    - "r0c2: set value 2, because of: r0c2: candidate 2"
+    - "r0c3: set value 7, because of: r0c3: candidate 7"
+    - "r0c4: set value 5, because of: r0c4: candidate 5"
+    - "r0c5: set value 3, because of: r0c5: candidate 3"
+    - "r0c6: set value 6, because of: r0c6: candidate 6"
+    - "r0c7: set value 4, because of: r0c7: candidate 4"
+    - "r0c8: set value 9, because of: r0c8: candidate 9"
+    - "r1c0: set value 9, because of: r1c0: candidate 9"
+    - "r1c1: set value 4, because of: r1c1: candidate 4"
+    - "r1c4: set value 8, because of: r1c4: candidate 8"
+    - "r1c5: set value 2, because of: r1c5: candidate 2"
+    - "r1c6: set value 1, because of: r1c6: candidate 1"
+    - "r1c7: set value 7, because of: r1c7: candidate 7"
+    - "r1c8: set value 5, because of: r1c8: candidate 5"
+    - "r2c0: set value 6, because of: r2c0: candidate 6"
+    - "r2c2: set value 5, because of: r2c2: candidate 5"
+    - "r2c3: set value 4, because of: r2c3: candidate 4"
+    - "r2c5: set value 1, because of: r2c5: candidate 1"
+    - "r2c7: set value 8, because of: r2c7: candidate 8"
+    - "r2c8: set value 3, because of: r2c8: candidate 3"
+    - "r3c0: set value 1, because of: r3c0: candidate 1"
+    - "r3c2: set value 4, because of: r3c2: candidate 4"
+    - "r3c3: set value 2, because of: r3c3: candidate 2"
+    - "r3c4: set value 3, because of: r3c4: candidate 3"
+    - "r3c6: set value 8, because of: r3c6: candidate 8"
+    - "r3c7: set value 9, because of: r3c7: candidate 9"
+    - "r3c8: set value 6, because of: r3c8: candidate 6"
+    - "r4c0: set value 3, because of: r4c0: candidate 3"
+    - "r4c1: set value 6, because of: r4c1: candidate 6"
+    - "r4c2: set value 9, because of: r4c2: candidate 9"
+    - "r4c3: set value 8, because of: r4c3: candidate 8"
+    - "r4c7: set value 2, because of: r4c7: candidate 2"
+    - "r4c8: set value 1, because of: r4c8: candidate 1"
+    - "r5c0: set value 2, because of: r5c0: candidate 2"
+    - "r5c1: set value 8, because of: r5c1: candidate 8"
+    - "r5c2: set value 7, because of: r5c2: candidate 7"
+    - "r5c4: set value 6, because of: r5c4: candidate 6"
+    - "r5c5: set value 9, because of: r5c5: candidate 9"
+    - "r5c6: set value 5, because of: r5c6: candidate 5"
+    - "r5c8: set value 4, because of: r5c8: candidate 4"
+    - "r6c0: set value 5, because of: r6c0: candidate 5"
+    - "r6c1: set value 2, because of: r6c1: candidate 2"
+    - "r6c3: set value 9, because of: r6c3: candidate 9"
+    - "r6c4: set value 7, because of: r6c4: candidate 7"
+    - "r6c5: set value 4, because of: r6c5: candidate 4"
+    - "r6c6: set value 3, because of: r6c6: candidate 3"
+    - "r7c0: set value 4, because of: r7c0: candidate 4"
+    - "r7c1: set value 3, because of: r7c1: candidate 3"
+    - "r7c4: set value 2, because of: r7c4: candidate 2"
+    - "r7c5: set value 6, because of: r7c5: candidate 6"
+    - "r7c6: set value 9, because of: r7c6: candidate 9"
+    - "r7c8: set value 7, because of: r7c8: candidate 7"
+    - "r8c0: set value 7, because of: r8c0: candidate 7"
+    - "r8c2: set value 6, because of: r8c2: candidate 6"
+    - "r8c3: set value 3, because of: r8c3: candidate 3"
+    - "r8c4: set value 1, because of: r8c4: candidate 1"
+    - "r8c5: set value 8, because of: r8c5: candidate 8"
+    - "r8c7: set value 5, because of: r8c7: candidate 5"
+    - "r8c8: set value 2, because of: r8c8: candidate 2"
+  grid_output:
+    - ╔═══════════╦═══════════╦═══════════╗
+    - ║ 8 │ 1 │ 2 ║ 7 │ 5 │ 3 ║ 6 │ 4 │ 9 ║
+    - ║───┼───┼───║───┼───┼───║───┼───┼───║
+    - ║ 9 │ 4 │ 3 ║ 6 │ 8 │ 2 ║ 1 │ 7 │ 5 ║
+    - ║───┼───┼───║───┼───┼───║───┼───┼───║
+    - ║ 6 │ 7 │ 5 ║ 4 │ 9 │ 1 ║ 2 │ 8 │ 3 ║
+    - ╠═══════════╬═══════════╬═══════════╣
+    - ║ 1 │ 5 │ 4 ║ 2 │ 3 │ 7 ║ 8 │ 9 │ 6 ║
+    - ║───┼───┼───║───┼───┼───║───┼───┼───║
+    - ║ 3 │ 6 │ 9 ║ 8 │ 4 │ 5 ║ 7 │ 2 │ 1 ║
+    - ║───┼───┼───║───┼───┼───║───┼───┼───║
+    - ║ 2 │ 8 │ 7 ║ 1 │ 6 │ 9 ║ 5 │ 3 │ 4 ║
+    - ╠═══════════╬═══════════╬═══════════╣
+    - ║ 5 │ 2 │ 1 ║ 9 │ 7 │ 4 ║ 3 │ 6 │ 8 ║
+    - ║───┼───┼───║───┼───┼───║───┼───┼───║
+    - ║ 4 │ 3 │ 8 ║ 5 │ 2 │ 6 ║ 9 │ 1 │ 7 ║
+    - ║───┼───┼───║───┼───┼───║───┼───┼───║
+    - ║ 7 │ 9 │ 6 ║ 3 │ 1 │ 8 ║ 4 │ 5 │ 2 ║
+    - ╚═══════════╩═══════════╩═══════════╝
 ---
 deductions:
   - reasons:
