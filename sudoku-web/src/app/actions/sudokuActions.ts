@@ -383,6 +383,8 @@ export function useGenerate() {
     const { mutation, cancel: cancelGenerate } = useCancelableMutation<DynamicGeneratorSettings, GeneratorProgress>({
         cancelableMutationFn: useCallback(
             async ({ variables: settings, abortPromise, onProgress }) => {
+                setGenerateProgress(undefined);
+
                 await generate(settings, abortPromise, onProgress);
             },
             [generate],
@@ -404,6 +406,7 @@ export type TrackedMultiShotGeneratorProgress = {
     latestProgress: MultiShotGeneratorProgress;
     seenIterationsCount: number;
     finishedIterationsCount: number;
+    bestEvaluatedGridMetric: bigint | undefined;
 };
 
 export type MultiShotGenerationResult = {
@@ -452,10 +455,12 @@ export function useGenerateMultiShot() {
     const [trackedMultiShotGeneratorProgress, setTrackedMultiShotGeneratorProgress] =
         useState<TrackedMultiShotGeneratorProgress>();
 
-    // Ref to capture the best evaluated grid metric from the last "finished" progress event.
-    // This is safe because progress events are fired during WASM execution,
-    // before the mutation promise resolves, ensuring the value is set when we read it.
     const bestEvaluatedGridMetricRef = useRef<bigint | undefined>(undefined);
+
+    const resetProgressState = useCallback(() => {
+        setTrackedMultiShotGeneratorProgress(undefined);
+        bestEvaluatedGridMetricRef.current = undefined;
+    }, []);
 
     const { mutation, cancel: cancelGenerateMultiShot } = useCancelableMutation<
         DynamicMultiShotGeneratorSettings,
@@ -463,21 +468,23 @@ export function useGenerateMultiShot() {
     >({
         cancelableMutationFn: useCallback(
             async ({ variables: settings, abortPromise, onProgress }) => {
-                // Reset the metric ref before starting new generation
-                bestEvaluatedGridMetricRef.current = undefined;
+                // Reset state before starting a new generation.
+                resetProgressState();
+
                 await generateImpl(settings, abortPromise, onProgress);
             },
-            [generateImpl],
+            [generateImpl, resetProgressState],
         ),
         onProgress: useCallback((progress: MultiShotGeneratorProgress) => {
             console.debug("MultiShot progress:", progress);
             let isFinished;
+            let bestEvaluatedGridMetric: bigint | undefined;
             if (progress.kind === "started") {
                 isFinished = false;
             } else if (progress.kind === "finished") {
                 isFinished = true;
-                // Capture the best evaluated grid metric from the finished progress
                 bestEvaluatedGridMetricRef.current = progress.bestEvaluatedGridMetric;
+                bestEvaluatedGridMetric = progress.bestEvaluatedGridMetric;
             } else {
                 assertNever(progress);
             }
@@ -488,25 +495,28 @@ export function useGenerateMultiShot() {
                     latestProgress: progress,
                     seenIterationsCount: isFinished ? prevSeenIterationsCount : prevSeenIterationsCount + 1,
                     finishedIterationsCount: isFinished ? prevFinishedIterationsCount + 1 : prevFinishedIterationsCount,
+                    bestEvaluatedGridMetric: bestEvaluatedGridMetric ?? prev?.bestEvaluatedGridMetric,
                 };
             });
         }, []),
         onCancel: useCallback(() => {
             console.info("MultiShot generation was canceled.");
-            setTrackedMultiShotGeneratorProgress(undefined);
-            bestEvaluatedGridMetricRef.current = undefined;
-        }, []),
+            resetProgressState();
+        }, [resetProgressState]),
     });
 
     const generateMultiShot = useCallback(
-        async (settings: DynamicMultiShotGeneratorSettings): Promise<MultiShotGenerationResult | undefined> => {
+        async (settings: DynamicMultiShotGeneratorSettings): Promise<MultiShotGenerationResult> => {
             await mutation.mutateAsync(settings);
-            // Return the result with the final best metric.
-            // This is safe because progress events are fired before the mutation resolves.
+
             if (bestEvaluatedGridMetricRef.current !== undefined) {
                 return { bestEvaluatedGridMetric: bestEvaluatedGridMetricRef.current };
+            } else {
+                console.warn(
+                    "Expected bestEvaluatedGridMetricRef to be set after successful generation, but it was undefined.",
+                );
+                return { bestEvaluatedGridMetric: -1n };
             }
-            return undefined;
         },
         [mutation],
     );

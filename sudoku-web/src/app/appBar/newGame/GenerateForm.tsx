@@ -68,7 +68,12 @@ type GenerateProgressProps = {
 };
 function GenerateProgress({ progress, cellCount }: GenerateProgressProps) {
     if (!progress) {
-        return <GenerateProgressLayout linearProgress={<LinearProgress />} description={"Generating solution"} />;
+        return (
+            <GenerateProgressLayout
+                linearProgress={<LinearProgress variant="determinate" value={0} />}
+                description={"Generating solution"}
+            />
+        );
     }
 
     const { pruningPositionCount, pruningPositionIndex, deletedCount } = progress;
@@ -91,7 +96,7 @@ function GenerateMultiShotProgress({ trackedMultiShotGeneratorProgress }: Genera
     if (!trackedMultiShotGeneratorProgress) {
         return (
             <GenerateProgressLayout
-                linearProgress={<LinearProgress />}
+                linearProgress={<LinearProgress variant="buffer" value={0} valueBuffer={0} />}
                 description={"Initializing multi-shot generator"}
             />
         );
@@ -112,7 +117,9 @@ function GenerateMultiShotProgress({ trackedMultiShotGeneratorProgress }: Genera
             linearProgress={
                 <LinearProgress variant="buffer" value={finishedPercentage} valueBuffer={processingPercentage} />
             }
-            description={`Iteration ${finishedIterationsCount}/${totalIterations}, in progress: ${inProgressCount}`}
+            description={`Iteration ${finishedIterationsCount}/${totalIterations}, in progress: ${inProgressCount}, best metric: ${
+                trackedMultiShotGeneratorProgress.bestEvaluatedGridMetric ?? "-"
+            }`}
         />
     );
 }
@@ -199,7 +206,7 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
 
                             try {
                                 if (multiShot) {
-                                    const result = await generateMultiShot({
+                                    const { bestEvaluatedGridMetric } = await generateMultiShot({
                                         generatorSettings,
                                         iterations: iterationsIndexToIterations(iterationsIndex),
                                         metric,
@@ -207,18 +214,11 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
                                         parallel,
                                     });
 
-                                    // Show notification with final grid metric
-                                    if (result?.bestEvaluatedGridMetric !== undefined) {
-                                        const metricLabel = GRID_METRIC_OPTIONS[metric.kind]?.label ?? metric.kind;
-                                        notifications.show(
-                                            `Grid metric: ${metricLabel} = ${result.bestEvaluatedGridMetric.toString()}`,
-                                            {
-                                                key: "multi-shot-result",
-                                                severity: "info",
-                                                autoHideDuration: 5000,
-                                            },
-                                        );
-                                    }
+                                    const metricLabel = GRID_METRIC_OPTIONS[metric.kind].label;
+                                    notifications.show(`${metricLabel} = ${bestEvaluatedGridMetric}`, {
+                                        key: "multi-shot-result",
+                                        severity: "info",
+                                    });
                                 } else {
                                     await generate(generatorSettings);
                                 }
