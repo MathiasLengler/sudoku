@@ -9,6 +9,9 @@ default:
 test *test-args:
     cargo nextest run {{ test-args }}
 
+test-ci *test-args:
+    @just test --profile ci {{ test-args }}
+
 # Run all linters
 lint: rust-lint web-lint
 
