@@ -1,6 +1,6 @@
 ---
 source: sudoku-rs/src/solver/strategic/strategies/impls/brute_force.rs
-expression: "TransportDeductions::from(deductions)"
+expression: "TransportDeductions::from(deductions.clone())"
 ---
 deductions:
   - reasons:

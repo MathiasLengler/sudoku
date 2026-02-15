@@ -122,25 +122,51 @@ mod tests {
         use super::*;
         use crate::solver::strategic::deduction::transport::TransportDeductions;
 
-        #[test]
-        fn test_hidden_singles_base2() {
-            let mut grid = samples::base_2().into_iter().nth(1).unwrap();
-            grid.set_all_direct_candidates();
-            grid.fix_all_values();
-            let deductions = HiddenSingles.execute(&grid).unwrap();
-            insta::assert_yaml_snapshot!(TransportDeductions::from(deductions));
-        }
+        // TODO: extract as common strategy snapshot test macro
+        mod execute {
+            use super::*;
+            use crate::{
+                grid::format::{CandidatesGridPlain, GridFormat},
+                test_util::test_max_base4,
+            };
 
-        #[test]
-        fn test_hidden_singles_base3() {
-            let mut grid: Grid<Base3> =
-                "000000300000071500002400018000009040094618230610700000430897600008140000009000000"
-                    .parse()
-                    .unwrap();
-            grid.set_all_direct_candidates();
-            grid.fix_all_values();
-            let deductions = HiddenSingles.execute(&grid).unwrap();
-            insta::assert_yaml_snapshot!(TransportDeductions::from(deductions));
+            #[derive(serde::Serialize)]
+            struct DedudctionInfo<'a> {
+                grid_input: Vec<&'a str>,
+                grid_output: Vec<&'a str>,
+            }
+
+            test_max_base4!({
+                for (i, mut grid) in Base::grid_samples().enumerate() {
+                    let grid_name = format!("base_{}_sample_{i}", Base::BASE);
+
+                    grid.fix_all_values();
+                    grid.set_all_direct_candidates();
+
+                    let grid_input = CandidatesGridPlain.render(&grid);
+
+                    let deductions = HiddenSingles.execute(&grid).unwrap();
+                    deductions.apply(&mut grid).expect(
+                        "Deductions should be applicable to the grid they were generated from",
+                    );
+
+                    let grid_output = CandidatesGridPlain.render(&grid);
+                    let info = DedudctionInfo {
+                        grid_input: grid_input.split('\n').collect(),
+                        grid_output: grid_output.split('\n').collect(),
+                    };
+
+                    insta::with_settings!({
+                        description => format!("Strategy {} executed on grid {}", HiddenSingles.name(), grid_name),
+                        info => &info
+                    }, {
+                        insta::assert_yaml_snapshot!(
+                            grid_name,
+                            TransportDeductions::from(deductions.clone()),
+                        );
+                    });
+                }
+            });
         }
     }
 }
