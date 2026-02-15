@@ -556,6 +556,7 @@ mod tests {
     mod snapshots {
         use super::*;
 
+        // TODO: refactor using testing macros
         #[test]
         fn test_solve_path_base2() {
             for (i, grid) in crate::samples::base_2().into_iter().enumerate() {
@@ -581,9 +582,7 @@ mod tests {
                 );
                 let all_possible_solve_steps: Vec<Vec<DynamicSolveStep>> = solver
                     .solve_path_all()
-                    .map(|res| {
-                        res.map(|steps| steps.into_iter().map(Into::into).collect())
-                    })
+                    .map(|res| res.map(|steps| steps.into_iter().map(Into::into).collect()))
                     .collect::<Result<_>>()
                     .unwrap();
                 insta::assert_yaml_snapshot!(
