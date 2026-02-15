@@ -135,9 +135,11 @@ impl LockedSets {
 
 #[cfg(test)]
 mod tests {
-    use crate::solver::strategic::strategies::test_util::assert_deductions_with_grid;
+    use crate::base::consts::*;
+    use crate::solver::strategic::strategies::test_util::{
+        assert_deductions_with_grid, strategy_snapshot_tests,
+    };
     use crate::test_util::init_test_logger;
-    use crate::{base::consts::*, solver::strategic::deduction::transport::TransportDeductions};
 
     use super::*;
 
@@ -495,36 +497,5 @@ mod tests {
         assert_deductions_with_grid(&deductions, &expected_deductions, &mut grid);
     }
 
-    mod snapshots {
-        use super::*;
-
-        #[test]
-        fn test_naked_pairs() {
-            let mut grid: Grid<Base3> =
-                "400000938032094100095300240370609004529001673604703090957008300003900400240030709"
-                    .parse()
-                    .unwrap();
-            grid.set_all_direct_candidates();
-            let deductions = LockedSets.execute(&grid).unwrap();
-            insta::assert_yaml_snapshot!(
-                "locked_sets_naked_pairs",
-                TransportDeductions::from(deductions)
-            );
-        }
-
-        #[test]
-        fn test_hidden_pairs() {
-            init_test_logger();
-            let mut grid: Grid<Base3> =
-                "720408030080000047401076802810739000000851000000264080209680413340000008168943275"
-                    .parse()
-                    .unwrap();
-            grid.set_all_direct_candidates();
-            let deductions = LockedSets.execute(&grid).unwrap();
-            insta::assert_yaml_snapshot!(
-                "locked_sets_hidden_pairs",
-                TransportDeductions::from(deductions)
-            );
-        }
-    }
+    strategy_snapshot_tests!(LockedSets);
 }

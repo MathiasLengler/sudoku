@@ -32,9 +32,9 @@ impl Strategy for NakedSingles {
 
 #[cfg(test)]
 mod tests {
-    use crate::cell::Value;
     use crate::samples;
     use crate::solver::strategic::strategies::test_util::assert_deductions_with_grid;
+    use crate::{cell::Value, solver::strategic::strategies::test_util::strategy_snapshot_tests};
 
     use super::*;
 
@@ -70,17 +70,5 @@ mod tests {
         assert!(grid.is_solved());
     }
 
-    mod snapshots {
-        use super::*;
-        use crate::solver::strategic::deduction::transport::TransportDeductions;
-
-        #[test]
-        fn test_naked_singles() {
-            let mut grid = samples::base_2().first().unwrap().clone();
-            grid.set_all_direct_candidates();
-            grid.fix_all_values();
-            let deductions = NakedSingles.execute(&grid).unwrap();
-            insta::assert_yaml_snapshot!(TransportDeductions::from(deductions));
-        }
-    }
+    strategy_snapshot_tests!(NakedSingles);
 }

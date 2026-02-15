@@ -103,8 +103,10 @@ impl NakedPairs {
 
 #[cfg(test)]
 mod tests {
-    use crate::base::consts::*;
     use crate::solver::strategic::strategies::test_util::assert_deductions;
+    use crate::{
+        base::consts::*, solver::strategic::strategies::test_util::strategy_snapshot_tests,
+    };
 
     use super::*;
 
@@ -253,50 +255,5 @@ mod tests {
         }
     }
 
-    mod snapshots {
-        use super::*;
-        use crate::solver::strategic::deduction::transport::TransportDeductions;
-
-        #[test]
-        fn test_naked_pairs() {
-            type Base = Base3;
-
-            let test_inputs = vec![
-                // Single naked pair
-                vec![
-                    ((0, 0), vec![1, 6]),
-                    ((0, 1), vec![1, 6]),
-                    ((0, 2), vec![1, 2, 5]),
-                    ((0, 3), vec![1, 2, 5, 6, 7]),
-                    ((0, 4), vec![2, 5, 6, 7]),
-                ],
-                // Two naked pairs
-                vec![
-                    ((0, 0), vec![1, 2]),
-                    ((0, 1), vec![1, 2]),
-                    ((0, 2), vec![3, 4]),
-                    ((0, 3), vec![3, 4]),
-                    ((0, 4), vec![1, 2, 3, 4, 5]),
-                ],
-            ];
-
-            for (i, input) in test_inputs.into_iter().enumerate() {
-                let candidates_group: Vec<(Position<Base>, Candidates<Base>)> = input
-                    .into_iter()
-                    .map(|(pos, candidates)| {
-                        (
-                            pos.try_into().unwrap(),
-                            Candidates::try_from(candidates).unwrap(),
-                        )
-                    })
-                    .collect();
-                let deductions: Deductions<Base> =
-                    NakedPairs::find_naked_pairs(candidates_group).collect();
-                insta::assert_yaml_snapshot!(
-                    format!("naked_pairs_case_{i}"),
-                    TransportDeductions::from(deductions)
-                );
-            }
-        }
-    }
+    strategy_snapshot_tests!(NakedPairs);
 }

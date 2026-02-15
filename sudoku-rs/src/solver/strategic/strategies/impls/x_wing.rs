@@ -343,7 +343,7 @@ mod tests {
         base::consts::*,
         cell::Cell,
         solver::strategic::strategies::test_util::{
-            assert_deductions, assert_deductions_with_grid,
+            assert_deductions, assert_deductions_with_grid, strategy_snapshot_tests,
         },
     };
     use indoc::indoc;
@@ -419,45 +419,6 @@ mod tests {
             .into();
 
             assert_deductions(&deductions, &expected_deductions);
-        }
-    }
-
-    mod snapshots {
-        use super::*;
-        use crate::solver::strategic::deduction::transport::TransportDeductions;
-
-        #[test]
-        fn test_synthetic_base2_row_to_column_snapshot() {
-            let mut grid: Grid<Base2> = indoc! {"
-            0100
-            0101
-            0101
-            0001"
-            }
-            .parse()
-            .unwrap();
-            for pos in grid.all_value_positions() {
-                grid[pos] = Cell::with_candidates(grid[pos].to_candidates());
-            }
-            let deductions = XWing.execute(&grid).unwrap();
-            insta::assert_yaml_snapshot!(TransportDeductions::from(deductions));
-        }
-
-        #[test]
-        fn test_sudokuwiki_examples_snapshot() {
-            let grids = [
-                "S9B015y2e685w68050609040i022e0e0f0a2e085y050f0a5u090b042e2u2e0i06042c0810012q0f0dd0015w9i102e020a089e03050f9e0d5y042e05d0609i010f095y0e5y0f0a045y0206020166cy669id205",
-                "S9B4n144p5i6q7a360i0407064a0i014a0o050o1a091a263e023608011q078w580556bk01bc2714290758094w0o4816088c0s030a8c060g02045i014y5iba07c652016u54096u48040509127a5s707i0a0o54",
-                "S9B4n0b4n5i6q7a360i0407064a0i014a0o050o1a091a263e023608011q077o580556bk01bc2712270758094u0o4616087o0s030a8c060g02045i014y5iba07c652016u54096u48040509127a5q707i0a0o52",
-            ];
-            for (i, grid_str) in grids.into_iter().enumerate() {
-                let grid: Grid<Base3> = grid_str.parse().unwrap();
-                let deductions = XWing.execute(&grid).unwrap();
-                insta::assert_yaml_snapshot!(
-                    format!("x_wing_sudokuwiki_{i}"),
-                    TransportDeductions::from(deductions)
-                );
-            }
         }
     }
 
@@ -544,4 +505,6 @@ mod tests {
             assert_deductions_with_grid(&deductions, &expected_deductions, &mut grid);
         }
     }
+
+    strategy_snapshot_tests!(XWing);
 }
