@@ -49,6 +49,27 @@ macro_rules! test_max_base5 {
     };
 }
 
+macro_rules! for_base_grid_samples {
+    (|$grid:ident, $name:ident| $block:block) => {
+        #[allow(unused_mut)]
+        for (i, mut $grid) in Base::grid_samples().enumerate() {
+            let $name = format!("base_{}_sample_{i}", Base::BASE);
+            $block
+        }
+    };
+}
+
+macro_rules! for_base_grid_samples_with_direct_candidates {
+    (|$grid:ident, $name:ident| $block:block) => {
+        #[allow(unused_mut)]
+        for (i, mut $grid) in Base::grid_samples().enumerate() {
+            let $name = format!("base_{}_sample_{i}_direct_candidates", Base::BASE);
+            $grid.set_all_direct_candidates();
+            $block
+        }
+    };
+}
+
 macro_rules! test_all_sample_grids {
     (|$grid:ident| $block:block) => {
         test_all_sample_grids!(|$grid, name| {
@@ -61,21 +82,14 @@ macro_rules! test_all_sample_grids {
             use super::*;
 
             $crate::test_util::test_max_base5!({
-                #[allow(unused_mut)]
-                for (i, mut $grid) in Base::grid_samples().enumerate() {
-                    let $name = format!("base_{}_sample_{i}_direct_candidates", Base::BASE);
-                    $grid.set_all_direct_candidates();
+                $crate::test_util::for_base_grid_samples_with_direct_candidates!(|$grid, $name| {
                     $block
-                }
+                })
             });
         }
 
         $crate::test_util::test_max_base5!({
-            #[allow(unused_mut)]
-            for (i, mut $grid) in Base::grid_samples().enumerate() {
-                let $name = format!("base_{}_sample_{i}", Base::BASE);
-                $block
-            }
+            $crate::test_util::for_base_grid_samples!(|$grid, $name| { $block })
         });
 
         #[test]
@@ -95,6 +109,8 @@ macro_rules! test_all_sample_grids {
     };
 }
 
+pub(crate) use for_base_grid_samples;
+pub(crate) use for_base_grid_samples_with_direct_candidates;
 pub(crate) use test_all_sample_grids;
 pub(crate) use test_max_base3;
 pub(crate) use test_max_base4;

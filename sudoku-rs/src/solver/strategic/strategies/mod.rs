@@ -88,16 +88,11 @@ mod test_util {
                     solver::strategic::{
                         deduction::transport::TransportDeductions, strategies::test_util::DedudctionInfo,
                     },
-                    test_util::test_max_base4,
+                    test_util::{test_max_base4, for_base_grid_samples_with_direct_candidates},
                 };
 
                 test_max_base4!({
-                    for (i, mut $grid) in Base::grid_samples().enumerate() {
-                        let grid_name = format!("base_{}_sample_{i}", Base::BASE);
-
-                        $grid.fix_all_values();
-                        $grid.set_all_direct_candidates();
-
+                    for_base_grid_samples_with_direct_candidates!(|$grid, grid_name| {
                         let grid_input = CandidatesGridPlain.render(&$grid);
 
                         let deductions = $strategy.execute(&$grid).unwrap();
@@ -124,7 +119,7 @@ mod test_util {
                                 TransportDeductions::from(deductions.clone()),
                             );
                         });
-                    }
+                    })
                 });
             }
         };
