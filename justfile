@@ -38,7 +38,7 @@ test-insta-review *insta-args:
     cargo insta review {{ insta-args }}
 
 # Run clippy
-clippy: _clippy
+clippy *clippy-args: (_clippy clippy-args)
 
 # Run clippy for CI (treat warnings as errors)
 clippy-ci: (_clippy "--" "-D" "warnings")
