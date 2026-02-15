@@ -1,0 +1,5 @@
+---
+source: sudoku-rs/src/grid/format/wiki/v2.rs
+expression: BinaryCandidatesLineV2.render(&grid)
+---
+S4B2341413214233214

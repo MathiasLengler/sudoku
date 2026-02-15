@@ -1,3 +1,4 @@
+import { selectedStrategiesSchema } from "../../app/constants";
 import { type BaseEnum, type GeneratorProgress } from "../../types";
 import { WasmSudoku } from "sudoku-wasm";
 
@@ -29,7 +30,7 @@ export function getWasmSudokuSamples(base: BaseEnum, seed: bigint): { name: stri
                     seed,
                     prune: {
                         target: "minimal",
-                        strategies: ["BruteForce"],
+                        strategies: selectedStrategiesSchema.decode(["BruteForce"]),
                         setAllDirectCandidates: true,
                         order: "random",
                         startFromNearMinimalGrid: false,

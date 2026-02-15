@@ -103,8 +103,10 @@ impl NakedPairs {
 
 #[cfg(test)]
 mod tests {
-    use crate::base::consts::*;
     use crate::solver::strategic::strategies::test_util::assert_deductions;
+    use crate::{
+        base::consts::*, solver::strategic::strategies::test_util::strategy_snapshot_tests,
+    };
 
     use super::*;
 
@@ -252,4 +254,6 @@ mod tests {
             assert_deductions(&deductions, &expected_deductions);
         }
     }
+
+    strategy_snapshot_tests!(NakedPairs);
 }

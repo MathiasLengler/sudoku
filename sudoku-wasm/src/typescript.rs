@@ -21,7 +21,7 @@ use sudoku::{
             PositionedTransportAction, PositionedTransportReason, TransportAction,
             TransportDeduction, TransportDeductions, TransportReason,
         },
-        strategies::StrategyEnum,
+        strategies::{StrategyEnum, selection::StrategySet},
     },
     transport::{TransportCell, TransportSudoku},
     world::{
@@ -132,12 +132,18 @@ pub type DynamicCells = Vec<DynamicCell>;
 // Must be keept in sync with aliases above
 #[wasm_bindgen(typescript_custom_section)]
 const TS_SERDE_ALIASES: &'static str = r#"
+import type {
+    StrategyMap,
+} from "../../sudoku-rs/bindings";
+
 export type StrategyEnums = StrategyEnum[];
 export type DynamicCells = DynamicCell[];
+export type StrategySet = StrategyMap<boolean>;
 "#;
 serde_wasm_bindgen_interop! {
     DynamicCells,
     StrategyEnums,
+    StrategySet,
 }
 
 // external types (zod branded types)
