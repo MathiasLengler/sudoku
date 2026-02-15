@@ -5,6 +5,7 @@ import TabPanel from "@mui/lab/TabPanel";
 import { Box, DialogContent, FormGroup, LinearProgress, Stack, Typography } from "@mui/material";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
+import { useNotifications } from "@toolpad/core/useNotifications";
 import * as _ from "es-toolkit";
 import { useAtom } from "jotai";
 import { useEffect } from "react";
@@ -67,7 +68,12 @@ type GenerateProgressProps = {
 };
 function GenerateProgress({ progress, cellCount }: GenerateProgressProps) {
     if (!progress) {
-        return <GenerateProgressLayout linearProgress={<LinearProgress />} description={"Generating solution"} />;
+        return (
+            <GenerateProgressLayout
+                linearProgress={<LinearProgress variant="determinate" value={0} />}
+                description={"Generating solution"}
+            />
+        );
     }
 
     const { pruningPositionCount, pruningPositionIndex, deletedCount } = progress;
@@ -90,7 +96,7 @@ function GenerateMultiShotProgress({ trackedMultiShotGeneratorProgress }: Genera
     if (!trackedMultiShotGeneratorProgress) {
         return (
             <GenerateProgressLayout
-                linearProgress={<LinearProgress />}
+                linearProgress={<LinearProgress variant="buffer" value={0} valueBuffer={0} />}
                 description={"Initializing multi-shot generator"}
             />
         );
@@ -111,7 +117,9 @@ function GenerateMultiShotProgress({ trackedMultiShotGeneratorProgress }: Genera
             linearProgress={
                 <LinearProgress variant="buffer" value={finishedPercentage} valueBuffer={processingPercentage} />
             }
-            description={`Iteration ${finishedIterationsCount}/${totalIterations}, in progress: ${inProgressCount}`}
+            description={`Iteration ${finishedIterationsCount}/${totalIterations}, in progress: ${inProgressCount}, best metric: ${
+                trackedMultiShotGeneratorProgress.bestEvaluatedGridMetric ?? "-"
+            }`}
         />
     );
 }
@@ -120,6 +128,7 @@ type GenerateFormProps = {
     onClose: () => void;
 };
 export function GenerateForm({ onClose }: GenerateFormProps) {
+    const notifications = useNotifications();
     const [generateFormValues, setGenerateFormValues] = useAtom(generateFormValuesState);
 
     const {
@@ -197,12 +206,18 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
 
                             try {
                                 if (multiShot) {
-                                    await generateMultiShot({
+                                    const { bestEvaluatedGridMetric } = await generateMultiShot({
                                         generatorSettings,
                                         iterations: iterationsIndexToIterations(iterationsIndex),
                                         metric,
                                         optimize,
                                         parallel,
+                                    });
+
+                                    const metricLabel = GRID_METRIC_OPTIONS[metric.kind].label;
+                                    notifications.show(`${metricLabel} = ${bestEvaluatedGridMetric}`, {
+                                        key: "multi-shot-result",
+                                        severity: "info",
                                     });
                                 } else {
                                     await generate(generatorSettings);
