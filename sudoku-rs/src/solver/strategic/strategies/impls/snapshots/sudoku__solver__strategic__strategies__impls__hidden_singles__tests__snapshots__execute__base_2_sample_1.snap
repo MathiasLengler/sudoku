@@ -21,6 +21,11 @@ info:
     - ║     │  1  ║     │  2  ║
     - ║ 3 4 │     ║ 3   │     ║
     - ╚═══════════╩═══════════╝
+  deductions:
+    - "r0c1: set value 2, because of: r0c1: candidate 2"
+    - "r1c2: set value 2, because of: r1c2: candidate 2"
+    - "r2c3: set value 4, because of: r2c3: candidate 4"
+    - "r3c0: set value 4, because of: r3c0: candidate 4"
   grid_output:
     - ╔═══════════╦═══════════╗
     - ║     │     ║     │     ║

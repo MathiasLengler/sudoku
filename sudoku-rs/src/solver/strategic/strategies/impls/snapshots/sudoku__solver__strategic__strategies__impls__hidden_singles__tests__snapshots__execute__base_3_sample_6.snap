@@ -41,6 +41,12 @@ info:
     - ║ 4   │  5  │ 45  ║  5  │  2  │  5  ║     │ 4   │  6  ║
     - ║ 7   │ 7   │ 78  ║ 78  │     │ 789 ║  89 │ 789 │     ║
     - ╚═════════════════╩═════════════════╩═════════════════╝
+  deductions:
+    - "r3c4: set value 9, because of: r3c4: candidate 9"
+    - "r3c7: set value 5, because of: r3c7: candidate 5"
+    - "r4c0: set value 9, because of: r4c0: candidate 9"
+    - "r8c2: set value 8, because of: r8c2: candidate 8"
+    - "r8c6: set value 9, because of: r8c6: candidate 9"
   grid_output:
     - ╔═════════════════╦═════════════════╦═════════════════╗
     - ║     │ 12  │ 12  ║ 12  │     │ 1   ║     │ 1   │     ║

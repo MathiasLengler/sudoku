@@ -133,6 +133,7 @@ mod tests {
             #[derive(serde::Serialize)]
             struct DedudctionInfo<'a> {
                 grid_input: Vec<&'a str>,
+                deductions: Vec<&'a str>,
                 grid_output: Vec<&'a str>,
             }
 
@@ -151,8 +152,10 @@ mod tests {
                     );
 
                     let grid_output = CandidatesGridPlain.render(&grid);
+                    let deductions_str = deductions.to_string();
                     let info = DedudctionInfo {
                         grid_input: grid_input.split('\n').collect(),
+                        deductions: deductions_str.split('\n').collect(),
                         grid_output: grid_output.split('\n').collect(),
                     };
 

@@ -41,6 +41,30 @@ info:
     - ║     │  9  │     ║  3  │ 4   │ 45  ║  6  │  2  │  5  ║
     - ║ 7   │     │ 78  ║     │ 78  │ 78  ║     │     │     ║
     - ╚═════════════════╩═════════════════╩═════════════════╝
+  deductions:
+    - "r0c0: set value 9, because of: r0c0: candidate 9"
+    - "r0c1: set value 6, because of: r0c1: candidate 6"
+    - "r1c3: set value 6, because of: r1c3: candidate 6"
+    - "r1c5: set value 4, because of: r1c5: candidate 4"
+    - "r2c0: set value 2, because of: r2c0: candidate 2"
+    - "r3c2: set value 9, because of: r3c2: candidate 9"
+    - "r3c5: set value 1, because of: r3c5: candidate 1"
+    - "r3c6: set value 7, because of: r3c6: candidate 7"
+    - "r3c7: set value 8, because of: r3c7: candidate 8"
+    - "r3c8: set value 3, because of: r3c8: candidate 3"
+    - "r4c5: set value 6, because of: r4c5: candidate 6"
+    - "r4c6: set value 4, because of: r4c6: candidate 4"
+    - "r5c1: set value 4, because of: r5c1: candidate 4"
+    - "r5c4: set value 7, because of: r5c4: candidate 7"
+    - "r5c7: set value 9, because of: r5c7: candidate 9"
+    - "r6c1: set value 1, because of: r6c1: candidate 1"
+    - "r6c4: set value 2, because of: r6c4: candidate 2"
+    - "r6c6: set value 3, because of: r6c6: candidate 3"
+    - "r7c2: set value 2, because of: r7c2: candidate 2"
+    - "r7c5: set value 9, because of: r7c5: candidate 9"
+    - "r7c7: set value 4, because of: r7c7: candidate 4"
+    - "r8c4: set value 4, because of: r8c4: candidate 4"
+    - "r8c8: set value 1, because of: r8c8: candidate 1"
   grid_output:
     - ╔═════════════════╦═════════════════╦═════════════════╗
     - ║     │     │     ║     │   3 │     ║     │     │     ║
