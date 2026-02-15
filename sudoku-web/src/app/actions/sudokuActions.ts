@@ -2,7 +2,7 @@ import assertNever from "assert-never";
 import { inRange, isEqual } from "es-toolkit";
 import type { Getter, Setter } from "jotai";
 import { useAtomCallback } from "jotai/utils";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type {
     DynamicGeneratorSettings,
     DynamicMultiShotGeneratorSettings,
@@ -383,6 +383,8 @@ export function useGenerate() {
     const { mutation, cancel: cancelGenerate } = useCancelableMutation<DynamicGeneratorSettings, GeneratorProgress>({
         cancelableMutationFn: useCallback(
             async ({ variables: settings, abortPromise, onProgress }) => {
+                setGenerateProgress(undefined);
+
                 await generate(settings, abortPromise, onProgress);
             },
             [generate],
@@ -404,6 +406,11 @@ export type TrackedMultiShotGeneratorProgress = {
     latestProgress: MultiShotGeneratorProgress;
     seenIterationsCount: number;
     finishedIterationsCount: number;
+    bestEvaluatedGridMetric: bigint | undefined;
+};
+
+export type MultiShotGenerationResult = {
+    bestEvaluatedGridMetric: bigint;
 };
 
 export function useGenerateMultiShot() {
@@ -448,23 +455,36 @@ export function useGenerateMultiShot() {
     const [trackedMultiShotGeneratorProgress, setTrackedMultiShotGeneratorProgress] =
         useState<TrackedMultiShotGeneratorProgress>();
 
+    const bestEvaluatedGridMetricRef = useRef<bigint | undefined>(undefined);
+
+    const resetProgressState = useCallback(() => {
+        setTrackedMultiShotGeneratorProgress(undefined);
+        bestEvaluatedGridMetricRef.current = undefined;
+    }, []);
+
     const { mutation, cancel: cancelGenerateMultiShot } = useCancelableMutation<
         DynamicMultiShotGeneratorSettings,
         MultiShotGeneratorProgress
     >({
         cancelableMutationFn: useCallback(
             async ({ variables: settings, abortPromise, onProgress }) => {
+                // Reset state before starting a new generation.
+                resetProgressState();
+
                 await generateImpl(settings, abortPromise, onProgress);
             },
-            [generateImpl],
+            [generateImpl, resetProgressState],
         ),
         onProgress: useCallback((progress: MultiShotGeneratorProgress) => {
             console.debug("MultiShot progress:", progress);
             let isFinished;
+            let bestEvaluatedGridMetric: bigint | undefined;
             if (progress.kind === "started") {
                 isFinished = false;
             } else if (progress.kind === "finished") {
                 isFinished = true;
+                bestEvaluatedGridMetricRef.current = progress.bestEvaluatedGridMetric;
+                bestEvaluatedGridMetric = progress.bestEvaluatedGridMetric;
             } else {
                 assertNever(progress);
             }
@@ -475,17 +495,34 @@ export function useGenerateMultiShot() {
                     latestProgress: progress,
                     seenIterationsCount: isFinished ? prevSeenIterationsCount : prevSeenIterationsCount + 1,
                     finishedIterationsCount: isFinished ? prevFinishedIterationsCount + 1 : prevFinishedIterationsCount,
+                    bestEvaluatedGridMetric: bestEvaluatedGridMetric ?? prev?.bestEvaluatedGridMetric,
                 };
             });
         }, []),
         onCancel: useCallback(() => {
             console.info("MultiShot generation was canceled.");
-            setTrackedMultiShotGeneratorProgress(undefined);
-        }, []),
+            resetProgressState();
+        }, [resetProgressState]),
     });
 
+    const generateMultiShot = useCallback(
+        async (settings: DynamicMultiShotGeneratorSettings): Promise<MultiShotGenerationResult> => {
+            await mutation.mutateAsync(settings);
+
+            if (bestEvaluatedGridMetricRef.current !== undefined) {
+                return { bestEvaluatedGridMetric: bestEvaluatedGridMetricRef.current };
+            } else {
+                console.warn(
+                    "Expected bestEvaluatedGridMetricRef to be set after successful generation, but it was undefined.",
+                );
+                return { bestEvaluatedGridMetric: -1n };
+            }
+        },
+        [mutation],
+    );
+
     return {
-        generateMultiShot: mutation.mutateAsync,
+        generateMultiShot,
         trackedMultiShotGeneratorProgress,
         cancelGenerateMultiShot,
     };
