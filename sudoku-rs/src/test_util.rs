@@ -59,7 +59,7 @@ macro_rules! for_base_grid_samples {
     };
 }
 
-macro_rules! for_base_grid_samples_with_direct_candidates {
+macro_rules! for_base_grid_samples_direct_candidates {
     (|$grid:ident, $name:ident| $block:block) => {
         #[allow(unused_mut)]
         for (i, mut $grid) in Base::grid_samples().enumerate() {
@@ -82,7 +82,7 @@ macro_rules! test_all_sample_grids {
             use super::*;
 
             $crate::test_util::test_max_base5!({
-                $crate::test_util::for_base_grid_samples_with_direct_candidates!(|$grid, $name| {
+                $crate::test_util::for_base_grid_samples_direct_candidates!(|$grid, $name| {
                     $block
                 })
             });
@@ -110,7 +110,7 @@ macro_rules! test_all_sample_grids {
 }
 
 pub(crate) use for_base_grid_samples;
-pub(crate) use for_base_grid_samples_with_direct_candidates;
+pub(crate) use for_base_grid_samples_direct_candidates;
 pub(crate) use test_all_sample_grids;
 pub(crate) use test_max_base3;
 pub(crate) use test_max_base4;
