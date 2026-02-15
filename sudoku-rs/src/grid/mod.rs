@@ -434,6 +434,9 @@ impl<Base: SudokuBase> Grid<Base> {
         solver.count()
     }
 
+    /// Try to solve this grid using the given strategies.
+    ///
+    /// Returns the solution if it is solvable using the given strategies, otherwise returns None.
     pub fn is_solvable_with_strategies(
         &self,
         strategies: impl StrategySelection,

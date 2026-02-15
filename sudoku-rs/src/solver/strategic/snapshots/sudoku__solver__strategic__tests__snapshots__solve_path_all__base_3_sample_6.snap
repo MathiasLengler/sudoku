@@ -1,0 +1,6175 @@
+---
+source: sudoku-rs/src/solver/strategic/mod.rs
+expression: all_possible_solve_steps
+---
+- - strategy: HiddenSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 3
+                column: 4
+              candidates:
+                - 9
+          actions:
+            - position:
+                row: 3
+                column: 4
+              setValue: 9
+        - reasons:
+            - position:
+                row: 3
+                column: 7
+              candidates:
+                - 5
+          actions:
+            - position:
+                row: 3
+                column: 7
+              setValue: 5
+        - reasons:
+            - position:
+                row: 4
+                column: 0
+              candidates:
+                - 9
+          actions:
+            - position:
+                row: 4
+                column: 0
+              setValue: 9
+        - reasons:
+            - position:
+                row: 8
+                column: 2
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 8
+                column: 2
+              setValue: 8
+        - reasons:
+            - position:
+                row: 8
+                column: 6
+              candidates:
+                - 9
+          actions:
+            - position:
+                row: 8
+                column: 6
+              setValue: 9
+  - strategy: LockedSets
+    deductions:
+      deductions:
+        - reasons: []
+          actions:
+            - position:
+                row: 1
+                column: 1
+              deleteCandidates:
+                - 1
+                - 2
+                - 7
+            - position:
+                row: 1
+                column: 7
+              deleteCandidates:
+                - 1
+                - 3
+                - 4
+        - reasons: []
+          actions:
+            - position:
+                row: 3
+                column: 4
+              deleteCandidates:
+                - 1
+                - 3
+                - 7
+                - 8
+        - reasons: []
+          actions:
+            - position:
+                row: 3
+                column: 7
+              deleteCandidates:
+                - 1
+                - 2
+                - 3
+                - 7
+                - 8
+        - reasons: []
+          actions:
+            - position:
+                row: 4
+                column: 0
+              deleteCandidates:
+                - 1
+                - 2
+                - 7
+        - reasons: []
+          actions:
+            - position:
+                row: 8
+                column: 2
+              deleteCandidates:
+                - 1
+                - 3
+                - 4
+                - 5
+                - 7
+        - reasons: []
+          actions:
+            - position:
+                row: 8
+                column: 6
+              deleteCandidates:
+                - 8
+  - strategy: GroupIntersectionBoth
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 8
+              candidates:
+                - 4
+            - position:
+                row: 1
+                column: 8
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 0
+                column: 7
+              deleteCandidates:
+                - 4
+            - position:
+                row: 1
+                column: 7
+              deleteCandidates:
+                - 4
+            - position:
+                row: 2
+                column: 7
+              deleteCandidates:
+                - 4
+        - reasons:
+            - position:
+                row: 7
+                column: 7
+              candidates:
+                - 4
+            - position:
+                row: 8
+                column: 7
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 0
+                column: 7
+              deleteCandidates:
+                - 4
+            - position:
+                row: 1
+                column: 7
+              deleteCandidates:
+                - 4
+            - position:
+                row: 2
+                column: 7
+              deleteCandidates:
+                - 4
+        - reasons:
+            - position:
+                row: 6
+                column: 5
+              candidates:
+                - 9
+            - position:
+                row: 8
+                column: 5
+              candidates:
+                - 9
+          actions:
+            - position:
+                row: 3
+                column: 5
+              deleteCandidates:
+                - 9
+            - position:
+                row: 4
+                column: 5
+              deleteCandidates:
+                - 9
+        - reasons:
+            - position:
+                row: 3
+                column: 8
+              candidates:
+                - 7
+            - position:
+                row: 4
+                column: 8
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 3
+                column: 7
+              deleteCandidates:
+                - 7
+            - position:
+                row: 4
+                column: 7
+              deleteCandidates:
+                - 7
+            - position:
+                row: 5
+                column: 7
+              deleteCandidates:
+                - 7
+        - reasons:
+            - position:
+                row: 6
+                column: 7
+              candidates:
+                - 7
+            - position:
+                row: 7
+                column: 7
+              candidates:
+                - 7
+            - position:
+                row: 8
+                column: 7
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 3
+                column: 7
+              deleteCandidates:
+                - 7
+            - position:
+                row: 4
+                column: 7
+              deleteCandidates:
+                - 7
+            - position:
+                row: 5
+                column: 7
+              deleteCandidates:
+                - 7
+        - reasons:
+            - position:
+                row: 3
+                column: 4
+              candidates:
+                - 9
+            - position:
+                row: 3
+                column: 5
+              candidates:
+                - 9
+          actions:
+            - position:
+                row: 4
+                column: 5
+              deleteCandidates:
+                - 9
+        - reasons:
+            - position:
+                row: 0
+                column: 7
+              candidates:
+                - 9
+            - position:
+                row: 1
+                column: 7
+              candidates:
+                - 9
+          actions:
+            - position:
+                row: 6
+                column: 7
+              deleteCandidates:
+                - 9
+            - position:
+                row: 8
+                column: 7
+              deleteCandidates:
+                - 9
+  - strategy: XWing
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 1
+              candidates:
+                - 9
+            - position:
+                row: 0
+                column: 7
+              candidates:
+                - 9
+            - position:
+                row: 1
+                column: 1
+              candidates:
+                - 9
+            - position:
+                row: 1
+                column: 7
+              candidates:
+                - 9
+          actions:
+            - position:
+                row: 6
+                column: 7
+              deleteCandidates:
+                - 9
+            - position:
+                row: 8
+                column: 7
+              deleteCandidates:
+                - 9
+- - strategy: HiddenSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 6
+                column: 5
+              candidates:
+                - 9
+          actions:
+            - position:
+                row: 6
+                column: 5
+              setValue: 9
+  - strategy: LockedSets
+    deductions:
+      deductions:
+        - reasons: []
+          actions:
+            - position:
+                row: 1
+                column: 1
+              deleteCandidates:
+                - 1
+                - 2
+                - 7
+            - position:
+                row: 1
+                column: 7
+              deleteCandidates:
+                - 1
+                - 3
+                - 4
+        - reasons: []
+          actions:
+            - position:
+                row: 6
+                column: 5
+              deleteCandidates:
+                - 1
+                - 7
+                - 8
+        - reasons: []
+          actions:
+            - position:
+                row: 7
+                column: 1
+              deleteCandidates:
+                - 2
+                - 7
+            - position:
+                row: 8
+                column: 1
+              deleteCandidates:
+                - 1
+                - 7
+  - strategy: GroupIntersectionBoth
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 2
+              candidates:
+                - 5
+            - position:
+                row: 2
+                column: 2
+              candidates:
+                - 5
+          actions:
+            - position:
+                row: 0
+                column: 1
+              deleteCandidates:
+                - 5
+            - position:
+                row: 2
+                column: 1
+              deleteCandidates:
+                - 5
+        - reasons:
+            - position:
+                row: 7
+                column: 1
+              candidates:
+                - 5
+            - position:
+                row: 8
+                column: 1
+              candidates:
+                - 5
+          actions:
+            - position:
+                row: 0
+                column: 1
+              deleteCandidates:
+                - 5
+            - position:
+                row: 2
+                column: 1
+              deleteCandidates:
+                - 5
+        - reasons:
+            - position:
+                row: 3
+                column: 2
+              candidates:
+                - 2
+            - position:
+                row: 4
+                column: 2
+              candidates:
+                - 2
+          actions:
+            - position:
+                row: 0
+                column: 2
+              deleteCandidates:
+                - 2
+            - position:
+                row: 1
+                column: 2
+              deleteCandidates:
+                - 2
+        - reasons:
+            - position:
+                row: 0
+                column: 8
+              candidates:
+                - 4
+            - position:
+                row: 1
+                column: 8
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 0
+                column: 7
+              deleteCandidates:
+                - 4
+            - position:
+                row: 1
+                column: 7
+              deleteCandidates:
+                - 4
+            - position:
+                row: 2
+                column: 7
+              deleteCandidates:
+                - 4
+        - reasons:
+            - position:
+                row: 7
+                column: 7
+              candidates:
+                - 4
+            - position:
+                row: 8
+                column: 7
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 0
+                column: 7
+              deleteCandidates:
+                - 4
+            - position:
+                row: 1
+                column: 7
+              deleteCandidates:
+                - 4
+            - position:
+                row: 2
+                column: 7
+              deleteCandidates:
+                - 4
+        - reasons:
+            - position:
+                row: 0
+                column: 2
+              candidates:
+                - 4
+            - position:
+                row: 1
+                column: 2
+              candidates:
+                - 4
+            - position:
+                row: 2
+                column: 2
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 2
+                column: 0
+              deleteCandidates:
+                - 4
+        - reasons:
+            - position:
+                row: 7
+                column: 0
+              candidates:
+                - 4
+            - position:
+                row: 8
+                column: 0
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 2
+                column: 0
+              deleteCandidates:
+                - 4
+        - reasons:
+            - position:
+                row: 3
+                column: 8
+              candidates:
+                - 7
+            - position:
+                row: 4
+                column: 8
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 4
+                column: 7
+              deleteCandidates:
+                - 7
+            - position:
+                row: 5
+                column: 7
+              deleteCandidates:
+                - 7
+        - reasons:
+            - position:
+                row: 6
+                column: 7
+              candidates:
+                - 7
+            - position:
+                row: 7
+                column: 7
+              candidates:
+                - 7
+            - position:
+                row: 8
+                column: 7
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 4
+                column: 7
+              deleteCandidates:
+                - 7
+            - position:
+                row: 5
+                column: 7
+              deleteCandidates:
+                - 7
+        - reasons:
+            - position:
+                row: 3
+                column: 2
+              candidates:
+                - 3
+            - position:
+                row: 4
+                column: 2
+              candidates:
+                - 3
+            - position:
+                row: 5
+                column: 2
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 5
+                column: 1
+              deleteCandidates:
+                - 3
+        - reasons:
+            - position:
+                row: 7
+                column: 1
+              candidates:
+                - 3
+            - position:
+                row: 8
+                column: 1
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 5
+                column: 1
+              deleteCandidates:
+                - 3
+        - reasons:
+            - position:
+                row: 6
+                column: 0
+              candidates:
+                - 2
+            - position:
+                row: 7
+                column: 0
+              candidates:
+                - 2
+          actions:
+            - position:
+                row: 6
+                column: 1
+              deleteCandidates:
+                - 2
+            - position:
+                row: 7
+                column: 1
+              deleteCandidates:
+                - 2
+  - strategy: XWing
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 7
+                column: 0
+              candidates:
+                - 4
+            - position:
+                row: 7
+                column: 7
+              candidates:
+                - 4
+            - position:
+                row: 8
+                column: 0
+              candidates:
+                - 4
+            - position:
+                row: 8
+                column: 7
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 0
+                column: 7
+              deleteCandidates:
+                - 4
+            - position:
+                row: 1
+                column: 7
+              deleteCandidates:
+                - 4
+            - position:
+                row: 2
+                column: 0
+              deleteCandidates:
+                - 4
+            - position:
+                row: 2
+                column: 7
+              deleteCandidates:
+                - 4
+- - strategy: LockedSets
+    deductions:
+      deductions:
+        - reasons: []
+          actions:
+            - position:
+                row: 1
+                column: 1
+              deleteCandidates:
+                - 1
+                - 2
+                - 7
+            - position:
+                row: 1
+                column: 7
+              deleteCandidates:
+                - 1
+                - 3
+                - 4
+        - reasons: []
+          actions:
+            - position:
+                row: 7
+                column: 1
+              deleteCandidates:
+                - 2
+                - 7
+            - position:
+                row: 8
+                column: 1
+              deleteCandidates:
+                - 1
+                - 7
+  - strategy: GroupIntersectionBoth
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 2
+              candidates:
+                - 5
+            - position:
+                row: 2
+                column: 2
+              candidates:
+                - 5
+          actions:
+            - position:
+                row: 0
+                column: 1
+              deleteCandidates:
+                - 5
+            - position:
+                row: 2
+                column: 1
+              deleteCandidates:
+                - 5
+        - reasons:
+            - position:
+                row: 7
+                column: 1
+              candidates:
+                - 5
+            - position:
+                row: 8
+                column: 1
+              candidates:
+                - 5
+          actions:
+            - position:
+                row: 0
+                column: 1
+              deleteCandidates:
+                - 5
+            - position:
+                row: 2
+                column: 1
+              deleteCandidates:
+                - 5
+        - reasons:
+            - position:
+                row: 3
+                column: 2
+              candidates:
+                - 2
+            - position:
+                row: 4
+                column: 2
+              candidates:
+                - 2
+          actions:
+            - position:
+                row: 0
+                column: 2
+              deleteCandidates:
+                - 2
+            - position:
+                row: 1
+                column: 2
+              deleteCandidates:
+                - 2
+        - reasons:
+            - position:
+                row: 0
+                column: 8
+              candidates:
+                - 4
+            - position:
+                row: 1
+                column: 8
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 0
+                column: 7
+              deleteCandidates:
+                - 4
+            - position:
+                row: 1
+                column: 7
+              deleteCandidates:
+                - 4
+            - position:
+                row: 2
+                column: 7
+              deleteCandidates:
+                - 4
+        - reasons:
+            - position:
+                row: 7
+                column: 7
+              candidates:
+                - 4
+            - position:
+                row: 8
+                column: 7
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 0
+                column: 7
+              deleteCandidates:
+                - 4
+            - position:
+                row: 1
+                column: 7
+              deleteCandidates:
+                - 4
+            - position:
+                row: 2
+                column: 7
+              deleteCandidates:
+                - 4
+        - reasons:
+            - position:
+                row: 0
+                column: 2
+              candidates:
+                - 4
+            - position:
+                row: 1
+                column: 2
+              candidates:
+                - 4
+            - position:
+                row: 2
+                column: 2
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 2
+                column: 0
+              deleteCandidates:
+                - 4
+        - reasons:
+            - position:
+                row: 7
+                column: 0
+              candidates:
+                - 4
+            - position:
+                row: 8
+                column: 0
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 2
+                column: 0
+              deleteCandidates:
+                - 4
+        - reasons:
+            - position:
+                row: 3
+                column: 8
+              candidates:
+                - 7
+            - position:
+                row: 4
+                column: 8
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 4
+                column: 7
+              deleteCandidates:
+                - 7
+            - position:
+                row: 5
+                column: 7
+              deleteCandidates:
+                - 7
+        - reasons:
+            - position:
+                row: 6
+                column: 7
+              candidates:
+                - 7
+            - position:
+                row: 7
+                column: 7
+              candidates:
+                - 7
+            - position:
+                row: 8
+                column: 7
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 4
+                column: 7
+              deleteCandidates:
+                - 7
+            - position:
+                row: 5
+                column: 7
+              deleteCandidates:
+                - 7
+        - reasons:
+            - position:
+                row: 3
+                column: 2
+              candidates:
+                - 3
+            - position:
+                row: 4
+                column: 2
+              candidates:
+                - 3
+            - position:
+                row: 5
+                column: 2
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 5
+                column: 1
+              deleteCandidates:
+                - 3
+        - reasons:
+            - position:
+                row: 7
+                column: 1
+              candidates:
+                - 3
+            - position:
+                row: 8
+                column: 1
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 5
+                column: 1
+              deleteCandidates:
+                - 3
+        - reasons:
+            - position:
+                row: 6
+                column: 0
+              candidates:
+                - 2
+            - position:
+                row: 7
+                column: 0
+              candidates:
+                - 2
+          actions:
+            - position:
+                row: 6
+                column: 1
+              deleteCandidates:
+                - 2
+            - position:
+                row: 7
+                column: 1
+              deleteCandidates:
+                - 2
+  - strategy: XWing
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 7
+                column: 0
+              candidates:
+                - 4
+            - position:
+                row: 7
+                column: 7
+              candidates:
+                - 4
+            - position:
+                row: 8
+                column: 0
+              candidates:
+                - 4
+            - position:
+                row: 8
+                column: 7
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 0
+                column: 7
+              deleteCandidates:
+                - 4
+            - position:
+                row: 1
+                column: 7
+              deleteCandidates:
+                - 4
+            - position:
+                row: 2
+                column: 0
+              deleteCandidates:
+                - 4
+            - position:
+                row: 2
+                column: 7
+              deleteCandidates:
+                - 4
+- - strategy: NakedPairs
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 7
+                column: 1
+              candidates:
+                - 3
+                - 5
+            - position:
+                row: 8
+                column: 1
+              candidates:
+                - 3
+                - 5
+          actions:
+            - position:
+                row: 0
+                column: 1
+              deleteCandidates:
+                - 5
+            - position:
+                row: 2
+                column: 1
+              deleteCandidates:
+                - 5
+            - position:
+                row: 5
+                column: 1
+              deleteCandidates:
+                - 3
+  - strategy: LockedSets
+    deductions:
+      deductions:
+        - reasons: []
+          actions:
+            - position:
+                row: 0
+                column: 1
+              deleteCandidates:
+                - 5
+            - position:
+                row: 2
+                column: 1
+              deleteCandidates:
+                - 5
+            - position:
+                row: 5
+                column: 1
+              deleteCandidates:
+                - 3
+  - strategy: GroupIntersectionBoth
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 2
+              candidates:
+                - 5
+            - position:
+                row: 2
+                column: 2
+              candidates:
+                - 5
+          actions:
+            - position:
+                row: 0
+                column: 1
+              deleteCandidates:
+                - 5
+            - position:
+                row: 2
+                column: 1
+              deleteCandidates:
+                - 5
+        - reasons:
+            - position:
+                row: 7
+                column: 1
+              candidates:
+                - 5
+            - position:
+                row: 8
+                column: 1
+              candidates:
+                - 5
+          actions:
+            - position:
+                row: 0
+                column: 1
+              deleteCandidates:
+                - 5
+            - position:
+                row: 2
+                column: 1
+              deleteCandidates:
+                - 5
+        - reasons:
+            - position:
+                row: 3
+                column: 2
+              candidates:
+                - 2
+            - position:
+                row: 4
+                column: 2
+              candidates:
+                - 2
+          actions:
+            - position:
+                row: 0
+                column: 2
+              deleteCandidates:
+                - 2
+            - position:
+                row: 1
+                column: 2
+              deleteCandidates:
+                - 2
+        - reasons:
+            - position:
+                row: 0
+                column: 8
+              candidates:
+                - 4
+            - position:
+                row: 1
+                column: 8
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 0
+                column: 7
+              deleteCandidates:
+                - 4
+            - position:
+                row: 2
+                column: 7
+              deleteCandidates:
+                - 4
+        - reasons:
+            - position:
+                row: 7
+                column: 7
+              candidates:
+                - 4
+            - position:
+                row: 8
+                column: 7
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 0
+                column: 7
+              deleteCandidates:
+                - 4
+            - position:
+                row: 2
+                column: 7
+              deleteCandidates:
+                - 4
+        - reasons:
+            - position:
+                row: 0
+                column: 2
+              candidates:
+                - 4
+            - position:
+                row: 1
+                column: 2
+              candidates:
+                - 4
+            - position:
+                row: 2
+                column: 2
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 2
+                column: 0
+              deleteCandidates:
+                - 4
+        - reasons:
+            - position:
+                row: 7
+                column: 0
+              candidates:
+                - 4
+            - position:
+                row: 8
+                column: 0
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 2
+                column: 0
+              deleteCandidates:
+                - 4
+        - reasons:
+            - position:
+                row: 3
+                column: 8
+              candidates:
+                - 7
+            - position:
+                row: 4
+                column: 8
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 4
+                column: 7
+              deleteCandidates:
+                - 7
+            - position:
+                row: 5
+                column: 7
+              deleteCandidates:
+                - 7
+        - reasons:
+            - position:
+                row: 6
+                column: 7
+              candidates:
+                - 7
+            - position:
+                row: 7
+                column: 7
+              candidates:
+                - 7
+            - position:
+                row: 8
+                column: 7
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 4
+                column: 7
+              deleteCandidates:
+                - 7
+            - position:
+                row: 5
+                column: 7
+              deleteCandidates:
+                - 7
+        - reasons:
+            - position:
+                row: 3
+                column: 2
+              candidates:
+                - 3
+            - position:
+                row: 4
+                column: 2
+              candidates:
+                - 3
+            - position:
+                row: 5
+                column: 2
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 5
+                column: 1
+              deleteCandidates:
+                - 3
+        - reasons:
+            - position:
+                row: 7
+                column: 1
+              candidates:
+                - 3
+            - position:
+                row: 8
+                column: 1
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 5
+                column: 1
+              deleteCandidates:
+                - 3
+        - reasons:
+            - position:
+                row: 6
+                column: 0
+              candidates:
+                - 2
+            - position:
+                row: 7
+                column: 0
+              candidates:
+                - 2
+          actions:
+            - position:
+                row: 6
+                column: 1
+              deleteCandidates:
+                - 2
+  - strategy: XWing
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 7
+                column: 0
+              candidates:
+                - 4
+            - position:
+                row: 7
+                column: 7
+              candidates:
+                - 4
+            - position:
+                row: 8
+                column: 0
+              candidates:
+                - 4
+            - position:
+                row: 8
+                column: 7
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 0
+                column: 7
+              deleteCandidates:
+                - 4
+            - position:
+                row: 2
+                column: 0
+              deleteCandidates:
+                - 4
+            - position:
+                row: 2
+                column: 7
+              deleteCandidates:
+                - 4
+- - strategy: GroupIntersectionBoth
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 3
+                column: 2
+              candidates:
+                - 2
+            - position:
+                row: 4
+                column: 2
+              candidates:
+                - 2
+          actions:
+            - position:
+                row: 0
+                column: 2
+              deleteCandidates:
+                - 2
+            - position:
+                row: 1
+                column: 2
+              deleteCandidates:
+                - 2
+        - reasons:
+            - position:
+                row: 0
+                column: 8
+              candidates:
+                - 4
+            - position:
+                row: 1
+                column: 8
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 0
+                column: 7
+              deleteCandidates:
+                - 4
+            - position:
+                row: 2
+                column: 7
+              deleteCandidates:
+                - 4
+        - reasons:
+            - position:
+                row: 7
+                column: 7
+              candidates:
+                - 4
+            - position:
+                row: 8
+                column: 7
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 0
+                column: 7
+              deleteCandidates:
+                - 4
+            - position:
+                row: 2
+                column: 7
+              deleteCandidates:
+                - 4
+        - reasons:
+            - position:
+                row: 0
+                column: 2
+              candidates:
+                - 4
+            - position:
+                row: 1
+                column: 2
+              candidates:
+                - 4
+            - position:
+                row: 2
+                column: 2
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 2
+                column: 0
+              deleteCandidates:
+                - 4
+        - reasons:
+            - position:
+                row: 7
+                column: 0
+              candidates:
+                - 4
+            - position:
+                row: 8
+                column: 0
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 2
+                column: 0
+              deleteCandidates:
+                - 4
+        - reasons:
+            - position:
+                row: 3
+                column: 8
+              candidates:
+                - 7
+            - position:
+                row: 4
+                column: 8
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 4
+                column: 7
+              deleteCandidates:
+                - 7
+            - position:
+                row: 5
+                column: 7
+              deleteCandidates:
+                - 7
+        - reasons:
+            - position:
+                row: 6
+                column: 7
+              candidates:
+                - 7
+            - position:
+                row: 7
+                column: 7
+              candidates:
+                - 7
+            - position:
+                row: 8
+                column: 7
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 4
+                column: 7
+              deleteCandidates:
+                - 7
+            - position:
+                row: 5
+                column: 7
+              deleteCandidates:
+                - 7
+        - reasons:
+            - position:
+                row: 6
+                column: 0
+              candidates:
+                - 2
+            - position:
+                row: 7
+                column: 0
+              candidates:
+                - 2
+          actions:
+            - position:
+                row: 6
+                column: 1
+              deleteCandidates:
+                - 2
+  - strategy: XWing
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 7
+                column: 0
+              candidates:
+                - 4
+            - position:
+                row: 7
+                column: 7
+              candidates:
+                - 4
+            - position:
+                row: 8
+                column: 0
+              candidates:
+                - 4
+            - position:
+                row: 8
+                column: 7
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 0
+                column: 7
+              deleteCandidates:
+                - 4
+            - position:
+                row: 2
+                column: 0
+              deleteCandidates:
+                - 4
+            - position:
+                row: 2
+                column: 7
+              deleteCandidates:
+                - 4
+- - strategy: HiddenSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 1
+              candidates:
+                - 2
+          actions:
+            - position:
+                row: 0
+                column: 1
+              setValue: 2
+        - reasons:
+            - position:
+                row: 1
+                column: 3
+              candidates:
+                - 2
+          actions:
+            - position:
+                row: 1
+                column: 3
+              setValue: 2
+  - strategy: NakedPairs
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 5
+                column: 1
+              candidates:
+                - 1
+                - 7
+            - position:
+                row: 6
+                column: 1
+              candidates:
+                - 1
+                - 7
+          actions:
+            - position:
+                row: 0
+                column: 1
+              deleteCandidates:
+                - 1
+            - position:
+                row: 2
+                column: 1
+              deleteCandidates:
+                - 1
+                - 7
+  - strategy: LockedSets
+    deductions:
+      deductions:
+        - reasons: []
+          actions:
+            - position:
+                row: 0
+                column: 1
+              deleteCandidates:
+                - 1
+                - 9
+        - reasons: []
+          actions:
+            - position:
+                row: 1
+                column: 3
+              deleteCandidates:
+                - 1
+                - 3
+                - 4
+                - 7
+        - reasons: []
+          actions:
+            - position:
+                row: 2
+                column: 2
+              deleteCandidates:
+                - 1
+                - 7
+            - position:
+                row: 2
+                column: 5
+              deleteCandidates:
+                - 1
+                - 3
+                - 7
+                - 8
+- - strategy: HiddenSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 7
+              candidates:
+                - 9
+          actions:
+            - position:
+                row: 0
+                column: 7
+              setValue: 9
+        - reasons:
+            - position:
+                row: 1
+                column: 1
+              candidates:
+                - 9
+          actions:
+            - position:
+                row: 1
+                column: 1
+              setValue: 9
+  - strategy: NakedPairs
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 5
+                column: 1
+              candidates:
+                - 1
+                - 7
+            - position:
+                row: 6
+                column: 1
+              candidates:
+                - 1
+                - 7
+          actions:
+            - position:
+                row: 2
+                column: 1
+              deleteCandidates:
+                - 1
+                - 7
+  - strategy: LockedSets
+    deductions:
+      deductions:
+        - reasons: []
+          actions:
+            - position:
+                row: 0
+                column: 7
+              deleteCandidates:
+                - 1
+                - 8
+        - reasons: []
+          actions:
+            - position:
+                row: 1
+                column: 1
+              deleteCandidates:
+                - 6
+        - reasons: []
+          actions:
+            - position:
+                row: 2
+                column: 2
+              deleteCandidates:
+                - 1
+                - 7
+            - position:
+                row: 2
+                column: 5
+              deleteCandidates:
+                - 1
+                - 3
+                - 7
+                - 8
+- - strategy: NakedSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 1
+                column: 7
+              candidates:
+                - 6
+          actions:
+            - position:
+                row: 1
+                column: 7
+              setValue: 6
+  - strategy: HiddenSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 1
+                column: 7
+              candidates:
+                - 6
+          actions:
+            - position:
+                row: 1
+                column: 7
+              setValue: 6
+        - reasons:
+            - position:
+                row: 2
+                column: 1
+              candidates:
+                - 6
+          actions:
+            - position:
+                row: 2
+                column: 1
+              setValue: 6
+  - strategy: NakedPairs
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 5
+                column: 1
+              candidates:
+                - 1
+                - 7
+            - position:
+                row: 6
+                column: 1
+              candidates:
+                - 1
+                - 7
+          actions:
+            - position:
+                row: 2
+                column: 1
+              deleteCandidates:
+                - 1
+                - 7
+  - strategy: LockedSets
+    deductions:
+      deductions:
+        - reasons: []
+          actions:
+            - position:
+                row: 2
+                column: 1
+              deleteCandidates:
+                - 1
+                - 7
+        - reasons: []
+          actions:
+            - position:
+                row: 2
+                column: 2
+              deleteCandidates:
+                - 1
+                - 7
+            - position:
+                row: 2
+                column: 5
+              deleteCandidates:
+                - 1
+                - 3
+                - 7
+                - 8
+        - reasons: []
+          actions:
+            - position:
+                row: 2
+                column: 6
+              deleteCandidates:
+                - 6
+            - position:
+                row: 2
+                column: 7
+              deleteCandidates:
+                - 6
+        - reasons: []
+          actions:
+            - position:
+                row: 2
+                column: 7
+              deleteCandidates:
+                - 6
+            - position:
+                row: 4
+                column: 7
+              deleteCandidates:
+                - 6
+            - position:
+                row: 5
+                column: 7
+              deleteCandidates:
+                - 6
+  - strategy: GroupIntersectionBoth
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 2
+                column: 6
+              candidates:
+                - 1
+            - position:
+                row: 2
+                column: 7
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 2
+                column: 0
+              deleteCandidates:
+                - 1
+            - position:
+                row: 2
+                column: 1
+              deleteCandidates:
+                - 1
+            - position:
+                row: 2
+                column: 2
+              deleteCandidates:
+                - 1
+            - position:
+                row: 2
+                column: 4
+              deleteCandidates:
+                - 1
+            - position:
+                row: 2
+                column: 5
+              deleteCandidates:
+                - 1
+- - strategy: HiddenSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 2
+                column: 1
+              candidates:
+                - 6
+          actions:
+            - position:
+                row: 2
+                column: 1
+              setValue: 6
+        - reasons:
+            - position:
+                row: 4
+                column: 6
+              candidates:
+                - 6
+          actions:
+            - position:
+                row: 4
+                column: 6
+              setValue: 6
+        - reasons:
+            - position:
+                row: 5
+                column: 3
+              candidates:
+                - 6
+          actions:
+            - position:
+                row: 5
+                column: 3
+              setValue: 6
+  - strategy: NakedPairs
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 5
+                column: 1
+              candidates:
+                - 1
+                - 7
+            - position:
+                row: 6
+                column: 1
+              candidates:
+                - 1
+                - 7
+          actions:
+            - position:
+                row: 2
+                column: 1
+              deleteCandidates:
+                - 1
+                - 7
+  - strategy: LockedSets
+    deductions:
+      deductions:
+        - reasons: []
+          actions:
+            - position:
+                row: 2
+                column: 1
+              deleteCandidates:
+                - 1
+                - 7
+        - reasons: []
+          actions:
+            - position:
+                row: 4
+                column: 6
+              deleteCandidates:
+                - 1
+                - 2
+        - reasons: []
+          actions:
+            - position:
+                row: 5
+                column: 3
+              deleteCandidates:
+                - 1
+                - 3
+                - 7
+                - 8
+  - strategy: GroupIntersectionBoth
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 2
+                column: 6
+              candidates:
+                - 1
+            - position:
+                row: 2
+                column: 7
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 2
+                column: 0
+              deleteCandidates:
+                - 1
+            - position:
+                row: 2
+                column: 1
+              deleteCandidates:
+                - 1
+            - position:
+                row: 2
+                column: 2
+              deleteCandidates:
+                - 1
+            - position:
+                row: 2
+                column: 4
+              deleteCandidates:
+                - 1
+            - position:
+                row: 2
+                column: 5
+              deleteCandidates:
+                - 1
+- - strategy: HiddenSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 7
+                column: 5
+              candidates:
+                - 6
+          actions:
+            - position:
+                row: 7
+                column: 5
+              setValue: 6
+  - strategy: LockedSets
+    deductions:
+      deductions:
+        - reasons: []
+          actions:
+            - position:
+                row: 2
+                column: 2
+              deleteCandidates:
+                - 1
+                - 7
+            - position:
+                row: 2
+                column: 5
+              deleteCandidates:
+                - 1
+                - 3
+                - 7
+                - 8
+        - reasons: []
+          actions:
+            - position:
+                row: 7
+                column: 5
+              deleteCandidates:
+                - 3
+                - 5
+                - 7
+                - 8
+  - strategy: GroupIntersectionBoth
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 2
+                column: 6
+              candidates:
+                - 1
+            - position:
+                row: 2
+                column: 7
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 2
+                column: 0
+              deleteCandidates:
+                - 1
+            - position:
+                row: 2
+                column: 2
+              deleteCandidates:
+                - 1
+            - position:
+                row: 2
+                column: 4
+              deleteCandidates:
+                - 1
+            - position:
+                row: 2
+                column: 5
+              deleteCandidates:
+                - 1
+- - strategy: LockedSets
+    deductions:
+      deductions:
+        - reasons: []
+          actions:
+            - position:
+                row: 2
+                column: 2
+              deleteCandidates:
+                - 1
+                - 7
+            - position:
+                row: 2
+                column: 5
+              deleteCandidates:
+                - 1
+                - 3
+                - 7
+                - 8
+  - strategy: GroupIntersectionBoth
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 2
+                column: 6
+              candidates:
+                - 1
+            - position:
+                row: 2
+                column: 7
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 2
+                column: 0
+              deleteCandidates:
+                - 1
+            - position:
+                row: 2
+                column: 2
+              deleteCandidates:
+                - 1
+            - position:
+                row: 2
+                column: 4
+              deleteCandidates:
+                - 1
+            - position:
+                row: 2
+                column: 5
+              deleteCandidates:
+                - 1
+- - strategy: GroupIntersectionBoth
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 2
+                column: 6
+              candidates:
+                - 1
+            - position:
+                row: 2
+                column: 7
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 2
+                column: 0
+              deleteCandidates:
+                - 1
+            - position:
+                row: 2
+                column: 4
+              deleteCandidates:
+                - 1
+  - strategy: XWing
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 5
+              candidates:
+                - 8
+            - position:
+                row: 0
+                column: 8
+              candidates:
+                - 8
+            - position:
+                row: 3
+                column: 5
+              candidates:
+                - 8
+            - position:
+                row: 3
+                column: 8
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 0
+                column: 3
+              deleteCandidates:
+                - 8
+            - position:
+                row: 3
+                column: 3
+              deleteCandidates:
+                - 8
+            - position:
+                row: 3
+                column: 6
+              deleteCandidates:
+                - 8
+- - strategy: NakedSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 2
+                column: 0
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 2
+                column: 0
+              setValue: 7
+  - strategy: LockedSets
+    deductions:
+      deductions:
+        - reasons: []
+          actions:
+            - position:
+                row: 1
+                column: 2
+              deleteCandidates:
+                - 7
+        - reasons: []
+          actions:
+            - position:
+                row: 2
+                column: 4
+              deleteCandidates:
+                - 7
+        - reasons: []
+          actions:
+            - position:
+                row: 6
+                column: 0
+              deleteCandidates:
+                - 7
+            - position:
+                row: 7
+                column: 0
+              deleteCandidates:
+                - 7
+            - position:
+                row: 8
+                column: 0
+              deleteCandidates:
+                - 7
+  - strategy: GroupIntersectionBoth
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 2
+              candidates:
+                - 1
+            - position:
+                row: 1
+                column: 2
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 3
+                column: 2
+              deleteCandidates:
+                - 1
+            - position:
+                row: 4
+                column: 2
+              deleteCandidates:
+                - 1
+            - position:
+                row: 5
+                column: 2
+              deleteCandidates:
+                - 1
+        - reasons:
+            - position:
+                row: 6
+                column: 0
+              candidates:
+                - 1
+            - position:
+                row: 8
+                column: 0
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 6
+                column: 1
+              deleteCandidates:
+                - 1
+  - strategy: XWing
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 5
+              candidates:
+                - 8
+            - position:
+                row: 0
+                column: 8
+              candidates:
+                - 8
+            - position:
+                row: 3
+                column: 5
+              candidates:
+                - 8
+            - position:
+                row: 3
+                column: 8
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 0
+                column: 3
+              deleteCandidates:
+                - 8
+            - position:
+                row: 3
+                column: 3
+              deleteCandidates:
+                - 8
+            - position:
+                row: 3
+                column: 6
+              deleteCandidates:
+                - 8
+- - strategy: HiddenSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 6
+                column: 1
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 6
+                column: 1
+              setValue: 7
+  - strategy: LockedSets
+    deductions:
+      deductions:
+        - reasons: []
+          actions:
+            - position:
+                row: 3
+                column: 2
+              deleteCandidates:
+                - 1
+            - position:
+                row: 4
+                column: 2
+              deleteCandidates:
+                - 1
+            - position:
+                row: 5
+                column: 2
+              deleteCandidates:
+                - 1
+        - reasons: []
+          actions:
+            - position:
+                row: 6
+                column: 1
+              deleteCandidates:
+                - 1
+  - strategy: GroupIntersectionBoth
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 2
+              candidates:
+                - 1
+            - position:
+                row: 1
+                column: 2
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 3
+                column: 2
+              deleteCandidates:
+                - 1
+            - position:
+                row: 4
+                column: 2
+              deleteCandidates:
+                - 1
+            - position:
+                row: 5
+                column: 2
+              deleteCandidates:
+                - 1
+        - reasons:
+            - position:
+                row: 3
+                column: 2
+              candidates:
+                - 7
+            - position:
+                row: 4
+                column: 2
+              candidates:
+                - 7
+            - position:
+                row: 5
+                column: 2
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 5
+                column: 1
+              deleteCandidates:
+                - 7
+        - reasons:
+            - position:
+                row: 6
+                column: 0
+              candidates:
+                - 1
+            - position:
+                row: 8
+                column: 0
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 6
+                column: 1
+              deleteCandidates:
+                - 1
+  - strategy: XWing
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 5
+              candidates:
+                - 8
+            - position:
+                row: 0
+                column: 8
+              candidates:
+                - 8
+            - position:
+                row: 3
+                column: 5
+              candidates:
+                - 8
+            - position:
+                row: 3
+                column: 8
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 0
+                column: 3
+              deleteCandidates:
+                - 8
+            - position:
+                row: 3
+                column: 3
+              deleteCandidates:
+                - 8
+            - position:
+                row: 3
+                column: 6
+              deleteCandidates:
+                - 8
+- - strategy: NakedSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 5
+                column: 1
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 5
+                column: 1
+              setValue: 1
+  - strategy: HiddenSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 5
+                column: 1
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 5
+                column: 1
+              setValue: 1
+  - strategy: NakedPairs
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 6
+                column: 7
+              candidates:
+                - 2
+                - 8
+            - position:
+                row: 7
+                column: 6
+              candidates:
+                - 2
+                - 8
+          actions:
+            - position:
+                row: 7
+                column: 7
+              deleteCandidates:
+                - 2
+                - 8
+  - strategy: LockedSets
+    deductions:
+      deductions:
+        - reasons: []
+          actions:
+            - position:
+                row: 3
+                column: 2
+              deleteCandidates:
+                - 1
+            - position:
+                row: 4
+                column: 2
+              deleteCandidates:
+                - 1
+            - position:
+                row: 5
+                column: 2
+              deleteCandidates:
+                - 1
+        - reasons: []
+          actions:
+            - position:
+                row: 5
+                column: 2
+              deleteCandidates:
+                - 1
+            - position:
+                row: 5
+                column: 4
+              deleteCandidates:
+                - 1
+            - position:
+                row: 5
+                column: 7
+              deleteCandidates:
+                - 1
+        - reasons: []
+          actions:
+            - position:
+                row: 7
+                column: 7
+              deleteCandidates:
+                - 2
+                - 8
+  - strategy: GroupIntersectionBoth
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 2
+              candidates:
+                - 1
+            - position:
+                row: 1
+                column: 2
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 3
+                column: 2
+              deleteCandidates:
+                - 1
+            - position:
+                row: 4
+                column: 2
+              deleteCandidates:
+                - 1
+            - position:
+                row: 5
+                column: 2
+              deleteCandidates:
+                - 1
+  - strategy: XWing
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 5
+              candidates:
+                - 8
+            - position:
+                row: 0
+                column: 8
+              candidates:
+                - 8
+            - position:
+                row: 3
+                column: 5
+              candidates:
+                - 8
+            - position:
+                row: 3
+                column: 8
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 0
+                column: 3
+              deleteCandidates:
+                - 8
+            - position:
+                row: 3
+                column: 3
+              deleteCandidates:
+                - 8
+            - position:
+                row: 3
+                column: 6
+              deleteCandidates:
+                - 8
+- - strategy: HiddenSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 1
+                column: 4
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 1
+                column: 4
+              setValue: 1
+  - strategy: NakedPairs
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 6
+                column: 7
+              candidates:
+                - 2
+                - 8
+            - position:
+                row: 7
+                column: 6
+              candidates:
+                - 2
+                - 8
+          actions:
+            - position:
+                row: 7
+                column: 7
+              deleteCandidates:
+                - 2
+                - 8
+  - strategy: LockedSets
+    deductions:
+      deductions:
+        - reasons: []
+          actions:
+            - position:
+                row: 1
+                column: 4
+              deleteCandidates:
+                - 3
+                - 7
+        - reasons: []
+          actions:
+            - position:
+                row: 3
+                column: 6
+              deleteCandidates:
+                - 8
+            - position:
+                row: 4
+                column: 7
+              deleteCandidates:
+                - 3
+        - reasons: []
+          actions:
+            - position:
+                row: 7
+                column: 7
+              deleteCandidates:
+                - 2
+                - 8
+  - strategy: XWing
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 5
+              candidates:
+                - 8
+            - position:
+                row: 0
+                column: 8
+              candidates:
+                - 8
+            - position:
+                row: 3
+                column: 5
+              candidates:
+                - 8
+            - position:
+                row: 3
+                column: 8
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 0
+                column: 3
+              deleteCandidates:
+                - 8
+            - position:
+                row: 3
+                column: 3
+              deleteCandidates:
+                - 8
+            - position:
+                row: 3
+                column: 6
+              deleteCandidates:
+                - 8
+- - strategy: NakedSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 1
+                column: 2
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 1
+                column: 2
+              setValue: 4
+  - strategy: HiddenSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 2
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 0
+                column: 2
+              setValue: 1
+        - reasons:
+            - position:
+                row: 1
+                column: 5
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 1
+                column: 5
+              setValue: 7
+  - strategy: NakedPairs
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 6
+                column: 7
+              candidates:
+                - 2
+                - 8
+            - position:
+                row: 7
+                column: 6
+              candidates:
+                - 2
+                - 8
+          actions:
+            - position:
+                row: 7
+                column: 7
+              deleteCandidates:
+                - 2
+                - 8
+  - strategy: LockedSets
+    deductions:
+      deductions:
+        - reasons: []
+          actions:
+            - position:
+                row: 0
+                column: 2
+              deleteCandidates:
+                - 4
+            - position:
+                row: 2
+                column: 2
+              deleteCandidates:
+                - 4
+        - reasons: []
+          actions:
+            - position:
+                row: 0
+                column: 2
+              deleteCandidates:
+                - 4
+                - 5
+        - reasons: []
+          actions:
+            - position:
+                row: 1
+                column: 5
+              deleteCandidates:
+                - 4
+            - position:
+                row: 1
+                column: 8
+              deleteCandidates:
+                - 4
+        - reasons: []
+          actions:
+            - position:
+                row: 1
+                column: 5
+              deleteCandidates:
+                - 3
+                - 4
+        - reasons: []
+          actions:
+            - position:
+                row: 3
+                column: 6
+              deleteCandidates:
+                - 8
+            - position:
+                row: 4
+                column: 7
+              deleteCandidates:
+                - 3
+        - reasons: []
+          actions:
+            - position:
+                row: 7
+                column: 7
+              deleteCandidates:
+                - 2
+                - 8
+  - strategy: XWing
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 5
+              candidates:
+                - 8
+            - position:
+                row: 0
+                column: 8
+              candidates:
+                - 8
+            - position:
+                row: 3
+                column: 5
+              candidates:
+                - 8
+            - position:
+                row: 3
+                column: 8
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 0
+                column: 3
+              deleteCandidates:
+                - 8
+            - position:
+                row: 3
+                column: 3
+              deleteCandidates:
+                - 8
+            - position:
+                row: 3
+                column: 6
+              deleteCandidates:
+                - 8
+- - strategy: NakedSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 1
+                column: 8
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 1
+                column: 8
+              setValue: 3
+        - reasons:
+            - position:
+                row: 2
+                column: 2
+              candidates:
+                - 5
+          actions:
+            - position:
+                row: 2
+                column: 2
+              setValue: 5
+  - strategy: HiddenSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 2
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 0
+                column: 2
+              setValue: 1
+        - reasons:
+            - position:
+                row: 0
+                column: 8
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 0
+                column: 8
+              setValue: 4
+        - reasons:
+            - position:
+                row: 1
+                column: 5
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 1
+                column: 5
+              setValue: 7
+        - reasons:
+            - position:
+                row: 2
+                column: 5
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 2
+                column: 5
+              setValue: 4
+  - strategy: NakedPairs
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 6
+                column: 7
+              candidates:
+                - 2
+                - 8
+            - position:
+                row: 7
+                column: 6
+              candidates:
+                - 2
+                - 8
+          actions:
+            - position:
+                row: 7
+                column: 7
+              deleteCandidates:
+                - 2
+                - 8
+  - strategy: LockedSets
+    deductions:
+      deductions:
+        - reasons: []
+          actions:
+            - position:
+                row: 0
+                column: 2
+              deleteCandidates:
+                - 5
+        - reasons: []
+          actions:
+            - position:
+                row: 1
+                column: 5
+              deleteCandidates:
+                - 3
+        - reasons: []
+          actions:
+            - position:
+                row: 2
+                column: 5
+              deleteCandidates:
+                - 5
+        - reasons: []
+          actions:
+            - position:
+                row: 2
+                column: 7
+              deleteCandidates:
+                - 3
+        - reasons: []
+          actions:
+            - position:
+                row: 3
+                column: 6
+              deleteCandidates:
+                - 8
+            - position:
+                row: 4
+                column: 7
+              deleteCandidates:
+                - 3
+        - reasons: []
+          actions:
+            - position:
+                row: 3
+                column: 8
+              deleteCandidates:
+                - 3
+            - position:
+                row: 4
+                column: 8
+              deleteCandidates:
+                - 3
+        - reasons: []
+          actions:
+            - position:
+                row: 7
+                column: 7
+              deleteCandidates:
+                - 2
+                - 8
+  - strategy: XWing
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 5
+              candidates:
+                - 8
+            - position:
+                row: 0
+                column: 8
+              candidates:
+                - 8
+            - position:
+                row: 3
+                column: 5
+              candidates:
+                - 8
+            - position:
+                row: 3
+                column: 8
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 0
+                column: 3
+              deleteCandidates:
+                - 8
+            - position:
+                row: 3
+                column: 3
+              deleteCandidates:
+                - 8
+            - position:
+                row: 3
+                column: 6
+              deleteCandidates:
+                - 8
+- - strategy: NakedSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 2
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 0
+                column: 2
+              setValue: 1
+        - reasons:
+            - position:
+                row: 1
+                column: 5
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 1
+                column: 5
+              setValue: 7
+        - reasons:
+            - position:
+                row: 2
+                column: 5
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 2
+                column: 5
+              setValue: 4
+        - reasons:
+            - position:
+                row: 4
+                column: 8
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 4
+                column: 8
+              setValue: 7
+  - strategy: HiddenSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 2
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 0
+                column: 2
+              setValue: 1
+        - reasons:
+            - position:
+                row: 0
+                column: 8
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 0
+                column: 8
+              setValue: 4
+        - reasons:
+            - position:
+                row: 1
+                column: 5
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 1
+                column: 5
+              setValue: 7
+        - reasons:
+            - position:
+                row: 2
+                column: 4
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 2
+                column: 4
+              setValue: 3
+        - reasons:
+            - position:
+                row: 2
+                column: 5
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 2
+                column: 5
+              setValue: 4
+  - strategy: NakedPairs
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 2
+                column: 6
+              candidates:
+                - 1
+                - 8
+            - position:
+                row: 2
+                column: 7
+              candidates:
+                - 1
+                - 8
+          actions:
+            - position:
+                row: 0
+                column: 8
+              deleteCandidates:
+                - 8
+            - position:
+                row: 2
+                column: 4
+              deleteCandidates:
+                - 8
+        - reasons:
+            - position:
+                row: 6
+                column: 7
+              candidates:
+                - 2
+                - 8
+            - position:
+                row: 7
+                column: 6
+              candidates:
+                - 2
+                - 8
+          actions:
+            - position:
+                row: 7
+                column: 7
+              deleteCandidates:
+                - 2
+                - 8
+  - strategy: LockedSets
+    deductions:
+      deductions:
+        - reasons: []
+          actions:
+            - position:
+                row: 0
+                column: 3
+              deleteCandidates:
+                - 4
+            - position:
+                row: 0
+                column: 5
+              deleteCandidates:
+                - 4
+        - reasons: []
+          actions:
+            - position:
+                row: 0
+                column: 8
+              deleteCandidates:
+                - 8
+        - reasons: []
+          actions:
+            - position:
+                row: 2
+                column: 4
+              deleteCandidates:
+                - 8
+        - reasons: []
+          actions:
+            - position:
+                row: 3
+                column: 5
+              deleteCandidates:
+                - 7
+            - position:
+                row: 4
+                column: 5
+              deleteCandidates:
+                - 7
+            - position:
+                row: 8
+                column: 5
+              deleteCandidates:
+                - 7
+        - reasons: []
+          actions:
+            - position:
+                row: 3
+                column: 8
+              deleteCandidates:
+                - 7
+        - reasons: []
+          actions:
+            - position:
+                row: 4
+                column: 2
+              deleteCandidates:
+                - 7
+            - position:
+                row: 4
+                column: 3
+              deleteCandidates:
+                - 7
+            - position:
+                row: 4
+                column: 5
+              deleteCandidates:
+                - 7
+        - reasons: []
+          actions:
+            - position:
+                row: 7
+                column: 7
+              deleteCandidates:
+                - 2
+                - 8
+  - strategy: XWing
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 5
+              candidates:
+                - 8
+            - position:
+                row: 0
+                column: 8
+              candidates:
+                - 8
+            - position:
+                row: 3
+                column: 5
+              candidates:
+                - 8
+            - position:
+                row: 3
+                column: 8
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 0
+                column: 3
+              deleteCandidates:
+                - 8
+            - position:
+                row: 3
+                column: 3
+              deleteCandidates:
+                - 8
+            - position:
+                row: 3
+                column: 6
+              deleteCandidates:
+                - 8
+- - strategy: NakedSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 3
+                column: 8
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 3
+                column: 8
+              setValue: 8
+  - strategy: HiddenSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 8
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 0
+                column: 8
+              setValue: 4
+        - reasons:
+            - position:
+                row: 2
+                column: 4
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 2
+                column: 4
+              setValue: 3
+        - reasons:
+            - position:
+                row: 4
+                column: 3
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 4
+                column: 3
+              setValue: 4
+  - strategy: NakedPairs
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 3
+              candidates:
+                - 5
+                - 8
+            - position:
+                row: 0
+                column: 5
+              candidates:
+                - 5
+                - 8
+          actions:
+            - position:
+                row: 0
+                column: 8
+              deleteCandidates:
+                - 8
+            - position:
+                row: 2
+                column: 4
+              deleteCandidates:
+                - 8
+        - reasons:
+            - position:
+                row: 2
+                column: 6
+              candidates:
+                - 1
+                - 8
+            - position:
+                row: 2
+                column: 7
+              candidates:
+                - 1
+                - 8
+          actions:
+            - position:
+                row: 0
+                column: 8
+              deleteCandidates:
+                - 8
+            - position:
+                row: 2
+                column: 4
+              deleteCandidates:
+                - 8
+        - reasons:
+            - position:
+                row: 6
+                column: 7
+              candidates:
+                - 2
+                - 8
+            - position:
+                row: 7
+                column: 6
+              candidates:
+                - 2
+                - 8
+          actions:
+            - position:
+                row: 7
+                column: 7
+              deleteCandidates:
+                - 2
+                - 8
+  - strategy: LockedSets
+    deductions:
+      deductions:
+        - reasons: []
+          actions:
+            - position:
+                row: 0
+                column: 8
+              deleteCandidates:
+                - 8
+        - reasons: []
+          actions:
+            - position:
+                row: 2
+                column: 4
+              deleteCandidates:
+                - 8
+        - reasons: []
+          actions:
+            - position:
+                row: 3
+                column: 3
+              deleteCandidates:
+                - 8
+            - position:
+                row: 3
+                column: 5
+              deleteCandidates:
+                - 8
+            - position:
+                row: 3
+                column: 6
+              deleteCandidates:
+                - 8
+        - reasons: []
+          actions:
+            - position:
+                row: 3
+                column: 6
+              deleteCandidates:
+                - 8
+            - position:
+                row: 5
+                column: 7
+              deleteCandidates:
+                - 8
+        - reasons: []
+          actions:
+            - position:
+                row: 4
+                column: 3
+              deleteCandidates:
+                - 1
+                - 3
+        - reasons: []
+          actions:
+            - position:
+                row: 7
+                column: 7
+              deleteCandidates:
+                - 2
+                - 8
+  - strategy: XWing
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 5
+              candidates:
+                - 8
+            - position:
+                row: 0
+                column: 8
+              candidates:
+                - 8
+            - position:
+                row: 3
+                column: 5
+              candidates:
+                - 8
+            - position:
+                row: 3
+                column: 8
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 0
+                column: 3
+              deleteCandidates:
+                - 8
+            - position:
+                row: 3
+                column: 3
+              deleteCandidates:
+                - 8
+            - position:
+                row: 3
+                column: 6
+              deleteCandidates:
+                - 8
+- - strategy: NakedSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 8
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 0
+                column: 8
+              setValue: 4
+        - reasons:
+            - position:
+                row: 5
+                column: 7
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 5
+                column: 7
+              setValue: 3
+  - strategy: HiddenSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 5
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 0
+                column: 5
+              setValue: 8
+        - reasons:
+            - position:
+                row: 0
+                column: 8
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 0
+                column: 8
+              setValue: 4
+        - reasons:
+            - position:
+                row: 2
+                column: 4
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 2
+                column: 4
+              setValue: 3
+        - reasons:
+            - position:
+                row: 4
+                column: 3
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 4
+                column: 3
+              setValue: 4
+        - reasons:
+            - position:
+                row: 5
+                column: 4
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 5
+                column: 4
+              setValue: 8
+  - strategy: NakedPairs
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 3
+              candidates:
+                - 5
+                - 8
+            - position:
+                row: 0
+                column: 5
+              candidates:
+                - 5
+                - 8
+          actions:
+            - position:
+                row: 2
+                column: 4
+              deleteCandidates:
+                - 8
+        - reasons:
+            - position:
+                row: 2
+                column: 6
+              candidates:
+                - 1
+                - 8
+            - position:
+                row: 2
+                column: 7
+              candidates:
+                - 1
+                - 8
+          actions:
+            - position:
+                row: 2
+                column: 4
+              deleteCandidates:
+                - 8
+        - reasons:
+            - position:
+                row: 3
+                column: 5
+              candidates:
+                - 1
+                - 3
+            - position:
+                row: 4
+                column: 5
+              candidates:
+                - 1
+                - 3
+          actions:
+            - position:
+                row: 3
+                column: 3
+              deleteCandidates:
+                - 1
+                - 3
+            - position:
+                row: 4
+                column: 3
+              deleteCandidates:
+                - 1
+                - 3
+            - position:
+                row: 5
+                column: 4
+              deleteCandidates:
+                - 3
+            - position:
+                row: 8
+                column: 5
+              deleteCandidates:
+                - 1
+                - 3
+        - reasons:
+            - position:
+                row: 6
+                column: 7
+              candidates:
+                - 2
+                - 8
+            - position:
+                row: 7
+                column: 6
+              candidates:
+                - 2
+                - 8
+          actions:
+            - position:
+                row: 7
+                column: 7
+              deleteCandidates:
+                - 2
+                - 8
+  - strategy: LockedSets
+    deductions:
+      deductions:
+        - reasons: []
+          actions:
+            - position:
+                row: 0
+                column: 5
+              deleteCandidates:
+                - 5
+        - reasons: []
+          actions:
+            - position:
+                row: 2
+                column: 4
+              deleteCandidates:
+                - 8
+        - reasons: []
+          actions:
+            - position:
+                row: 4
+                column: 3
+              deleteCandidates:
+                - 1
+                - 3
+        - reasons: []
+          actions:
+            - position:
+                row: 4
+                column: 7
+              deleteCandidates:
+                - 3
+        - reasons: []
+          actions:
+            - position:
+                row: 5
+                column: 2
+              deleteCandidates:
+                - 3
+            - position:
+                row: 5
+                column: 4
+              deleteCandidates:
+                - 3
+        - reasons: []
+          actions:
+            - position:
+                row: 7
+                column: 7
+              deleteCandidates:
+                - 2
+                - 8
+  - strategy: GroupIntersectionBoth
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 3
+              candidates:
+                - 8
+            - position:
+                row: 0
+                column: 5
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 2
+                column: 4
+              deleteCandidates:
+                - 8
+        - reasons:
+            - position:
+                row: 2
+                column: 6
+              candidates:
+                - 8
+            - position:
+                row: 2
+                column: 7
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 2
+                column: 4
+              deleteCandidates:
+                - 8
+- - strategy: NakedSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 5
+                column: 2
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 5
+                column: 2
+              setValue: 7
+  - strategy: HiddenSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 5
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 0
+                column: 5
+              setValue: 8
+        - reasons:
+            - position:
+                row: 2
+                column: 4
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 2
+                column: 4
+              setValue: 3
+        - reasons:
+            - position:
+                row: 4
+                column: 3
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 4
+                column: 3
+              setValue: 4
+        - reasons:
+            - position:
+                row: 5
+                column: 4
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 5
+                column: 4
+              setValue: 8
+  - strategy: NakedPairs
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 3
+              candidates:
+                - 5
+                - 8
+            - position:
+                row: 0
+                column: 5
+              candidates:
+                - 5
+                - 8
+          actions:
+            - position:
+                row: 2
+                column: 4
+              deleteCandidates:
+                - 8
+        - reasons:
+            - position:
+                row: 2
+                column: 6
+              candidates:
+                - 1
+                - 8
+            - position:
+                row: 2
+                column: 7
+              candidates:
+                - 1
+                - 8
+          actions:
+            - position:
+                row: 2
+                column: 4
+              deleteCandidates:
+                - 8
+        - reasons:
+            - position:
+                row: 3
+                column: 5
+              candidates:
+                - 1
+                - 3
+            - position:
+                row: 4
+                column: 5
+              candidates:
+                - 1
+                - 3
+          actions:
+            - position:
+                row: 3
+                column: 3
+              deleteCandidates:
+                - 1
+                - 3
+            - position:
+                row: 4
+                column: 3
+              deleteCandidates:
+                - 1
+                - 3
+            - position:
+                row: 8
+                column: 5
+              deleteCandidates:
+                - 1
+                - 3
+        - reasons:
+            - position:
+                row: 6
+                column: 7
+              candidates:
+                - 2
+                - 8
+            - position:
+                row: 7
+                column: 6
+              candidates:
+                - 2
+                - 8
+          actions:
+            - position:
+                row: 7
+                column: 7
+              deleteCandidates:
+                - 2
+                - 8
+  - strategy: LockedSets
+    deductions:
+      deductions:
+        - reasons: []
+          actions:
+            - position:
+                row: 0
+                column: 5
+              deleteCandidates:
+                - 5
+        - reasons: []
+          actions:
+            - position:
+                row: 2
+                column: 4
+              deleteCandidates:
+                - 8
+        - reasons: []
+          actions:
+            - position:
+                row: 3
+                column: 2
+              deleteCandidates:
+                - 7
+        - reasons: []
+          actions:
+            - position:
+                row: 4
+                column: 3
+              deleteCandidates:
+                - 1
+                - 3
+        - reasons: []
+          actions:
+            - position:
+                row: 5
+                column: 4
+              deleteCandidates:
+                - 7
+        - reasons: []
+          actions:
+            - position:
+                row: 7
+                column: 7
+              deleteCandidates:
+                - 2
+                - 8
+  - strategy: GroupIntersectionBoth
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 3
+              candidates:
+                - 8
+            - position:
+                row: 0
+                column: 5
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 2
+                column: 4
+              deleteCandidates:
+                - 8
+        - reasons:
+            - position:
+                row: 2
+                column: 6
+              candidates:
+                - 8
+            - position:
+                row: 2
+                column: 7
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 2
+                column: 4
+              deleteCandidates:
+                - 8
+- - strategy: NakedSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 5
+                column: 4
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 5
+                column: 4
+              setValue: 8
+  - strategy: HiddenSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 5
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 0
+                column: 5
+              setValue: 8
+        - reasons:
+            - position:
+                row: 2
+                column: 4
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 2
+                column: 4
+              setValue: 3
+        - reasons:
+            - position:
+                row: 3
+                column: 3
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 3
+                column: 3
+              setValue: 7
+        - reasons:
+            - position:
+                row: 4
+                column: 3
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 4
+                column: 3
+              setValue: 4
+        - reasons:
+            - position:
+                row: 5
+                column: 4
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 5
+                column: 4
+              setValue: 8
+        - reasons:
+            - position:
+                row: 7
+                column: 4
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 7
+                column: 4
+              setValue: 7
+  - strategy: NakedPairs
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 3
+              candidates:
+                - 5
+                - 8
+            - position:
+                row: 0
+                column: 5
+              candidates:
+                - 5
+                - 8
+          actions:
+            - position:
+                row: 2
+                column: 4
+              deleteCandidates:
+                - 8
+        - reasons:
+            - position:
+                row: 2
+                column: 6
+              candidates:
+                - 1
+                - 8
+            - position:
+                row: 2
+                column: 7
+              candidates:
+                - 1
+                - 8
+          actions:
+            - position:
+                row: 2
+                column: 4
+              deleteCandidates:
+                - 8
+        - reasons:
+            - position:
+                row: 3
+                column: 5
+              candidates:
+                - 1
+                - 3
+            - position:
+                row: 4
+                column: 5
+              candidates:
+                - 1
+                - 3
+          actions:
+            - position:
+                row: 3
+                column: 3
+              deleteCandidates:
+                - 1
+                - 3
+            - position:
+                row: 4
+                column: 3
+              deleteCandidates:
+                - 1
+                - 3
+            - position:
+                row: 8
+                column: 5
+              deleteCandidates:
+                - 1
+                - 3
+        - reasons:
+            - position:
+                row: 6
+                column: 7
+              candidates:
+                - 2
+                - 8
+            - position:
+                row: 7
+                column: 6
+              candidates:
+                - 2
+                - 8
+          actions:
+            - position:
+                row: 7
+                column: 7
+              deleteCandidates:
+                - 2
+                - 8
+  - strategy: LockedSets
+    deductions:
+      deductions:
+        - reasons: []
+          actions:
+            - position:
+                row: 0
+                column: 5
+              deleteCandidates:
+                - 5
+        - reasons: []
+          actions:
+            - position:
+                row: 2
+                column: 4
+              deleteCandidates:
+                - 8
+        - reasons: []
+          actions:
+            - position:
+                row: 2
+                column: 4
+              deleteCandidates:
+                - 8
+            - position:
+                row: 7
+                column: 4
+              deleteCandidates:
+                - 8
+        - reasons: []
+          actions:
+            - position:
+                row: 3
+                column: 3
+              deleteCandidates:
+                - 1
+                - 3
+        - reasons: []
+          actions:
+            - position:
+                row: 4
+                column: 3
+              deleteCandidates:
+                - 1
+                - 3
+        - reasons: []
+          actions:
+            - position:
+                row: 7
+                column: 7
+              deleteCandidates:
+                - 2
+                - 8
+  - strategy: GroupIntersectionBoth
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 3
+              candidates:
+                - 8
+            - position:
+                row: 0
+                column: 5
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 2
+                column: 4
+              deleteCandidates:
+                - 8
+        - reasons:
+            - position:
+                row: 2
+                column: 6
+              candidates:
+                - 8
+            - position:
+                row: 2
+                column: 7
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 2
+                column: 4
+              deleteCandidates:
+                - 8
+- - strategy: NakedSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 2
+                column: 4
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 2
+                column: 4
+              setValue: 3
+  - strategy: HiddenSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 5
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 0
+                column: 5
+              setValue: 8
+        - reasons:
+            - position:
+                row: 2
+                column: 4
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 2
+                column: 4
+              setValue: 3
+        - reasons:
+            - position:
+                row: 3
+                column: 3
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 3
+                column: 3
+              setValue: 7
+        - reasons:
+            - position:
+                row: 4
+                column: 3
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 4
+                column: 3
+              setValue: 4
+        - reasons:
+            - position:
+                row: 7
+                column: 4
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 7
+                column: 4
+              setValue: 7
+  - strategy: NakedPairs
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 3
+                column: 5
+              candidates:
+                - 1
+                - 3
+            - position:
+                row: 4
+                column: 5
+              candidates:
+                - 1
+                - 3
+          actions:
+            - position:
+                row: 3
+                column: 3
+              deleteCandidates:
+                - 1
+                - 3
+            - position:
+                row: 4
+                column: 3
+              deleteCandidates:
+                - 1
+                - 3
+            - position:
+                row: 8
+                column: 5
+              deleteCandidates:
+                - 1
+                - 3
+        - reasons:
+            - position:
+                row: 6
+                column: 7
+              candidates:
+                - 2
+                - 8
+            - position:
+                row: 7
+                column: 6
+              candidates:
+                - 2
+                - 8
+          actions:
+            - position:
+                row: 7
+                column: 7
+              deleteCandidates:
+                - 2
+                - 8
+  - strategy: LockedSets
+    deductions:
+      deductions:
+        - reasons: []
+          actions:
+            - position:
+                row: 0
+                column: 5
+              deleteCandidates:
+                - 5
+        - reasons: []
+          actions:
+            - position:
+                row: 3
+                column: 3
+              deleteCandidates:
+                - 1
+                - 3
+        - reasons: []
+          actions:
+            - position:
+                row: 4
+                column: 3
+              deleteCandidates:
+                - 1
+                - 3
+        - reasons: []
+          actions:
+            - position:
+                row: 7
+                column: 4
+              deleteCandidates:
+                - 3
+        - reasons: []
+          actions:
+            - position:
+                row: 7
+                column: 7
+              deleteCandidates:
+                - 2
+                - 8
+  - strategy: GroupIntersectionBoth
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 6
+                column: 3
+              candidates:
+                - 8
+            - position:
+                row: 7
+                column: 3
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 0
+                column: 3
+              deleteCandidates:
+                - 8
+- - strategy: NakedSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 7
+                column: 4
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 7
+                column: 4
+              setValue: 7
+  - strategy: HiddenSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 5
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 0
+                column: 5
+              setValue: 8
+        - reasons:
+            - position:
+                row: 3
+                column: 3
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 3
+                column: 3
+              setValue: 7
+        - reasons:
+            - position:
+                row: 4
+                column: 3
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 4
+                column: 3
+              setValue: 4
+        - reasons:
+            - position:
+                row: 7
+                column: 4
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 7
+                column: 4
+              setValue: 7
+  - strategy: NakedPairs
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 3
+                column: 5
+              candidates:
+                - 1
+                - 3
+            - position:
+                row: 4
+                column: 5
+              candidates:
+                - 1
+                - 3
+          actions:
+            - position:
+                row: 3
+                column: 3
+              deleteCandidates:
+                - 1
+                - 3
+            - position:
+                row: 4
+                column: 3
+              deleteCandidates:
+                - 1
+                - 3
+            - position:
+                row: 8
+                column: 5
+              deleteCandidates:
+                - 1
+                - 3
+        - reasons:
+            - position:
+                row: 6
+                column: 7
+              candidates:
+                - 2
+                - 8
+            - position:
+                row: 7
+                column: 6
+              candidates:
+                - 2
+                - 8
+          actions:
+            - position:
+                row: 7
+                column: 7
+              deleteCandidates:
+                - 2
+                - 8
+  - strategy: LockedSets
+    deductions:
+      deductions:
+        - reasons: []
+          actions:
+            - position:
+                row: 0
+                column: 5
+              deleteCandidates:
+                - 5
+        - reasons: []
+          actions:
+            - position:
+                row: 3
+                column: 3
+              deleteCandidates:
+                - 1
+                - 3
+        - reasons: []
+          actions:
+            - position:
+                row: 4
+                column: 3
+              deleteCandidates:
+                - 1
+                - 3
+        - reasons: []
+          actions:
+            - position:
+                row: 7
+                column: 3
+              deleteCandidates:
+                - 7
+            - position:
+                row: 7
+                column: 7
+              deleteCandidates:
+                - 7
+        - reasons: []
+          actions:
+            - position:
+                row: 7
+                column: 3
+              deleteCandidates:
+                - 7
+            - position:
+                row: 8
+                column: 3
+              deleteCandidates:
+                - 7
+        - reasons: []
+          actions:
+            - position:
+                row: 7
+                column: 7
+              deleteCandidates:
+                - 2
+                - 8
+  - strategy: GroupIntersectionBoth
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 6
+                column: 3
+              candidates:
+                - 8
+            - position:
+                row: 7
+                column: 3
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 0
+                column: 3
+              deleteCandidates:
+                - 8
+- - strategy: HiddenSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 5
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 0
+                column: 5
+              setValue: 8
+        - reasons:
+            - position:
+                row: 3
+                column: 3
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 3
+                column: 3
+              setValue: 7
+        - reasons:
+            - position:
+                row: 4
+                column: 3
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 4
+                column: 3
+              setValue: 4
+        - reasons:
+            - position:
+                row: 8
+                column: 7
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 8
+                column: 7
+              setValue: 7
+  - strategy: NakedPairs
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 3
+                column: 5
+              candidates:
+                - 1
+                - 3
+            - position:
+                row: 4
+                column: 5
+              candidates:
+                - 1
+                - 3
+          actions:
+            - position:
+                row: 3
+                column: 3
+              deleteCandidates:
+                - 1
+                - 3
+            - position:
+                row: 4
+                column: 3
+              deleteCandidates:
+                - 1
+                - 3
+            - position:
+                row: 8
+                column: 5
+              deleteCandidates:
+                - 1
+                - 3
+        - reasons:
+            - position:
+                row: 6
+                column: 7
+              candidates:
+                - 2
+                - 8
+            - position:
+                row: 7
+                column: 6
+              candidates:
+                - 2
+                - 8
+          actions:
+            - position:
+                row: 7
+                column: 7
+              deleteCandidates:
+                - 2
+                - 8
+  - strategy: LockedSets
+    deductions:
+      deductions:
+        - reasons: []
+          actions:
+            - position:
+                row: 0
+                column: 5
+              deleteCandidates:
+                - 5
+        - reasons: []
+          actions:
+            - position:
+                row: 3
+                column: 3
+              deleteCandidates:
+                - 1
+                - 3
+        - reasons: []
+          actions:
+            - position:
+                row: 4
+                column: 3
+              deleteCandidates:
+                - 1
+                - 3
+        - reasons: []
+          actions:
+            - position:
+                row: 7
+                column: 3
+              deleteCandidates:
+                - 8
+        - reasons: []
+          actions:
+            - position:
+                row: 8
+                column: 7
+              deleteCandidates:
+                - 4
+  - strategy: GroupIntersectionBoth
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 6
+                column: 3
+              candidates:
+                - 8
+            - position:
+                row: 7
+                column: 3
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 0
+                column: 3
+              deleteCandidates:
+                - 8
+- - strategy: NakedSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 3
+              candidates:
+                - 5
+          actions:
+            - position:
+                row: 0
+                column: 3
+              setValue: 5
+  - strategy: HiddenSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 3
+              candidates:
+                - 5
+          actions:
+            - position:
+                row: 0
+                column: 3
+              setValue: 5
+        - reasons:
+            - position:
+                row: 7
+                column: 7
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 7
+                column: 7
+              setValue: 4
+        - reasons:
+            - position:
+                row: 8
+                column: 0
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 8
+                column: 0
+              setValue: 4
+        - reasons:
+            - position:
+                row: 8
+                column: 5
+              candidates:
+                - 5
+          actions:
+            - position:
+                row: 8
+                column: 5
+              setValue: 5
+  - strategy: NakedPairs
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 6
+                column: 7
+              candidates:
+                - 2
+                - 8
+            - position:
+                row: 7
+                column: 6
+              candidates:
+                - 2
+                - 8
+          actions:
+            - position:
+                row: 7
+                column: 7
+              deleteCandidates:
+                - 2
+                - 8
+        - reasons:
+            - position:
+                row: 3
+                column: 5
+              candidates:
+                - 1
+                - 3
+            - position:
+                row: 4
+                column: 5
+              candidates:
+                - 1
+                - 3
+          actions:
+            - position:
+                row: 8
+                column: 5
+              deleteCandidates:
+                - 1
+                - 3
+  - strategy: LockedSets
+    deductions:
+      deductions:
+        - reasons: []
+          actions:
+            - position:
+                row: 7
+                column: 3
+              deleteCandidates:
+                - 5
+            - position:
+                row: 8
+                column: 3
+              deleteCandidates:
+                - 5
+        - reasons: []
+          actions:
+            - position:
+                row: 7
+                column: 3
+              deleteCandidates:
+                - 8
+        - reasons: []
+          actions:
+            - position:
+                row: 7
+                column: 7
+              deleteCandidates:
+                - 2
+                - 8
+        - reasons: []
+          actions:
+            - position:
+                row: 8
+                column: 0
+              deleteCandidates:
+                - 1
+        - reasons: []
+          actions:
+            - position:
+                row: 8
+                column: 5
+              deleteCandidates:
+                - 1
+                - 3
+  - strategy: GroupIntersectionBoth
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 3
+                column: 5
+              candidates:
+                - 1
+            - position:
+                row: 4
+                column: 5
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 8
+                column: 5
+              deleteCandidates:
+                - 1
+        - reasons:
+            - position:
+                row: 6
+                column: 3
+              candidates:
+                - 1
+            - position:
+                row: 8
+                column: 3
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 8
+                column: 5
+              deleteCandidates:
+                - 1
+        - reasons:
+            - position:
+                row: 3
+                column: 5
+              candidates:
+                - 3
+            - position:
+                row: 4
+                column: 5
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 8
+                column: 5
+              deleteCandidates:
+                - 3
+        - reasons:
+            - position:
+                row: 7
+                column: 3
+              candidates:
+                - 3
+            - position:
+                row: 8
+                column: 3
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 8
+                column: 5
+              deleteCandidates:
+                - 3
+  - strategy: XWing
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 6
+                column: 0
+              candidates:
+                - 1
+            - position:
+                row: 6
+                column: 3
+              candidates:
+                - 1
+            - position:
+                row: 8
+                column: 0
+              candidates:
+                - 1
+            - position:
+                row: 8
+                column: 3
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 8
+                column: 5
+              deleteCandidates:
+                - 1
+        - reasons:
+            - position:
+                row: 3
+                column: 2
+              candidates:
+                - 3
+            - position:
+                row: 3
+                column: 5
+              candidates:
+                - 3
+            - position:
+                row: 4
+                column: 2
+              candidates:
+                - 3
+            - position:
+                row: 4
+                column: 5
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 8
+                column: 5
+              deleteCandidates:
+                - 3
+        - reasons:
+            - position:
+                row: 7
+                column: 1
+              candidates:
+                - 3
+            - position:
+                row: 7
+                column: 3
+              candidates:
+                - 3
+            - position:
+                row: 8
+                column: 1
+              candidates:
+                - 3
+            - position:
+                row: 8
+                column: 3
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 8
+                column: 5
+              deleteCandidates:
+                - 3
+- - strategy: HiddenSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 7
+                column: 1
+              candidates:
+                - 5
+          actions:
+            - position:
+                row: 7
+                column: 1
+              setValue: 5
+        - reasons:
+            - position:
+                row: 7
+                column: 7
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 7
+                column: 7
+              setValue: 4
+        - reasons:
+            - position:
+                row: 8
+                column: 0
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 8
+                column: 0
+              setValue: 4
+        - reasons:
+            - position:
+                row: 8
+                column: 5
+              candidates:
+                - 5
+          actions:
+            - position:
+                row: 8
+                column: 5
+              setValue: 5
+  - strategy: NakedPairs
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 6
+                column: 7
+              candidates:
+                - 2
+                - 8
+            - position:
+                row: 7
+                column: 6
+              candidates:
+                - 2
+                - 8
+          actions:
+            - position:
+                row: 7
+                column: 7
+              deleteCandidates:
+                - 2
+                - 8
+        - reasons:
+            - position:
+                row: 3
+                column: 5
+              candidates:
+                - 1
+                - 3
+            - position:
+                row: 4
+                column: 5
+              candidates:
+                - 1
+                - 3
+          actions:
+            - position:
+                row: 8
+                column: 5
+              deleteCandidates:
+                - 1
+                - 3
+  - strategy: LockedSets
+    deductions:
+      deductions:
+        - reasons: []
+          actions:
+            - position:
+                row: 7
+                column: 1
+              deleteCandidates:
+                - 3
+        - reasons: []
+          actions:
+            - position:
+                row: 7
+                column: 7
+              deleteCandidates:
+                - 2
+                - 8
+        - reasons: []
+          actions:
+            - position:
+                row: 8
+                column: 0
+              deleteCandidates:
+                - 1
+        - reasons: []
+          actions:
+            - position:
+                row: 8
+                column: 5
+              deleteCandidates:
+                - 1
+                - 3
+  - strategy: GroupIntersectionBoth
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 3
+                column: 5
+              candidates:
+                - 1
+            - position:
+                row: 4
+                column: 5
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 8
+                column: 5
+              deleteCandidates:
+                - 1
+        - reasons:
+            - position:
+                row: 6
+                column: 3
+              candidates:
+                - 1
+            - position:
+                row: 8
+                column: 3
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 8
+                column: 5
+              deleteCandidates:
+                - 1
+        - reasons:
+            - position:
+                row: 3
+                column: 5
+              candidates:
+                - 3
+            - position:
+                row: 4
+                column: 5
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 8
+                column: 5
+              deleteCandidates:
+                - 3
+        - reasons:
+            - position:
+                row: 7
+                column: 3
+              candidates:
+                - 3
+            - position:
+                row: 8
+                column: 3
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 8
+                column: 5
+              deleteCandidates:
+                - 3
+  - strategy: XWing
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 6
+                column: 0
+              candidates:
+                - 1
+            - position:
+                row: 6
+                column: 3
+              candidates:
+                - 1
+            - position:
+                row: 8
+                column: 0
+              candidates:
+                - 1
+            - position:
+                row: 8
+                column: 3
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 8
+                column: 5
+              deleteCandidates:
+                - 1
+        - reasons:
+            - position:
+                row: 3
+                column: 2
+              candidates:
+                - 3
+            - position:
+                row: 3
+                column: 5
+              candidates:
+                - 3
+            - position:
+                row: 4
+                column: 2
+              candidates:
+                - 3
+            - position:
+                row: 4
+                column: 5
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 8
+                column: 5
+              deleteCandidates:
+                - 3
+        - reasons:
+            - position:
+                row: 7
+                column: 1
+              candidates:
+                - 3
+            - position:
+                row: 7
+                column: 3
+              candidates:
+                - 3
+            - position:
+                row: 8
+                column: 1
+              candidates:
+                - 3
+            - position:
+                row: 8
+                column: 3
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 8
+                column: 5
+              deleteCandidates:
+                - 3
+- - strategy: NakedSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 7
+                column: 0
+              candidates:
+                - 2
+          actions:
+            - position:
+                row: 7
+                column: 0
+              setValue: 2
+        - reasons:
+            - position:
+                row: 8
+                column: 1
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 8
+                column: 1
+              setValue: 3
+  - strategy: HiddenSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 6
+                column: 0
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 6
+                column: 0
+              setValue: 1
+        - reasons:
+            - position:
+                row: 7
+                column: 3
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 7
+                column: 3
+              setValue: 3
+        - reasons:
+            - position:
+                row: 8
+                column: 1
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 8
+                column: 1
+              setValue: 3
+        - reasons:
+            - position:
+                row: 8
+                column: 3
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 8
+                column: 3
+              setValue: 1
+  - strategy: LockedSets
+    deductions:
+      deductions:
+        - reasons: []
+          actions:
+            - position:
+                row: 6
+                column: 0
+              deleteCandidates:
+                - 2
+        - reasons: []
+          actions:
+            - position:
+                row: 7
+                column: 6
+              deleteCandidates:
+                - 2
+        - reasons: []
+          actions:
+            - position:
+                row: 8
+                column: 3
+              deleteCandidates:
+                - 3
+- - strategy: NakedSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 6
+                column: 0
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 6
+                column: 0
+              setValue: 1
+        - reasons:
+            - position:
+                row: 7
+                column: 6
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 7
+                column: 6
+              setValue: 8
+        - reasons:
+            - position:
+                row: 8
+                column: 3
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 8
+                column: 3
+              setValue: 1
+  - strategy: HiddenSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 3
+                column: 6
+              candidates:
+                - 2
+          actions:
+            - position:
+                row: 3
+                column: 6
+              setValue: 2
+        - reasons:
+            - position:
+                row: 6
+                column: 0
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 6
+                column: 0
+              setValue: 1
+        - reasons:
+            - position:
+                row: 6
+                column: 7
+              candidates:
+                - 2
+          actions:
+            - position:
+                row: 6
+                column: 7
+              setValue: 2
+        - reasons:
+            - position:
+                row: 7
+                column: 3
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 7
+                column: 3
+              setValue: 3
+        - reasons:
+            - position:
+                row: 8
+                column: 3
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 8
+                column: 3
+              setValue: 1
+  - strategy: LockedSets
+    deductions:
+      deductions:
+        - reasons: []
+          actions:
+            - position:
+                row: 2
+                column: 6
+              deleteCandidates:
+                - 8
+        - reasons: []
+          actions:
+            - position:
+                row: 6
+                column: 3
+              deleteCandidates:
+                - 1
+        - reasons: []
+          actions:
+            - position:
+                row: 6
+                column: 7
+              deleteCandidates:
+                - 8
+        - reasons: []
+          actions:
+            - position:
+                row: 7
+                column: 3
+              deleteCandidates:
+                - 8
+- - strategy: NakedSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 2
+                column: 6
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 2
+                column: 6
+              setValue: 1
+        - reasons:
+            - position:
+                row: 6
+                column: 3
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 6
+                column: 3
+              setValue: 8
+        - reasons:
+            - position:
+                row: 6
+                column: 7
+              candidates:
+                - 2
+          actions:
+            - position:
+                row: 6
+                column: 7
+              setValue: 2
+        - reasons:
+            - position:
+                row: 7
+                column: 3
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 7
+                column: 3
+              setValue: 3
+  - strategy: HiddenSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 2
+                column: 7
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 2
+                column: 7
+              setValue: 8
+        - reasons:
+            - position:
+                row: 3
+                column: 6
+              candidates:
+                - 2
+          actions:
+            - position:
+                row: 3
+                column: 6
+              setValue: 2
+        - reasons:
+            - position:
+                row: 6
+                column: 3
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 6
+                column: 3
+              setValue: 8
+        - reasons:
+            - position:
+                row: 6
+                column: 7
+              candidates:
+                - 2
+          actions:
+            - position:
+                row: 6
+                column: 7
+              setValue: 2
+        - reasons:
+            - position:
+                row: 7
+                column: 3
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 7
+                column: 3
+              setValue: 3
+  - strategy: LockedSets
+    deductions:
+      deductions:
+        - reasons: []
+          actions:
+            - position:
+                row: 2
+                column: 7
+              deleteCandidates:
+                - 1
+        - reasons: []
+          actions:
+            - position:
+                row: 3
+                column: 6
+              deleteCandidates:
+                - 1
+        - reasons: []
+          actions:
+            - position:
+                row: 4
+                column: 7
+              deleteCandidates:
+                - 2
+- - strategy: NakedSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 2
+                column: 7
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 2
+                column: 7
+              setValue: 8
+        - reasons:
+            - position:
+                row: 3
+                column: 6
+              candidates:
+                - 2
+          actions:
+            - position:
+                row: 3
+                column: 6
+              setValue: 2
+        - reasons:
+            - position:
+                row: 4
+                column: 7
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 4
+                column: 7
+              setValue: 1
+  - strategy: HiddenSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 2
+                column: 7
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 2
+                column: 7
+              setValue: 8
+        - reasons:
+            - position:
+                row: 3
+                column: 5
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 3
+                column: 5
+              setValue: 1
+        - reasons:
+            - position:
+                row: 3
+                column: 6
+              candidates:
+                - 2
+          actions:
+            - position:
+                row: 3
+                column: 6
+              setValue: 2
+        - reasons:
+            - position:
+                row: 4
+                column: 2
+              candidates:
+                - 2
+          actions:
+            - position:
+                row: 4
+                column: 2
+              setValue: 2
+        - reasons:
+            - position:
+                row: 4
+                column: 7
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 4
+                column: 7
+              setValue: 1
+  - strategy: LockedSets
+    deductions:
+      deductions:
+        - reasons: []
+          actions:
+            - position:
+                row: 3
+                column: 2
+              deleteCandidates:
+                - 2
+        - reasons: []
+          actions:
+            - position:
+                row: 4
+                column: 5
+              deleteCandidates:
+                - 1
+- - strategy: NakedSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 3
+                column: 2
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 3
+                column: 2
+              setValue: 3
+        - reasons:
+            - position:
+                row: 4
+                column: 5
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 4
+                column: 5
+              setValue: 3
+  - strategy: HiddenSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 3
+                column: 5
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 3
+                column: 5
+              setValue: 1
+        - reasons:
+            - position:
+                row: 4
+                column: 2
+              candidates:
+                - 2
+          actions:
+            - position:
+                row: 4
+                column: 2
+              setValue: 2
+  - strategy: LockedSets
+    deductions:
+      deductions:
+        - reasons: []
+          actions:
+            - position:
+                row: 3
+                column: 5
+              deleteCandidates:
+                - 3
+        - reasons: []
+          actions:
+            - position:
+                row: 4
+                column: 2
+              deleteCandidates:
+                - 3
+- - strategy: NakedSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 3
+                column: 5
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 3
+                column: 5
+              setValue: 1
+        - reasons:
+            - position:
+                row: 4
+                column: 2
+              candidates:
+                - 2
+          actions:
+            - position:
+                row: 4
+                column: 2
+              setValue: 2
+  - strategy: HiddenSingles
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 3
+                column: 5
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 3
+                column: 5
+              setValue: 1
+        - reasons:
+            - position:
+                row: 4
+                column: 2
+              candidates:
+                - 2
+          actions:
+            - position:
+                row: 4
+                column: 2
+              setValue: 2
