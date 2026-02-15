@@ -49,6 +49,13 @@ mod test_util {
     use crate::grid::Grid;
     use crate::solver::strategic::deduction::Deductions;
 
+    #[derive(serde::Serialize)]
+    pub(crate) struct DedudctionInfo<'a> {
+        pub(crate) grid_input: Vec<&'a str>,
+        pub(crate) deductions: Vec<&'a str>,
+        pub(crate) grid_output: Vec<&'a str>,
+    }
+
     pub(crate) fn assert_deductions<Base: SudokuBase>(
         deductions: &Deductions<Base>,
         expected_deductions: &Deductions<Base>,
@@ -67,5 +74,9 @@ mod test_util {
         assert_deductions(deductions, expected_deductions);
 
         deductions.apply(grid).unwrap();
+    }
+
+    macro_rules! strategy_snapshot_test {
+        () => {};
     }
 }
