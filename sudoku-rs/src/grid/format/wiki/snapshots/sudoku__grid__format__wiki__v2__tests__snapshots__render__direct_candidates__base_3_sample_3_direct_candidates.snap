@@ -1,0 +1,5 @@
+---
+source: sudoku-rs/src/grid/format/wiki/v2.rs
+expression: BinaryCandidatesLineV2.render(&grid)
+---
+S9B7m1i04050m0201070801507836093e0k031u9w1kaw082f377o8y04060o7s04055v9ib60m0y071209424y0u0102080q01022a03058q1e04516s2b5x6b0m0y0903050k0j067v080q072a095u03636j06020z

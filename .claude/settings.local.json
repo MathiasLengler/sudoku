@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:insta.rs)",
+      "Bash(find:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(grep:*)",
+      "Bash(wc:*)",
+      "WebFetch(domain:docs.rs)",
+      "Bash(ls:*)",
+      "Bash(cargo test:*)",
+      "Bash(just lint:*)",
+      "Bash(cargo insta test:*)",
+      "Bash(just clippy)"
+    ]
+  }
+}
