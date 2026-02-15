@@ -49,6 +49,7 @@ clap = { version = "4.5.53", optional = true, features = ["derive"] }
 
 [dev-dependencies]
 indoc = "2"
+insta = { version = "1", features = ["yaml"] }
 rstest = "0.26.1"
 serde_test = "1.0.177"
 

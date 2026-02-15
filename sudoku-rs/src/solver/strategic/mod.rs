@@ -552,4 +552,72 @@ mod tests {
             // TODO: assert
         }
     }
+
+    mod snapshots {
+        use super::*;
+
+        // TODO: refactor using testing macros
+        #[test]
+        fn test_solve_path_base2() {
+            for (i, grid) in crate::samples::base_2().into_iter().enumerate() {
+                let mut solver = Solver::with_strategies(
+                    grid,
+                    StrategySet::default_solver_strategies_no_brute_force(),
+                );
+                let solve_steps: Vec<DynamicSolveStep> = solver
+                    .solve_path()
+                    .map(|res| res.map(Into::into))
+                    .collect::<Result<_>>()
+                    .unwrap();
+                insta::assert_yaml_snapshot!(format!("solve_path_base2_grid_{i}"), solve_steps);
+            }
+        }
+
+        #[test]
+        fn test_solve_path_all_base2() {
+            for (i, grid) in crate::samples::base_2().into_iter().enumerate() {
+                let mut solver = Solver::with_strategies(
+                    grid,
+                    StrategySet::default_solver_strategies_no_brute_force(),
+                );
+                let all_possible_solve_steps: Vec<Vec<DynamicSolveStep>> = solver
+                    .solve_path_all()
+                    .map(|res| res.map(|steps| steps.into_iter().map(Into::into).collect()))
+                    .collect::<Result<_>>()
+                    .unwrap();
+                insta::assert_yaml_snapshot!(
+                    format!("solve_path_all_base2_grid_{i}"),
+                    all_possible_solve_steps
+                );
+            }
+        }
+
+        #[test]
+        fn test_solve_path_base3() {
+            let grid = crate::samples::base_3().into_iter().next().unwrap();
+            let mut solver = Solver::with_strategies(
+                grid,
+                StrategySet::default_solver_strategies_no_brute_force(),
+            );
+            let solve_steps: Vec<DynamicSolveStep> = solver
+                .solve_path()
+                .map(|res| res.map(Into::into))
+                .collect::<Result<_>>()
+                .unwrap();
+            insta::assert_yaml_snapshot!(solve_steps);
+        }
+
+        #[test]
+        fn test_solve_path_base3_all_samples() {
+            for (i, grid) in crate::samples::base_3().into_iter().enumerate() {
+                let mut solver = Solver::new(grid);
+                let solve_steps: Vec<DynamicSolveStep> = solver
+                    .solve_path()
+                    .map(|res| res.map(Into::into))
+                    .collect::<Result<_>>()
+                    .unwrap();
+                insta::assert_yaml_snapshot!(format!("solve_path_base3_grid_{i}"), solve_steps);
+            }
+        }
+    }
 }

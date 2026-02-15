@@ -1,0 +1,384 @@
+---
+source: sudoku-rs/src/solver/strategic/strategies/impls/locked_sets.rs
+description: Strategy LockedSets executed on grid base_3_sample_2
+expression: "TransportDeductions :: from(deductions.clone())"
+info:
+  grid_input:
+    - ╔═════════════════╦═════════════════╦═════════════════╗
+    - ║     │     │     ║     │     │     ║ 1   │     │     ║
+    - ║  2  │  5  │  6  ║     │  3  │ 4   ║     │ 4   │ 4   ║
+    - ║     │  89 │     ║ 7 9 │     │ 7   ║   9 │  89 │  8  ║
+    - ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+    - ║   3 │   3 │     ║  2  │     │     ║  23 │     │  2  ║
+    - ║     │     │  1  ║     │  6  │  5  ║     │  7  │ 4   ║
+    - ║  89 │  89 │     ║   9 │     │     ║   9 │     │  8  ║
+    - ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+    - ║   3 │     │     ║     │     │     ║  23 │     │  2  ║
+    - ║     │  4  │  7  ║  1  │     │  8  ║   6 │  5  │     ║
+    - ║   9 │     │     ║     │   9 │     ║   9 │     │     ║
+    - ╠═════════════════╬═════════════════╬═════════════════╣
+    - ║     │ 1 3 │   3 ║     │     │   3 ║   3 │     │     ║
+    - ║  5  │   6 │ 4   ║   6 │     │   6 ║     │  2  │  9  ║
+    - ║     │     │     ║ 78  │ 78  │ 7   ║ 7   │     │     ║
+    - ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+    - ║   3 │  23 │     ║     │     │     ║     │   3 │     ║
+    - ║     │     │  8  ║  5  │  1  │  9  ║  4  │     │  6  ║
+    - ║ 7   │     │     ║ 7   │     │     ║     │     │     ║
+    - ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+    - ║   3 │   3 │   3 ║     │     │   3 ║   3 │   3 │     ║
+    - ║     │   6 │     ║  4  │  2  │   6 ║  5  │     │  1  ║
+    - ║ 7 9 │   9 │     ║     │     │ 7   ║ 7   │  8  │     ║
+    - ╠═════════════════╬═════════════════╬═════════════════╣
+    - ║ 1 3 │ 1 3 │   3 ║     │     │     ║     │     │     ║
+    - ║     │  5  │  5  ║  56 │  4  │  2  ║  8  │   6 │     ║
+    - ║     │     │     ║ 7 9 │     │     ║     │   9 │ 7   ║
+    - ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+    - ║     │ 12  │     ║     │     │ 1   ║  2  │     │     ║
+    - ║  6  │     │  9  ║  3  │     │     ║     │ 4   │  5  ║
+    - ║     │  8  │     ║     │ 78  │ 7   ║ 7   │     │     ║
+    - ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+    - ║     │     │  2  ║     │     │     ║  2  │     │     ║
+    - ║ 4   │  7  │ 45  ║  56 │  5  │   6 ║   6 │  1  │  3  ║
+    - ║  8  │     │     ║  89 │  89 │     ║   9 │     │     ║
+    - ╚═════════════════╩═════════════════╩═════════════════╝
+  deductions:
+    - "r0c1: delete candidates 8,9, because of: "
+    - "r0c3: delete candidate 9, r1c3: delete candidate 9, because of: "
+    - "r0c6: delete candidate 9, because of: "
+    - "r1c3: delete candidate 9, because of: "
+    - "r1c6: delete candidate 2, r1c8: delete candidate 2, r2c6: delete candidate 2, because of: "
+    - "r1c8: delete candidate 2, because of: "
+    - "r1c8: delete candidates 2,8, because of: "
+    - "r2c0: delete candidate 9, r2c6: delete candidate 9, because of: "
+    - "r3c1: delete candidate 3, r3c2: delete candidate 3, r4c0: delete candidate 3, r4c1: delete candidate 3, r5c0: delete candidate 3, r5c1: delete candidate 3, because of: "
+    - "r3c1: delete candidates 3,6, because of: "
+    - "r3c2: delete candidate 3, r6c2: delete candidate 3, because of: "
+    - "r3c5: delete candidate 6, r5c5: delete candidate 6, because of: "
+    - "r3c6: delete candidate 3, r5c6: delete candidate 3, r5c7: delete candidate 3, because of: "
+    - "r4c0: delete candidate 3, r4c1: delete candidate 3, because of: "
+    - "r4c3: delete candidate 7, because of: "
+    - "r5c0: delete candidate 3, r5c1: delete candidate 3, r5c5: delete candidate 3, r5c6: delete candidate 3, r5c7: delete candidate 3, because of: "
+    - "r5c7: delete candidate 3, because of: "
+    - "r6c0: delete candidate 3, because of: "
+    - "r6c3: delete candidate 6, r8c3: delete candidate 6, because of: "
+    - "r6c3: delete candidate 7, because of: "
+    - "r7c1: delete candidate 1, r8c2: delete candidate 5, because of: "
+    - "r7c6: delete candidate 7, because of: "
+    - "r8c3: delete candidate 6, r8c6: delete candidate 6, because of: "
+    - "r8c4: delete candidate 9, because of: "
+  grid_output:
+    - ╔═════════════════╦═════════════════╦═════════════════╗
+    - ║     │     │     ║     │     │     ║ 1   │     │     ║
+    - ║  2  │  5  │  6  ║     │  3  │ 4   ║     │ 4   │ 4   ║
+    - ║     │     │     ║ 7   │     │ 7   ║     │  89 │  8  ║
+    - ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+    - ║   3 │   3 │     ║  2  │     │     ║   3 │     │     ║
+    - ║     │     │  1  ║     │  6  │  5  ║     │  7  │ 4   ║
+    - ║  89 │  89 │     ║     │     │     ║   9 │     │     ║
+    - ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+    - ║   3 │     │     ║     │     │     ║   3 │     │  2  ║
+    - ║     │  4  │  7  ║  1  │     │  8  ║   6 │  5  │     ║
+    - ║     │     │     ║     │   9 │     ║     │     │     ║
+    - ╠═════════════════╬═════════════════╬═════════════════╣
+    - ║     │ 1   │     ║     │     │   3 ║     │     │     ║
+    - ║  5  │     │ 4   ║   6 │     │     ║     │  2  │  9  ║
+    - ║     │     │     ║ 78  │ 78  │ 7   ║ 7   │     │     ║
+    - ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+    - ║     │  2  │     ║     │     │     ║     │   3 │     ║
+    - ║     │     │  8  ║  5  │  1  │  9  ║  4  │     │  6  ║
+    - ║ 7   │     │     ║     │     │     ║     │     │     ║
+    - ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+    - ║     │     │   3 ║     │     │     ║     │     │     ║
+    - ║     │   6 │     ║  4  │  2  │     ║  5  │     │  1  ║
+    - ║ 7 9 │   9 │     ║     │     │ 7   ║ 7   │  8  │     ║
+    - ╠═════════════════╬═════════════════╬═════════════════╣
+    - ║ 1   │ 1 3 │     ║     │     │     ║     │     │     ║
+    - ║     │  5  │  5  ║  5  │  4  │  2  ║  8  │   6 │     ║
+    - ║     │     │     ║   9 │     │     ║     │   9 │ 7   ║
+    - ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+    - ║     │  2  │     ║     │     │ 1   ║  2  │     │     ║
+    - ║  6  │     │  9  ║  3  │     │     ║     │ 4   │  5  ║
+    - ║     │  8  │     ║     │ 78  │ 7   ║     │     │     ║
+    - ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+    - ║     │     │  2  ║     │     │     ║  2  │     │     ║
+    - ║ 4   │  7  │ 4   ║  5  │  5  │   6 ║     │  1  │  3  ║
+    - ║  8  │     │     ║  89 │  8  │     ║   9 │     │     ║
+    - ╚═════════════════╩═════════════════╩═════════════════╝
+---
+deductions:
+  - reasons: []
+    actions:
+      - position:
+          row: 0
+          column: 1
+        deleteCandidates:
+          - 8
+          - 9
+  - reasons: []
+    actions:
+      - position:
+          row: 0
+          column: 3
+        deleteCandidates:
+          - 9
+      - position:
+          row: 1
+          column: 3
+        deleteCandidates:
+          - 9
+  - reasons: []
+    actions:
+      - position:
+          row: 0
+          column: 6
+        deleteCandidates:
+          - 9
+  - reasons: []
+    actions:
+      - position:
+          row: 1
+          column: 3
+        deleteCandidates:
+          - 9
+  - reasons: []
+    actions:
+      - position:
+          row: 1
+          column: 6
+        deleteCandidates:
+          - 2
+      - position:
+          row: 1
+          column: 8
+        deleteCandidates:
+          - 2
+      - position:
+          row: 2
+          column: 6
+        deleteCandidates:
+          - 2
+  - reasons: []
+    actions:
+      - position:
+          row: 1
+          column: 8
+        deleteCandidates:
+          - 2
+  - reasons: []
+    actions:
+      - position:
+          row: 1
+          column: 8
+        deleteCandidates:
+          - 2
+          - 8
+  - reasons: []
+    actions:
+      - position:
+          row: 2
+          column: 0
+        deleteCandidates:
+          - 9
+      - position:
+          row: 2
+          column: 6
+        deleteCandidates:
+          - 9
+  - reasons: []
+    actions:
+      - position:
+          row: 3
+          column: 1
+        deleteCandidates:
+          - 3
+      - position:
+          row: 3
+          column: 2
+        deleteCandidates:
+          - 3
+      - position:
+          row: 4
+          column: 0
+        deleteCandidates:
+          - 3
+      - position:
+          row: 4
+          column: 1
+        deleteCandidates:
+          - 3
+      - position:
+          row: 5
+          column: 0
+        deleteCandidates:
+          - 3
+      - position:
+          row: 5
+          column: 1
+        deleteCandidates:
+          - 3
+  - reasons: []
+    actions:
+      - position:
+          row: 3
+          column: 1
+        deleteCandidates:
+          - 3
+          - 6
+  - reasons: []
+    actions:
+      - position:
+          row: 3
+          column: 2
+        deleteCandidates:
+          - 3
+      - position:
+          row: 6
+          column: 2
+        deleteCandidates:
+          - 3
+  - reasons: []
+    actions:
+      - position:
+          row: 3
+          column: 5
+        deleteCandidates:
+          - 6
+      - position:
+          row: 5
+          column: 5
+        deleteCandidates:
+          - 6
+  - reasons: []
+    actions:
+      - position:
+          row: 3
+          column: 6
+        deleteCandidates:
+          - 3
+      - position:
+          row: 5
+          column: 6
+        deleteCandidates:
+          - 3
+      - position:
+          row: 5
+          column: 7
+        deleteCandidates:
+          - 3
+  - reasons: []
+    actions:
+      - position:
+          row: 4
+          column: 0
+        deleteCandidates:
+          - 3
+      - position:
+          row: 4
+          column: 1
+        deleteCandidates:
+          - 3
+  - reasons: []
+    actions:
+      - position:
+          row: 4
+          column: 3
+        deleteCandidates:
+          - 7
+  - reasons: []
+    actions:
+      - position:
+          row: 5
+          column: 0
+        deleteCandidates:
+          - 3
+      - position:
+          row: 5
+          column: 1
+        deleteCandidates:
+          - 3
+      - position:
+          row: 5
+          column: 5
+        deleteCandidates:
+          - 3
+      - position:
+          row: 5
+          column: 6
+        deleteCandidates:
+          - 3
+      - position:
+          row: 5
+          column: 7
+        deleteCandidates:
+          - 3
+  - reasons: []
+    actions:
+      - position:
+          row: 5
+          column: 7
+        deleteCandidates:
+          - 3
+  - reasons: []
+    actions:
+      - position:
+          row: 6
+          column: 0
+        deleteCandidates:
+          - 3
+  - reasons: []
+    actions:
+      - position:
+          row: 6
+          column: 3
+        deleteCandidates:
+          - 6
+      - position:
+          row: 8
+          column: 3
+        deleteCandidates:
+          - 6
+  - reasons: []
+    actions:
+      - position:
+          row: 6
+          column: 3
+        deleteCandidates:
+          - 7
+  - reasons: []
+    actions:
+      - position:
+          row: 7
+          column: 1
+        deleteCandidates:
+          - 1
+      - position:
+          row: 8
+          column: 2
+        deleteCandidates:
+          - 5
+  - reasons: []
+    actions:
+      - position:
+          row: 7
+          column: 6
+        deleteCandidates:
+          - 7
+  - reasons: []
+    actions:
+      - position:
+          row: 8
+          column: 3
+        deleteCandidates:
+          - 6
+      - position:
+          row: 8
+          column: 6
+        deleteCandidates:
+          - 6
+  - reasons: []
+    actions:
+      - position:
+          row: 8
+          column: 4
+        deleteCandidates:
+          - 9
