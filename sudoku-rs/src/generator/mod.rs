@@ -886,15 +886,14 @@ mod tests {
             }
         }
 
-        // FIXME: currently the slowest test
-        //  PASS [   2.334s] sudoku generator::tests::prune::test_strategies
-        // Either:
-        //  optimize
-        //  split into smaller tests (parallelize, rstest)
-        //  reduce search space
-        #[test]
-        fn test_strategies() {
-            fn generate(target: PruningTarget, strategies: StrategySet) -> Grid<Base3> {
+        mod strategies {
+            use super::*;
+            use rstest::rstest;
+
+            fn generate_with_target_and_strategies(
+                target: PruningTarget,
+                strategies: StrategySet,
+            ) -> Grid<Base3> {
                 Generator::<Base3>::with_pruning(PruningSettings {
                     strategies,
                     target,
@@ -904,16 +903,38 @@ mod tests {
                 .unwrap()
             }
 
-            let targets = vec![PruningTarget::Minimal, PruningTarget::MaxEmptyCellCount(20)];
-
-            for target in targets {
-                let grid = generate(target, StrategySet::with_all(false));
-                assert!(grid.is_solved());
-
+            fn first_n_default_strategies(n: usize) -> StrategySet {
                 let default_strategies = StrategySet::default_solver_strategies_no_brute_force();
-                for i in 1..default_strategies.count() {
-                    let strategies = default_strategies.iter_strategies().take(i).collect();
-                    let grid = generate(target, strategies);
+                assert!(n <= default_strategies.count());
+                StrategySet::default_solver_strategies_no_brute_force()
+                    .iter_strategies()
+                    .take(n)
+                    .collect()
+            }
+
+            #[rstest]
+            fn test_strategies(
+                #[values(
+                    PruningTarget::Minimal,
+                    PruningTarget::MinimalPlusClueCunt(1),
+                    PruningTarget::MinClueCount(30)
+                )]
+                target: PruningTarget,
+                #[values(
+                    StrategySet::with_all(false),
+                    first_n_default_strategies(1),
+                    first_n_default_strategies(2),
+                    first_n_default_strategies(3),
+                    first_n_default_strategies(4),
+                    first_n_default_strategies(5),
+                    first_n_default_strategies(6)
+                )]
+                strategies: StrategySet,
+            ) {
+                let grid = generate_with_target_and_strategies(target, strategies);
+                if strategies.is_empty() {
+                    assert!(grid.is_solved());
+                } else {
                     assert!(
                         grid.is_solvable_with_strategies(strategies)
                             .unwrap()
