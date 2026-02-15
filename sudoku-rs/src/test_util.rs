@@ -29,16 +29,7 @@ macro_rules! test_max_base3 {
 
 macro_rules! test_max_base4 {
     ($using_base:block) => {
-        #[test]
-        fn test_base2() {
-            type Base = $crate::base::consts::Base2;
-            $using_base
-        }
-        #[test]
-        fn test_base3() {
-            type Base = $crate::base::consts::Base3;
-            $using_base
-        }
+        $crate::test_util::test_max_base3!($using_base);
         #[test]
         fn test_base4() {
             type Base = $crate::base::consts::Base4;
@@ -49,21 +40,7 @@ macro_rules! test_max_base4 {
 
 macro_rules! test_max_base5 {
     ($using_base:block) => {
-        #[test]
-        fn test_base2() {
-            type Base = $crate::base::consts::Base2;
-            $using_base
-        }
-        #[test]
-        fn test_base3() {
-            type Base = $crate::base::consts::Base3;
-            $using_base
-        }
-        #[test]
-        fn test_base4() {
-            type Base = $crate::base::consts::Base4;
-            $using_base
-        }
+        $crate::test_util::test_max_base4!($using_base);
         #[test]
         fn test_base5() {
             type Base = $crate::base::consts::Base5;
@@ -86,9 +63,8 @@ macro_rules! test_all_sample_grids {
             $crate::test_util::test_max_base5!({
                 #[allow(unused_mut)]
                 for (i, mut $grid) in Base::grid_samples().enumerate() {
-                    $grid.set_all_direct_candidates();
-
                     let $name = format!("base_{}_sample_{i}_direct_candidates", Base::BASE);
+                    $grid.set_all_direct_candidates();
                     $block
                 }
             });
@@ -104,16 +80,16 @@ macro_rules! test_all_sample_grids {
 
         #[test]
         fn test_base_2_solved() {
+            let $name = "base_2_solved".to_owned();
             #[allow(unused_mut)]
             let mut $grid = $crate::samples::base_2_solved();
-            let $name = "base_2_solved".to_owned();
             $block
         }
         #[test]
         fn test_base_2_candidates_coordinates() {
+            let $name = "base_2_candidates_coordinates".to_owned();
             #[allow(unused_mut)]
             let mut $grid = $crate::samples::base_2_candidates_coordinates();
-            let $name = "base_2_candidates_coordinates".to_owned();
             $block
         }
     };
