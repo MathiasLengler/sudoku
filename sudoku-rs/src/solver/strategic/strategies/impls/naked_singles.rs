@@ -32,9 +32,9 @@ impl Strategy for NakedSingles {
 
 #[cfg(test)]
 mod tests {
-    use crate::cell::Value;
     use crate::samples;
     use crate::solver::strategic::strategies::test_util::assert_deductions_with_grid;
+    use crate::{cell::Value, solver::strategic::strategies::test_util::strategy_snapshot_tests};
 
     use super::*;
 
@@ -69,4 +69,6 @@ mod tests {
 
         assert!(grid.is_solved());
     }
+
+    strategy_snapshot_tests!(NakedSingles);
 }

@@ -168,6 +168,10 @@ pub mod selection {
                 .sum()
         }
 
+        pub fn is_empty(&self) -> bool {
+            self.count() == 0
+        }
+
         pub const fn default_solver_strategies() -> Self {
             StrategySet {
                 naked_singles: true,

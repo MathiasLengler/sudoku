@@ -37,9 +37,9 @@ impl Strategy for BruteForce {
 
 #[cfg(test)]
 mod tests {
-    use crate::cell::Value;
     use crate::samples;
     use crate::solver::strategic::strategies::test_util::assert_deductions_with_grid;
+    use crate::{cell::Value, solver::strategic::strategies::test_util::strategy_snapshot_tests};
 
     use super::*;
 
@@ -74,14 +74,8 @@ mod tests {
 
         assert!(grid.is_solved());
     }
-    #[test]
-    fn test_base_3() {
-        let mut grid = samples::base_3().first().unwrap().clone();
-        grid.fix_all_values();
-        grid.set_all_direct_candidates();
 
-        let deductions = BruteForce.execute(&grid).unwrap();
-        deductions.apply(&mut grid).unwrap();
+    strategy_snapshot_tests!(BruteForce, |grid| {
         assert!(grid.is_solved());
-    }
+    });
 }

@@ -9,6 +9,9 @@ default:
 test *test-args:
     cargo nextest run {{ test-args }}
 
+test-ci *test-args:
+    @just test --profile ci {{ test-args }}
+
 # Run all linters
 lint: rust-lint web-lint
 
@@ -26,8 +29,16 @@ test-cov *test-args:
 test-cov-html *test-args:
     cargo llvm-cov nextest --branch --html --open -- {{ test-args }}
 
+test-insta *insta-args:
+    cargo insta test {{ insta-args }}
+
+test-insta-force: (test-insta "--unreferenced" "auto" "--force-update-snapshots")
+
+test-insta-review *insta-args:
+    cargo insta review {{ insta-args }}
+
 # Run clippy
-clippy: _clippy
+clippy *clippy-args: (_clippy clippy-args)
 
 # Run clippy for CI (treat warnings as errors)
 clippy-ci: (_clippy "--" "-D" "warnings")
@@ -73,7 +84,7 @@ web-ts-serve:
 # Run CI build/test/lint locally; fork of `.github/workflows/deploy_app.yml`
 ci-local:
     just clippy-ci
-    just test
+    just test-ci
     just pack-prod
     cd sudoku-web && npm ci
     cd sudoku-web && npm run lint
