@@ -257,4 +257,17 @@ mod tests {
             Cell::with_value(1.try_into().unwrap(), false)
         );
     }
+
+    mod snapshots {
+        use super::*;
+
+        mod render {
+            use super::*;
+            use crate::test_util::test_all_sample_grids;
+
+            test_all_sample_grids!(|grid, name| {
+                insta::assert_snapshot!(name, BinaryCandidatesLineV1.render(&grid));
+            });
+        }
+    }
 }

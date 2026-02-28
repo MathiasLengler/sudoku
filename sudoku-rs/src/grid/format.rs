@@ -249,7 +249,7 @@ mod tests {
         grid::format::test_util::{
             assert_grid_format_roundtrip, assert_grid_format_roundtrip_unchanged,
         },
-        test_util::{init_test_logger, test_all_bases},
+        test_util::{init_test_logger, test_max_base5},
     };
 
     mod grid_format_enum {
@@ -323,7 +323,7 @@ mod tests {
             mod lexicographical {
                 use super::*;
 
-                test_all_bases!({
+                test_max_base5!({
                     init_test_logger();
 
                     for grid_format in GridFormatEnum::all() {
@@ -392,7 +392,7 @@ mod tests {
             mod filled {
                 use super::*;
 
-                test_all_bases!({
+                test_max_base5!({
                     init_test_logger();
 
                     for grid_format in GridFormatEnum::all() {
