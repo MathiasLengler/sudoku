@@ -126,7 +126,7 @@ export function RequestHintButton() {
 
                 // In puzzle mode, validate the player's deductions
                 if (isPuzzleMode && puzzleStatus === "active") {
-                    const isCorrect = await validatePuzzleMove(deductions);
+                    const isCorrect = validatePuzzleMove(deductions);
                     if (isCorrect) {
                         notifications.show("Correct! You found the right deduction.", {
                             key: "puzzle-solved",

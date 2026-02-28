@@ -5,7 +5,7 @@ import { useCallback, useState } from "react";
 import type { DynamicGeneratorSettings, GeneratorProgress, StrategyEnum, TransportDeduction } from "../../types";
 import { ALL_STRATEGIES, selectedStrategiesSchema } from "../constants";
 import { gameState } from "../state/gameMode";
-import { expectedDeductionsState, getStrategyStats, puzzleStatsState, type PuzzleStats } from "../state/puzzle";
+import { expectedDeductionsState, getStrategyStats, puzzleStatsState } from "../state/puzzle";
 import type { GameModePuzzle, PuzzleStatus } from "../state/puzzle/schema";
 import {
     mainThreadWasmSudokuClassState,
@@ -201,7 +201,7 @@ function compareDeductions(playerDeductions: TransportDeduction[], expectedDeduc
  */
 export function useValidatePuzzleMove() {
     return useAtomCallback(
-        useCallback(async (get, set, playerDeductions: TransportDeduction[]) => {
+        useCallback((get, set, playerDeductions: TransportDeduction[]) => {
             const game = get(gameState);
             if (game.mode !== "puzzle") {
                 console.warn("validatePuzzleMove called outside puzzle mode");
@@ -225,16 +225,16 @@ export function useValidatePuzzleMove() {
             });
 
             // Update stats
-            const currentStats = await get(puzzleStatsState);
+            const currentStats = get(puzzleStatsState);
             const strategyStats = getStrategyStats(currentStats, game.targetStrategy);
-            const newStats: PuzzleStats = {
-                ...currentStats,
+            void set(puzzleStatsState, (prev) => ({
+                // eslint-disable-next-line @typescript-eslint/no-misused-promises -- puzzleStatsState uses SyncStorage, prev is not a Promise
+                ...prev,
                 [game.targetStrategy]: {
                     solved: strategyStats.solved + (isCorrect ? 1 : 0),
                     failed: strategyStats.failed + (isCorrect ? 0 : 1),
                 },
-            };
-            await set(puzzleStatsState, newStats);
+            }));
 
             return isCorrect;
         }, []),
@@ -260,7 +260,7 @@ export function usePuzzleAwareApplyDeductions() {
 
                 // If in puzzle mode, validate the move
                 if (game.mode === "puzzle" && game.status === "active") {
-                    await validatePuzzleMove(playerDeductions);
+                    validatePuzzleMove(playerDeductions);
                 }
             },
             [validatePuzzleMove],
