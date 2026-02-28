@@ -35,7 +35,7 @@ export const hintSettingsSchema = z.object({
 });
 
 export const DEFAULT_HINT_SETTINGS = {
-    strategies: ALL_STRATEGIES.filter((strategy) => strategy !== "BruteForce"),
+    strategies: selectedStrategiesSchema.decode(ALL_STRATEGIES.filter((strategy) => strategy !== "BruteForce")),
     mode: "hintApply",
     doLoop: false,
     loopDelayIndex: 0,

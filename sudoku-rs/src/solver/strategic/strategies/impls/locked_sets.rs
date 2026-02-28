@@ -150,7 +150,9 @@ impl LockedSets {
 #[cfg(test)]
 mod tests {
     use crate::base::consts::*;
-    use crate::solver::strategic::strategies::test_util::assert_deductions_with_grid;
+    use crate::solver::strategic::strategies::test_util::{
+        assert_deductions_with_grid, strategy_snapshot_tests,
+    };
     use crate::test_util::init_test_logger;
 
     use super::*;
@@ -569,4 +571,6 @@ mod tests {
 
         assert_deductions_with_grid(&deductions, &expected_deductions, &mut grid);
     }
+
+    strategy_snapshot_tests!(LockedSets);
 }

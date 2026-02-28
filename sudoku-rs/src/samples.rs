@@ -127,7 +127,8 @@ pub fn minimal<Base: SudokuBase>() -> Grid<Base> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{position::Position, test_util::test_all_bases};
+    use crate::position::Position;
+    use crate::test_util::test_all_sample_grids;
 
     #[test]
     fn test_base_2() {
@@ -165,30 +166,12 @@ mod tests {
         base_3();
     }
 
-    macro_rules! test_all_sample_grids {
-        (|$grid:ident| $block:block) => {
-            test_all_bases!({
-                for $grid in Base::grid_samples() $block
-            });
-            #[test]
-            fn test_base_2_solved() {
-                let $grid = base_2_solved();
-                $block
-            }
-            #[test]
-            fn test_base_2_candidates_coordinates() {
-                let $grid = base_2_candidates_coordinates();
-                $block
-            }
-        };
-    }
-
     mod all_values_fixed {
         use super::*;
-        test_all_sample_grids!(|grid| {
+        test_all_sample_grids!(|grid, name| {
             assert!(
                 grid.all_unfixed_value_positions().is_empty(),
-                "Not all values are fixed in grid:\n{grid}"
+                "Not all values are fixed in grid {name}:\n{grid}"
             );
         });
     }
