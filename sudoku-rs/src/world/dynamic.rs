@@ -7,8 +7,8 @@ use ndarray::Array2;
 use serde::{Deserialize, Serialize};
 
 use super::{
-    CellWorld, CellWorldDimensions, DynamicWorldGridCellPosition, Quadrant, WorldCellPosition,
-    WorldGenerationResult, WorldGridDim, WorldGridPosition,
+    CellWorld, CellWorldDimensions, DynamicWorldGridCellPosition, Quadrant, TilingPattern,
+    WorldCellPosition, WorldGenerationResult, WorldGridDim, WorldGridPosition,
 };
 
 #[enum_dispatch]
@@ -73,17 +73,40 @@ macro_rules! new_dynamic_cell_world_from_base_enum {
 }
 
 impl DynamicCellWorld {
+    /// Creates a new `DynamicCellWorld` with the Regular tiling pattern (default).
     pub fn new(base: BaseEnum, grid_dim: WorldGridDim, overlap: u8) -> Result<Self> {
+        Self::new_with_pattern(base, grid_dim, overlap, TilingPattern::default())
+    }
+
+    /// Creates a new `DynamicCellWorld` with the specified tiling pattern.
+    pub fn new_with_pattern(
+        base: BaseEnum,
+        grid_dim: WorldGridDim,
+        overlap: u8,
+        tiling_pattern: TilingPattern,
+    ) -> Result<Self> {
         Ok(new_dynamic_cell_world_from_base_enum!(
             base,
-            CellWorld::<Base>::new(grid_dim, overlap.try_into()?)
+            CellWorld::<Base>::new_with_pattern(grid_dim, overlap.try_into()?, tiling_pattern)
         ))
     }
 
+    /// Creates a `DynamicCellWorld` from cells with Regular tiling pattern.
     pub fn with(
         base: BaseEnum,
         grid_dim: WorldGridDim,
         overlap: u8,
+        cells: Vec<DynamicCell>,
+    ) -> Result<Self> {
+        Self::with_pattern(base, grid_dim, overlap, TilingPattern::default(), cells)
+    }
+
+    /// Creates a `DynamicCellWorld` from cells with the specified tiling pattern.
+    pub fn with_pattern(
+        base: BaseEnum,
+        grid_dim: WorldGridDim,
+        overlap: u8,
+        tiling_pattern: TilingPattern,
         cells: Vec<DynamicCell>,
     ) -> Result<Self> {
         Ok(new_dynamic_cell_world_from_base_enum!(base, {
@@ -93,9 +116,10 @@ impl DynamicCellWorld {
                 .into_iter()
                 .map(|dynamic_cell| dynamic_cell.try_into())
                 .collect::<Result<Vec<_>>>()?;
-            CellWorld::<Base>::with(
+            CellWorld::<Base>::with_pattern(
                 grid_dim,
                 overlap,
+                tiling_pattern,
                 Array2::from_shape_vec(cells_shape, cells)?,
             )?
         }))

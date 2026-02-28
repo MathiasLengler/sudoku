@@ -25,8 +25,8 @@ use sudoku::{
     },
     transport::{TransportCell, TransportSudoku},
     world::{
-        CellWorldDimensions, DynamicWorldGridCellPosition, Quadrant, RelativeDir, WorldCellDim,
-        WorldCellPosition, WorldGenerationResult, WorldGridDim, WorldGridPosition,
+        CellWorldDimensions, DynamicWorldGridCellPosition, Quadrant, RelativeDir, TilingPattern,
+        WorldCellDim, WorldCellPosition, WorldGenerationResult, WorldGridDim, WorldGridPosition,
     },
 };
 use wasm_bindgen::prelude::*;
@@ -116,6 +116,7 @@ serde_wasm_bindgen_interop! {
     Quadrant,
     RelativeDir,
     StrategyEnum,
+    TilingPattern,
     TransportAction,
     TransportCell,
     TransportDeduction,
