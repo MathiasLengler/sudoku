@@ -118,11 +118,7 @@ export function SettingsDialog({ onClose }: SettingsDialogProps) {
 
                         <Fieldset label="User interface">
                             <SwitchElement control={control} name="showTimer" label="Show timer" />
-                            <SwitchElement
-                                control={control}
-                                name="inputNumberBlock"
-                                label="Input number block"
-                            />
+                            <SwitchElement control={control} name="inputNumberBlock" label="Input number block" />
                             <Typography variant="caption" color="text.secondary" sx={{ pl: 4 }}>
                                 Takes more space, but useful for larger bases
                             </Typography>
