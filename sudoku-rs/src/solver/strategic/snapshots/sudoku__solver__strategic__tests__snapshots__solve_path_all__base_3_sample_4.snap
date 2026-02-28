@@ -1081,6 +1081,326 @@ expression: all_possible_solve_steps
                 column: 7
               deleteCandidates:
                 - 7
+  - strategy: SimpleColouring
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 3
+                column: 2
+              candidates:
+                - 3
+            - position:
+                row: 3
+                column: 8
+              candidates:
+                - 3
+            - position:
+                row: 5
+                column: 2
+              candidates:
+                - 3
+            - position:
+                row: 5
+                column: 8
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 0
+                column: 2
+              deleteCandidates:
+                - 3
+            - position:
+                row: 1
+                column: 2
+              deleteCandidates:
+                - 3
+            - position:
+                row: 5
+                column: 6
+              deleteCandidates:
+                - 3
+        - reasons:
+            - position:
+                row: 2
+                column: 4
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 0
+                column: 4
+              deleteCandidates:
+                - 8
+            - position:
+                row: 2
+                column: 5
+              deleteCandidates:
+                - 8
+        - reasons:
+            - position:
+                row: 1
+                column: 0
+              candidates:
+                - 6
+            - position:
+                row: 2
+                column: 0
+              candidates:
+                - 6
+          actions:
+            - position:
+                row: 1
+                column: 1
+              deleteCandidates:
+                - 6
+        - reasons:
+            - position:
+                row: 3
+                column: 1
+              candidates:
+                - 6
+            - position:
+                row: 5
+                column: 1
+              candidates:
+                - 6
+          actions:
+            - position:
+                row: 1
+                column: 1
+              deleteCandidates:
+                - 6
+        - reasons:
+            - position:
+                row: 1
+                column: 1
+              candidates:
+                - 1
+            - position:
+                row: 1
+                column: 2
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 1
+                column: 4
+              deleteCandidates:
+                - 1
+            - position:
+                row: 1
+                column: 5
+              deleteCandidates:
+                - 1
+        - reasons:
+            - position:
+                row: 2
+                column: 5
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 1
+                column: 5
+              deleteCandidates:
+                - 1
+            - position:
+                row: 2
+                column: 4
+              deleteCandidates:
+                - 1
+        - reasons:
+            - position:
+                row: 0
+                column: 3
+              candidates:
+                - 6
+            - position:
+                row: 0
+                column: 5
+              candidates:
+                - 6
+          actions:
+            - position:
+                row: 1
+                column: 5
+              deleteCandidates:
+                - 6
+            - position:
+                row: 2
+                column: 3
+              deleteCandidates:
+                - 6
+            - position:
+                row: 2
+                column: 5
+              deleteCandidates:
+                - 6
+        - reasons:
+            - position:
+                row: 1
+                column: 4
+              candidates:
+                - 5
+            - position:
+                row: 2
+                column: 4
+              candidates:
+                - 5
+          actions:
+            - position:
+                row: 2
+                column: 3
+              deleteCandidates:
+                - 5
+        - reasons:
+            - position:
+                row: 3
+                column: 3
+              candidates:
+                - 5
+            - position:
+                row: 4
+                column: 3
+              candidates:
+                - 5
+          actions:
+            - position:
+                row: 2
+                column: 3
+              deleteCandidates:
+                - 5
+        - reasons:
+            - position:
+                row: 4
+                column: 0
+              candidates:
+                - 4
+            - position:
+                row: 4
+                column: 2
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 5
+                column: 1
+              deleteCandidates:
+                - 4
+            - position:
+                row: 5
+                column: 2
+              deleteCandidates:
+                - 4
+        - reasons:
+            - position:
+                row: 5
+                column: 6
+              candidates:
+                - 4
+            - position:
+                row: 5
+                column: 8
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 5
+                column: 1
+              deleteCandidates:
+                - 4
+            - position:
+                row: 5
+                column: 2
+              deleteCandidates:
+                - 4
+        - reasons:
+            - position:
+                row: 6
+                column: 6
+              candidates:
+                - 3
+            - position:
+                row: 8
+                column: 6
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 5
+                column: 6
+              deleteCandidates:
+                - 3
+        - reasons:
+            - position:
+                row: 7
+                column: 3
+              candidates:
+                - 2
+            - position:
+                row: 7
+                column: 4
+              candidates:
+                - 2
+          actions:
+            - position:
+                row: 7
+                column: 0
+              deleteCandidates:
+                - 2
+        - reasons:
+            - position:
+                row: 7
+                column: 6
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 7
+                column: 7
+              deleteCandidates:
+                - 7
+            - position:
+                row: 8
+                column: 6
+              deleteCandidates:
+                - 7
+        - reasons:
+            - position:
+                row: 4
+                column: 5
+              candidates:
+                - 9
+            - position:
+                row: 5
+                column: 5
+              candidates:
+                - 9
+          actions:
+            - position:
+                row: 8
+                column: 5
+              deleteCandidates:
+                - 9
+        - reasons:
+            - position:
+                row: 7
+                column: 4
+              candidates:
+                - 9
+            - position:
+                row: 8
+                column: 4
+              candidates:
+                - 9
+          actions:
+            - position:
+                row: 8
+                column: 5
+              deleteCandidates:
+                - 9
 - - strategy: NakedSingles
     deductions:
       deductions:
@@ -2115,6 +2435,233 @@ expression: all_possible_solve_steps
                 column: 2
               deleteCandidates:
                 - 4
+  - strategy: SimpleColouring
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 3
+                column: 2
+              candidates:
+                - 3
+            - position:
+                row: 5
+                column: 2
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 0
+                column: 2
+              deleteCandidates:
+                - 3
+            - position:
+                row: 1
+                column: 2
+              deleteCandidates:
+                - 3
+        - reasons:
+            - position:
+                row: 2
+                column: 4
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 0
+                column: 4
+              deleteCandidates:
+                - 8
+            - position:
+                row: 2
+                column: 5
+              deleteCandidates:
+                - 8
+        - reasons:
+            - position:
+                row: 0
+                column: 4
+              candidates:
+                - 2
+          actions:
+            - position:
+                row: 0
+                column: 5
+              deleteCandidates:
+                - 2
+            - position:
+                row: 1
+                column: 4
+              deleteCandidates:
+                - 2
+        - reasons:
+            - position:
+                row: 1
+                column: 0
+              candidates:
+                - 6
+            - position:
+                row: 2
+                column: 0
+              candidates:
+                - 6
+          actions:
+            - position:
+                row: 1
+                column: 1
+              deleteCandidates:
+                - 6
+        - reasons:
+            - position:
+                row: 3
+                column: 1
+              candidates:
+                - 6
+            - position:
+                row: 5
+                column: 1
+              candidates:
+                - 6
+          actions:
+            - position:
+                row: 1
+                column: 1
+              deleteCandidates:
+                - 6
+        - reasons:
+            - position:
+                row: 1
+                column: 1
+              candidates:
+                - 1
+            - position:
+                row: 1
+                column: 2
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 1
+                column: 4
+              deleteCandidates:
+                - 1
+            - position:
+                row: 1
+                column: 5
+              deleteCandidates:
+                - 1
+        - reasons:
+            - position:
+                row: 2
+                column: 5
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 1
+                column: 5
+              deleteCandidates:
+                - 1
+            - position:
+                row: 2
+                column: 4
+              deleteCandidates:
+                - 1
+        - reasons:
+            - position:
+                row: 0
+                column: 3
+              candidates:
+                - 6
+            - position:
+                row: 0
+                column: 5
+              candidates:
+                - 6
+          actions:
+            - position:
+                row: 1
+                column: 5
+              deleteCandidates:
+                - 6
+            - position:
+                row: 2
+                column: 3
+              deleteCandidates:
+                - 6
+            - position:
+                row: 2
+                column: 5
+              deleteCandidates:
+                - 6
+        - reasons:
+            - position:
+                row: 1
+                column: 0
+              candidates:
+                - 4
+            - position:
+                row: 1
+                column: 2
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 2
+                column: 0
+              deleteCandidates:
+                - 4
+        - reasons:
+            - position:
+                row: 4
+                column: 0
+              candidates:
+                - 4
+            - position:
+                row: 4
+                column: 2
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 5
+                column: 2
+              deleteCandidates:
+                - 4
+        - reasons:
+            - position:
+                row: 5
+                column: 6
+              candidates:
+                - 4
+            - position:
+                row: 5
+                column: 8
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 5
+                column: 2
+              deleteCandidates:
+                - 4
+        - reasons:
+            - position:
+                row: 7
+                column: 6
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 7
+                column: 7
+              deleteCandidates:
+                - 7
+            - position:
+                row: 8
+                column: 6
+              deleteCandidates:
+                - 7
 - - strategy: NakedSingles
     deductions:
       deductions:
@@ -2900,6 +3447,99 @@ expression: all_possible_solve_steps
                 column: 2
               deleteCandidates:
                 - 3
+  - strategy: SimpleColouring
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 1
+                column: 0
+              candidates:
+                - 3
+            - position:
+                row: 1
+                column: 2
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 0
+                column: 2
+              deleteCandidates:
+                - 3
+        - reasons:
+            - position:
+                row: 3
+                column: 2
+              candidates:
+                - 3
+            - position:
+                row: 5
+                column: 2
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 0
+                column: 2
+              deleteCandidates:
+                - 3
+            - position:
+                row: 1
+                column: 2
+              deleteCandidates:
+                - 3
+        - reasons:
+            - position:
+                row: 2
+                column: 4
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 0
+                column: 4
+              deleteCandidates:
+                - 8
+            - position:
+                row: 2
+                column: 5
+              deleteCandidates:
+                - 8
+        - reasons:
+            - position:
+                row: 0
+                column: 4
+              candidates:
+                - 2
+          actions:
+            - position:
+                row: 0
+                column: 5
+              deleteCandidates:
+                - 2
+            - position:
+                row: 1
+                column: 4
+              deleteCandidates:
+                - 2
+        - reasons:
+            - position:
+                row: 1
+                column: 1
+              candidates:
+                - 1
+            - position:
+                row: 1
+                column: 2
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 1
+                column: 5
+              deleteCandidates:
+                - 1
 - - strategy: NakedSingles
     deductions:
       deductions:
