@@ -1,5 +1,5 @@
 import assertNever from "assert-never";
-import wbgInit, { initThreadPool, init as wasmInit } from "sudoku-wasm";
+import wbgInit, { initThreadPool, init as wasmInit, has_panicked } from "sudoku-wasm";
 
 // Based on benchmarking: more threads don't improve performance of parallel grid generation.
 const MAX_THREADS = 4;
@@ -52,4 +52,13 @@ export async function initWasm(threadCount?: number) {
             assertNever(initState);
         }
     }
+}
+
+/**
+ * Check if a Rust panic has occurred in the WASM module.
+ * If this returns true, the WASM module is in an undefined state and
+ * the worker should be terminated and respawned.
+ */
+export function hasPanicked(): boolean {
+    return has_panicked();
 }
