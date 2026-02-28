@@ -106,29 +106,11 @@ export default defineConfig(({ mode }) => ({
         },
     },
     test: {
-        projects: [
-            {
-                // FIXME: for some reason, this does not report TS type errors
-                //  we still use this setup for type test, but check with tsc directly.
-                test: {
-                    name: "typecheck",
-                    include: ["**/*.test-d.ts"],
-                    typecheck: {
-                        only: true,
-                    },
-                },
-            },
-            {
-                test: {
-                    name: "browser",
-                    browser: {
-                        enabled: true,
-                        provider: playwright(),
-                        headless: false,
-                        instances: [{ browser: "chromium" }],
-                    },
-                },
-            },
-        ],
+        browser: {
+            enabled: true,
+            provider: playwright(),
+            headless: false,
+            instances: [{ browser: "chromium" }],
+        },
     },
 }));
