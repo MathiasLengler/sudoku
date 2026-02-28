@@ -35,6 +35,7 @@ impl WorldCellRegion {
     }
 
     /// Clamps this region to fit within the given cell dimensions.
+    #[must_use]
     pub fn clamp_to_dim(&self, cell_dim: WorldCellDim) -> Self {
         let start_row = self.start.row.min(cell_dim.row_count.get());
         let start_column = self.start.column.min(cell_dim.column_count.get());
