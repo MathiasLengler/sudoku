@@ -94,4 +94,17 @@ mod tests {
         .unwrap();
         assert_parsed_grid(&expected_grid, &cells).unwrap();
     }
+
+    mod snapshots {
+        use super::*;
+
+        mod render {
+            use super::*;
+            use crate::test_util::test_all_sample_grids;
+
+            test_all_sample_grids!(|grid, name| {
+                insta::assert_snapshot!(name, ValuesLine.render(&grid));
+            });
+        }
+    }
 }
