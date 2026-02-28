@@ -1081,6 +1081,61 @@ expression: all_possible_solve_steps
                 column: 7
               deleteCandidates:
                 - 7
+  - strategy: XyzWing
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 4
+                column: 0
+              candidates:
+                - 4
+                - 9
+            - position:
+                row: 5
+                column: 2
+              candidates:
+                - 3
+                - 4
+                - 9
+            - position:
+                row: 5
+                column: 6
+              candidates:
+                - 3
+                - 4
+          actions:
+            - position:
+                row: 5
+                column: 1
+              deleteCandidates:
+                - 4
+        - reasons:
+            - position:
+                row: 4
+                column: 0
+              candidates:
+                - 4
+                - 9
+            - position:
+                row: 5
+                column: 2
+              candidates:
+                - 3
+                - 4
+                - 9
+            - position:
+                row: 5
+                column: 8
+              candidates:
+                - 3
+                - 4
+          actions:
+            - position:
+                row: 5
+                column: 1
+              deleteCandidates:
+                - 4
 - - strategy: NakedSingles
     deductions:
       deductions:
@@ -2115,6 +2170,35 @@ expression: all_possible_solve_steps
                 column: 2
               deleteCandidates:
                 - 4
+  - strategy: XyzWing
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 2
+                column: 4
+              candidates:
+                - 1
+                - 8
+            - position:
+                row: 2
+                column: 5
+              candidates:
+                - 1
+                - 6
+                - 8
+            - position:
+                row: 3
+                column: 5
+              candidates:
+                - 6
+                - 8
+          actions:
+            - position:
+                row: 0
+                column: 5
+              deleteCandidates:
+                - 8
 - - strategy: NakedSingles
     deductions:
       deductions:
