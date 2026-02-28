@@ -70,6 +70,20 @@ impl WasmCellWorld {
         this.prune(seed)?;
         Ok(this)
     }
+
+    #[wasm_bindgen(js_name = generateWithSettings)]
+    pub fn generate_with_settings(
+        base: IBaseEnum,
+        grid_dim: IWorldGridDim,
+        overlap: u8,
+        seed: Option<u64>,
+        pruning_settings: IWorldPruningSettings,
+    ) -> Result<Self> {
+        let mut this = Self::new(base, grid_dim, overlap)?;
+        this.generate_solved(seed)?;
+        this.prune_with_settings(seed, pruning_settings)?;
+        Ok(this)
+    }
 }
 
 #[wasm_bindgen]
@@ -84,6 +98,16 @@ impl WasmCellWorld {
     }
     pub fn prune(&mut self, seed: Option<u64>) -> Result<()> {
         Ok(self.world.prune(seed)?)
+    }
+    #[wasm_bindgen(js_name = pruneWithSettings)]
+    pub fn prune_with_settings(
+        &mut self,
+        seed: Option<u64>,
+        settings: IWorldPruningSettings,
+    ) -> Result<()> {
+        Ok(self
+            .world
+            .prune_with_settings(seed, import_world_pruning_settings(settings)?)?)
     }
 
     // DynamicGrid interop

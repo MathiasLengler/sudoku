@@ -10,7 +10,7 @@ pub use dynamic_settings::*;
 
 /// How much to prune the solution.
 #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
-#[derive(Debug, Copy, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum PruningTarget {
     /// Prune until the grid is minimal, meaning that no clue can be removed without breaking uniqueness of the solution.
