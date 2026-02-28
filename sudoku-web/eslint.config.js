@@ -77,6 +77,11 @@ export default defineConfig(
                             name: "react",
                             importNames: ["default", "FunctionComponent"],
                         },
+                        {
+                            name: "react-hook-form-mui",
+                            importNames: ["TextFieldElement"],
+                            message: "Instead use 'MyTextField'",
+                        },
                     ],
                 },
             ],
