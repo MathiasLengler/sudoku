@@ -1,24 +1,20 @@
 import AddCircleIcon from "@mui/icons-material/AddCircle";
-import { MyDialog } from "../../components/MyDialog";
-import { NewGameDialog } from "./NewGameDialog";
-import MyIconButton from "../../components/MyIconButton";
-import { useState } from "react";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import { Link } from "@tanstack/react-router";
 
 export function NewGameButton() {
-    const [isNewGameDialogOpen, setIsNewGameDialogOpen] = useState(false);
-
     return (
-        <>
-            <MyIconButton
-                icon={AddCircleIcon}
+        <Tooltip title="New game">
+            <IconButton
+                component={Link}
+                to="/new-game"
                 size="large"
-                label="New game"
                 color="inherit"
-                onClick={() => setIsNewGameDialogOpen(true)}
-            />
-            <MyDialog open={isNewGameDialogOpen} onClose={() => setIsNewGameDialogOpen(false)}>
-                {(onClose) => <NewGameDialog onClose={onClose} />}
-            </MyDialog>
-        </>
+                aria-label="New game"
+            >
+                <AddCircleIcon fontSize="large" />
+            </IconButton>
+        </Tooltip>
     );
 }

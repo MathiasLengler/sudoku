@@ -43,6 +43,8 @@
         "@mui/material": "^7.3.7",
         "@mui/x-date-pickers": "^8.26.0",
         "@tanstack/react-query": "^5.90.20",
+        "@tanstack/react-router": "^1.157.17",
+        "@tanstack/router-plugin": "^1.157.17",
         "@toolpad/core": "^0.16.0",
         "@vitejs/plugin-react": "^5.1.2",
         "assert-never": "^1.4.0",
@@ -65,6 +67,7 @@
     "devDependencies": {
         "@bubblewrap/cli": "^1.24.1",
         "@eslint/js": "^9.39.2",
+        "@tanstack/react-router-devtools": "^1.157.17",
         "@tsconfig/strictest": "^2.0.8",
         "@types/react": "^19.2.10",
         "@types/react-dom": "^19.2.3",

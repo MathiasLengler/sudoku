@@ -2,6 +2,7 @@
 
 import { minimal2023Preset } from "@vite-pwa/assets-generator/config";
 import react from "@vitejs/plugin-react";
+import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
 import { playwright } from "@vitest/browser-playwright";
 import jotaiDebugLabel from "jotai/babel/plugin-debug-label";
 import jotaiReactRefresh from "jotai/babel/plugin-react-refresh";
@@ -48,6 +49,10 @@ export default defineConfig(({ mode }) => ({
         format: "es",
     },
     plugins: [
+        TanStackRouterVite({
+            target: "react",
+            autoCodeSplitting: true,
+        }),
         react({ babel: { plugins: [jotaiDebugLabel, jotaiReactRefresh] } }),
         wasm(),
         ...(mode !== "test"
@@ -57,7 +62,7 @@ export default defineConfig(({ mode }) => ({
                       registerType: "autoUpdate",
                       devOptions: {
                           enabled: true,
-                          navigateFallbackAllowlist: [/^\/$/],
+                          navigateFallback: "/index.html",
                       },
                       filename: "service-worker.js",
                       manifestFilename: "manifest.json",
@@ -71,8 +76,8 @@ export default defineConfig(({ mode }) => ({
                       },
                       workbox: {
                           globPatterns: ["**/*.{js,wasm,css,html,png,svg,ico,woff2}"],
-                          // We currently don't have a SPA router
-                          navigateFallbackAllowlist: [/^\/$/],
+                          // SPA router support
+                          navigateFallback: "/index.html",
                           maximumFileSizeToCacheInBytes: 20 * 1024 * 1024, // 20 MiB
                       },
                       pwaAssets: {
