@@ -83,4 +83,26 @@ impl<T: WorldObject> WorldDim<T> {
 
         row_count.get() * column_count.get()
     }
+
+    /// Iterate over all rows, yielding iterators of positions in each row.
+    ///
+    /// Returns an iterator where each item represents a row and yields positions
+    /// in that row from left to right (column 0 to `column_count` - 1).
+    pub fn all_rows(self) -> impl Iterator<Item = impl Iterator<Item = WorldPosition<T>>> {
+        let column_count = self.column_count.get();
+        (0..self.row_count.get()).map(move |row| {
+            (0..column_count).map(move |column| WorldPosition::new(row, column))
+        })
+    }
+
+    /// Iterate over all columns, yielding iterators of positions in each column.
+    ///
+    /// Returns an iterator where each item represents a column and yields positions
+    /// in that column from top to bottom (row 0 to `row_count` - 1).
+    pub fn all_columns(self) -> impl Iterator<Item = impl Iterator<Item = WorldPosition<T>>> {
+        let row_count = self.row_count.get();
+        (0..self.column_count.get()).map(move |column| {
+            (0..row_count).map(move |row| WorldPosition::new(row, column))
+        })
+    }
 }

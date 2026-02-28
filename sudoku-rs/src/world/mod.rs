@@ -28,6 +28,9 @@ mod indexing;
 pub use indexing::*;
 pub mod dynamic;
 
+#[cfg(feature = "parallel")]
+pub mod parallel;
+
 mod serialization {
     use crate::error::Error;
 
@@ -501,6 +504,81 @@ impl<Base: SudokuBase> CellWorld<Base> {
         Some(denylist)
     }
 
+    /// Diagonal constraint for the bottom-left grid pattern.
+    ///
+    /// When generating grids in an order where the bottom-left diagonal needs to be considered:
+    /// ```text
+    /// 1x    Grid at (row, col) is filled, grid at (row, col+1) is being generated
+    /// 01    Grid at (row+1, col) is already filled
+    /// ```
+    ///
+    /// This is the mirror case of `direct_denylist_from_top_right_grid`.
+    fn direct_denylist_from_bottom_left_grid(
+        &self,
+        grid_position: ValidatedWorldGridPosition,
+    ) -> Option<DeniedCandidatesGrid<Base>> {
+        use crate::world::RelativeDir::BottomLeft;
+
+        let bottom_left_grid_position = grid_position.adjacent(BottomLeft, self.grid_dim)?;
+
+        let bottom_left_grid_cells = self.grid_cells(bottom_left_grid_position);
+
+        let overlap_isize = self.overlap.get_isize();
+
+        // Get the constraining corner cells from the bottom-left grid
+        // This is the top-right corner of the bottom-left grid (excluding the overlap)
+        let bottom_left_constraining_corner_cells = bottom_left_grid_cells.slice(s![
+            // top overlap row band
+            0..overlap_isize,
+            // right block column band without overlap
+            -isize::from(Base::BASE)..-overlap_isize
+        ]);
+
+        let denied_corner_candidates: Candidates<Base> = bottom_left_constraining_corner_cells
+            .into_iter()
+            .map(|cell| cell.value().expect("bottom left grid to contain only values"))
+            .collect();
+
+        let mut denylist = Grid::new();
+        denylist
+            .cells_view_mut()
+            .slice_mut(s![
+                // bottom block row band without overlap
+                -isize::from(Base::BASE)..-overlap_isize,
+                // left overlap column band
+                0..overlap_isize,
+            ])
+            .fill(denied_corner_candidates);
+
+        Some(denylist)
+    }
+
+    /// Get combined diagonal constraints from both top-right and bottom-left grids.
+    ///
+    /// This is useful for parallel generation strategies where the generation order
+    /// may require constraints from either or both diagonal directions.
+    fn combined_diagonal_denylist(
+        &self,
+        grid_position: ValidatedWorldGridPosition,
+    ) -> DeniedCandidatesGrid<Base> {
+        let mut combined_denylist: DeniedCandidatesGrid<Base> = Grid::new();
+
+        if let Some(top_right_denylist) = self.direct_denylist_from_top_right_grid(grid_position) {
+            for pos in Position::<Base>::all() {
+                combined_denylist[pos] = combined_denylist[pos].union(top_right_denylist[pos]);
+            }
+        }
+
+        if let Some(bottom_left_denylist) = self.direct_denylist_from_bottom_left_grid(grid_position)
+        {
+            for pos in Position::<Base>::all() {
+                combined_denylist[pos] = combined_denylist[pos].union(bottom_left_denylist[pos]);
+            }
+        }
+
+        combined_denylist
+    }
+
     fn split_cells_into_overlap_segments_single_axis(
         grid_cells: ArrayViewMut2<Cell<Base>>,
         axis: Axis,
@@ -805,6 +883,113 @@ mod tests {
                 deleted_positions, expected_deleted_positions,
                 "{overlap_segment_filter:?} => {grid}"
             );
+        }
+    }
+
+    mod diagonal_denylist {
+        use super::*;
+
+        /// Test that direct_denylist_from_top_right_grid returns None for edge grids
+        #[test]
+        fn test_top_right_edge_cases() {
+            let grid_dim = WorldGridDim::new(3, 3).unwrap();
+            let overlap = 1.try_into().unwrap();
+            let mut world = CellWorld::<Base2>::new(grid_dim, overlap);
+            world.generate_solved(Some(42)).unwrap();
+
+            // Grid at top row has no top-right diagonal (no grid above)
+            let top_left = WorldGridPosition::new(0, 0).validate(grid_dim).unwrap();
+            assert!(world.direct_denylist_from_top_right_grid(top_left).is_none());
+
+            // Grid at right edge has no top-right diagonal (no grid to the right)
+            let right_edge = WorldGridPosition::new(1, 2).validate(grid_dim).unwrap();
+            assert!(world
+                .direct_denylist_from_top_right_grid(right_edge)
+                .is_none());
+
+            // Grid not at top or right edges should have a denylist
+            let valid = WorldGridPosition::new(1, 0).validate(grid_dim).unwrap();
+            assert!(world.direct_denylist_from_top_right_grid(valid).is_some());
+        }
+
+        /// Test that direct_denylist_from_bottom_left_grid returns None for edge grids
+        #[test]
+        fn test_bottom_left_edge_cases() {
+            let grid_dim = WorldGridDim::new(3, 3).unwrap();
+            let overlap = 1.try_into().unwrap();
+            let mut world = CellWorld::<Base2>::new(grid_dim, overlap);
+            world.generate_solved(Some(42)).unwrap();
+
+            // Grid at bottom row has no bottom-left diagonal
+            let bottom_right = WorldGridPosition::new(2, 2).validate(grid_dim).unwrap();
+            assert!(world
+                .direct_denylist_from_bottom_left_grid(bottom_right)
+                .is_none());
+
+            // Grid at left edge has no bottom-left diagonal
+            let left_edge = WorldGridPosition::new(1, 0).validate(grid_dim).unwrap();
+            assert!(world
+                .direct_denylist_from_bottom_left_grid(left_edge)
+                .is_none());
+
+            // Grid not at edges should have a denylist
+            let valid = WorldGridPosition::new(0, 1).validate(grid_dim).unwrap();
+            assert!(world
+                .direct_denylist_from_bottom_left_grid(valid)
+                .is_some());
+        }
+
+        /// Test that combined_diagonal_denylist includes constraints from both directions
+        #[test]
+        fn test_combined_denylist() {
+            let grid_dim = WorldGridDim::new(3, 3).unwrap();
+            let overlap = 1.try_into().unwrap();
+            let mut world = CellWorld::<Base2>::new(grid_dim, overlap);
+            world.generate_solved(Some(42)).unwrap();
+
+            // Center grid should have constraints from both top-right and bottom-left
+            let center = WorldGridPosition::new(1, 1).validate(grid_dim).unwrap();
+            let combined = world.combined_diagonal_denylist(center);
+
+            // Verify that the combined denylist has some constraints
+            let has_constraints = Position::<Base2>::all()
+                .any(|pos| !combined[pos].is_empty());
+            assert!(
+                has_constraints,
+                "Combined denylist should have some constraints for center grid"
+            );
+        }
+
+        /// Test that denylists are symmetric in structure
+        #[test]
+        fn test_denylist_symmetry() {
+            let grid_dim = WorldGridDim::new(3, 3).unwrap();
+            let overlap = 1.try_into().unwrap();
+            let mut world = CellWorld::<Base2>::new(grid_dim, overlap);
+            world.generate_solved(Some(42)).unwrap();
+
+            // Get denylists from opposite corners
+            let pos_1_0 = WorldGridPosition::new(1, 0).validate(grid_dim).unwrap();
+            let pos_0_1 = WorldGridPosition::new(0, 1).validate(grid_dim).unwrap();
+
+            let top_right = world.direct_denylist_from_top_right_grid(pos_1_0);
+            let bottom_left = world.direct_denylist_from_bottom_left_grid(pos_0_1);
+
+            // Both should exist
+            assert!(top_right.is_some());
+            assert!(bottom_left.is_some());
+
+            // Both denylists should have non-empty constraints
+            let top_right = top_right.unwrap();
+            let bottom_left = bottom_left.unwrap();
+
+            let top_right_has_constraints = Position::<Base2>::all()
+                .any(|pos| !top_right[pos].is_empty());
+            let bottom_left_has_constraints = Position::<Base2>::all()
+                .any(|pos| !bottom_left[pos].is_empty());
+
+            assert!(top_right_has_constraints);
+            assert!(bottom_left_has_constraints);
         }
     }
 }
