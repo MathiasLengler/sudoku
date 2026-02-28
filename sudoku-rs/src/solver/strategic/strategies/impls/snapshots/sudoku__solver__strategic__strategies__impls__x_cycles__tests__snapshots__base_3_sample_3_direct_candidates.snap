@@ -1,0 +1,525 @@
+---
+source: sudoku-rs/src/solver/strategic/strategies/impls/x_cycles.rs
+description: Strategy XCycles executed on grid base_3_sample_3_direct_candidates
+expression: "TransportDeductions :: from(deductions.clone())"
+info:
+  grid_input:
+    - ╔═════════════════╦═════════════════╦═════════════════╗
+    - ║     │   3 │     ║     │   3 │     ║     │     │     ║
+    - ║     │   6 │  4  ║  5  │     │  2  ║  1  │  7  │  8  ║
+    - ║   9 │     │     ║     │     │     ║     │     │     ║
+    - ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+    - ║     │  2  │  2  ║     │     │     ║  2  │     │     ║
+    - ║  1  │   6 │  56 ║   6 │  9  │ 4 6 ║     │  3  │  56 ║
+    - ║     │  8  │ 78  ║ 7   │     │ 7   ║     │     │     ║
+    - ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+    - ║  2  │  23 │  23 ║     │ 1 3 │ 1   ║  2  │     │     ║
+    - ║  5  │   6 │  56 ║  8  │     │   6 ║     │  56 │  4  ║
+    - ║ 7 9 │     │ 7 9 ║     │ 7   │ 7   ║   9 │   9 │     ║
+    - ╠═════════════════╬═════════════════╬═════════════════╣
+    - ║     │  23 │  23 ║     │     │ 1   ║   3 │     │   3 ║
+    - ║  6  │     │     ║  4  │  5  │     ║     │     │     ║
+    - ║     │     │   9 ║     │     │ 78  ║ 7 9 │  89 │     ║
+    - ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+    - ║     │     │   3 ║     │     │     ║   3 │     │     ║
+    - ║  5  │  7  │  5  ║  9  │     │   6 ║ 4   │  1  │  2  ║
+    - ║     │     │     ║     │  8  │  8  ║     │     │     ║
+    - ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+    - ║     │     │     ║     │     │     ║     │     │     ║
+    - ║  8  │ 4   │  1  ║  2  │     │  3  ║  5  │ 4 6 │   6 ║
+    - ║     │     │     ║     │ 7   │     ║     │   9 │     ║
+    - ╠═════════════════╬═════════════════╬═════════════════╣
+    - ║     │ 12  │  2  ║ 1   │ 12  │ 1   ║   3 │     │     ║
+    - ║  4  │   6 │   6 ║     │     │  5  ║     │  5  │  9  ║
+    - ║     │  8  │ 78  ║ 7   │ 78  │ 78  ║     │     │     ║
+    - ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+    - ║     │     │  2  ║ 1   │     │ 1   ║     │     │     ║
+    - ║  3  │  5  │     ║     │  6  │ 4   ║  8  │ 4   │  7  ║
+    - ║     │     │     ║     │     │   9 ║     │     │     ║
+    - ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+    - ║     │     │     ║     │ 1   │ 1   ║     │     │ 1   ║
+    - ║     │  9  │     ║  3  │ 4   │ 45  ║  6  │  2  │  5  ║
+    - ║ 7   │     │ 78  ║     │ 78  │ 78  ║     │     │     ║
+    - ╚═════════════════╩═════════════════╩═════════════════╝
+  deductions:
+    - "r2c0: delete candidate 9, because of: r2c0: candidate 9, r2c2: candidate 9, r2c6: candidate 9, r3c2: candidate 9, r3c6: candidate 9"
+    - "r2c0: delete candidate 9, r2c7: delete candidate 9, r3c7: delete candidate 9, because of: r2c2: candidate 9, r2c6: candidate 9, r3c2: candidate 9, r3c6: candidate 9"
+    - "r2c2: delete candidate 9, because of: r0c0: candidate 9, r2c0: candidate 9, r2c2: candidate 9, r2c6: candidate 9, r2c7: candidate 9"
+    - "r2c7: delete candidate 9, because of: r0c0: candidate 9, r2c0: candidate 9, r2c2: candidate 9, r2c6: candidate 9, r2c7: candidate 9, r3c2: candidate 9, r3c6: candidate 9"
+    - "r2c7: delete candidate 9, because of: r2c2: candidate 9, r2c6: candidate 9, r2c7: candidate 9, r3c2: candidate 9, r3c6: candidate 9"
+    - "r2c7: delete candidate 9, r3c7: delete candidate 9, because of: r0c0: candidate 9, r2c0: candidate 9, r2c2: candidate 9, r2c6: candidate 9, r3c2: candidate 9, r3c6: candidate 9"
+    - "r3c7: delete candidate 9, because of: r0c0: candidate 9, r2c0: candidate 9, r2c2: candidate 9, r2c6: candidate 9, r2c7: candidate 9, r3c2: candidate 9, r3c7: candidate 9"
+    - "r3c7: delete candidate 9, because of: r0c0: candidate 9, r2c0: candidate 9, r2c2: candidate 9, r2c6: candidate 9, r3c2: candidate 9, r3c6: candidate 9, r3c7: candidate 9"
+    - "r3c7: delete candidate 9, because of: r2c2: candidate 9, r2c6: candidate 9, r2c7: candidate 9, r3c2: candidate 9, r3c7: candidate 9"
+    - "r3c7: delete candidate 9, because of: r2c2: candidate 9, r2c6: candidate 9, r3c2: candidate 9, r3c6: candidate 9, r3c7: candidate 9"
+    - "r6c4: delete candidate 1, because of: r2c4: candidate 1, r2c5: candidate 1, r6c4: candidate 1, r7c3: candidate 1, r7c5: candidate 1"
+    - "r8c4: delete candidate 1, because of: r2c4: candidate 1, r2c5: candidate 1, r7c3: candidate 1, r7c5: candidate 1, r8c4: candidate 1"
+  grid_output:
+    - ╔═════════════════╦═════════════════╦═════════════════╗
+    - ║     │   3 │     ║     │   3 │     ║     │     │     ║
+    - ║     │   6 │  4  ║  5  │     │  2  ║  1  │  7  │  8  ║
+    - ║   9 │     │     ║     │     │     ║     │     │     ║
+    - ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+    - ║     │  2  │  2  ║     │     │     ║  2  │     │     ║
+    - ║  1  │   6 │  56 ║   6 │  9  │ 4 6 ║     │  3  │  56 ║
+    - ║     │  8  │ 78  ║ 7   │     │ 7   ║     │     │     ║
+    - ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+    - ║  2  │  23 │  23 ║     │ 1 3 │ 1   ║  2  │     │     ║
+    - ║  5  │   6 │  56 ║  8  │     │   6 ║     │  56 │  4  ║
+    - ║ 7   │     │ 7   ║     │ 7   │ 7   ║   9 │     │     ║
+    - ╠═════════════════╬═════════════════╬═════════════════╣
+    - ║     │  23 │  23 ║     │     │ 1   ║   3 │     │   3 ║
+    - ║  6  │     │     ║  4  │  5  │     ║     │     │     ║
+    - ║     │     │   9 ║     │     │ 78  ║ 7 9 │  8  │     ║
+    - ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+    - ║     │     │   3 ║     │     │     ║   3 │     │     ║
+    - ║  5  │  7  │  5  ║  9  │     │   6 ║ 4   │  1  │  2  ║
+    - ║     │     │     ║     │  8  │  8  ║     │     │     ║
+    - ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+    - ║     │     │     ║     │     │     ║     │     │     ║
+    - ║  8  │ 4   │  1  ║  2  │     │  3  ║  5  │ 4 6 │   6 ║
+    - ║     │     │     ║     │ 7   │     ║     │   9 │     ║
+    - ╠═════════════════╬═════════════════╬═════════════════╣
+    - ║     │ 12  │  2  ║ 1   │  2  │ 1   ║   3 │     │     ║
+    - ║  4  │   6 │   6 ║     │     │  5  ║     │  5  │  9  ║
+    - ║     │  8  │ 78  ║ 7   │ 78  │ 78  ║     │     │     ║
+    - ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+    - ║     │     │  2  ║ 1   │     │ 1   ║     │     │     ║
+    - ║  3  │  5  │     ║     │  6  │ 4   ║  8  │ 4   │  7  ║
+    - ║     │     │     ║     │     │   9 ║     │     │     ║
+    - ║─────┼─────┼─────║─────┼─────┼─────║─────┼─────┼─────║
+    - ║     │     │     ║     │     │ 1   ║     │     │ 1   ║
+    - ║     │  9  │     ║  3  │ 4   │ 45  ║  6  │  2  │  5  ║
+    - ║ 7   │     │ 78  ║     │ 78  │ 78  ║     │     │     ║
+    - ╚═════════════════╩═════════════════╩═════════════════╝
+---
+deductions:
+  - reasons:
+      - position:
+          row: 2
+          column: 0
+        candidates:
+          - 9
+      - position:
+          row: 2
+          column: 2
+        candidates:
+          - 9
+      - position:
+          row: 2
+          column: 6
+        candidates:
+          - 9
+      - position:
+          row: 3
+          column: 2
+        candidates:
+          - 9
+      - position:
+          row: 3
+          column: 6
+        candidates:
+          - 9
+    actions:
+      - position:
+          row: 2
+          column: 0
+        deleteCandidates:
+          - 9
+  - reasons:
+      - position:
+          row: 2
+          column: 2
+        candidates:
+          - 9
+      - position:
+          row: 2
+          column: 6
+        candidates:
+          - 9
+      - position:
+          row: 3
+          column: 2
+        candidates:
+          - 9
+      - position:
+          row: 3
+          column: 6
+        candidates:
+          - 9
+    actions:
+      - position:
+          row: 2
+          column: 0
+        deleteCandidates:
+          - 9
+      - position:
+          row: 2
+          column: 7
+        deleteCandidates:
+          - 9
+      - position:
+          row: 3
+          column: 7
+        deleteCandidates:
+          - 9
+  - reasons:
+      - position:
+          row: 0
+          column: 0
+        candidates:
+          - 9
+      - position:
+          row: 2
+          column: 0
+        candidates:
+          - 9
+      - position:
+          row: 2
+          column: 2
+        candidates:
+          - 9
+      - position:
+          row: 2
+          column: 6
+        candidates:
+          - 9
+      - position:
+          row: 2
+          column: 7
+        candidates:
+          - 9
+    actions:
+      - position:
+          row: 2
+          column: 2
+        deleteCandidates:
+          - 9
+  - reasons:
+      - position:
+          row: 0
+          column: 0
+        candidates:
+          - 9
+      - position:
+          row: 2
+          column: 0
+        candidates:
+          - 9
+      - position:
+          row: 2
+          column: 2
+        candidates:
+          - 9
+      - position:
+          row: 2
+          column: 6
+        candidates:
+          - 9
+      - position:
+          row: 2
+          column: 7
+        candidates:
+          - 9
+      - position:
+          row: 3
+          column: 2
+        candidates:
+          - 9
+      - position:
+          row: 3
+          column: 6
+        candidates:
+          - 9
+    actions:
+      - position:
+          row: 2
+          column: 7
+        deleteCandidates:
+          - 9
+  - reasons:
+      - position:
+          row: 2
+          column: 2
+        candidates:
+          - 9
+      - position:
+          row: 2
+          column: 6
+        candidates:
+          - 9
+      - position:
+          row: 2
+          column: 7
+        candidates:
+          - 9
+      - position:
+          row: 3
+          column: 2
+        candidates:
+          - 9
+      - position:
+          row: 3
+          column: 6
+        candidates:
+          - 9
+    actions:
+      - position:
+          row: 2
+          column: 7
+        deleteCandidates:
+          - 9
+  - reasons:
+      - position:
+          row: 0
+          column: 0
+        candidates:
+          - 9
+      - position:
+          row: 2
+          column: 0
+        candidates:
+          - 9
+      - position:
+          row: 2
+          column: 2
+        candidates:
+          - 9
+      - position:
+          row: 2
+          column: 6
+        candidates:
+          - 9
+      - position:
+          row: 3
+          column: 2
+        candidates:
+          - 9
+      - position:
+          row: 3
+          column: 6
+        candidates:
+          - 9
+    actions:
+      - position:
+          row: 2
+          column: 7
+        deleteCandidates:
+          - 9
+      - position:
+          row: 3
+          column: 7
+        deleteCandidates:
+          - 9
+  - reasons:
+      - position:
+          row: 0
+          column: 0
+        candidates:
+          - 9
+      - position:
+          row: 2
+          column: 0
+        candidates:
+          - 9
+      - position:
+          row: 2
+          column: 2
+        candidates:
+          - 9
+      - position:
+          row: 2
+          column: 6
+        candidates:
+          - 9
+      - position:
+          row: 2
+          column: 7
+        candidates:
+          - 9
+      - position:
+          row: 3
+          column: 2
+        candidates:
+          - 9
+      - position:
+          row: 3
+          column: 7
+        candidates:
+          - 9
+    actions:
+      - position:
+          row: 3
+          column: 7
+        deleteCandidates:
+          - 9
+  - reasons:
+      - position:
+          row: 0
+          column: 0
+        candidates:
+          - 9
+      - position:
+          row: 2
+          column: 0
+        candidates:
+          - 9
+      - position:
+          row: 2
+          column: 2
+        candidates:
+          - 9
+      - position:
+          row: 2
+          column: 6
+        candidates:
+          - 9
+      - position:
+          row: 3
+          column: 2
+        candidates:
+          - 9
+      - position:
+          row: 3
+          column: 6
+        candidates:
+          - 9
+      - position:
+          row: 3
+          column: 7
+        candidates:
+          - 9
+    actions:
+      - position:
+          row: 3
+          column: 7
+        deleteCandidates:
+          - 9
+  - reasons:
+      - position:
+          row: 2
+          column: 2
+        candidates:
+          - 9
+      - position:
+          row: 2
+          column: 6
+        candidates:
+          - 9
+      - position:
+          row: 2
+          column: 7
+        candidates:
+          - 9
+      - position:
+          row: 3
+          column: 2
+        candidates:
+          - 9
+      - position:
+          row: 3
+          column: 7
+        candidates:
+          - 9
+    actions:
+      - position:
+          row: 3
+          column: 7
+        deleteCandidates:
+          - 9
+  - reasons:
+      - position:
+          row: 2
+          column: 2
+        candidates:
+          - 9
+      - position:
+          row: 2
+          column: 6
+        candidates:
+          - 9
+      - position:
+          row: 3
+          column: 2
+        candidates:
+          - 9
+      - position:
+          row: 3
+          column: 6
+        candidates:
+          - 9
+      - position:
+          row: 3
+          column: 7
+        candidates:
+          - 9
+    actions:
+      - position:
+          row: 3
+          column: 7
+        deleteCandidates:
+          - 9
+  - reasons:
+      - position:
+          row: 2
+          column: 4
+        candidates:
+          - 1
+      - position:
+          row: 2
+          column: 5
+        candidates:
+          - 1
+      - position:
+          row: 6
+          column: 4
+        candidates:
+          - 1
+      - position:
+          row: 7
+          column: 3
+        candidates:
+          - 1
+      - position:
+          row: 7
+          column: 5
+        candidates:
+          - 1
+    actions:
+      - position:
+          row: 6
+          column: 4
+        deleteCandidates:
+          - 1
+  - reasons:
+      - position:
+          row: 2
+          column: 4
+        candidates:
+          - 1
+      - position:
+          row: 2
+          column: 5
+        candidates:
+          - 1
+      - position:
+          row: 7
+          column: 3
+        candidates:
+          - 1
+      - position:
+          row: 7
+          column: 5
+        candidates:
+          - 1
+      - position:
+          row: 8
+          column: 4
+        candidates:
+          - 1
+    actions:
+      - position:
+          row: 8
+          column: 4
+        deleteCandidates:
+          - 1
