@@ -10,7 +10,7 @@ use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::rng::{CrateRng, new_crate_rng_with_seed};
-use crate::solver::backtracking::DisallowedCandidateAtPosition;
+use crate::solver::sat::AmbiguousSolutionChecker;
 use crate::solver::strategic::strategies::BruteForce;
 use crate::solver::{backtracking, introspective};
 use crate::{base::SudokuBase, solver::strategic::strategies::selection::StrategySet};
@@ -329,14 +329,17 @@ impl<Base: SudokuBase> Generator<Base> {
         Ok(pruned_grid)
     }
 
-    /// Try to delete a cell at specific position in a grid while preserving uniqueness of the grid solution.
+    /// Try to delete a cell using the optimized [`AmbiguousSolutionChecker`].
+    ///
+    /// This method reuses the SAT solver and leverages incremental solving for better performance.
     ///
     /// Returns the value of the deleted cell, if any.
-    fn try_delete_cell_at_pos(
+    fn try_delete_cell_at_pos_with_checker(
         grid: &mut Grid<Base>,
         pos: Position<Base>,
         prune_settings: &PruningSettings<Base>,
-    ) -> Option<Value<Base>> {
+        checker: &mut AmbiguousSolutionChecker<Base>,
+    ) -> Result<Option<Value<Base>>> {
         let cell = grid.get(pos);
 
         let Some(deleted_value) = cell.value() else {
@@ -354,24 +357,21 @@ impl<Base: SudokuBase> Generator<Base> {
                 .is_solvable_with_strategies(prune_settings.strategies)
                 .is_ok_and(|solution| solution.is_some())
         ) && {
-            let mut solver = introspective::Solver::with_filter(
-                grid.clone(),
-                DisallowedCandidateAtPosition {
-                    pos,
-                    candidate: deleted_value,
-                },
-            );
-            let has_ambiguous_solution = solver.next().is_some();
+            // Use the optimized checker instead of creating a new solver
+            let has_ambiguous_solution = checker.has_ambiguous_solution(pos, deleted_value)?;
             !has_ambiguous_solution
         };
 
         if can_be_deleted {
             // current position can be removed without losing uniqueness of the grid solution.
-            Some(deleted_value)
+            // Update the checker state to reflect the removal
+            checker.confirm_removal(pos);
+            Ok(Some(deleted_value))
         } else {
             // current position is necessary for unique solution
+            // No checker update needed - its state already reflects the position has a value
             grid.get_mut(pos).set_value(deleted_value);
-            None
+            Ok(None)
         }
     }
 
@@ -471,6 +471,9 @@ impl<Base: SudokuBase> Generator<Base> {
         let pruning_positions: Vec<_> = self.pruning_positions(prune_settings, rng)?;
         let pruning_position_count = pruning_positions.len();
 
+        // Create optimized checker for incremental solving
+        let mut checker = AmbiguousSolutionChecker::new(&grid);
+
         let mut deleted_count = 0;
         for (i, pos) in pruning_positions.into_iter().enumerate() {
             let pruning_position_index = i + 1;
@@ -479,7 +482,7 @@ impl<Base: SudokuBase> Generator<Base> {
                 break;
             }
 
-            if Self::try_delete_cell_at_pos(&mut grid, pos, prune_settings).is_some() {
+            if Self::try_delete_cell_at_pos_with_checker(&mut grid, pos, prune_settings, &mut checker)?.is_some() {
                 deleted_count += 1;
                 debug!(
                     "Position {pruning_position_index}/{pruning_position_count} deleted, totaling {deleted_count}/{distance_from_filled} deleted positions"
@@ -521,6 +524,9 @@ impl<Base: SudokuBase> Generator<Base> {
             return Ok(solved_grid);
         }
 
+        // Create optimized checker for incremental solving from the solved grid
+        let mut checker = AmbiguousSolutionChecker::new(&solved_grid);
+
         // TODO: evaluate if near_minimal_grid is always a pessimization
         //  root cause could be the basic backtracking solver implementation
         //  DPLL-based solver could be faster at counting ambiguous solutions
@@ -529,7 +535,12 @@ impl<Base: SudokuBase> Generator<Base> {
             mut deleted,
             remaining_pruning_positions,
         } = if prune_settings.start_from_near_minimal_grid {
-            self.near_minimal_grid(&solved_grid, prune_settings, rng)?
+            let result = self.near_minimal_grid(&solved_grid, prune_settings, rng)?;
+            // Synchronize the checker state with the deleted positions from near_minimal_grid
+            for (pos, _) in &result.deleted {
+                checker.confirm_removal(*pos);
+            }
+            result
         } else {
             NearMinimalGridReturn {
                 near_minimal_grid: solved_grid,
@@ -551,7 +562,7 @@ impl<Base: SudokuBase> Generator<Base> {
             let deleted_count = u16::try_from(deleted.len()).unwrap();
 
             if let Some(deleted_value) =
-                Self::try_delete_cell_at_pos(&mut grid, pos, prune_settings)
+                Self::try_delete_cell_at_pos_with_checker(&mut grid, pos, prune_settings, &mut checker)?
             {
                 debug!(
                     "Position {pruning_position_index}/{remaining_pruning_position_count} deleted, totaling {deleted_count} deleted positions"
