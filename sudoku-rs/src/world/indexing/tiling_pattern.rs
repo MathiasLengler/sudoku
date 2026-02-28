@@ -57,7 +57,7 @@ impl TilingPattern {
             Self::Regular => true,
             Self::Chainlink => {
                 // Checkerboard: position is active if (row + column) is even
-                (position.row + position.column) % 2 == 0
+                (position.row + position.column).is_multiple_of(2)
             }
         }
     }
@@ -90,7 +90,7 @@ impl TilingPattern {
                 // If one is even, one is odd: row*col / 2
                 // If both are odd: (row*col + 1) / 2
                 if row_count % 2 == 1 && col_count % 2 == 1 {
-                    (total + 1) / 2
+                    total.div_ceil(2)
                 } else {
                     total / 2
                 }
@@ -174,18 +174,14 @@ mod tests {
         for (row, col) in expected_active {
             assert!(
                 pattern.is_position_active(WorldGridPosition::new(row, col)),
-                "Position ({}, {}) should be active",
-                row,
-                col
+                "Position ({row}, {col}) should be active",
             );
         }
 
         for (row, col) in expected_inactive {
             assert!(
                 !pattern.is_position_active(WorldGridPosition::new(row, col)),
-                "Position ({}, {}) should be inactive",
-                row,
-                col
+                "Position ({row}, {col}) should be inactive",
             );
         }
 
