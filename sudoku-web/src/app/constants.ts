@@ -12,6 +12,7 @@ export const STRATEGY_NAMES = [
     { strategyEnum: "GroupIntersectionAxisToBlock", mapKey: "group_intersection_axis_to_block" },
     { strategyEnum: "GroupIntersectionBoth", mapKey: "group_intersection_both" },
     { strategyEnum: "XWing", mapKey: "x_wing" },
+    { strategyEnum: "Bug", mapKey: "bug" },
     { strategyEnum: "BruteForce", mapKey: "brute_force" },
 ] satisfies { strategyEnum: StrategyEnum; mapKey: keyof StrategyMap<boolean> }[];
 
@@ -68,6 +69,12 @@ export const STRATEGY_OPTIONS: Record<
         label: "X-Wing",
         description: "A candidate appears in exactly two cells in two different rows and columns, forming a rectangle.",
         link: "https://www.sudokuwiki.org/X_Wing_Strategy",
+    },
+    Bug: {
+        label: "BUG",
+        description:
+            "Bivalue Universal Grave: All unsolved cells have exactly two candidates except one with three. The trivalue cell must be set to the candidate appearing three times in a group.",
+        link: "https://www.sudokuwiki.org/BUG",
     },
     BruteForce: {
         label: "Brute Force",
