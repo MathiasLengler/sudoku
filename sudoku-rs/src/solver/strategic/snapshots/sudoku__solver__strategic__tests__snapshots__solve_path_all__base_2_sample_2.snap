@@ -386,6 +386,117 @@ expression: all_possible_solve_steps
                 column: 3
               deleteCandidates:
                 - 4
+  - strategy: SimpleColouring
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 0
+                column: 1
+              candidates:
+                - 2
+            - position:
+                row: 1
+                column: 2
+              candidates:
+                - 2
+            - position:
+                row: 3
+                column: 0
+              candidates:
+                - 2
+          actions:
+            - position:
+                row: 0
+                column: 0
+              deleteCandidates:
+                - 2
+            - position:
+                row: 1
+                column: 1
+              deleteCandidates:
+                - 2
+        - reasons:
+            - position:
+                row: 0
+                column: 0
+              candidates:
+                - 3
+            - position:
+                row: 1
+                column: 3
+              candidates:
+                - 3
+            - position:
+                row: 2
+                column: 2
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 0
+                column: 3
+              deleteCandidates:
+                - 3
+            - position:
+                row: 1
+                column: 2
+              deleteCandidates:
+                - 3
+        - reasons:
+            - position:
+                row: 1
+                column: 1
+              candidates:
+                - 1
+            - position:
+                row: 2
+                column: 0
+              candidates:
+                - 1
+            - position:
+                row: 3
+                column: 3
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 2
+                column: 1
+              deleteCandidates:
+                - 1
+            - position:
+                row: 3
+                column: 0
+              deleteCandidates:
+                - 1
+        - reasons:
+            - position:
+                row: 0
+                column: 3
+              candidates:
+                - 4
+            - position:
+                row: 2
+                column: 1
+              candidates:
+                - 4
+            - position:
+                row: 3
+                column: 2
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 2
+                column: 2
+              deleteCandidates:
+                - 4
+            - position:
+                row: 3
+                column: 3
+              deleteCandidates:
+                - 4
 - - strategy: NakedSingles
     deductions:
       deductions:
