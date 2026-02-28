@@ -342,6 +342,24 @@ impl<Base: SudokuBase> DynamicCellWorldActions for CellWorld<Base> {
         self.cells.iter().map(|cell| cell.into()).collect()
     }
 
+    fn world_cells_in_region(&self, region: WorldCellRegion) -> Vec<DynamicCell> {
+        let cell_dim = self.cell_dim();
+        let clamped_region = region.clamp_to_dim(cell_dim);
+        
+        let start_row = clamped_region.start.row;
+        let end_row = clamped_region.end.row;
+        let start_col = clamped_region.start.column;
+        let end_col = clamped_region.end.column;
+        
+        let mut result = Vec::with_capacity(clamped_region.cell_count());
+        for row in start_row..end_row {
+            for col in start_col..end_col {
+                result.push((&self.cells[[row, col]]).into());
+            }
+        }
+        result
+    }
+
     // Indexing helpers
     fn world_cell_position_to_nearest_world_grid_cell_position(
         &self,
@@ -806,5 +824,52 @@ mod tests {
                 "{overlap_segment_filter:?} => {grid}"
             );
         }
+    }
+
+    #[test]
+    fn test_world_cells_in_region() {
+        // Use a simple cell world without complex generation
+        let cell_world = sample_cell_world();
+        let cell_dim = cell_world.cell_dim();
+        
+        // Get all cells using existing method
+        let all_cells = cell_world.all_world_cells();
+        
+        // Get cells in a region covering the full world
+        let full_region = WorldCellRegion::new(
+            WorldCellPosition::new(0, 0),
+            WorldCellPosition::new(cell_dim.row_count.get(), cell_dim.column_count.get()),
+        );
+        let region_cells = cell_world.world_cells_in_region(full_region);
+        
+        // Should be the same
+        assert_eq!(all_cells.len(), region_cells.len());
+        assert_eq!(all_cells, region_cells);
+        
+        // Get a subset region (top-left 2x2 cells)
+        let subset_region = WorldCellRegion::new(
+            WorldCellPosition::new(0, 0),
+            WorldCellPosition::new(2, 2),
+        );
+        let subset_cells = cell_world.world_cells_in_region(subset_region);
+        
+        assert_eq!(subset_cells.len(), 4);
+        
+        // Verify the cells match the expected positions
+        assert_eq!(subset_cells[0], all_cells[0]); // (0, 0)
+        assert_eq!(subset_cells[1], all_cells[1]); // (0, 1)
+        assert_eq!(subset_cells[2], all_cells[cell_dim.column_count.get()]); // (1, 0)
+        assert_eq!(subset_cells[3], all_cells[cell_dim.column_count.get() + 1]); // (1, 1)
+        
+        // Test region that exceeds bounds - should be clamped
+        let oversized_region = WorldCellRegion::new(
+            WorldCellPosition::new(0, 0),
+            WorldCellPosition::new(1000, 1000),
+        );
+        let clamped_cells = cell_world.world_cells_in_region(oversized_region);
+        
+        // Should still equal all cells since it gets clamped
+        assert_eq!(all_cells.len(), clamped_cells.len());
+        assert_eq!(all_cells, clamped_cells);
     }
 }

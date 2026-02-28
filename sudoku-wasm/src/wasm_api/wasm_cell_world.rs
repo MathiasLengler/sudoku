@@ -127,6 +127,15 @@ impl WasmCellWorld {
     pub fn all_world_cells(&self) -> Result<IDynamicCells> {
         export_dynamic_cells(self.world.all_world_cells())
     }
+    /// Returns cells within the specified region.
+    /// The region is clamped to fit within the world dimensions.
+    #[wasm_bindgen(js_name = worldCellsInRegion)]
+    pub fn world_cells_in_region(&self, region: IWorldCellRegion) -> Result<IDynamicCells> {
+        export_dynamic_cells(
+            self.world
+                .world_cells_in_region(import_world_cell_region(region)?),
+        )
+    }
     // Indexing helpers
     #[wasm_bindgen(js_name = worldCellPositionToNearestWorldGridCellPosition)]
     pub fn world_cell_position_to_nearest_world_grid_cell_position(

@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use super::{
     CellWorld, CellWorldDimensions, DynamicWorldGridCellPosition, Quadrant, WorldCellPosition,
-    WorldGenerationResult, WorldGridDim, WorldGridPosition,
+    WorldCellRegion, WorldGenerationResult, WorldGridDim, WorldGridPosition,
 };
 
 #[enum_dispatch]
@@ -30,6 +30,9 @@ pub trait DynamicCellWorldActions {
     fn is_solved(&self) -> bool;
     fn is_directly_consistent(&self) -> bool;
     fn all_world_cells(&self) -> Vec<DynamicCell>;
+    /// Returns cells within the specified region.
+    /// The region is clamped to fit within the world dimensions.
+    fn world_cells_in_region(&self, region: WorldCellRegion) -> Vec<DynamicCell>;
 
     // Indexing helpers
     fn world_cell_position_to_nearest_world_grid_cell_position(
