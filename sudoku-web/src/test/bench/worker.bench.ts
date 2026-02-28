@@ -1,7 +1,7 @@
 import * as Comlink from "comlink";
 import { WasmCellWorld, WasmSudoku } from "sudoku-wasm";
 import { bench, describe } from "vitest";
-import { init } from "../../app/state/worker/bg/init";
+import { initWasm } from "../../app/state/wasm/init";
 import type { WorkerApi } from "../../app/state/worker/bg/worker";
 import { spawnWorker } from "../../app/state/worker/spawn";
 import { getWasmCellWorldSamples } from "../util/cellWorld";
@@ -9,7 +9,7 @@ import { getWasmSudokuSamples } from "../util/sudoku";
 
 describe("worker", async () => {
     // Init foreground WASM.
-    await init(1);
+    await initWasm();
 
     const base = 3;
     const seed = 42n;
@@ -46,7 +46,7 @@ describe("worker", async () => {
                         const remoteWasmSudoku = await remoteWorkerApi.WasmSudokuWithTransfer.deserialize(
                             Comlink.transfer(serializedDynamicSudoku, [serializedDynamicSudoku.buffer]),
                         );
-                        const roundTrippedSerializedDynamicSudoku = await remoteWasmSudoku.serializeWithTransfer();
+                        const roundTrippedSerializedDynamicSudoku = await remoteWasmSudoku.serialize();
                         const _roundTrippedWasmSudoku = WasmSudoku.deserialize(roundTrippedSerializedDynamicSudoku);
                     });
                 });
@@ -92,8 +92,7 @@ describe("worker", async () => {
                                 const remoteWasmCellWorld = await remoteWorkerApi.WasmCellWorldWithTransfer.deserialize(
                                     Comlink.transfer(serializedDynamicCellWorld, [serializedDynamicCellWorld.buffer]),
                                 );
-                                const roundTrippedSerializedDynamicCellWorld =
-                                    await remoteWasmCellWorld.serializeWithTransfer();
+                                const roundTrippedSerializedDynamicCellWorld = await remoteWasmCellWorld.serialize();
                                 const _roundTrippedWasmCellWorld = WasmCellWorld.deserialize(
                                     roundTrippedSerializedDynamicCellWorld,
                                 );
