@@ -569,7 +569,7 @@ mod tests {
             // TODO: StrategyDeductionCountSingle
             #[case::strategy_average_options(0, GridMetric::StrategyAverageOptions, 2000)]
             #[case::strategy_average_options(1, GridMetric::StrategyAverageOptions, 2750)]
-            #[case::strategy_average_options(2, GridMetric::StrategyAverageOptions, 3000)]
+            #[case::strategy_average_options(2, GridMetric::StrategyAverageOptions, 3500)]
             // #[case::solve_graph_average_branching_factor(
             //     0,
             //     GridMetric::SolveGraphAverageBranchingFactor,
