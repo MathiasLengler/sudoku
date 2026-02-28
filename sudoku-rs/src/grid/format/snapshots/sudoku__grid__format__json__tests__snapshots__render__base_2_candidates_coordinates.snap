@@ -1,0 +1,5 @@
+---
+source: sudoku-rs/src/grid/format/json.rs
+expression: Json.render(&grid)
+---
+[{"kind":"candidates","candidates":[]},{"kind":"candidates","candidates":[1]},{"kind":"candidates","candidates":[2]},{"kind":"candidates","candidates":[1,2]},{"kind":"candidates","candidates":[3]},{"kind":"candidates","candidates":[1,3]},{"kind":"candidates","candidates":[2,3]},{"kind":"candidates","candidates":[1,2,3]},{"kind":"candidates","candidates":[4]},{"kind":"candidates","candidates":[1,4]},{"kind":"candidates","candidates":[2,4]},{"kind":"candidates","candidates":[1,2,4]},{"kind":"candidates","candidates":[3,4]},{"kind":"candidates","candidates":[1,3,4]},{"kind":"candidates","candidates":[2,3,4]},{"kind":"candidates","candidates":[1,2,3,4]}]

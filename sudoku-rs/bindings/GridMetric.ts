@@ -4,4 +4,4 @@ import type { StrategyEnum } from "./StrategyEnum";
 /**
  * A metric used to evaluate the difficulty of a grid.
  */
-export type GridMetric = { "kind": "strategyScore" } | { "kind": "strategyApplicationCountAny" } | { "kind": "strategyApplicationCountSingle", strategy: StrategyEnum, } | { "kind": "strategyDeductionCountAny" } | { "kind": "strategyDeductionCountSingle", strategy: StrategyEnum, } | { "kind": "strategyAverageOptions" } | { "kind": "solveGraphAverageBranchingFactor" } | { "kind": "satStepCount" } | { "kind": "backtrackCount" } | { "kind": "gridGivensCount" } | { "kind": "gridDirectCandidatesCount" } | { "kind": "gridGivensValueCountDeviation" };
+export type GridMetric = { "kind": "strategyScore" } | { "kind": "strategyApplicationCountAny" } | { "kind": "strategyApplicationCountSingle", strategy: StrategyEnum, } | { "kind": "strategyDeductionCountAny" } | { "kind": "strategyDeductionCountSingle", strategy: StrategyEnum, } | { "kind": "strategyAverageOptions" } | { "kind": "satStepCount" } | { "kind": "backtrackCount" } | { "kind": "gridGivensCount" } | { "kind": "gridDirectCandidatesCount" } | { "kind": "gridGivensValueCountDeviation" };

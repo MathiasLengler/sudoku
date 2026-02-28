@@ -1,8 +1,7 @@
 import { useAtomCallback } from "jotai/utils";
 import { useCallback } from "react";
 import { gameState } from "../state/gameMode";
-import { remoteWasmSudokuClassState, remoteWasmSudokuState } from "../state/worker";
-import { fixupComlinkRemote } from "../state/worker/comlinkProxyWrapper";
+import { mainThreadWasmSudokuClassState, wasmSudokuState } from "../state/mainThread/wasmSudoku";
 import {
     allWorldCellsInvalidateCounterState,
     assertGameModeWorld,
@@ -14,11 +13,11 @@ import { updateSudoku } from "./sudokuActions";
 export function useShowWorldMap() {
     return useAtomCallback(
         useCallback(async (get, set) => {
-            const remoteWasmSudoku = await get(remoteWasmSudokuState);
+            const wasmSudoku = await get(wasmSudokuState);
             const remoteWasmCellWorld = await get(remoteWasmCellWorldState);
             const selectedGridPosition = get(selectedGridPositionState);
 
-            const dynamicGrid = await remoteWasmSudoku.toDynamicGrid();
+            const dynamicGrid = wasmSudoku.toDynamicGrid();
 
             await remoteWasmCellWorld.setGridAt(dynamicGrid, selectedGridPosition);
 
@@ -41,14 +40,14 @@ export function usePlaySelectedGrid() {
             const selectedGridPosition = get(selectedGridPositionState);
             const newGrid = await remoteWasmCellWorld.toGridAt(selectedGridPosition);
 
-            const RemoteWasmSudoku = await get(remoteWasmSudokuClassState);
+            const MainThreadWasmSudoku = await get(mainThreadWasmSudokuClassState);
 
-            const newRemoteWasmSudoku = fixupComlinkRemote(await RemoteWasmSudoku.fromDynamicGrid(newGrid));
-            set(remoteWasmSudokuState, newRemoteWasmSudoku);
+            const newWasmSudoku = await MainThreadWasmSudoku.fromDynamicGrid(newGrid);
+            set(wasmSudokuState, newWasmSudoku);
 
-            await updateSudoku({
+            updateSudoku({
                 set,
-                wasmSudokuProxy: newRemoteWasmSudoku,
+                wasmSudoku: newWasmSudoku,
             });
 
             // Switch view to sudoku

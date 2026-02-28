@@ -1,14 +1,14 @@
 import * as Comlink from "comlink";
 import { WasmCellWorld, WasmSudoku } from "sudoku-wasm";
 import { describe, expect } from "vitest";
-import { init } from "../app/state/worker/bg/init";
+import { initWasm } from "../app/state/wasm/init";
 import { getWasmCellWorldSamples } from "./util/cellWorld";
 import { getWasmSudokuSamples } from "./util/sudoku";
 import { test } from "./util/fixtures";
 
 describe("worker communication", async () => {
     // Init foreground WASM.
-    await init(1);
+    await initWasm();
 
     const base = 3;
     const seed = 42n;
@@ -49,7 +49,7 @@ describe("worker communication", async () => {
                         );
                         // Transferred
                         expect(serializedDynamicSudoku.length).toBe(0);
-                        const roundTrippedSerializedDynamicSudoku = await remoteWasmSudoku.serializeWithTransfer();
+                        const roundTrippedSerializedDynamicSudoku = await remoteWasmSudoku.serialize();
                         const roundTrippedWasmSudoku = WasmSudoku.deserialize(roundTrippedSerializedDynamicSudoku);
                         expect(wasmSudoku.equals(roundTrippedWasmSudoku)).toBe(true);
                     });
@@ -106,8 +106,7 @@ describe("worker communication", async () => {
                         );
                         // Transferred
                         expect(serializedDynamicCellWorld.length).toBe(0);
-                        const roundTrippedSerializedDynamicCellWorld =
-                            await remoteWasmCellWorld.serializeWithTransfer();
+                        const roundTrippedSerializedDynamicCellWorld = await remoteWasmCellWorld.serialize();
                         const roundTrippedWasmCellWorld = WasmCellWorld.deserialize(
                             roundTrippedSerializedDynamicCellWorld,
                         );
