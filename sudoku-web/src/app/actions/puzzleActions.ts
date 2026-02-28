@@ -1,36 +1,22 @@
-import * as Comlink from "comlink";
 import { isEqual, sortBy, zip } from "es-toolkit";
 import type { Getter, Setter } from "jotai";
 import { useAtomCallback } from "jotai/utils";
 import { useCallback, useState } from "react";
-import type {
-    DynamicGeneratorSettings,
-    GeneratorProgress,
-    StrategyEnum,
-    TransportDeduction,
-} from "../../types";
-import { ALL_STRATEGIES } from "../constants";
+import type { DynamicGeneratorSettings, GeneratorProgress, StrategyEnum, TransportDeduction } from "../../types";
+import { ALL_STRATEGIES, selectedStrategiesSchema } from "../constants";
 import { gameState } from "../state/gameMode";
-import {
-    expectedDeductionsState,
-    getStrategyStats,
-    puzzleStatsState,
-    type PuzzleStats,
-} from "../state/puzzle";
+import { expectedDeductionsState, getStrategyStats, puzzleStatsState, type PuzzleStats } from "../state/puzzle";
 import type { GameModePuzzle, PuzzleStatus } from "../state/puzzle/schema";
-import { gameCounterState, sudokuState } from "../state/sudoku";
 import {
-    isWorkerReadyState,
-    remoteWasmSudokuClassState,
-    remoteWasmSudokuState,
-    workerState,
-    type RemoteWasmSudoku,
-} from "../state/worker";
-import { fixupComlinkRemote } from "../state/worker/comlinkProxyWrapper";
+    mainThreadWasmSudokuClassState,
+    wasmSudokuState,
+    type MainThreadWasmSudoku,
+} from "../state/mainThread/wasmSudoku";
+import { isWorkerReadyState, workerState } from "../state/worker";
+import { updateSudoku } from "./sudokuActions";
 import { useCancelableMutation } from "../useCancelableMutation";
 import { measure, withMeasure } from "../utils/measure";
 import { parseBase } from "../utils/base";
-import { hintState } from "../state/hint";
 
 /**
  * Get strategies that should be used before the target strategy.
@@ -52,18 +38,6 @@ function getStrategiesUpTo(targetStrategy: StrategyEnum): StrategyEnum[] {
     return [...prereqs, targetStrategy];
 }
 
-async function updateSudoku(
-    { set, wasmSudokuProxy }: { set: Setter; wasmSudokuProxy: RemoteWasmSudoku },
-    isNewGame = false,
-) {
-    const newSudoku = await wasmSudokuProxy.getTransportSudoku();
-    set(sudokuState, newSudoku);
-    if (isNewGame) {
-        set(gameCounterState, (prev) => prev + 1);
-        set(hintState, undefined);
-    }
-}
-
 const rebootWorker = withMeasure({ name: "rebootWorker" }, async ({ get, set }: { get: Getter; set: Setter }) => {
     console.info("Rebooting worker");
     const currentWorker = get(workerState);
@@ -71,7 +45,7 @@ const rebootWorker = withMeasure({ name: "rebootWorker" }, async ({ get, set }: 
     currentWorker.terminate();
     set(workerState);
     await get(isWorkerReadyState);
-    await updateSudoku({ set, wasmSudokuProxy: await get(remoteWasmSudokuState) }, true);
+    updateSudoku({ set, wasmSudoku: await get(wasmSudokuState) }, true);
     console.info("Worker rebooted");
 });
 
@@ -89,7 +63,7 @@ export function useStartPuzzle() {
                 onProgress: (progress: GeneratorProgress) => void,
             ) => {
                 return await measure({ name: "startPuzzle", detail: { targetStrategy } }, async () => {
-                    const RemoteWasmSudoku = await get(remoteWasmSudokuClassState);
+                    const MainThreadWasmSudoku = await get(mainThreadWasmSudokuClassState);
 
                     // Generate a puzzle that requires the target strategy
                     const strategiesUpTo = getStrategiesUpTo(targetStrategy);
@@ -99,7 +73,7 @@ export function useStartPuzzle() {
                         base: parseBase(3), // Use standard 9x9 grid
                         prune: {
                             target: "minimal",
-                            strategies: strategiesUpTo,
+                            strategies: selectedStrategiesSchema.decode(strategiesUpTo),
                             setAllDirectCandidates: true,
                             order: "random",
                             startFromNearMinimalGrid: false,
@@ -108,11 +82,11 @@ export function useStartPuzzle() {
                         seed: undefined, // Random each time
                     };
 
-                    let unsafeWasmSudokuProxy;
+                    let wasmSudoku: MainThreadWasmSudoku;
                     try {
-                        unsafeWasmSudokuProxy = await Promise.race([
+                        wasmSudoku = await Promise.race([
                             abortPromise,
-                            RemoteWasmSudoku.generate(generatorSettings, Comlink.proxy(onProgress)),
+                            MainThreadWasmSudoku.generate(generatorSettings, onProgress),
                         ]);
                     } catch (err) {
                         if (!(err instanceof DOMException && err.name === "AbortError")) {
@@ -123,17 +97,16 @@ export function useStartPuzzle() {
                         throw err;
                     }
 
-                    const wasmSudokuProxy = fixupComlinkRemote(unsafeWasmSudokuProxy);
-
                     // Now partially solve the puzzle using prerequisite strategies
                     // until the target strategy is required
                     if (prereqStrategies.length > 0) {
+                        const prereqStrategySet = selectedStrategiesSchema.decode(prereqStrategies);
                         let madeProgress = true;
                         while (madeProgress) {
-                            const solveStep = await wasmSudokuProxy.tryStrategies(prereqStrategies);
+                            const solveStep = await wasmSudoku.tryStrategies(prereqStrategySet);
                             if (solveStep) {
                                 // Apply the deductions from prerequisite strategies
-                                await wasmSudokuProxy.applyDeductions(solveStep.deductions);
+                                wasmSudoku.applyDeductions(solveStep.deductions);
                                 console.debug(`Applied ${solveStep.strategy} deductions during puzzle setup`);
                             } else {
                                 madeProgress = false;
@@ -142,7 +115,9 @@ export function useStartPuzzle() {
                     }
 
                     // Now get the expected deductions from the target strategy
-                    const targetSolveStep = await wasmSudokuProxy.tryStrategies([targetStrategy]);
+                    const targetSolveStep = await wasmSudoku.tryStrategies(
+                        selectedStrategiesSchema.decode([targetStrategy]),
+                    );
                     if (!targetSolveStep) {
                         // The puzzle doesn't require the target strategy - try generating again
                         console.warn(`Generated puzzle doesn't require ${targetStrategy}, retrying...`);
@@ -154,8 +129,8 @@ export function useStartPuzzle() {
 
                     // Store the expected deductions and update state
                     set(expectedDeductionsState, expectedDeductions);
-                    set(remoteWasmSudokuState, wasmSudokuProxy);
-                    await updateSudoku({ set, wasmSudokuProxy }, true);
+                    set(wasmSudokuState, wasmSudoku);
+                    updateSudoku({ set, wasmSudoku }, true);
 
                     // Set game mode to puzzle
                     set(gameState, {
@@ -197,24 +172,18 @@ export function useStartPuzzle() {
  * Compare player deductions with expected deductions.
  * Returns true if they match (puzzle solved), false otherwise (puzzle failed).
  */
-function compareDeductions(
-    playerDeductions: TransportDeduction[],
-    expectedDeductions: TransportDeduction[],
-): boolean {
+function compareDeductions(playerDeductions: TransportDeduction[], expectedDeductions: TransportDeduction[]): boolean {
     // For now, we do a simple comparison: check if the player's deductions
     // achieve the same result as the expected deductions
     // This compares the actions (what changes are made to cells)
-    
+
     if (playerDeductions.length !== expectedDeductions.length) {
         return false;
     }
 
     // Sort deductions by position for comparison using es-toolkit sortBy
     const sortDeductions = (deductions: TransportDeduction[]) =>
-        sortBy(deductions, [
-            (d) => d.actions[0]?.position?.row ?? 0,
-            (d) => d.actions[0]?.position?.column ?? 0,
-        ]);
+        sortBy(deductions, [(d) => d.actions[0]?.position?.row ?? 0, (d) => d.actions[0]?.position?.column ?? 0]);
 
     const sortedPlayer = sortDeductions(playerDeductions);
     const sortedExpected = sortDeductions(expectedDeductions);
@@ -250,12 +219,13 @@ export function useValidatePuzzleMove() {
 
             // Update puzzle status
             set(gameState, {
-                ...game,
+                mode: game.mode,
+                targetStrategy: game.targetStrategy,
                 status: newStatus,
             });
 
             // Update stats
-            const currentStats = get(puzzleStatsState);
+            const currentStats = await get(puzzleStatsState);
             const strategyStats = getStrategyStats(currentStats, game.targetStrategy);
             const newStats: PuzzleStats = {
                 ...currentStats,
@@ -264,7 +234,7 @@ export function useValidatePuzzleMove() {
                     failed: strategyStats.failed + (isCorrect ? 0 : 1),
                 },
             };
-            set(puzzleStatsState, newStats);
+            await set(puzzleStatsState, newStats);
 
             return isCorrect;
         }, []),
@@ -282,12 +252,11 @@ export function usePuzzleAwareApplyDeductions() {
         useCallback(
             async (get, set, playerDeductions: TransportDeduction[]) => {
                 const game = get(gameState);
-                const wasmSudokuProxy = await get(remoteWasmSudokuState);
+                const wasmSudoku = await get(wasmSudokuState);
 
                 // Apply the deductions
-                await wasmSudokuProxy.applyDeductions({ deductions: playerDeductions });
-                const newSudoku = await wasmSudokuProxy.getTransportSudoku();
-                set(sudokuState, newSudoku);
+                wasmSudoku.applyDeductions({ deductions: playerDeductions });
+                updateSudoku({ set, wasmSudoku });
 
                 // If in puzzle mode, validate the move
                 if (game.mode === "puzzle" && game.status === "active") {
@@ -323,7 +292,8 @@ export function useUpdatePuzzleStatus() {
                 return;
             }
             set(gameState, {
-                ...game,
+                mode: game.mode,
+                targetStrategy: game.targetStrategy,
                 status,
             });
         }, []),

@@ -159,7 +159,8 @@ export function PuzzleDialog({ onClose }: PuzzleDialogProps) {
                                 <LinearProgress
                                     variant="determinate"
                                     value={
-                                        (generateProgress.pruningPositionIndex / generateProgress.pruningPositionCount) *
+                                        (generateProgress.pruningPositionIndex /
+                                            generateProgress.pruningPositionCount) *
                                         100
                                     }
                                 />

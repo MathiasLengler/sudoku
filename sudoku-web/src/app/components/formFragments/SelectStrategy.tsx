@@ -1,7 +1,7 @@
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { Stack, Tooltip } from "@mui/material";
 import type { Control, FieldPath, FieldValues } from "react-hook-form";
-import { ALL_STRATEGIES, STRATEGY_OPTIONS, type SelectedStrategies } from "../../constants";
+import { ALL_STRATEGIES, STRATEGY_OPTIONS } from "../../constants";
 import { ExternalLink } from "../ExternalLink";
 import { MySelect } from "./mui-rhf/MySelect";
 import type { StrategyEnum } from "../../../types";

@@ -22,11 +22,7 @@ export const expectedDeductionsState = atom<TransportDeduction[] | undefined>(un
 /**
  * Persisted puzzle stats across all strategies
  */
-export const puzzleStatsState = atomWithStorage<PuzzleStats>(
-    "puzzleStats",
-    {},
-    getZodLocalStorage(puzzleStatsSchema),
-);
+export const puzzleStatsState = atomWithStorage<PuzzleStats>("puzzleStats", {}, getZodLocalStorage(puzzleStatsSchema));
 
 /**
  * Helper to get stats for a specific strategy
