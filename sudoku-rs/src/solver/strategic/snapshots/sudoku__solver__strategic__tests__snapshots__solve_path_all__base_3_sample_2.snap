@@ -804,6 +804,40 @@ expression: all_possible_solve_steps
                 column: 6
               deleteCandidates:
                 - 7
+  - strategy: XyzWing
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 2
+                column: 0
+              candidates:
+                - 3
+                - 9
+            - position:
+                row: 4
+                column: 0
+              candidates:
+                - 3
+                - 7
+            - position:
+                row: 5
+                column: 0
+              candidates:
+                - 3
+                - 7
+                - 9
+          actions:
+            - position:
+                row: 1
+                column: 0
+              deleteCandidates:
+                - 3
+            - position:
+                row: 6
+                column: 0
+              deleteCandidates:
+                - 3
 - - strategy: NakedSingles
     deductions:
       deductions:
