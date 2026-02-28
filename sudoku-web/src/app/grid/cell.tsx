@@ -2,12 +2,13 @@ import classNames from "classnames";
 import type * as CSS from "csstype";
 import { isEqual } from "es-toolkit";
 import { useAtomValue } from "jotai";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import type { DynamicCellCandidates, DynamicCellValue, DynamicPosition, TransportCell } from "../../types";
 import { useHandlePosition } from "../actions/sudokuActions";
 import { hintState } from "../state/hint";
 import { inputState } from "../state/input";
-import { sudokuBaseState } from "../state/sudoku";
-import { cellColorClass, indexToPosition, valueToString } from "../utils/sudoku";
+import { sudokuBaseState, sudokuSideLengthState } from "../state/sudoku";
+import { cellColorClass, getValueColorStyle, getValueColorStyleDark, indexToPosition, valueToString } from "../utils/sudoku";
 
 function cellBackgroundClass(isSelected: boolean, isGuide: boolean) {
     if (isSelected) {
@@ -20,10 +21,23 @@ function cellBackgroundClass(isSelected: boolean, isGuide: boolean) {
 
 type CellValueProps = {
     value: DynamicCellValue["value"];
+    colorMode: boolean;
+    sideLength: number;
 };
 
-export function CellValue({ value }: CellValueProps) {
-    return <div className="cell-value">{valueToString(value)}</div>;
+export function CellValue({ value, colorMode, sideLength }: CellValueProps) {
+    const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+    const colorStyle = colorMode
+        ? prefersDarkMode
+            ? getValueColorStyleDark(value, sideLength)
+            : getValueColorStyle(value, sideLength)
+        : undefined;
+    const style: CSS.Properties | undefined = colorStyle ? { color: colorStyle } : undefined;
+    return (
+        <div className="cell-value" style={style}>
+            {valueToString(value)}
+        </div>
+    );
 }
 
 type CandidatesProps = {
@@ -93,6 +107,8 @@ export function Cell(props: CellProps) {
     const { cell, isSelected, isGuide } = props;
 
     const { position: gridPosition } = cell;
+    const input = useAtomValue(inputState);
+    const sideLength = useAtomValue(sudokuSideLengthState);
 
     const cellClassNames = classNames(
         "cell",
@@ -137,7 +153,7 @@ export function Cell(props: CellProps) {
             }}
         >
             {cell.kind === "value" ? (
-                <CellValue value={cell.value} />
+                <CellValue value={cell.value} colorMode={input.colorMode} sideLength={sideLength} />
             ) : (
                 <Candidates candidates={cell.candidates} gridPosition={gridPosition} />
             )}

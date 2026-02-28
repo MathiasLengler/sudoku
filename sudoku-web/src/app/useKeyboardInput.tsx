@@ -2,7 +2,7 @@ import { clamp } from "es-toolkit";
 import { useCallback, type KeyboardEvent } from "react";
 import { useAtomCallback } from "jotai/utils";
 import type { DynamicPosition, TransportSudoku } from "../types";
-import { useToggleCandidateMode, useToggleStickyMode } from "./actions/inputActions";
+import { useToggleCandidateMode, useToggleColorMode, useToggleStickyMode } from "./actions/inputActions";
 import {
     useDeleteSelectedCell,
     useHandlePosition,
@@ -60,6 +60,7 @@ export function useKeyboardInput() {
     const undo = useUndo();
     const toggleCandidateMode = useToggleCandidateMode();
     const toggleStickyMode = useToggleStickyMode();
+    const toggleColorMode = useToggleColorMode();
 
     const onKeyDown: React.KeyboardEventHandler<HTMLDivElement> = useAtomCallback(
         useCallback(
@@ -108,6 +109,10 @@ export function useKeyboardInput() {
                             ev.preventDefault();
                             toggleStickyMode();
                             break;
+                        case "c":
+                            ev.preventDefault();
+                            toggleColorMode();
+                            break;
                         case "Backspace":
                             ev.preventDefault();
                             await undo();
@@ -127,6 +132,7 @@ export function useKeyboardInput() {
                 handleValue,
                 setAllDirectCandidates,
                 toggleCandidateMode,
+                toggleColorMode,
                 toggleStickyMode,
                 undo,
             ],

@@ -19,6 +19,7 @@ export function useToggleStickyMode() {
                 set(inputState, {
                     stickyMode: false,
                     candidateMode: input.candidateMode,
+                    colorMode: input.colorMode,
                     selectedPos: input.previouslySelectedPos,
                     previouslySelectedValue: input.selectedValue,
                 });
@@ -26,11 +27,21 @@ export function useToggleStickyMode() {
                 set(inputState, {
                     stickyMode: true,
                     candidateMode: input.candidateMode,
+                    colorMode: input.colorMode,
                     selectedValue: input.previouslySelectedValue,
                     previouslySelectedPos: input.selectedPos,
                     stickyChain: undefined,
                 });
             }
+        }, []),
+    );
+}
+
+export function useToggleColorMode() {
+    return useAtomCallback(
+        useCallback((get, set) => {
+            const input = get(inputState);
+            set(inputState, { ...input, colorMode: !input.colorMode });
         }, []),
     );
 }
