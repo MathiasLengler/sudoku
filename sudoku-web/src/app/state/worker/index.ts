@@ -1,24 +1,12 @@
 import * as Comlink from "comlink";
 import { atom } from "jotai";
-import { atomWithRefresh, RESET } from "jotai/utils";
+import { atomWithRefresh } from "jotai/utils";
 import type { WasmCellWorld } from "../../../types";
 import type { WasmSudokuWithTransfer, WorkerApi } from "./bg/worker";
 import { fixupComlinkRemote, type SaveComlinkRemote } from "./comlinkProxyWrapper";
 import { spawnWorker } from "./spawn";
 
-// Keep track of the current worker instance for termination on reset
-let currentWorker: Worker | null = null;
-
-export const workerState = atomWithRefresh<Worker>(() => {
-    // Terminate the previous worker if it exists
-    if (currentWorker) {
-        console.debug("Terminating previous worker before reset");
-        currentWorker.terminate();
-    }
-    const worker = spawnWorker();
-    currentWorker = worker;
-    return worker;
-});
+export const workerState = atomWithRefresh<Worker>(() => spawnWorker());
 
 export type RemoteWorkerApi = Comlink.Remote<WorkerApi>;
 export type UnsafeRemoteWasmSudoku = Comlink.Remote<WasmSudokuWithTransfer>;
@@ -41,34 +29,6 @@ export const isWorkerReadyState = atom<Promise<boolean>>(async (get) => {
     return true;
 });
 
-/**
- * Check if the WASM module has panicked.
- * Returns true if a Rust panic has occurred and the worker should be reset.
- */
-export async function checkWorkerPanic(remoteWorkerApi: RemoteWorkerApi): Promise<boolean> {
-    try {
-        return await remoteWorkerApi.hasPanicked();
-    } catch (error) {
-        // If we can't communicate with the worker, treat it as a panic
-        console.error("Failed to check panic status, assuming panic:", error);
-        return true;
-    }
-}
-
-/**
- * Error class to represent a WASM panic.
- * Used to distinguish panics from other errors for proper handling.
- */
-export class WasmPanicError extends Error {
-    constructor(
-        message: string,
-        public readonly originalError?: unknown,
-    ) {
-        super(message);
-        this.name = "WasmPanicError";
-    }
-}
-
 export const remoteWasmSudokuClassState = atom<Promise<RemoteWasmSudokuClass>>(async (get) => {
     const remoteWorkerApi = await get(remoteWorkerApiState);
     return fixupComlinkRemote(remoteWorkerApi.WasmSudoku);
@@ -77,21 +37,4 @@ export const remoteWasmSudokuClassState = atom<Promise<RemoteWasmSudokuClass>>(a
 export const remoteWasmCellWorldClassState = atom<Promise<RemoteWasmCellWorldClass>>(async (get) => {
     const remoteWorkerApi = await get(remoteWorkerApiState);
     return fixupComlinkRemote(remoteWorkerApi.WasmCellWorld);
-});
-
-/**
- * Write-only atom to reset the worker after a panic.
- * This terminates the current worker, spawns a new one, and restores the Sudoku state.
- * Use by calling `set(resetWorkerAfterPanicAction)` from a component or action.
- */
-export const resetWorkerAfterPanicAction = atom(null, (_get, set) => {
-    console.warn("Resetting worker after WASM panic");
-
-    // Refresh the worker state - calling set() with no arguments on an atomWithRefresh
-    // triggers a refresh, which will run the factory function again.
-    // This terminates the old worker (via currentWorker.terminate()) and spawns a new one.
-    set(workerState);
-
-    // Reset the sudoku state to force re-initialization with persisted data
-    set(remoteWasmSudokuState, RESET);
 });

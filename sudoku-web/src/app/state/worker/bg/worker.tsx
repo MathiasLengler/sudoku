@@ -1,7 +1,7 @@
 import * as Comlink from "comlink";
 import { WasmCellWorld, WasmSudoku } from "sudoku-wasm";
 import type { SerializedDynamicCellWorld, SerializedDynamicSudoku } from "../../../utils/serializedData";
-import { hasPanicked, initWasm } from "../../wasm/init";
+import { initWasm } from "../../wasm/init";
 
 if (import.meta.env.MODE === "development") {
     self.addEventListener("message", (ev) => {
@@ -36,7 +36,6 @@ export class WasmCellWorldWithTransfer extends WasmCellWorld {
 
 export type WorkerApi = {
     init: typeof initWasm;
-    hasPanicked: typeof hasPanicked;
     // expose class constructors directly
     // Reference: https://github.com/GoogleChromeLabs/comlink/tree/main/docs/examples/03-classes-example
     WasmSudoku: typeof WasmSudoku;
@@ -47,7 +46,6 @@ export type WorkerApi = {
 
 const workerApi: WorkerApi = {
     init: initWasm,
-    hasPanicked,
     WasmSudoku,
     WasmSudokuWithTransfer,
     WasmCellWorld,
