@@ -1,7 +1,7 @@
 import * as Comlink from "comlink";
 import { WasmCellWorld, WasmSudoku } from "sudoku-wasm";
 import type { SerializedDynamicCellWorld, SerializedDynamicSudoku } from "../../../utils/serializedData";
-import { init } from "./init";
+import { initWasm } from "../../wasm/init";
 
 if (import.meta.env.MODE === "development") {
     self.addEventListener("message", (ev) => {
@@ -9,33 +9,33 @@ if (import.meta.env.MODE === "development") {
     });
 }
 
-class WasmSudokuWithTransfer extends WasmSudoku {
+export class WasmSudokuWithTransfer extends WasmSudoku {
     static override deserialize(bytes: SerializedDynamicSudoku): WasmSudokuWithTransfer {
         const instance = WasmSudoku.deserialize(bytes);
         Object.setPrototypeOf(instance, this.prototype);
         return instance as WasmSudokuWithTransfer;
     }
 
-    serializeWithTransfer(): SerializedDynamicSudoku {
+    override serialize(): SerializedDynamicSudoku {
         const serialized = super.serialize();
         return Comlink.transfer(serialized, [serialized.buffer]);
     }
 }
 
-class WasmCellWorldWithTransfer extends WasmCellWorld {
+export class WasmCellWorldWithTransfer extends WasmCellWorld {
     static override deserialize(bytes: SerializedDynamicCellWorld): WasmCellWorldWithTransfer {
         const instance = WasmCellWorld.deserialize(bytes);
         Object.setPrototypeOf(instance, this.prototype);
         return instance as WasmCellWorldWithTransfer;
     }
-    serializeWithTransfer(): SerializedDynamicCellWorld {
+    override serialize(): SerializedDynamicCellWorld {
         const serialized = super.serialize();
         return Comlink.transfer(serialized, [serialized.buffer]);
     }
 }
 
 export type WorkerApi = {
-    init: typeof init;
+    init: typeof initWasm;
     // expose class constructors directly
     // Reference: https://github.com/GoogleChromeLabs/comlink/tree/main/docs/examples/03-classes-example
     WasmSudoku: typeof WasmSudoku;
@@ -45,7 +45,7 @@ export type WorkerApi = {
 };
 
 const workerApi: WorkerApi = {
-    init,
+    init: initWasm,
     WasmSudoku,
     WasmSudokuWithTransfer,
     WasmCellWorld,
