@@ -1,7 +1,9 @@
 import CssBaseline from "@mui/material/CssBaseline";
 import { createTheme, StyledEngineProvider, ThemeProvider } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
-import { useMemo, type ReactNode } from "react";
+import { useAtomValue } from "jotai";
+import { useEffect, useMemo, type ReactNode } from "react";
+import { appSettingsState } from "../state/forms/appSettings";
 
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
 declare module "@mui/material/styles" {
@@ -33,13 +35,29 @@ const fontFamily = ['"Roboto Flex Variable"', '"Roboto"', '"Helvetica"', '"Arial
 const fontFamilyMonospace = ['"Inconsolata"', "monospace"].join(",");
 
 export function MyTheme({ children }: MyThemeProps) {
-    const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+    const systemPrefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+    const appSettings = useAtomValue(appSettingsState);
+
+    // Determine dark mode based on user setting
+    const prefersDarkMode = useMemo(() => {
+        if (appSettings.colorMode === "auto") {
+            return systemPrefersDarkMode;
+        }
+        return appSettings.colorMode === "dark";
+    }, [appSettings.colorMode, systemPrefersDarkMode]);
+
+    // Apply theme hue to CSS variables
+    useEffect(() => {
+        document.documentElement.style.setProperty("--hue", String(appSettings.themeColorHue));
+    }, [appSettings.themeColorHue]);
 
     const theme = useMemo(() => {
         return createTheme({
             palette: {
                 primary: {
-                    main: prefersDarkMode ? "#5FA1F2FF" : "#0D4FA0",
+                    main: prefersDarkMode
+                        ? `hsl(${appSettings.themeColorHue}, 70%, 66%)`
+                        : `hsl(${appSettings.themeColorHue}, 85%, 34%)`,
                 },
                 mode: prefersDarkMode ? "dark" : "light",
                 background: prefersDarkMode
@@ -95,7 +113,7 @@ export function MyTheme({ children }: MyThemeProps) {
                 },
             },
         });
-    }, [prefersDarkMode]);
+    }, [prefersDarkMode, appSettings.themeColorHue]);
 
     return (
         <StyledEngineProvider injectFirst>
