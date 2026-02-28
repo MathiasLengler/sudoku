@@ -1,0 +1,9 @@
+---
+source: sudoku-rs/src/grid/format/candidates_grid_compact.rs
+expression: CandidatesGridCompact.render(&grid)
+---
+  0  1     │  2   12     
+  3  13    │  23  123    
+───────────┼─────────────
+  4   14   │  24   124   
+  34  134  │  234  1234

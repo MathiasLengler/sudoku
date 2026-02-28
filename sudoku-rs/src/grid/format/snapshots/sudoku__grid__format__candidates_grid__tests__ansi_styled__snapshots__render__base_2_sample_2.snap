@@ -1,0 +1,13 @@
+---
+source: sudoku-rs/src/grid/format/candidates_grid.rs
+expression: CandidatesGridANSIStyled.render(&grid)
+---
+╔═══════╦═══════╗
+║   │   ║ [1m1[0m │   ║
+║───┼───║───┼───║
+║ [1m4[0m │   ║   │   ║
+╠═══════╬═══════╣
+║   │   ║   │ [1m2[0m ║
+║───┼───║───┼───║
+║   │ [1m3[0m ║   │   ║
+╚═══════╩═══════╝
