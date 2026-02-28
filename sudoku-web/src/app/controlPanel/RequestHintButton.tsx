@@ -7,9 +7,11 @@ import { useNotifications } from "@toolpad/core/useNotifications";
 import { useCallback, useState } from "react";
 import { useAtomValue } from "jotai";
 import { useApplyDeductions, useTryStrategies } from "../actions/sudokuActions";
+import { useValidatePuzzleMove } from "../actions/puzzleActions";
 import MyIconButton from "../components/MyIconButton";
 import { hintSettingsState, scaleLoopDelayIndex } from "../state/forms/hintSettings";
 import { hintState, type Hint, type OptionalHint } from "../state/hint";
+import { isPuzzleModeState, puzzleStatusState } from "../state/puzzle";
 import { sudokuIsSolvedState } from "../state/sudoku";
 import { RESET, useAtomCallback } from "jotai/utils";
 
@@ -19,7 +21,10 @@ export function RequestHintButton() {
 
     const tryStrategies = useTryStrategies();
     const applyDeductions = useApplyDeductions();
+    const validatePuzzleMove = useValidatePuzzleMove();
     const sudokuIsSolved = useAtomValue(sudokuIsSolvedState);
+    const isPuzzleMode = useAtomValue(isPuzzleModeState);
+    const puzzleStatus = useAtomValue(puzzleStatusState);
 
     const notifications = useNotifications();
 
@@ -41,13 +46,26 @@ export function RequestHintButton() {
                     return;
                 }
 
+                // In puzzle mode, check if already solved/failed
+                if (isPuzzleMode && puzzleStatus !== "active") {
+                    notifications.show("Puzzle already completed", {
+                        key: "puzzle-completed",
+                        severity: "info",
+                    });
+                    return;
+                }
+
                 const hintSettings = get(hintSettingsState);
+                // In puzzle mode, only use the strategies up to and including the target strategy
+                // This prevents the player from using easier strategies to bypass the puzzle
+                const strategiesToUse = hintSettings.strategies;
+
                 let tryStrategiesResult;
                 try {
-                    tryStrategiesResult = await tryStrategies(hintSettings.strategies);
+                    tryStrategiesResult = await tryStrategies(strategiesToUse);
                 } catch (err) {
                     if (!(err instanceof Error)) throw err;
-                    console.error("Failed to execute strategies", hintSettings.strategies, ":", err);
+                    console.error("Failed to execute strategies", strategiesToUse, ":", err);
                     notifications.show(err.message, { severity: "error" });
                     return;
                 }
@@ -77,7 +95,7 @@ export function RequestHintButton() {
                     return { strategy, deductions: [deduction] };
                 }
             },
-            [notifications, tryStrategies],
+            [notifications, tryStrategies, isPuzzleMode, puzzleStatus],
         ),
     );
 
@@ -105,6 +123,22 @@ export function RequestHintButton() {
             let madeProgress = true;
             try {
                 await applyDeductions({ deductions });
+
+                // In puzzle mode, validate the player's deductions
+                if (isPuzzleMode && puzzleStatus === "active") {
+                    const isCorrect = validatePuzzleMove(deductions);
+                    if (isCorrect) {
+                        notifications.show("Correct! You found the right deduction.", {
+                            key: "puzzle-solved",
+                            severity: "success",
+                        });
+                    } else {
+                        notifications.show("Incorrect deduction.", {
+                            key: "puzzle-failed",
+                            severity: "error",
+                        });
+                    }
+                }
             } catch (err) {
                 if (!(err instanceof Error)) throw err;
                 console.error("Failed to apply deductions", deductions, ":", err);
@@ -115,7 +149,7 @@ export function RequestHintButton() {
             hideHint();
             return madeProgress;
         },
-        [applyDeductions, notifications, hideHint],
+        [applyDeductions, notifications, hideHint, isPuzzleMode, puzzleStatus, validatePuzzleMove],
     );
 
     const requestSingleHint = useAtomCallback(

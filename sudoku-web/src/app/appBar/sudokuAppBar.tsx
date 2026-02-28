@@ -8,6 +8,7 @@ import { FullScreenSpinner } from "../components/FullScreenSpinner";
 import { featureFlagsState } from "../state/featureFlags";
 import { HintSettingsButton } from "./hintSettings/HintSettingsButton";
 import { NewGameButton } from "./newGame/NewGameButton";
+import { PuzzleButton } from "./puzzle/PuzzleButton";
 import { ShareMenu } from "./share/ShareMenu";
 import { WorldSettingsButton } from "./world/WorldSettingsButton";
 import { Box } from "@mui/material";
@@ -25,6 +26,7 @@ export default function SudokuAppBar() {
                         </Typography>
                         <Suspense fallback={<FullScreenSpinner />}>
                             {experimentWorld && <WorldSettingsButton />}
+                            <PuzzleButton />
                             <ShareMenu />
                             <HintSettingsButton />
                             <NewGameButton />

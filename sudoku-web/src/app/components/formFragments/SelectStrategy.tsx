@@ -4,6 +4,7 @@ import type { Control, FieldPath, FieldValues } from "react-hook-form";
 import { ALL_STRATEGIES, STRATEGY_OPTIONS } from "../../constants";
 import { ExternalLink } from "../ExternalLink";
 import { MySelect } from "./mui-rhf/MySelect";
+import type { StrategyEnum } from "../../../types";
 
 type SelectStrategyProps<
     TFieldValues extends FieldValues = FieldValues,
@@ -12,18 +13,20 @@ type SelectStrategyProps<
 > = {
     control: Control<TFieldValues, unknown, TTransformedValues>;
     name: TName;
+    /** Optional list of strategies to show. Defaults to ALL_STRATEGIES. */
+    strategies?: readonly StrategyEnum[];
 };
 function SelectStrategy<
     TFieldValues extends FieldValues = FieldValues,
     TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
     TTransformedValues = TFieldValues,
->({ control, name }: SelectStrategyProps<TFieldValues, TName, TTransformedValues>) {
+>({ control, name, strategies = ALL_STRATEGIES }: SelectStrategyProps<TFieldValues, TName, TTransformedValues>) {
     return (
         <MySelect
             control={control}
             name={name}
             label="Strategy"
-            options={ALL_STRATEGIES.map((strategy) => {
+            options={strategies.map((strategy) => {
                 const option = STRATEGY_OPTIONS[strategy];
                 return {
                     id: strategy,
