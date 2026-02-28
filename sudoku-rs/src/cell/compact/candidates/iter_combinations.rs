@@ -576,13 +576,13 @@ mod tests {
         use crate::{
             base::SudokuBase,
             cell::{Candidates, Value},
-            test_util::{test_all_bases, test_max_base3, test_max_base4},
+            test_util::{test_max_base5, test_max_base3, test_max_base4},
         };
 
         mod empty_candidates {
             use super::*;
 
-            test_all_bases!({
+            test_max_base5!({
                 let empty: Candidates<Base> = Candidates::new();
 
                 for k in Value::<Base>::all() {
@@ -595,7 +595,7 @@ mod tests {
         mod single_candidate {
             use super::*;
 
-            test_all_bases!({
+            test_max_base5!({
                 for single in Value::<Base>::all().map(Candidates::with_single) {
                     for k in Value::<Base>::all() {
                         if k.get() == 1 {
@@ -613,7 +613,7 @@ mod tests {
         mod three_candidates {
             use super::*;
 
-            test_all_bases!({
+            test_max_base5!({
                 let three_candidates: Candidates<Base> = vec![1, 2, 4].try_into().unwrap();
 
                 itertools::assert_equal(
@@ -643,7 +643,7 @@ mod tests {
         mod all_candidates {
             use super::*;
 
-            test_all_bases!({
+            test_max_base5!({
                 let all: Candidates<Base> = Candidates::all();
 
                 // k == 1 produces all candidates
@@ -702,7 +702,7 @@ mod tests {
             mod empty_candidates {
                 use super::*;
 
-                test_all_bases!({
+                test_max_base5!({
                     let empty: Candidates<Base> = Candidates::new();
 
                     for k in Value::<Base>::all() {
@@ -714,7 +714,7 @@ mod tests {
             mod single_candidate {
                 use super::*;
 
-                test_all_bases!({
+                test_max_base5!({
                     for single in Value::<Base>::all().map(Candidates::with_single) {
                         for k in Value::<Base>::all() {
                             assert_against_oracle(single, k);
@@ -726,7 +726,7 @@ mod tests {
             mod three_candidates {
                 use super::*;
 
-                test_all_bases!({
+                test_max_base5!({
                     let three_candidates: Candidates<Base> = vec![1, 2, 4].try_into().unwrap();
 
                     for k in Value::all() {
@@ -751,7 +751,7 @@ mod tests {
             mod all_k_1 {
                 use super::*;
 
-                test_all_bases!({
+                test_max_base5!({
                     let all: Candidates<Base> = Candidates::all();
 
                     assert_against_oracle(all, 1.try_into().unwrap());

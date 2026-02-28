@@ -1174,7 +1174,7 @@ mod tests {
 
         mod all_less_than_or_equal_candidates_mask {
             use super::*;
-            use crate::test_util::test_all_bases;
+            use crate::test_util::test_max_base5;
 
             fn assert_all_less_than_or_equal_candidates_mask<Base: SudokuBase>(
                 candidate: Coordinate<Base>,
@@ -1190,7 +1190,7 @@ mod tests {
                 );
             }
 
-            test_all_bases!({
+            test_max_base5!({
                 for candidate in Coordinate::<Base>::all() {
                     assert_all_less_than_or_equal_candidates_mask(candidate);
                 }

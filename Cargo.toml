@@ -20,9 +20,25 @@ log = { version = "0.4.28" }
 serde = { version = "1.0.228" }
 anyhow = { version = "1.0.100", features = ["backtrace"] }
 
-[profile.release-with-debug]
+[profile.release-debug-full]
 inherits = "release"
 debug = true
+
+# https://doc.rust-lang.org/cargo/guide/build-performance.html#reduce-amount-of-generated-debug-information
+[profile.dev]
+debug = "line-tables-only"
+[profile.dev.package."*"]
+debug = false
+[profile.debug-full]
+inherits = "dev"
+debug = true
+
+# https://docs.rs/insta/latest/insta/#optional-faster-runs
+[profile.dev.package.insta]
+opt-level = 3
+[profile.dev.package.similar]
+opt-level = 3
+
 
 [patch.crates-io]
 

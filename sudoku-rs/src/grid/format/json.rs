@@ -32,3 +32,21 @@ impl GridFormat for Json {
         Ok(serde_json::from_str(input)?)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    mod snapshots {
+        use super::*;
+
+        mod render {
+            use super::*;
+            use crate::test_util::test_all_sample_grids;
+
+            test_all_sample_grids!(|grid, name| {
+                insta::assert_snapshot!(name, Json.render(&grid));
+            });
+        }
+    }
+}
