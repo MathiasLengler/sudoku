@@ -12,7 +12,6 @@ use crate::grid::format::GridFormatEnum;
 use crate::position::DynamicPosition;
 use crate::solver::strategic::DynamicSolveStep;
 use crate::solver::strategic::deduction::transport::TransportDeductions;
-use crate::solver::strategic::strategies::StrategyEnum;
 use crate::sudoku::Sudoku;
 use crate::sudoku::settings::Settings as SudokuSettings;
 use crate::{
@@ -22,6 +21,7 @@ use crate::{
 use crate::{base::consts::*, solver::strategic::strategies::selection::StrategySelection};
 use enum_dispatch::enum_dispatch;
 use serde::{Deserialize, Serialize};
+use std::fmt::Display;
 
 /// All methods provided by `Sudoku`, which:
 /// - do not depend on the generic `SudokuBase`
@@ -38,8 +38,10 @@ pub trait DynamicSudokuActions {
     fn set_candidate(&mut self, pos: DynamicPosition, candidate: DynamicValue) -> Result<()>;
     fn delete_candidate(&mut self, pos: DynamicPosition, candidate: DynamicValue) -> Result<()>;
     fn delete(&mut self, pos: DynamicPosition) -> Result<()>;
-    fn try_strategies(&mut self, strategies: Vec<StrategyEnum>)
-    -> Result<Option<DynamicSolveStep>>;
+    fn try_strategies(
+        &mut self,
+        strategies: impl StrategySelection,
+    ) -> Result<Option<DynamicSolveStep>>;
     fn apply_deductions(&mut self, deductions: TransportDeductions) -> Result<()>;
 
     // actions that don't depend on base
@@ -66,6 +68,17 @@ pub enum DynamicSudoku {
     Base3(Sudoku<Base3>),
     Base4(Sudoku<Base4>),
     Base5(Sudoku<Base5>),
+}
+
+impl Display for DynamicSudoku {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DynamicSudoku::Base2(sudoku) => write!(f, "{sudoku}"),
+            DynamicSudoku::Base3(sudoku) => write!(f, "{sudoku}"),
+            DynamicSudoku::Base4(sudoku) => write!(f, "{sudoku}"),
+            DynamicSudoku::Base5(sudoku) => write!(f, "{sudoku}"),
+        }
+    }
 }
 
 /// Constructors
