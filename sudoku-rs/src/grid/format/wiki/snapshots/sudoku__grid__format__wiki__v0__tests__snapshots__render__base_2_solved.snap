@@ -1,0 +1,5 @@
+---
+source: sudoku-rs/src/grid/format/wiki/v0.rs
+expression: BinaryCandidatesLineV0.render(&grid)
+---
+2,4,8,1,8,1,4,2,1,8,2,4,4,2,1,8

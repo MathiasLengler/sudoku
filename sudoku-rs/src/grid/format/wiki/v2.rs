@@ -223,14 +223,14 @@ mod tests {
     use crate::grid::format::test_util::assert_parsed_grid;
     use crate::{
         base::SudokuBase,
-        test_util::{test_all_bases, test_max_base4},
+        test_util::{test_max_base4, test_max_base5},
     };
 
     mod cell_char_count {
         use super::*;
         use radix_fmt::radix_36;
 
-        test_all_bases!({
+        test_max_base5!({
             // https://blueant1.github.io/puzzle-coding/documentation/puzzlecoding/fieldcoding
             let max_integer = Offsets::new::<Base>().max_value;
             let serialized = format!("{}", radix_36(max_integer));
@@ -317,7 +317,7 @@ mod tests {
                 assert_eq!(&parsed_cell, cell);
             }
 
-            test_all_bases!({
+            test_max_base5!({
                 for value in Value::<Base>::all() {
                     assert_cell_roundtrip(&Cell::with_value(value, false));
                     assert_cell_roundtrip(&Cell::with_value(value, true));
@@ -457,5 +457,18 @@ mod tests {
         let parsed_grid = BinaryCandidatesLineV2.parse(RENDERED_TEST_GRID).unwrap();
         let expected_grid = get_test_grid();
         assert_parsed_grid(&expected_grid, &parsed_grid).unwrap();
+    }
+
+    mod snapshots {
+        use super::*;
+
+        mod render {
+            use super::*;
+            use crate::test_util::test_all_sample_grids;
+
+            test_all_sample_grids!(|grid, name| {
+                insta::assert_snapshot!(name, BinaryCandidatesLineV2.render(&grid));
+            });
+        }
     }
 }

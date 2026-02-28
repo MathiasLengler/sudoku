@@ -62,7 +62,7 @@ export function ThemeErrorBoundary({ children, inline }: { children: ReactNode; 
     return (
         <ErrorBoundary
             fallbackRender={({ error, resetErrorBoundary }) => (
-                <ThemeFallback error={error as unknown} resetErrorBoundary={resetErrorBoundary} inline={inline} />
+                <ThemeFallback error={error} resetErrorBoundary={resetErrorBoundary} inline={inline} />
             )}
         >
             {children}
