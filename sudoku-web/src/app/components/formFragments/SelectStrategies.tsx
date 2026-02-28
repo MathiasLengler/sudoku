@@ -1,17 +1,25 @@
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { Stack, Tooltip } from "@mui/material";
-import type { Control, FieldValues, Path } from "react-hook-form";
-import { CheckboxButtonGroup } from "react-hook-form-mui";
+import type { Control, FieldPath, FieldValues } from "react-hook-form";
 import { ALL_STRATEGIES, STRATEGY_OPTIONS } from "../../constants";
 import { ExternalLink } from "../ExternalLink";
+import { MyCheckboxGroup } from "./mui-rhf/MyCheckboxGroup";
 
-type SelectStrategiesProps<T extends FieldValues> = {
-    control: Control<T>;
-    name: Path<T>;
+type SelectStrategiesProps<
+    TFieldValues extends FieldValues = FieldValues,
+    TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+    TTransformedValues = TFieldValues,
+> = {
+    control: Control<TFieldValues, unknown, TTransformedValues>;
+    name: TName;
 };
-function SelectStrategies<T extends FieldValues>({ control, name }: SelectStrategiesProps<T>) {
+function SelectStrategies<
+    TFieldValues extends FieldValues = FieldValues,
+    TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+    TTransformedValues = TFieldValues,
+>({ control, name }: SelectStrategiesProps<TFieldValues, TName, TTransformedValues>) {
     return (
-        <CheckboxButtonGroup
+        <MyCheckboxGroup
             control={control}
             name={name}
             label="Strategies"
