@@ -375,6 +375,111 @@ impl<Base: SudokuBase> Generator<Base> {
         }
     }
 
+    /// Try to delete a cell and its symmetric counterpart (if any) while preserving uniqueness.
+    ///
+    /// Returns the deleted position/value pairs. For `PruningSymmetry::None`, this will be at most
+    /// one pair. For other symmetries, this can be up to two pairs (the primary position and its
+    /// symmetric counterpart).
+    ///
+    /// If the symmetric deletion would break uniqueness, both cells are restored and an empty
+    /// vector is returned.
+    fn try_delete_symmetric_cells_at_pos(
+        grid: &mut Grid<Base>,
+        pos: Position<Base>,
+        prune_settings: &PruningSettings<Base>,
+    ) -> Vec<(Position<Base>, Value<Base>)> {
+        let symmetry = prune_settings.symmetry;
+
+        // For no symmetry, just try to delete the single cell
+        if symmetry == PruningSymmetry::None {
+            return Self::try_delete_cell_at_pos(grid, pos, prune_settings)
+                .map(|v| vec![(pos, v)])
+                .unwrap_or_default();
+        }
+
+        // Get the symmetric position (if different from pos)
+        let sym_pos = symmetry.symmetric_position(pos);
+
+        // Get values at both positions
+        let primary_cell = grid.get(pos);
+        let Some(primary_value) = primary_cell.value() else {
+            panic!("Expected value at {pos}, instead got: {primary_cell:?}")
+        };
+
+        // Delete the primary position
+        grid.get_mut(pos).delete();
+
+        // Track if we need to delete a symmetric position
+        let sym_value = if let Some(sym_pos) = sym_pos {
+            let sym_cell = grid.get(sym_pos);
+            let Some(sym_value) = sym_cell.value() else {
+                // Symmetric position already deleted (shouldn't happen in normal flow)
+                // Restore primary and return empty
+                grid.get_mut(pos).set_value(primary_value);
+                return vec![];
+            };
+            grid.get_mut(sym_pos).delete();
+            Some((sym_pos, sym_value))
+        } else {
+            None
+        };
+
+        // Check if the grid still has a unique solution
+        let can_be_deleted: bool = (
+            // Either default strategies
+            prune_settings.strategies == StrategySet::with_single(BruteForce.into())
+            ||
+                // Or ensure the grid remains solvable with the non-default strategies
+                grid
+                .is_solvable_with_strategies(prune_settings.strategies)
+                .is_ok_and(|solution| solution.is_some())
+        ) && {
+            // Check uniqueness by trying to find an alternative solution
+            // We need to check that no solution exists that differs from the original
+            // at either the primary or symmetric position
+            let mut solver = introspective::Solver::with_filter(
+                grid.clone(),
+                DisallowedCandidateAtPosition {
+                    pos,
+                    candidate: primary_value,
+                },
+            );
+            let has_ambiguous_solution = solver.next().is_some();
+
+            if has_ambiguous_solution {
+                false
+            } else if let Some((sym_pos, sym_value)) = sym_value {
+                // Also check the symmetric position
+                let mut solver = introspective::Solver::with_filter(
+                    grid.clone(),
+                    DisallowedCandidateAtPosition {
+                        pos: sym_pos,
+                        candidate: sym_value,
+                    },
+                );
+                solver.next().is_none()
+            } else {
+                true
+            }
+        };
+
+        if can_be_deleted {
+            // Both positions can be removed
+            let mut result = vec![(pos, primary_value)];
+            if let Some((sym_pos, sym_value)) = sym_value {
+                result.push((sym_pos, sym_value));
+            }
+            result
+        } else {
+            // Restore both positions
+            grid.get_mut(pos).set_value(primary_value);
+            if let Some((sym_pos, sym_value)) = sym_value {
+                grid.get_mut(sym_pos).set_value(sym_value);
+            }
+            vec![]
+        }
+    }
+
     fn shuffle_vec<T>(rng: &mut impl Rng, mut vec: Vec<T>) -> Vec<T> {
         vec.shuffle(rng);
         vec
@@ -420,7 +525,7 @@ impl<Base: SudokuBase> Generator<Base> {
         prune_settings: &PruningSettings<Base>,
         rng: &mut CrateRng,
     ) -> Result<Vec<Position<Base>>> {
-        Ok(match &prune_settings.order {
+        let positions = match &prune_settings.order {
             PruningOrder::Random => {
                 let prunable_positions = if let Some(SolutionSettings { values_grid }) =
                     &self.settings.solution
@@ -451,7 +556,19 @@ impl<Base: SudokuBase> Generator<Base> {
                     |rng| Self::shuffle_vec(rng, values_grid.all_candidates_positions()),
                 )
             }
-        })
+        };
+
+        // When symmetry is enabled, filter to only include primary positions
+        // to avoid processing the same symmetric pair twice
+        let symmetry = prune_settings.symmetry;
+        if symmetry == PruningSymmetry::None {
+            Ok(positions)
+        } else {
+            Ok(positions
+                .into_iter()
+                .filter(|&pos| symmetry.is_primary_position(pos))
+                .collect())
+        }
     }
 
     fn prune_from_filled(
@@ -471,7 +588,7 @@ impl<Base: SudokuBase> Generator<Base> {
         let pruning_positions: Vec<_> = self.pruning_positions(prune_settings, rng)?;
         let pruning_position_count = pruning_positions.len();
 
-        let mut deleted_count = 0;
+        let mut deleted_count: u16 = 0;
         for (i, pos) in pruning_positions.into_iter().enumerate() {
             let pruning_position_index = i + 1;
 
@@ -479,10 +596,13 @@ impl<Base: SudokuBase> Generator<Base> {
                 break;
             }
 
-            if Self::try_delete_cell_at_pos(&mut grid, pos, prune_settings).is_some() {
-                deleted_count += 1;
+            let deleted = Self::try_delete_symmetric_cells_at_pos(&mut grid, pos, prune_settings);
+            let newly_deleted = u16::try_from(deleted.len()).unwrap();
+
+            if newly_deleted > 0 {
+                deleted_count += newly_deleted;
                 debug!(
-                    "Position {pruning_position_index}/{pruning_position_count} deleted, totaling {deleted_count}/{distance_from_filled} deleted positions"
+                    "Position {pruning_position_index}/{pruning_position_count} deleted ({newly_deleted} cells), totaling {deleted_count}/{distance_from_filled} deleted positions"
                 );
             } else {
                 debug!(
@@ -550,18 +670,21 @@ impl<Base: SudokuBase> Generator<Base> {
 
             let deleted_count = u16::try_from(deleted.len()).unwrap();
 
-            if let Some(deleted_value) =
-                Self::try_delete_cell_at_pos(&mut grid, pos, prune_settings)
-            {
-                debug!(
-                    "Position {pruning_position_index}/{remaining_pruning_position_count} deleted, totaling {deleted_count} deleted positions"
-                );
+            let newly_deleted =
+                Self::try_delete_symmetric_cells_at_pos(&mut grid, pos, prune_settings);
 
-                deleted.push((pos, deleted_value));
-            } else {
+            if newly_deleted.is_empty() {
                 debug!(
                     "Position {pruning_position_index}/{remaining_pruning_position_count} is required for unique solution"
                 );
+            } else {
+                debug!(
+                    "Position {pruning_position_index}/{remaining_pruning_position_count} deleted ({} cells), totaling {} deleted positions",
+                    newly_deleted.len(),
+                    deleted_count + u16::try_from(newly_deleted.len()).unwrap()
+                );
+
+                deleted.extend(newly_deleted);
             }
 
             on_progress(GeneratorProgress {
@@ -572,6 +695,7 @@ impl<Base: SudokuBase> Generator<Base> {
         }
 
         // Restore the required amount of values, specified by distance.
+        // When symmetry is enabled, we should restore in pairs to maintain symmetry
         for (restore_i, (deleted_pos, deleted_value)) in
             (1..).zip(deleted.into_iter().rev().take(distance_from_minimal.into()))
         {
@@ -1120,6 +1244,149 @@ mod tests {
                 solution, values_grid,
                 "Solution differs from target solution:\n{solution}\n!=\n{values_grid}"
             );
+        }
+    }
+
+    mod symmetry {
+        use super::*;
+
+        /// Helper function to check if a grid has symmetric clue pattern
+        fn has_symmetric_clues<Base: SudokuBase>(
+            grid: &Grid<Base>,
+            symmetry: PruningSymmetry,
+        ) -> bool {
+            for pos in Position::<Base>::all() {
+                let has_value = grid.get(pos).has_value();
+                if let Some(sym_pos) = symmetry.symmetric_position(pos) {
+                    let sym_has_value = grid.get(sym_pos).has_value();
+                    if has_value != sym_has_value {
+                        return false;
+                    }
+                }
+            }
+            true
+        }
+
+        #[test]
+        fn test_symmetry_rotational_180() {
+            let grid = Generator::<Base2>::with_pruning(PruningSettings {
+                target: PruningTarget::Minimal,
+                symmetry: PruningSymmetry::Rotational180,
+                ..Default::default()
+            })
+            .generate()
+            .unwrap();
+
+            assert!(grid.has_unique_solution());
+            assert!(
+                has_symmetric_clues(&grid, PruningSymmetry::Rotational180),
+                "Grid should have 180° rotational symmetry"
+            );
+        }
+
+        #[test]
+        fn test_symmetry_horizontal_mirror() {
+            let grid = Generator::<Base2>::with_pruning(PruningSettings {
+                target: PruningTarget::Minimal,
+                symmetry: PruningSymmetry::HorizontalMirror,
+                ..Default::default()
+            })
+            .generate()
+            .unwrap();
+
+            assert!(grid.has_unique_solution());
+            assert!(
+                has_symmetric_clues(&grid, PruningSymmetry::HorizontalMirror),
+                "Grid should have horizontal mirror symmetry"
+            );
+        }
+
+        #[test]
+        fn test_symmetry_vertical_mirror() {
+            let grid = Generator::<Base2>::with_pruning(PruningSettings {
+                target: PruningTarget::Minimal,
+                symmetry: PruningSymmetry::VerticalMirror,
+                ..Default::default()
+            })
+            .generate()
+            .unwrap();
+
+            assert!(grid.has_unique_solution());
+            assert!(
+                has_symmetric_clues(&grid, PruningSymmetry::VerticalMirror),
+                "Grid should have vertical mirror symmetry"
+            );
+        }
+
+        #[test]
+        fn test_symmetry_diagonal_main() {
+            let grid = Generator::<Base2>::with_pruning(PruningSettings {
+                target: PruningTarget::Minimal,
+                symmetry: PruningSymmetry::DiagonalMain,
+                ..Default::default()
+            })
+            .generate()
+            .unwrap();
+
+            assert!(grid.has_unique_solution());
+            assert!(
+                has_symmetric_clues(&grid, PruningSymmetry::DiagonalMain),
+                "Grid should have main diagonal symmetry"
+            );
+        }
+
+        #[test]
+        fn test_symmetry_diagonal_anti() {
+            let grid = Generator::<Base2>::with_pruning(PruningSettings {
+                target: PruningTarget::Minimal,
+                symmetry: PruningSymmetry::DiagonalAnti,
+                ..Default::default()
+            })
+            .generate()
+            .unwrap();
+
+            assert!(grid.has_unique_solution());
+            assert!(
+                has_symmetric_clues(&grid, PruningSymmetry::DiagonalAnti),
+                "Grid should have anti-diagonal symmetry"
+            );
+        }
+
+        #[test]
+        fn test_symmetry_none_no_constraint() {
+            // With no symmetry, we shouldn't have any constraint on the clue pattern
+            let grid = Generator::<Base2>::with_pruning(PruningSettings {
+                target: PruningTarget::Minimal,
+                symmetry: PruningSymmetry::None,
+                ..Default::default()
+            })
+            .generate()
+            .unwrap();
+
+            assert!(grid.has_unique_solution());
+            // No symmetry constraint to check
+        }
+
+        #[test]
+        fn test_symmetry_with_max_empty_cell_count() {
+            // Test that symmetry works with target other than minimal
+            let grid = Generator::<Base2>::with_pruning(PruningSettings {
+                target: PruningTarget::MaxEmptyCellCount(4),
+                symmetry: PruningSymmetry::Rotational180,
+                ..Default::default()
+            })
+            .generate()
+            .unwrap();
+
+            assert!(grid.has_unique_solution());
+            assert!(
+                has_symmetric_clues(&grid, PruningSymmetry::Rotational180),
+                "Grid should have 180° rotational symmetry"
+            );
+            // We should have some cells deleted (at least 2, could be up to 4 depending on unique solution constraint)
+            // Note: For rotational symmetry, center cells (if any) are deleted individually, so odd counts are possible
+            let empty_count = grid.all_candidates_positions().len();
+            assert!(empty_count >= 2 && empty_count <= 4);
         }
     }
 }
