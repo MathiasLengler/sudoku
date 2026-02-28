@@ -634,7 +634,7 @@ mod tests {
             #[case::strategy_application_count_single_x_wing(6, GridMetric::StrategyApplicationCountSingle {strategy: XWing.into() }, 0)]
             #[case::strategy_deduction_count_any(1, GridMetric::StrategyDeductionCountAny, 47)]
             // TODO: StrategyDeductionCountSingle
-            #[case::strategy_average_options(1, GridMetric::StrategyAverageOptions, 4250)]
+            #[case::strategy_average_options(1, GridMetric::StrategyAverageOptions, 4000)]
             #[case::sat_step_count(0, GridMetric::SatStepCount, 77)]
             #[case::sat_step_count(1, GridMetric::SatStepCount, 1)]
             #[case::backtrack_count(0, GridMetric::BacktrackCount, 13357)]

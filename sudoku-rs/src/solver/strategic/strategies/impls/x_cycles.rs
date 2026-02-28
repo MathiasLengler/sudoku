@@ -479,6 +479,7 @@ mod tests {
     use crate::{
         base::consts::*,
         cell::Cell,
+        solver::strategic::strategies::test_util::strategy_snapshot_tests,
     };
     use indoc::indoc;
 
@@ -579,4 +580,6 @@ mod tests {
             assert!(!sees(pos1, pos5), "Cells in different units should not see each other");
         }
     }
+
+    strategy_snapshot_tests!(XCycles);
 }
