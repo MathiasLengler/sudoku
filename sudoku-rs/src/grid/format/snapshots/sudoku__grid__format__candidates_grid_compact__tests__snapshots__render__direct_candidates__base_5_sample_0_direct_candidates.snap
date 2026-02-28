@@ -1,0 +1,33 @@
+---
+source: sudoku-rs/src/grid/format/candidates_grid_compact.rs
+expression: CandidatesGridCompact.render(&grid)
+---
+  8fghp  3458fgip   m       o       358fp        │  789bil  k      n    d       14579l  │  459fgl  159gh  1349f  39hlp  a          │  124bghj  1589bj  159fhj  6      e    │  125bi  c     12359  12359bp  23bjp   
+  2      5afgikn    5afhin  5ahn    1            │  3       9abfi  abi  59bfil  p       │  59fgl   6      c      9hln   8          │  bghj     7       59fhj   o      m    │  e      4     d      59b      bj      
+  8ghp   3458gp     458h    3458hp  d            │  m       2      6    589b    1459    │  i       7      e      j      349hp      │  14bgh    1589b   l       14bgh  c    │  a      n     1359o  k        f       
+  c      4568afinp  l       7       b            │  o       j      1ai  589fi   e       │  d       159    k      9np    49fp       │  3        1589    159f    124f   89p  │  125im  9imp  h      12569p   g       
+  efp    j          9       3456ep  356fp        │  c       h      g    5cf     145     │  m       2      134f   o      b          │  n        d       a       i      k    │  7      8     1356   1356p    l       
+─────────────────────────────────────────────────┼──────────────────────────────────────┼──────────────────────────────────────────┼───────────────────────────────────────┼───────────────────────────────────────
+  8bfk   478abfikl  48afi   48al     78fk        │  7ail   n     237ai  p      257al    │  j     c      1478afim  7m     4fim      │  o    h     d     237bkm  8bi         │  9    6    g    e     3ab             
+  j      9          3       adeh     g           │  4      8     o      1      7a       │  2     adehm  7adfm     7dehm  6         │  p    bekm  c     7bkm    5           │  bfm  bdm  l    i     n               
+  5      678adei    68aei   68acde   m           │  f      aci   h      3cij   b        │  k     p      78adi     g      dei       │  l    8eij  n     9       1           │  o    2    3c   37d   4               
+  ben    467abein   46aein  2        o           │  d      9aci  m      k      679a     │  479a  19ae   5         79e    l         │  f    beij  37ij  37bg    bgij        │  1bc  h    p    137b  8               
+  8efhp  78defilp   1       8cdehlp  78cfp       │  79cil  g     27ei   29cil  279l     │  789f  3      n         b      o         │  27i  8eim  6     a       4           │  cfm  k    cfm  j     5               
+─────────────────────────────────────────────────┼──────────────────────────────────────┼──────────────────────────────────────────┼───────────────────────────────────────┼───────────────────────────────────────
+  89efkmp  478aefkop  48aefjo  489aemp  789fjkp  │  79ap  9amp  5     9g  n             │  h  i      l        39ekm  39efm         │  6    1cmo  b    147cfm  2            │  d     3jp  138cfo  13fgop  3cjp      
+  3        c          468afh   i        l        │  1     9adm  7a    o   j             │  b  89adm  689adfm  269dm  9dfm          │  5    p     k    47fhm   n            │  2fgh  e    268f    26fgh   26h       
+  fhkmnp   adfknp     g        adhmnp   fjknp    │  2     3     aikp  6   8             │  c  adkm   o        5      7             │  1hi  l     e    1fhm    dhi          │  4     jp   b       1fhnp   9         
+  8fhkp    5678dfkop  568fho   568dhp   5678fkp  │  7bp   bdp   l     e   c             │  n  4      368df    236dk  1             │  9    g     7fh  j       dho          │  25fh  a    i       m       236hp     
+  9emn     1          b        569demn  2        │  9i    9dim  f     4   h             │  p  9dem   j        69dem  g             │  a    cimo  8    cm      3            │  k     l    7       56no    6c        
+─────────────────────────────────────────────────┼──────────────────────────────────────┼──────────────────────────────────────────┼───────────────────────────────────────┼───────────────────────────────────────
+  4       356beop  2     3569ep  3569p           │  g      9abiop  c     9bi    f       │  679ao  n       3679aim  8       39eimp  │  k      569bi  579hi  l  69abhi       │  j       1      3569m  3569bhp   d    
+  19bfnp  36bfnp   c     k       a               │  69bjp  7       2bjp  29bjn  d       │  69     l       g        369mp   5       │  1bhj   4      o      e  69bhj        │  8       39bmp  2369m  2369bhnp  i    
+  19benp  6benop   6eno  g       i               │  5      9abop   abjp  h      69al    │  679ao  9adejo  2        679dep  c       │  17bj   3      m      8  69abj        │  bln     f      69k    4         6bp  
+  l       m        568   j       h               │  k      1       2aip  29i    269a    │  69a    b       369ai    4       39ip    │  d      569ci  59i    n  f            │  25cg    7      e      23569gp   o    
+  7       56bno    d     569n    569n            │  e      4       8     m      3       │  1      9jo     h        f       k       │  bcgij  2      59ij   p  69bgij       │  5bcgln  9b     a      569bgn    6bc  
+─────────────────────────────────────────────────┼──────────────────────────────────────┼──────────────────────────────────────────┼───────────────────────────────────────┼───────────────────────────────────────
+  6  25g   5j   59cm    59cj                     │  n      l   4     7      i           │  3     59ghkmo  p       1       9hm      │  8       9bcjko  9hj  d       9bhjo   │  2bfh  9b    29f  a    e              
+  o  358   58j  1358cm  358cj                    │  8bcjp  e   9     38bcj  1km         │  4568  58dhkm   468bdm  a       4dhm     │  1bchij  f       2    13bchk  l       │  bhi   g     n    bdh  7              
+  i  238g  k    b       389                      │  h      fm  d     a      2gm         │  789g  89gm     789m    c       j        │  e       n       p    5       9       │  6     o     4    l    1              
+  a  38ln  7    1389ln  4                        │  8b     5   13bk  38b    o           │  e     f        689bd   69dhkl  2        │  1bhi    169bik  g    13bhk   69bhi   │  p     9bdi  j    c    m              
+  d  h     p    f       e                        │  bcj    6   12bj  2bcgj  12g         │  9glo  9go      9b      i       n        │  m       a       4    1bc     7       │  3     5     29   8    k

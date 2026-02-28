@@ -30,14 +30,13 @@ jobs:
       # just
       - uses: extractions/setup-just@v3
 
-      # cargo nextest
-      - uses: taiki-e/install-action@nextest
-
-      - name: Install wasm-pack
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      # cargo tools
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest,wasm-pack
 
       # https://github.com/actions/cache/blob/main/examples.md#rust---cargo
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/bin/
@@ -51,7 +50,7 @@ jobs:
         run: just clippy-ci
 
       - name: test
-        run: just test
+        run: just test-ci
 
       - name: wasm-pack
         run: just pack-prod
