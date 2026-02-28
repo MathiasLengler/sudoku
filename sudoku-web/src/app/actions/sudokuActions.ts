@@ -1,9 +1,8 @@
 import assertNever from "assert-never";
-import * as Comlink from "comlink";
+import { inRange, isEqual } from "es-toolkit";
 import type { Getter, Setter } from "jotai";
 import { useAtomCallback } from "jotai/utils";
-import { inRange, isEqual } from "es-toolkit";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type {
     DynamicGeneratorSettings,
     DynamicMultiShotGeneratorSettings,
@@ -11,22 +10,20 @@ import type {
     GeneratorProgress,
     GridFormatEnum,
     MultiShotGeneratorProgress,
-    StrategyEnums,
+    StrategySet,
     TransportDeductions,
 } from "../../types";
 import { cellAtGridPositionState } from "../state/cellIndexing";
 import { hintState } from "../state/hint";
 import type { CellAction } from "../state/input";
 import { inputState } from "../state/input";
-import { gameCounterState, sudokuSideLengthState, sudokuState } from "../state/sudoku";
 import {
-    isWorkerReadyState,
-    remoteWasmSudokuClassState,
-    remoteWasmSudokuState,
-    workerState,
-    type RemoteWasmSudoku,
-} from "../state/worker";
-import { fixupComlinkRemote } from "../state/worker/comlinkProxyWrapper";
+    mainThreadWasmSudokuClassState,
+    wasmSudokuState,
+    type MainThreadWasmSudoku,
+} from "../state/mainThread/wasmSudoku";
+import { gameCounterState, sudokuSideLengthState, sudokuState } from "../state/sudoku";
+import { isWorkerReadyState, workerState } from "../state/worker";
 import { useCancelableMutation } from "../useCancelableMutation";
 import { measure, withMeasure } from "../utils/measure";
 
@@ -70,11 +67,11 @@ async function isInvalidGridPosition({ get, gridPosition }: { get: Getter; gridP
 }
 
 // Mutation helpers
-export async function updateSudoku(
-    { set, wasmSudokuProxy }: { set: Setter; wasmSudokuProxy: RemoteWasmSudoku },
+export function updateSudoku(
+    { set, wasmSudoku }: { set: Setter; wasmSudoku: MainThreadWasmSudoku },
     isNewGame = false,
 ) {
-    const newSudoku = await wasmSudokuProxy.getTransportSudoku();
+    const newSudoku = wasmSudoku.getTransportSudoku();
     set(sudokuState, newSudoku);
     if (isNewGame) {
         set(gameCounterState, (prev) => prev + 1);
@@ -96,7 +93,7 @@ async function applyValueAtGridPosition({
     if (await isFixedValueCell({ get, gridPosition })) {
         return;
     }
-    const wasmSudokuProxy = await get(remoteWasmSudokuState);
+    const wasmSudoku = await get(wasmSudokuState);
     const input = get(inputState);
 
     if (input.stickyMode) {
@@ -171,20 +168,20 @@ async function applyValueAtGridPosition({
 
         if (input.candidateMode) {
             if (cellAction === "set") {
-                await wasmSudokuProxy.setCandidate(gridPosition, value);
+                wasmSudoku.setCandidate(gridPosition, value);
             } else if (cellAction === "delete") {
-                await wasmSudokuProxy.deleteCandidate(gridPosition, value);
+                wasmSudoku.deleteCandidate(gridPosition, value);
             } else {
                 assertNever(cellAction);
             }
         } else {
             if (cellAction === "set") {
-                await wasmSudokuProxy.setValue(gridPosition, value);
+                wasmSudoku.setValue(gridPosition, value);
             } else if (cellAction === "delete") {
                 const cell = await get(cellAtGridPositionState(gridPosition));
                 // Only delete cell value if it matches the handled value
                 if (cell.kind === "value" && cell.value === value) {
-                    await wasmSudokuProxy.delete(gridPosition);
+                    wasmSudoku.delete(gridPosition);
                 }
             } else {
                 assertNever(cellAction);
@@ -224,17 +221,17 @@ async function applyValueAtGridPosition({
         });
     } else {
         if (value === 0) {
-            await wasmSudokuProxy.delete(gridPosition);
+            wasmSudoku.delete(gridPosition);
         } else {
             if (input.candidateMode) {
-                await wasmSudokuProxy.toggleCandidate(gridPosition, value);
+                wasmSudoku.toggleCandidate(gridPosition, value);
             } else {
-                await wasmSudokuProxy.setOrToggleValue(gridPosition, value);
+                wasmSudoku.setOrToggleValue(gridPosition, value);
             }
         }
     }
 
-    await updateSudoku({ set, wasmSudokuProxy });
+    updateSudoku({ set, wasmSudoku });
 }
 
 // Public action hooks
@@ -291,9 +288,9 @@ export function useDeleteSelectedCell() {
 export function useSetAllDirectCandidates() {
     return useAtomCallback(
         useCallback(async (get, set) => {
-            const wasmSudokuProxy = await get(remoteWasmSudokuState);
-            await wasmSudokuProxy.setAllDirectCandidates();
-            await updateSudoku({ set, wasmSudokuProxy });
+            const wasmSudoku = await get(wasmSudokuState);
+            wasmSudoku.setAllDirectCandidates();
+            updateSudoku({ set, wasmSudoku });
         }, []),
     );
 }
@@ -310,18 +307,18 @@ export function useUndo() {
                 return;
             }
 
-            const wasmSudokuProxy = await get(remoteWasmSudokuState);
-            await wasmSudokuProxy.undo();
-            await updateSudoku({ set, wasmSudokuProxy });
+            const wasmSudoku = await get(wasmSudokuState);
+            wasmSudoku.undo();
+            updateSudoku({ set, wasmSudoku });
         }, []),
     );
 }
 export function useRedo() {
     return useAtomCallback(
         useCallback(async (get, set) => {
-            const wasmSudokuProxy = await get(remoteWasmSudokuState);
-            await wasmSudokuProxy.redo();
-            await updateSudoku({ set, wasmSudokuProxy });
+            const wasmSudoku = await get(wasmSudokuState);
+            wasmSudoku.redo();
+            updateSudoku({ set, wasmSudoku });
         }, []),
     );
 }
@@ -337,7 +334,7 @@ const rebootWorker = withMeasure({ name: "rebootWorker" }, async ({ get, set }: 
     await get(isWorkerReadyState);
 
     // Sync sudokuState to the new worker
-    await updateSudoku({ set, wasmSudokuProxy: await get(remoteWasmSudokuState) }, true);
+    updateSudoku({ set, wasmSudoku: await get(wasmSudokuState) }, true);
 
     console.info("Worker rebooted");
 });
@@ -353,13 +350,13 @@ export function useGenerate() {
                 onProgress: (progress: GeneratorProgress) => void,
             ) => {
                 return await measure({ name: "generate", detail: { settings } }, async () => {
-                    const RemoteWasmSudoku = await get(remoteWasmSudokuClassState);
+                    const MainThreadWasmSudoku = await get(mainThreadWasmSudokuClassState);
 
-                    let unsafeWasmSudokuProxy;
+                    let wasmSudoku;
                     try {
-                        unsafeWasmSudokuProxy = await Promise.race([
+                        wasmSudoku = await Promise.race([
                             abortPromise,
-                            RemoteWasmSudoku.generate(settings, Comlink.proxy(onProgress)),
+                            MainThreadWasmSudoku.generate(settings, onProgress),
                         ]);
                     } catch (err) {
                         if (!(err instanceof DOMException && err.name === "AbortError")) {
@@ -372,11 +369,9 @@ export function useGenerate() {
                         throw err;
                     }
 
-                    const wasmSudokuProxy = fixupComlinkRemote(unsafeWasmSudokuProxy);
+                    set(wasmSudokuState, wasmSudoku);
 
-                    set(remoteWasmSudokuState, wasmSudokuProxy);
-
-                    await updateSudoku({ set, wasmSudokuProxy }, true);
+                    updateSudoku({ set, wasmSudoku }, true);
                 });
             },
             [],
@@ -388,6 +383,8 @@ export function useGenerate() {
     const { mutation, cancel: cancelGenerate } = useCancelableMutation<DynamicGeneratorSettings, GeneratorProgress>({
         cancelableMutationFn: useCallback(
             async ({ variables: settings, abortPromise, onProgress }) => {
+                setGenerateProgress(undefined);
+
                 await generate(settings, abortPromise, onProgress);
             },
             [generate],
@@ -409,6 +406,11 @@ export type TrackedMultiShotGeneratorProgress = {
     latestProgress: MultiShotGeneratorProgress;
     seenIterationsCount: number;
     finishedIterationsCount: number;
+    bestEvaluatedGridMetric: bigint | undefined;
+};
+
+export type MultiShotGenerationResult = {
+    bestEvaluatedGridMetric: bigint;
 };
 
 export function useGenerateMultiShot() {
@@ -422,13 +424,13 @@ export function useGenerateMultiShot() {
                 onProgress: (progress: MultiShotGeneratorProgress) => void,
             ) => {
                 return await measure({ name: "generateMultiShot", detail: { settings } }, async () => {
-                    const RemoteWasmSudoku = await get(remoteWasmSudokuClassState);
+                    const MainThreadWasmSudoku = await get(mainThreadWasmSudokuClassState);
 
-                    let unsafeWasmSudokuProxy;
+                    let wasmSudoku;
                     try {
-                        unsafeWasmSudokuProxy = await Promise.race([
+                        wasmSudoku = await Promise.race([
                             abortPromise,
-                            RemoteWasmSudoku.generateMultiShot(settings, Comlink.proxy(onProgress)),
+                            MainThreadWasmSudoku.generateMultiShot(settings, onProgress),
                         ]);
                     } catch (err) {
                         if (!(err instanceof DOMException && err.name === "AbortError")) {
@@ -441,11 +443,9 @@ export function useGenerateMultiShot() {
                         throw err;
                     }
 
-                    const wasmSudokuProxy = fixupComlinkRemote(unsafeWasmSudokuProxy);
+                    set(wasmSudokuState, wasmSudoku);
 
-                    set(remoteWasmSudokuState, wasmSudokuProxy);
-
-                    await updateSudoku({ set, wasmSudokuProxy }, true);
+                    updateSudoku({ set, wasmSudoku }, true);
                 });
             },
             [],
@@ -455,23 +455,36 @@ export function useGenerateMultiShot() {
     const [trackedMultiShotGeneratorProgress, setTrackedMultiShotGeneratorProgress] =
         useState<TrackedMultiShotGeneratorProgress>();
 
+    const bestEvaluatedGridMetricRef = useRef<bigint | undefined>(undefined);
+
+    const resetProgressState = useCallback(() => {
+        setTrackedMultiShotGeneratorProgress(undefined);
+        bestEvaluatedGridMetricRef.current = undefined;
+    }, []);
+
     const { mutation, cancel: cancelGenerateMultiShot } = useCancelableMutation<
         DynamicMultiShotGeneratorSettings,
         MultiShotGeneratorProgress
     >({
         cancelableMutationFn: useCallback(
             async ({ variables: settings, abortPromise, onProgress }) => {
+                // Reset state before starting a new generation.
+                resetProgressState();
+
                 await generateImpl(settings, abortPromise, onProgress);
             },
-            [generateImpl],
+            [generateImpl, resetProgressState],
         ),
         onProgress: useCallback((progress: MultiShotGeneratorProgress) => {
             console.debug("MultiShot progress:", progress);
             let isFinished;
+            let bestEvaluatedGridMetric: bigint | undefined;
             if (progress.kind === "started") {
                 isFinished = false;
             } else if (progress.kind === "finished") {
                 isFinished = true;
+                bestEvaluatedGridMetricRef.current = progress.bestEvaluatedGridMetric;
+                bestEvaluatedGridMetric = progress.bestEvaluatedGridMetric;
             } else {
                 assertNever(progress);
             }
@@ -482,17 +495,34 @@ export function useGenerateMultiShot() {
                     latestProgress: progress,
                     seenIterationsCount: isFinished ? prevSeenIterationsCount : prevSeenIterationsCount + 1,
                     finishedIterationsCount: isFinished ? prevFinishedIterationsCount + 1 : prevFinishedIterationsCount,
+                    bestEvaluatedGridMetric: bestEvaluatedGridMetric ?? prev?.bestEvaluatedGridMetric,
                 };
             });
         }, []),
         onCancel: useCallback(() => {
             console.info("MultiShot generation was canceled.");
-            setTrackedMultiShotGeneratorProgress(undefined);
-        }, []),
+            resetProgressState();
+        }, [resetProgressState]),
     });
 
+    const generateMultiShot = useCallback(
+        async (settings: DynamicMultiShotGeneratorSettings): Promise<MultiShotGenerationResult> => {
+            await mutation.mutateAsync(settings);
+
+            if (bestEvaluatedGridMetricRef.current !== undefined) {
+                return { bestEvaluatedGridMetric: bestEvaluatedGridMetricRef.current };
+            } else {
+                console.warn(
+                    "Expected bestEvaluatedGridMetricRef to be set after successful generation, but it was undefined.",
+                );
+                return { bestEvaluatedGridMetric: -1n };
+            }
+        },
+        [mutation],
+    );
+
     return {
-        generateMultiShot: mutation.mutateAsync,
+        generateMultiShot,
         trackedMultiShotGeneratorProgress,
         cancelGenerateMultiShot,
     };
@@ -501,33 +531,32 @@ export function useGenerateMultiShot() {
 export function useImportSudokuString() {
     return useAtomCallback(
         useCallback(async (get, set, input: string, setAllDirectCandidates: boolean) => {
-            const RemoteWasmSudoku = await get(remoteWasmSudokuClassState);
-            const unsafeWasmSudokuProxy = await RemoteWasmSudoku.import(input);
-            const wasmSudokuProxy = fixupComlinkRemote(unsafeWasmSudokuProxy);
-            set(remoteWasmSudokuState, wasmSudokuProxy);
+            const MainThreadWasmSudoku = await get(mainThreadWasmSudokuClassState);
+            const wasmSudoku = await MainThreadWasmSudoku.import(input);
+            set(wasmSudokuState, wasmSudoku);
 
             if (setAllDirectCandidates) {
-                await wasmSudokuProxy.setAllDirectCandidates();
+                wasmSudoku.setAllDirectCandidates();
             }
-            await updateSudoku({ set, wasmSudokuProxy }, true);
+            updateSudoku({ set, wasmSudoku }, true);
         }, []),
     );
 }
 export function useExportSudokuString() {
     return useAtomCallback(
         useCallback(async (get, _set, format: GridFormatEnum) => {
-            const wasmSudokuProxy = await get(remoteWasmSudokuState);
-            return await wasmSudokuProxy.export(format);
+            const wasmSudoku = await get(wasmSudokuState);
+            return wasmSudoku.export(format);
         }, []),
     );
 }
 
 export function useTryStrategies() {
     return useAtomCallback(
-        useCallback(async (get, set, strategies: StrategyEnums) => {
-            const wasmSudokuProxy = await get(remoteWasmSudokuState);
-            const res = await wasmSudokuProxy.tryStrategies(strategies);
-            await updateSudoku({ set, wasmSudokuProxy });
+        useCallback(async (get, set, strategies: StrategySet) => {
+            const wasmSudoku = await get(wasmSudokuState);
+            const res = await wasmSudoku.tryStrategies(strategies);
+            updateSudoku({ set, wasmSudoku });
             return res;
         }, []),
     );
@@ -536,9 +565,9 @@ export function useTryStrategies() {
 export function useApplyDeductions() {
     return useAtomCallback(
         useCallback(async (get, set, deductions: TransportDeductions) => {
-            const wasmSudokuProxy = await get(remoteWasmSudokuState);
-            await wasmSudokuProxy.applyDeductions(deductions);
-            await updateSudoku({ set, wasmSudokuProxy });
+            const wasmSudoku = await get(wasmSudokuState);
+            wasmSudoku.applyDeductions(deductions);
+            updateSudoku({ set, wasmSudoku });
         }, []),
     );
 }

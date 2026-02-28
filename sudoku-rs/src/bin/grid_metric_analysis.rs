@@ -1,5 +1,7 @@
 //! Statistical analysis of grid metrics
 
+// TODO: unslop
+
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
@@ -14,7 +16,6 @@ use sudoku::generator::multi_shot::{EvaluatedGridMetric, GridMetric};
 use sudoku::generator::{Generator, GeneratorSettings, PruningSettings};
 use sudoku::grid::Grid;
 use sudoku::match_base_enum;
-use sudoku::solver::strategic::strategies::StrategyEnum;
 use sudoku::{base::BaseEnum, solver::strategic::strategies::selection::StrategySet};
 
 #[derive(Parser, Debug)]
@@ -416,7 +417,7 @@ fn run_analysis<Base: SudokuBase>() -> Result<()> {
         args.samples, args.base
     );
 
-    let strategies = StrategyEnum::default_solver_strategies_no_brute_force();
+    let strategies = StrategySet::default_solver_strategies_no_brute_force();
 
     let generator_settings = GeneratorSettings {
         prune: Some(PruningSettings {

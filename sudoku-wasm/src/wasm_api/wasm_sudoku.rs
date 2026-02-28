@@ -179,11 +179,11 @@ impl WasmSudoku {
     #[wasm_bindgen(js_name = tryStrategies)]
     pub fn try_strategies(
         &mut self,
-        strategies: IStrategyEnums,
+        strategies: IStrategySet,
     ) -> Result<Option<IDynamicSolveStep>> {
         let opt_dyn_solve_step = self
             .sudoku
-            .try_strategies(import_strategy_enums(strategies)?)?;
+            .try_strategies(import_strategy_set(strategies)?)?;
 
         opt_dyn_solve_step
             .map(export_dynamic_solve_step)
