@@ -49,7 +49,7 @@ Phase 1 (Foundations):
   003 Accessibility ───────────┤
                                │
 Phase 2 (Polish):              │
-  004 Completion Celebration ◄─┤ (uses timer + difficulty)
+  004 Completion Celebration ◄─┤ (optionally uses timer + difficulty)
   005 Manual Theme Toggle      │
   006 Enhanced Keyboard ◄──────┘ (related to a11y)
 

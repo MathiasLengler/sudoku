@@ -83,7 +83,7 @@ Track and display player statistics including games played, games completed, ave
 | **Dependency chain:** Full statistics require timer (001) and difficulty (002) | Implement statistics incrementally: track games played/completed first (no dependencies), add time and difficulty when available. |
 | **Performance:** Aggregating 500 records on page load | Pre-compute aggregated statistics and store them separately. Only recompute when a new record is added. |
 | **Privacy concerns:** Tracking gameplay data may feel invasive | All data is local-only and never transmitted. Document this clearly. Provide a "Clear Statistics" button. |
-| **Bundle size:** Chart libraries can be large | Use CSS-only charts (flexbox bars) or a minimal library like `uplot` (~8KB). Avoid heavy libraries like Chart.js (~200KB). |
+| **Bundle size:** Chart libraries can be large | Use CSS-only charts (flexbox bars) or a minimal library like `uplot` (~8KB). Avoid heavy libraries like Chart.js (~65KB min). |
 
 ## Testing Approach
 
