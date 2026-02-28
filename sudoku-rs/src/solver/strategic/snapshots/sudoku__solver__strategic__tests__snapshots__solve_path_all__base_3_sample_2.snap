@@ -1479,6 +1479,39 @@ expression: all_possible_solve_steps
                 column: 1
               deleteCandidates:
                 - 1
+  - strategy: YWing
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 3
+                column: 4
+              candidates:
+                - 7
+                - 8
+            - position:
+                row: 4
+                column: 3
+              candidates:
+                - 5
+                - 7
+            - position:
+                row: 8
+                column: 4
+              candidates:
+                - 5
+                - 8
+          actions:
+            - position:
+                row: 6
+                column: 3
+              deleteCandidates:
+                - 5
+            - position:
+                row: 8
+                column: 3
+              deleteCandidates:
+                - 5
 - - strategy: NakedSingles
     deductions:
       deductions:
