@@ -1,3 +1,5 @@
+# WASM
+
 # Reference: https://github.com/RReverser/wasm-bindgen-rayon/tree/main?tab=readme-ov-file#using-config-files
 [target.wasm32-unknown-unknown]
 rustflags = [
@@ -26,3 +28,7 @@ rustflags = [
 # Workaround: pass as CLI args to wasm-pack
 #[unstable]
 #build-std = ["panic_abort", "std"]
+
+# https://doc.rust-lang.org/cargo/guide/build-performance.html#enable-the-experimental-parallel-frontend
+[build]
+rustflags = "-Zthreads=8"

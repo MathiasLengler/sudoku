@@ -1,0 +1,5 @@
+---
+source: sudoku-rs/src/grid/format/values_line.rs
+expression: ValuesLine.render(&grid)
+---
+590000147000900008072000030700040290020030806800170050005764009036005000100800002
