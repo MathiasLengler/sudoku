@@ -48,23 +48,19 @@ impl Strategy for XyzWing {
 fn find_xyz_wings<Base: SudokuBase>(grid: &Grid<Base>) -> Deductions<Base> {
     let candidates_positions = grid.all_candidates_positions();
 
-    // Collect cells with exactly 2 candidates (potential wings)
-    let bi_value_cells: Vec<_> = candidates_positions
-        .iter()
-        .filter_map(|&pos| {
-            let candidates = grid[pos].candidates()?;
-            (candidates.count() == 2).then_some((pos, candidates))
-        })
-        .collect();
+    // Single pass to categorize cells into bi-value (potential wings) and tri-value (potential pivots)
+    let mut bi_value_cells = Vec::new();
+    let mut tri_value_cells = Vec::new();
 
-    // Collect cells with exactly 3 candidates (potential pivots)
-    let tri_value_cells: Vec<_> = candidates_positions
-        .iter()
-        .filter_map(|&pos| {
-            let candidates = grid[pos].candidates()?;
-            (candidates.count() == 3).then_some((pos, candidates))
-        })
-        .collect();
+    for &pos in &candidates_positions {
+        if let Some(candidates) = grid[pos].candidates() {
+            match candidates.count() {
+                2 => bi_value_cells.push((pos, candidates)),
+                3 => tri_value_cells.push((pos, candidates)),
+                _ => {}
+            }
+        }
+    }
 
     let mut deductions_vec = Vec::new();
 
@@ -161,10 +157,12 @@ fn build_deduction<Base: SudokuBase>(
                 (pivot_pos, Reason::candidates(pivot_candidates)),
                 (
                     wing1_pos,
+                    // Safe: wing positions were collected from all_candidates_positions and grid is immutable
                     Reason::candidates(grid[wing1_pos].candidates().unwrap()),
                 ),
                 (
                     wing2_pos,
+                    // Safe: wing positions were collected from all_candidates_positions and grid is immutable
                     Reason::candidates(grid[wing2_pos].candidates().unwrap()),
                 ),
             ],
