@@ -185,6 +185,7 @@ pub mod selection {
                 locked_sets: true,
                 group_intersection_both: true,
                 x_wing: true,
+                swordfish: true,
                 brute_force: true,
                 ..StrategySet::with_all(false)
             }
