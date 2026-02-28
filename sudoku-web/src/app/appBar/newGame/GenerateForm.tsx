@@ -5,13 +5,18 @@ import TabPanel from "@mui/lab/TabPanel";
 import { Box, DialogContent, FormGroup, LinearProgress, Stack, Typography } from "@mui/material";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
+import { useNotifications } from "@toolpad/core/useNotifications";
 import * as _ from "es-toolkit";
 import { useAtom } from "jotai";
 import { useEffect } from "react";
-import { SelectElement, SliderElement, SwitchElement, TextFieldElement, useForm } from "react-hook-form-mui";
+import { useForm, useWatch } from "react-hook-form";
 import type { DynamicGeneratorSettings, GeneratorProgress } from "../../../types";
 import { useGenerate, useGenerateMultiShot, type TrackedMultiShotGeneratorProgress } from "../../actions/sudokuActions";
 import { Fieldset } from "../../components/Fieldset";
+import { MySelect } from "../../components/formFragments/mui-rhf/MySelect";
+import { MySlider } from "../../components/formFragments/mui-rhf/MySlider";
+import { MySwitch } from "../../components/formFragments/mui-rhf/MySwitch";
+import { MyTextField } from "../../components/formFragments/mui-rhf/MyTextField";
 import SelectStrategies from "../../components/formFragments/SelectStrategies";
 import SelectStrategy from "../../components/formFragments/SelectStrategy";
 import MyIconButton from "../../components/MyIconButton";
@@ -30,7 +35,6 @@ import {
     MAX_ITERATIONS_INDEX,
     MIN_ITERATIONS_INDEX,
     SEED_MAX,
-    type GenerateFormValues,
 } from "../../state/forms/generate";
 import { BASE_MARKS, BASE_MAX, BASE_MIN, baseToLabel, parseBase } from "../../utils/base";
 import { baseToCellCount } from "../../utils/sudoku";
@@ -64,7 +68,12 @@ type GenerateProgressProps = {
 };
 function GenerateProgress({ progress, cellCount }: GenerateProgressProps) {
     if (!progress) {
-        return <GenerateProgressLayout linearProgress={<LinearProgress />} description={"Generating solution"} />;
+        return (
+            <GenerateProgressLayout
+                linearProgress={<LinearProgress variant="determinate" value={0} />}
+                description={"Generating solution"}
+            />
+        );
     }
 
     const { pruningPositionCount, pruningPositionIndex, deletedCount } = progress;
@@ -87,7 +96,7 @@ function GenerateMultiShotProgress({ trackedMultiShotGeneratorProgress }: Genera
     if (!trackedMultiShotGeneratorProgress) {
         return (
             <GenerateProgressLayout
-                linearProgress={<LinearProgress />}
+                linearProgress={<LinearProgress variant="buffer" value={0} valueBuffer={0} />}
                 description={"Initializing multi-shot generator"}
             />
         );
@@ -108,7 +117,9 @@ function GenerateMultiShotProgress({ trackedMultiShotGeneratorProgress }: Genera
             linearProgress={
                 <LinearProgress variant="buffer" value={finishedPercentage} valueBuffer={processingPercentage} />
             }
-            description={`Iteration ${finishedIterationsCount}/${totalIterations}, in progress: ${inProgressCount}`}
+            description={`Iteration ${finishedIterationsCount}/${totalIterations}, in progress: ${inProgressCount}, best metric: ${
+                trackedMultiShotGeneratorProgress.bestEvaluatedGridMetric ?? "-"
+            }`}
         />
     );
 }
@@ -117,29 +128,25 @@ type GenerateFormProps = {
     onClose: () => void;
 };
 export function GenerateForm({ onClose }: GenerateFormProps) {
+    const notifications = useNotifications();
     const [generateFormValues, setGenerateFormValues] = useAtom(generateFormValuesState);
 
     const {
         control,
         handleSubmit,
-        watch,
         formState: { isSubmitting },
         setValue,
         reset,
-    } = useForm<GenerateFormValues>({
-        values: generateFormValues,
+    } = useForm({
+        values: generateFormValuesSchema.encode(generateFormValues),
         resolver: zodResolver(generateFormValuesSchema),
     });
 
-    const formValues = watch();
+    const [base, minGivens, useSeed, multiShot, metric] = useWatch({
+        control,
+        name: ["base", "minGivens", "useSeed", "multiShot", "metric"],
+    });
 
-    const [base, minGivens, useSeed, multiShot, metric] = watch([
-        "base",
-        "minGivens",
-        "useSeed",
-        "multiShot",
-        "metric",
-    ]);
     const cellCount = baseToCellCount(base);
 
     useEffect(() => {
@@ -166,7 +173,7 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
                 <TabPanel value={"generate-form" satisfies NewGameTabValue} sx={{ p: 0 }}>
                     <form
                         id="generate-form"
-                        onSubmit={handleSubmit(async () => {
+                        onSubmit={handleSubmit(async (formValues) => {
                             const {
                                 base,
                                 minGivens,
@@ -199,12 +206,18 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
 
                             try {
                                 if (multiShot) {
-                                    await generateMultiShot({
+                                    const { bestEvaluatedGridMetric } = await generateMultiShot({
                                         generatorSettings,
                                         iterations: iterationsIndexToIterations(iterationsIndex),
                                         metric,
                                         optimize,
                                         parallel,
+                                    });
+
+                                    const metricLabel = GRID_METRIC_OPTIONS[metric.kind].label;
+                                    notifications.show(`${metricLabel} = ${bestEvaluatedGridMetric}`, {
+                                        key: "multi-shot-result",
+                                        severity: "info",
                                     });
                                 } else {
                                     await generate(generatorSettings);
@@ -223,7 +236,7 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
                         })}
                     >
                         <Stack spacing={2}>
-                            <SliderElement
+                            <MySlider
                                 control={control}
                                 name="base"
                                 label="Size"
@@ -234,7 +247,7 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
                                 getAriaLabel={() => "Size"}
                                 getAriaValueText={(base) => baseToLabel(base)}
                             />
-                            <SliderElement
+                            <MySlider
                                 control={control}
                                 name="minGivens"
                                 label="Minimum number of givens"
@@ -252,17 +265,13 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
                             <SelectStrategies control={control} name="strategies" />
 
                             <Fieldset label="Post generation">
-                                <SwitchElement
-                                    control={control}
-                                    name="setAllDirectCandidates"
-                                    label="Fill candidates"
-                                />
+                                <MySwitch control={control} name="setAllDirectCandidates" label="Fill candidates" />
                             </Fieldset>
 
                             <Fieldset label="Random seed">
                                 <FormGroup row>
-                                    <SwitchElement control={control} name="useSeed" label="Use seed" />
-                                    <TextFieldElement
+                                    <MySwitch control={control} name="useSeed" label="Use seed" />
+                                    <MyTextField
                                         sx={{ flex: 1 }}
                                         control={control}
                                         name="seed"
@@ -290,15 +299,10 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
                                 </FormGroup>
                             </Fieldset>
                             <Fieldset label="Multi-shot settings">
-                                <SwitchElement control={control} name="multiShot" label="Multi-shot" />
-                                <SwitchElement
-                                    control={control}
-                                    name="parallel"
-                                    label="Parallel"
-                                    disabled={!multiShot}
-                                />
+                                <MySwitch control={control} name="multiShot" label="Multi-shot" />
+                                <MySwitch control={control} name="parallel" label="Parallel" disabled={!multiShot} />
                                 <Stack spacing={2}>
-                                    <SliderElement
+                                    <MySlider
                                         control={control}
                                         name="iterationsIndex"
                                         label="Iterations"
@@ -311,7 +315,7 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
                                         getAriaLabel={() => "Iterations"}
                                         getAriaValueText={(iterations) => `${iterations}`}
                                     />
-                                    <SelectElement
+                                    <MySelect
                                         control={control}
                                         name="metric.kind"
                                         label="Metric"
@@ -329,7 +333,7 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
                                     {(GRID_METRIC_NAMES_WITH_STRATEGY as string[]).includes(metric.kind) && (
                                         <SelectStrategy control={control} name="metric.strategy" />
                                     )}
-                                    <SelectElement
+                                    <MySelect
                                         control={control}
                                         name="optimize"
                                         label="Optimize"
@@ -359,7 +363,10 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
                         direction="row"
                         sx={{ width: 1, flex: 1, alignItems: "center", justifyContent: "space-between" }}
                     >
-                        <ResetFormButton disabled={isSubmitting} onClick={() => reset(GENERATE_FORM_DEFAULT_VALUES)} />
+                        <ResetFormButton
+                            disabled={isSubmitting}
+                            onClick={() => reset(generateFormValuesSchema.encode(GENERATE_FORM_DEFAULT_VALUES))}
+                        />
                         <Button
                             type="button"
                             onClick={() => {

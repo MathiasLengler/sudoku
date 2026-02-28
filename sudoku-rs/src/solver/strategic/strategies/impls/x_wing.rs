@@ -282,7 +282,7 @@ mod tests {
         base::consts::*,
         cell::Cell,
         solver::strategic::strategies::test_util::{
-            assert_deductions, assert_deductions_with_grid,
+            assert_deductions, assert_deductions_with_grid, strategy_snapshot_tests,
         },
     };
     use indoc::indoc;
@@ -444,4 +444,6 @@ mod tests {
             assert_deductions_with_grid(&deductions, &expected_deductions, &mut grid);
         }
     }
+
+    strategy_snapshot_tests!(XWing);
 }

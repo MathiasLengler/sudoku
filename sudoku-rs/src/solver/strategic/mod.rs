@@ -124,7 +124,7 @@ mod builder {
 
         pub fn build(self) -> Solver<Base, GridMut, StrategySet> {
             let SolverBuilder { grid, _base } = self;
-            Solver::with_strategies(grid, StrategyEnum::default_solver_strategies())
+            Solver::with_strategies(grid, StrategySet::default_solver_strategies())
         }
     }
 
@@ -293,7 +293,7 @@ impl<
 
     /// The number of times each strategy was applied to the grid.
     pub fn application_count(mut self) -> Result<Option<StrategyMap<StrategyScore>>> {
-        let mut strategy_map = StrategyMap::default();
+        let mut strategy_map = StrategyMap::<StrategyScore>::default();
 
         self.try_for_each(|res| {
             let SolveStep { strategy, .. } = res?;
@@ -494,7 +494,7 @@ mod tests {
         // Solver can solve the input grid
         let mut solver = Solver::with_strategies(
             grid.clone(),
-            StrategyEnum::default_solver_strategies_no_brute_force(),
+            StrategySet::default_solver_strategies_no_brute_force(),
         );
         assert_fallible_solver_single_solution(&mut solver, &grid);
 
@@ -510,7 +510,7 @@ mod tests {
         // Solver can no longer solve it
         let mut solver = Solver::with_strategies(
             ambiguous_grid.clone(),
-            StrategyEnum::default_solver_strategies_no_brute_force(),
+            StrategySet::default_solver_strategies_no_brute_force(),
         );
         assert!(solver.try_solve().unwrap().is_none());
 
@@ -520,41 +520,51 @@ mod tests {
                 pos: Position::top_left(),
                 candidate: Value::default(),
             })
-            .strategies(StrategyEnum::default_solver_strategies_no_brute_force())
+            .strategies(StrategySet::default_solver_strategies_no_brute_force())
             .build();
         assert_fallible_solver_single_solution(&mut solver, &grid);
     }
 
-    #[test]
-    fn test_solve_path() {
-        for grid in crate::samples::base_2() {
-            let mut solver = Solver::with_strategies(
-                grid.clone(),
-                StrategyEnum::default_solver_strategies_no_brute_force(),
-            );
-            let solve_steps = solver.solve_path().collect::<Result<Vec<_>>>().unwrap();
-            println!(
-                "Grid:\n{grid}\nSolve steps:\n{}",
-                solve_steps.into_iter().join("\n")
-            );
-            // TODO: assert
-        }
-    }
+    mod snapshots {
+        use super::*;
+        use crate::test_util::{for_base_grid_samples, test_max_base3, test_max_base4};
 
-    #[test]
-    fn test_solve_path_all() {
-        for grid in crate::samples::base_2() {
-            let mut solver = Solver::with_strategies(
-                grid.clone(),
-                StrategyEnum::default_solver_strategies_no_brute_force(),
-            );
-            let all_possible_solve_steps =
-                solver.solve_path_all().collect::<Result<Vec<_>>>().unwrap();
-            println!(
-                "Grid:\n{grid}\nSolve steps:\n{}",
-                all_possible_solve_steps.into_iter().flatten().join("\n")
-            );
-            // TODO: assert
+        mod solve_path {
+            use super::*;
+
+            test_max_base4!({
+                for_base_grid_samples!(|grid, name| {
+                    let mut solver = Solver::with_strategies(
+                        grid,
+                        StrategySet::default_solver_strategies_no_brute_force(),
+                    );
+                    let solve_steps: Vec<DynamicSolveStep> = solver
+                        .solve_path()
+                        .map(|res| res.map(Into::into))
+                        .collect::<Result<_>>()
+                        .unwrap();
+                    insta::assert_yaml_snapshot!(name, solve_steps);
+                });
+            });
+        }
+
+        mod solve_path_all {
+            use super::*;
+
+            test_max_base3!({
+                for_base_grid_samples!(|grid, name| {
+                    let mut solver = Solver::with_strategies(
+                        grid,
+                        StrategySet::default_solver_strategies_no_brute_force(),
+                    );
+                    let all_possible_solve_steps: Vec<Vec<DynamicSolveStep>> = solver
+                        .solve_path_all()
+                        .map(|res| res.map(|steps| steps.into_iter().map(Into::into).collect()))
+                        .collect::<Result<_>>()
+                        .unwrap();
+                    insta::assert_yaml_snapshot!(name, all_possible_solve_steps);
+                });
+            });
         }
     }
 }

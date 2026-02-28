@@ -2,12 +2,12 @@ use std::fs;
 
 use petgraph::dot::{Config as DotConfig, Dot};
 use petgraph::prelude::*;
-use sudoku::base::consts::*;
 use sudoku::error::Result;
 use sudoku::grid::Grid;
 use sudoku::samples;
 use sudoku::solver::strategic::strategies::StrategyEnum;
 use sudoku::solver::strategic::{SolveStep, Solver};
+use sudoku::{base::consts::*, solver::strategic::strategies::selection::StrategySet};
 
 fn main() -> Result<()> {
     // For each strategy and deduction:
@@ -31,7 +31,7 @@ fn main() -> Result<()> {
         let grid = &mut graph[node_index];
         let solver = Solver::with_strategies(
             grid,
-            StrategyEnum::default_solver_strategies_no_brute_force(),
+            StrategySet::default_solver_strategies_no_brute_force(),
         );
         let all_deductions = solver.try_all_strategies().unwrap();
 

@@ -63,6 +63,13 @@ mod test_util {
     use crate::grid::Grid;
     use crate::solver::strategic::deduction::Deductions;
 
+    #[derive(serde::Serialize)]
+    pub(crate) struct DedudctionInfo<'a> {
+        pub(crate) grid_input: Vec<&'a str>,
+        pub(crate) deductions: Vec<&'a str>,
+        pub(crate) grid_output: Vec<&'a str>,
+    }
+
     pub(crate) fn assert_deductions<Base: SudokuBase>(
         deductions: &Deductions<Base>,
         expected_deductions: &Deductions<Base>,
@@ -82,4 +89,54 @@ mod test_util {
 
         deductions.apply(grid).unwrap();
     }
+
+    macro_rules! strategy_snapshot_tests {
+        ($strategy:expr) => {
+            strategy_snapshot_tests!($strategy, |_grid| {});
+        };
+        ($strategy:expr, |$grid:ident| $assertions:block) => {
+            mod snapshots {
+                use super::*;
+                use $crate::{
+                    grid::format::{CandidatesGridPlain, GridFormat},
+                    solver::strategic::{
+                        deduction::transport::TransportDeductions, strategies::test_util::DedudctionInfo,
+                    },
+                    test_util::{test_max_base4, for_base_grid_samples_direct_candidates},
+                };
+
+                test_max_base4!({
+                    for_base_grid_samples_direct_candidates!(|$grid, grid_name| {
+                        let grid_input = CandidatesGridPlain.render(&$grid);
+
+                        let deductions = $strategy.execute(&$grid).unwrap();
+                        deductions
+                            .apply(&mut $grid)
+                            .expect("Deductions should be applicable to the grid they were generated from");
+
+                        $assertions;
+
+                        let grid_output = CandidatesGridPlain.render(&$grid);
+                        let deductions_str = deductions.to_string();
+                        let info = DedudctionInfo {
+                            grid_input: grid_input.split('\n').collect(),
+                            deductions: deductions_str.split('\n').collect(),
+                            grid_output: grid_output.split('\n').collect(),
+                        };
+
+                        insta::with_settings!({
+                            description => format!("Strategy {} executed on grid {}", $strategy.name(), grid_name),
+                            info => &info
+                        }, {
+                            insta::assert_yaml_snapshot!(
+                                grid_name,
+                                TransportDeductions::from(deductions.clone()),
+                            );
+                        });
+                    })
+                });
+            }
+        };
+    }
+    pub(crate) use strategy_snapshot_tests;
 }

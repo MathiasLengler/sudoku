@@ -1,0 +1,5 @@
+---
+source: sudoku-rs/src/grid/format/values_line.rs
+expression: ValuesLine.render(&grid)
+---
+0000000000000000
