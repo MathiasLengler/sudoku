@@ -950,6 +950,123 @@ expression: all_possible_solve_steps
                 column: 8
               deleteCandidates:
                 - 3
+  - strategy: Swordfish
+    deductions:
+      deductions:
+        - reasons:
+            - position:
+                row: 1
+                column: 1
+              candidates:
+                - 7
+            - position:
+                row: 1
+                column: 3
+              candidates:
+                - 7
+            - position:
+                row: 1
+                column: 4
+              candidates:
+                - 7
+            - position:
+                row: 2
+                column: 1
+              candidates:
+                - 7
+            - position:
+                row: 2
+                column: 3
+              candidates:
+                - 7
+            - position:
+                row: 2
+                column: 4
+              candidates:
+                - 7
+            - position:
+                row: 3
+                column: 1
+              candidates:
+                - 7
+            - position:
+                row: 3
+                column: 3
+              candidates:
+                - 7
+            - position:
+                row: 3
+                column: 4
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 1
+                column: 0
+              deleteCandidates:
+                - 7
+            - position:
+                row: 3
+                column: 0
+              deleteCandidates:
+                - 7
+        - reasons:
+            - position:
+                row: 3
+                column: 0
+              candidates:
+                - 4
+            - position:
+                row: 3
+                column: 1
+              candidates:
+                - 4
+            - position:
+                row: 3
+                column: 7
+              candidates:
+                - 4
+            - position:
+                row: 5
+                column: 0
+              candidates:
+                - 4
+            - position:
+                row: 5
+                column: 1
+              candidates:
+                - 4
+            - position:
+                row: 5
+                column: 7
+              candidates:
+                - 4
+            - position:
+                row: 7
+                column: 0
+              candidates:
+                - 4
+            - position:
+                row: 7
+                column: 1
+              candidates:
+                - 4
+            - position:
+                row: 7
+                column: 7
+              candidates:
+                - 4
+          actions:
+            - position:
+                row: 6
+                column: 0
+              deleteCandidates:
+                - 4
+            - position:
+                row: 6
+                column: 1
+              deleteCandidates:
+                - 4
 - - strategy: NakedSingles
     deductions:
       deductions:
