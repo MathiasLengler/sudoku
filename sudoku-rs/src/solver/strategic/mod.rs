@@ -1,5 +1,6 @@
 use crate::solver::backtracking::CandidatesFilter;
 use crate::solver::strategic::deduction::Deductions;
+use crate::solver::strategic::group_candidate_availability::StrategicGroupAvailability;
 use crate::solver::strategic::strategies::StrategyEnum;
 use crate::solver::{FallibleSolver, strategic::strategies::selection::StrategySet};
 use crate::{base::SudokuBase, solver::strategic::strategies::STRATEGY_SCORE_FIXED_POINT_SCALE};
@@ -16,6 +17,7 @@ pub use step::{DynamicSolveStep, SolveStep};
 use strategies::{Strategy, StrategyScore};
 
 pub mod deduction;
+pub mod group_candidate_availability;
 pub mod strategies;
 
 mod step {
@@ -218,9 +220,12 @@ impl<Base: SudokuBase, GridMut: AsRef<Grid<Base>>, Strategies: StrategySelection
     }
 
     fn execute_strategies_iter(&self) -> impl Iterator<Item = Result<SolveStep<Base>>> + '_ {
-        self.strategies.iter_strategies().filter_map(|strategy| {
+        // Compute the group availability once for all strategies
+        let group_availability = StrategicGroupAvailability::from_grid(self.grid.as_ref());
+
+        self.strategies.iter_strategies().filter_map(move |strategy| {
             trace!("Executing strategy: {strategy:?}");
-            Strategy::execute(strategy, self.grid.as_ref())
+            Strategy::execute_with_availability(strategy, self.grid.as_ref(), &group_availability)
                 .map(|deductions| {
                     (!deductions.is_empty()).then(|| {
                         trace!(

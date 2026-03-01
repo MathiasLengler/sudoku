@@ -20,6 +20,7 @@ use sudoku::position::test_utils::{consume_iter, consume_nested_iter};
 use sudoku::rng::{CrateRng, new_crate_rng_with_seed};
 use sudoku::samples;
 use sudoku::solver::sat;
+use sudoku::solver::strategic::group_candidate_availability::StrategicGroupAvailability;
 use sudoku::solver::strategic::strategies::locked_sets::v2::find_locked_set;
 use sudoku::solver::strategic::strategies::locked_sets::v2::test_utils::locked_set_test_cases_base_3;
 use sudoku::solver::strategic::strategies::{
@@ -345,6 +346,13 @@ fn bench_strategy_group(strategy_group: &mut BenchmarkGroup<WallTime>) {
         |b, grid| b.iter(|| HiddenSingles.execute(grid).unwrap()),
     );
 
+    // Benchmark StrategicGroupAvailability construction
+    strategy_group.bench_with_input(
+        BenchmarkId::new("StrategicGroupAvailability/from_grid", "sample_grid_hidden_singles"),
+        &grid,
+        |b, grid| b.iter(|| StrategicGroupAvailability::from_grid(black_box(grid))),
+    );
+
     for (locked_sets_param_name, candidates_group, _) in locked_set_test_cases_base_3() {
         strategy_group.bench_with_input(
             BenchmarkId::new("LockedSets/find_locked_set", locked_sets_param_name),
@@ -368,6 +376,13 @@ fn bench_strategy_group(strategy_group: &mut BenchmarkGroup<WallTime>) {
         BenchmarkId::new("GroupIntersection/execute", "sample_grid_pointing_pairs_2"),
         &grid,
         |b, grid| b.iter(|| GroupIntersectionBoth.execute(grid).unwrap()),
+    );
+
+    // Benchmark StrategicGroupAvailability construction with pointing pairs grid
+    strategy_group.bench_with_input(
+        BenchmarkId::new("StrategicGroupAvailability/from_grid", "sample_grid_pointing_pairs_2"),
+        &grid,
+        |b, grid| b.iter(|| StrategicGroupAvailability::from_grid(black_box(grid))),
     );
 }
 

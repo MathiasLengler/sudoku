@@ -2,6 +2,7 @@ use crate::base::SudokuBase;
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::solver::strategic::deduction::Deductions;
+use crate::solver::strategic::group_candidate_availability::StrategicGroupAvailability;
 use enum_dispatch::enum_dispatch;
 use std::fmt::Debug;
 
@@ -30,6 +31,19 @@ pub trait Strategy: Debug + Copy + Clone + Eq + Sized {
 
     /// Execute this strategy on the given grid. Returns a list of deductions.
     fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>>;
+
+    /// Execute this strategy on the given grid with pre-computed group availability.
+    /// 
+    /// Strategies that can benefit from the pre-computed group availability should
+    /// override this method. The default implementation ignores the group availability
+    /// and just calls `execute`.
+    fn execute_with_availability<Base: SudokuBase>(
+        self,
+        grid: &Grid<Base>,
+        _group_availability: &StrategicGroupAvailability<Base>,
+    ) -> Result<Deductions<Base>> {
+        self.execute(grid)
+    }
 
     /// Execute this strategy on the given grid and applies the deductions to it.
     /// Returns a list of applied deductions.
