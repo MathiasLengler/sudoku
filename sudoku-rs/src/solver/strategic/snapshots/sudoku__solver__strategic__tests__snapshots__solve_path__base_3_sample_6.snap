@@ -77,7 +77,19 @@ expression: solve_steps
 - strategy: LockedSets
   deductions:
     deductions:
-      - reasons: []
+      - reasons:
+          - position:
+              row: 1
+              column: 1
+            candidates:
+              - 6
+              - 9
+          - position:
+              row: 1
+              column: 7
+            candidates:
+              - 6
+              - 9
         actions:
           - position:
               row: 1
@@ -93,7 +105,19 @@ expression: solve_steps
               - 1
               - 3
               - 4
-      - reasons: []
+      - reasons:
+          - position:
+              row: 7
+              column: 1
+            candidates:
+              - 3
+              - 5
+          - position:
+              row: 8
+              column: 1
+            candidates:
+              - 3
+              - 5
         actions:
           - position:
               row: 7
@@ -430,7 +454,19 @@ expression: solve_steps
 - strategy: LockedSets
   deductions:
     deductions:
-      - reasons: []
+      - reasons:
+          - position:
+              row: 2
+              column: 2
+            candidates:
+              - 4
+              - 5
+          - position:
+              row: 2
+              column: 5
+            candidates:
+              - 4
+              - 5
         actions:
           - position:
               row: 2

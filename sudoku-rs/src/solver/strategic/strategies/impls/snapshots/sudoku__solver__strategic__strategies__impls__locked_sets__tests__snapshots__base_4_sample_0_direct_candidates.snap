@@ -134,16 +134,16 @@ info:
     - ║         │         │         │     f   ║       g │         │       g │         ║       g │     f   │         │       g ║         │         │         │         ║
     - ╚═══════════════════════════════════════╩═══════════════════════════════════════╩═══════════════════════════════════════╩═══════════════════════════════════════╝
   deductions:
-    - "r0c6: delete candidates 2,5,8,9,a,d, because of: "
-    - "r0c15: delete candidate 3, r3c15: delete candidate 3, r14c15: delete candidate 3, because of: "
-    - "r1c7: delete candidate f, r2c7: delete candidate f, r6c7: delete candidate f, r8c7: delete candidate f, because of: "
-    - "r4c5: delete candidates 3,9,b,c,f, because of: "
-    - "r4c12: delete candidates 3,8,9, r5c12: delete candidates 3,8,9,d,g, because of: "
-    - "r8c0: delete candidate 3, r8c2: delete candidate 3, r8c9: delete candidate 3, r8c13: delete candidate 3, r8c14: delete candidate 3, because of: "
-    - "r8c5: delete candidate f, r8c6: delete candidate f, r8c7: delete candidate f, r9c6: delete candidate f, because of: "
-    - "r8c13: delete candidate 3, r8c14: delete candidate 3, r9c12: delete candidate 3, r11c12: delete candidate 3, because of: "
-    - "r9c1: delete candidate f, r9c6: delete candidate f, because of: "
-    - "r13c15: delete candidate 6, because of: "
+    - "r0c6: delete candidates 2,5,8,9,a,d, because of: r0c6: candidate 4"
+    - "r0c15: delete candidate 3, r3c15: delete candidate 3, r14c15: delete candidate 3, because of: r8c15: candidate 3"
+    - "r1c7: delete candidate f, r2c7: delete candidate f, r6c7: delete candidate f, r8c7: delete candidate f, because of: r9c7: candidate f"
+    - "r4c5: delete candidates 3,9,b,c,f, because of: r4c5: candidate 5"
+    - "r4c12: delete candidates 3,8,9, r5c12: delete candidates 3,8,9,d,g, because of: r4c12: candidates 4,7, r5c12: candidates 4,7"
+    - "r8c0: delete candidate 3, r8c2: delete candidate 3, r8c9: delete candidate 3, r8c13: delete candidate 3, r8c14: delete candidate 3, because of: r8c15: candidate 3"
+    - "r8c5: delete candidate f, r8c6: delete candidate f, r8c7: delete candidate f, r9c6: delete candidate f, because of: r9c7: candidate f"
+    - "r8c13: delete candidate 3, r8c14: delete candidate 3, r9c12: delete candidate 3, r11c12: delete candidate 3, because of: r8c15: candidate 3"
+    - "r9c1: delete candidate f, r9c6: delete candidate f, because of: r9c7: candidate f"
+    - "r13c15: delete candidate 6, because of: r13c15: candidate e"
   grid_output:
     - ╔═══════════════════════════════════════╦═══════════════════════════════════════╦═══════════════════════════════════════╦═══════════════════════════════════════╗
     - ║   2     │   2     │         │         ║         │   2 3   │       4 │         ║         │   2 3   │   2 3   │         ║   2 3   │   2 3   │     3   │         ║
@@ -276,7 +276,12 @@ info:
     - ╚═══════════════════════════════════════╩═══════════════════════════════════════╩═══════════════════════════════════════╩═══════════════════════════════════════╝
 ---
 deductions:
-  - reasons: []
+  - reasons:
+      - position:
+          row: 0
+          column: 6
+        candidates:
+          - 4
     actions:
       - position:
           row: 0
@@ -288,7 +293,12 @@ deductions:
           - 9
           - 10
           - 13
-  - reasons: []
+  - reasons:
+      - position:
+          row: 8
+          column: 15
+        candidates:
+          - 3
     actions:
       - position:
           row: 0
@@ -305,7 +315,12 @@ deductions:
           column: 15
         deleteCandidates:
           - 3
-  - reasons: []
+  - reasons:
+      - position:
+          row: 9
+          column: 7
+        candidates:
+          - 15
     actions:
       - position:
           row: 1
@@ -327,7 +342,12 @@ deductions:
           column: 7
         deleteCandidates:
           - 15
-  - reasons: []
+  - reasons:
+      - position:
+          row: 4
+          column: 5
+        candidates:
+          - 5
     actions:
       - position:
           row: 4
@@ -338,7 +358,19 @@ deductions:
           - 11
           - 12
           - 15
-  - reasons: []
+  - reasons:
+      - position:
+          row: 4
+          column: 12
+        candidates:
+          - 4
+          - 7
+      - position:
+          row: 5
+          column: 12
+        candidates:
+          - 4
+          - 7
     actions:
       - position:
           row: 4
@@ -356,7 +388,12 @@ deductions:
           - 9
           - 13
           - 16
-  - reasons: []
+  - reasons:
+      - position:
+          row: 8
+          column: 15
+        candidates:
+          - 3
     actions:
       - position:
           row: 8
@@ -383,7 +420,12 @@ deductions:
           column: 14
         deleteCandidates:
           - 3
-  - reasons: []
+  - reasons:
+      - position:
+          row: 9
+          column: 7
+        candidates:
+          - 15
     actions:
       - position:
           row: 8
@@ -405,7 +447,12 @@ deductions:
           column: 6
         deleteCandidates:
           - 15
-  - reasons: []
+  - reasons:
+      - position:
+          row: 8
+          column: 15
+        candidates:
+          - 3
     actions:
       - position:
           row: 8
@@ -427,7 +474,12 @@ deductions:
           column: 12
         deleteCandidates:
           - 3
-  - reasons: []
+  - reasons:
+      - position:
+          row: 9
+          column: 7
+        candidates:
+          - 15
     actions:
       - position:
           row: 9
@@ -439,7 +491,12 @@ deductions:
           column: 6
         deleteCandidates:
           - 15
-  - reasons: []
+  - reasons:
+      - position:
+          row: 13
+          column: 15
+        candidates:
+          - 14
     actions:
       - position:
           row: 13

@@ -89,9 +89,16 @@ impl Strategy for LockedSets {
                     if let Some(locked_set_info) = locked_set_result.locked_set_info {
                         for coordinate in locked_set_info.locked_set_coordinates {
                             let position = group_positions[coordinate.get_usize()];
-                            deduction
-                                .reasons
-                                .insert(position, Reason::Candidates(locked_set_info.locked_candidates))?;
+                            // Intersect with the cell's actual candidates, since not all cells
+                            // in a locked set necessarily contain all locked candidates
+                            // (e.g., a naked triple {1,2}, {1,3}, {2,3} has locked candidates {1,2,3}).
+                            let cell_candidates = grid[position].to_candidates();
+                            let reason_candidates = locked_set_info.locked_candidates.intersection(cell_candidates);
+                            if !reason_candidates.is_empty() {
+                                deduction
+                                    .reasons
+                                    .insert(position, Reason::Candidates(reason_candidates))?;
+                            }
                         }
                     }
                     Ok(Some(deduction))
