@@ -170,25 +170,23 @@ fn try_type2<Base: SudokuBase>(
     grid: &Grid<Base>,
     pair: Candidates<Base>,
     corners: [Position<Base>; 4],
-) -> Vec<Deduction<Base>> {
+) -> Option<Deduction<Base>> {
     let mut floor_positions = Vec::with_capacity(2);
     let mut roof_positions = Vec::with_capacity(2);
 
     for pos in corners {
-        let Some(candidates) = grid[pos].candidates() else {
-            return Vec::new();
-        };
+        let candidates = grid[pos].candidates()?;
         if candidates == pair {
             floor_positions.push(pos);
         } else if candidates.intersection(pair) == pair {
             roof_positions.push((pos, candidates));
         } else {
-            return Vec::new();
+            return None;
         }
     }
 
     if floor_positions.len() != 2 || roof_positions.len() != 2 {
-        return Vec::new();
+        return None;
     }
 
     let (roof1_pos, roof1_candidates) = roof_positions[0];
@@ -199,7 +197,7 @@ fn try_type2<Base: SudokuBase>(
     let roof2_extras = roof2_candidates.without(pair);
 
     if roof1_extras.count() != 1 || roof1_extras != roof2_extras {
-        return Vec::new();
+        return None;
     }
 
     let extra = roof1_extras;
@@ -209,54 +207,38 @@ fn try_type2<Base: SudokuBase>(
     let in_same_column = roof1_pos.to_column() == roof2_pos.to_column();
 
     if !in_same_row && !in_same_column {
-        return Vec::new();
+        return None;
     }
 
     // Find cells that see both roof cells and contain the extra candidate
-    // A cell "sees" another if they share a row, column, or block
-    let mut deductions = Vec::new();
-    let mut actions = Vec::new();
+    let actions: Vec<_> = Position::<Base>::all()
+        .filter(|&pos| pos != roof1_pos && pos != roof2_pos)
+        .filter(|&pos| {
+            grid[pos]
+                .candidates()
+                .is_some_and(|c| !c.intersection(extra).is_empty())
+        })
+        .filter(|&pos| shares_group(pos, roof1_pos) && shares_group(pos, roof2_pos))
+        .map(|pos| (pos, Action::delete_candidates(extra)))
+        .collect();
 
-    for pos in Position::<Base>::all() {
-        if pos == roof1_pos || pos == roof2_pos {
-            continue;
-        }
-
-        let Some(candidates) = grid[pos].candidates() else {
-            continue;
-        };
-
-        if candidates.intersection(extra).is_empty() {
-            continue;
-        }
-
-        let sees_roof1 = shares_group(pos, roof1_pos);
-        let sees_roof2 = shares_group(pos, roof2_pos);
-
-        if sees_roof1 && sees_roof2 {
-            actions.push((pos, Action::delete_candidates(extra)));
-        }
+    if actions.is_empty() {
+        return None;
     }
 
-    if !actions.is_empty() {
-        let reasons: Vec<_> = corners.into_iter().map(|pos| {
-            let reason_candidates = if pos == roof1_pos || pos == roof2_pos {
-                pair.union(extra)
-            } else {
-                pair
-            };
-            (pos, Reason::candidates(reason_candidates))
-        }).collect();
+    // All 4 corners form the deadly pattern and are included as reasons.
+    // Roof cells highlight the pair + extra, floor cells highlight just the pair.
+    let reasons: Vec<_> = roof_positions
+        .iter()
+        .map(|&(pos, _)| (pos, Reason::candidates(pair.union(extra))))
+        .chain(
+            floor_positions
+                .iter()
+                .map(|&pos| (pos, Reason::candidates(pair))),
+        )
+        .collect();
 
-        if let Ok(deduction) = Deduction::try_from_iters(
-            actions,
-            reasons,
-        ) {
-            deductions.push(deduction);
-        }
-    }
-
-    deductions
+    Deduction::try_from_iters(actions, reasons).ok()
 }
 
 /// Check if two positions share any group (row, column, or block).
