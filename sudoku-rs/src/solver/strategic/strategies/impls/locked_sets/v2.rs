@@ -2,22 +2,32 @@ use crate::{
     base::SudokuBase,
     cell::{Candidates, Value},
     grid::group::{CandidatesGroup, Group},
+    position::Coordinate,
 };
 use itertools::Itertools;
 use log::{debug, trace};
 
-// TODO: change API: return deduction
-// => Deduction are currently hard-coded for Position.
-// since this has only knowledge about a single group, it can't refer to grid positions, only group coordinates/indexes.
-// new type: GroupDeduction<Base>
-// Signature:
-// fn find_locked_set<Base: SudokuBase>(
-//     candidates_group: CandidatesGroup<Base>,
-// ) -> Option<GroupDeduction<Base>>
+/// Information about a found locked set.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LockedSetInfo<Base: SudokuBase> {
+    /// The coordinates within the group that form the locked set.
+    pub locked_set_coordinates: Vec<Coordinate<Base>>,
+    /// The candidates that are locked to those coordinates.
+    pub locked_candidates: Candidates<Base>,
+}
+
+/// Result of searching for a locked set in a candidates group.
+#[derive(Debug, Clone)]
+pub struct LockedSetResult<Base: SudokuBase> {
+    /// The reduced candidates group after applying the locked set.
+    pub reduced_candidates_group: CandidatesGroup<Base>,
+    /// Information about the locked set found, if any.
+    pub locked_set_info: Option<LockedSetInfo<Base>>,
+}
 
 pub fn find_locked_set<Base: SudokuBase>(
     candidates_group: &CandidatesGroup<Base>,
-) -> CandidatesGroup<Base> {
+) -> LockedSetResult<Base> {
     const ENABLE_STATS: bool = false;
     debug!("Searching for locked set in:\n{candidates_group}");
 
@@ -141,24 +151,52 @@ pub fn find_locked_set<Base: SudokuBase>(
                     .iter_index_mask(locked_set_indexes)
                     .join("\n")
             );
-            let mut candidates_group = candidates_group.clone();
-            candidates_group
+            let mut reduced_candidates_group = candidates_group.clone();
+            reduced_candidates_group
                 .iter_mut_index_mask(outside_set_indexes)
                 .for_each(|candidates| *candidates = candidates.without(removed_candidates_by_set));
 
+            // For hidden sets (is_transposed), the locked_set_indexes represent candidate values,
+            // not cell positions. We need to convert back to cell positions.
+            let locked_set_coordinates: Vec<Coordinate<Base>> = if is_transposed {
+                // For hidden sets: locked_set_indexes contains the candidate values that are locked.
+                // The cell positions are the intersection of positions where these candidates appear.
+                // We need to find which cells contain the locked candidates.
+                locked_candidates.iter().map(Coordinate::from).collect()
+            } else {
+                // For naked sets: locked_set_indexes directly represents cell positions
+                locked_set_indexes.iter().map(Coordinate::from).collect()
+            };
+
             if is_transposed {
-                candidates_group = candidates_group.transpose();
+                reduced_candidates_group = reduced_candidates_group.transpose();
             }
 
             trace!(
                 "evaluated_locked_set_count_per_set_size: {evaluated_locked_set_count_per_set_size}"
             );
-            return candidates_group;
+            return LockedSetResult {
+                reduced_candidates_group,
+                locked_set_info: Some(LockedSetInfo {
+                    locked_set_coordinates,
+                    locked_candidates: if is_transposed {
+                        // For hidden sets: the locked "candidates" from the transposed view
+                        // are actually the cell position indexes. The actual locked candidates
+                        // are the locked_set_indexes (which represent candidate values).
+                        locked_set_indexes.iter().collect()
+                    } else {
+                        locked_candidates
+                    },
+                }),
+            };
         }
     }
 
     debug!("No locked set found");
-    candidates_group.clone()
+    LockedSetResult {
+        reduced_candidates_group: candidates_group.clone(),
+        locked_set_info: None,
+    }
 }
 
 // Used by benchmarking harness
@@ -1064,8 +1102,8 @@ mod tests {
         let actual_output = find_locked_set(input);
 
         assert_eq!(
-            &actual_output, expected_output,
-            "Test case {test_case_name}:\n{actual_output}!=\n{expected_output}"
+            &actual_output.reduced_candidates_group, expected_output,
+            "Test case {test_case_name}:\n{:?}!=\n{expected_output}", actual_output.reduced_candidates_group
         );
     }
 
@@ -1096,11 +1134,11 @@ mod tests {
         where
             Base::Group<Candidates<Base>>: PartialEq,
         {
-            let reduced = find_locked_set(candidates_group);
-            if &reduced == candidates_group {
-                return reduced;
+            let result = find_locked_set(candidates_group);
+            if &result.reduced_candidates_group == candidates_group {
+                return result.reduced_candidates_group;
             }
-            v2_recusive(&reduced)
+            v2_recusive(&result.reduced_candidates_group)
         }
 
         type Base = Base2;

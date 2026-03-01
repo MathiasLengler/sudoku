@@ -6,7 +6,8 @@ use crate::cell::Value;
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::grid::group::CandidatesGroup;
-use crate::solver::strategic::deduction::{Action, Deduction, Deductions};
+use crate::position::Position;
+use crate::solver::strategic::deduction::{Action, Deduction, Deductions, Reason};
 use crate::solver::strategic::strategies::Strategy;
 use crate::solver::strategic::strategies::StrategyScore;
 
@@ -16,7 +17,6 @@ pub mod v2;
 //  - https://en.wikipedia.org/wiki/Strongly_connected_component
 //  - https://opensourc.es/blog/sudoku/
 //  This seems to be the bottleneck for the goal generator
-// TODO: produce decuction reasons
 // TODO: parameterize strategy
 //  set size
 //  naked/hidden
@@ -49,6 +49,9 @@ impl Strategy for LockedSets {
                     .try_into()
                     .unwrap();
 
+                // Collect positions for later use when building reasons
+                let group_positions: Vec<Position<Base>> = group.clone().collect();
+
                 // let (positions, candidates_group): (Vec<_>, Vec<_>) = group
                 //     .filter_map(|pos| {
                 //         grid.get(pos)
@@ -62,13 +65,15 @@ impl Strategy for LockedSets {
                 //  For large candidates groups, v2 is way faster, up to 6ms vs 220ns / 20_000x speed-up (Strategies/LockedSets/v2/find_locked_set/all)
                 // Either optimize v2 to be faster or at least comparable to v1 in all cases.
                 // Or use introspective implementation, which switches between the two implementation based on a heuristic.
-                let reduced_candidates_group = v2::find_locked_set(&candidates_group);
+                let locked_set_result = v2::find_locked_set(&candidates_group);
 
                 let mut deduction = Deduction::new();
 
-                for (position, candidates, reduced_candidates) in
-                    izip!(group, candidates_group, reduced_candidates_group)
-                {
+                for (position, candidates, reduced_candidates) in izip!(
+                    group,
+                    candidates_group,
+                    locked_set_result.reduced_candidates_group
+                ) {
                     if candidates != reduced_candidates {
                         deduction.actions.insert(
                             position,
@@ -80,6 +85,22 @@ impl Strategy for LockedSets {
                 if deduction.is_empty() {
                     Ok(None)
                 } else {
+                    // Add reasons for the locked set if found
+                    if let Some(locked_set_info) = locked_set_result.locked_set_info {
+                        for coordinate in locked_set_info.locked_set_coordinates {
+                            let position = group_positions[coordinate.get_usize()];
+                            // Intersect with the cell's actual candidates, since not all cells
+                            // in a locked set necessarily contain all locked candidates
+                            // (e.g., a naked triple {1,2}, {1,3}, {2,3} has locked candidates {1,2,3}).
+                            let cell_candidates = grid[position].to_candidates();
+                            let reason_candidates = locked_set_info.locked_candidates.intersection(cell_candidates);
+                            if !reason_candidates.is_empty() {
+                                deduction
+                                    .reasons
+                                    .insert(position, Reason::Candidates(reason_candidates))?;
+                            }
+                        }
+                    }
                     Ok(Some(deduction))
                 }
             })
@@ -408,42 +429,83 @@ mod tests {
         let deductions = LockedSets.execute(&grid).unwrap();
 
         let expected_deductions: Deductions<_> = vec![
-            vec![
-                // Pair 1,6 in row 0
-                ((0, 3), vec![1]),
-                ((0, 4), vec![1, 6]),
-                ((0, 5), vec![6]),
-            ],
-            vec![
-                // Pair 1,6 in block 0,0
-                ((2, 0), vec![1]),
-            ],
-            vec![
-                // Pair 6,7 in row 2
-                ((2, 0), vec![7]),
-                ((2, 4), vec![6, 7]),
-            ],
-            vec![
-                // Pair 4,8 in block 1,1
-                ((3, 4), vec![8]),
-                ((5, 4), vec![8]),
-            ],
-            vec![
-                // Pair 5,8 in block 1,2
-                ((3, 7), vec![5, 8]),
-                ((5, 8), vec![5]),
-            ],
+            (
+                vec![
+                    // reasons: Pair 1,6 at positions (0,1) and (0,2)
+                    ((0, 1), vec![1, 6]),
+                    ((0, 2), vec![1, 6]),
+                ],
+                vec![
+                    // actions: Pair 1,6 in row 0
+                    ((0, 3), vec![1]),
+                    ((0, 4), vec![1, 6]),
+                    ((0, 5), vec![6]),
+                ],
+            ),
+            (
+                vec![
+                    // reasons: Pair 1,6 at positions (0,1) and (0,2) in block 0,0
+                    ((0, 1), vec![1, 6]),
+                    ((0, 2), vec![1, 6]),
+                ],
+                vec![
+                    // actions: Pair 1,6 in block 0,0
+                    ((2, 0), vec![1]),
+                ],
+            ),
+            (
+                vec![
+                    // reasons: Pair 6,7 at positions (2,5) and (2,8)
+                    ((2, 5), vec![6, 7]),
+                    ((2, 8), vec![6, 7]),
+                ],
+                vec![
+                    // actions: Pair 6,7 in row 2
+                    ((2, 0), vec![7]),
+                    ((2, 4), vec![6, 7]),
+                ],
+            ),
+            (
+                vec![
+                    // reasons: Pair 4,8 at positions (4,3) and (4,4) in block 1,1
+                    ((4, 3), vec![4, 8]),
+                    ((4, 4), vec![4, 8]),
+                ],
+                vec![
+                    // actions: Pair 4,8 in block 1,1
+                    ((3, 4), vec![8]),
+                    ((5, 4), vec![8]),
+                ],
+            ),
+            (
+                vec![
+                    // reasons: Pair 5,8 at positions (3,6) and (5,6) in block 1,2
+                    ((3, 6), vec![5, 8]),
+                    ((5, 6), vec![5, 8]),
+                ],
+                vec![
+                    // actions: Pair 5,8 in block 1,2
+                    ((3, 7), vec![5, 8]),
+                    ((5, 8), vec![5]),
+                ],
+            ),
         ]
         .into_iter()
-        .map(|positioned_candidates| {
-            Deduction::try_from_actions(positioned_candidates.into_iter().map(
-                |(pos, candidates)| {
+        .map(|(reasons, actions)| {
+            Deduction::try_from_iters(
+                actions.into_iter().map(|(pos, candidates)| {
                     (
-                        pos.try_into().unwrap(),
+                        pos,
                         Action::DeleteCandidates(Candidates::try_from(candidates).unwrap()),
                     )
-                },
-            ))
+                }),
+                reasons.into_iter().map(|(pos, candidates)| {
+                    (
+                        pos,
+                        Reason::Candidates(Candidates::try_from(candidates).unwrap()),
+                    )
+                }),
+            )
             .unwrap()
         })
         .collect();
@@ -469,27 +531,47 @@ mod tests {
         let deductions = LockedSets.execute(&grid).unwrap();
 
         let expected_deductions: Deductions<_> = vec![
-            vec![
-                // Hidden pair 2,4 in block 1,0 and column 2
-                ((3, 2), vec![5, 6]),
-                ((4, 2), vec![3, 6, 7]),
-            ],
-            vec![
-                // Hidden pair 3,7 in block 1,2 and column 6
-                ((4, 6), vec![6, 9]),
-                ((5, 6), vec![1, 5, 9]),
-            ],
+            (
+                vec![
+                    // reasons: Hidden pair 2,4 at positions (3,2) and (4,2)
+                    ((3, 2), vec![2, 4]),
+                    ((4, 2), vec![2, 4]),
+                ],
+                vec![
+                    // actions: Hidden pair 2,4 in block 1,0 and column 2
+                    ((3, 2), vec![5, 6]),
+                    ((4, 2), vec![3, 6, 7]),
+                ],
+            ),
+            (
+                vec![
+                    // reasons: Hidden pair 3,7 at positions (4,6) and (5,6)
+                    ((4, 6), vec![3, 7]),
+                    ((5, 6), vec![3, 7]),
+                ],
+                vec![
+                    // actions: Hidden pair 3,7 in block 1,2 and column 6
+                    ((4, 6), vec![6, 9]),
+                    ((5, 6), vec![1, 5, 9]),
+                ],
+            ),
         ]
         .into_iter()
-        .map(|positioned_candidates| {
-            Deduction::try_from_actions(positioned_candidates.into_iter().map(
-                |(pos, candidates)| {
+        .map(|(reasons, actions)| {
+            Deduction::try_from_iters(
+                actions.into_iter().map(|(pos, candidates)| {
                     (
-                        pos.try_into().unwrap(),
+                        pos,
                         Action::DeleteCandidates(Candidates::try_from(candidates).unwrap()),
                     )
-                },
-            ))
+                }),
+                reasons.into_iter().map(|(pos, candidates)| {
+                    (
+                        pos,
+                        Reason::Candidates(Candidates::try_from(candidates).unwrap()),
+                    )
+                }),
+            )
             .unwrap()
         })
         .collect();
