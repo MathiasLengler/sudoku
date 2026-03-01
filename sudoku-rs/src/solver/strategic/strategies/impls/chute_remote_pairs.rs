@@ -322,7 +322,9 @@ mod tests {
 
             let deduction = deductions.iter().next().unwrap();
 
-            let action = deduction.actions.iter()
+            let action = deduction
+                .actions
+                .iter()
                 .find(|(pos, _)| *pos == target_pos);
             assert!(action.is_some(), "Expected elimination at (0,6)");
             let (_, action) = action.unwrap();
