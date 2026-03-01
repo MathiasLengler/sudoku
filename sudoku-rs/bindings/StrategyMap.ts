@@ -3,4 +3,4 @@
 /**
  * A map of `StrategyEnum` to `T`.
  */
-export type StrategyMap<T> = { naked_singles: T, hidden_singles: T, naked_pairs: T, locked_sets: T, group_intersection_block_to_axis: T, group_intersection_axis_to_block: T, group_intersection_both: T, x_wing: T, brute_force: T, };
+export type StrategyMap<T> = { naked_singles: T, hidden_singles: T, naked_pairs: T, locked_sets: T, group_intersection_block_to_axis: T, group_intersection_axis_to_block: T, group_intersection_both: T, x_wing: T, chute_remote_pairs: T, brute_force: T, };

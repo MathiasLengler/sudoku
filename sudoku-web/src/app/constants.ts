@@ -12,6 +12,7 @@ export const STRATEGY_NAMES = [
     { strategyEnum: "GroupIntersectionAxisToBlock", mapKey: "group_intersection_axis_to_block" },
     { strategyEnum: "GroupIntersectionBoth", mapKey: "group_intersection_both" },
     { strategyEnum: "XWing", mapKey: "x_wing" },
+    { strategyEnum: "ChuteRemotePairs", mapKey: "chute_remote_pairs" },
     { strategyEnum: "BruteForce", mapKey: "brute_force" },
 ] satisfies { strategyEnum: StrategyEnum; mapKey: keyof StrategyMap<boolean> }[];
 
@@ -68,6 +69,12 @@ export const STRATEGY_OPTIONS: Record<
         label: "X-Wing",
         description: "A candidate appears in exactly two cells in two different rows and columns, forming a rectangle.",
         link: "https://www.sudokuwiki.org/X_Wing_Strategy",
+    },
+    ChuteRemotePairs: {
+        label: "Remote Pairs",
+        description:
+            "Chains of bivalent cells with the same two candidates. Any cell seeing both endpoints of an even-length chain can eliminate those candidates.",
+        link: "https://www.sudokuwiki.org/Remote_Pairs",
     },
     BruteForce: {
         label: "Brute Force",
