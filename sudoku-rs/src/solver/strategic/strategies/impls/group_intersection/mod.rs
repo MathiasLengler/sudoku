@@ -27,8 +27,8 @@ impl Strategy for GroupIntersectionBlockToAxis {
         _grid: &Grid<Base>,
         group_availability: &StrategicGroupAvailability<Base>,
     ) -> Result<Deductions<Base>> {
-        GroupIntersection(GroupIntersectionTypeFilter::BlockToAxis)
-            .execute_with_availability(group_availability)
+        Ok(GroupIntersection(GroupIntersectionTypeFilter::BlockToAxis)
+            .execute_with_availability(group_availability))
     }
 }
 
@@ -50,8 +50,8 @@ impl Strategy for GroupIntersectionAxisToBlock {
         _grid: &Grid<Base>,
         group_availability: &StrategicGroupAvailability<Base>,
     ) -> Result<Deductions<Base>> {
-        GroupIntersection(GroupIntersectionTypeFilter::AxisToBlock)
-            .execute_with_availability(group_availability)
+        Ok(GroupIntersection(GroupIntersectionTypeFilter::AxisToBlock)
+            .execute_with_availability(group_availability))
     }
 }
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -72,8 +72,8 @@ impl Strategy for GroupIntersectionBoth {
         _grid: &Grid<Base>,
         group_availability: &StrategicGroupAvailability<Base>,
     ) -> Result<Deductions<Base>> {
-        GroupIntersection(GroupIntersectionTypeFilter::Both)
-            .execute_with_availability(group_availability)
+        Ok(GroupIntersection(GroupIntersectionTypeFilter::Both)
+            .execute_with_availability(group_availability))
     }
 }
 
@@ -125,10 +125,10 @@ impl GroupIntersection {
     fn execute_with_availability<Base: SudokuBase>(
         self,
         group_availability: &StrategicGroupAvailability<Base>,
-    ) -> Result<Deductions<Base>> {
+    ) -> Deductions<Base> {
         let group_intersection_type_filter = self.0;
 
-        Ok(group_availability
+        group_availability
             .iter()
             .flat_map(|(candidate, candidate_availability)| {
                 BlockSegment::<Base>::all().filter_map(move |block_segment| {
@@ -140,11 +140,11 @@ impl GroupIntersection {
                     )
                 })
             })
-            .collect())
+            .collect()
     }
 
     #[cfg(test)]
-    fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Result<Deductions<Base>> {
+    fn execute<Base: SudokuBase>(self, grid: &Grid<Base>) -> Deductions<Base> {
         let availability = StrategicGroupAvailability::from_grid(grid);
         self.execute_with_availability(&availability)
     }
@@ -306,8 +306,7 @@ mod tests {
                 .unwrap();
 
                 let deductions = GroupIntersection(GroupIntersectionTypeFilter::Both)
-                    .execute(&grid)
-                    .unwrap();
+                    .execute(&grid);
                 assert_eq!(
                     deductions,
                     vec![
@@ -319,16 +318,14 @@ mod tests {
                 );
 
                 let deductions = GroupIntersection(GroupIntersectionTypeFilter::BlockToAxis)
-                    .execute(&grid)
-                    .unwrap();
+                    .execute(&grid);
                 assert_eq!(
                     deductions,
                     vec![expected_deduction_block_to_row].into_iter().collect()
                 );
 
                 let deductions = GroupIntersection(GroupIntersectionTypeFilter::AxisToBlock)
-                    .execute(&grid)
-                    .unwrap();
+                    .execute(&grid);
                 assert_eq!(
                     deductions,
                     vec![expected_deduction_row_to_block].into_iter().collect()
@@ -348,8 +345,7 @@ mod tests {
                     let grid: Grid<Base3> = "9k0341g11k09218g8k3s1s28568150gagigug18sa8062k2g118i419041059003i00h09i09ap8o80hj005o241q282210h0941o00511o241os0384gkogo82111akokq0500950o2oioi8ooo1121gg034105oo".parse().unwrap();
 
                     let deductions = GroupIntersection(GroupIntersectionTypeFilter::BlockToAxis)
-                        .execute(&grid)
-                        .unwrap();
+                        .execute(&grid);
 
                     let expected_deductions = vec![
                         expected_deduction(3, vec![(1, 0), (1, 1), (1, 2)], vec![(1, 6), (1, 8)]),
@@ -375,8 +371,7 @@ mod tests {
                     let grid: Grid<Base3> = "s00905cgdg2103pgc00h03r0ccd85cmcpcece0c0b0g1do036s9sec11c48222g1482c8c0ho421og8o9o1ogc410209sgoi22054gi0o011i6gkiq116q814s0s4ca48kao4s6o4s1003g10610410s0qg081210c".parse().unwrap();
 
                     let deductions = GroupIntersection(GroupIntersectionTypeFilter::BlockToAxis)
-                        .execute(&grid)
-                        .unwrap();
+                        .execute(&grid);
 
                     let expected_deductions = vec![
                         expected_deduction(8, vec![(0, 7), (1, 7), (2, 7)], vec![(3, 7), (5, 7)]),
@@ -405,8 +400,7 @@ mod tests {
                     let grid: Grid<Base3> = "g1094i4g1182ek2m66054i4i210982cgg111811121kgkg054o0q4a2gg4090381ig1141246i6i114o056og1812a6i81g4kokg112s2u2e6o6k4k814g4o0311g111m0810503k868280h4qkiki1121ko4c0c81".parse().unwrap();
 
                     let deductions = GroupIntersection(GroupIntersectionTypeFilter::BlockToAxis)
-                        .execute(&grid)
-                        .unwrap();
+                        .execute(&grid);
 
                     let expected_deductions = vec![
                         expected_deduction(7, vec![(0, 6), (1, 6), (2, 6)], vec![(7, 6), (8, 6)]),
@@ -436,8 +430,7 @@ mod tests {
                     let grid: Grid<Base3> = "1g03211khk4181gg091og11c813s3o4m4g5i81411c1shs030k21hg460h8156763009k0k22111424q4qg14i81054609g14mcm8g21114i5a215ag1d2904g05cg5281525i5i05g10921g1050h21c8881103c0".parse().unwrap();
 
                     let deductions = GroupIntersection(GroupIntersectionTypeFilter::AxisToBlock)
-                        .execute(&grid)
-                        .unwrap();
+                        .execute(&grid);
 
                     let expected_deductions = vec![
                         expected_deduction(2, vec![(1, 4), (2, 3), (2, 4)], vec![(0, 3), (0, 4)]),
@@ -463,8 +456,7 @@ mod tests {
                     let grid: Grid<Base3> = "a005a0g10h09410311g10a0hd24652210c8441110aa22622o80ho4116ama0h81m2g2k4m405e2u262m2m20h11090h62m2091105o2k0u0280h0570m8n0g881038aca1142ka0h0521k02ag16a056a8111480h".parse().unwrap();
 
                     let deductions = GroupIntersection(GroupIntersectionTypeFilter::AxisToBlock)
-                        .execute(&grid)
-                        .unwrap();
+                        .execute(&grid);
 
                     let expected_deductions = vec![
                         expected_deduction(
