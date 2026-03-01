@@ -9,7 +9,7 @@ use std::fmt::Debug;
 use std::fmt::{self, Display};
 use std::str::FromStr;
 
-const STRATEGY_COUNT: usize = 9;
+const STRATEGY_COUNT: usize = 10;
 
 pub mod map {
     use super::*;
@@ -27,6 +27,7 @@ pub mod map {
         pub group_intersection_axis_to_block: T,
         pub group_intersection_both: T,
         pub x_wing: T,
+        pub unique_rectangle: T,
         pub brute_force: T,
     }
 
@@ -44,6 +45,7 @@ pub mod map {
                 group_intersection_axis_to_block: value,
                 group_intersection_both: value,
                 x_wing: value,
+                unique_rectangle: value,
                 brute_force: value,
             }
         }
@@ -62,6 +64,7 @@ pub mod map {
                 }
                 StrategyEnum::GroupIntersectionBoth(_) => &self.group_intersection_both,
                 StrategyEnum::XWing(_) => &self.x_wing,
+                StrategyEnum::UniqueRectangle(_) => &self.unique_rectangle,
                 StrategyEnum::BruteForce(_) => &self.brute_force,
             }
         }
@@ -79,6 +82,7 @@ pub mod map {
                 }
                 StrategyEnum::GroupIntersectionBoth(_) => &mut self.group_intersection_both,
                 StrategyEnum::XWing(_) => &mut self.x_wing,
+                StrategyEnum::UniqueRectangle(_) => &mut self.unique_rectangle,
                 StrategyEnum::BruteForce(_) => &mut self.brute_force,
             }
         }
@@ -93,6 +97,7 @@ pub mod map {
                 self.group_intersection_axis_to_block,
                 self.group_intersection_both,
                 self.x_wing,
+                self.unique_rectangle,
                 self.brute_force,
             ]
         }
@@ -216,6 +221,7 @@ pub enum StrategyEnum {
     GroupIntersectionAxisToBlock,
     GroupIntersectionBoth,
     XWing,
+    UniqueRectangle,
     BruteForce,
 }
 
@@ -236,6 +242,7 @@ impl StrategyEnum {
             GroupIntersectionAxisToBlock.into(),
             GroupIntersectionBoth.into(),
             XWing.into(),
+            UniqueRectangle.into(),
             BruteForce.into(),
         ]
     }
