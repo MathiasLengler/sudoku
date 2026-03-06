@@ -214,11 +214,13 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
                                         parallel,
                                     });
 
-                                    const metricLabel = GRID_METRIC_OPTIONS[metric.kind].label;
-                                    notifications.show(`${metricLabel} = ${bestEvaluatedGridMetric}`, {
-                                        key: "multi-shot-result",
-                                        severity: "info",
-                                    });
+                                    if (bestEvaluatedGridMetric !== undefined) {
+                                        const metricLabel = GRID_METRIC_OPTIONS[metric.kind].label;
+                                        notifications.show(`${metricLabel} = ${bestEvaluatedGridMetric}`, {
+                                            key: "multi-shot-result",
+                                            severity: "info",
+                                        });
+                                    }
                                 } else {
                                     await generate(generatorSettings);
                                 }

@@ -410,7 +410,7 @@ export type TrackedMultiShotGeneratorProgress = {
 };
 
 export type MultiShotGenerationResult = {
-    bestEvaluatedGridMetric: bigint;
+    bestEvaluatedGridMetric: bigint | undefined;
 };
 
 export function useGenerateMultiShot() {
@@ -455,6 +455,9 @@ export function useGenerateMultiShot() {
     const [trackedMultiShotGeneratorProgress, setTrackedMultiShotGeneratorProgress] =
         useState<TrackedMultiShotGeneratorProgress>();
 
+    // Ref mirrors bestEvaluatedGridMetric from state so the value can be
+    // read synchronously after mutateAsync resolves (React state may not
+    // yet reflect the latest update at that point).
     const bestEvaluatedGridMetricRef = useRef<bigint | undefined>(undefined);
 
     const resetProgressState = useCallback(() => {
@@ -509,14 +512,13 @@ export function useGenerateMultiShot() {
         async (settings: DynamicMultiShotGeneratorSettings): Promise<MultiShotGenerationResult> => {
             await mutation.mutateAsync(settings);
 
-            if (bestEvaluatedGridMetricRef.current !== undefined) {
-                return { bestEvaluatedGridMetric: bestEvaluatedGridMetricRef.current };
-            } else {
+            if (bestEvaluatedGridMetricRef.current === undefined) {
                 console.warn(
                     "Expected bestEvaluatedGridMetricRef to be set after successful generation, but it was undefined.",
                 );
-                return { bestEvaluatedGridMetric: -1n };
             }
+
+            return { bestEvaluatedGridMetric: bestEvaluatedGridMetricRef.current };
         },
         [mutation],
     );
