@@ -1,39 +1,81 @@
+use crate::cell::Cell;
+use crate::cell::CellState;
+use crate::cell::Value;
+use crate::cell::dynamic::DynamicCell;
+use crate::cell::{Candidates, map::ValueCounts};
+use crate::error::{Error, Result};
+use crate::grid::format::{CandidatesGridANSIStyled, GridFormat, GridFormatEnum};
+use crate::position::Coordinate;
+use crate::position::Position;
+use crate::solver::{FallibleSolver, introspective, strategic};
+use crate::unsafe_utils::{get_unchecked, get_unchecked_mut};
+use crate::{base::SudokuBase, solver::strategic::strategies::selection::StrategySelection};
+use anyhow::ensure;
+use ndarray::{Array2, ArrayView2, ArrayViewMut2};
+use serde::{Deserialize, Serialize};
+use serialization::SerializedGrid;
+use solution_state::SolutionState;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::marker::PhantomData;
 use std::ops::{Index, IndexMut};
 use std::str::FromStr;
 
-use anyhow::ensure;
-use ndarray::{Array2, ArrayView2, ArrayViewMut2};
-use solution_state::SolutionState;
-
-use crate::base::SudokuBase;
-use crate::cell::dynamic::DynamicCell;
-use crate::cell::Candidates;
-use crate::cell::Cell;
-use crate::cell::CellState;
-use crate::cell::Value;
-use crate::error::{Error, Result};
-use crate::grid::format::{CandidatesGridANSIStyled, GridFormat, GridFormatEnum};
-use crate::position::Coordinate;
-use crate::position::Position;
-use crate::solver::strategic::strategies::StrategyEnum;
-use crate::solver::{introspective, strategic, FallibleSolver};
-use crate::unsafe_utils::{get_unchecked, get_unchecked_mut};
-
 pub mod deserialization;
+pub mod dynamic;
 pub mod format;
 pub mod group;
 pub mod solution_state;
 
-pub mod dynamic;
+mod serialization {
+    use super::*;
+
+    #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+    #[serde(bound(
+        serialize = "Base: SudokuBase, T: Serialize",
+        deserialize = "Base: SudokuBase, T: Deserialize<'de>"
+    ))]
+    pub(super) struct SerializedGrid<Base: SudokuBase, T> {
+        /// The cells of this grid.
+        cells: Vec<T>,
+        _base: PhantomData<Base>,
+    }
+
+    impl<Base: SudokuBase, T> From<Grid<Base, T>> for SerializedGrid<Base, T> {
+        fn from(grid: Grid<Base, T>) -> Self {
+            Self {
+                cells: grid.into_cells(),
+                _base: PhantomData,
+            }
+        }
+    }
+
+    impl<Base: SudokuBase, T> TryFrom<SerializedGrid<Base, T>> for Grid<Base, T> {
+        type Error = Error;
+
+        fn try_from(serialized_grid: SerializedGrid<Base, T>) -> Result<Self> {
+            Self::with(serialized_grid.cells)
+        }
+    }
+}
 
 /// A square grid of cells with side length `Base::SIDE_LENGTH`.
 ///
 /// By default, the cell type `T` is `Cell<Base>`.
 /// Other cell types are supported, but with less functionality.
-#[derive(Eq, PartialEq, Hash, Clone, Debug)]
+#[allow(
+    clippy::unsafe_derive_deserialize,
+    reason = "Safety invariants upheld by serde(try_from)"
+)]
+#[derive(Eq, PartialEq, Hash, Clone, Debug, Serialize, Deserialize)]
+#[serde(
+    bound(
+        serialize = "Base: SudokuBase, T: Serialize + Clone",
+        deserialize = "Base: SudokuBase, T: Deserialize<'de>"
+    ),
+    into = "SerializedGrid<Base, T>",
+    try_from = "SerializedGrid<Base, T>"
+)]
 pub struct Grid<Base: SudokuBase, T = Cell<Base>> {
     /// The cells of this grid.
     ///
@@ -145,12 +187,12 @@ impl<Base: SudokuBase, T> Grid<Base, T> {
 
 /// internal ndarray views for cells
 impl<Base: SudokuBase, T> Grid<Base, T> {
-    pub(crate) fn cells_view(&self) -> ArrayView2<T> {
+    pub(crate) fn cells_view(&self) -> ArrayView2<'_, T> {
         self.cells.view()
     }
 
     #[allow(dead_code)]
-    pub(crate) fn cells_view_mut(&mut self) -> ArrayViewMut2<T> {
+    pub(crate) fn cells_view_mut(&mut self) -> ArrayViewMut2<'_, T> {
         self.cells.view_mut()
     }
 }
@@ -392,14 +434,17 @@ impl<Base: SudokuBase> Grid<Base> {
         solver.count()
     }
 
+    /// Try to solve this grid using the given strategies.
+    ///
+    /// Returns the solution if it is solvable using the given strategies, otherwise returns None.
     pub fn is_solvable_with_strategies(
         &self,
-        strategies: Vec<StrategyEnum>,
+        strategies: impl StrategySelection,
     ) -> Result<Option<Self>> {
         let mut clone = self.clone();
         clone.fix_all_values();
         clone.set_all_direct_candidates();
-        let mut solver = strategic::Solver::new_with_strategies(&mut clone, strategies);
+        let mut solver = strategic::Solver::with_strategies(&mut clone, strategies);
 
         solver.try_solve()
     }
@@ -456,6 +501,13 @@ impl<Base: SudokuBase, T> Grid<Base, T> {
         Ok(grid)
     }
 
+    pub fn filled_with(value: T) -> Self
+    where
+        T: Clone,
+    {
+        Self::with(vec![value; Base::CELL_COUNT.into()]).unwrap()
+    }
+
     pub fn into_cells(self) -> Vec<T> {
         self.cells.into_raw_vec_and_offset().0
     }
@@ -494,9 +546,7 @@ impl<Base: SudokuBase, T> Grid<Base, T> {
         // Safety:
         // - `cell_index < Base::CELL_COUNT` is guaranteed by `Position`
         // - `cells.len() == Base::CELL_COUNT` is guaranteed by `Grid`
-        let cell = unsafe { get_unchecked(cells_slice, cell_index) };
-
-        cell
+        unsafe { get_unchecked(cells_slice, cell_index) }
     }
 
     pub fn get_mut(&mut self, pos: Position<Base>) -> &mut T {
@@ -511,12 +561,11 @@ impl<Base: SudokuBase, T> Grid<Base, T> {
         // Safety:
         // - `cell_index < Base::CELL_COUNT` is guaranteed by `Position`
         // - `cells.len() == Base::CELL_COUNT` is guaranteed by `Grid`
-        let cell = unsafe { get_unchecked_mut(cells_slice, cell_index) };
-
-        cell
+        unsafe { get_unchecked_mut(cells_slice, cell_index) }
     }
 }
 
+/// Cell bulk operations
 impl<Base: SudokuBase> Grid<Base> {
     pub fn fix_all_values(&mut self) {
         for pos in self.all_value_positions() {
@@ -532,6 +581,11 @@ impl<Base: SudokuBase> Grid<Base> {
 
     pub fn delete_all_unfixed_values(&mut self) {
         for pos in self.all_unfixed_value_positions() {
+            self.get_mut(pos).delete();
+        }
+    }
+    pub fn delete_all_candidates(&mut self) {
+        for pos in self.all_candidates_positions() {
             self.get_mut(pos).delete();
         }
     }
@@ -645,8 +699,8 @@ impl<Base: SudokuBase, T> Grid<Base, T> {
         Position::all_blocks()
     }
 
-    pub fn all_group_positions(
-    ) -> impl Iterator<Item = impl Iterator<Item = Position<Base>> + Clone> {
+    pub fn all_group_positions()
+    -> impl Iterator<Item = impl Iterator<Item = Position<Base>> + Clone> {
         Position::all_groups()
     }
 }
@@ -699,6 +753,13 @@ impl<Base: SudokuBase, T> Grid<Base, T> {
     }
 }
 
+/// Interop `ValueMap`
+impl<Base: SudokuBase> Grid<Base> {
+    pub fn count_values(&self) -> ValueCounts<Base> {
+        ValueCounts::count(self.all_cells().filter_map(|cell| cell.value()))
+    }
+}
+
 /// Convert nested rows into Grid<Base>
 impl<Base: SudokuBase, IntoCell: Into<DynamicCell>> TryFrom<Vec<Vec<IntoCell>>> for Grid<Base> {
     type Error = Error;
@@ -744,7 +805,9 @@ impl<Base: SudokuBase> FromStr for Grid<Base> {
     type Err = Error;
 
     fn from_str(input: &str) -> Result<Self> {
-        GridFormatEnum::detect_and_parse(input)?.try_into()
+        GridFormatEnum::detect_and_parse(input)?
+            .parsed_grid
+            .try_into()
     }
 }
 
@@ -757,7 +820,7 @@ impl<Base: SudokuBase> Display for Grid<Base> {
 #[cfg(test)]
 mod tests {
 
-    use itertools::{assert_equal, Itertools};
+    use itertools::{Itertools, assert_equal};
 
     use crate::base::consts::*;
     use crate::position::DynamicPosition;

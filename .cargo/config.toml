@@ -1,9 +1,34 @@
+# WASM
+
 # Reference: https://github.com/RReverser/wasm-bindgen-rayon/tree/main?tab=readme-ov-file#using-config-files
 [target.wasm32-unknown-unknown]
-rustflags = ["-C", "target-feature=+atomics,+bulk-memory,+mutable-globals,+simd128"]
+rustflags = [
+    "-C",
+    "target-feature=+atomics,+bulk-memory,+simd128",
+    "-C",
+    "link-arg=--shared-memory",
+    "-C",
+    "link-arg=--max-memory=1073741824",
+    "-C",
+    "link-arg=--import-memory",
+    "-C",
+    "link-arg=--export=__wasm_init_tls",
+    "-C",
+    "link-arg=--export=__tls_size",
+    "-C",
+    "link-arg=--export=__tls_align",
+    "-C",
+    "link-arg=--export=__tls_base",
+    '--cfg',
+    'getrandom_backend="wasm_js"',
+]
 
 # Unstable cargo features affect all targets, but we only want to affect wasm32-unknown-unknown
 # Reference: https://github.com/rust-lang/cargo/issues/8733
 # Workaround: pass as CLI args to wasm-pack
 #[unstable]
 #build-std = ["panic_abort", "std"]
+
+# https://doc.rust-lang.org/cargo/guide/build-performance.html#enable-the-experimental-parallel-frontend
+[build]
+rustflags = "-Zthreads=8"

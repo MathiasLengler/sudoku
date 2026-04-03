@@ -2,9 +2,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import SaveIcon from "@mui/icons-material/Save";
 import { Box, Button, DialogActions, DialogContent, DialogTitle } from "@mui/material";
 import { Stack } from "@mui/material";
-import { RadioButtonGroup, SliderElement, SwitchElement, useForm } from "react-hook-form-mui";
-import { useRecoilState } from "recoil";
+import { useForm, useWatch } from "react-hook-form";
+import { useAtom } from "jotai";
 import { Fieldset } from "../../components/Fieldset";
+import { MyRadioGroup } from "../../components/formFragments/mui-rhf/MyRadioGroup";
+import { MySlider } from "../../components/formFragments/mui-rhf/MySlider";
+import { MySwitch } from "../../components/formFragments/mui-rhf/MySwitch";
 import { ResetFormButton } from "../../components/ResetFormButton";
 import SelectStrategies from "../../components/formFragments/SelectStrategies";
 import { formatDurationMs } from "../../i18n";
@@ -22,20 +25,22 @@ type HintSettingsDialogProps = {
 };
 
 export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
-    const [hintSettingsFormValues, setHintSettingsFormValues] = useRecoilState(hintSettingsState);
+    const [hintSettingsFormValues, setHintSettingsFormValues] = useAtom(hintSettingsState);
 
     const {
         control,
         handleSubmit,
-        watch,
         formState: { isSubmitting },
         reset,
-    } = useForm<HintSettings>({
-        values: hintSettingsFormValues,
+    } = useForm({
+        values: hintSettingsSchema.encode(hintSettingsFormValues),
         resolver: zodResolver(hintSettingsSchema),
     });
 
-    const [mode, doLoop] = watch(["mode", "doLoop"]);
+    const mode = useWatch({
+        control,
+        name: "mode",
+    });
     return (
         <>
             <DialogTitle>Hint settings</DialogTitle>
@@ -51,7 +56,7 @@ export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
                 >
                     <Stack spacing={2}>
                         <SelectStrategies control={control} name="strategies" />
-                        <RadioButtonGroup
+                        <MyRadioGroup
                             control={control}
                             name="mode"
                             label="Mode"
@@ -74,17 +79,16 @@ export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
                             required
                         />
                         <Fieldset label="Loop" disabled={mode === "toggleHint"}>
-                            <SwitchElement
+                            <MySwitch
                                 control={control}
                                 name="doLoop"
                                 label="Loop until strategies make no further progress"
                             />
                             <Box sx={{ mx: 2 }}>
-                                <SliderElement
+                                <MySlider
                                     control={control}
                                     name="loopDelayIndex"
                                     label="Loop delay"
-                                    disabled={mode === "toggleHint" || !doLoop}
                                     step={1}
                                     min={0}
                                     max={MAX_LOOP_DELAY_INDEX}
@@ -101,17 +105,16 @@ export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
                             </Box>
                         </Fieldset>
                         <Fieldset label="Deductions">
-                            <SwitchElement
-                                control={control}
-                                name="multipleDeductions"
-                                label="Apply multiple deductions"
-                            />
+                            <MySwitch control={control} name="multipleDeductions" label="Apply multiple deductions" />
                         </Fieldset>
                     </Stack>
                 </form>
             </DialogContent>
             <DialogActions>
-                <ResetFormButton disabled={isSubmitting} onClick={() => reset(DEFAULT_HINT_SETTINGS)} />
+                <ResetFormButton
+                    disabled={isSubmitting}
+                    onClick={() => reset(hintSettingsSchema.encode(DEFAULT_HINT_SETTINGS))}
+                />
                 <Button onClick={onClose} disabled={isSubmitting}>
                     Cancel
                 </Button>

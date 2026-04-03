@@ -1,36 +1,41 @@
-use std::fmt::{self, Display, Formatter};
-
-pub use dynamic::{DynamicSudoku, DynamicSudokuActions};
-use history::History;
-use log::info;
-
-use crate::base::SudokuBase;
-use crate::cell::dynamic::{DynamicCandidates, DynamicValue};
 use crate::cell::{Candidates, Value};
 use crate::error::Result;
 use crate::generator::multi_shot::{
     MultiShotGenerator, MultiShotGeneratorProgress, MultiShotGeneratorSettings,
 };
 use crate::generator::{Generator, GeneratorProgress, GeneratorSettings};
+use crate::grid::Grid;
 use crate::grid::dynamic::DynamicGrid;
 use crate::grid::format::GridFormat;
 use crate::grid::format::GridFormatEnum;
 use crate::grid::solution_state::SolutionState;
-use crate::grid::Grid;
 use crate::position::{DynamicPosition, Position};
-use crate::solver::strategic::deduction::transport::TransportDeductions;
 use crate::solver::strategic::deduction::Deductions;
-use crate::solver::strategic::strategies::StrategyEnum;
+use crate::solver::strategic::deduction::transport::TransportDeductions;
 use crate::solver::strategic::{DynamicSolveStep, SolveStep, Solver as StrategicSolver};
+use crate::{
+    base::SudokuBase,
+    generator::multi_shot::{EvaluatedGridMetric, GridMetric},
+};
+use crate::{
+    cell::dynamic::{DynamicCandidates, DynamicValue},
+    solver::strategic::strategies::selection::StrategySelection,
+};
+use history::History;
+use log::info;
+use serde::{Deserialize, Serialize};
+use settings::Settings;
+use std::fmt::{self, Display, Formatter};
 
-use self::settings::Settings;
+pub use dynamic::{DynamicSudoku, DynamicSudokuActions};
 
 mod dynamic;
 mod history;
 pub mod settings;
 pub mod transport;
 
-#[derive(Eq, PartialEq, Hash, Clone, Debug)]
+#[derive(Eq, PartialEq, Hash, Clone, Debug, Serialize, Deserialize)]
+#[serde(bound = "Base: SudokuBase")]
 pub struct Sudoku<Base: SudokuBase> {
     grid: Grid<Base>,
     solution: SolutionState<Base>,
@@ -46,6 +51,7 @@ impl<Base: SudokuBase> Default for Sudoku<Base> {
 
 /// Constructors
 impl<Base: SudokuBase> Sudoku<Base> {
+    /// Creates a new empty Sudoku.
     pub fn new() -> Self {
         Self::with_grid(Grid::new())
     }
@@ -74,7 +80,7 @@ impl<Base: SudokuBase> Sudoku<Base> {
         settings: Settings,
         on_progress: impl FnMut(GeneratorProgress) -> Result<()>,
     ) -> Result<Self> {
-        info!("generator_settings {:#?}", generator_settings);
+        info!("generator_settings {generator_settings:#?}");
 
         Ok(Self::with_grid_and_settings(
             Generator::with_settings(generator_settings).generate_with_progress(on_progress)?,
@@ -87,17 +93,19 @@ impl<Base: SudokuBase> Sudoku<Base> {
         settings: Settings,
         on_progress: impl FnMut(MultiShotGeneratorProgress) -> Result<()>,
     ) -> Result<Self> {
-        info!(
-            "multi_shot_generator_settings {:#?}",
-            multi_shot_generator_settings
-        );
+        info!("multi_shot_generator_settings {multi_shot_generator_settings:#?}");
 
+        let metric = multi_shot_generator_settings.metric;
         let generator = MultiShotGenerator::with_settings(multi_shot_generator_settings)?;
 
-        Ok(Self::with_grid_and_settings(
-            generator.generate_with_progress(on_progress)?.grid,
-            settings,
-        ))
+        let evaluated_grid = generator.generate_with_progress(on_progress)?;
+
+        info!(
+            "Grid generated with a final metric {:?} of {}",
+            metric, evaluated_grid.evaluated_grid_metric
+        );
+
+        Ok(Self::with_grid_and_settings(evaluated_grid.grid, settings))
     }
 }
 
@@ -159,7 +167,7 @@ impl<Base: SudokuBase> Sudoku<Base> {
 
     pub fn try_strategies(
         &mut self,
-        strategies: Vec<StrategyEnum>,
+        strategies: impl StrategySelection,
     ) -> Result<Option<SolveStep<Base>>> {
         // Only create history entry if all candidates are empty.
         // If this is the case, StrategicSolver will mutate the grid by setting all direct candidates.
@@ -167,7 +175,7 @@ impl<Base: SudokuBase> Sudoku<Base> {
             self.push_history();
         }
 
-        let solver = StrategicSolver::new_with_strategies(&mut self.grid, strategies);
+        let solver = StrategicSolver::with_strategies(&mut self.grid, strategies);
         solver.try_strategies()
     }
 
@@ -250,7 +258,7 @@ impl<Base: SudokuBase> DynamicSudokuActions for Sudoku<Base> {
 
     fn try_strategies(
         &mut self,
-        strategies: Vec<StrategyEnum>,
+        strategies: impl StrategySelection,
     ) -> Result<Option<DynamicSolveStep>> {
         Ok(self.try_strategies(strategies)?.map(Into::into))
     }
@@ -295,6 +303,14 @@ impl<Base: SudokuBase> DynamicSudokuActions for Sudoku<Base> {
 
     fn to_dynamic_grid(&self) -> DynamicGrid {
         self.grid.clone().into()
+    }
+
+    fn evaluate_metric(
+        &self,
+        metric: GridMetric,
+        strategies: impl StrategySelection,
+    ) -> Result<EvaluatedGridMetric> {
+        metric.evaluate(&self.grid, strategies)
     }
 }
 

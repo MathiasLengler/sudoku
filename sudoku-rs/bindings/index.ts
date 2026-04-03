@@ -27,6 +27,7 @@ export type * from "./PruningTarget";
 export type * from "./Quadrant";
 export type * from "./RelativeDir";
 export type * from "./StrategyEnum";
+export type * from "./StrategyMap";
 export type * from "./TransportAction";
 export type * from "./TransportCell";
 export type * from "./TransportDeduction";

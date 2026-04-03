@@ -1,8 +1,4 @@
-use enum_dispatch::enum_dispatch;
-
-use crate::base::consts::*;
 use crate::base::match_base_enum;
-use crate::base::BaseEnum;
 use crate::cell::dynamic::DynamicCandidates;
 use crate::cell::dynamic::DynamicCell;
 use crate::cell::dynamic::DynamicValue;
@@ -10,15 +6,22 @@ use crate::error::{Error, Result};
 use crate::generator::multi_shot::DynamicMultiShotGeneratorSettings;
 use crate::generator::multi_shot::MultiShotGeneratorProgress;
 use crate::generator::{DynamicGeneratorSettings, GeneratorProgress};
+use crate::grid::Grid;
 use crate::grid::dynamic::DynamicGrid;
 use crate::grid::format::GridFormatEnum;
-use crate::grid::Grid;
 use crate::position::DynamicPosition;
-use crate::solver::strategic::deduction::transport::TransportDeductions;
-use crate::solver::strategic::strategies::StrategyEnum;
 use crate::solver::strategic::DynamicSolveStep;
-use crate::sudoku::settings::Settings as SudokuSettings;
+use crate::solver::strategic::deduction::transport::TransportDeductions;
 use crate::sudoku::Sudoku;
+use crate::sudoku::settings::Settings as SudokuSettings;
+use crate::{
+    base::BaseEnum,
+    generator::multi_shot::{EvaluatedGridMetric, GridMetric},
+};
+use crate::{base::consts::*, solver::strategic::strategies::selection::StrategySelection};
+use enum_dispatch::enum_dispatch;
+use serde::{Deserialize, Serialize};
+use std::fmt::Display;
 
 /// All methods provided by `Sudoku`, which:
 /// - do not depend on the generic `SudokuBase`
@@ -30,13 +33,15 @@ pub trait DynamicSudokuActions {
     fn set_value(&mut self, pos: DynamicPosition, value: DynamicValue) -> Result<()>;
     fn set_or_toggle_value(&mut self, pos: DynamicPosition, value: DynamicValue) -> Result<()>;
     fn set_candidates(&mut self, pos: DynamicPosition, candidates: DynamicCandidates)
-        -> Result<()>;
+    -> Result<()>;
     fn toggle_candidate(&mut self, pos: DynamicPosition, candidate: DynamicValue) -> Result<()>;
     fn set_candidate(&mut self, pos: DynamicPosition, candidate: DynamicValue) -> Result<()>;
     fn delete_candidate(&mut self, pos: DynamicPosition, candidate: DynamicValue) -> Result<()>;
     fn delete(&mut self, pos: DynamicPosition) -> Result<()>;
-    fn try_strategies(&mut self, strategies: Vec<StrategyEnum>)
-        -> Result<Option<DynamicSolveStep>>;
+    fn try_strategies(
+        &mut self,
+        strategies: impl StrategySelection,
+    ) -> Result<Option<DynamicSolveStep>>;
     fn apply_deductions(&mut self, deductions: TransportDeductions) -> Result<()>;
 
     // actions that don't depend on base
@@ -46,13 +51,18 @@ pub trait DynamicSudokuActions {
     fn settings(&self) -> SudokuSettings;
     fn update_settings(&mut self, settings: SudokuSettings);
     fn export(&self, format: GridFormatEnum) -> String;
+    fn evaluate_metric(
+        &self,
+        metric: GridMetric,
+        strategies: impl StrategySelection,
+    ) -> Result<EvaluatedGridMetric>;
 
     fn to_dynamic_grid(&self) -> DynamicGrid;
 }
 
 /// A game of Sudoku which is able to change the size of the board at runtime.
 #[enum_dispatch(DynamicSudokuActions)]
-#[derive(Eq, PartialEq, Hash, Clone, Debug)]
+#[derive(Eq, PartialEq, Hash, Clone, Debug, Serialize, Deserialize)]
 pub enum DynamicSudoku {
     Base2(Sudoku<Base2>),
     Base3(Sudoku<Base3>),
@@ -60,74 +70,62 @@ pub enum DynamicSudoku {
     Base5(Sudoku<Base5>),
 }
 
-// TODO: re-evaluate constructors vs replacing &mut self methods (*self =)
-/// Actions which can change the currently used base
-impl DynamicSudoku {
-    pub fn new(base: u8) -> Result<Self> {
-        let base: BaseEnum = base.try_into()?;
-
-        Ok(match base {
-            BaseEnum::Base2 => Self::Base2(Sudoku::<Base2>::new()),
-            BaseEnum::Base3 => Self::Base3(Sudoku::<Base3>::new()),
-            BaseEnum::Base4 => Self::Base4(Sudoku::<Base4>::new()),
-            BaseEnum::Base5 => Self::Base5(Sudoku::<Base5>::new()),
-        })
+impl Display for DynamicSudoku {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DynamicSudoku::Base2(sudoku) => write!(f, "{sudoku}"),
+            DynamicSudoku::Base3(sudoku) => write!(f, "{sudoku}"),
+            DynamicSudoku::Base4(sudoku) => write!(f, "{sudoku}"),
+            DynamicSudoku::Base5(sudoku) => write!(f, "{sudoku}"),
+        }
     }
+}
+
+/// Constructors
+impl DynamicSudoku {
+    /// Creates a new empty Sudoku with the given base.
+    pub fn new(base: BaseEnum) -> Self {
+        match_base_enum!(base, Self::from(Sudoku::<Base>::new()))
+    }
+
     pub fn generate(
-        &mut self,
         dynamic_generator_settings: DynamicGeneratorSettings,
         on_progress: impl FnMut(GeneratorProgress) -> Result<()>,
-    ) -> Result<()> {
-        let base: BaseEnum = dynamic_generator_settings.base.try_into()?;
-
-        *self = match_base_enum!(
-            base,
+    ) -> Result<Self> {
+        Ok(match_base_enum!(
+            dynamic_generator_settings.base,
             Self::from(Sudoku::<Base>::generate(
                 dynamic_generator_settings.try_into()?,
-                self.settings(),
+                SudokuSettings::default(),
                 on_progress,
             )?)
-        );
-
-        Ok(())
+        ))
     }
 
     pub fn generate_multi_shot(
-        &mut self,
         multi_shot_generator_settings: DynamicMultiShotGeneratorSettings,
         on_progress: impl FnMut(MultiShotGeneratorProgress) -> Result<()>,
-    ) -> Result<()> {
-        let base: BaseEnum = multi_shot_generator_settings
-            .generator_settings
-            .base
-            .try_into()?;
-
-        *self = match_base_enum!(
-            base,
+    ) -> Result<Self> {
+        Ok(match_base_enum!(
+            multi_shot_generator_settings.generator_settings.base,
             Self::from(Sudoku::<Base>::generate_multi_shot(
                 multi_shot_generator_settings.try_into()?,
-                self.settings(),
+                SudokuSettings::default(),
                 on_progress,
             )?)
-        );
-
-        Ok(())
+        ))
     }
-    pub fn import(&mut self, input: &str) -> Result<()> {
-        *self = input.try_into()?;
 
-        Ok(())
+    pub fn import(input: &str) -> Result<Self> {
+        Self::try_from(input)
     }
 }
 
 impl TryFrom<Vec<DynamicCell>> for DynamicSudoku {
     type Error = Error;
 
-    fn try_from(views: Vec<DynamicCell>) -> Result<Self> {
-        Ok(match_base_enum!(
-            BaseEnum::try_from_cell_count_usize(views.len())?,
-            Sudoku::<Base>::with_grid(views.try_into()?).into()
-        ))
+    fn try_from(dynamic_cells: Vec<DynamicCell>) -> Result<Self> {
+        DynamicGrid::try_from(dynamic_cells)?.try_into()
     }
 }
 
@@ -157,7 +155,9 @@ impl TryFrom<&str> for DynamicSudoku {
     type Error = Error;
 
     fn try_from(input: &str) -> Result<Self> {
-        GridFormatEnum::detect_and_parse(input)?.try_into()
+        GridFormatEnum::detect_and_parse(input)?
+            .parsed_grid
+            .try_into()
     }
 }
 

@@ -2,7 +2,7 @@ import { Alert, Button, Stack } from "@mui/material";
 
 import type { ReactNode } from "react";
 import { ErrorBoundary } from "react-error-boundary";
-import { z } from "zod";
+import * as z from "zod";
 
 type FallbackProps = {
     error: unknown;
@@ -62,7 +62,7 @@ export function ThemeErrorBoundary({ children, inline }: { children: ReactNode; 
     return (
         <ErrorBoundary
             fallbackRender={({ error, resetErrorBoundary }) => (
-                <ThemeFallback error={error as unknown} resetErrorBoundary={resetErrorBoundary} inline={inline} />
+                <ThemeFallback error={error} resetErrorBoundary={resetErrorBoundary} inline={inline} />
             )}
         >
             {children}

@@ -1,8 +1,8 @@
 use anyhow::bail;
 use serde::{Deserialize, Serialize};
 
-use crate::base::consts::BaseMax;
 use crate::base::SudokuBase;
+use crate::base::consts::BaseMax;
 use crate::cell::{Candidates, Cell, CellState, Value};
 use crate::error::{Error, Result};
 
@@ -44,6 +44,7 @@ impl<Base: SudokuBase> From<Candidates<Base>> for DynamicCandidates {
     }
 }
 
+// FIXME: `tag = "kind"` leads to larger serialized size
 #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
 #[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug)]
 #[serde(rename_all = "camelCase", tag = "kind")]
@@ -92,7 +93,7 @@ pub(crate) fn char_value_to_u8(c: char) -> Result<u8> {
         '.' | '0' => Ok(0),
         _ => match c.to_digit(36) {
             Some(digit) => Ok(digit.try_into()?),
-            None => bail!("Unable to convert character into number: {}", c),
+            None => bail!("Unable to convert character into number: {c}"),
         },
     }
 }
@@ -133,7 +134,7 @@ impl TryFrom<u32> for DynamicCell {
     type Error = Error;
 
     fn try_from(bits: u32) -> Result<Self> {
-        let candidates = Candidates::<BaseMax>::with_integral(bits);
+        let candidates = Candidates::<BaseMax>::with_integral(bits)?;
         let candidates_vec = candidates.to_vec_u8();
 
         Ok(if let &[value] = candidates_vec.as_slice() {

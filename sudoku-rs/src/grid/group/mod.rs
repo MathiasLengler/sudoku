@@ -14,9 +14,28 @@ pub type CandidatesGroup<Base> = Group<Base, Candidates<Base>>;
 /// Wrapper around `Base::Group<T>`, e.g. `[T; Base::SIDE_LENGTH]`.
 ///
 /// Provides efficient indexing using `Coordinate<Base>` and better conversion errors.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Eq, PartialOrd, Ord)]
 pub struct Group<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug> {
     group: Base::Group<T>,
+}
+
+impl<Base: SudokuBase + Hash, T: Send + Sync + Copy + Clone + Debug + Hash> Hash for Group<Base, T>
+where
+    Base::Group<T>: Hash,
+{
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.group.hash(state);
+    }
+}
+
+impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + PartialEq> PartialEq
+    for Group<Base, T>
+where
+    Base::Group<T>: PartialEq,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.group == other.group
+    }
 }
 
 impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default> Default for Group<Base, T> {
@@ -56,13 +75,19 @@ impl<Base: SudokuBase> Display for Group<Base, u32> {
     }
 }
 
-impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash>
-    Group<Base, T>
-{
+impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug> Group<Base, T> {
     pub fn new(group: Base::Group<T>) -> Self {
         Self { group }
     }
 
+    pub fn with_all(value: T) -> Self
+    where
+        T: Copy,
+    {
+        Self {
+            group: Base::group_with_all(value),
+        }
+    }
     // pub fn from_trusted_iter(iter: impl TrustedGroupSizeIter<Base, Item = T>) -> Self {
     //     Self {
     //         // TODO: optimize based on the safety contract of `TrustedGroupSizeIter`.
@@ -70,7 +95,10 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + H
     //     }
     // }
 
-    pub fn from_iter_checked(iter: impl IntoIterator<Item = T>) -> Self {
+    pub fn from_iter_checked(iter: impl IntoIterator<Item = T>) -> Self
+    where
+        T: Default + Ord + Hash,
+    {
         fn inner<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash>(
             iter: impl Iterator<Item = T>,
         ) -> Group<Base, T> {
@@ -167,7 +195,7 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + H
 }
 
 impl<Base: SudokuBase> CandidatesGroup<Base> {
-    // TODO: bench/optimize
+    // TODO: optimize
     #[must_use]
     pub fn transpose(&self) -> CandidatesGroup<Base> {
         let mut transposed = Self::default();
@@ -182,9 +210,7 @@ impl<Base: SudokuBase> CandidatesGroup<Base> {
     }
 }
 
-impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash> IntoIterator
-    for Group<Base, T>
-{
+impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug> IntoIterator for Group<Base, T> {
     type Item = T;
     type IntoIter = <Base::Group<T> as IntoIterator>::IntoIter;
 
@@ -193,9 +219,7 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + H
     }
 }
 
-impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Default + Ord + Hash> TryFrom<Vec<T>>
-    for Group<Base, T>
-{
+impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug> TryFrom<Vec<T>> for Group<Base, T> {
     type Error = Error;
 
     fn try_from(vec: Vec<T>) -> Result<Self> {

@@ -1,14 +1,13 @@
-use std::fmt::{self, Debug, Display, Formatter};
-
+use crate::base::SudokuBase;
+use crate::cell::dynamic::DynamicCell;
+use crate::error::Error;
 use anyhow::bail;
+use serde::{Deserialize, Serialize};
+use std::fmt::{self, Debug, Display, Formatter};
 
 pub use candidates::*;
 pub(crate) use cell_state::*;
 pub use value::*;
-
-use crate::base::SudokuBase;
-use crate::cell::dynamic::DynamicCell;
-use crate::error::Error;
 
 mod candidates;
 mod cell_state;
@@ -34,7 +33,8 @@ mod value;
 /// | non_unfixed_value |       | x          | x          |
 /// | unfixed           | x     |            | x          |
 /// | all               | x     | x          | x          |
-#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug, Default)]
+#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(transparent, bound = "Base: SudokuBase")]
 pub struct Cell<Base: SudokuBase>(CellState<Base>);
 
 impl<Base: SudokuBase> Cell<Base> {

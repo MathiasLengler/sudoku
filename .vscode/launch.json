@@ -8,7 +8,7 @@
       "type": "chrome",
       "name": "Debug sudoku-web",
       "request": "launch",
-      "url": "http://127.0.0.1:8080/?world",
+      "url": "http://localhost:5173/?world",
       "webRoot": "${workspaceFolder}/sudoku-web"
     }
   ]

@@ -1,7 +1,7 @@
-import { z } from "zod";
+import { atomWithStorage } from "jotai/utils";
+import * as z from "zod";
 import { ALL_STRATEGIES, selectedStrategiesSchema } from "../../constants";
-import { atom } from "recoil";
-import { localStorageEffect } from "../localStorageEffect";
+import { getZodLocalStorage } from "../localStorageEffect";
 
 export function scaleLoopDelayIndex(loopDelayIndex: number) {
     if (loopDelayIndex === 0) {
@@ -35,14 +35,14 @@ export const hintSettingsSchema = z.object({
 });
 
 export const DEFAULT_HINT_SETTINGS = {
-    strategies: ALL_STRATEGIES.filter((strategy) => strategy !== "BruteForce"),
+    strategies: selectedStrategiesSchema.decode(ALL_STRATEGIES.filter((strategy) => strategy !== "BruteForce")),
     mode: "hintApply",
     doLoop: false,
     loopDelayIndex: 0,
     multipleDeductions: true,
 } satisfies HintSettings;
-export const hintSettingsState = atom<HintSettings>({
-    key: "HintSettingsFormValues",
-    default: DEFAULT_HINT_SETTINGS,
-    effects: [localStorageEffect(hintSettingsSchema)],
-});
+export const hintSettingsState = atomWithStorage<HintSettings>(
+    "HintSettingsFormValues",
+    DEFAULT_HINT_SETTINGS,
+    getZodLocalStorage(hintSettingsSchema),
+);

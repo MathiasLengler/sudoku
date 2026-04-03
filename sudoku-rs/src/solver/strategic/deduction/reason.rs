@@ -1,6 +1,6 @@
 use std::fmt::{Display, Formatter};
 
-use anyhow::{bail, ensure, Context};
+use anyhow::{Context, bail, ensure};
 
 use crate::base::SudokuBase;
 use crate::cell::Candidates;

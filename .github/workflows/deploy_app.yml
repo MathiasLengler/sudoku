@@ -23,21 +23,20 @@ jobs:
       # Rust
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: nightly-2025-03-09
+          toolchain: nightly-2025-11-15
           targets: wasm32-unknown-unknown
           components: clippy, rust-src
 
       # just
       - uses: extractions/setup-just@v3
 
-      # cargo nextest
-      - uses: taiki-e/install-action@nextest
-
-      - name: Install wasm-pack
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      # cargo tools
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest,wasm-pack
 
       # https://github.com/actions/cache/blob/main/examples.md#rust---cargo
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/bin/
@@ -51,7 +50,7 @@ jobs:
         run: just clippy-ci
 
       - name: test
-        run: just test
+        run: just test-ci
 
       - name: wasm-pack
         run: just pack-prod
@@ -98,7 +97,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./sudoku-web
-          platforms: linux/arm64
+          platforms: linux/x86_64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

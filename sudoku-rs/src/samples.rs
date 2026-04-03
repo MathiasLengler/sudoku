@@ -1,12 +1,15 @@
-use crate::base::consts::*;
 use crate::base::SudokuBase;
+use crate::base::consts::*;
 use crate::cell::Candidates;
 use crate::cell::Cell;
 use crate::error::Result;
 use crate::generator::{Generator, PruningSettings, PruningTarget};
 use crate::grid::Grid;
 
-// TODO: rethink API (unwrap, clone for consumer of specific sudoku)
+pub fn grid<Base: SudokuBase>(index: usize) -> Grid<Base> {
+    Base::grid_samples().nth(index).unwrap()
+}
+
 pub fn base_2() -> Vec<Grid<Base2>> {
     let mut grids = vec![
         vec![
@@ -41,19 +44,21 @@ pub fn base_2() -> Vec<Grid<Base2>> {
 }
 
 pub fn base_2_solved() -> Grid<Base2> {
-    Grid::<Base2>::try_from(vec![
+    let mut grid = Grid::<Base2>::try_from(vec![
         vec![2, 3, 4, 1],
         vec![4, 1, 3, 2],
         vec![1, 4, 2, 3],
         vec![3, 2, 1, 4],
     ])
-    .unwrap()
+    .unwrap();
+    grid.fix_all_values();
+    grid
 }
 
 pub fn base_2_candidates_coordinates() -> Grid<Base2> {
     Grid::<Base2>::with(
-        (0..u8::try_from(Base2::CELL_COUNT).unwrap())
-            .map(|i| Cell::with_candidates(Candidates::with_integral(i)))
+        Candidates::iter_all_lexicographical()
+            .map(Cell::with_candidates)
             .collect(),
     )
     .unwrap()
@@ -86,6 +91,7 @@ pub fn base_3() -> Vec<Grid<Base3>> {
             "..45.21781...9..3....8....46..45.....7.9...128.12.35..4.......935..6.8.7.9.3..62.",
             "59....147...9....8.72....3.7...4.29..2..3.8.68..17..5...5764..9.36..5...1..8....2",
             "9...84.6.6.4..52.7.3..7..8.76...15...53.....1...4.96.31.5.26.9...2.4....8....371.",
+            "3...6.7..8.....5.....9....264........8..5....5....24.9..6.4.3.5..9.....1....2...6",
         ]
         .into_iter()
         .map(|s| s.parse().unwrap()),
@@ -121,6 +127,8 @@ pub fn minimal<Base: SudokuBase>() -> Grid<Base> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::position::Position;
+    use crate::test_util::test_all_sample_grids;
 
     #[test]
     fn test_base_2() {
@@ -135,16 +143,36 @@ mod tests {
     #[test]
     fn test_base_2_candidates_coordinates() {
         let grid = base_2_candidates_coordinates();
-
-        let top_left_cell = grid.get((0, 0).try_into().unwrap());
-        assert_eq!(*top_left_cell, Cell::with_candidates(Candidates::new()));
-
-        let bottom_right = grid.get((3, 3).try_into().unwrap());
-        assert_eq!(*bottom_right, Cell::with_candidates(Candidates::all()));
+        assert_eq!(
+            grid.get(Position::top_left()).candidates().unwrap(),
+            Candidates::new()
+        );
+        assert_eq!(
+            grid.get(Position::top_right()).candidates().unwrap(),
+            Candidates::try_from(vec![1, 2]).unwrap()
+        );
+        assert_eq!(
+            grid.get(Position::bottom_left()).candidates().unwrap(),
+            Candidates::try_from(vec![3, 4]).unwrap()
+        );
+        assert_eq!(
+            grid.get(Position::bottom_right()).candidates().unwrap(),
+            Candidates::all()
+        );
     }
 
     #[test]
     fn test_base_3() {
         base_3();
+    }
+
+    mod all_values_fixed {
+        use super::*;
+        test_all_sample_grids!(|grid, name| {
+            assert!(
+                grid.all_unfixed_value_positions().is_empty(),
+                "Not all values are fixed in grid {name}:\n{grid}"
+            );
+        });
     }
 }

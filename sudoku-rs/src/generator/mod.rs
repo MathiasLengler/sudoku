@@ -5,15 +5,15 @@ use rand::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 
-use crate::base::SudokuBase;
 use crate::cell::Value;
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
-use crate::rng::{new_crate_rng_with_seed, CrateRng};
+use crate::rng::{CrateRng, new_crate_rng_with_seed};
 use crate::solver::backtracking::DisallowedCandidateAtPosition;
 use crate::solver::strategic::strategies::BruteForce;
 use crate::solver::{backtracking, introspective};
+use crate::{base::SudokuBase, solver::strategic::strategies::selection::StrategySet};
 
 pub use settings::*;
 #[cfg(feature = "parallel")]
@@ -32,7 +32,7 @@ Ideas:
 //  Reference: https://github.com/t-dillon/tdoku/blob/master/src/solver_dpll_triad_simd.cc#L707
 //  The constrained sudoku is not guaranteed to be minimal.
 //  This has an advantage of providing a "almost" minimal sudoku way faster,
-//  since checking for an ambiguous solution is way faster (early abort) than proofing a unique solution.
+//  since checking for an ambiguous solution is way faster (early abort) than proving a unique solution.
 //  The near minimal sudoku can then be minimized as usual.
 
 #[derive(Debug, Default, Clone)]
@@ -215,7 +215,10 @@ impl<Base: SudokuBase> Generator<Base> {
                 restored_positions.push(pruning_position);
 
                 let solution_value = solved_grid[pruning_position].clone();
-                debug!("Restoring pruning position #{}/{pruning_position_count}: {solution_value} at {pruning_position}", restored_positions.len());
+                debug!(
+                    "Restoring pruning position #{}/{pruning_position_count}: {solution_value} at {pruning_position}",
+                    restored_positions.len()
+                );
                 debug_assert!(solution_value.has_value());
                 near_minimal_grid[pruning_position] = solution_value;
             }
@@ -246,7 +249,7 @@ impl<Base: SudokuBase> Generator<Base> {
 
                 let restored_value_count = pruning_position_i + non_pruning_position_count;
                 let minimum_clue_count_for_unique_solution =
-                    Base::MINIMUM_CLUE_COUNT_FOR_UNIQUE_SOLUTION;
+                    Base::ENUM.minimum_clue_count_for_unique_solution();
                 if restored_value_count < minimum_clue_count_for_unique_solution {
                     // FIXME: breaks rustfmt
                     // debug!("Skip check for unique solution, since restored value count {restored_value_count} is less than minimum clue count for unique solution {minimum_clue_count_for_unique_solution}");
@@ -264,7 +267,9 @@ impl<Base: SudokuBase> Generator<Base> {
                 if self.settings.solution.is_some() {
                     bail!("'solution.values_grid' has no solution")
                 } else {
-                    panic!("Expected adding of pruning positions to eventually result in a unique solution")
+                    panic!(
+                        "Expected adding of pruning positions to eventually result in a unique solution"
+                    )
                 }
             };
 
@@ -342,14 +347,14 @@ impl<Base: SudokuBase> Generator<Base> {
 
         let can_be_deleted: bool = (
             // Either default strategies
-            prune_settings.strategies == [BruteForce.into()]
+            prune_settings.strategies == StrategySet::with_single(BruteForce.into())
             ||
                 // Or ensure the grid remains solvable with the non-default strategies
                 grid
-                .is_solvable_with_strategies(prune_settings.strategies.clone())
+                .is_solvable_with_strategies(prune_settings.strategies)
                 .is_ok_and(|solution| solution.is_some())
         ) && {
-            let mut solver = introspective::Solver::new_with_filter(
+            let mut solver = introspective::Solver::with_filter(
                 grid.clone(),
                 DisallowedCandidateAtPosition {
                     pos,
@@ -377,7 +382,9 @@ impl<Base: SudokuBase> Generator<Base> {
 
     fn get_solution_values_grid(&self) -> Result<&Grid<Base>> {
         let Some(SolutionSettings { values_grid }) = &self.settings.solution else {
-            bail!("'PruningOrder::SolutionUnfixedValues' requires 'settings.solution.values_grid' to be defined")
+            bail!(
+                "'PruningOrder::SolutionUnfixedValues' requires 'settings.solution.values_grid' to be defined"
+            )
         };
         Ok(values_grid)
     }
@@ -474,7 +481,9 @@ impl<Base: SudokuBase> Generator<Base> {
 
             if Self::try_delete_cell_at_pos(&mut grid, pos, prune_settings).is_some() {
                 deleted_count += 1;
-                debug!("Position {pruning_position_index}/{pruning_position_count} deleted, totaling {deleted_count}/{distance_from_filled} deleted positions");
+                debug!(
+                    "Position {pruning_position_index}/{pruning_position_count} deleted, totaling {deleted_count}/{distance_from_filled} deleted positions"
+                );
             } else {
                 debug!(
                     "Position {pruning_position_index}/{pruning_position_count} is required for unique solution"
@@ -529,7 +538,9 @@ impl<Base: SudokuBase> Generator<Base> {
             }
         };
 
-        debug!("Pruning grid by trying to delete values at positions {remaining_pruning_positions:?} in grid:\n{grid}");
+        debug!(
+            "Pruning grid by trying to delete values at positions {remaining_pruning_positions:?} in grid:\n{grid}"
+        );
 
         let remaining_pruning_position_count = remaining_pruning_positions.len();
 
@@ -542,7 +553,9 @@ impl<Base: SudokuBase> Generator<Base> {
             if let Some(deleted_value) =
                 Self::try_delete_cell_at_pos(&mut grid, pos, prune_settings)
             {
-                debug!("Position {pruning_position_index}/{remaining_pruning_position_count} deleted, totaling {deleted_count} deleted positions");
+                debug!(
+                    "Position {pruning_position_index}/{remaining_pruning_position_count} deleted, totaling {deleted_count} deleted positions"
+                );
 
                 deleted.push((pos, deleted_value));
             } else {
@@ -562,7 +575,9 @@ impl<Base: SudokuBase> Generator<Base> {
         for (restore_i, (deleted_pos, deleted_value)) in
             (1..).zip(deleted.into_iter().rev().take(distance_from_minimal.into()))
         {
-            debug!("Restoring deleted value #{restore_i}/{distance_from_minimal}: {deleted_value} at {deleted_pos}");
+            debug!(
+                "Restoring deleted value #{restore_i}/{distance_from_minimal}: {deleted_value} at {deleted_pos}"
+            );
 
             grid.get_mut(deleted_pos).set_value(deleted_value);
         }
@@ -604,6 +619,7 @@ mod tests {
 
             let solution_values_grid = {
                 let mut solution_values_grid = samples::base_2_solved();
+                solution_values_grid.unfix_all_values();
 
                 // Delete lower half of solution grid
                 Position::all_rows()
@@ -745,7 +761,7 @@ mod tests {
 
             for (input, expected_output) in test_cases {
                 for seed in 0..10 {
-                    let gen = Generator::with_settings(GeneratorSettings {
+                    let generator = Generator::with_settings(GeneratorSettings {
                         prune: Some(PruningSettings {
                             order: input.order.clone(),
                             ..Default::default()
@@ -760,17 +776,21 @@ mod tests {
 
                     let mut rng = new_crate_rng_with_seed(Some(seed));
 
-                    let prune_settings = gen.settings.prune.as_ref().unwrap().clone();
-                    let pruning_positions =
-                        gen.pruning_positions(&prune_settings, &mut rng).unwrap();
-                    let non_pruning_positions = gen.non_pruning_positions(&prune_settings).unwrap();
+                    let prune_settings = generator.settings.prune.as_ref().unwrap().clone();
+                    let pruning_positions = generator
+                        .pruning_positions(&prune_settings, &mut rng)
+                        .unwrap();
+                    let non_pruning_positions =
+                        generator.non_pruning_positions(&prune_settings).unwrap();
 
                     assert!(pruning_positions.iter().all_unique());
                     assert!(non_pruning_positions.iter().all_unique());
-                    assert!(pruning_positions
-                        .iter()
-                        .chain(&non_pruning_positions)
-                        .all_unique());
+                    assert!(
+                        pruning_positions
+                            .iter()
+                            .chain(&non_pruning_positions)
+                            .all_unique()
+                    );
 
                     assert_eq!(
                         pruning_positions.len() + non_pruning_positions.len(),
@@ -814,6 +834,7 @@ mod tests {
 
     mod prune {
         use super::*;
+        use crate::solver::strategic::strategies::selection::StrategySelection;
 
         mod target {
             use super::*;
@@ -865,11 +886,14 @@ mod tests {
             }
         }
 
-        #[test]
-        fn test_strategies() {
-            use crate::solver::strategic::strategies::*;
+        mod strategies {
+            use super::*;
+            use rstest::rstest;
 
-            fn generate(target: PruningTarget, strategies: Vec<StrategyEnum>) -> Grid<Base3> {
+            fn generate_with_target_and_strategies(
+                target: PruningTarget,
+                strategies: StrategySet,
+            ) -> Grid<Base3> {
                 Generator::<Base3>::with_pruning(PruningSettings {
                     strategies,
                     target,
@@ -879,20 +903,43 @@ mod tests {
                 .unwrap()
             }
 
-            let targets = vec![PruningTarget::Minimal, PruningTarget::MaxEmptyCellCount(20)];
+            fn first_n_default_strategies(n: usize) -> StrategySet {
+                let default_strategies = StrategySet::default_solver_strategies_no_brute_force();
+                assert!(n <= default_strategies.count());
+                StrategySet::default_solver_strategies_no_brute_force()
+                    .iter_strategies()
+                    .take(n)
+                    .collect()
+            }
 
-            for target in targets {
-                let grid = generate(target, vec![]);
-                assert!(grid.is_solved());
-
-                let default_strategies = StrategyEnum::default_solver_strategies();
-                for i in 1..default_strategies.len() {
-                    let strategies = default_strategies.clone().into_iter().take(i).collect_vec();
-                    let grid = generate(target, strategies.clone());
-                    assert!(grid
-                        .is_solvable_with_strategies(strategies)
-                        .unwrap()
-                        .is_some());
+            #[rstest]
+            fn test_strategies(
+                #[values(
+                    PruningTarget::Minimal,
+                    PruningTarget::MinimalPlusClueCunt(1),
+                    PruningTarget::MinClueCount(30)
+                )]
+                target: PruningTarget,
+                #[values(
+                    StrategySet::with_all(false),
+                    first_n_default_strategies(1),
+                    first_n_default_strategies(2),
+                    first_n_default_strategies(3),
+                    first_n_default_strategies(4),
+                    first_n_default_strategies(5),
+                    first_n_default_strategies(6)
+                )]
+                strategies: StrategySet,
+            ) {
+                let grid = generate_with_target_and_strategies(target, strategies);
+                if strategies.is_empty() {
+                    assert!(grid.is_solved());
+                } else {
+                    assert!(
+                        grid.is_solvable_with_strategies(strategies)
+                            .unwrap()
+                            .is_some()
+                    );
                 }
             }
         }
@@ -934,10 +981,10 @@ mod tests {
 
         #[test]
         fn test_no_seed() {
-            let gen = Generator::<Base3>::default();
+            let generator = Generator::<Base3>::default();
 
-            let grid1 = gen.generate().unwrap();
-            let grid2 = gen.generate().unwrap();
+            let grid1 = generator.generate().unwrap();
+            let grid2 = generator.generate().unwrap();
 
             assert!(grid1.is_solved());
             assert!(grid2.is_solved());
@@ -1045,7 +1092,11 @@ mod tests {
 
         #[test]
         fn test_solved_values_grid_prune_minimal() {
-            let values_grid = samples::base_2_solved();
+            let values_grid = {
+                let mut solved_grid = samples::base_2_solved();
+                solved_grid.unfix_all_values();
+                solved_grid
+            };
 
             let grid = Generator::<Base2>::with_settings(GeneratorSettings {
                 solution: Some(SolutionSettings {

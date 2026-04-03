@@ -1,36 +1,64 @@
-import { DefaultValue } from "recoil";
-import { z } from "zod";
+import type { SyncStorage } from "jotai/vanilla/utils/atomWithStorage";
+import * as z from "zod";
 
-type SimpleAtomEffect<T> = (param: {
-    node: { key: string };
-    setSelf: (param: T) => void;
-
-    // Subscribe callbacks to events.
-    // Atom effect observers are called before global transaction observers
-    onSet: (param: (newValue: T, oldValue: T | DefaultValue, isReset: boolean) => void) => void;
-}) => void | (() => void);
-
-export function localStorageEffect<Schema extends z.ZodTypeAny>(schema: Schema) {
-    type SchemaType = z.infer<typeof schema>;
-    const effect: SimpleAtomEffect<SchemaType> = ({ setSelf, onSet, node: { key: nodeKey } }) => {
-        const key = `recoil_v1_${nodeKey}`;
-        const savedValue = localStorage.getItem(key);
-        if (savedValue != null) {
+// https://zod.dev/codecs?id=jsonschema
+const jsonCodec = <T extends z.core.$ZodType>(schema: T) =>
+    z.codec(z.string(), schema, {
+        decode: (jsonString, ctx) => {
             try {
-                setSelf(schema.parse(JSON.parse(savedValue)) as SchemaType);
-            } catch (err) {
-                console.error(`Failed to restore recoil atom ${nodeKey} from local storage key ${key}:`, err);
-                localStorage.removeItem(key);
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+                return JSON.parse(jsonString);
+            } catch (err: unknown) {
+                ctx.issues.push({
+                    code: "invalid_format",
+                    format: "json",
+                    input: jsonString,
+                    message: err instanceof Error ? err.message : "Unknown error parsing JSON",
+                });
+                return z.NEVER;
             }
-        }
+        },
+        encode: (value) => JSON.stringify(value),
+    });
 
-        onSet((newValue, _, isReset) => {
-            if (isReset) {
-                localStorage.removeItem(key);
-            } else {
-                localStorage.setItem(key, JSON.stringify(newValue));
+export function getZodLocalStorage<Schema extends z.ZodTypeAny>(schema: Schema): SyncStorage<z.output<typeof schema>> {
+    const jsonSchema = jsonCodec(schema);
+
+    return {
+        getItem(key, initialValue) {
+            const storedValue = localStorage.getItem(key);
+            if (!storedValue) {
+                return initialValue;
             }
-        });
+            try {
+                return jsonSchema.decode(storedValue, { reportInput: true });
+            } catch (err) {
+                console.error("Error decoding localStorage item", key, err);
+                localStorage.removeItem(key);
+                return initialValue;
+            }
+        },
+        setItem(key, value) {
+            const encoded = jsonSchema.encode(value, { reportInput: true });
+            localStorage.setItem(key, encoded);
+        },
+        removeItem(key) {
+            localStorage.removeItem(key);
+        },
+        subscribe(key, callback, initialValue) {
+            const handler = (e: StorageEvent) => {
+                if (e.storageArea === localStorage && e.key === key) {
+                    let newValue;
+                    try {
+                        newValue = jsonSchema.decode(e.newValue ?? "");
+                    } catch {
+                        newValue = initialValue;
+                    }
+                    callback(newValue);
+                }
+            };
+            window.addEventListener("storage", handler);
+            return () => window.removeEventListener("storage", handler);
+        },
     };
-    return effect;
 }

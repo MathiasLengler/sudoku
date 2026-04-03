@@ -1,49 +1,34 @@
+import { isEqual } from "es-toolkit";
+import { eagerAtom } from "jotai-eager";
+import { atomFamily } from "jotai/utils";
 import type { DynamicPosition, TransportCell } from "../../types";
-import { selector, selectorFamily } from "recoil";
 import { cellPositionToBlockPosition, positionToIndex } from "../utils/sudoku";
-import { sudokuBaseState, sudokuCellsState, sudokuSideLengthState } from "./sudoku";
 import { selectedPosState } from "./input";
-import type { CreateSerializableParam } from "../../typeUtils";
+import { sudokuBaseState, sudokuCellsState, sudokuSideLengthState } from "./sudoku";
 
-export const cellAtIndexState = selectorFamily<TransportCell, number>({
-    key: "CellAtIndex",
-    get:
-        (cellIndex) =>
-        ({ get }) => {
-            const cells = get(sudokuCellsState);
-            const selectedCells = cells[cellIndex];
-            if (!selectedCells) {
-                throw new Error(`Failed to get cell at index ${cellIndex} in cells with length of ${cells.length}`);
-            }
-            return selectedCells;
-        },
-    cachePolicy_UNSTABLE: {
-        eviction: "most-recent",
-    },
-});
-export const cellAtGridPositionState = selectorFamily<TransportCell, CreateSerializableParam<DynamicPosition>>({
-    key: "CellAtGridPosition",
-    get:
-        (gridPosition) =>
-        ({ get }) => {
+export const cellAtIndexState = atomFamily((cellIndex: number) =>
+    eagerAtom<TransportCell>((get) => {
+        const cells = get(sudokuCellsState);
+        const selectedCells = cells[cellIndex];
+        if (!selectedCells) {
+            throw new Error(`Failed to get cell at index ${cellIndex} in cells with length of ${cells.length}`);
+        }
+        return selectedCells;
+    }),
+);
+export const cellAtGridPositionState = atomFamily(
+    (gridPosition: DynamicPosition) =>
+        eagerAtom<TransportCell>((get) => {
             const sideLength = get(sudokuSideLengthState);
             return get(cellAtIndexState(positionToIndex({ gridPosition, sideLength })));
-        },
-    cachePolicy_UNSTABLE: {
-        eviction: "most-recent",
-    },
-});
+        }),
+    isEqual,
+);
 
-export const selectedBlockPositionState = selector<DynamicPosition | undefined>({
-    key: "CellSelection.selectedBlockPosition",
-    get: ({ get }) => {
-        const selectedPos = get(selectedPosState);
-        if (selectedPos) {
-            const base = get(sudokuBaseState);
-            return cellPositionToBlockPosition(selectedPos, base);
-        }
-    },
-    cachePolicy_UNSTABLE: {
-        eviction: "most-recent",
-    },
+export const selectedBlockPositionState = eagerAtom<DynamicPosition | undefined>((get) => {
+    const selectedPos = get(selectedPosState);
+    const base = get(sudokuBaseState);
+    if (selectedPos) {
+        return cellPositionToBlockPosition(selectedPos, base);
+    }
 });

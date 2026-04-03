@@ -1,7 +1,7 @@
 import { useNotifications } from "@toolpad/core/useNotifications";
-import * as _ from "lodash-es";
+import * as _ from "es-toolkit";
 import { Suspense, useCallback, useEffect } from "react";
-import { useRecoilValue, useSetRecoilState } from "recoil";
+import { useAtomValue, useSetAtom } from "jotai";
 import type { DynamicCell, DynamicPosition } from "../types";
 import { useEndStickyChain } from "./actions/inputActions";
 import { saveCells } from "./state/cellsPersistence";
@@ -10,7 +10,7 @@ import { gameCounterState, sudokuBaseState, sudokuCellsState, sudokuSolutionStat
 import { baseToSideLength } from "./utils/sudoku";
 
 function SaveCellsEffect() {
-    const cells = useRecoilValue(sudokuCellsState);
+    const cells = useAtomValue(sudokuCellsState);
 
     useEffect(() => {
         saveCells(cells.map(({ position, incorrectValue, ...cell }): DynamicCell => cell));
@@ -20,8 +20,8 @@ function SaveCellsEffect() {
 }
 
 function SudokuBaseEffect() {
-    const base = useRecoilValue(sudokuBaseState);
-    const setInput = useSetRecoilState(inputState);
+    const base = useAtomValue(sudokuBaseState);
+    const setInput = useSetAtom(inputState);
 
     useEffect(() => {
         setInput((input) => {
@@ -55,8 +55,8 @@ function SudokuBaseEffect() {
 function SolutionEffect() {
     const notifications = useNotifications();
 
-    const solution = useRecoilValue(sudokuSolutionState);
-    const gameCounter = useRecoilValue(gameCounterState);
+    const solution = useAtomValue(sudokuSolutionState);
+    const gameCounter = useAtomValue(gameCounterState);
 
     useEffect(() => {
         if (solution === "noSolution") {
@@ -85,7 +85,7 @@ function PointerUpHandler() {
                 return;
             }
 
-            endStickyChain().catch(console.error);
+            endStickyChain();
         },
         [endStickyChain],
     );

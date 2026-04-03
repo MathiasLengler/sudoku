@@ -4,18 +4,96 @@ use std::marker::PhantomData;
 use std::num::NonZeroU8;
 
 use anyhow::{ensure, format_err};
-use serde::{Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 
 use crate::base::SudokuBase;
 use crate::cell::dynamic::DynamicValue;
 use crate::error::{Error, Result};
 use crate::position::Coordinate;
 
+pub mod map {
+    use super::*;
+    use crate::grid::group::Group;
+    use std::fmt::Debug;
+
+    // TODO: implement `Grid::count_values() -> ValueMap<Base, u16>` (CELL_COUNT: u16)
+    // then implement ValueMap<Base, u16>::(variance/deviation/dispersion)
+    //  decide on which dispersion to implement: https://en.wikipedia.org/wiki/Statistical_dispersion
+
+    /// A map of `Value<Base>` to `T`.
+    #[derive(Debug, Default, Clone)]
+    pub struct ValueMap<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug> {
+        values: Group<Base, T>,
+    }
+
+    impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + PartialEq> PartialEq
+        for ValueMap<Base, T>
+    where
+        Base::Group<T>: PartialEq,
+    {
+        fn eq(&self, other: &Self) -> bool {
+            self.values == other.values
+        }
+    }
+
+    impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug + Eq> Eq for ValueMap<Base, T> where
+        Base::Group<T>: Eq
+    {
+    }
+
+    impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug> ValueMap<Base, T> {
+        pub fn with_all(value: T) -> Self
+        where
+            T: Copy,
+        {
+            Self {
+                values: Group::with_all(value),
+            }
+        }
+
+        pub fn get(&self, value: Value<Base>) -> T {
+            self.values.get(value.into())
+        }
+        pub fn get_mut(&mut self, value: Value<Base>) -> &mut T {
+            self.values.get_mut(value.into())
+        }
+    }
+
+    pub type ValueCounts<Base> = ValueMap<Base, u16>;
+
+    impl<Base: SudokuBase> ValueCounts<Base> {
+        pub fn count(values: impl IntoIterator<Item = Value<Base>>) -> Self {
+            let mut this = Self::default();
+            for value in values {
+                *this.get_mut(value) += 1;
+            }
+            this
+        }
+
+        pub fn sum(&self) -> u16 {
+            self.values.iter().sum()
+        }
+
+        pub fn std_dev(&self) -> f64 {
+            use statrs::statistics::Statistics;
+
+            self.values.iter().map(f64::from).std_dev()
+        }
+    }
+}
+
 /// A valid sudoku value for a given base.
 ///
 /// A `Value` always is in the range of `1..=(Base::MAX_VALUE)`
-#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Copy, Clone, Debug)]
+#[allow(
+    clippy::unsafe_derive_deserialize,
+    reason = "Safety invariants upheld by serde(try_from)"
+)]
+#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Copy, Clone, Debug, Serialize, Deserialize)]
+#[serde(into = "u8", try_from = "u8")]
 pub struct Value<Base: SudokuBase> {
+    /// # Safety invariants
+    /// - `value <= Base::MAX_VALUE`
     value: NonZeroU8,
     base: PhantomData<Base>,
 }
@@ -56,6 +134,12 @@ impl<Base: SudokuBase> Value<Base> {
     pub fn max() -> Self {
         // Safety: `Base::MAX_VALUE` is in the range `1..=(Base::MAX_VALUE)`
         unsafe { Self::new_unchecked(Base::MAX_VALUE) }
+    }
+
+    pub fn middle() -> Self {
+        let middle_value = Base::MAX_VALUE.div_ceil(2);
+        // Safety: `middle_value` is in the range `1..=(Base::MAX_VALUE)`
+        unsafe { Self::new_unchecked(middle_value) }
     }
 }
 
@@ -138,12 +222,9 @@ impl<Base: SudokuBase> TryFrom<DynamicValue> for Value<Base> {
     }
 }
 
-impl<Base: SudokuBase> Serialize for Value<Base> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_u8(self.value.get())
+impl<Base: SudokuBase> From<Value<Base>> for u8 {
+    fn from(value: Value<Base>) -> Self {
+        value.get()
     }
 }
 
@@ -179,5 +260,42 @@ mod tests {
         value.unwrap_err();
 
         Ok(())
+    }
+
+    #[test]
+    fn test_middle() {
+        assert_eq!(Value::<Base2>::middle().get(), 2);
+        assert_eq!(Value::<Base3>::middle().get(), 5);
+        assert_eq!(Value::<Base4>::middle().get(), 8);
+        assert_eq!(Value::<Base5>::middle().get(), 13);
+    }
+
+    mod serde {
+        use super::*;
+        use crate::test_util::test_max_base5;
+        use serde_test::{Token, assert_tokens};
+
+        mod default {
+            use super::*;
+            test_max_base5!({
+                assert_tokens(&Value::<Base>::default(), &[Token::U8(1)]);
+            });
+        }
+
+        mod max {
+            use super::*;
+            test_max_base5!({
+                let value = Value::<Base>::default();
+                assert_tokens(&value, &[Token::U8(value.get())]);
+            });
+        }
+
+        mod middle {
+            use super::*;
+            test_max_base5!({
+                let value = Value::<Base>::middle();
+                assert_tokens(&value, &[Token::U8(value.get())]);
+            });
+        }
     }
 }

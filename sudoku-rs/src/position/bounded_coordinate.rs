@@ -120,7 +120,8 @@ impl<Base: SudokuBase> Coordinate<Base> {
         #[allow(clippy::cast_possible_truncation)]
         let coordinate = coordinate as u8;
 
-        Self::new_unchecked(coordinate)
+        // Safety: caller has guaranteed `coordinate < Base::SIDE_LENGTH`.
+        unsafe { Self::new_unchecked(coordinate) }
     }
 }
 
@@ -232,14 +233,22 @@ mod tests {
 
     use super::*;
 
-    #[test]
-    fn test_new() {
-        // Base 2
-        assert_eq!(Coordinate::<Base2>::new(0).unwrap().coordinate, 0);
-        assert_eq!(Coordinate::<Base2>::new(3).unwrap().coordinate, 3);
-        Coordinate::<Base2>::new(4).unwrap_err();
-    }
+    mod constructors {
+        use super::*;
+        #[test]
+        fn test_new() {
+            // Base 2
+            assert_eq!(Coordinate::<Base2>::new(0).unwrap().coordinate, 0);
+            assert_eq!(Coordinate::<Base2>::new(3).unwrap().coordinate, 3);
+            Coordinate::<Base2>::new(4).unwrap_err();
+        }
 
+        #[test]
+        fn test_max() {
+            assert_eq!(Coordinate::<Base2>::max().get(), 3);
+            assert_eq!(Coordinate::<Base3>::max().get(), 8);
+        }
+    }
     #[test]
     fn test_all() {
         use itertools::assert_equal;
@@ -248,11 +257,5 @@ mod tests {
             Coordinate::<Base3>::all(),
             (0..9).map(|coordinate| Coordinate::new(coordinate).unwrap()),
         );
-    }
-
-    #[test]
-    fn test_max() {
-        assert_eq!(Coordinate::<Base2>::max().get(), 3);
-        assert_eq!(Coordinate::<Base3>::max().get(), 8);
     }
 }

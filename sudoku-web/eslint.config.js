@@ -1,17 +1,19 @@
 import eslint from "@eslint/js";
-import hooksPlugin from "eslint-plugin-react-hooks";
+import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import reactJsxRuntime from "eslint-plugin-react/configs/jsx-runtime.js";
 import reactRecommended from "eslint-plugin-react/configs/recommended.js";
+import eslintPluginZodX from "eslint-plugin-zod-x";
+import { defineConfig } from "eslint/config";
 import tseslint from "typescript-eslint";
 
-export default tseslint.config(
+export default defineConfig(
     {
         ignores: ["*.js", "*.mjs", "dist", "dev-dist"],
     },
     eslint.configs.recommended,
-    ...tseslint.configs.recommendedTypeChecked,
-    ...tseslint.configs.stylisticTypeChecked,
+    tseslint.configs.recommendedTypeChecked,
+    tseslint.configs.stylisticTypeChecked,
     {
         languageOptions: {
             parserOptions: {
@@ -29,14 +31,9 @@ export default tseslint.config(
             },
         },
     },
-    // Reference: https://github.com/facebook/react/issues/28313
-    {
-        plugins: {
-            "react-hooks": hooksPlugin,
-        },
-        rules: hooksPlugin.configs.recommended.rules,
-    },
+    reactHooks.configs.flat.recommended,
     reactRefresh.configs.vite,
+    eslintPluginZodX.configs.recommended,
     {
         rules: {
             "@typescript-eslint/no-unused-vars": [
@@ -66,12 +63,6 @@ export default tseslint.config(
                     ignoreStatic: true,
                 },
             ],
-            "react-hooks/exhaustive-deps": [
-                "warn",
-                {
-                    additionalHooks: "(useRecoilCallback|useRecoilTransaction_UNSTABLE)",
-                },
-            ],
             "react/no-unknown-property": [
                 "error",
                 {
@@ -83,27 +74,15 @@ export default tseslint.config(
                 {
                     paths: [
                         {
-                            name: "lodash",
-                            message: `Instead use: import {} from "lodash-es";`,
-                        },
-                        {
                             name: "react",
                             importNames: ["default", "FunctionComponent"],
                         },
-                    ],
-                    patterns: [
                         {
-                            group: ["lodash/*"],
-                            message: `Instead use: import {} from "lodash-es";`,
+                            name: "react-hook-form-mui",
+                            importNames: ["TextFieldElement"],
+                            message: "Instead use 'MyTextField'",
                         },
                     ],
-                },
-            ],
-            "no-restricted-syntax": [
-                "error",
-                {
-                    selector: 'ImportDeclaration[source.value="lodash-es"] ImportDefaultSpecifier',
-                    message: `Instead use: import * as _ from "lodash-es";`,
                 },
             ],
             // Reference: https://stackoverflow.com/a/76818791

@@ -1,11 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { NotificationsProvider } from "@toolpad/core/useNotifications";
+import { Provider as JotaiProvider } from "jotai";
 import { Suspense } from "react";
-import { RecoilRoot } from "recoil";
-import { RecoilDebug } from "./RecoilDebug";
 import { SwManager } from "./SwManager";
 import { BasicErrorBoundary, ThemeErrorBoundary } from "./components/ErrorFallback";
 import { FullScreenSpinner } from "./components/FullScreenSpinner";
+import { store } from "./state/store";
 import { Sudoku } from "./sudoku";
 import { MyTheme } from "./theme/myTheme";
 
@@ -27,8 +27,7 @@ const queryClient = new QueryClient({
 export function App() {
     return (
         <BasicErrorBoundary>
-            <RecoilRoot>
-                {import.meta.env.DEV && <RecoilDebug />}
+            <JotaiProvider store={store}>
                 <QueryClientProvider client={queryClient}>
                     <MyTheme>
                         <ThemeErrorBoundary>
@@ -41,7 +40,7 @@ export function App() {
                         </ThemeErrorBoundary>
                     </MyTheme>
                 </QueryClientProvider>
-            </RecoilRoot>
+            </JotaiProvider>
         </BasicErrorBoundary>
     );
 }

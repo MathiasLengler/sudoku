@@ -1,5 +1,5 @@
 import type { UseResizeDetectorReturn } from "react-resize-detector";
-import { useRecoilValue } from "recoil";
+import { useAtomValue } from "jotai";
 import { sudokuBlocksIndexesState, sudokuCellsState } from "../state/sudoku";
 import { Block } from "./block";
 
@@ -8,8 +8,8 @@ type GridProps = {
 };
 
 export function Grid({ gridRef }: GridProps) {
-    const blocksIndexes = useRecoilValue(sudokuBlocksIndexesState);
-    const cells = useRecoilValue(sudokuCellsState);
+    const blocksIndexes = useAtomValue(sudokuBlocksIndexesState);
+    const cells = useAtomValue(sudokuCellsState);
 
     return (
         <div className="grid-container">

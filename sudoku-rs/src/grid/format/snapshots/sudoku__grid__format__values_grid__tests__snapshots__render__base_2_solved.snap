@@ -1,0 +1,9 @@
+---
+source: sudoku-rs/src/grid/format/values_grid.rs
+expression: ValuesGrid.render(&grid)
+---
+ 2 3 │ 4 1 
+ 4 1 │ 3 2 
+─────┼─────
+ 1 4 │ 2 3 
+ 3 2 │ 1 4

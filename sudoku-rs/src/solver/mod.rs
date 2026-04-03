@@ -98,7 +98,14 @@ pub(crate) mod test_util {
 
                 for $grid in grids $block
             }
+            #[test]
+            fn test_samples_base_2_solved() {
+                $setup;
 
+                let $grid = crate::samples::base_2_solved();
+
+                $block
+            }
             #[test]
             fn test_samples_base_3() {
                 $setup;
@@ -107,7 +114,6 @@ pub(crate) mod test_util {
 
                 for $grid in grids $block
             }
-
             #[cfg(not(debug_assertions))]
             #[test]
             fn test_samples_base_4() {
@@ -116,15 +122,6 @@ pub(crate) mod test_util {
                 let grids = crate::samples::base_4();
 
                 for $grid in grids $block
-            }
-
-            #[test]
-            fn test_samples_solved() {
-                $setup;
-
-                let $grid = crate::samples::base_2_solved();
-
-                $block
             }
         };
         (|$grid:ident| $block:block) => {
@@ -135,7 +132,7 @@ pub(crate) mod test_util {
     pub(crate) use tests_solver_samples;
 
     pub(crate) fn assert_infallible_solver_single_solution<Base: SudokuBase>(
-        mut solver: impl InfallibleSolver<Base>,
+        solver: &mut impl InfallibleSolver<Base>,
         puzzle: &Grid<Base>,
     ) {
         let solution = solver.solve().expect("Solver should return a solution");
@@ -144,7 +141,7 @@ pub(crate) mod test_util {
     }
 
     pub(crate) fn assert_fallible_solver_single_solution<Base: SudokuBase>(
-        mut solver: impl FallibleSolver<Base>,
+        solver: &mut impl FallibleSolver<Base>,
         puzzle: &Grid<Base>,
     ) {
         let solution = solver
@@ -186,9 +183,9 @@ pub(crate) mod test_util {
 
         assert_eq!(solutions.len(), NUMBER_OF_BASE_2_SOLUTIONS);
 
-        solutions
-            .iter()
-            .for_each(|solution| assert!(solution.is_solved()));
+        for solution in &solutions {
+            assert!(solution.is_solved());
+        }
 
         let unique_solutions = solutions.into_iter().collect::<HashSet<_>>();
 

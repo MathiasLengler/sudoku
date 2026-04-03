@@ -1,13 +1,14 @@
 import LanguageIcon from "@mui/icons-material/Language";
 import assertNever from "assert-never";
-import { useRecoilState } from "recoil";
+import { useAtom } from "jotai";
+import * as _ from "es-toolkit";
+import * as z from "zod";
+import { usePlaySelectedGrid, useShowWorldMap } from "../../actions/worldActions";
 import MyIconButton from "../../components/MyIconButton";
 import { MyMenu } from "../../components/MyMenu";
 import { gameState } from "../../state/gameMode";
-import { DEFAULT_WORLD_GRID_POSITION, requestedGridDimState, worldGridDimSchema } from "../../state/world";
-import { usePlaySelectedGrid, useShowWorldMap } from "../../actions/worldActions";
-import * as _ from "lodash-es";
-import { z } from "zod";
+import { DEFAULT_WORLD_GRID_POSITION, requestedGridDimState } from "../../state/world";
+import { worldGridDimSchema } from "../../state/world/schema";
 
 const gridDims = z.array(worldGridDimSchema).parse([
     { rowCount: 3, columnCount: 3 },
@@ -17,8 +18,8 @@ const gridDims = z.array(worldGridDimSchema).parse([
 ]);
 
 export function WorldSettingsButton() {
-    const [game, setGame] = useRecoilState(gameState);
-    const [requestedGridDim, setRequestedGridDim] = useRecoilState(requestedGridDimState);
+    const [game, setGame] = useAtom(gameState);
+    const [requestedGridDim, setRequestedGridDim] = useAtom(requestedGridDimState);
 
     const playSelectedGrid = usePlaySelectedGrid();
     const showWorldMap = useShowWorldMap();
@@ -63,8 +64,10 @@ export function WorldSettingsButton() {
                           {
                               label: `Toggle world size (${requestedGridDim.rowCount}x${requestedGridDim.columnCount})`,
                               onClick: () => {
-                                  setRequestedGridDim((gridDim) => {
-                                      const currentIndex = _.findIndex(gridDims, gridDim);
+                                  setRequestedGridDim((currentGridDim) => {
+                                      const currentIndex = gridDims.findIndex((gridDim) =>
+                                          _.isEqual(gridDim, currentGridDim),
+                                      );
 
                                       if (currentIndex === -1) {
                                           return _.head(gridDims)!;

@@ -1,22 +1,26 @@
 use serde::{Deserialize, Serialize};
 
-use crate::base::SudokuBase;
-use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::rng::CrateRng;
-use crate::solver::strategic::strategies::{BruteForce, StrategyEnum};
+use crate::{base::SudokuBase, solver::strategic::strategies::selection::StrategySet};
+use crate::{error::Result, solver::strategic::strategies::BruteForce};
 
 pub use dynamic_settings::*;
 
+/// How much to prune the solution.
 #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
 #[derive(Debug, Copy, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum PruningTarget {
+    /// Prune until the grid is minimal, meaning that no clue can be removed without breaking uniqueness of the solution.
     #[default]
     Minimal,
+    /// Prune until the grid is minimal, but with N additional clues.
     MinimalPlusClueCunt(u16),
+    /// Prune until the grid has at most N empty cells or is minimal, whichever comes first.
     MaxEmptyCellCount(u16),
+    /// Prune until the grid has N clues left or is minimal, whichever comes first.
     MinClueCount(u16),
 }
 
@@ -103,10 +107,8 @@ pub enum PruningOrder<Base: SudokuBase> {
 pub struct PruningSettings<Base: SudokuBase> {
     /// Whether to set all direct candidates after pruning is done.
     pub set_all_direct_candidates: bool,
-    // TODO: bit field
-    //  this should make this struct cloneable
     /// With which strategies the sudoku should remain solvable for.
-    pub strategies: Vec<StrategyEnum>,
+    pub strategies: StrategySet,
     /// How much to prune the solution.
     pub target: PruningTarget,
     /// Adjust order in which cells are pruned.
@@ -120,7 +122,7 @@ pub struct PruningSettings<Base: SudokuBase> {
 impl<Base: SudokuBase> Default for PruningSettings<Base> {
     fn default() -> Self {
         Self {
-            strategies: vec![BruteForce.into()],
+            strategies: StrategySet::with_single(BruteForce.into()),
             set_all_direct_candidates: false,
             target: PruningTarget::default(),
             order: PruningOrder::default(),
@@ -165,19 +167,20 @@ pub struct GeneratorSettings<Base: SudokuBase> {
 }
 
 mod dynamic_settings {
-    use anyhow::ensure;
-
+    use crate::base::BaseEnum;
     use crate::cell::dynamic::DynamicCell;
     use crate::error::Error;
     use crate::grid::dynamic::DynamicGrid;
     use crate::position::DynamicPosition;
+    use anyhow::ensure;
 
     use super::*;
 
     #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
-    #[derive(Debug, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Default, Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub enum DynamicPruningOrder {
+        #[default]
         Random,
         Positions {
             positions: Vec<DynamicPosition>,
@@ -212,11 +215,11 @@ mod dynamic_settings {
     }
 
     #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
-    #[derive(Debug, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Default, Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct DynamicPruningSettings {
         pub set_all_direct_candidates: bool,
-        pub strategies: Vec<StrategyEnum>,
+        pub strategies: StrategySet,
         pub target: PruningTarget,
         pub order: DynamicPruningOrder,
         pub start_from_near_minimal_grid: bool,
@@ -245,7 +248,7 @@ mod dynamic_settings {
     }
 
     #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
-    #[derive(Debug, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct DynamicSolutionSettings {
         pub values_grid: DynamicGrid<DynamicCell>,
@@ -263,10 +266,10 @@ mod dynamic_settings {
     }
 
     #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
-    #[derive(Debug, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Default, Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct DynamicGeneratorSettings {
-        pub base: u8,
+        pub base: BaseEnum,
         #[cfg_attr(feature = "wasm", ts(optional = nullable))]
         pub prune: Option<DynamicPruningSettings>,
         #[cfg_attr(feature = "wasm", ts(optional = nullable))]
@@ -286,7 +289,7 @@ mod dynamic_settings {
                 seed,
             } = dynamic_generator_settings;
 
-            ensure!(base == Base::BASE);
+            ensure!(base == Base::ENUM);
 
             Ok(Self {
                 prune: if let Some(prune) = prune {

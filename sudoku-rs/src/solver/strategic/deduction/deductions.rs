@@ -1,4 +1,4 @@
-use std::collections::{btree_set, BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, btree_set};
 use std::fmt::{Display, Formatter};
 
 use crate::base::SudokuBase;
@@ -130,6 +130,10 @@ impl<Base: SudokuBase> Deductions<Base> {
     }
 
     pub fn apply(&self, grid: &mut Grid<Base>) -> Result<()> {
+        if self.is_empty() {
+            return Ok(());
+        }
+
         self.validate(grid)?;
 
         let merged_deduction = self.as_merged_deduction()?;
@@ -162,5 +166,26 @@ impl<Base: SudokuBase> FromIterator<Deduction<Base>> for Deductions<Base> {
         Self {
             deductions: iter.into_iter().collect(),
         }
+    }
+}
+
+impl<Base: SudokuBase> From<Deduction<Base>> for Deductions<Base> {
+    fn from(value: Deduction<Base>) -> Self {
+        std::iter::once(value).collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_apply_empty() {
+        let mut grid = Grid::<crate::base::consts::Base3>::default();
+        let deductions = Deductions::default();
+
+        deductions.apply(&mut grid).unwrap();
+
+        assert_eq!(grid, Grid::default());
     }
 }

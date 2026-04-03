@@ -1,7 +1,7 @@
 import classNames from "classnames";
 import type * as CSS from "csstype";
-import { isEqual } from "lodash-es";
-import { useRecoilValue } from "recoil";
+import { isEqual } from "es-toolkit";
+import { useAtomValue } from "jotai";
 import type { DynamicCellCandidates, DynamicCellValue, DynamicPosition, TransportCell } from "../../types";
 import { useHandlePosition } from "../actions/sudokuActions";
 import { hintState } from "../state/hint";
@@ -33,9 +33,9 @@ type CandidatesProps = {
 };
 
 export function Candidates({ candidates, gridPosition, showGuide = true }: CandidatesProps) {
-    const base = useRecoilValue(sudokuBaseState);
-    const input = useRecoilValue(inputState);
-    const hint = useRecoilValue(hintState);
+    const base = useAtomValue(sudokuBaseState);
+    const input = useAtomValue(inputState);
+    const hint = useAtomValue(hintState);
 
     return (
         <div className="candidates">

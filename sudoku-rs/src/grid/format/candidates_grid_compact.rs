@@ -1,13 +1,17 @@
+use crate::base::SudokuBase;
+use crate::cell::CellState;
+use crate::cell::dynamic::DynamicCell;
+use crate::error::Result;
+use crate::grid::Grid;
+use crate::grid::dynamic::DynamicGrid;
+use crate::grid::format::GridFormat;
+use crate::grid::format::GridFormatCapabilities;
+use crate::grid::format::GridFormatDetectAndParseCapability;
+use crate::grid::format::GridFormatPreservesCellCandidates;
+use crate::grid::format::GridFormatPreservesCellValue;
 use itertools::Itertools;
 use tabled::builder::Builder;
 use tabled::settings::Style;
-
-use crate::base::SudokuBase;
-use crate::cell::dynamic::DynamicCell;
-use crate::cell::CellState;
-use crate::error::Result;
-use crate::grid::format::GridFormat;
-use crate::grid::Grid;
 
 /// A grid of cells.
 /// Candidates are visualized as concatenated numbers in a single line.
@@ -32,6 +36,14 @@ use crate::grid::Grid;
 pub struct CandidatesGridCompact;
 
 impl GridFormat for CandidatesGridCompact {
+    fn capabilities(self) -> GridFormatCapabilities {
+        GridFormatCapabilities {
+            preserves_cell_value: GridFormatPreservesCellValue::ValueOnly,
+            preserves_cell_candidates: GridFormatPreservesCellCandidates::OnlyMultiple,
+            detect_and_parse: GridFormatDetectAndParseCapability::Detectable,
+        }
+    }
+
     fn render<Base: SudokuBase>(self, grid: &Grid<Base>) -> String {
         let all_block_cells = grid
             .all_block_cells()
@@ -80,33 +92,29 @@ impl GridFormat for CandidatesGridCompact {
             .to_string()
     }
 
-    fn parse(self, input: &str) -> Result<Vec<DynamicCell>> {
-        static GRID_BORDER_CHARS: &[char] = &['-', '|', ':', '+', '\'', '\n', '*'];
+    fn parse(self, input: &str) -> Result<DynamicGrid> {
+        static GRID_BORDER_CHARS: &[char] = &['-', '|', '│', ':', '+', '\'', '\n', '*'];
 
         input
             .lines()
             // Filter horizontal separator lines
-            .filter(|line| line.contains(|c: char| c.is_digit(36)))
+            .filter(|&line| line.contains(|c: char| c.is_digit(36)))
             // Filter vertical separators
             .flat_map(|line| line.split(GRID_BORDER_CHARS))
             .filter(|s| !s.is_empty())
             // Split and trim groups of numbers
             .flat_map(|s| s.split_whitespace())
             .map(TryInto::<DynamicCell>::try_into)
-            .collect::<Result<Vec<_>>>()
+            .collect::<Result<Vec<_>>>()?
+            .try_into()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::samples;
-
     use super::*;
-
-    pub(crate) static INPUT_CANDIDATES: &str = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/tests/res/grid_formats/candidates_grid_compact.txt"
-    ));
+    use crate::{base::consts::Base3, grid::format::test_util::assert_parsed_grid, samples};
+    use indoc::indoc;
 
     #[test]
     fn test_render() {
@@ -115,27 +123,45 @@ mod tests {
 
         assert_eq!(
             CandidatesGridCompact.render(&grid),
-            "  8      1246  24569    │  2347  12357  1234     │  13569  4579   1345679  
-  12459  124   3        │  6     12578  1248     │  1589   45789  14579    
-  1456   7     456      │  348   9      1348     │  2      458    13456    
-────────────────────────┼────────────────────────┼─────────────────────────
-  123469  5      2469   │  2389  2368  7         │  1689  2489  12469      
-  12369   12368  269    │  2389  4     5         │  7     289   1269       
-  24679   2468   24679  │  1     268   2689      │  5689  3     24569      
-────────────────────────┼────────────────────────┼─────────────────────────
-  23457  234   1        │  23479  237     2349   │  359  6    8            
-  23467  2346  8        │  5      2367    23469  │  39   1    2379         
-  23567  9     2567     │  2378   123678  12368  │  4    257  2357         "
+            indoc! {"
+                  8      1246  24569    │  2347  12357  1234     │  13569  4579   1345679  
+                  12459  124   3        │  6     12578  1248     │  1589   45789  14579    
+                  1456   7     456      │  348   9      1348     │  2      458    13456    
+                ────────────────────────┼────────────────────────┼─────────────────────────
+                  123469  5      2469   │  2389  2368  7         │  1689  2489  12469      
+                  12369   12368  269    │  2389  4     5         │  7     289   1269       
+                  24679   2468   24679  │  1     268   2689      │  5689  3     24569      
+                ────────────────────────┼────────────────────────┼─────────────────────────
+                  23457  234   1        │  23479  237     2349   │  359  6    8            
+                  23467  2346  8        │  5      2367    23469  │  39   1    2379         
+                  23567  9     2567     │  2378   123678  12368  │  4    257  2357         "
+            }
         );
     }
 
     #[test]
-    fn test_parse() -> Result<()> {
+    fn test_parse() {
         use crate::cell::dynamic::{c, v};
 
-        let cells = CandidatesGridCompact.parse(INPUT_CANDIDATES)?;
+        let parsed_grid = CandidatesGridCompact
+            .parse(indoc! {"
+                .--------------.----------------.------------.
+                | 6   7    89  | 189  19   2    | 3   5   4  |
+                | 1   2    5   | .    3    4    | 9   8   7  |
+                | 3   89   4   | 7    58   59   | 6   2   1  |
+                :--------------+----------------+------------:
+                | 7   3    29  | 19   25   1569 | 8   4   69 |
+                | 5   1    289 | 89   0    679  | 27  69  3  |
+                | 89  4    6   | 3    28   79   | 27  1   5  |
+                :--------------+----------------+------------:
+                | 2   5    3   | 4    7    8    | 0   69  69 |
+                | 89  689  1   | 5    69   3    | 4   .   2  |
+                | 4   69   7   | 2    169  169  | 5   3   8  |
+                '--------------'----------------'------------'"
+            })
+            .unwrap();
 
-        let expected_cells = vec![
+        let expected_grid = Grid::<Base3>::try_from(vec![
             vec![
                 v(6),
                 v(7),
@@ -225,13 +251,21 @@ mod tests {
                 v(3),
                 v(8),
             ],
-        ]
-        .into_iter()
-        .flatten()
-        .collect::<Vec<_>>();
+        ])
+        .unwrap();
+        assert_parsed_grid(&expected_grid, &parsed_grid).unwrap();
+    }
 
-        assert_eq!(cells, expected_cells);
+    mod snapshots {
+        use super::*;
 
-        Ok(())
+        mod render {
+            use super::*;
+            use crate::test_util::test_all_sample_grids;
+
+            test_all_sample_grids!(|grid, name| {
+                insta::assert_snapshot!(name, CandidatesGridCompact.render(&grid));
+            });
+        }
     }
 }

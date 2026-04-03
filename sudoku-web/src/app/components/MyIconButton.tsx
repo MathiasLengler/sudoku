@@ -2,8 +2,8 @@ import type { MouseEvent, ReactNode } from "react";
 import { Badge, SvgIcon } from "@mui/material";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
-import type { IconButtonProps } from "@mui/material/IconButton/IconButton";
-import type { BadgeProps } from "@mui/material/Badge/Badge";
+import type { IconButtonProps } from "@mui/material/IconButton";
+import type { BadgeProps } from "@mui/material/Badge";
 
 type MyIconButtonProps = {
     label: string;

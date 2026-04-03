@@ -1,46 +1,38 @@
 #[macro_use]
 extern crate criterion;
 
-use std::any::Any;
-use std::hint::black_box;
-use std::path::Path;
-
 use criterion::measurement::WallTime;
 use criterion::{BatchSize, BenchmarkId, SamplingMode, Throughput};
 use criterion::{BenchmarkGroup, Criterion};
-
 use num::Integer;
-use sudoku::base::{consts::*, BaseEnum, SudokuBase};
+use rand::prelude::*;
+use std::hint::black_box;
+use std::path::Path;
 use sudoku::cell::Candidates;
 use sudoku::cell::Value;
 use sudoku::generator::{Generator, GeneratorSettings, PruningSettings, PruningTarget};
+use sudoku::grid::Grid;
 use sudoku::grid::deserialization::read_grids_from_file;
 use sudoku::grid::group::CandidatesGroup;
-use sudoku::grid::Grid;
-use sudoku::position::test_utils::{consume_iter, consume_nested_iter};
 use sudoku::position::Coordinate;
 use sudoku::position::Position;
-use sudoku::rng::{new_crate_rng_from_rng, new_crate_rng_with_seed};
-use sudoku::samples::{base_2, base_3, base_4, base_5};
+use sudoku::position::test_utils::{consume_iter, consume_nested_iter};
+use sudoku::rng::{CrateRng, new_crate_rng_with_seed};
+use sudoku::samples;
 use sudoku::solver::sat;
 use sudoku::solver::strategic::strategies::locked_sets::v2::find_locked_set;
 use sudoku::solver::strategic::strategies::locked_sets::v2::test_utils::locked_set_test_cases_base_3;
 use sudoku::solver::strategic::strategies::{
-    GroupIntersectionBoth, HiddenSingles, LockedSets, Strategy, StrategyEnum,
+    GroupIntersectionBoth, HiddenSingles, LockedSets, Strategy,
 };
-use sudoku::solver::{backtracking, introspective, strategic, FallibleSolver, InfallibleSolver};
-
-fn cast_grid<Base: SudokuBase>(any_grid: Box<dyn Any>) -> Grid<Base> {
-    *any_grid.downcast().unwrap()
-}
+use sudoku::solver::{FallibleSolver, InfallibleSolver, backtracking, introspective, strategic};
+use sudoku::{
+    base::{SudokuBase, consts::*},
+    solver::strategic::strategies::selection::StrategySet,
+};
 
 fn sample_grid<Base: SudokuBase>() -> Grid<Base> {
-    match Base::ENUM {
-        BaseEnum::Base2 => cast_grid(Box::new(base_2().into_iter().next().unwrap())),
-        BaseEnum::Base3 => cast_grid(Box::new(base_3().into_iter().next().unwrap())),
-        BaseEnum::Base4 => cast_grid(Box::new(base_4().into_iter().next().unwrap())),
-        BaseEnum::Base5 => cast_grid(Box::new(base_5().into_iter().next().unwrap())),
-    }
+    samples::grid::<Base>(0)
 }
 
 fn bench_generator_group<Base: SudokuBase>(generator_group: &mut BenchmarkGroup<WallTime>) {
@@ -58,7 +50,7 @@ fn bench_generator_group<Base: SudokuBase>(generator_group: &mut BenchmarkGroup<
             "NoBacktracking Minimal",
             Some(PruningSettings::<Base> {
                 target: PruningTarget::Minimal,
-                strategies: StrategyEnum::default_solver_strategies_no_brute_force(),
+                strategies: StrategySet::default_solver_strategies_no_brute_force(),
                 ..Default::default()
             }),
         ),
@@ -122,7 +114,7 @@ fn bench_solver_sample_group<Base: SudokuBase>(solver_group: &mut BenchmarkGroup
             let mut rng = new_crate_rng_with_seed(Some(0));
             b.iter(|| {
                 backtracking::Solver::builder(grid)
-                    .rng(new_crate_rng_from_rng(&mut rng))
+                    .rng(CrateRng::from_rng(&mut rng))
                     .build()
                     .solve()
                     .unwrap()
@@ -168,13 +160,13 @@ fn bench_solver_tdoku_group(solver_tdoku_group: &mut BenchmarkGroup<WallTime>) {
 
     let tdoku_datasets = vec![
         "puzzles0_kaggle",
-        "puzzles1_unbiased",
-        "puzzles2_17_clue",
-        "puzzles3_magictour_top1465",
-        "puzzles4_forum_hardest_1905",
-        "puzzles5_forum_hardest_1905_11+",
-        "puzzles6_forum_hardest_1106",
-        "puzzles7_serg_benchmark",
+        // "puzzles1_unbiased",
+        // "puzzles2_17_clue",
+        // "puzzles3_magictour_top1465",
+        // "puzzles4_forum_hardest_1905",
+        // "puzzles5_forum_hardest_1905_11+",
+        // "puzzles6_forum_hardest_1106",
+        // "puzzles7_serg_benchmark",
         // invalid puzzles with no solutions
         // "puzzles8_gen_puzzles",
     ];
@@ -421,7 +413,7 @@ fn bench_candidates_group(candidates_group: &mut BenchmarkGroup<WallTime>) {
 
     candidates_group.bench_function(BenchmarkId::new("block_segmentation", "segment"), |b| {
         b.iter_batched(
-            || Candidates::<Base3>::with_integral(0b000_101_000),
+            || Candidates::<Base3>::with_integral(0b000_101_000).unwrap(),
             |candidates| candidates.block_segmentation(),
             BatchSize::SmallInput,
         );
@@ -445,7 +437,7 @@ fn bench_candidates_group(candidates_group: &mut BenchmarkGroup<WallTime>) {
         b.iter_batched(
             || {
                 (
-                    Candidates::<Base3>::with_integral(0b000_010_000),
+                    Candidates::<Base3>::with_integral(0b000_010_000).unwrap(),
                     1.try_into().unwrap(),
                 )
             },

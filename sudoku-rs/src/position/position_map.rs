@@ -1,5 +1,5 @@
 use std::collections::btree_map::Iter;
-use std::collections::{btree_map, BTreeMap};
+use std::collections::{BTreeMap, btree_map};
 use std::fmt::{Display, Formatter};
 use std::iter::Map;
 

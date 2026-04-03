@@ -1,6 +1,6 @@
-import { clamp } from "lodash-es";
-import type { KeyboardEvent } from "react";
-import { useRecoilCallback } from "recoil";
+import { clamp } from "es-toolkit";
+import { useCallback, type KeyboardEvent } from "react";
+import { useAtomCallback } from "jotai/utils";
 import type { DynamicPosition, TransportSudoku } from "../types";
 import { useToggleCandidateMode, useToggleStickyMode } from "./actions/inputActions";
 import {
@@ -61,9 +61,9 @@ export function useKeyboardInput() {
     const toggleCandidateMode = useToggleCandidateMode();
     const toggleStickyMode = useToggleStickyMode();
 
-    const onKeyDown: React.KeyboardEventHandler<HTMLDivElement> = useRecoilCallback(
-        ({ snapshot }) =>
-            (ev: KeyboardEvent): void => {
+    const onKeyDown: React.KeyboardEventHandler<HTMLDivElement> = useAtomCallback(
+        useCallback(
+            (get, _set, ev: KeyboardEvent): void => {
                 const asyncEventHandler = async () => {
                     // TODO: process modifier keys
                     //  shift+backspace => redo
@@ -75,14 +75,14 @@ export function useKeyboardInput() {
                         return;
                     }
 
-                    const sideLength = await snapshot.getPromise(sudokuSideLengthState);
+                    const sideLength = await get(sudokuSideLengthState);
                     const value = keyToValue(key, sideLength);
                     if (value !== undefined) {
                         ev.preventDefault();
                         return await handleValue(value);
                     }
 
-                    const input = await snapshot.getPromise(inputState);
+                    const input = get(inputState);
                     if (!input.stickyMode) {
                         const newPos = keyToNewPos(key, input.selectedPos, sideLength);
                         if (newPos !== undefined) {
@@ -121,15 +121,16 @@ export function useKeyboardInput() {
                     console.error("Error in key down handler", ev, ":", err);
                 });
             },
-        [
-            deleteSelectedCell,
-            handlePosition,
-            handleValue,
-            setAllDirectCandidates,
-            toggleCandidateMode,
-            toggleStickyMode,
-            undo,
-        ],
+            [
+                deleteSelectedCell,
+                handlePosition,
+                handleValue,
+                setAllDirectCandidates,
+                toggleCandidateMode,
+                toggleStickyMode,
+                undo,
+            ],
+        ),
     );
 
     return {

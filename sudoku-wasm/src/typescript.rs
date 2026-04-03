@@ -9,19 +9,19 @@ use sudoku::{
     cell::dynamic::{DynamicCandidates, DynamicCell, DynamicValue},
     error::Error as SudokuError,
     generator::{
-        multi_shot::{DynamicMultiShotGeneratorSettings, MultiShotGeneratorProgress},
         DynamicGeneratorSettings, DynamicPruningOrder, DynamicPruningSettings,
         DynamicSolutionSettings, GeneratorProgress, PruningGroupBehaviour, PruningTarget,
+        multi_shot::{DynamicMultiShotGeneratorSettings, MultiShotGeneratorProgress},
     },
     grid::{dynamic::DynamicGrid, format::GridFormatEnum},
     position::DynamicPosition,
     solver::strategic::{
+        DynamicSolveStep,
         deduction::transport::{
             PositionedTransportAction, PositionedTransportReason, TransportAction,
             TransportDeduction, TransportDeductions, TransportReason,
         },
-        strategies::StrategyEnum,
-        DynamicSolveStep,
+        strategies::{StrategyEnum, selection::StrategySet},
     },
     transport::{TransportCell, TransportSudoku},
     world::{
@@ -61,7 +61,7 @@ macro_rules! serde_wasm_bindgen_interop {
     };
     ($($ty_name:ty),* $(,)?) => {
         paste! {
-            // wasm_bindgen interfaces "ITypeName" refercing bindings from ts_rs "bindings.TypeName"
+            // wasm_bindgen interfaces "ITypeName" referencing bindings from ts_rs "bindings.TypeName"
             #[wasm_bindgen]
             extern "C" {
                 $(
@@ -131,24 +131,30 @@ pub type DynamicCells = Vec<DynamicCell>;
 
 // Must be keept in sync with aliases above
 #[wasm_bindgen(typescript_custom_section)]
-const SERDE_ALIASES: &'static str = r#"
+const TS_SERDE_ALIASES: &'static str = r#"
+import type {
+    StrategyMap,
+} from "../../sudoku-rs/bindings";
+
 export type StrategyEnums = StrategyEnum[];
 export type DynamicCells = DynamicCell[];
+export type StrategySet = StrategyMap<boolean>;
 "#;
 serde_wasm_bindgen_interop! {
     DynamicCells,
     StrategyEnums,
+    StrategySet,
 }
 
 // external types (zod branded types)
 #[wasm_bindgen(typescript_custom_section)]
-const EXTERNAL_TYPES: &'static str = r#"
+const TS_EXTERNAL_SERDE_TYPES: &'static str = r#"
 import type {
     WorldCellDim,
     WorldCellPosition,
     WorldGridDim,
     WorldGridPosition,
-} from "../../sudoku-web/src/app/state/world";
+} from "../../sudoku-web/src/app/state/world/schema";
 "#;
 serde_wasm_bindgen_interop! {
     WorldCellDim,
@@ -159,7 +165,7 @@ serde_wasm_bindgen_interop! {
 
 // non-serde types - custom conversion functions
 #[wasm_bindgen(typescript_custom_section)]
-const EXTRA: &'static str = r#"
+const TS_CUSTOM: &'static str = r#"
 export type GenerateOnProgress = (progress: GeneratorProgress) => void;
 export type GenerateMultiShotOnProgress = (progress: MultiShotGeneratorProgress) => void;
 "#;
@@ -213,4 +219,22 @@ pub(crate) fn import_generate_multi_shot_on_progress(
             Ok(())
         },
     )
+}
+
+// serialized data (postcard)
+#[wasm_bindgen(typescript_custom_section)]
+const TS_SERIALIZED: &'static str = r#"
+import type {
+    SerializedDynamicCellWorld,
+    SerializedDynamicSudoku,
+} from "../../sudoku-web/src/app/utils/serializedData";
+"#;
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(typescript_type = "SerializedDynamicCellWorld")]
+    pub type ISerializedDynamicCellWorld;
+
+    #[wasm_bindgen(typescript_type = "SerializedDynamicSudoku")]
+    pub type ISerializedDynamicSudoku;
 }

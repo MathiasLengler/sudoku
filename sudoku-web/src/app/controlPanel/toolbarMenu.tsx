@@ -2,7 +2,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import InfoIcon from "@mui/icons-material/Info";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import RedoIcon from "@mui/icons-material/Redo";
-import { useRecoilValue } from "recoil";
+import { useAtomValue } from "jotai";
 import { useDeleteSelectedCell, useRedo, useSetAllDirectCandidates } from "../actions/sudokuActions";
 import MyIconButton from "../components/MyIconButton";
 import { MyMenu } from "../components/MyMenu";
@@ -12,8 +12,8 @@ import { sudokuCanRedoState } from "../state/sudoku";
 export function ToolbarMenu() {
     const deleteSelectedCell = useDeleteSelectedCell();
     const setAllDirectCandidates = useSetAllDirectCandidates();
-    const inputStickyMode = useRecoilValue(inputStickyModeState);
-    const canRedo = useRecoilValue(sudokuCanRedoState);
+    const inputStickyMode = useAtomValue(inputStickyModeState);
+    const canRedo = useAtomValue(sudokuCanRedoState);
     const redo = useRedo();
 
     return (

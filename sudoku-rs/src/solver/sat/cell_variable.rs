@@ -33,11 +33,7 @@ impl<Base: SudokuBase> From<CellVariable<Base>> for i32 {
         let i = (i32::from(variable.pos.cell_index()) * i32::from(Base::SIDE_LENGTH)
             + i32::from(Coordinate::from(variable.value).get()))
             + 1;
-        if variable.is_true {
-            i
-        } else {
-            -i
-        }
+        if variable.is_true { i } else { -i }
     }
 }
 

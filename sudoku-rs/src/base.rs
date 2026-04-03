@@ -1,22 +1,22 @@
+use crate::error::{Error, Result};
+use crate::grid::Grid;
+use crate::position::Coordinate;
+use crate::position::Position;
+use crate::samples;
+use crate::unsafe_utils::get_unchecked;
+use consts::*;
+use num::PrimInt;
+use num::traits::{
+    CheckedShl, CheckedShr, ConstOne, ConstZero, NumAssignOps, Unsigned, WrappingAdd, WrappingMul,
+    WrappingNeg, WrappingShl, WrappingShr, WrappingSub,
+};
 use std::fmt::{Binary, Debug, Display};
 use std::hash::Hash;
 use std::mem::MaybeUninit;
 use std::ops::{BitAndAssign, BitOrAssign, BitXorAssign, Shl};
 
-use num::traits::{
-    CheckedShl, CheckedShr, ConstOne, ConstZero, NumAssignOps, Unsigned, WrappingAdd, WrappingMul,
-    WrappingNeg, WrappingShl, WrappingShr, WrappingSub,
-};
-use num::PrimInt;
-
-use consts::*;
-pub(crate) use enum_impl::match_base_enum;
 pub use enum_impl::BaseEnum;
-
-use crate::error::{Error, Result};
-use crate::position::Coordinate;
-use crate::position::Position;
-use crate::unsafe_utils::get_unchecked;
+pub use enum_impl::match_base_enum;
 
 pub mod consts {
     // Aliases
@@ -32,13 +32,6 @@ pub mod consts {
     pub struct Base4;
     #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
     pub struct Base5;
-
-    pub const ALL_CELL_COUNTS: [u16; 4] = [
-        Base2::CELL_COUNT,
-        Base3::CELL_COUNT,
-        Base4::CELL_COUNT,
-        Base5::CELL_COUNT,
-    ];
 
     pub const ALL_SIDE_LENGTHS: [u8; 4] = [
         Base2::SIDE_LENGTH,
@@ -57,18 +50,6 @@ mod private {
     impl Sealed for Base3 {}
     impl Sealed for Base4 {}
     impl Sealed for Base5 {}
-}
-
-const fn base_to_side_length(base: u8) -> u8 {
-    base.pow(2)
-}
-
-const fn base_to_max_value(base: u8) -> u8 {
-    base_to_side_length(base)
-}
-
-const fn base_to_cell_count(base: u8) -> u16 {
-    (base as u16).pow(4)
 }
 
 mod cell_index_to_block_index {
@@ -94,14 +75,14 @@ mod cell_index_to_block_index {
         }
     }
 
-    const fn const_generate_cell_index_to_block_index<const BASE: u8, const CELL_COUNT: usize>(
-    ) -> [u8; CELL_COUNT] {
+    const fn const_generate_cell_index_to_block_index<Base: SudokuBase, const CELL_COUNT: usize>()
+    -> [u8; CELL_COUNT] {
         assert!(
-            base_to_cell_count(BASE) as usize == CELL_COUNT,
+            Base::CELL_COUNT as usize == CELL_COUNT,
             "Invalid CELL_COUNT for BASE"
         );
         let cell_count = assert_u16(CELL_COUNT);
-        let base_u16 = BASE as u16;
+        let base_u16 = Base::BASE as u16;
 
         let mut out = [0u8; CELL_COUNT];
 
@@ -117,14 +98,14 @@ mod cell_index_to_block_index {
         out
     }
 
-    pub(super) static BASE_2: &[u8; base_to_cell_count(2) as usize] =
-        &const_generate_cell_index_to_block_index::<2, { base_to_cell_count(2) as usize }>();
-    pub(super) static BASE_3: &[u8; base_to_cell_count(3) as usize] =
-        &const_generate_cell_index_to_block_index::<3, { base_to_cell_count(3) as usize }>();
-    pub(super) static BASE_4: &[u8; base_to_cell_count(4) as usize] =
-        &const_generate_cell_index_to_block_index::<4, { base_to_cell_count(4) as usize }>();
-    pub(super) static BASE_5: &[u8; base_to_cell_count(5) as usize] =
-        &const_generate_cell_index_to_block_index::<5, { base_to_cell_count(5) as usize }>();
+    pub(super) static BASE_2: &[u8; Base2::CELL_COUNT as usize] =
+        &const_generate_cell_index_to_block_index::<Base2, _>();
+    pub(super) static BASE_3: &[u8; Base3::CELL_COUNT as usize] =
+        &const_generate_cell_index_to_block_index::<Base3, _>();
+    pub(super) static BASE_4: &[u8; Base4::CELL_COUNT as usize] =
+        &const_generate_cell_index_to_block_index::<Base4, _>();
+    pub(super) static BASE_5: &[u8; Base5::CELL_COUNT as usize] =
+        &const_generate_cell_index_to_block_index::<Base5, _>();
 
     #[cfg(test)]
     mod tests {
@@ -161,13 +142,13 @@ mod block_index_to_top_left_cell_index {
     //! - `array.len() == Base::SIDE_LENGTH`
     use super::*;
 
-    pub(super) static BASE_2: [u16; base_to_side_length(2) as usize] = [0, 2, 8, 10];
-    pub(super) static BASE_3: [u16; base_to_side_length(3) as usize] =
+    pub(super) static BASE_2: [u16; Base2::SIDE_LENGTH as usize] = [0, 2, 8, 10];
+    pub(super) static BASE_3: [u16; Base3::SIDE_LENGTH as usize] =
         [0, 3, 6, 27, 30, 33, 54, 57, 60];
-    pub(super) static BASE_4: [u16; base_to_side_length(4) as usize] = [
+    pub(super) static BASE_4: [u16; Base4::SIDE_LENGTH as usize] = [
         0, 4, 8, 12, 64, 68, 72, 76, 128, 132, 136, 140, 192, 196, 200, 204,
     ];
-    pub(super) static BASE_5: [u16; base_to_side_length(5) as usize] = [
+    pub(super) static BASE_5: [u16; Base5::SIDE_LENGTH as usize] = [
         0, 5, 10, 15, 20, 125, 130, 135, 140, 145, 250, 255, 260, 265, 270, 375, 380, 385, 390,
         395, 500, 505, 510, 515, 520,
     ];
@@ -190,7 +171,7 @@ where
     /// Used for matching of bases at runtime.
     ///
     /// # Safety
-    /// - `Base::DYNAMIC_BASE.into_u8() == Base::BASE`
+    /// - `Base::ENUM.into_u8() == Base::BASE`
     const ENUM: BaseEnum;
 
     /// The side length of a sudoku block. Must be non-zero.
@@ -222,19 +203,6 @@ where
     /// # Safety
     /// - must equal `(base as u16).pow(4)`
     const CELL_COUNT: u16;
-
-    /// Used by `BinaryFixedCandidatesLine`
-    ///
-    /// Defines how many chars are representing a single cell in this grid format.
-    const BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS: usize;
-
-    const MINIMUM_CLUE_COUNT_FOR_UNIQUE_SOLUTION: u16;
-
-    /// For a given cell position, returns the coordinate of the block it is contained in.
-    fn pos_to_block(pos: Position<Self>) -> Coordinate<Self>;
-
-    /// For a given block, returns the position of the top left cell in this block.
-    fn block_to_top_left_pos(block: Coordinate<Self>) -> Position<Self>;
 
     /// Bit field type for candidates storage.
     ///
@@ -271,7 +239,9 @@ where
         + Shl<u8, Output = Self::CandidatesIntegral>
         // Conversions
         + Into<u32>
-        + TryFrom<u32, Error: Into<Error> + Debug>;
+        + TryFrom<u32, Error: Into<Error> + std::error::Error + Debug + Send + Sync>
+        + serde::Serialize
+        + for<'de> serde::Deserialize<'de>;
 
     /// A generic array of `SIDE_LENGTH` elements, e.g. `[T; Self::SIDE_LENGTH]`.
     ///
@@ -294,26 +264,36 @@ where
     where
         T: Send + Sync + Copy + Clone + Debug;
 
+    /// For a given cell position, returns the coordinate of the block it is contained in.
+    fn pos_to_block(pos: Position<Self>) -> Coordinate<Self>;
+
+    /// For a given block, returns the position of the top left cell in this block.
+    fn block_to_top_left_pos(block: Coordinate<Self>) -> Position<Self>;
+
     fn group_default<T: Send + Sync + Copy + Clone + Debug + Default>() -> Self::Group<T>;
+    fn group_with_all<T: Send + Sync + Copy + Clone + Debug + Copy>(element: T) -> Self::Group<T>;
     fn group_uninit<T: Send + Sync + Copy + Clone + Debug>() -> Self::Group<MaybeUninit<T>>;
     fn group_map<T: Send + Sync + Copy + Clone + Debug, U: Send + Sync + Copy + Clone + Debug>(
         group: Self::Group<T>,
         f: impl FnMut(T) -> U,
     ) -> Self::Group<U>;
+    fn grid_samples() -> impl Iterator<Item = Grid<Self>>;
 }
 
 macro_rules! impl_sudoku_base {
-    ($($type_num:ty,$base_u8:expr,$type_integral:ty,$CELL_INDEX_TO_BLOCK_INDEX:expr,$BLOCK_INDEX_TO_TOP_LEFT_CELL_INDEX:expr;)+) => {
+    ($($type_num:ty,$base_enum:expr,$type_integral:ty,$CELL_INDEX_TO_BLOCK_INDEX:expr,$BLOCK_INDEX_TO_TOP_LEFT_CELL_INDEX:expr,$GRID_SAMPLES_ITER:expr;)+) => {
         $(
 // Safety: this private macro is only instantiated below and the correctness of the generated impls is tested.
 unsafe impl SudokuBase for $type_num {
-    const ENUM: BaseEnum = BaseEnum::assert_from_base_u8($base_u8);
-    const BASE: u8 = $base_u8;
-    const SIDE_LENGTH: u8 = base_to_side_length(Self::BASE);
-    const MAX_VALUE: u8 = base_to_max_value(Self::BASE);
-    const CELL_COUNT: u16 = base_to_cell_count(Self::BASE);
-    const BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS: usize = Self::ENUM.binary_fixed_candidates_line_cell_chars();
-    const MINIMUM_CLUE_COUNT_FOR_UNIQUE_SOLUTION: u16 = Self::ENUM.minimum_clue_count_for_unique_solution();
+    const ENUM: BaseEnum = $base_enum;
+    const BASE: u8 = Self::ENUM.into_u8();
+    const SIDE_LENGTH: u8 = Self::ENUM.side_length();
+    const MAX_VALUE: u8 = Self::ENUM.max_value();
+    const CELL_COUNT: u16 = Self::ENUM.cell_count();
+
+    type CandidatesIntegral = $type_integral;
+
+    type Group<T: Send + Sync + Copy + Clone + Debug> = [T; Self::SIDE_LENGTH as usize];
 
     fn pos_to_block(pos: Position<Self>) -> Coordinate<Self> {
         let cell_index = usize::from(pos.cell_index());
@@ -338,12 +318,12 @@ unsafe impl SudokuBase for $type_num {
         unsafe { Position::new_unchecked(*cell_index) }
     }
 
-    type CandidatesIntegral = $type_integral;
-
-    type Group<T: Send + Sync + Copy + Clone + Debug> = [T; Self::SIDE_LENGTH as usize];
 
     fn group_default<T: Send + Sync + Copy + Clone + Debug + Default>() -> Self::Group<T> {
         [Default::default(); Self::SIDE_LENGTH as usize]
+    }
+    fn group_with_all<T: Send + Sync + Copy + Clone + Debug + Copy>(element: T) -> Self::Group<T> {
+        [element; Self::SIDE_LENGTH as usize]
     }
     fn group_uninit<T: Send + Sync + Copy + Clone + Debug>() -> Self::Group<MaybeUninit<T>> {
         [const { MaybeUninit::uninit() }; Self::SIDE_LENGTH as usize]
@@ -354,6 +334,9 @@ unsafe impl SudokuBase for $type_num {
     ) -> Self::Group<U> {
         group.map(f)
     }
+    fn grid_samples() -> impl Iterator<Item = Grid<Self>> {
+        $GRID_SAMPLES_ITER
+    }
 }
         )+
     };
@@ -361,10 +344,10 @@ unsafe impl SudokuBase for $type_num {
 
 // Implement `SudokuBase` for all base structs
 impl_sudoku_base!(
-    Base2, 2, u8, cell_index_to_block_index::BASE_2, block_index_to_top_left_cell_index::BASE_2;
-    Base3, 3, u16, cell_index_to_block_index::BASE_3, block_index_to_top_left_cell_index::BASE_3;
-    Base4, 4, u16, cell_index_to_block_index::BASE_4, block_index_to_top_left_cell_index::BASE_4;
-    Base5, 5, u32, cell_index_to_block_index::BASE_5, block_index_to_top_left_cell_index::BASE_5;
+    Base2, BaseEnum::Base2, u8, cell_index_to_block_index::BASE_2, block_index_to_top_left_cell_index::BASE_2, samples::base_2().into_iter();
+    Base3, BaseEnum::Base3, u16, cell_index_to_block_index::BASE_3, block_index_to_top_left_cell_index::BASE_3, samples::base_3().into_iter();
+    Base4, BaseEnum::Base4, u16, cell_index_to_block_index::BASE_4, block_index_to_top_left_cell_index::BASE_4, samples::base_4().into_iter();
+    Base5, BaseEnum::Base5, u32, cell_index_to_block_index::BASE_5, block_index_to_top_left_cell_index::BASE_5, samples::base_5().into_iter();
 );
 
 mod enum_impl {
@@ -372,13 +355,21 @@ mod enum_impl {
     use anyhow::{bail, format_err};
     use serde_repr::{Deserialize_repr, Serialize_repr};
 
-    #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize_repr, Deserialize_repr)]
+    #[cfg_attr(feature = "terminal", derive(clap::ValueEnum))]
+    #[derive(Debug, Copy, Clone, Default, Eq, PartialEq, Serialize_repr, Deserialize_repr)]
     #[repr(u8)]
     pub enum BaseEnum {
         Base2 = 2,
+        #[default]
         Base3 = 3,
         Base4 = 4,
         Base5 = 5,
+    }
+
+    impl Display for BaseEnum {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "Base{}", self.into_u8())
+        }
     }
 
     /// const conversions between `u8` and `DynamicBase`
@@ -396,26 +387,28 @@ mod enum_impl {
         }
 
         pub const fn into_u8(self) -> u8 {
-            match self {
-                BaseEnum::Base2 => 2,
-                BaseEnum::Base3 => 3,
-                BaseEnum::Base4 => 4,
-                BaseEnum::Base5 => 5,
-            }
+            self as u8
         }
     }
 
     /// const definitions
     impl BaseEnum {
-        pub const fn binary_fixed_candidates_line_cell_chars(self) -> usize {
-            match self {
-                BaseEnum::Base2 => 1,
-                BaseEnum::Base3 => 2,
-                BaseEnum::Base4 => 4,
-                BaseEnum::Base5 => 6,
-            }
+        /// The side length of the complete sudoku.
+        pub const fn side_length(self) -> u8 {
+            self.into_u8().pow(2)
         }
 
+        /// The max value a value can be set to.
+        pub const fn max_value(self) -> u8 {
+            self.side_length()
+        }
+
+        /// The total cell count of the sudoku.
+        pub const fn cell_count(self) -> u16 {
+            (self.into_u8() as u16).pow(4)
+        }
+
+        /// Minimum clue count for a unique solution.
         pub const fn minimum_clue_count_for_unique_solution(self) -> u16 {
             match self {
                 // Reference: https://math.stackexchange.com/questions/2170944/sudoku-what-is-the-relationship-between-minimum-number-of-clues-and-order-n
@@ -500,6 +493,7 @@ mod enum_impl {
         }
     }
 
+    #[macro_export]
     macro_rules! match_base_enum {
         ($base_enum_value:expr, $using_base:expr) => {{
             use $crate::base::consts::*;
@@ -524,7 +518,7 @@ mod enum_impl {
         }};
     }
 
-    pub(crate) use match_base_enum;
+    pub use match_base_enum;
 
     #[cfg(feature = "wasm")]
     mod wasm {
@@ -534,6 +528,7 @@ mod enum_impl {
 
         impl ::ts_rs::TS for BaseEnum {
             type WithoutGenerics = Self;
+            type OptionInnerType = Self;
 
             fn name() -> String {
                 "BaseEnum".to_owned()
@@ -551,8 +546,8 @@ mod enum_impl {
             fn inline_flattened() -> String {
                 panic!("{} cannot be flattened", Self::name())
             }
-            fn output_path() -> Option<&'static std::path::Path> {
-                Some(std::path::Path::new("BaseEnum.ts"))
+            fn output_path() -> Option<std::path::PathBuf> {
+                Some(std::path::PathBuf::from(format!("{}.ts", Self::name())))
             }
         }
 
@@ -581,6 +576,29 @@ mod enum_impl {
             assert_eq!(BaseEnum::Base3.into_u8(), 3);
             assert_eq!(BaseEnum::Base4.into_u8(), 4);
             assert_eq!(BaseEnum::Base5.into_u8(), 5);
+        }
+
+        #[test]
+        fn test_side_length() {
+            assert_eq!(BaseEnum::Base2.side_length(), 4);
+            assert_eq!(BaseEnum::Base3.side_length(), 9);
+            assert_eq!(BaseEnum::Base4.side_length(), 16);
+            assert_eq!(BaseEnum::Base5.side_length(), 25);
+        }
+
+        #[test]
+        fn test_max_value() {
+            for base_enum in BaseEnum::all() {
+                assert_eq!(base_enum.max_value(), base_enum.side_length());
+            }
+        }
+
+        #[test]
+        fn test_cell_count() {
+            assert_eq!(BaseEnum::Base2.cell_count(), 16);
+            assert_eq!(BaseEnum::Base3.cell_count(), 81);
+            assert_eq!(BaseEnum::Base4.cell_count(), 256);
+            assert_eq!(BaseEnum::Base5.cell_count(), 625);
         }
 
         #[test]
@@ -628,35 +646,29 @@ mod enum_impl {
             }
             Ok(())
         }
+
+        #[test]
+        fn test_all() {
+            use itertools::assert_equal;
+
+            assert_equal(
+                BaseEnum::all(),
+                vec![
+                    BaseEnum::Base2,
+                    BaseEnum::Base3,
+                    BaseEnum::Base4,
+                    BaseEnum::Base5,
+                ],
+            );
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::position::DynamicPosition;
-
     use super::*;
-
-    #[test]
-    fn test_base_to_side_length_or_max_value() {
-        assert_eq!(base_to_side_length(0), 0);
-        assert_eq!(base_to_side_length(1), 1);
-        assert_eq!(base_to_side_length(2), 4);
-        assert_eq!(base_to_side_length(3), 9);
-        assert_eq!(base_to_side_length(4), 16);
-        assert_eq!(base_to_side_length(5), 25);
-
-        assert!((0..=5).all(|base| base_to_side_length(base) == base_to_max_value(base)));
-    }
-    #[test]
-    fn test_base_to_cell_count() {
-        assert_eq!(base_to_cell_count(0), 0);
-        assert_eq!(base_to_cell_count(1), 1);
-        assert_eq!(base_to_cell_count(2), 16);
-        assert_eq!(base_to_cell_count(3), 81);
-        assert_eq!(base_to_cell_count(4), 256);
-        assert_eq!(base_to_cell_count(5), 625);
-    }
+    use crate::position::DynamicPosition;
+    use std::iter::repeat_n;
 
     // Fork of https://docs.rs/type-equals/0.1.0/type_equals/
     trait TypeEquals {
@@ -676,19 +688,19 @@ mod tests {
     fn assert_base_invariants<Base: SudokuBase>() {
         use std::mem::size_of;
 
-        // Safety invariant of Base::DYNAMIC_BASE
+        // Safety invariant of Base::ENUM
         assert_eq!(Base::ENUM.into_u8(), Base::BASE);
 
         // Safety invariant of Base::BASE
         assert_ne!(Base::BASE, 0);
 
         // Safety invariants of Base::SIDE_LENGTH/Base::MAX_VALUE
+        assert_eq!(Base::SIDE_LENGTH, Base::ENUM.side_length());
+        assert_eq!(Base::MAX_VALUE, Base::ENUM.max_value());
         assert_eq!(Base::SIDE_LENGTH, Base::MAX_VALUE);
-        assert_eq!(Base::SIDE_LENGTH, base_to_side_length(Base::BASE));
-        assert_eq!(Base::MAX_VALUE, base_to_max_value(Base::BASE));
 
         // Safety invariant of Base::CELL_COUNT
-        assert_eq!(Base::CELL_COUNT, base_to_cell_count(Base::BASE));
+        assert_eq!(Base::CELL_COUNT, Base::ENUM.cell_count());
 
         // Safety invariant of Base::CandidatesIntegral
         // MAX_VALUE must be representable at the highest bit position.
@@ -708,7 +720,6 @@ mod tests {
         assert_eq!(Base::SIDE_LENGTH, 4);
         assert_eq!(Base::MAX_VALUE, 4);
         assert_eq!(Base::CELL_COUNT, 16);
-        assert_eq!(Base::BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS, 1);
 
         assert_type_equals::<<Base as SudokuBase>::CandidatesIntegral, u8>();
 
@@ -724,7 +735,6 @@ mod tests {
         assert_eq!(Base::SIDE_LENGTH, 9);
         assert_eq!(Base::MAX_VALUE, 9);
         assert_eq!(Base::CELL_COUNT, 81);
-        assert_eq!(Base::BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS, 2);
 
         assert_type_equals::<<Base as SudokuBase>::CandidatesIntegral, u16>();
 
@@ -740,7 +750,6 @@ mod tests {
         assert_eq!(Base::SIDE_LENGTH, 16);
         assert_eq!(Base::MAX_VALUE, 16);
         assert_eq!(Base::CELL_COUNT, 256);
-        assert_eq!(Base::BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS, 4);
 
         assert_type_equals::<<Base as SudokuBase>::CandidatesIntegral, u16>();
 
@@ -756,7 +765,6 @@ mod tests {
         assert_eq!(Base::SIDE_LENGTH, 25);
         assert_eq!(Base::MAX_VALUE, 25);
         assert_eq!(Base::CELL_COUNT, 625);
-        assert_eq!(Base::BINARY_FIXED_CANDIDATES_LINE_CELL_CHARS, 6);
 
         assert_type_equals::<<Base as SudokuBase>::CandidatesIntegral, u32>();
 
@@ -766,14 +774,13 @@ mod tests {
     #[test]
     fn test_cell_index_to_block_index_generator() {
         fn generate_cell_index_to_block_index(base: u8) -> Vec<u8> {
-            use std::iter::repeat;
             let base_usize = usize::from(base);
             let block_row_cell_count = base_usize * base_usize * base_usize;
             (0..base)
                 .flat_map(|row| {
                     let starting_block_index = row * base;
                     (starting_block_index..(starting_block_index + base))
-                        .flat_map(|i| repeat(i).take(base_usize))
+                        .flat_map(|i| repeat_n(i, base_usize))
                         .cycle()
                         .take(block_row_cell_count)
                 })
@@ -845,13 +852,13 @@ mod tests {
 
     #[test]
     fn test_block_index_to_top_left_cell_index() {
-        fn generate_block_to_top_left_cell_index(base: u8) -> Vec<u16> {
+        fn generate_block_to_top_left_cell_index(base: BaseEnum) -> Vec<u16> {
             use num::Integer;
 
-            let side_length = base_to_side_length(base);
+            let side_length = base.side_length();
             (0..side_length)
                 .map(|block_index| {
-                    let (block_row, block_column) = block_index.div_rem(&base);
+                    let (block_row, block_column) = block_index.div_rem(&base.into_u8());
 
                     let DynamicPosition {
                         row: base_row,
@@ -859,7 +866,7 @@ mod tests {
                     } = DynamicPosition {
                         row: block_row,
                         column: block_column,
-                    } * base;
+                    } * base.into_u8();
 
                     u16::from(base_row) * u16::from(side_length) + u16::from(base_column)
                 })
@@ -868,19 +875,19 @@ mod tests {
 
         assert_eq!(
             block_index_to_top_left_cell_index::BASE_2,
-            generate_block_to_top_left_cell_index(2).as_slice()
+            generate_block_to_top_left_cell_index(BaseEnum::Base2).as_slice()
         );
         assert_eq!(
             block_index_to_top_left_cell_index::BASE_3,
-            generate_block_to_top_left_cell_index(3).as_slice()
+            generate_block_to_top_left_cell_index(BaseEnum::Base3).as_slice()
         );
         assert_eq!(
             block_index_to_top_left_cell_index::BASE_4,
-            generate_block_to_top_left_cell_index(4).as_slice()
+            generate_block_to_top_left_cell_index(BaseEnum::Base4).as_slice()
         );
         assert_eq!(
             block_index_to_top_left_cell_index::BASE_5,
-            generate_block_to_top_left_cell_index(5).as_slice()
+            generate_block_to_top_left_cell_index(BaseEnum::Base5).as_slice()
         );
     }
 

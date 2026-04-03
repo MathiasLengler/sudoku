@@ -8,11 +8,13 @@ import AccordionDetails from "@mui/material/AccordionDetails";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
-import { SwitchElement, TextFieldElement, useForm } from "react-hook-form-mui";
-import { z } from "zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 import { useImportSudokuString } from "../../actions/sudokuActions";
 import { Code } from "../../components/Code";
 import { Fieldset } from "../../components/Fieldset";
+import { MySwitch } from "../../components/formFragments/mui-rhf/MySwitch";
+import { MyTextField } from "../../components/formFragments/mui-rhf/MyTextField";
 import { ResetFormButton } from "../../components/ResetFormButton";
 import type { NewGameTabValue } from "./NewGameDialog";
 
@@ -108,24 +110,24 @@ export function ImportForm({ onClose }: ImportFormProps) {
                         })}
                     >
                         <Stack spacing={2}>
-                            <TextFieldElement
+                            <MyTextField
                                 control={control}
                                 name="input"
                                 label="Formatted Sudoku"
                                 multiline
                                 fullWidth
                                 slotProps={{
-                                    input: { sx: { fontFamily: "monospace" } },
+                                    input: {
+                                        sx: {
+                                            fontFamily: "monospace",
+                                        },
+                                        readOnly: isSubmitting,
+                                    },
                                 }}
-                                disabled={isSubmitting}
                             />
                             <SupportedFormats />
                             <Fieldset label="Post import">
-                                <SwitchElement
-                                    control={control}
-                                    name="setAllDirectCandidates"
-                                    label="Fill candidates"
-                                />
+                                <MySwitch control={control} name="setAllDirectCandidates" label="Fill candidates" />
                             </Fieldset>
                         </Stack>
                     </form>

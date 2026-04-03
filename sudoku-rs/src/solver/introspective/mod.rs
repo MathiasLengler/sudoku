@@ -3,7 +3,7 @@ use crate::cell::CandidatesAscIter;
 use crate::grid::Grid;
 use crate::solver::backtracking::CandidatesFilter;
 use crate::solver::sat;
-use crate::solver::{backtracking, InfallibleSolver};
+use crate::solver::{InfallibleSolver, backtracking};
 
 #[derive(Debug, Default)]
 enum SolverImpl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, Filter: CandidatesFilter<Base>> {
@@ -23,14 +23,14 @@ pub struct Solver<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, Filter: Candidat
 
 impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>> Solver<Base, GridRef, ()> {
     pub fn new(grid: GridRef) -> Self {
-        Self::new_with_filter(grid, ())
+        Self::with_filter(grid, ())
     }
 }
 
 impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, Filter: CandidatesFilter<Base>>
     Solver<Base, GridRef, Filter>
 {
-    pub fn new_with_filter(grid: GridRef, filter: Filter) -> Self {
+    pub fn with_filter(grid: GridRef, filter: Filter) -> Self {
         match Base::ENUM {
             // Base 2 and 3 are small enough,
             // that the overhead of the strategy evaluation is slower than the naive backtracking solver.
@@ -44,7 +44,7 @@ impl<Base: SudokuBase, GridRef: AsRef<Grid<Base>>, Filter: CandidatesFilter<Base
             // For base >= 4, sat solver is faster
             BaseEnum::Base4 | BaseEnum::Base5 => Self {
                 solver_impl: SolverImpl::Sat(
-                    sat::Solver::new_with_candidates_filter(grid, &filter).into_iter(),
+                    sat::Solver::with_candidates_filter(grid, &filter).into_iter(),
                 ),
             },
         }
@@ -96,8 +96,8 @@ mod tests {
     tests_solver_samples! {
         init_test_logger(),
         |grid| {
-            let solver = Solver::new(grid.clone());
-            assert_infallible_solver_single_solution(solver, &grid);
+            let mut solver = Solver::new(grid.clone());
+            assert_infallible_solver_single_solution(&mut solver, &grid);
         }
     }
 
@@ -111,8 +111,8 @@ mod tests {
             tests_solver_samples! {
                 init_test_logger(),
                 |grid| {
-                    let solver = Solver::new(grid.clone());
-                    assert_infallible_solver_single_solution(solver, &grid);
+                    let mut solver = Solver::new(grid.clone());
+                    assert_infallible_solver_single_solution(&mut solver, &grid);
                 }
             }
         }

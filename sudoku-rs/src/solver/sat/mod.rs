@@ -13,21 +13,23 @@ use crate::cell::{Cell, Value};
 use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::position::Position;
+use crate::solver::FallibleSolver;
 use crate::solver::backtracking::CandidatesFilter;
 use crate::solver::sat::cell_variable::CellVariable;
-use crate::solver::FallibleSolver;
 
 mod initialized_sat_solver {
-    use once_cell::sync::Lazy;
-
-    use crate::base::consts::*;
-
     use super::*;
+    use crate::base::consts::*;
+    use std::sync::LazyLock;
 
-    pub(super) static SOLVER_BASE_2: Lazy<SatSolver> = Lazy::new(Solver::<Base2>::init_sat_solver);
-    pub(super) static SOLVER_BASE_3: Lazy<SatSolver> = Lazy::new(Solver::<Base3>::init_sat_solver);
-    pub(super) static SOLVER_BASE_4: Lazy<SatSolver> = Lazy::new(Solver::<Base4>::init_sat_solver);
-    pub(super) static SOLVER_BASE_5: Lazy<SatSolver> = Lazy::new(Solver::<Base5>::init_sat_solver);
+    pub(super) static SOLVER_BASE_2: LazyLock<SatSolver> =
+        LazyLock::new(Solver::<Base2>::init_sat_solver);
+    pub(super) static SOLVER_BASE_3: LazyLock<SatSolver> =
+        LazyLock::new(Solver::<Base3>::init_sat_solver);
+    pub(super) static SOLVER_BASE_4: LazyLock<SatSolver> =
+        LazyLock::new(Solver::<Base4>::init_sat_solver);
+    pub(super) static SOLVER_BASE_5: LazyLock<SatSolver> =
+        LazyLock::new(Solver::<Base5>::init_sat_solver);
 }
 
 type Clause = Vec<Lit>;
@@ -52,13 +54,10 @@ impl<Base: SudokuBase> Debug for Solver<Base> {
 /// Public API
 impl<Base: SudokuBase> Solver<Base> {
     pub fn new<GridRef: AsRef<Grid<Base>>>(grid: GridRef) -> Self {
-        Self::new_with_candidates_filter(grid, &())
+        Self::with_candidates_filter(grid, &())
     }
 
-    pub fn new_with_candidates_filter<
-        GridRef: AsRef<Grid<Base>>,
-        Filter: CandidatesFilter<Base>,
-    >(
+    pub fn with_candidates_filter<GridRef: AsRef<Grid<Base>>, Filter: CandidatesFilter<Base>>(
         grid: GridRef,
         filter: &Filter,
     ) -> Self {
@@ -90,6 +89,10 @@ impl<Base: SudokuBase> Solver<Base> {
                 .into()
             })
             .collect()
+    }
+
+    pub fn step_count(&self) -> u64 {
+        self.sat_solver.stats().conflicts
     }
 }
 
@@ -401,8 +404,8 @@ mod tests {
             tests_solver_samples! {
                 init_test_logger(),
                 |grid| {
-                    let solver = Solver::new(&grid);
-                    assert_fallible_solver_single_solution(solver, &grid);
+                    let mut solver = Solver::new(&grid);
+                    assert_fallible_solver_single_solution(&mut solver, &grid);
                 }
             }
         }
@@ -441,17 +444,19 @@ mod tests {
             .into_iter()
             .map(|v| Value::try_from(v).unwrap())
             .collect();
-        let solver = Solver::new_with_candidates_filter(&grid, &denylist);
+        let solver = Solver::with_candidates_filter(&grid, &denylist);
 
         for solution in solver.clone() {
-            assert!(![1, 3].contains(
-                &solution
-                    .unwrap()
-                    .get(Position::top_left())
-                    .value()
-                    .unwrap()
-                    .get()
-            ));
+            assert!(
+                ![1, 3].contains(
+                    &solution
+                        .unwrap()
+                        .get(Position::top_left())
+                        .value()
+                        .unwrap()
+                        .get()
+                )
+            );
         }
 
         assert_eq!(solver.clone().into_iter().count(), 144);

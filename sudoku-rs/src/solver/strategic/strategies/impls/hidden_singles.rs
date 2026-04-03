@@ -1,7 +1,7 @@
 use crate::base::SudokuBase;
 use crate::error::Result;
-use crate::grid::group::Group;
 use crate::grid::Grid;
+use crate::grid::group::Group;
 use crate::position::Position;
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions};
 use crate::solver::strategic::strategies::{Strategy, StrategyScore};
@@ -39,7 +39,7 @@ impl Strategy for HiddenSingles {
 
                 candidate_histogram
                     .into_iter_enumerate()
-                    .filter(|&(_coordinate, stats)| (stats.count == 1))
+                    .filter(|&(_coordinate, stats)| stats.count == 1)
                     .map(|(coordinate, stats)| {
                         // This candidate is unique in this group.
                         let pos = stats.last_pos.unwrap();
@@ -53,12 +53,13 @@ impl Strategy for HiddenSingles {
 
 #[cfg(test)]
 mod tests {
-    use crate::base::consts::*;
+    use super::*;
     use crate::cell::Value;
     use crate::samples;
     use crate::solver::strategic::strategies::test_util::assert_deductions_with_grid;
-
-    use super::*;
+    use crate::{
+        base::consts::*, solver::strategic::strategies::test_util::strategy_snapshot_tests,
+    };
 
     #[test]
     fn test_hidden_singles_base2() {
@@ -117,4 +118,6 @@ mod tests {
 
         assert_deductions_with_grid(&deductions, &expected_deductions, &mut grid);
     }
+
+    strategy_snapshot_tests!(HiddenSingles);
 }
