@@ -1,6 +1,6 @@
 http:// {
 	root * /srv
-	encode gzip
+	encode
 
 	tracing {
 		span file_server
