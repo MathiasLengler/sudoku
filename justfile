@@ -12,6 +12,9 @@ test *test-args:
 test-ci *test-args:
     @just test --profile ci {{ test-args }}
 
+test-miri *test-args:
+    @just test --profile default-miri {{ test-args }}
+
 # Run all linters
 lint: rust-lint web-lint
 
