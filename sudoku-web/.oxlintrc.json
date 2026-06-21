@@ -23,16 +23,20 @@
     },
     "ignorePatterns": ["*.js", "*.mjs", "dist", "dev-dist"],
     "rules": {
-        //
+        // override suspicious
         "react-in-jsx-scope": "off",
         "eslint/no-shadow": "off",
         "eslint/no-underscore-dangle": "off",
+        "react/no-unstable-nested-components": ["warn", { "allowAsProps": true }],
         "typescript/consistent-return": "off",
+
+        // override pedantic
         "typescript/prefer-readonly-parameter-types": "off",
         "typescript/strict-boolean-expressions": "off",
         "typescript/return-await": ["warn", "error-handling-correctness-only"],
         // Enable once we are ready for jotai atomFamily migration
         "typescript/no-deprecated": "off",
+
         // ESLint migration
         "constructor-super": "error",
         "for-direction": "error",
