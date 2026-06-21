@@ -15,7 +15,8 @@
       "WebFetch(domain:insta.rs)",
       "Bash(npm test *)",
       "Bash(npm run lint*)",
-      "WebFetch(domain:vite.dev)"
+      "WebFetch(domain:vite.dev)",
+      "WebFetch(domain:jotai.org)"
     ],
     "deny": [
       "Bash(npx *)"
