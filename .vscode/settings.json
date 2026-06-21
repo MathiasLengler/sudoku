@@ -13,13 +13,17 @@
     "hookform",
     "indicatif",
     "notistack",
+    "oxlint",
     "recoilize",
     "sudoku",
     "tanstack",
     "toolpad",
+    "tsrs",
     "usize"
   ],
   "eslint.workingDirectories": ["sudoku-web"],
-  "typescript.tsdk": "./sudoku-web/node_modules/typescript/lib",
-  "coverage-gutters.coverageReportFileName": "target/llvm-cov/html/index.html"
+  "coverage-gutters.coverageReportFileName": "target/llvm-cov/html/index.html",
+  "oxc.configPath": "sudoku-web/.oxlintrc.json",
+  "oxc.tsConfigPath": "sudoku-web/tsconfig.json",
+  "oxc.path.tsgolint": "sudoku-web/node_modules/oxlint-tsgolint/bin/tsgolint.js"
 }

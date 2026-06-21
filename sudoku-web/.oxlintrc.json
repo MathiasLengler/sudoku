@@ -1,0 +1,286 @@
+{
+    "$schema": "./node_modules/oxlint/configuration_schema.json",
+    "plugins": ["typescript", "react"],
+    "categories": {
+        "correctness": "off"
+    },
+    "options": {
+        "typeAware": true
+    },
+    "env": {
+        "builtin": true
+    },
+    "settings": {
+        "react": {
+            "version": "19.0.0"
+        }
+    },
+    "ignorePatterns": ["*.js", "*.mjs", "dist", "dev-dist"],
+    "rules": {
+        "constructor-super": "error",
+        "for-direction": "error",
+        "getter-return": "error",
+        "no-async-promise-executor": "error",
+        "no-case-declarations": "error",
+        "no-class-assign": "error",
+        "no-compare-neg-zero": "error",
+        "no-cond-assign": "error",
+        "no-const-assign": "error",
+        "no-constant-binary-expression": "error",
+        "no-constant-condition": "error",
+        "no-control-regex": "error",
+        "no-debugger": "error",
+        "no-delete-var": "error",
+        "no-dupe-class-members": "error",
+        "no-dupe-else-if": "error",
+        "no-dupe-keys": "error",
+        "no-duplicate-case": "error",
+        "no-empty": "error",
+        "no-empty-character-class": "error",
+        "no-empty-pattern": "error",
+        "no-empty-static-block": "error",
+        "no-ex-assign": "error",
+        "no-extra-boolean-cast": "error",
+        "no-fallthrough": "error",
+        "no-func-assign": "error",
+        "no-global-assign": "error",
+        "no-import-assign": "error",
+        "no-invalid-regexp": "error",
+        "no-irregular-whitespace": "error",
+        "no-loss-of-precision": "error",
+        "no-misleading-character-class": "error",
+        "no-new-native-nonconstructor": "error",
+        "no-nonoctal-decimal-escape": "error",
+        "no-obj-calls": "error",
+        "no-prototype-builtins": "error",
+        "no-redeclare": "error",
+        "no-regex-spaces": "error",
+        "no-self-assign": "error",
+        "no-setter-return": "error",
+        "no-shadow-restricted-names": "error",
+        "no-sparse-arrays": "error",
+        "no-this-before-super": "error",
+        "no-unexpected-multiline": "error",
+        "no-unreachable": "error",
+        "no-unsafe-finally": "error",
+        "no-unsafe-negation": "error",
+        "no-unsafe-optional-chaining": "error",
+        "no-unused-labels": "error",
+        "no-unused-private-class-members": "error",
+        "no-unused-vars": [
+            "warn",
+            {
+                "args": "all",
+                "argsIgnorePattern": "^_",
+                "caughtErrors": "all",
+                "caughtErrorsIgnorePattern": "^_",
+                "destructuredArrayIgnorePattern": "^_",
+                "varsIgnorePattern": "^_",
+                "ignoreRestSiblings": true
+            }
+        ],
+        "no-useless-backreference": "error",
+        "no-useless-catch": "error",
+        "no-useless-escape": "error",
+        "no-with": "error",
+        "require-yield": "error",
+        "use-isnan": "error",
+        "valid-typeof": "error",
+        "no-array-constructor": "error",
+        "no-unused-expressions": "error",
+        "no-empty-function": "error",
+        "react/display-name": "error",
+        "react/jsx-key": "error",
+        "react/jsx-no-comment-textnodes": "error",
+        "react/jsx-no-duplicate-props": "error",
+        "react/jsx-no-target-blank": "error",
+        "react/jsx-no-undef": "error",
+        "react/no-children-prop": "error",
+        "react/no-danger-with-children": "error",
+        "react/no-direct-mutation-state": "error",
+        "react/no-find-dom-node": "error",
+        "react/no-is-mounted": "error",
+        "react/no-render-return-value": "error",
+        "react/no-string-refs": "error",
+        "react/no-unescaped-entities": "error",
+        "react/no-unknown-property": [
+            "error",
+            {
+                "ignore": ["sx"]
+            }
+        ],
+        "no-restricted-imports": [
+            "error",
+            {
+                "paths": [
+                    {
+                        "name": "react",
+                        "importNames": ["default", "FunctionComponent"]
+                    },
+                    {
+                        "name": "react-hook-form-mui",
+                        "importNames": ["TextFieldElement"],
+                        "message": "Instead use 'MyTextField'"
+                    }
+                ]
+            }
+        ],
+        "react/rules-of-hooks": "error",
+        "react/exhaustive-deps": "warn",
+        "react/only-export-components": [
+            "error",
+            {
+                "allowConstantExport": true
+            }
+        ],
+        "typescript/await-thenable": "error",
+        "typescript/ban-ts-comment": "error",
+        "typescript/no-array-delete": "error",
+        "typescript/no-base-to-string": "error",
+        "typescript/no-duplicate-enum-values": "error",
+        "typescript/no-duplicate-type-constituents": "error",
+        "typescript/no-empty-object-type": "error",
+        "typescript/no-explicit-any": "error",
+        "typescript/no-extra-non-null-assertion": "error",
+        "typescript/no-floating-promises": "error",
+        "typescript/no-for-in-array": "error",
+        "typescript/no-implied-eval": "error",
+        "typescript/no-misused-new": "error",
+        "typescript/no-misused-promises": [
+            "error",
+            {
+                "checksVoidReturn": {
+                    "attributes": false
+                }
+            }
+        ],
+        "typescript/no-namespace": "error",
+        "typescript/no-non-null-asserted-optional-chain": "error",
+        "typescript/no-redundant-type-constituents": "error",
+        "typescript/no-require-imports": "error",
+        "typescript/no-this-alias": "error",
+        "typescript/no-unnecessary-type-assertion": "error",
+        "typescript/no-unnecessary-type-constraint": "error",
+        "typescript/no-unsafe-argument": "error",
+        "typescript/no-unsafe-assignment": "error",
+        "typescript/no-unsafe-call": "error",
+        "typescript/no-unsafe-declaration-merging": "error",
+        "typescript/no-unsafe-enum-comparison": "error",
+        "typescript/no-unsafe-function-type": "error",
+        "typescript/no-unsafe-member-access": "error",
+        "typescript/no-unsafe-return": "error",
+        "typescript/no-unsafe-unary-minus": "error",
+        "typescript/no-wrapper-object-types": "error",
+        "typescript/only-throw-error": "error",
+        "typescript/prefer-as-const": "error",
+        "typescript/prefer-namespace-keyword": "error",
+        "typescript/prefer-promise-reject-errors": "error",
+        "typescript/require-await": "error",
+        "typescript/restrict-plus-operands": "error",
+        "typescript/restrict-template-expressions": "error",
+        "typescript/triple-slash-reference": "error",
+        "typescript/unbound-method": [
+            "warn",
+            {
+                "ignoreStatic": true
+            }
+        ],
+        "typescript/adjacent-overload-signatures": "error",
+        "typescript/array-type": "error",
+        "typescript/ban-tslint-comment": "error",
+        "typescript/class-literal-property-style": "error",
+        "typescript/consistent-generic-constructors": "error",
+        "typescript/consistent-indexed-object-style": "error",
+        "typescript/consistent-type-assertions": "error",
+        "typescript/consistent-type-definitions": ["warn", "type"],
+        "typescript/dot-notation": "error",
+        "typescript/no-confusing-non-null-assertion": "error",
+        "typescript/no-inferrable-types": "error",
+        "typescript/non-nullable-type-assertion-style": "error",
+        "typescript/prefer-find": "error",
+        "typescript/prefer-for-of": "error",
+        "typescript/prefer-function-type": "error",
+        "typescript/prefer-includes": "error",
+        "typescript/prefer-nullish-coalescing": "error",
+        "typescript/prefer-regexp-exec": "error",
+        "typescript/prefer-string-starts-ends-with": "error",
+        "typescript/no-restricted-types": [
+            "error",
+            {
+                "types": {
+                    "React.FC": {
+                        "message": "Useless and has some drawbacks, see https://github.com/facebook/create-react-app/pull/8177"
+                    },
+                    "React.FunctionComponent": {
+                        "message": "Useless and has some drawbacks, see https://github.com/facebook/create-react-app/pull/8177"
+                    },
+                    "React.FunctionalComponent": {
+                        "message": "Preact specific, useless and has some drawbacks, see https://github.com/facebook/create-react-app/pull/8177"
+                    }
+                }
+            }
+        ]
+    },
+    "overrides": [
+        {
+            "files": ["**/*.ts", "**/*.tsx", "**/*.mts", "**/*.cts"],
+            "rules": {
+                "constructor-super": "off",
+                "getter-return": "off",
+                "no-class-assign": "off",
+                "no-const-assign": "off",
+                "no-dupe-class-members": "off",
+                "no-dupe-keys": "off",
+                "no-func-assign": "off",
+                "no-import-assign": "off",
+                "no-new-native-nonconstructor": "off",
+                "no-obj-calls": "off",
+                "no-redeclare": "off",
+                "no-setter-return": "off",
+                "no-this-before-super": "off",
+                "no-unreachable": "off",
+                "no-unsafe-negation": "off",
+                "no-var": "error",
+                "no-with": "off",
+                "prefer-const": "error",
+                "prefer-rest-params": "error",
+                "prefer-spread": "error"
+            }
+        },
+        {
+            "files": ["**/*.{js,mjs,cjs,jsx,mjsx,ts,tsx,mtsx}"],
+            "rules": {
+                "zod/array-style": "error",
+                "zod/consistent-import": "error",
+                "zod/consistent-schema-var-name": "error",
+                "zod/no-any-schema": "error",
+                "zod/no-coerce-boolean": "error",
+                "zod/no-duplicate-schema-methods": "error",
+                "zod/no-empty-custom-schema": "error",
+                "zod/no-native-enum": "error",
+                "zod/no-number-schema-with-finite": "error",
+                "zod/no-number-schema-with-int": "error",
+                "zod/no-number-schema-with-is-finite": "error",
+                "zod/no-number-schema-with-is-int": "error",
+                "zod/no-number-schema-with-safe": "error",
+                "zod/no-number-schema-with-step": "error",
+                "zod/no-string-schema-with-uuid": "error",
+                "zod/no-optional-and-default-together": "error",
+                "zod/no-promise-schema": "error",
+                "zod/no-schema-with-is-nullable": "error",
+                "zod/no-schema-with-is-optional": "error",
+                "zod/no-throw-in-refine": "error",
+                "zod/prefer-enum-over-literal-union": "error",
+                "zod/prefer-loose-object": "error",
+                "zod/prefer-meta": "error",
+                "zod/prefer-meta-last": "error",
+                "zod/prefer-strict-object": "error",
+                "zod/prefer-top-level-string-formats": "error",
+                "zod/prefer-trim-before-string-length-checks": "error",
+                "zod/require-brand-type-parameter": "error",
+                "zod/require-error-message": "error"
+            },
+            "jsPlugins": ["eslint-plugin-zod"]
+        }
+    ]
+}
