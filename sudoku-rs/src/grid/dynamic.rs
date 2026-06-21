@@ -144,30 +144,32 @@ mod wasm {
     // Recursive expansion of TS macro
     // ================================
 
-    impl<T> ::ts_rs::TS for DynamicGrid<T>
+    #[automatically_derived]
+    impl<T: Clone> ::ts_rs::TS for DynamicGrid<T>
     where
         T: ::ts_rs::TS,
     {
         type WithoutGenerics = DynamicGrid<::ts_rs::Dummy>;
         type OptionInnerType = Self;
-        fn ident() -> String {
+        const IS_ENUM: bool = <Vec<T> as ::ts_rs::TS>::IS_ENUM;
+        fn ident(cfg: &::ts_rs::Config) -> String {
             ("DynamicGrid").to_string()
         }
-        fn name() -> String {
+        fn name(cfg: &::ts_rs::Config) -> String {
             format!(
                 "{}<{}>",
                 "DynamicGrid",
-                vec![<T as ::ts_rs::TS>::name()].join(", ")
+                vec![<T as ::ts_rs::TS>::name(cfg)].join(", ")
             )
         }
-        fn decl_concrete() -> String {
+        fn decl_concrete(cfg: &::ts_rs::Config) -> String {
             format!(
                 "type {} = {};",
                 "DynamicGrid",
-                <Self as ::ts_rs::TS>::inline()
+                <Self as ::ts_rs::TS>::inline(cfg)
             )
         }
-        fn decl() -> String {
+        fn decl(cfg: &::ts_rs::Config) -> String {
             #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
             struct T;
 
@@ -179,39 +181,39 @@ mod wasm {
             impl ::ts_rs::TS for T {
                 type WithoutGenerics = T;
                 type OptionInnerType = Self;
-                fn name() -> String {
+                fn name(_cfg: &::ts_rs::Config) -> String {
                     stringify!(T).to_owned()
                 }
-                fn inline() -> String {
-                    panic!("{} cannot be inlined", <Self as ::ts_rs::TS>::name())
+                fn inline(cfg: &::ts_rs::Config) -> String {
+                    panic!("{} cannot be inlined", <Self as ::ts_rs::TS>::name(cfg))
                 }
-                fn inline_flattened() -> String {
+                fn inline_flattened(_cfg: &::ts_rs::Config) -> String {
                     stringify!(T).to_owned()
                 }
-                fn decl() -> String {
-                    panic!("{} cannot be declared", <Self as ::ts_rs::TS>::name())
+                fn decl(cfg: &::ts_rs::Config) -> String {
+                    panic!("{} cannot be declared", <Self as ::ts_rs::TS>::name(cfg))
                 }
-                fn decl_concrete() -> String {
-                    panic!("{} cannot be declared", <Self as ::ts_rs::TS>::name())
+                fn decl_concrete(cfg: &::ts_rs::Config) -> String {
+                    panic!("{} cannot be declared", <Self as ::ts_rs::TS>::name(cfg))
                 }
             }
-            let inline = <DynamicGrid<T> as ::ts_rs::TS>::inline();
+            let inline = <DynamicGrid<T> as ::ts_rs::TS>::inline(cfg);
             let generics = format!(
                 "<{}>",
                 [format!(
                     "{} = {}",
                     "T",
-                    <DynamicCell as ::ts_rs::TS>::name()
+                    <DynamicCell as ::ts_rs::TS>::name(cfg)
                 )]
                 .join(", ")
             );
             format!("type {}{generics} = {inline};", "DynamicGrid")
         }
-        fn inline() -> String {
-            <Vec<T> as ::ts_rs::TS>::name()
+        fn inline(cfg: &::ts_rs::Config) -> String {
+            <Vec<T> as ::ts_rs::TS>::name(cfg)
         }
-        fn inline_flattened() -> String {
-            panic!("{} cannot be flattened", <Self as ::ts_rs::TS>::name())
+        fn inline_flattened(cfg: &::ts_rs::Config) -> String {
+            panic!("{} cannot be flattened", <Self as ::ts_rs::TS>::name(cfg))
         }
         fn visit_generics(v: &mut impl ::ts_rs::TypeVisitor)
         where
@@ -227,16 +229,18 @@ mod wasm {
         where
             Self: 'static,
         {
+            v.visit::<DynamicCell>();
             v.visit::<Vec<T>>();
             <Vec<T> as ::ts_rs::TS>::visit_generics(v);
-            v.visit::<DynamicCell>();
             <DynamicCell as ::ts_rs::TS>::visit_generics(v);
         }
     }
     #[cfg(test)]
     #[test]
     fn export_bindings_dynamicgrid() {
-        <DynamicGrid<::ts_rs::Dummy> as ::ts_rs::TS>::export_all().expect("could not export type");
+        let cfg = ::ts_rs::Config::from_env();
+        <DynamicGrid<::ts_rs::Dummy> as ::ts_rs::TS>::export_all(&cfg)
+            .expect("could not export type");
     }
 }
 

@@ -530,31 +530,33 @@ mod enum_impl {
             type WithoutGenerics = Self;
             type OptionInnerType = Self;
 
-            fn name() -> String {
+            fn name(_cfg: &::ts_rs::Config) -> String {
                 "BaseEnum".to_owned()
             }
-            fn decl_concrete() -> String {
-                format!("type {} = {};", Self::name(), Self::inline())
+            fn decl_concrete(cfg: &::ts_rs::Config) -> String {
+                format!("type {} = {};", Self::name(cfg), Self::inline(cfg))
             }
-            fn decl() -> String {
-                let inline = Self::inline();
-                format!("type {} = {inline};", Self::name())
+            fn decl(cfg: &::ts_rs::Config) -> String {
+                let inline = Self::inline(cfg);
+                format!("type {} = {inline};", Self::name(cfg))
             }
-            fn inline() -> String {
+            fn inline(_cfg: &::ts_rs::Config) -> String {
                 BaseEnum::all().map(Self::into_u8).join(" | ")
             }
-            fn inline_flattened() -> String {
-                panic!("{} cannot be flattened", Self::name())
+            fn inline_flattened(cfg: &::ts_rs::Config) -> String {
+                panic!("{} cannot be flattened", Self::name(cfg))
             }
             fn output_path() -> Option<std::path::PathBuf> {
-                Some(std::path::PathBuf::from(format!("{}.ts", Self::name())))
+                let cfg: ts_rs::Config = ::ts_rs::Config::from_env();
+                Some(std::path::PathBuf::from(format!("{}.ts", Self::name(&cfg))))
             }
         }
 
         #[cfg(test)]
         #[test]
         fn export_bindings_baseenum() {
-            <BaseEnum as ::ts_rs::TS>::export_all().expect("could not export type");
+            let cfg: ts_rs::Config = ::ts_rs::Config::from_env();
+            <BaseEnum as ::ts_rs::TS>::export_all(&cfg).expect("could not export type");
         }
     }
 
