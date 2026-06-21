@@ -16,6 +16,7 @@
     "recoilize",
     "sudoku",
     "tanstack",
+    "toolpad",
     "usize"
   ],
   "eslint.workingDirectories": ["sudoku-web"],
