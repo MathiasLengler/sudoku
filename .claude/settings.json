@@ -14,8 +14,11 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:insta.rs)",
       "Bash(npm test *)",
-      "Bash(npm run lint*)"
+      "Bash(npm run lint*)",
+      "WebFetch(domain:vite.dev)"
     ],
-    "deny": ["Bash(npx *)"]
+    "deny": [
+      "Bash(npx *)"
+    ]
   }
 }

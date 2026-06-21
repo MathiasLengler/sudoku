@@ -11,14 +11,6 @@ import wasm from "vite-plugin-wasm";
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
-    esbuild: {
-        supported: {
-            "top-level-await": true,
-        },
-        ...(mode === "profile" && {
-            minifyIdentifiers: false, // makes Chrome DevTools easier to use
-        }),
-    },
     server: {
         fs: {
             // Allow serving files from one level up to the project root
