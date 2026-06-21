@@ -3,8 +3,7 @@
 import { minimal2023Preset } from "@vite-pwa/assets-generator/config";
 import react from "@vitejs/plugin-react";
 import { playwright } from "@vitest/browser-playwright";
-import jotaiDebugLabel from "jotai/babel/plugin-debug-label";
-import jotaiReactRefresh from "jotai/babel/plugin-react-refresh";
+import jotai from "jotai-rolldown";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 import wasm from "vite-plugin-wasm";
@@ -43,7 +42,9 @@ export default defineConfig(({ mode }) => ({
         format: "es",
     },
     plugins: [
-        react({ babel: { plugins: [jotaiDebugLabel, jotaiReactRefresh] } }),
+        react(),
+        // jotai-rolldown: atom debug labels + Fast Refresh state preservation (both dev-only by default).
+        jotai(),
         wasm(),
         ...(mode !== "test"
             ? [
