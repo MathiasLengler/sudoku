@@ -1,25 +1,16 @@
-/* eslint-disable no-empty-pattern */
-/* eslint-disable react-hooks/rules-of-hooks */
-
 import * as Comlink from "comlink";
 import { test as baseTest } from "vitest";
-import type { RemoteWorkerApi } from "../../app/state/worker";
 import type { WorkerApi } from "../../app/state/worker/bg/worker";
 import { spawnWorker } from "../../app/state/worker/spawn";
 
-type WorkerFixtures = {
-    remoteWorkerApi: RemoteWorkerApi;
-};
-
-export const test = baseTest.extend<WorkerFixtures>({
-    remoteWorkerApi: async ({}, use) => {
+export const test = baseTest
+    // Rayon threads for the worker's wasm-bindgen-rayon pool. Defaults to 1; override per-suite
+    // via `test.override("threadCount", n)` for tests that need real multi-threading.
+    .extend("threadCount", 1)
+    .extend("remoteWorkerApi", async ({ threadCount }, { onCleanup }) => {
         const worker = spawnWorker();
-
         const remoteWorkerApi = Comlink.wrap<WorkerApi>(worker, {});
-        await remoteWorkerApi.init(1);
-
-        await use(remoteWorkerApi);
-
-        worker.terminate();
-    },
-});
+        await remoteWorkerApi.init(threadCount);
+        onCleanup(() => worker.terminate());
+        return remoteWorkerApi;
+    });
