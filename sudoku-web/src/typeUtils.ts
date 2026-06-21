@@ -1,2 +1,2 @@
-// eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
+// oxlint-disable-next-line no-unused-vars typescript/no-unnecessary-type-parameters no-empty-function
 export function assert<T extends true>() {}

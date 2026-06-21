@@ -2,7 +2,13 @@
     "$schema": "./node_modules/oxlint/configuration_schema.json",
     "plugins": ["typescript", "react"],
     "categories": {
-        "correctness": "off"
+        "correctness": "error",
+        "suspicious": "warn"
+        // "pedantic": "warn",
+        // "perf": "warn",
+        // "style": "warn",
+        // "restriction": "warn",
+        // "nursery": "off"
     },
     "options": {
         "typeAware": true
@@ -17,6 +23,17 @@
     },
     "ignorePatterns": ["*.js", "*.mjs", "dist", "dev-dist"],
     "rules": {
+        //
+        "react-in-jsx-scope": "off",
+        "eslint/no-shadow": "off",
+        "eslint/no-underscore-dangle": "off",
+        "typescript/consistent-return": "off",
+        "typescript/prefer-readonly-parameter-types": "off",
+        "typescript/strict-boolean-expressions": "off",
+        "typescript/return-await": ["warn", "error-handling-correctness-only"],
+        // Enable once we are ready for jotai atomFamily migration
+        "typescript/no-deprecated": "off",
+        // ESLint migration
         "constructor-super": "error",
         "for-direction": "error",
         "getter-return": "error",

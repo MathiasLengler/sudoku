@@ -7,6 +7,7 @@ export type SaveComlinkRemote<T> = Comlink.Remote<T> & {
 const saveComlinkRemoteSymbol = Symbol("SaveComlinkProxy");
 
 export function fixupComlinkRemote<T>(comlinkRemote: Comlink.Remote<T>): SaveComlinkRemote<T> {
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     return new Proxy(
         // Target a plain object for `typeof proxy === "object"`
         // Reference: https://stackoverflow.com/a/42493645

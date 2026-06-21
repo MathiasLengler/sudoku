@@ -50,6 +50,7 @@ export const mainThreadWasmSudokuClassState = atom<Promise<MainThreadWasmSudokuC
     //  the class would *not* extend WasmSudoku, since it overrides expensive methods incompatibly
     //  Current scope access would be replaced with constructor parameters (?)
     const MainThreadWasmSudoku = {
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
         prototype: undefined as never,
 
         // Cheap constructor functions
@@ -117,6 +118,7 @@ function createInstanceProxy(get: Getter, wasmSudoku: WasmSudoku): MainThreadWas
             return Reflect.get(wasmSudoku, prop, receiver) as unknown;
         },
     });
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     return proxy as unknown as MainThreadWasmSudoku;
 }
 

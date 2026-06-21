@@ -39,7 +39,7 @@ function WorldCellVirtualized({ rowIndex, columnIndex, style }: CellComponentPro
 
     const cellOnClick = useAtomCallback(
         useCallback(
-            async (get, set, e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+            async (get, set, e: React.MouseEvent<HTMLDivElement>) => {
                 const { width, height } = e.currentTarget.getBoundingClientRect();
                 const centerX = width / 2;
                 const centerY = height / 2;

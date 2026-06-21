@@ -21,5 +21,6 @@ export function baseToLabel(base: number): string {
 export const baseSchema = z.int().min(BASE_MIN).max(BASE_MAX);
 
 export function parseBase(base: number): BaseEnum {
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     return baseSchema.parse(base) as BaseEnum;
 }
