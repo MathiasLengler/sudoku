@@ -97,6 +97,12 @@ export default defineConfig(({ mode }) => ({
             }),
         },
     },
+    define: {
+        // Vite 8 disallows NODE_ENV=production in .env
+        ...(mode === "profile" && {
+            "process.env.NODE_ENV": JSON.stringify("production"),
+        }),
+    },
     test: {
         browser: {
             enabled: true,
