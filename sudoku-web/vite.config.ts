@@ -3,22 +3,13 @@
 import { minimal2023Preset } from "@vite-pwa/assets-generator/config";
 import react from "@vitejs/plugin-react";
 import { playwright } from "@vitest/browser-playwright";
-import jotaiDebugLabel from "jotai/babel/plugin-debug-label";
-import jotaiReactRefresh from "jotai/babel/plugin-react-refresh";
+import jotai from "jotai-rolldown";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 import wasm from "vite-plugin-wasm";
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
-    esbuild: {
-        supported: {
-            "top-level-await": true,
-        },
-        ...(mode === "profile" && {
-            minifyIdentifiers: false, // makes Chrome DevTools easier to use
-        }),
-    },
     server: {
         fs: {
             // Allow serving files from one level up to the project root
@@ -44,11 +35,16 @@ export default defineConfig(({ mode }) => ({
         },
         allowedHosts: [".goat-snapper.ts.net"],
     },
+    build: {
+        chunkSizeWarningLimit: 1_000,
+    },
     worker: {
         format: "es",
     },
     plugins: [
-        react({ babel: { plugins: [jotaiDebugLabel, jotaiReactRefresh] } }),
+        react(),
+        // jotai-rolldown: atom debug labels + Fast Refresh state preservation (both dev-only by default).
+        jotai(),
         wasm(),
         ...(mode !== "test"
             ? [
@@ -104,6 +100,12 @@ export default defineConfig(({ mode }) => ({
                 "react-dom/client": "react-dom/profiling",
             }),
         },
+    },
+    define: {
+        // Vite 8 disallows NODE_ENV=production in .env
+        ...(mode === "profile" && {
+            "process.env.NODE_ENV": JSON.stringify("production"),
+        }),
     },
     test: {
         browser: {

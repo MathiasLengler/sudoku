@@ -13,7 +13,7 @@ export class WasmSudokuWithTransfer extends WasmSudoku {
     static override deserialize(bytes: SerializedDynamicSudoku): WasmSudokuWithTransfer {
         const instance = WasmSudoku.deserialize(bytes);
         Object.setPrototypeOf(instance, this.prototype);
-        return instance as WasmSudokuWithTransfer;
+        return instance;
     }
 
     override serialize(): SerializedDynamicSudoku {
@@ -26,7 +26,7 @@ export class WasmCellWorldWithTransfer extends WasmCellWorld {
     static override deserialize(bytes: SerializedDynamicCellWorld): WasmCellWorldWithTransfer {
         const instance = WasmCellWorld.deserialize(bytes);
         Object.setPrototypeOf(instance, this.prototype);
-        return instance as WasmCellWorldWithTransfer;
+        return instance;
     }
     override serialize(): SerializedDynamicCellWorld {
         const serialized = super.serialize();

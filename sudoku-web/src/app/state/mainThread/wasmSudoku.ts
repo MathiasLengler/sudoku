@@ -34,6 +34,7 @@ type ReplaceWasmSudokuReturnWithMainThreadWasmSudoku<T extends (...args: any) =>
 export type MainThreadWasmSudokuClass = MakeMainThreadWasmSudokuStatics<typeof WasmSudoku>;
 export type MainThreadWasmSudoku = MakeMainThreadWasmSudokuMethods<WasmSudoku>;
 
+// FIXME: refactor this so that tests can use it without depending on jotai state
 export const mainThreadWasmSudokuClassState = atom<Promise<MainThreadWasmSudokuClass>>(async (get) => {
     const WasmSudoku = await get(wasmSudokuClassState);
 

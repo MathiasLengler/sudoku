@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cargo insta test:*)",
+      "Bash(cargo test:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(just clippy)",
+      "Bash(just lint:*)",
+      "Bash(just pack-dev *)",
+      "Bash(ls:*)",
+      "Bash(wc:*)",
+      "WebFetch(domain:docs.rs)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:insta.rs)",
+      "Bash(npm test *)",
+      "Bash(npm run lint*)",
+      "WebFetch(domain:vite.dev)",
+      "WebFetch(domain:jotai.org)"
+    ],
+    "deny": [
+      "Bash(npx *)"
+    ]
+  }
+}
