@@ -12,7 +12,10 @@
       "Bash(wc:*)",
       "WebFetch(domain:docs.rs)",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:insta.rs)"
-    ]
+      "WebFetch(domain:insta.rs)",
+      "Bash(npm test *)",
+      "Bash(npm run lint*)"
+    ],
+    "deny": ["Bash(npx *)"]
   }
 }
