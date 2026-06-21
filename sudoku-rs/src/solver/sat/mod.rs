@@ -256,7 +256,7 @@ impl<Base: SudokuBase> Solver<Base> {
     fn no_group_contains_the_same_value_twice_clauses() -> impl Iterator<Item = Clause> {
         Value::<Base>::all().flat_map(|value| {
             Position::<Base>::all_groups().flat_map(move |group| {
-                group.tuple_combinations().map(move |(pos1, pos2)| {
+                group.array_combinations().map(move |[pos1, pos2]| {
                     vec![
                         CellVariable {
                             pos: pos1,
@@ -282,8 +282,8 @@ impl<Base: SudokuBase> Solver<Base> {
     fn no_cell_contains_more_than_one_value_clauses() -> impl Iterator<Item = Clause> {
         Position::<Base>::all().flat_map(|pos| {
             Value::<Base>::all()
-                .tuple_combinations()
-                .map(move |(value1, value2)| {
+                .array_combinations()
+                .map(move |[value1, value2]| {
                     vec![
                         CellVariable {
                             pos,

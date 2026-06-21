@@ -449,8 +449,6 @@ impl<
 
 #[cfg(test)]
 mod tests {
-    use itertools::Itertools;
-
     use crate::base::consts::Base2;
     use crate::cell::Value;
     use crate::position::Position;
