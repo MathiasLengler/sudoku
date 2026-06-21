@@ -36,6 +36,9 @@ export default defineConfig(({ mode }) => ({
         },
         allowedHosts: [".goat-snapper.ts.net"],
     },
+    build: {
+        chunkSizeWarningLimit: 1_000,
+    },
     worker: {
         format: "es",
     },
