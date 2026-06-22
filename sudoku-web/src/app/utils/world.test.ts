@@ -25,11 +25,11 @@ describe("validateCellWorldPosition", () => {
         { row: -1, column: 0 },
         { row: 0, column: -1 },
     ] satisfies DynamicPosition[])("negative %o", (cellWorldPosition) => {
-        expect(() =>
+        expect(() => {
             validateCellWorldPosition({
                 cellWorldPosition,
                 cellDim: cellDim,
-            }),
-        ).toThrowError(/cellWorldPosition out of bounds/);
+            });
+        }).toThrowError(/cellWorldPosition out of bounds/);
     });
 });

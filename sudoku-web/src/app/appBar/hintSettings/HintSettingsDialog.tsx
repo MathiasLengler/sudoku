@@ -113,7 +113,9 @@ export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
             <DialogActions>
                 <ResetFormButton
                     disabled={isSubmitting}
-                    onClick={() => reset(hintSettingsSchema.encode(DEFAULT_HINT_SETTINGS))}
+                    onClick={() => {
+                        reset(hintSettingsSchema.encode(DEFAULT_HINT_SETTINGS));
+                    }}
                 />
                 <Button onClick={onClose} disabled={isSubmitting}>
                     Cancel

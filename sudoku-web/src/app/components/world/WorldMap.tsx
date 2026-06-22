@@ -137,7 +137,14 @@ export function WorldMap() {
 
     return (
         <div className="world-map" style={cssVariables}>
-            <Slider min={1} max={200} value={cellSize} onChange={(_e, value) => setCellSize(value)} />
+            <Slider
+                min={1}
+                max={200}
+                value={cellSize}
+                onChange={(_e, value) => {
+                    setCellSize(value);
+                }}
+            />
             <WorldMapVirtualized />
         </div>
     );

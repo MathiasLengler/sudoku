@@ -79,7 +79,8 @@ export function useKeyboardInput() {
                     const value = keyToValue(key, sideLength);
                     if (value !== undefined) {
                         ev.preventDefault();
-                        return await handleValue(value);
+                        await handleValue(value);
+                        return;
                     }
 
                     const input = get(inputState);
@@ -87,7 +88,8 @@ export function useKeyboardInput() {
                         const newPos = keyToNewPos(key, input.selectedPos, sideLength);
                         if (newPos !== undefined) {
                             ev.preventDefault();
-                            return await handlePosition(newPos);
+                            await handlePosition(newPos);
+                            return;
                         }
                     }
 

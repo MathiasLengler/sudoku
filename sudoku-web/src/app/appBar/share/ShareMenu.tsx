@@ -40,7 +40,12 @@ export function ShareMenu() {
                     <MyIconButton label="Share" icon={ShareIcon} color="inherit" size="large" onClick={onMenuOpen} />
                 )}
             </MyMenu>
-            <MyDialog open={isExportToClipboardDialogOpen} onClose={() => setIsExportToClipboardDialogOpen(false)}>
+            <MyDialog
+                open={isExportToClipboardDialogOpen}
+                onClose={() => {
+                    setIsExportToClipboardDialogOpen(false);
+                }}
+            >
                 {(onClose) => <ExportToClipboardDialog onClose={onClose} />}
             </MyDialog>
         </>

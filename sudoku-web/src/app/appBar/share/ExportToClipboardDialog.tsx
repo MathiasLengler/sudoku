@@ -96,7 +96,12 @@ export function ExportToClipboardDialog({ onClose }: ExportToClipboardDialogProp
                 </form>
             </DialogContent>
             <DialogActions sx={{ justifyContent: "space-between" }}>
-                <ResetFormButton disabled={isSubmitting} onClick={() => reset()} />
+                <ResetFormButton
+                    disabled={isSubmitting}
+                    onClick={() => {
+                        reset();
+                    }}
+                />
                 <Button onClick={onClose} disabled={isSubmitting}>
                     Cancel
                 </Button>

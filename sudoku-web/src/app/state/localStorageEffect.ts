@@ -58,7 +58,9 @@ export function getZodLocalStorage<Schema extends z.ZodTypeAny>(schema: Schema):
                 }
             };
             window.addEventListener("storage", handler);
-            return () => window.removeEventListener("storage", handler);
+            return () => {
+                window.removeEventListener("storage", handler);
+            };
         },
     };
 }

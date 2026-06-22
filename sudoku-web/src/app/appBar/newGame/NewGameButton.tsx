@@ -14,9 +14,16 @@ export function NewGameButton() {
                 size="large"
                 label="New game"
                 color="inherit"
-                onClick={() => setIsNewGameDialogOpen(true)}
+                onClick={() => {
+                    setIsNewGameDialogOpen(true);
+                }}
             />
-            <MyDialog open={isNewGameDialogOpen} onClose={() => setIsNewGameDialogOpen(false)}>
+            <MyDialog
+                open={isNewGameDialogOpen}
+                onClose={() => {
+                    setIsNewGameDialogOpen(false);
+                }}
+            >
                 {(onClose) => <NewGameDialog onClose={onClose} />}
             </MyDialog>
         </>

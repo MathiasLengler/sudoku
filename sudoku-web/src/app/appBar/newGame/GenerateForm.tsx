@@ -367,7 +367,9 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
                     >
                         <ResetFormButton
                             disabled={isSubmitting}
-                            onClick={() => reset(generateFormValuesSchema.encode(GENERATE_FORM_DEFAULT_VALUES))}
+                            onClick={() => {
+                                reset(generateFormValuesSchema.encode(GENERATE_FORM_DEFAULT_VALUES));
+                            }}
                         />
                         <Button
                             type="button"

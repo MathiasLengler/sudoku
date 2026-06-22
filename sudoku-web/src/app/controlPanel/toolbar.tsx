@@ -28,7 +28,9 @@ export function Toolbar() {
                 <ToggleButton
                     value="candidateMode"
                     selected={inputCandidateMode}
-                    onChange={() => toggleCandidateMode()}
+                    onChange={() => {
+                        toggleCandidateMode();
+                    }}
                     color="primary"
                     size="large"
                 >
@@ -39,7 +41,9 @@ export function Toolbar() {
                 <ToggleButton
                     value="stickyMode"
                     selected={inputStickyMode}
-                    onChange={() => toggleStickyMode()}
+                    onChange={() => {
+                        toggleStickyMode();
+                    }}
                     color="primary"
                     size="large"
                 >

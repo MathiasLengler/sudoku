@@ -349,7 +349,7 @@ export function useGenerate() {
                 abortPromise: Promise<never>,
                 onProgress: (progress: GeneratorProgress) => void,
             ) => {
-                return await measure({ name: "generate", detail: { settings } }, async () => {
+                await measure({ name: "generate", detail: { settings } }, async () => {
                     const MainThreadWasmSudoku = await get(mainThreadWasmSudokuClassState);
 
                     let wasmSudoku;
@@ -423,7 +423,7 @@ export function useGenerateMultiShot() {
                 abortPromise: Promise<never>,
                 onProgress: (progress: MultiShotGeneratorProgress) => void,
             ) => {
-                return await measure({ name: "generateMultiShot", detail: { settings } }, async () => {
+                await measure({ name: "generateMultiShot", detail: { settings } }, async () => {
                     const MainThreadWasmSudoku = await get(mainThreadWasmSudokuClassState);
 
                     let wasmSudoku;
