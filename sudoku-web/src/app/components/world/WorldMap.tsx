@@ -75,8 +75,7 @@ function WorldCellVirtualized({ rowIndex, columnIndex, style }: CellComponentPro
 
                 set(selectedGridPositionState, current);
             },
-            // FIXME: debug why oxlint does not offer an quick fix here
-            [cellWorldPosition, playSelectedGrid],
+            [cellWorldPosition, playSelectedGrid, emptyCellWorld],
         ),
     );
 

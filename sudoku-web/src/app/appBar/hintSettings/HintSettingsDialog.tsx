@@ -48,6 +48,7 @@ export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
                 <form
                     id="hint-settings-form"
                     noValidate
+                    // oxlint-disable-next-line typescript/strict-void-return
                     onSubmit={handleSubmit((hintSettings) => {
                         setHintSettingsFormValues(hintSettings);
                         onClose();

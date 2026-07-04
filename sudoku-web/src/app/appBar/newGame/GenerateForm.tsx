@@ -173,6 +173,7 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
                 <TabPanel value={"generate-form" satisfies NewGameTabValue} sx={{ p: 0 }}>
                     <form
                         id="generate-form"
+                        // oxlint-disable-next-line typescript/strict-void-return
                         onSubmit={handleSubmit(async (formValues) => {
                             const {
                                 base,

@@ -97,7 +97,7 @@ async function applyValueAtGridPosition({
     const input = get(inputState);
 
     if (input.stickyMode) {
-        // Behaviour of stickyMode ("value first, cell second"):
+        // Behavior of stickyMode ("value first, cell second"):
         //  in candidateMode:
         //   only modifies existing candidates (could be configurable?)
         //   first candidate cell interaction determines if the candidate is set/deleted
@@ -110,28 +110,27 @@ async function applyValueAtGridPosition({
         //    set value => set value
         //    delete value => delete value if matching
         let cellAction: CellAction;
-        if (!input.stickyChain) {
+        if (input.stickyChain) {
+            // Active sticky "chain"
+            ({ cellAction } = input.stickyChain);
+        } else {
             const cell = await get(cellAtGridPositionState(gridPosition));
             if (input.candidateMode) {
                 if (cell.kind === "value") {
                     return; // Wait for first candidates cell interaction.
-                } else {
-                    if (cell.candidates.includes(value)) {
-                        cellAction = "delete";
-                    } else {
-                        cellAction = "set";
-                    }
-                }
-            } else {
-                if (cell.kind === "value") {
-                    if (cell.value === value) {
-                        cellAction = "delete";
-                    } else {
-                        cellAction = "set";
-                    }
+                } else if (cell.candidates.includes(value)) {
+                    cellAction = "delete";
                 } else {
                     cellAction = "set";
                 }
+            } else if (cell.kind === "value") {
+                if (cell.value === value) {
+                    cellAction = "delete";
+                } else {
+                    cellAction = "set";
+                }
+            } else {
+                cellAction = "set";
             }
 
             // Initialize stickyChain
@@ -148,9 +147,6 @@ async function applyValueAtGridPosition({
                     },
                 };
             });
-        } else {
-            // Active sticky "chain"
-            ({ cellAction } = input.stickyChain);
         }
 
         if (
@@ -174,18 +170,16 @@ async function applyValueAtGridPosition({
             } else {
                 assertNever(cellAction);
             }
-        } else {
-            if (cellAction === "set") {
-                wasmSudoku.setValue(gridPosition, value);
-            } else if (cellAction === "delete") {
-                const cell = await get(cellAtGridPositionState(gridPosition));
-                // Only delete cell value if it matches the handled value
-                if (cell.kind === "value" && cell.value === value) {
-                    wasmSudoku.delete(gridPosition);
-                }
-            } else {
-                assertNever(cellAction);
+        } else if (cellAction === "set") {
+            wasmSudoku.setValue(gridPosition, value);
+        } else if (cellAction === "delete") {
+            const cell = await get(cellAtGridPositionState(gridPosition));
+            // Only delete cell value if it matches the handled value
+            if (cell.kind === "value" && cell.value === value) {
+                wasmSudoku.delete(gridPosition);
             }
+        } else {
+            assertNever(cellAction);
         }
 
         // Add gridPosition to handledGridPositions
@@ -219,16 +213,12 @@ async function applyValueAtGridPosition({
                 },
             };
         });
+    } else if (value === 0) {
+        wasmSudoku.delete(gridPosition);
+    } else if (input.candidateMode) {
+        wasmSudoku.toggleCandidate(gridPosition, value);
     } else {
-        if (value === 0) {
-            wasmSudoku.delete(gridPosition);
-        } else {
-            if (input.candidateMode) {
-                wasmSudoku.toggleCandidate(gridPosition, value);
-            } else {
-                wasmSudoku.setOrToggleValue(gridPosition, value);
-            }
-        }
+        wasmSudoku.setOrToggleValue(gridPosition, value);
     }
 
     updateSudoku({ set, wasmSudoku });

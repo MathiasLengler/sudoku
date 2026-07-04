@@ -75,6 +75,7 @@ export function ExportToClipboardDialog({ onClose }: ExportToClipboardDialogProp
                 <form
                     id="export-to-clipboard-form"
                     noValidate
+                    // oxlint-disable-next-line typescript/strict-void-return
                     onSubmit={handleSubmit(onSubmit)}
                     style={{ display: "sticky" }}
                 >
