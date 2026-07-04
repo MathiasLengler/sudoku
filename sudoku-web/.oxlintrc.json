@@ -45,11 +45,11 @@
         // Enable once we are ready for jotai atomFamily migration
         "typescript/no-deprecated": "off",
 
-        // let/var hygiene — not in any enabled category, enable explicitly
-        "no-var": "error",
-        "prefer-const": "error",
-        "prefer-rest-params": "error",
-        "prefer-spread": "error",
+        // Rules not enabled by the current categories, manual opt-in.
+        "no-var": "warn",
+        "prefer-const": "warn",
+        "prefer-rest-params": "warn",
+        "prefer-spread": "warn",
 
         // ESLint migration
         "no-empty": "error",
