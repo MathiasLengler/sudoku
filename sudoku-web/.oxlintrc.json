@@ -45,6 +45,12 @@
         // Enable once we are ready for jotai atomFamily migration
         "typescript/no-deprecated": "off",
 
+        // let/var hygiene — not in any enabled category, enable explicitly
+        "no-var": "error",
+        "prefer-const": "error",
+        "prefer-rest-params": "error",
+        "prefer-spread": "error",
+
         // ESLint migration
         "no-empty": "error",
         "no-regex-spaces": "error",
@@ -142,6 +148,8 @@
         ]
     },
     "overrides": [
+        // tsc already reports these as compile errors, so oxlint leaves them off.
+        // Same set typescript-eslint disables in eslint-recommended.
         {
             "files": ["**/*.ts", "**/*.tsx", "**/*.mts", "**/*.cts"],
             "rules": {
@@ -160,11 +168,7 @@
                 "no-this-before-super": "off",
                 "no-unreachable": "off",
                 "no-unsafe-negation": "off",
-                "no-var": "error",
-                "no-with": "off",
-                "prefer-const": "error",
-                "prefer-rest-params": "error",
-                "prefer-spread": "error"
+                "no-with": "off"
             }
         },
         {
