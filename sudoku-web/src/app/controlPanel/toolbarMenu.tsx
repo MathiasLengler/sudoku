@@ -40,7 +40,9 @@ export function ToolbarMenu() {
                     // TODO: show KB shortcut [Insert]
                     label: "Fill candidates",
                     icon: <InfoIcon />,
-                    onClick: async () => await setAllDirectCandidates(),
+                    onClick: async () => {
+                        await setAllDirectCandidates();
+                    },
                 },
             ]}
         >

@@ -48,6 +48,7 @@ export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
                 <form
                     id="hint-settings-form"
                     noValidate
+                    // oxlint-disable-next-line typescript/strict-void-return
                     onSubmit={handleSubmit((hintSettings) => {
                         setHintSettingsFormValues(hintSettings);
                         onClose();
@@ -113,7 +114,9 @@ export function HintSettingsDialog({ onClose }: HintSettingsDialogProps) {
             <DialogActions>
                 <ResetFormButton
                     disabled={isSubmitting}
-                    onClick={() => reset(hintSettingsSchema.encode(DEFAULT_HINT_SETTINGS))}
+                    onClick={() => {
+                        reset(hintSettingsSchema.encode(DEFAULT_HINT_SETTINGS));
+                    }}
                 />
                 <Button onClick={onClose} disabled={isSubmitting}>
                     Cancel

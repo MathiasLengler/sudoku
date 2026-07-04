@@ -75,6 +75,7 @@ export function ExportToClipboardDialog({ onClose }: ExportToClipboardDialogProp
                 <form
                     id="export-to-clipboard-form"
                     noValidate
+                    // oxlint-disable-next-line typescript/strict-void-return
                     onSubmit={handleSubmit(onSubmit)}
                     style={{ display: "sticky" }}
                 >
@@ -96,7 +97,12 @@ export function ExportToClipboardDialog({ onClose }: ExportToClipboardDialogProp
                 </form>
             </DialogContent>
             <DialogActions sx={{ justifyContent: "space-between" }}>
-                <ResetFormButton disabled={isSubmitting} onClick={() => reset()} />
+                <ResetFormButton
+                    disabled={isSubmitting}
+                    onClick={() => {
+                        reset();
+                    }}
+                />
                 <Button onClick={onClose} disabled={isSubmitting}>
                     Cancel
                 </Button>

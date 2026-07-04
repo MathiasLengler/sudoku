@@ -41,10 +41,10 @@ export function useCancelableMutation<Variables, Progress>({
                 signal,
                 abortPromise,
                 onProgress: (progress: Progress) => {
-                    if (!signal.aborted) {
-                        onProgress(progress);
-                    } else {
+                    if (signal.aborted) {
                         console.warn("Progress update after abort:", progress);
+                    } else {
+                        onProgress(progress);
                     }
                 },
             });

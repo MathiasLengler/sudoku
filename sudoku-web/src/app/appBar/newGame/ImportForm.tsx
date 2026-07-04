@@ -97,6 +97,7 @@ export function ImportForm({ onClose }: ImportFormProps) {
                 <TabPanel value={"import-form" satisfies NewGameTabValue} sx={{ p: 0 }}>
                     <form
                         id="import-form"
+                        // oxlint-disable-next-line typescript/strict-void-return
                         onSubmit={handleSubmit(async ({ input, setAllDirectCandidates }) => {
                             try {
                                 await importSudokuString(input, setAllDirectCandidates);

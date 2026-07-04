@@ -62,7 +62,7 @@ async function runMultiShot(api: RemoteWorkerApi, parallel: boolean): Promise<Ru
     const finished = progress.filter((p) => p.kind === "finished");
     // Aggregate across updates (parallel message order isn't fixed); the u64 arrives as a JS number.
     const bestMetric = finished.reduce<bigint>((acc, p) => {
-        const value = BigInt(p.bestEvaluatedGridMetric);
+        const value = p.bestEvaluatedGridMetric;
         return value > acc ? value : acc;
     }, 0n);
 

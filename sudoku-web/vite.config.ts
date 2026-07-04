@@ -46,8 +46,9 @@ export default defineConfig(({ mode }) => ({
         // jotai-rolldown: atom debug labels + Fast Refresh state preservation (both dev-only by default).
         jotai(),
         wasm(),
-        ...(mode !== "test"
-            ? [
+        ...(mode === "test"
+            ? []
+            : [
                   VitePWA({
                       strategies: "generateSW",
                       registerType: "autoUpdate",
@@ -91,8 +92,7 @@ export default defineConfig(({ mode }) => ({
                           injectThemeColor: false,
                       },
                   }),
-              ]
-            : []),
+              ]),
     ],
     resolve: {
         alias: {

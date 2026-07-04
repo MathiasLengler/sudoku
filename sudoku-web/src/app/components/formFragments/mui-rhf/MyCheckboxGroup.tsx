@@ -60,7 +60,9 @@ export function MyCheckboxGroup<
                             <Checkbox
                                 name={field.name}
                                 checked={selectedValues.includes(option.id)}
-                                onChange={(e) => handleChange(option.id, e.target.checked)}
+                                onChange={(e) => {
+                                    handleChange(option.id, e.target.checked);
+                                }}
                             />
                         }
                         label={option.label}

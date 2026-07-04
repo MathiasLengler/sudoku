@@ -32,9 +32,11 @@ function MyIconButton({
             <div className="icon-button-container">
                 <IconButton
                     onClick={(ev) => {
-                        (async () => await onClick(ev))().catch((err) =>
-                            console.error("Error in IconButton onClick:", err),
-                        );
+                        (async () => {
+                            await onClick(ev);
+                        })().catch((err) => {
+                            console.error("Error in IconButton onClick:", err);
+                        });
                     }}
                     size={size}
                     disabled={disabled}

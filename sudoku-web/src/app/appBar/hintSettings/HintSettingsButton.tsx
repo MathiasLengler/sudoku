@@ -15,10 +15,17 @@ export function HintSettingsButton() {
                 icon={LightbulbIcon}
                 size="large"
                 color="inherit"
-                onClick={() => setIsSolverConfigDialogOpen(true)}
+                onClick={() => {
+                    setIsSolverConfigDialogOpen(true);
+                }}
                 badge={<SettingsIcon fontSize="inherit" />}
             />
-            <MyDialog open={isSolverConfigDialogOpen} onClose={() => setIsSolverConfigDialogOpen(false)}>
+            <MyDialog
+                open={isSolverConfigDialogOpen}
+                onClose={() => {
+                    setIsSolverConfigDialogOpen(false);
+                }}
+            >
                 {(onClose) => <HintSettingsDialog onClose={onClose} />}
             </MyDialog>
         </>

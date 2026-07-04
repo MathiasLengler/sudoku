@@ -1,0 +1,210 @@
+{
+    "$schema": "./node_modules/oxlint/configuration_schema.json",
+    "plugins": ["typescript", "react"],
+    "categories": {
+        "correctness": "error",
+        "suspicious": "warn",
+        "pedantic": "warn"
+        // "perf": "warn",
+        // "style": "warn"
+        // "restriction": "warn",
+        // "nursery": "off"
+    },
+    "options": {
+        "typeAware": true
+    },
+    "env": {
+        "builtin": true
+    },
+    "settings": {
+        "react": {
+            "version": "19.0.0"
+        }
+    },
+    "ignorePatterns": ["*.js", "*.mjs", "dist", "dev-dist"],
+    "rules": {
+        // override suspicious
+        "react-in-jsx-scope": "off",
+        "eslint/no-shadow": "off",
+        "eslint/no-underscore-dangle": "off",
+        "react/no-unstable-nested-components": ["warn", { "allowAsProps": true }],
+        "typescript/consistent-return": "off",
+
+        // override pedantic
+        "typescript/prefer-readonly-parameter-types": "off",
+        "typescript/strict-boolean-expressions": "off",
+        "typescript/return-await": ["warn", "error-handling-correctness-only"],
+        "eslint/max-lines-per-function": "off",
+        "eslint/no-warning-comments": "off",
+        "eslint/no-inline-comments": "off",
+        "eslint/max-depth": "off",
+        "eslint/max-lines": "off",
+        "eslint/require-unicode-regexp": "off",
+        "eslint/max-classes-per-file": "off",
+        "eslint/no-else-return": "off",
+        // Enable once we are ready for jotai atomFamily migration
+        "typescript/no-deprecated": "off",
+
+        // Rules not enabled by the current categories, manual opt-in.
+        "no-var": "warn",
+        "prefer-const": "warn",
+        "prefer-rest-params": "warn",
+        "prefer-spread": "warn",
+
+        // ESLint migration
+        "no-empty": "error",
+        "no-regex-spaces": "error",
+        "no-unused-vars": [
+            "warn",
+            {
+                "args": "all",
+                "argsIgnorePattern": "^_",
+                "caughtErrors": "all",
+                "caughtErrorsIgnorePattern": "^_",
+                "destructuredArrayIgnorePattern": "^_",
+                "varsIgnorePattern": "^_",
+                "ignoreRestSiblings": true
+            }
+        ],
+        "no-empty-function": "error",
+        "react/no-unknown-property": [
+            "error",
+            {
+                "ignore": ["sx"]
+            }
+        ],
+        "no-restricted-imports": [
+            "error",
+            {
+                "paths": [
+                    {
+                        "name": "react",
+                        "importNames": ["default", "FunctionComponent"]
+                    },
+                    {
+                        "name": "react-hook-form-mui",
+                        "importNames": ["TextFieldElement"],
+                        "message": "Instead use 'MyTextField'"
+                    }
+                ]
+            }
+        ],
+        "react/exhaustive-deps": "warn",
+        "react/only-export-components": [
+            "error",
+            {
+                "allowConstantExport": true
+            }
+        ],
+        "typescript/no-empty-object-type": "error",
+        "typescript/no-explicit-any": "error",
+        "typescript/no-misused-promises": [
+            "error",
+            {
+                "checksVoidReturn": {
+                    "attributes": false
+                }
+            }
+        ],
+        "typescript/no-namespace": "error",
+        "typescript/no-require-imports": "error",
+        "typescript/unbound-method": [
+            "warn",
+            {
+                "ignoreStatic": true
+            }
+        ],
+        "typescript/adjacent-overload-signatures": "error",
+        "typescript/array-type": "error",
+        "typescript/ban-tslint-comment": "error",
+        "typescript/class-literal-property-style": "error",
+        "typescript/consistent-generic-constructors": "error",
+        "typescript/consistent-indexed-object-style": "error",
+        "typescript/consistent-type-assertions": "error",
+        "typescript/consistent-type-definitions": ["warn", "type"],
+        "typescript/dot-notation": "error",
+        "typescript/no-inferrable-types": "error",
+        "typescript/non-nullable-type-assertion-style": "error",
+        "typescript/prefer-find": "error",
+        "typescript/prefer-for-of": "error",
+        "typescript/prefer-function-type": "error",
+        "typescript/prefer-regexp-exec": "error",
+        "typescript/prefer-string-starts-ends-with": "error",
+        "typescript/no-restricted-types": [
+            "error",
+            {
+                "types": {
+                    "React.FC": {
+                        "message": "Useless and has some drawbacks, see https://github.com/facebook/create-react-app/pull/8177"
+                    },
+                    "React.FunctionComponent": {
+                        "message": "Useless and has some drawbacks, see https://github.com/facebook/create-react-app/pull/8177"
+                    },
+                    "React.FunctionalComponent": {
+                        "message": "Preact specific, useless and has some drawbacks, see https://github.com/facebook/create-react-app/pull/8177"
+                    }
+                }
+            }
+        ]
+    },
+    "overrides": [
+        // tsc already reports these as compile errors, so oxlint leaves them off.
+        // Same set typescript-eslint disables in eslint-recommended.
+        {
+            "files": ["**/*.ts", "**/*.tsx", "**/*.mts", "**/*.cts"],
+            "rules": {
+                "constructor-super": "off",
+                "getter-return": "off",
+                "no-class-assign": "off",
+                "no-const-assign": "off",
+                "no-dupe-class-members": "off",
+                "no-dupe-keys": "off",
+                "no-func-assign": "off",
+                "no-import-assign": "off",
+                "no-new-native-nonconstructor": "off",
+                "no-obj-calls": "off",
+                "no-redeclare": "off",
+                "no-setter-return": "off",
+                "no-this-before-super": "off",
+                "no-unreachable": "off",
+                "no-unsafe-negation": "off",
+                "no-with": "off"
+            }
+        },
+        {
+            "files": ["**/*.{js,mjs,cjs,jsx,mjsx,ts,tsx,mtsx}"],
+            "rules": {
+                "zod/array-style": "error",
+                "zod/consistent-import": "error",
+                "zod/consistent-schema-var-name": "error",
+                "zod/no-any-schema": "error",
+                "zod/no-coerce-boolean": "error",
+                "zod/no-duplicate-schema-methods": "error",
+                "zod/no-empty-custom-schema": "error",
+                "zod/no-native-enum": "error",
+                "zod/no-number-schema-with-finite": "error",
+                "zod/no-number-schema-with-int": "error",
+                "zod/no-number-schema-with-is-finite": "error",
+                "zod/no-number-schema-with-is-int": "error",
+                "zod/no-number-schema-with-safe": "error",
+                "zod/no-number-schema-with-step": "error",
+                "zod/no-string-schema-with-uuid": "error",
+                "zod/no-optional-and-default-together": "error",
+                "zod/no-promise-schema": "error",
+                "zod/no-schema-with-is-nullable": "error",
+                "zod/no-schema-with-is-optional": "error",
+                "zod/no-throw-in-refine": "error",
+                "zod/prefer-enum-over-literal-union": "error",
+                "zod/prefer-loose-object": "error",
+                "zod/prefer-meta": "error",
+                "zod/prefer-meta-last": "error",
+                "zod/prefer-strict-object": "error",
+                "zod/prefer-top-level-string-formats": "error",
+                "zod/prefer-trim-before-string-length-checks": "error",
+                "zod/require-brand-type-parameter": "error",
+                "zod/require-error-message": "error"
+            },
+            "jsPlugins": ["eslint-plugin-zod"]
+        }
+    ]
+}

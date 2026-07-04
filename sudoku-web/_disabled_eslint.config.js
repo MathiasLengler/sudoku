@@ -1,9 +1,11 @@
+// TODO: remove after migration oxlint migration
+
 import eslint from "@eslint/js";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import reactJsxRuntime from "eslint-plugin-react/configs/jsx-runtime.js";
 import reactRecommended from "eslint-plugin-react/configs/recommended.js";
-import eslintPluginZodX from "eslint-plugin-zod-x";
+import eslintPluginZod from "eslint-plugin-zod";
 import { defineConfig } from "eslint/config";
 import tseslint from "typescript-eslint";
 
@@ -33,7 +35,7 @@ export default defineConfig(
     },
     reactHooks.configs.flat.recommended,
     reactRefresh.configs.vite,
-    eslintPluginZodX.configs.recommended,
+    eslintPluginZod.configs.recommended,
     {
         rules: {
             "@typescript-eslint/no-unused-vars": [
@@ -112,6 +114,7 @@ export default defineConfig(
                     unnamedComponents: "function-expression",
                 },
             ],
+            "zod/prefer-string-schema-with-trim": "off",
         },
     },
 );

@@ -16,18 +16,20 @@ type MyMenuProps = {
 export function MyMenu({ children, menuItems }: MyMenuProps) {
     const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
 
-    const makeHandleMenuClose = (action?: () => Promise<void> | void) => async () => {
+    const makeHandleMenuClose = (action?: () => Promise<void> | void) => () => {
         setMenuAnchorEl(null);
         if (action) {
-            try {
-                await action();
-            } catch (err) {
-                console.error("Error while executing menu action:", err);
-            }
+            Promise.resolve()
+                .then(action)
+                .catch((err) => {
+                    console.error("Error while executing menu action:", err);
+                });
         }
     };
 
-    const onMenuOpen: MouseEventHandler<HTMLButtonElement> = (e) => setMenuAnchorEl(e.currentTarget);
+    const onMenuOpen: MouseEventHandler<HTMLButtonElement> = (e) => {
+        setMenuAnchorEl(e.currentTarget);
+    };
 
     return (
         <>

@@ -174,7 +174,9 @@ export function RequestHintButton() {
                             if (loopDelayIndex) {
                                 const loopDelayMs = scaleLoopDelayIndex(loopDelayIndex);
                                 console.info("Sleeping for", loopDelayMs);
-                                await new Promise((resolve) => setTimeout(resolve, loopDelayMs));
+                                await new Promise((resolve) => {
+                                    setTimeout(resolve, loopDelayMs);
+                                });
 
                                 if (requestHintAbortController.signal.aborted) {
                                     console.info("requestHint aborted");

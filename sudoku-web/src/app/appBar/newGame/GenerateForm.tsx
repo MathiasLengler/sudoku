@@ -173,6 +173,7 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
                 <TabPanel value={"generate-form" satisfies NewGameTabValue} sx={{ p: 0 }}>
                     <form
                         id="generate-form"
+                        // oxlint-disable-next-line typescript/strict-void-return
                         onSubmit={handleSubmit(async (formValues) => {
                             const {
                                 base,
@@ -367,7 +368,9 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
                     >
                         <ResetFormButton
                             disabled={isSubmitting}
-                            onClick={() => reset(generateFormValuesSchema.encode(GENERATE_FORM_DEFAULT_VALUES))}
+                            onClick={() => {
+                                reset(generateFormValuesSchema.encode(GENERATE_FORM_DEFAULT_VALUES));
+                            }}
                         />
                         <Button
                             type="button"

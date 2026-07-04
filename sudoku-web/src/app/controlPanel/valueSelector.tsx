@@ -32,8 +32,8 @@ function ValueButton({ value }: SelectorValueProps) {
         <ButtonBase
             className={buttonClassNames}
             sx={{ typography: "button" }}
-            onClick={async () => {
-                await handleValue(value);
+            onClick={() => {
+                handleValue(value).catch(console.error);
             }}
         >
             <span className="selector-value-text">{valueToString(value)}</span>

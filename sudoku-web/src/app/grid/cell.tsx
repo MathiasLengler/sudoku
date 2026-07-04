@@ -116,8 +116,8 @@ export function Cell(props: CellProps) {
                 console.debug("onPointerDown", { isPrimary, buttons, pointerId, pointerType, target });
 
                 // Disable implicit pointer capture, e.g. handle touch events with mouse event semantics
-                if ((target as Element).hasPointerCapture(pointerId)) {
-                    (target as Element).releasePointerCapture(pointerId);
+                if (target instanceof Element && target.hasPointerCapture(pointerId)) {
+                    target.releasePointerCapture(pointerId);
                 }
 
                 if (pointerType !== "touch") {

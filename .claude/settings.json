@@ -18,8 +18,6 @@
       "WebFetch(domain:vite.dev)",
       "WebFetch(domain:jotai.org)"
     ],
-    "deny": [
-      "Bash(npx *)"
-    ]
+    "ask": ["Bash(npx *)"]
   }
 }

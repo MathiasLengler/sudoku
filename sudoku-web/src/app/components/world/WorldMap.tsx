@@ -32,6 +32,7 @@ function WorldCellVirtualized({ rowIndex, columnIndex, style }: CellComponentPro
     );
 
     const worldCell = useAtomValue(worldCellState(cellWorldPosition));
+    const emptyCellWorld = useAtomValue(emptyWasmCellWorldState);
 
     const worldCellBorderClasses = useAtomValue(worldCellBorderClassesState(cellWorldPosition));
 
@@ -39,7 +40,7 @@ function WorldCellVirtualized({ rowIndex, columnIndex, style }: CellComponentPro
 
     const cellOnClick = useAtomCallback(
         useCallback(
-            async (get, set, e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+            (get, set, e: React.MouseEvent<HTMLDivElement>) => {
                 const { width, height } = e.currentTarget.getBoundingClientRect();
                 const centerX = width / 2;
                 const centerY = height / 2;
@@ -60,8 +61,6 @@ function WorldCellVirtualized({ rowIndex, columnIndex, style }: CellComponentPro
                     return;
                 }
 
-                const emptyCellWorld = await get(emptyWasmCellWorldState);
-
                 const nearestWorldGridCellPosition = emptyCellWorld.worldCellPositionToNearestWorldGridCellPosition(
                     cellWorldPosition,
                     tieBreak,
@@ -76,7 +75,7 @@ function WorldCellVirtualized({ rowIndex, columnIndex, style }: CellComponentPro
 
                 set(selectedGridPositionState, current);
             },
-            [cellWorldPosition, playSelectedGrid],
+            [cellWorldPosition, playSelectedGrid, emptyCellWorld],
         ),
     );
 
@@ -137,7 +136,14 @@ export function WorldMap() {
 
     return (
         <div className="world-map" style={cssVariables}>
-            <Slider min={1} max={200} value={cellSize} onChange={(_e, value) => setCellSize(value)} />
+            <Slider
+                min={1}
+                max={200}
+                value={cellSize}
+                onChange={(_e, value) => {
+                    setCellSize(value);
+                }}
+            />
             <WorldMapVirtualized />
         </div>
     );

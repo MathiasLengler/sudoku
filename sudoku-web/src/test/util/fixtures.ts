@@ -11,6 +11,8 @@ export const test = baseTest
         const worker = spawnWorker();
         const remoteWorkerApi = Comlink.wrap<WorkerApi>(worker, {});
         await remoteWorkerApi.init(threadCount);
-        onCleanup(() => worker.terminate());
+        onCleanup(() => {
+            worker.terminate();
+        });
         return remoteWorkerApi;
     });
