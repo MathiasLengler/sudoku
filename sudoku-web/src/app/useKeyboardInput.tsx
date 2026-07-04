@@ -115,7 +115,6 @@ export function useKeyboardInput() {
                             await undo();
                             break;
                         default:
-                            return;
                     }
                 };
 

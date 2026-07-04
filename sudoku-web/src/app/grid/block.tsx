@@ -45,8 +45,8 @@ export function Block({ blockIndex, cells }: BlockProps) {
                     isSelected = containsSelectedPos && isEqual(selectedPos, cell.position);
                     isGuide =
                         containsSelectedPos ||
-                        selectedPos.column == cell.position.column ||
-                        selectedPos.row == cell.position.row;
+                        selectedPos.column === cell.position.column ||
+                        selectedPos.row === cell.position.row;
                 }
 
                 return <Cell key={blockCellIndex} cell={cell} isSelected={isSelected} isGuide={isGuide} />;

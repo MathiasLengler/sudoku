@@ -43,11 +43,11 @@ async function isFixedValueCell({ get, gridPosition }: { get: Getter; gridPositi
 async function isInvalidValue({ get, value }: { get: Getter; value: number }) {
     const sideLength = await get(sudokuSideLengthState);
 
-    if (!inRange(value, 0, sideLength + 1)) {
+    if (inRange(value, 0, sideLength + 1)) {
+        return false;
+    } else {
         console.warn(`Skip handling of value ${value} outside range [0, ${sideLength}]`);
         return true;
-    } else {
-        return false;
     }
 }
 
