@@ -326,7 +326,7 @@ impl GridFormat for CandidatesGridPlain {
             .into_iter()
             .flatten()
             .map(|cell_fragments| {
-                debug_assert!(cell_fragments.len() == cell_height);
+                debug_assert_eq!(cell_fragments.len(), cell_height);
 
                 let single_centered_char = {
                     let (first_fragments, middle_and_last_fragments) =

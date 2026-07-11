@@ -194,7 +194,7 @@ fn find_x_wing_candidate<Base: SudokuBase>(
 ) -> Option<XWingPattern<Base>> {
     match axis_coordinates.count() {
         0 => {
-            panic!("Expected at least one coordinate for pattern {locked_pair_pattern}",)
+            panic!("Expected at least one coordinate for pattern {locked_pair_pattern}")
         }
         1 => None,
         2 => {
