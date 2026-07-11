@@ -32,8 +32,8 @@ This is a **Sudoku** application with a touch-optimized web interface. The proje
 - **Build Tool**: Vite
 - **UI Framework**: React 19 with MUI (Material UI) 7
 - **State Management**: Jotai
-- **Type Checking**: TypeScript (via `tsgo`)
-- **Linting**: ESLint with `typescript-eslint`, `eslint-plugin-react-hooks`
+- **Type Checking**: TypeScript 7 (native compiler, `tsc`)
+- **Linting**: oxlint with `oxlint-tsgolint` (type-aware rules)
 - **Formatting**: Prettier
 - **Testing**: Vitest with Playwright for browser tests
 
