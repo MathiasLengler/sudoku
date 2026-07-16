@@ -58,7 +58,7 @@ jobs:
       # Node
       - uses: actions/setup-node@v4
         with:
-          node-version-file: "sudoku-web/.nvmrc"
+          node-version-file: "sudoku-web/.node-version"
           cache: "npm"
           cache-dependency-path: "sudoku-web/package-lock.json"
 
