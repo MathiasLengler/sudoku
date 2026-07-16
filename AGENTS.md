@@ -28,7 +28,7 @@ This is a **Sudoku** application with a touch-optimized web interface. The proje
 
 ### TypeScript/React (sudoku-web)
 
-- **Node.js**: 22
+- **Node.js**: 24
 - **Build Tool**: Vite
 - **UI Framework**: React 19 with MUI (Material UI) 7
 - **State Management**: Jotai
