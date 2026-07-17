@@ -1,5 +1,7 @@
 import type { UseResizeDetectorReturn } from "react-resize-detector";
+
 import { useAtomValue } from "jotai";
+
 import { sudokuBlocksIndexesState, sudokuCellsState } from "../state/sudoku";
 import { Block } from "./block";
 

@@ -1,36 +1,32 @@
 {
-    "author": "Mathias Lengler <mathias@lengler.dev>",
     "name": "sudoku-web",
     "version": "0.2.0",
-    "type": "module",
     "license": "MIT",
+    "author": "Mathias Lengler <mathias@lengler.dev>",
     "repository": "https://github.com/MathiasLengler/sudoku",
-    "engines": {
-        "node": "24"
-    },
-    "packageManager": "pnpm@11.9.0",
+    "type": "module",
     "scripts": {
-        "dev": "vite",
-        "dev:profile": "vite --mode profile",
+        "bubblewrap:build": "cd ../sudoku-bubblewrap && bubblewrap build",
+        "bubblewrap:merge": "cd ../sudoku-bubblewrap && bubblewrap merge",
+        "bubblewrap:update": "cd ../sudoku-bubblewrap && bubblewrap update --appVersionName=\"1\"",
         "build": "vite build",
         "build:dev": "vite build --mode development",
         "build:visualize": "vite-bundle-visualizer",
-        "preview": "vite preview",
-        "test": "vitest",
-        "test:bench": "vitest bench",
+        "dev": "vite",
+        "dev:profile": "vite --mode profile",
+        "docker:build": "docker build -t docker-registry.lengler.dev/sudoku:local .",
+        "docker:dev": "pnpm run build && pnpm run docker:build && pnpm run docker:run",
+        "docker:run": "docker run -it --rm -p 8080:80 docker-registry.lengler.dev/sudoku:local",
         "lint": "pnpm run lint:tsc && pnpm run lint:oxlint && pnpm run lint:oxfmt",
-        "lint:tsc": "tsc -b",
-        "lint:tsc:watch": "pnpm run lint:tsc --watch",
-        "lint:oxlint": "oxlint --max-warnings 0",
-        "lint:oxlint:fix": "oxlint --fix",
         "lint:oxfmt": "oxfmt --check",
         "lint:oxfmt:fix": "oxfmt",
-        "bubblewrap:merge": "cd ../sudoku-bubblewrap && bubblewrap merge",
-        "bubblewrap:update": "cd ../sudoku-bubblewrap && bubblewrap update --appVersionName=\"1\"",
-        "bubblewrap:build": "cd ../sudoku-bubblewrap && bubblewrap build",
-        "docker:build": "docker build -t docker-registry.lengler.dev/sudoku:local .",
-        "docker:run": "docker run -it --rm -p 8080:80 docker-registry.lengler.dev/sudoku:local",
-        "docker:dev": "pnpm run build && pnpm run docker:build && pnpm run docker:run"
+        "lint:oxlint": "oxlint --max-warnings 0",
+        "lint:oxlint:fix": "oxlint --fix",
+        "lint:tsc": "tsc -b",
+        "lint:tsc:watch": "pnpm run lint:tsc --watch",
+        "preview": "vite preview",
+        "test": "vitest",
+        "test:bench": "vitest bench"
     },
     "dependencies": {
         "@emotion/react": "^11.14.0",
@@ -88,5 +84,9 @@
         "vite-plugin-wasm": "^3.6.0",
         "vitest": "^4.1.9",
         "vitest-browser-react": "^2.2.0"
-    }
+    },
+    "engines": {
+        "node": "24"
+    },
+    "packageManager": "pnpm@11.9.0"
 }

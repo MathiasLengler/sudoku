@@ -1,6 +1,8 @@
 import { range } from "es-toolkit";
 import * as z from "zod";
+
 import type { BaseEnum } from "../../types";
+
 import { baseToSideLength } from "./sudoku";
 
 export const BASE_MIN = 2;

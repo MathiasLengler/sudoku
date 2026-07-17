@@ -1,8 +1,10 @@
+import type { Getter, Setter } from "jotai";
+
 import assertNever from "assert-never";
 import { inRange, isEqual } from "es-toolkit";
-import type { Getter, Setter } from "jotai";
 import { useAtomCallback } from "jotai/utils";
 import { useCallback, useRef, useState } from "react";
+
 import type {
     DynamicGeneratorSettings,
     DynamicMultiShotGeneratorSettings,
@@ -13,9 +15,10 @@ import type {
     StrategySet,
     TransportDeductions,
 } from "../../types";
+import type { CellAction } from "../state/input";
+
 import { cellAtGridPositionState } from "../state/cellIndexing";
 import { hintState } from "../state/hint";
-import type { CellAction } from "../state/input";
 import { inputState } from "../state/input";
 import {
     mainThreadWasmSudokuClassState,

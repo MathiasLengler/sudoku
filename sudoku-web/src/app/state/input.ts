@@ -1,7 +1,9 @@
 import { atom } from "jotai";
-import * as z from "zod";
-import type { DynamicPosition } from "../../types";
 import { atomWithStorage } from "jotai/utils";
+import * as z from "zod";
+
+import type { DynamicPosition } from "../../types";
+
 import { getZodLocalStorage } from "./localStorageEffect";
 
 const baseInputSchema = z.object({

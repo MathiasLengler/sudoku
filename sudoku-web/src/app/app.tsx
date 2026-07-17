@@ -4,11 +4,12 @@ import { Provider as JotaiProvider } from "jotai";
 import { DevTools } from "jotai-devtools";
 import jotaiDevToolsCss from "jotai-devtools/styles.css?inline";
 import { Suspense } from "react";
-import { SwManager } from "./SwManager";
+
 import { BasicErrorBoundary, ThemeErrorBoundary } from "./components/ErrorFallback";
 import { FullScreenSpinner } from "./components/FullScreenSpinner";
 import { store } from "./state/store";
 import { Sudoku } from "./sudoku";
+import { SwManager } from "./SwManager";
 import { MyTheme } from "./theme/myTheme";
 
 const queryClient = new QueryClient({

@@ -1,12 +1,15 @@
+import type * as CSS from "csstype";
+
 import { Slider } from "@mui/material";
 import classNames from "classnames";
-import type * as CSS from "csstype";
 import * as _ from "es-toolkit";
 import { useAtom, useAtomValue } from "jotai";
 import { useAtomCallback } from "jotai/utils";
 import { useCallback, useDeferredValue, useMemo } from "react";
 import { Grid, type CellComponentProps } from "react-window";
+
 import type { Quadrant } from "../../../types";
+
 import { usePlaySelectedGrid } from "../../actions/worldActions";
 import { Candidates, CellValue } from "../../grid/cell";
 import { sudokuBaseState, sudokuSideLengthState } from "../../state/sudoku";

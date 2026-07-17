@@ -1,7 +1,6 @@
-import { useState, type MouseEventHandler } from "react";
-
 import { ListItemIcon, ListItemText, Menu } from "@mui/material";
 import MenuItem from "@mui/material/MenuItem";
+import { useState, type MouseEventHandler } from "react";
 
 type MyMenuProps = {
     children: (params: { onMenuOpen: MouseEventHandler<HTMLButtonElement> }) => React.ReactNode;

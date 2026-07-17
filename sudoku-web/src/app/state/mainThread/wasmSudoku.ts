@@ -1,9 +1,12 @@
+import type { Asyncify, SetReturnType } from "type-fest";
+
 import * as Comlink from "comlink";
 import { atom, type Getter } from "jotai";
 import { atomWithDefault } from "jotai/utils";
 import { type WasmSudoku } from "sudoku-wasm";
-import type { Asyncify, SetReturnType } from "type-fest";
+
 import type { DynamicGrid } from "../../../types";
+
 import { loadCells } from "../cellsPersistence";
 import { GENERATE_FORM_DEFAULT_VALUES } from "../forms/generate";
 import { wasmSudokuClassState } from "../wasm/classes";

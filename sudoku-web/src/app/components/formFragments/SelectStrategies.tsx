@@ -1,6 +1,8 @@
+import type { Control, FieldPath, FieldValues } from "react-hook-form";
+
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { Stack, Tooltip } from "@mui/material";
-import type { Control, FieldPath, FieldValues } from "react-hook-form";
+
 import { ALL_STRATEGIES, STRATEGY_OPTIONS } from "../../constants";
 import { ExternalLink } from "../ExternalLink";
 import { MyCheckboxGroup } from "./mui-rhf/MyCheckboxGroup";

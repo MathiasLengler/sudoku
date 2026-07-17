@@ -1,8 +1,10 @@
 import { useNotifications } from "@toolpad/core/useNotifications";
 import * as _ from "es-toolkit";
-import { Suspense, useCallback, useEffect } from "react";
 import { useAtomValue, useSetAtom } from "jotai";
+import { Suspense, useCallback, useEffect } from "react";
+
 import type { DynamicCell, DynamicPosition } from "../types";
+
 import { useEndStickyChain } from "./actions/inputActions";
 import { saveCells } from "./state/cellsPersistence";
 import { inputState } from "./state/input";

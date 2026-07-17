@@ -1,6 +1,9 @@
 import type { IsEqual } from "type-fest";
+
 import * as z from "zod";
+
 import type { GoalOptimization, GridMetricName, StrategyEnum, StrategyMap } from "../types";
+
 import { assert } from "../typeUtils";
 
 export const STRATEGY_NAMES = [

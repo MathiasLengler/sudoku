@@ -1,5 +1,6 @@
-import { Link } from "@mui/material";
 import type { ReactNode } from "react";
+
+import { Link } from "@mui/material";
 
 export function ExternalLink({ children, href }: { children: ReactNode; href: string }) {
     return (

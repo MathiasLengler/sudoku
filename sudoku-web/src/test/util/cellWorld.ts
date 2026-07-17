@@ -1,6 +1,8 @@
 import { WasmCellWorld } from "sudoku-wasm";
-import { worldGridDimSchema } from "../../app/state/world/schema";
+
 import type { BaseEnum } from "../../types";
+
+import { worldGridDimSchema } from "../../app/state/world/schema";
 
 export function getWasmCellWorldSamples(
     base: BaseEnum,

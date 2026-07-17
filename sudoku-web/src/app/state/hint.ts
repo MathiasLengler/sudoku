@@ -1,4 +1,5 @@
 import { atomWithReset } from "jotai/utils";
+
 import type { StrategyEnum, TransportDeductions } from "../../types";
 
 export type Hint = {

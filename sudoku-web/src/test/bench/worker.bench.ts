@@ -1,8 +1,10 @@
 import * as Comlink from "comlink";
 import { WasmCellWorld, WasmSudoku } from "sudoku-wasm";
 import { bench, describe } from "vitest";
-import { initWasm } from "../../app/state/wasm/init";
+
 import type { WorkerApi } from "../../app/state/worker/bg/worker";
+
+import { initWasm } from "../../app/state/wasm/init";
 import { spawnWorker } from "../../app/state/worker/spawn";
 import { getWasmCellWorldSamples } from "../util/cellWorld";
 import { getWasmSudokuSamples } from "../util/sudoku";

@@ -1,8 +1,5 @@
 {
     "$schema": "./node_modules/oxfmt/configuration_schema.json",
-    "tabWidth": 4,
-    "printWidth": 120,
-    "sortPackageJson": false,
     "ignorePatterns": ["pnpm-lock.yaml"],
     "overrides": [
         {
@@ -11,5 +8,22 @@
                 "tabWidth": 2
             }
         }
-    ]
+    ],
+    "printWidth": 120,
+    // https://oxc.rs/docs/guide/usage/formatter/sorting.html#example-configuration
+    "sortImports": {
+        "groups": [
+            "type-import",
+            ["value-builtin", "value-external"],
+            "type-internal",
+            "value-internal",
+            ["type-parent", "type-sibling", "type-index"],
+            ["value-parent", "value-sibling", "value-index"],
+            "unknown"
+        ]
+    },
+    "sortPackageJson": {
+        "sortScripts": true
+    },
+    "tabWidth": 4
 }

@@ -1,7 +1,9 @@
 import { clamp } from "es-toolkit";
-import { useCallback, type KeyboardEvent } from "react";
 import { useAtomCallback } from "jotai/utils";
+import { useCallback, type KeyboardEvent } from "react";
+
 import type { DynamicPosition, TransportSudoku } from "../types";
+
 import { useToggleCandidateMode, useToggleStickyMode } from "./actions/inputActions";
 import {
     useDeleteSelectedCell,

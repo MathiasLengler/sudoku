@@ -1,8 +1,10 @@
 import * as Comlink from "comlink";
 import { atom } from "jotai";
 import { atomWithRefresh } from "jotai/utils";
+
 import type { WasmCellWorld } from "../../../types";
 import type { WasmSudokuWithTransfer, WorkerApi } from "./bg/worker";
+
 import { fixupComlinkRemote, type SaveComlinkRemote } from "./comlinkProxyWrapper";
 import { spawnWorker } from "./spawn";
 

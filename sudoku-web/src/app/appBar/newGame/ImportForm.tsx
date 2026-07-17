@@ -10,13 +10,15 @@ import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+
+import type { NewGameTabValue } from "./NewGameDialog";
+
 import { useImportSudokuString } from "../../actions/sudokuActions";
 import { Code } from "../../components/Code";
 import { Fieldset } from "../../components/Fieldset";
 import { MySwitch } from "../../components/formFragments/mui-rhf/MySwitch";
 import { MyTextField } from "../../components/formFragments/mui-rhf/MyTextField";
 import { ResetFormButton } from "../../components/ResetFormButton";
-import type { NewGameTabValue } from "./NewGameDialog";
 
 function SupportedFormats() {
     return (

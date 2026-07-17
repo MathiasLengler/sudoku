@@ -1,6 +1,7 @@
 import { useAtomCallback } from "jotai/utils";
-import { inputState } from "../state/input";
 import { useCallback } from "react";
+
+import { inputState } from "../state/input";
 
 export function useToggleCandidateMode() {
     return useAtomCallback(

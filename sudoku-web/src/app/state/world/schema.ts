@@ -1,7 +1,10 @@
 import type { IsEqual } from "type-fest";
+
 import * as z from "zod";
-import { assert } from "../../../typeUtils";
+
 import type { WorldDim, WorldPosition } from "../../../types";
+
+import { assert } from "../../../typeUtils";
 
 const usizeSchema = z
     .int()

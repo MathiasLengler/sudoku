@@ -1,8 +1,10 @@
+import { isEqual } from "es-toolkit";
 import { useAtomValue, type Atom } from "jotai";
 import { eagerAtom } from "jotai-eager";
 import { atomFamily } from "jotai/utils";
-import { isEqual } from "es-toolkit";
+
 import type { DynamicPosition, TransportCell } from "../../types";
+
 import { selectedBlockPositionState } from "../state/cellIndexing";
 import { inputState } from "../state/input";
 import { sudokuBaseState } from "../state/sudoku";
