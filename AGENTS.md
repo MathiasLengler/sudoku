@@ -35,7 +35,7 @@ This is a **Sudoku** application with a touch-optimized web interface. The proje
 - **State Management**: Jotai
 - **Type Checking**: TypeScript 7 (native compiler, `tsc`)
 - **Linting**: oxlint with `oxlint-tsgolint` (type-aware rules)
-- **Formatting**: Prettier
+- **Formatting**: Oxfmt
 - **Testing**: Vitest with Playwright for browser tests
 
 ## Repository Structure
@@ -129,7 +129,7 @@ pnpm install
 # Start dev server
 pnpm run dev
 
-# Run lints (includes type checking, eslint and prettier)
+# Run lints (includes type checking, oxlint and oxfmt)
 pnpm run lint
 
 # Run vitest browser tests

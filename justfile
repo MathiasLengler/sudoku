@@ -100,7 +100,7 @@ generate-tsrs-bindings:
 # Run all web linters
 [parallel]
 [working-directory('sudoku-web')]
-web-lint: web-lint-tsc web-lint-oxlint web-lint-prettier
+web-lint: web-lint-tsc web-lint-oxlint web-lint-oxfmt
 
 # TypeScript compiler
 [working-directory('sudoku-web')]
@@ -112,7 +112,7 @@ web-lint-tsc:
 web-lint-oxlint:
     pnpm run lint:oxlint
 
-# Prettier
+# Oxfmt
 [working-directory('sudoku-web')]
-web-lint-prettier:
-    pnpm run lint:prettier
+web-lint-oxfmt:
+    pnpm run lint:oxfmt
