@@ -89,9 +89,9 @@ ci-local:
     just clippy-ci
     just test-ci
     just pack-prod
-    cd sudoku-web && npm ci
-    cd sudoku-web && npm run lint
-    cd sudoku-web && npm run docker:dev
+    cd sudoku-web && pnpm install --frozen-lockfile
+    cd sudoku-web && pnpm run lint
+    cd sudoku-web && pnpm run docker:dev
 
 # Generate TypeScript bindings from Rust ("ts_rs" crate)
 generate-tsrs-bindings:
@@ -105,14 +105,14 @@ web-lint: web-lint-tsc web-lint-oxlint web-lint-prettier
 # TypeScript compiler
 [working-directory('sudoku-web')]
 web-lint-tsc:
-    npm run lint:tsc
+    pnpm run lint:tsc
 
 # Oxlint
 [working-directory('sudoku-web')]
 web-lint-oxlint:
-    npm run lint:oxlint
+    pnpm run lint:oxlint
 
 # Prettier
 [working-directory('sudoku-web')]
 web-lint-prettier:
-    npm run lint:prettier
+    pnpm run lint:prettier

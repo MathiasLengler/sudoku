@@ -56,19 +56,26 @@ jobs:
         run: just pack-prod
 
       # Node
+      # pnpm must be installed before setup-node for cache: "pnpm" to work:
+      # https://github.com/actions/setup-node/blob/main/docs/advanced-usage.md#caching-packages-data
+      - uses: pnpm/action-setup@v6
+        with:
+          # https://github.com/pnpm/action-setup#package_json_file
+          package_json_file: sudoku-web/package.json
+
       - uses: actions/setup-node@v7
         with:
           node-version-file: "sudoku-web/.node-version"
-          cache: "npm"
-          cache-dependency-path: "sudoku-web/package-lock.json"
+          cache: "pnpm"
+          cache-dependency-path: "sudoku-web/pnpm-lock.yaml"
 
-      - run: npm ci
+      - run: pnpm install --frozen-lockfile
         working-directory: ./sudoku-web
 
-      - run: npm run lint
+      - run: pnpm run lint
         working-directory: ./sudoku-web
 
-      - run: npm run build
+      - run: pnpm run build
         working-directory: ./sudoku-web
 
       - name: Set up Docker Buildx

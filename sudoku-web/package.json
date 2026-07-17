@@ -8,6 +8,7 @@
     "engines": {
         "node": "24"
     },
+    "packageManager": "pnpm@11.9.0",
     "scripts": {
         "dev": "vite",
         "dev:profile": "vite --mode profile",
@@ -17,9 +18,9 @@
         "preview": "vite preview",
         "test": "vitest",
         "test:bench": "vitest bench",
-        "lint": "npm run lint:tsc && npm run lint:oxlint && npm run lint:prettier",
+        "lint": "pnpm run lint:tsc && pnpm run lint:oxlint && pnpm run lint:prettier",
         "lint:tsc": "tsc -b",
-        "lint:tsc:watch": "npm run lint:tsc -- --watch",
+        "lint:tsc:watch": "pnpm run lint:tsc --watch",
         "lint:oxlint": "oxlint --max-warnings 0",
         "lint:oxlint:fix": "oxlint --fix",
         "lint:prettier": "prettier --check .",
@@ -29,7 +30,7 @@
         "bubblewrap:build": "cd ../sudoku-bubblewrap && bubblewrap build",
         "docker:build": "docker build -t docker-registry.lengler.dev/sudoku:local .",
         "docker:run": "docker run -it --rm -p 8080:80 docker-registry.lengler.dev/sudoku:local",
-        "docker:dev": "npm run build && npm run docker:build && npm run docker:run"
+        "docker:dev": "pnpm run build && pnpm run docker:build && pnpm run docker:run"
     },
     "dependencies": {
         "@emotion/react": "^11.14.0",
@@ -57,7 +58,7 @@
         "react-hook-form-mui": "^8.2.0",
         "react-resize-detector": "^12.3.0",
         "react-window": "^2.2.6",
-        "sudoku-wasm": "file:../sudoku-wasm/pkg",
+        "sudoku-wasm": "link:../sudoku-wasm/pkg",
         "workbox-window": "^7.4.0",
         "zod": "^4.3.6"
     },
@@ -87,8 +88,5 @@
         "vite-plugin-wasm": "^3.6.0",
         "vitest": "^4.1.9",
         "vitest-browser-react": "^2.2.0"
-    },
-    "overrides": {
-        "react-json-tree": "^0.20.0"
     }
 }

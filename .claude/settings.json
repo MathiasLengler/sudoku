@@ -13,12 +13,12 @@
       "WebFetch(domain:docs.rs)",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:insta.rs)",
-      "Bash(npm test *)",
-      "Bash(npm run lint*)",
+      "Bash(pnpm test *)",
+      "Bash(pnpm run lint*)",
       "WebFetch(domain:vite.dev)",
       "WebFetch(domain:jotai.org)",
       "WebFetch(domain:www.sudokuwiki.org)"
     ],
-    "ask": ["Bash(npx *)"]
+    "ask": ["Bash(npx *)", "Bash(pnpm dlx *)"]
   }
 }
