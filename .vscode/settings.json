@@ -27,5 +27,6 @@
   "oxc.configPath": "sudoku-web/.oxlintrc.json",
   "oxc.tsConfigPath": "sudoku-web/tsconfig.json",
   "oxc.path.tsgolint": "sudoku-web/node_modules/oxlint-tsgolint/bin/tsgolint.js",
-  "oxc.fixKind": "dangerous_fix_or_suggestion"
+  "oxc.fixKind": "dangerous_fix_or_suggestion",
+  "editor.defaultFormatter": "oxc.oxc-vscode"
 }
