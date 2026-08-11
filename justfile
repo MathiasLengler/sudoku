@@ -1,5 +1,6 @@
-set windows-shell := ['pwsh.exe', '-CommandWithArgs']
-set positional-arguments := true
+[windows]
+set shell := ["powershell.exe", "-NoLogo", "-Command"]
+set positional-arguments
 
 # List all recipes
 default:
