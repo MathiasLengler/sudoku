@@ -28,13 +28,14 @@ This is a **Sudoku** application with a touch-optimized web interface. The proje
 
 ### TypeScript/React (sudoku-web)
 
-- **Node.js**: 22
+- **Node.js**: 24
+- **Package Manager**: pnpm
 - **Build Tool**: Vite
 - **UI Framework**: React 19 with MUI (Material UI) 7
 - **State Management**: Jotai
-- **Type Checking**: TypeScript (via `tsgo`)
-- **Linting**: ESLint with `typescript-eslint`, `eslint-plugin-react-hooks`
-- **Formatting**: Prettier
+- **Type Checking**: TypeScript 7 (native compiler, `tsc`)
+- **Linting**: oxlint with `oxlint-tsgolint` (type-aware rules)
+- **Formatting**: Oxfmt
 - **Testing**: Vitest with Playwright for browser tests
 
 ## Repository Structure
@@ -123,16 +124,16 @@ just generate-tsrs-bindings
 cd sudoku-web
 
 # Install dependencies
-npm i
+pnpm install
 
 # Start dev server
-npm run dev
+pnpm run dev
 
-# Run lints (includes type checking, eslint and prettier)
-npm run lint
+# Run lints (includes type checking, oxlint and oxfmt)
+pnpm run lint
 
 # Run vitest browser tests
-npm test
+pnpm test
 ```
 
 ## Code Style & Conventions
@@ -180,13 +181,10 @@ just test-cov
 cd sudoku-web
 
 # Run tests
-npm test
+pnpm test
 
 # Run benchmarks
-npm run test:bench
-
-# Type tests
-npm run test:types
+pnpm run test:bench
 ```
 
 ## Building for Production
@@ -201,15 +199,15 @@ just pack-prod
 
 ```bash
 cd sudoku-web
-npm run build
+pnpm run build
 ```
 
 ### Docker
 
 ```bash
 cd sudoku-web
-npm run docker:build
-npm run docker:run
+pnpm run docker:build
+pnpm run docker:run
 ```
 
 ## Common Tasks for Agents

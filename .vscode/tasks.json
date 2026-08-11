@@ -9,7 +9,7 @@
         "base": "$tsc",
         "fileLocation": ["relative", "${workspaceFolder}/sudoku-web"]
       },
-      "label": "npm: lint:tsc - sudoku-web"
+      "label": "pnpm: lint:tsc - sudoku-web"
     },
     {
       "type": "npm",
@@ -19,7 +19,7 @@
         "base": "$tsc-watch",
         "fileLocation": ["relative", "${workspaceFolder}/sudoku-web"]
       },
-      "label": "npm: lint:tsc:watch - sudoku-web",
+      "label": "pnpm: lint:tsc:watch - sudoku-web",
       "isBackground": true
     },
     {
@@ -27,7 +27,7 @@
       "script": "lint:eslint",
       "path": "sudoku-web",
       "problemMatcher": ["$eslint-stylish"],
-      "label": "npm: lint:eslint - sudoku-web"
+      "label": "pnpm: lint:eslint - sudoku-web"
     }
   ]
 }

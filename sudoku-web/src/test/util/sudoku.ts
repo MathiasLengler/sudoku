@@ -1,6 +1,7 @@
+import { WasmSudoku } from "sudoku-wasm";
+
 import { selectedStrategiesSchema } from "../../app/constants";
 import { type BaseEnum, type GeneratorProgress } from "../../types";
-import { WasmSudoku } from "sudoku-wasm";
 
 function noopGenerateProgress(_progress: GeneratorProgress): void {
     // noop

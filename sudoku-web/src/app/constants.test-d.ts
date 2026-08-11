@@ -1,5 +1,7 @@
-import { expectTypeOf, test } from "vitest";
 import type * as z from "zod";
+
+import { expectTypeOf, test } from "vitest";
+
 import type {
     GoalOptimization,
     GridFormatEnum,
@@ -9,6 +11,7 @@ import type {
     StrategyMap,
     StrategySet,
 } from "../types";
+
 import {
     strategyEnumSchema,
     type goalOptimizationSchema,

@@ -1,7 +1,9 @@
 import type * as CSS from "csstype";
+
+import { useAtomValue } from "jotai";
 import { Suspense } from "react";
 import { useResizeDetector } from "react-resize-detector";
-import { useAtomValue } from "jotai";
+
 import SudokuAppBar from "./appBar/sudokuAppBar";
 import { ThemeErrorBoundary } from "./components/ErrorFallback";
 import { FullScreenSpinner } from "./components/FullScreenSpinner";

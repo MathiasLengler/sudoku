@@ -1,0 +1,6 @@
+overrides:
+    react-json-tree: ^0.20.0
+
+allowBuilds:
+    jotai-rolldown: true
+    sharp: true

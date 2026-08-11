@@ -2,14 +2,15 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import SaveIcon from "@mui/icons-material/Save";
 import { Box, Button, DialogActions, DialogContent, DialogTitle } from "@mui/material";
 import { Stack } from "@mui/material";
-import { useForm, useWatch } from "react-hook-form";
 import { useAtom } from "jotai";
+import { useForm, useWatch } from "react-hook-form";
+
 import { Fieldset } from "../../components/Fieldset";
 import { MyRadioGroup } from "../../components/formFragments/mui-rhf/MyRadioGroup";
 import { MySlider } from "../../components/formFragments/mui-rhf/MySlider";
 import { MySwitch } from "../../components/formFragments/mui-rhf/MySwitch";
-import { ResetFormButton } from "../../components/ResetFormButton";
 import SelectStrategies from "../../components/formFragments/SelectStrategies";
+import { ResetFormButton } from "../../components/ResetFormButton";
 import { formatDurationMs } from "../../i18n";
 import {
     DEFAULT_HINT_SETTINGS,

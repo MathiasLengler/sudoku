@@ -1,6 +1,8 @@
 import { describe, expect, test } from "vitest";
-import { validateCellWorldPosition } from "./world";
+
 import type { DynamicPosition } from "../../types";
+
+import { validateCellWorldPosition } from "./world";
 
 describe("validateCellWorldPosition", () => {
     const cellDim = {

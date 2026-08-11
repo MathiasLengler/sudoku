@@ -1,8 +1,9 @@
 import AddCircleIcon from "@mui/icons-material/AddCircle";
-import { MyDialog } from "../../components/MyDialog";
-import { NewGameDialog } from "./NewGameDialog";
-import MyIconButton from "../../components/MyIconButton";
 import { useState } from "react";
+
+import { MyDialog } from "../../components/MyDialog";
+import MyIconButton from "../../components/MyIconButton";
+import { NewGameDialog } from "./NewGameDialog";
 
 export function NewGameButton() {
     const [isNewGameDialogOpen, setIsNewGameDialogOpen] = useState(false);

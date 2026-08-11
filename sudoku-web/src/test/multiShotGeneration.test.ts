@@ -1,8 +1,10 @@
 import * as Comlink from "comlink";
 import { describe, expect } from "vitest";
-import { selectedStrategiesSchema } from "../app/constants";
+
 import type { RemoteWorkerApi } from "../app/state/worker";
 import type { DynamicMultiShotGeneratorSettings, MultiShotGeneratorProgress, TransportSudoku } from "../types";
+
+import { selectedStrategiesSchema } from "../app/constants";
 import { test } from "./util/fixtures";
 
 // The multi-shot generator is the only code path using wasm-bindgen-rayon. Overriding the

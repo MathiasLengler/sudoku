@@ -1,17 +1,19 @@
+import type { IconButtonProps } from "@mui/material/IconButton";
+
 import LightbulbIcon from "@mui/icons-material/Lightbulb";
 import CircularProgress from "@mui/material/CircularProgress";
-import type { IconButtonProps } from "@mui/material/IconButton";
+import { useNotifications } from "@toolpad/core/useNotifications";
 import assertNever from "assert-never";
 import * as _ from "es-toolkit";
-import { useNotifications } from "@toolpad/core/useNotifications";
-import { useCallback, useState } from "react";
 import { useAtomValue } from "jotai";
+import { RESET, useAtomCallback } from "jotai/utils";
+import { useCallback, useState } from "react";
+
 import { useApplyDeductions, useTryStrategies } from "../actions/sudokuActions";
 import MyIconButton from "../components/MyIconButton";
 import { hintSettingsState, scaleLoopDelayIndex } from "../state/forms/hintSettings";
 import { hintState, type Hint, type OptionalHint } from "../state/hint";
 import { sudokuIsSolvedState } from "../state/sudoku";
-import { RESET, useAtomCallback } from "jotai/utils";
 
 export function RequestHintButton() {
     const [isRequestingHint, setIsRequestingHint] = useState(false);

@@ -4,6 +4,7 @@ import UndoIcon from "@mui/icons-material/Undo";
 import { ToggleButton } from "@mui/material";
 import Tooltip from "@mui/material/Tooltip";
 import { useAtomValue } from "jotai";
+
 import { useToggleCandidateMode, useToggleStickyMode } from "../actions/inputActions";
 import { useUndo } from "../actions/sudokuActions";
 import MyIconButton from "../components/MyIconButton";

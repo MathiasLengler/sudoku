@@ -1,8 +1,10 @@
+import { Box } from "@mui/material";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
-import { Suspense } from "react";
 import { useAtomValue } from "jotai";
+import { Suspense } from "react";
+
 import { ThemeErrorBoundary } from "../components/ErrorFallback";
 import { FullScreenSpinner } from "../components/FullScreenSpinner";
 import { featureFlagsState } from "../state/featureFlags";
@@ -10,7 +12,6 @@ import { HintSettingsButton } from "./hintSettings/HintSettingsButton";
 import { NewGameButton } from "./newGame/NewGameButton";
 import { ShareMenu } from "./share/ShareMenu";
 import { WorldSettingsButton } from "./world/WorldSettingsButton";
-import { Box } from "@mui/material";
 
 export default function SudokuAppBar() {
     const { experimentWorld } = useAtomValue(featureFlagsState);

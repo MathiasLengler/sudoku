@@ -1,9 +1,10 @@
 import { WasmCellWorld, WasmSudoku } from "sudoku-wasm";
 import { describe, expect, test } from "vitest";
+import * as z from "zod";
+
 import { initWasm } from "../app/state/wasm/init";
 import { getWasmCellWorldSamples } from "./util/cellWorld";
 import { getWasmSudokuSamples } from "./util/sudoku";
-import * as z from "zod";
 
 describe("sudoku-wasm", async () => {
     await initWasm();

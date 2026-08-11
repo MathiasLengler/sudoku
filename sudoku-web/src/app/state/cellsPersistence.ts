@@ -1,4 +1,5 @@
 import type { DynamicCells } from "../../types";
+
 import { DynamicCellsSchema } from "./sudoku";
 
 const KEY_CELLS = "cells_v1";

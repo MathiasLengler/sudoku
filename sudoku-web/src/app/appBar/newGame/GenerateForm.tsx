@@ -10,7 +10,10 @@ import * as _ from "es-toolkit";
 import { useAtom } from "jotai";
 import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
+
 import type { DynamicGeneratorSettings, GeneratorProgress } from "../../../types";
+import type { NewGameTabValue } from "./NewGameDialog";
+
 import { useGenerate, useGenerateMultiShot, type TrackedMultiShotGeneratorProgress } from "../../actions/sudokuActions";
 import { Fieldset } from "../../components/Fieldset";
 import { MySelect } from "../../components/formFragments/mui-rhf/MySelect";
@@ -38,7 +41,6 @@ import {
 } from "../../state/forms/generate";
 import { BASE_MARKS, BASE_MAX, BASE_MIN, baseToLabel, parseBase } from "../../utils/base";
 import { baseToCellCount } from "../../utils/sudoku";
-import type { NewGameTabValue } from "./NewGameDialog";
 
 function GenerateProgressLayout({
     linearProgress,

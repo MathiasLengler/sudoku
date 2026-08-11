@@ -1,5 +1,6 @@
 import { atom } from "jotai";
 import { WasmCellWorld, type WasmSudoku, WasmSudoku as WasmSudokuMaybeUninit } from "sudoku-wasm";
+
 import { initWasm } from "./init";
 
 // Classes from "sudoku-wasm" need WASM to be initialized before they can be used.

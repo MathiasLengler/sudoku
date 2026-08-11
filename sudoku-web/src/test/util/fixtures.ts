@@ -1,6 +1,8 @@
 import * as Comlink from "comlink";
 import { test as baseTest } from "vitest";
+
 import type { WorkerApi } from "../../app/state/worker/bg/worker";
+
 import { spawnWorker } from "../../app/state/worker/spawn";
 
 export const test = baseTest

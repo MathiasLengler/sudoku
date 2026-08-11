@@ -18,7 +18,7 @@ jobs:
       contents: read
       deployments: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Rust
       - uses: dtolnay/rust-toolchain@master
@@ -28,7 +28,7 @@ jobs:
           components: clippy, rust-src
 
       # just
-      - uses: extractions/setup-just@v3
+      - uses: extractions/setup-just@v4
 
       # cargo tools
       - uses: taiki-e/install-action@v2
@@ -36,7 +36,7 @@ jobs:
           tool: cargo-nextest,wasm-pack
 
       # https://github.com/actions/cache/blob/main/examples.md#rust---cargo
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/bin/
@@ -56,27 +56,34 @@ jobs:
         run: just pack-prod
 
       # Node
-      - uses: actions/setup-node@v4
+      # pnpm must be installed before setup-node for cache: "pnpm" to work:
+      # https://github.com/actions/setup-node/blob/main/docs/advanced-usage.md#caching-packages-data
+      - uses: pnpm/action-setup@v6
         with:
-          node-version-file: "sudoku-web/.nvmrc"
-          cache: "npm"
-          cache-dependency-path: "sudoku-web/package-lock.json"
+          # https://github.com/pnpm/action-setup#package_json_file
+          package_json_file: sudoku-web/package.json
 
-      - run: npm ci
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: "sudoku-web/.node-version"
+          cache: "pnpm"
+          cache-dependency-path: "sudoku-web/pnpm-lock.yaml"
+
+      - run: pnpm install --frozen-lockfile
         working-directory: ./sudoku-web
 
-      - run: npm run lint
+      - run: pnpm run lint
         working-directory: ./sudoku-web
 
-      - run: npm run build
+      - run: pnpm run build
         working-directory: ./sudoku-web
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: |
             docker-registry.lengler.dev/sudoku
@@ -87,14 +94,14 @@ jobs:
             type=ref,event=branch
 
       - name: Login to Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: docker-registry.lengler.dev
           username: ${{ secrets.DOCKER_REGISTRY_USERNAME }}
           password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
 
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: ./sudoku-web
           platforms: linux/x86_64

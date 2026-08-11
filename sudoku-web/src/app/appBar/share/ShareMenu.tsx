@@ -1,13 +1,13 @@
-import { useExportSudokuString } from "../../actions/sudokuActions";
-import { MyMenu } from "../../components/MyMenu";
-import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import ShareIcon from "@mui/icons-material/Share";
-
-import { MyDialog } from "../../components/MyDialog";
-import { ExportToClipboardDialog } from "./ExportToClipboardDialog";
-import MyIconButton from "../../components/MyIconButton";
 import { useState } from "react";
+
+import { useExportSudokuString } from "../../actions/sudokuActions";
+import { MyDialog } from "../../components/MyDialog";
+import MyIconButton from "../../components/MyIconButton";
+import { MyMenu } from "../../components/MyMenu";
+import { ExportToClipboardDialog } from "./ExportToClipboardDialog";
 
 export function ShareMenu() {
     const exportSudokuString = useExportSudokuString();
