@@ -81,6 +81,12 @@ upgrade-latest:
 bench *bench-args:
     cargo bench --bench sudoku_benchmark -- {{ bench-args }}
 
+# TODO: generalize build/perf subcommand for every bin
+profile-generator_multi:
+    cargo build --bin generator_multi --profile release-debug-full --all-features
+    # TODO: test more perf event types
+    perf record -o perf.data --call-graph fp --event cycles,branches,branch-misses --aio --sample-cpu -- target/release-debug-full/generator_multi
+
 # Serve vite on tailscale
 web-ts-serve:
     tailscale serve 5173
