@@ -26,14 +26,15 @@ fn default_generator_settings() -> DynamicMultiShotGeneratorSettings {
                 strategies: StrategySet::default_solver_strategies_no_brute_force(),
                 ..Default::default()
             }),
+            seed: Some(42),
             ..Default::default()
         },
-        iterations: 10_000,
+        iterations: 2_000,
         metric: GridMetric::StrategyDeductionCountSingle {
             strategy: XWing.into(),
         },
         optimize: GoalOptimization::Maximize,
-        parallel: true,
+        parallel: false,
     }
 }
 
