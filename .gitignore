@@ -11,3 +11,7 @@ sudoku-bubblewrap/*
 
 # cargo llvm-cov
 lcov.info
+
+# perf
+perf.data
+perf.data.old
