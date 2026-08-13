@@ -3,7 +3,6 @@ use std::fmt::{Display, Formatter};
 use anyhow::ensure;
 use itertools::Itertools;
 
-use crate::base::SudokuBase;
 use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::position::{Position, PositionMap};
@@ -11,6 +10,7 @@ use crate::solver::strategic::deduction::transport::{
     PositionedTransportAction, PositionedTransportReason, TransportDeduction,
 };
 use crate::solver::strategic::deduction::{Action, Reason};
+use crate::{base::SudokuBase, position::Positioned};
 
 // TODO: make generic over the position/index type.
 //  use-case: reporting Deduction for a single group.
@@ -59,11 +59,11 @@ impl<Base: SudokuBase> Display for Deduction<Base> {
             "{}, because of: {}",
             self.actions
                 .iter()
-                .map(|(pos, action)| format!("{pos}: {action}"))
+                .map(|Positioned { pos, value: action }| format!("{pos}: {action}"))
                 .join(", "),
             self.reasons
                 .iter()
-                .map(|(pos, reason)| format!("{pos}: {reason}"))
+                .map(|Positioned { pos, value: reason }| format!("{pos}: {reason}"))
                 .join(", ")
         )
     }
@@ -145,11 +145,11 @@ impl<Base: SudokuBase> Deduction<Base> {
             "expected deduction to contain at least one action"
         );
 
-        for (pos, action) in &self.actions {
+        for Positioned { pos, value: action } in &self.actions {
             action.validate(grid.get(pos))?;
         }
 
-        for (pos, reason) in &self.reasons {
+        for Positioned { pos, value: reason } in &self.reasons {
             reason.validate(grid.get(pos))?;
         }
 
@@ -163,12 +163,12 @@ impl<Base: SudokuBase> Deduction<Base> {
     pub fn apply(&self, grid: &mut Grid<Base>) -> Result<()> {
         self.validate(grid)?;
 
-        for (pos, action) in &self.actions {
+        for Positioned { pos, value: action } in &self.actions {
             action.apply(grid.get_mut(pos))?;
         }
 
         // Update candidates for all set value actions.
-        for (pos, action) in &self.actions {
+        for Positioned { pos, value: action } in &self.actions {
             action.update_direct_candidates(grid, pos);
         }
 

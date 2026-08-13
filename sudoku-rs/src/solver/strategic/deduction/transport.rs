@@ -1,9 +1,9 @@
 use serde::{Deserialize, Serialize};
 
-use crate::base::SudokuBase;
 use crate::cell::dynamic::{DynamicCandidates, DynamicValue};
 use crate::position::DynamicPosition;
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions, Reason};
+use crate::{base::SudokuBase, position::Positioned};
 
 #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
@@ -32,18 +32,22 @@ impl<Base: SudokuBase> From<Deduction<Base>> for TransportDeduction {
             reasons: deduction
                 .reasons
                 .into_iter()
-                .map(|(position, reason)| PositionedTransportReason {
-                    position: position.into(),
-                    reason: reason.into(),
-                })
+                .map(
+                    |Positioned { pos, value: reason }| PositionedTransportReason {
+                        position: pos.into(),
+                        reason: reason.into(),
+                    },
+                )
                 .collect(),
             actions: deduction
                 .actions
                 .into_iter()
-                .map(|(position, action)| PositionedTransportAction {
-                    position: position.into(),
-                    action: action.into(),
-                })
+                .map(
+                    |Positioned { pos, value: action }| PositionedTransportAction {
+                        position: pos.into(),
+                        action: action.into(),
+                    },
+                )
                 .collect(),
         }
     }
