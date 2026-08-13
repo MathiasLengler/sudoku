@@ -559,7 +559,7 @@ impl<Base: SudokuBase> Generator<Base> {
 
                 deleted.push(Positioned {
                     pos,
-                    item: deleted_value,
+                    value: deleted_value,
                 });
             } else {
                 debug!(
@@ -579,7 +579,7 @@ impl<Base: SudokuBase> Generator<Base> {
             restore_i,
             Positioned {
                 pos: deleted_pos,
-                item: deleted_value,
+                value: deleted_value,
             },
         ) in (1..).zip(deleted.into_iter().rev().take(distance_from_minimal.into()))
         {
