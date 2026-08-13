@@ -5,7 +5,6 @@ use rand::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 
-use crate::cell::Value;
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
@@ -14,6 +13,7 @@ use crate::solver::backtracking::DisallowedCandidateAtPosition;
 use crate::solver::strategic::strategies::BruteForce;
 use crate::solver::{backtracking, introspective};
 use crate::{base::SudokuBase, solver::strategic::strategies::selection::StrategySet};
+use crate::{cell::Value, position::Positioned};
 
 pub use settings::*;
 #[cfg(feature = "parallel")]
@@ -51,7 +51,7 @@ pub struct GeneratorProgress {
 
 struct NearMinimalGridReturn<Base: SudokuBase> {
     near_minimal_grid: Grid<Base>,
-    deleted: Vec<(Position<Base>, Value<Base>)>,
+    deleted: Vec<Positioned<Base, Value<Base>>>,
     remaining_pruning_positions: Vec<Position<Base>>,
 }
 
@@ -164,7 +164,7 @@ impl<Base: SudokuBase> Generator<Base> {
                     near_minimal_grid,
                     deleted: pruning_positions
                         .iter()
-                        .map(|&pos| (pos, solved_grid[pos].value().unwrap()))
+                        .map(|&pos| (pos, solved_grid[pos].value().unwrap()).into())
                         .collect(),
                     remaining_pruning_positions: vec![],
                 });
@@ -225,9 +225,9 @@ impl<Base: SudokuBase> Generator<Base> {
 
             debug!("Restored value resulted in unique solution, stop restoring");
 
-            let deleted: Vec<(Position<Base>, Value<Base>)> = pruning_positions
+            let deleted: Vec<_> = pruning_positions
                 .iter()
-                .map(|&pos| (pos, solved_grid[pos].value().unwrap()))
+                .map(|&pos| (pos, solved_grid[pos].value().unwrap()).into())
                 .collect();
 
             Ok(NearMinimalGridReturn {
@@ -276,9 +276,9 @@ impl<Base: SudokuBase> Generator<Base> {
             let (deleted_pruning_positions, remaining_pruning_positions) =
                 pruning_positions.split_at(stop_index);
 
-            let deleted: Vec<(Position<Base>, Value<Base>)> = deleted_pruning_positions
+            let deleted: Vec<_> = deleted_pruning_positions
                 .iter()
-                .map(|&pos| (pos, solved_grid[pos].value().unwrap()))
+                .map(|&pos| (pos, solved_grid[pos].value().unwrap()).into())
                 .collect();
             let remaining_pruning_positions = remaining_pruning_positions.to_vec();
 
@@ -557,7 +557,10 @@ impl<Base: SudokuBase> Generator<Base> {
                     "Position {pruning_position_index}/{remaining_pruning_position_count} deleted, totaling {deleted_count} deleted positions"
                 );
 
-                deleted.push((pos, deleted_value));
+                deleted.push(Positioned {
+                    pos,
+                    item: deleted_value,
+                });
             } else {
                 debug!(
                     "Position {pruning_position_index}/{remaining_pruning_position_count} is required for unique solution"
@@ -572,8 +575,13 @@ impl<Base: SudokuBase> Generator<Base> {
         }
 
         // Restore the required amount of values, specified by distance.
-        for (restore_i, (deleted_pos, deleted_value)) in
-            (1..).zip(deleted.into_iter().rev().take(distance_from_minimal.into()))
+        for (
+            restore_i,
+            Positioned {
+                pos: deleted_pos,
+                item: deleted_value,
+            },
+        ) in (1..).zip(deleted.into_iter().rev().take(distance_from_minimal.into()))
         {
             debug!(
                 "Restoring deleted value #{restore_i}/{distance_from_minimal}: {deleted_value} at {deleted_pos}"
