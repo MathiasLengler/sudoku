@@ -1,7 +1,7 @@
-use crate::base::SudokuBase;
 use crate::cell::{Candidates, Value};
 use crate::grid::Grid;
 use crate::position::Position;
+use crate::{base::SudokuBase, position::Positioned};
 
 pub type DeniedCandidatesGrid<Base> = Grid<Base, Candidates<Base>>;
 
@@ -14,24 +14,33 @@ pub trait CandidatesFilter<Base: SudokuBase> {
     /// A iterator over all positions for which a candidate is denied by this filter.
     ///
     /// The default implementation iterates over all positions and returns those with non-empty `denied_candidates`.
-    fn all_denied_candidates(&self) -> impl Iterator<Item = (Position<Base>, Candidates<Base>)> {
-        Position::all()
-            .map(move |pos| (pos, self.denied_candidates(pos)))
-            .filter(|(_, candidates)| !candidates.is_empty())
+    fn all_denied_candidates(&self) -> impl Iterator<Item = Positioned<Base, Candidates<Base>>> {
+        Position::all().filter_map(move |pos| {
+            let denied_candidates = self.denied_candidates(pos);
+
+            denied_candidates.is_non_empty().then(|| Positioned {
+                pos,
+                value: denied_candidates,
+            })
+        })
     }
 
     /// Apply this filter to a given grid.
     ///
     /// The default implementation iterates over all denied candidates and removes them from the corresponding cell's candidates.
     fn apply_to_grid_candidates(&self, grid: &mut Grid<Base>) {
-        self.all_denied_candidates()
-            .for_each(|(pos, denied_candidates)| {
+        self.all_denied_candidates().for_each(
+            |Positioned {
+                 pos,
+                 value: denied_candidates,
+             }| {
                 let cell = &mut grid[pos];
                 let candidates = cell
                     .candidates()
                     .expect("CandidatesFilter to only target cells with candidates");
                 cell.set_candidates(candidates.without(denied_candidates));
-            });
+            },
+        );
     }
 }
 
@@ -43,7 +52,7 @@ impl<Base: SudokuBase> CandidatesFilter<Base> for () {
         Candidates::new()
     }
 
-    fn all_denied_candidates(&self) -> impl Iterator<Item = (Position<Base>, Candidates<Base>)> {
+    fn all_denied_candidates(&self) -> impl Iterator<Item = Positioned<Base, Candidates<Base>>> {
         std::iter::empty()
     }
 
@@ -82,8 +91,11 @@ impl<Base: SudokuBase> CandidatesFilter<Base> for DisallowedCandidateAtPosition<
             Candidates::new()
         }
     }
-    fn all_denied_candidates(&self) -> impl Iterator<Item = (Position<Base>, Candidates<Base>)> {
-        std::iter::once((self.pos, self.denied_candidates_at_pos()))
+    fn all_denied_candidates(&self) -> impl Iterator<Item = Positioned<Base, Candidates<Base>>> {
+        std::iter::once(Positioned {
+            pos: self.pos,
+            value: self.denied_candidates_at_pos(),
+        })
     }
 }
 
@@ -108,8 +120,11 @@ impl<Base: SudokuBase> CandidatesFilter<Base> for ForceCandidateAtPosition<Base>
             Candidates::new()
         }
     }
-    fn all_denied_candidates(&self) -> impl Iterator<Item = (Position<Base>, Candidates<Base>)> {
-        std::iter::once((self.pos, self.denied_candidates_at_pos()))
+    fn all_denied_candidates(&self) -> impl Iterator<Item = Positioned<Base, Candidates<Base>>> {
+        std::iter::once(Positioned {
+            pos: self.pos,
+            value: self.denied_candidates_at_pos(),
+        })
     }
 }
 
@@ -121,7 +136,11 @@ mod tests {
     use crate::samples::base_2_candidates_coordinates;
 
     fn assert_self_consistent_filter(filter: &impl CandidatesFilter<Base2>) {
-        for (pos, denied_candidates) in filter.all_denied_candidates() {
+        for Positioned {
+            pos,
+            value: denied_candidates,
+        } in filter.all_denied_candidates()
+        {
             // The returned `denied_candidates` from `all_denied_candidates` match `denied_candidates()` for the same position.
             assert_eq!(denied_candidates, filter.denied_candidates(pos));
             // `denied_candidates` is non-empty.
@@ -131,7 +150,7 @@ mod tests {
         // All non-denied positions return empty candidates.
         let denied_positions = filter
             .all_denied_candidates()
-            .map(|(pos, _)| pos)
+            .map(|positioned| positioned.pos)
             .collect::<std::collections::HashSet<_>>();
         for non_denied_pos in Position::<Base2>::all().filter(|pos| !denied_positions.contains(pos))
         {
@@ -249,10 +268,10 @@ mod tests {
         let all_denied_candidates: Vec<_> = filter.all_denied_candidates().collect();
         assert_eq!(
             all_denied_candidates,
-            vec![(
-                Position::bottom_right(),
-                Candidates::with_single(Value::max())
-            )]
+            vec![Positioned {
+                pos: Position::bottom_right(),
+                value: Candidates::with_single(Value::max())
+            }]
         );
 
         assert_self_consistent_filter(&filter);
@@ -268,10 +287,10 @@ mod tests {
         let all_denied_candidates: Vec<_> = filter.all_denied_candidates().collect();
         assert_eq!(
             all_denied_candidates,
-            vec![(
-                Position::bottom_right(),
-                Candidates::all().without(Candidates::with_single(Value::max()))
-            )]
+            vec![Positioned {
+                pos: Position::bottom_right(),
+                value: Candidates::all().without(Candidates::with_single(Value::max()))
+            }]
         );
 
         assert_self_consistent_filter(&filter);

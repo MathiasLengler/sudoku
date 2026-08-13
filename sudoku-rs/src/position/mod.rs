@@ -1,5 +1,6 @@
-// TODO: introduce Positioned<Base, T>(Position<Base>, T)
-//  replace current usages of (Position<Base>, ...)
+// TODO:
+// [x] introduce Positioned<Base, T>(Position<Base>, T)
+// [ ] replace current usages of (Position<Base>, ...)
 //  also useful for Grid iterators
 //  could simply be an alias for a tuple `(Position<Base>, T)`
 

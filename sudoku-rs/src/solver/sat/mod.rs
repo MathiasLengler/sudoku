@@ -8,7 +8,6 @@ use itertools::Itertools;
 use log::trace;
 use varisat::{CnfFormula, ExtendFormula, Lit, Solver as SatSolver};
 
-use crate::base::{BaseEnum, SudokuBase};
 use crate::cell::{Cell, Value};
 use crate::error::{Error, Result};
 use crate::grid::Grid;
@@ -16,6 +15,10 @@ use crate::position::Position;
 use crate::solver::FallibleSolver;
 use crate::solver::backtracking::CandidatesFilter;
 use crate::solver::sat::cell_variable::CellVariable;
+use crate::{
+    base::{BaseEnum, SudokuBase},
+    position::Positioned,
+};
 
 mod initialized_sat_solver {
     use super::*;
@@ -121,20 +124,21 @@ impl<Base: SudokuBase> Solver<Base> {
             .collect();
 
         // Add filter assumptions
-        assumptions.extend(
-            filter
-                .all_denied_candidates()
-                .flat_map(|(pos, denied_candidates)| {
-                    denied_candidates.into_iter().map(move |denied_value| {
-                        // Remove denied value via a negative assignment
-                        Lit::from(CellVariable {
-                            pos,
-                            value: denied_value,
-                            is_true: false,
-                        })
+        assumptions.extend(filter.all_denied_candidates().flat_map(
+            |Positioned {
+                 pos,
+                 value: denied_candidates,
+             }| {
+                denied_candidates.into_iter().map(move |denied_value| {
+                    // Remove denied value via a negative assignment
+                    Lit::from(CellVariable {
+                        pos,
+                        value: denied_value,
+                        is_true: false,
                     })
-                }),
-        );
+                })
+            },
+        ));
 
         sat_solver.assume(&assumptions);
 

@@ -293,6 +293,10 @@ impl<Base: SudokuBase> Candidates<Base> {
         self.bits.is_zero()
     }
 
+    pub fn is_non_empty(&self) -> bool {
+        !self.is_empty()
+    }
+
     pub fn is_single(self) -> bool {
         self.count() == 1
     }
@@ -934,6 +938,17 @@ mod tests {
             assert!(empty.is_empty());
             assert!(!one.is_empty());
             assert!(!all.is_empty());
+        }
+
+        #[test]
+        fn test_is_non_empty() {
+            let empty: Candidates<Base2> = Candidates::new();
+            let one: Candidates<Base2> = Candidates::with_single(1.try_into().unwrap());
+            let all: Candidates<Base2> = Candidates::all();
+
+            assert!(!empty.is_non_empty());
+            assert!(one.is_non_empty());
+            assert!(all.is_non_empty());
         }
 
         #[test]
