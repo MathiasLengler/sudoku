@@ -74,18 +74,14 @@ impl<Base: SudokuBase, T: Merge> PositionMap<Base, T> {
         this
     }
 
-    pub fn try_from_iter<I, IntoPos, IntoT>(iter: I) -> Result<Self>
-    where
-        I: IntoIterator<Item = (IntoPos, IntoT)>,
-        IntoPos: TryInto<Position<Base>>,
-        IntoT: TryInto<T>,
-        Error: From<IntoPos::Error>,
-        Error: From<IntoT::Error>,
-    {
+    pub fn try_from_iter(
+        iter: impl IntoIterator<Item: TryInto<Positioned<Base, T>, Error: Into<Error>>>,
+    ) -> Result<Self> {
         let mut this = Self::new();
 
-        for (pos, value) in iter {
-            this.insert(pos.try_into()?, value.try_into()?)?;
+        for into_positioned in iter {
+            let Positioned { pos, value } = into_positioned.try_into().map_err(Into::into)?;
+            this.insert(pos, value)?;
         }
 
         Ok(this)

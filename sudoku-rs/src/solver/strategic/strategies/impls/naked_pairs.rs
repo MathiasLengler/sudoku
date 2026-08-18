@@ -38,6 +38,7 @@ impl Strategy for NakedPairs {
 
 impl NakedPairs {
     fn find_naked_pairs<Base: SudokuBase>(
+        // TODO: Positioned
         candidates_group: Vec<(Position<Base>, Candidates<Base>)>,
     ) -> impl Iterator<Item = Deduction<Base>> {
         let mut pair_candidates_histogram: BTreeMap<Candidates<Base>, Vec<Position<Base>>> =

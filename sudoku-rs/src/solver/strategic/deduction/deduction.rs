@@ -98,7 +98,7 @@ impl<Base: SudokuBase> Deduction<Base> {
     }
 
     pub fn try_from_actions(
-        actions: impl Iterator<Item = (Position<Base>, Action<Base>)>,
+        actions: impl IntoIterator<Item: TryInto<Positioned<Base, Action<Base>>, Error: Into<Error>>>,
     ) -> Result<Self> {
         Ok(Self {
             actions: PositionMap::try_from_iter(actions)?,
@@ -106,29 +106,10 @@ impl<Base: SudokuBase> Deduction<Base> {
         })
     }
 
-    pub fn try_from_iters<
-        IActions,
-        IntoActionsPos,
-        IntoAction,
-        IReasons,
-        IntoReasonsPos,
-        IntoReason,
-    >(
-        actions: IActions,
-        reasons: IReasons,
-    ) -> Result<Self>
-    where
-        IActions: IntoIterator<Item = (IntoActionsPos, IntoAction)>,
-        IntoActionsPos: TryInto<Position<Base>>,
-        IntoAction: TryInto<Action<Base>>,
-        Error: From<IntoActionsPos::Error>,
-        Error: From<IntoAction::Error>,
-        IReasons: IntoIterator<Item = (IntoReasonsPos, IntoReason)>,
-        IntoReasonsPos: TryInto<Position<Base>>,
-        IntoReason: TryInto<Reason<Base>>,
-        Error: From<IntoReasonsPos::Error>,
-        Error: From<IntoReason::Error>,
-    {
+    pub fn try_from_iters(
+        actions: impl IntoIterator<Item: TryInto<Positioned<Base, Action<Base>>, Error: Into<Error>>>,
+        reasons: impl IntoIterator<Item: TryInto<Positioned<Base, Reason<Base>>, Error: Into<Error>>>,
+    ) -> Result<Self> {
         Ok(Self {
             reasons: PositionMap::try_from_iter(reasons)?,
             actions: PositionMap::try_from_iter(actions)?,
