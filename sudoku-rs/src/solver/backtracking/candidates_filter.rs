@@ -18,7 +18,7 @@ pub trait CandidatesFilter<Base: SudokuBase> {
         Position::all().filter_map(move |pos| {
             let denied_candidates = self.denied_candidates(pos);
 
-            denied_candidates.is_non_empty().then(|| Positioned {
+            denied_candidates.is_non_empty().then_some(Positioned {
                 pos,
                 value: denied_candidates,
             })
