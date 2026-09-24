@@ -1,5 +1,6 @@
-// TODO: introduce Positioned<Base, T>(Position<Base>, T)
-//  replace current usages of (Position<Base>, ...)
+// TODO:
+// [x] introduce Positioned<Base, T>(Position<Base>, T)
+// [ ] replace current usages of (Position<Base>, ...)
 //  also useful for Grid iterators
 //  could simply be an alias for a tuple `(Position<Base>, T)`
 
@@ -13,6 +14,7 @@ pub use bounded_coordinate::Coordinate;
 pub use bounded_position::Position;
 pub use dynamic::DynamicPosition;
 pub use position_map::{Merge, PositionMap};
+pub use positioned::Positioned;
 
 mod bounded_block_coordinate;
 mod bounded_block_segment;
@@ -21,6 +23,7 @@ mod bounded_position;
 mod dynamic;
 mod group;
 mod position_map;
+mod positioned;
 
 // Used by benchmarking harness
 #[doc(hidden)]

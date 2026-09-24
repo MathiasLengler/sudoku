@@ -1,12 +1,12 @@
 use std::collections::{BTreeMap, BTreeSet, btree_set};
 use std::fmt::{Display, Formatter};
 
-use crate::base::SudokuBase;
 use crate::error::{Error, Result};
 use crate::grid::Grid;
 use crate::position::PositionMap;
 use crate::solver::strategic::deduction::transport::TransportDeductions;
 use crate::solver::strategic::deduction::{Action, Deduction, Reason};
+use crate::{base::SudokuBase, position::Positioned};
 
 /// A list of deductions made by a strategy.
 /// Some strategies can be applied multiple times on a single grid, e.g.:
@@ -70,11 +70,11 @@ impl<Base: SudokuBase> Deductions<Base> {
         let mut merged_deduction = Deduction::default();
 
         for deduction in &self.deductions {
-            for (pos, action) in &deduction.actions {
+            for Positioned { pos, value: action } in &deduction.actions {
                 merged_deduction.actions.insert(pos, *action)?;
             }
-            for (pos, reasons) in &deduction.reasons {
-                merged_deduction.reasons.insert(pos, *reasons)?;
+            for Positioned { pos, value: reason } in &deduction.reasons {
+                merged_deduction.reasons.insert(pos, *reason)?;
             }
         }
         Ok(merged_deduction)

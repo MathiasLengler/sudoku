@@ -1,12 +1,12 @@
 use std::collections::BTreeMap;
 
-use crate::base::SudokuBase;
 use crate::cell::Candidates;
 use crate::error::Result;
 use crate::grid::Grid;
 use crate::position::Position;
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions, Reason};
 use crate::solver::strategic::strategies::{Strategy, StrategyScore};
+use crate::{base::SudokuBase, position::Positioned};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct NakedPairs;
@@ -23,9 +23,10 @@ impl Strategy for NakedPairs {
             .flat_map(|group| {
                 let candidates_group: Vec<_> = group
                     .filter_map(|pos| {
-                        grid.get(pos)
-                            .candidates()
-                            .map(|candidates| (pos, candidates))
+                        grid.get(pos).candidates().map(|candidates| Positioned {
+                            pos,
+                            value: candidates,
+                        })
                     })
                     .collect();
 
@@ -38,15 +39,19 @@ impl Strategy for NakedPairs {
 
 impl NakedPairs {
     fn find_naked_pairs<Base: SudokuBase>(
-        candidates_group: Vec<(Position<Base>, Candidates<Base>)>,
+        candidates_group: Vec<Positioned<Base, Candidates<Base>>>,
     ) -> impl Iterator<Item = Deduction<Base>> {
         let mut pair_candidates_histogram: BTreeMap<Candidates<Base>, Vec<Position<Base>>> =
             BTreeMap::new();
 
-        for (pos, pair_candidates) in candidates_group
-            .iter()
-            .filter(|(_, candidates)| candidates.count() == 2)
-        {
+        for Positioned {
+            pos,
+            value: pair_candidates,
+        } in candidates_group.iter().filter(
+            |Positioned {
+                 value: candidates, ..
+             }| candidates.count() == 2,
+        ) {
             pair_candidates_histogram
                 .entry(*pair_candidates)
                 .and_modify(|indexes| indexes.push(*pos))
@@ -67,15 +72,20 @@ impl NakedPairs {
 
                     candidates_group
                         .iter()
-                        .filter(|(pos, _)| !positions.contains(pos))
-                        .filter_map(|(pos, candidates)| {
-                            let deleted_candidates = candidates.intersection(pair_candidates);
-                            if deleted_candidates.is_empty() {
-                                None
-                            } else {
-                                Some((pos, Action::DeleteCandidates(deleted_candidates)))
-                            }
-                        })
+                        .filter(|Positioned { pos, .. }| !positions.contains(pos))
+                        .filter_map(
+                            |Positioned {
+                                 pos,
+                                 value: candidates,
+                             }| {
+                                let deleted_candidates = candidates.intersection(pair_candidates);
+                                if deleted_candidates.is_empty() {
+                                    None
+                                } else {
+                                    Some((pos, Action::DeleteCandidates(deleted_candidates)))
+                                }
+                            },
+                        )
                         .for_each(|(pos, action)| {
                             deduction.actions.insert(*pos, action).unwrap();
                         });
@@ -113,7 +123,7 @@ mod tests {
     #[test]
     fn test_find_naked_pairs() {
         type Base = Base3;
-        type TestCase = (Vec<(Position<Base>, Candidates<Base>)>, Deductions<Base>);
+        type TestCase = (Vec<Positioned<Base, Candidates<Base>>>, Deductions<Base>);
 
         let test_cases: Vec<TestCase> = vec![
             // Single naked pair
@@ -214,11 +224,9 @@ mod tests {
             (
                 candidates_group
                     .into_iter()
-                    .map(|(pos, candidates)| {
-                        (
-                            pos.try_into().unwrap(),
-                            Candidates::try_from(candidates).unwrap(),
-                        )
+                    .map(|(pos, candidates)| Positioned {
+                        pos: pos.try_into().unwrap(),
+                        value: Candidates::try_from(candidates).unwrap(),
                     })
                     .collect(),
                 deductions
