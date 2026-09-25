@@ -69,10 +69,6 @@ pack-prod: (_pack "--release")
 _pack wasm-pack-args:
     wasm-pack build --target web --reference-types --weak-refs {{ wasm-pack-args }} . -- -Z build-std=panic_abort,std
 
-# update all globally installed cargo binaries
-install-update:
-    cargo install-update -a
-
 # upgrade all Cargo dependencies to latest
 upgrade-latest:
     cargo upgrade -i --verbose
