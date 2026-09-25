@@ -44,8 +44,8 @@ pub struct Generator<Base: SudokuBase> {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GeneratorProgress {
-    pruning_position_index: usize,
-    pruning_position_count: usize,
+    pruning_position_index: u32,
+    pruning_position_count: u32,
     deleted_count: u16,
 }
 
@@ -469,12 +469,10 @@ impl<Base: SudokuBase> Generator<Base> {
         }
 
         let pruning_positions: Vec<_> = self.pruning_positions(prune_settings, rng)?;
-        let pruning_position_count = pruning_positions.len();
+        let pruning_position_count = pruning_positions.len().try_into().unwrap();
 
         let mut deleted_count = 0;
-        for (i, pos) in pruning_positions.into_iter().enumerate() {
-            let pruning_position_index = i + 1;
-
+        for (pruning_position_index, pos) in (1..).zip(pruning_positions) {
             if deleted_count >= distance_from_filled {
                 break;
             }
@@ -542,12 +540,11 @@ impl<Base: SudokuBase> Generator<Base> {
             "Pruning grid by trying to delete values at positions {remaining_pruning_positions:?} in grid:\n{grid}"
         );
 
-        let remaining_pruning_position_count = remaining_pruning_positions.len();
+        let remaining_pruning_position_count =
+            remaining_pruning_positions.len().try_into().unwrap();
 
         // Reduce grid to a minimal solution.
-        for (i, pos) in remaining_pruning_positions.into_iter().enumerate() {
-            let pruning_position_index = i + 1;
-
+        for (pruning_position_index, pos) in (1..).zip(remaining_pruning_positions) {
             let deleted_count = u16::try_from(deleted.len()).unwrap();
 
             if let Some(deleted_value) =
