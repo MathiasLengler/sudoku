@@ -476,8 +476,8 @@ where
             available_candidates_vec.split_at(available_candidates_vec.len() / 2);
 
         // Both halves have at least on candidate
-        debug_assert!(!left_values.is_empty());
-        debug_assert!(!right_values.is_empty());
+        debug_assert_ne!(left_values, []);
+        debug_assert_ne!(right_values, []);
 
         let left_candidates: Candidates<Base> = left_values.iter().copied().collect();
         let right_candidates: Candidates<Base> = right_values.iter().copied().collect();

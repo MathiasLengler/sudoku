@@ -371,15 +371,11 @@ fn render_candidates_grid<Base: SudokuBase>(
     grid: &Grid<Base>,
     enable_terminal_styling: bool,
 ) -> String {
-    let bold;
-    let bold_blue;
-    if enable_terminal_styling {
-        bold = OwoStyle::new().bold();
-        bold_blue = OwoStyle::new().bold().blue();
+    let (bold, bold_blue) = if enable_terminal_styling {
+        (OwoStyle::new().bold(), OwoStyle::new().bold().blue())
     } else {
-        bold = OwoStyle::new();
-        bold_blue = OwoStyle::new();
-    }
+        (OwoStyle::new(), OwoStyle::new())
+    };
 
     let is_compact = !grid.all_cells().any(
         |cell| matches!(cell.state(), CellState::Candidates(candidates) if !candidates.is_empty()),

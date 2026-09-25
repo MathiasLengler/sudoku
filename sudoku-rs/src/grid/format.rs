@@ -142,7 +142,7 @@ impl GridFormatEnum {
         input: &str,
         formats: &[GridFormatEnum],
     ) -> Result<DetectAndParseReturn> {
-        assert!(!formats.is_empty());
+        assert_ne!(formats, []);
 
         let first_format = formats.first().expect("Formats list is non-empty");
         formats[1..]
