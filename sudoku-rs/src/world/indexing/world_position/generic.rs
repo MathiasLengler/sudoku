@@ -19,8 +19,8 @@ use super::ValidatedWorldPosition;
 #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export), ts(concrete(T = crate::world::CellMarker)))]
 #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
 pub struct WorldPosition<T: WorldObject> {
-    pub row: usize,
-    pub column: usize,
+    pub row: u32,
+    pub column: u32,
     #[cfg_attr(feature = "wasm", ts(skip))]
     #[serde(skip)]
     object: PhantomData<T>,
@@ -34,7 +34,7 @@ impl<T: WorldObject> Display for WorldPosition<T> {
 }
 
 impl<T: WorldObject> WorldPosition<T> {
-    pub fn new(row: usize, column: usize) -> Self {
+    pub fn new(row: u32, column: u32) -> Self {
         Self {
             row,
             column,
@@ -73,10 +73,18 @@ impl<T: WorldObject> WorldPosition<T> {
             BottomRight => Self::new(row + 1, column + 1),
         })
     }
+
+    // TODO: view ASM on x64 and WASM32; should be a noop.
+    pub fn as_usize(self) -> (usize, usize) {
+        (
+            usize::try_from(self.row).unwrap(),
+            usize::try_from(self.column).unwrap(),
+        )
+    }
 }
 
-impl<T: WorldObject> From<(usize, usize)> for WorldPosition<T> {
-    fn from((row, column): (usize, usize)) -> Self {
+impl<T: WorldObject> From<(u32, u32)> for WorldPosition<T> {
+    fn from((row, column): (u32, u32)) -> Self {
         Self::new(row, column)
     }
 }

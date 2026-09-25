@@ -20,9 +20,9 @@ impl WorldGridPosition {
     }
 
     fn grid_axis_index_to_first_cell_axis_index<Base: SudokuBase>(
-        grid_axis_index: usize,
+        grid_axis_index: u32,
         overlap: GridOverlap<Base>,
-    ) -> usize {
-        grid_axis_index * overlap.grid_stride_usize()
+    ) -> u32 {
+        grid_axis_index * overlap.grid_stride_u32()
     }
 }

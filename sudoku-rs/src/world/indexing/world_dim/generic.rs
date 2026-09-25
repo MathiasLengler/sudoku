@@ -1,7 +1,7 @@
 use std::{
     fmt::{self, Display, Formatter},
     marker::PhantomData,
-    num::NonZeroUsize,
+    num::NonZeroU32,
 };
 
 use anyhow::Context;
@@ -18,8 +18,8 @@ use crate::{
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WorldDim<T: WorldObject> {
-    pub row_count: NonZeroUsize,
-    pub column_count: NonZeroUsize,
+    pub row_count: NonZeroU32,
+    pub column_count: NonZeroU32,
     #[cfg_attr(feature = "wasm", ts(skip))]
     #[serde(skip)]
     object: PhantomData<T>,
@@ -37,11 +37,10 @@ impl<T: WorldObject> Display for WorldDim<T> {
 }
 
 impl<T: WorldObject> WorldDim<T> {
-    pub fn new(row_count: usize, column_count: usize) -> Result<Self> {
+    pub fn new(row_count: u32, column_count: u32) -> Result<Self> {
         Ok(Self {
-            row_count: NonZeroUsize::new(row_count).context("row_count must be non-zero")?,
-            column_count: NonZeroUsize::new(column_count)
-                .context("column_count must be non-zero")?,
+            row_count: NonZeroU32::new(row_count).context("row_count must be non-zero")?,
+            column_count: NonZeroU32::new(column_count).context("column_count must be non-zero")?,
             object: PhantomData,
         })
     }
@@ -57,8 +56,8 @@ impl<T: WorldObject> WorldDim<T> {
         (0..row_count.get()).contains(&row) && (0..column_count.get()).contains(&column)
     }
 
-    pub fn all_positions_count(self) -> usize {
-        self.row_count.get() * self.column_count.get()
+    pub fn all_positions_count(self) -> u32 {
+        self.object_count()
     }
 
     pub fn all_positions(self) -> impl Iterator<Item = WorldPosition<T>> {
@@ -74,7 +73,7 @@ impl<T: WorldObject> WorldDim<T> {
             .map(ValidatedWorldPosition::new_unchecked)
     }
 
-    pub fn object_count(self) -> usize {
+    pub fn object_count(self) -> u32 {
         let WorldDim {
             row_count,
             column_count,

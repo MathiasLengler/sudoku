@@ -1,4 +1,4 @@
-use std::num::NonZeroUsize;
+use std::num::NonZeroU32;
 
 use num::Integer;
 
@@ -12,7 +12,7 @@ use crate::{
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub(in crate::world::indexing) struct WorldGridCellAxisIndex<Base: SudokuBase> {
     /// The axis index of the grid in the world.
-    world_grid_axis_index: usize,
+    world_grid_axis_index: u32,
     /// The axis index of the cell inside this grid.
     cell_axis_index: Coordinate<Base>,
 }
@@ -21,16 +21,16 @@ impl<Base: SudokuBase> WorldGridCellAxisIndex<Base> {
     /// For the given `world_cell_axis_index`, returns the equivalent `WorldGridCellAxisIndex`
     /// with the greatest `world_grid_axis_index` within bounds and the lowest `cell_axis_index`.
     pub(in crate::world::indexing) fn from_world_cell_axis_index(
-        world_cell_axis_index: usize,
-        world_grid_axis_count: NonZeroUsize,
+        world_cell_axis_index: u32,
+        world_grid_axis_count: NonZeroU32,
         overlap: GridOverlap<Base>,
     ) -> Self {
-        let grid_stride_usize = overlap.grid_stride_usize();
+        let grid_stride_u32 = overlap.grid_stride_u32();
 
         let mut this = Self {
-            world_grid_axis_index: world_cell_axis_index / grid_stride_usize,
+            world_grid_axis_index: world_cell_axis_index / grid_stride_u32,
             cell_axis_index: Coordinate::new(
-                (world_cell_axis_index % grid_stride_usize)
+                (world_cell_axis_index % grid_stride_u32)
                     .try_into()
                     .unwrap(),
             )
@@ -48,7 +48,7 @@ impl<Base: SudokuBase> WorldGridCellAxisIndex<Base> {
         this
     }
 
-    pub(in crate::world::indexing) fn world_grid_axis_index(self) -> usize {
+    pub(in crate::world::indexing) fn world_grid_axis_index(self) -> u32 {
         self.world_grid_axis_index
     }
     pub(in crate::world::indexing) fn cell_axis_index(self) -> Coordinate<Base> {
@@ -57,7 +57,7 @@ impl<Base: SudokuBase> WorldGridCellAxisIndex<Base> {
 
     pub(in crate::world::indexing) fn overlap_neighbor(
         self,
-        world_grid_axis_count: NonZeroUsize,
+        world_grid_axis_count: NonZeroU32,
         overlap: GridOverlap<Base>,
     ) -> Option<(Self, AxisOrdering)> {
         let grid_stride = overlap.grid_stride();
@@ -100,7 +100,7 @@ impl<Base: SudokuBase> WorldGridCellAxisIndex<Base> {
     /// Tie break is determined by the clicked cell quadrant.
     pub(in crate::world::indexing) fn normalize_to_nearest_world_grid_axis_index(
         self,
-        world_grid_axis_count: NonZeroUsize,
+        world_grid_axis_count: NonZeroU32,
         overlap: GridOverlap<Base>,
         tie_break: AxisOrdering,
     ) -> Self {
@@ -152,7 +152,7 @@ impl<Base: SudokuBase> WorldGridCellAxisIndex<Base> {
     fn to_neighboring_grid_axis_index(
         self,
         neighbor_ordering: AxisOrdering,
-        world_grid_axis_count: NonZeroUsize,
+        world_grid_axis_count: NonZeroU32,
         overlap: GridOverlap<Base>,
     ) -> Option<Self> {
         debug_assert!(Self::is_cell_axis_index_in_potential_overlap_region(
@@ -205,7 +205,7 @@ impl<Base: SudokuBase> WorldGridCellAxisIndex<Base> {
     }
 
     #[cfg(test)]
-    fn all(world_grid_axis_count: NonZeroUsize) -> impl Iterator<Item = Self> {
+    fn all(world_grid_axis_count: NonZeroU32) -> impl Iterator<Item = Self> {
         (0..world_grid_axis_count.get()).flat_map(|world_grid_axis_index| {
             Coordinate::<Base>::all().map(move |cell_axis_index| WorldGridCellAxisIndex {
                 world_grid_axis_index,
@@ -222,7 +222,7 @@ mod tests {
     use crate::base::consts::*;
 
     fn expected_tuples_to_world_grid_cell_axis_indexes<Base: SudokuBase>(
-        expected: impl IntoIterator<Item = (usize, u8)>,
+        expected: impl IntoIterator<Item = (u32, u8)>,
     ) -> impl Iterator<Item = WorldGridCellAxisIndex<Base>> {
         expected
             .into_iter()
@@ -534,19 +534,22 @@ mod tests {
 
                             // invariant: number of distinct normalized results
                             assert_eq!(
-                                WorldGridCellAxisIndex::<Base>::all(world_grid_axis_count)
-                                    .map(|world_grid_cell_axis_index| {
-                                        world_grid_cell_axis_index
-                                            .normalize_to_nearest_world_grid_axis_index(
-                                                world_grid_axis_count,
-                                                overlap,
-                                                tie_break,
-                                            )
-                                    })
-                                    .unique()
-                                    .count(),
-                                overlap.grid_stride_usize() * world_grid_axis_count.get()
-                                    + overlap.get_usize()
+                                u32::try_from(
+                                    WorldGridCellAxisIndex::<Base>::all(world_grid_axis_count)
+                                        .map(|world_grid_cell_axis_index| {
+                                            world_grid_cell_axis_index
+                                                .normalize_to_nearest_world_grid_axis_index(
+                                                    world_grid_axis_count,
+                                                    overlap,
+                                                    tie_break,
+                                                )
+                                        })
+                                        .unique()
+                                        .count()
+                                )
+                                .unwrap(),
+                                overlap.grid_stride_u32() * world_grid_axis_count.get()
+                                    + overlap.get_u32()
                             );
 
                             // invariant: the overlap region shared by two subsequent grids results in the same normalized result
@@ -619,7 +622,7 @@ mod tests {
             fn assert_normalize_to_nearest_world_grid_axis_index<Base: SudokuBase>(
                 overlap: GridOverlap<Base>,
                 tie_break: AxisOrdering,
-                expected: impl IntoIterator<Item = (usize, u8)>,
+                expected: impl IntoIterator<Item = (u32, u8)>,
             ) {
                 let world_grid_axis_count = 3.try_into().unwrap();
 

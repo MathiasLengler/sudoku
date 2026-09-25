@@ -2,7 +2,7 @@ use ndarray::{Dim, SliceInfo, SliceInfoElem, s};
 
 use crate::{
     base::SudokuBase,
-    world::{GridMarker, GridOverlap, WorldCellPosition},
+    world::{GridMarker, GridOverlap},
 };
 
 use super::ValidatedWorldPosition;
@@ -17,11 +17,10 @@ impl ValidatedWorldGridPosition {
         self,
         overlap: GridOverlap<Base>,
     ) -> GridCellsSliceInfo {
-        let WorldCellPosition {
-            row: top_left_cell_row,
-            column: top_left_cell_col,
-            ..
-        } = self.get().to_top_left_cell_position::<Base>(overlap);
+        let (top_left_cell_row, top_left_cell_col) = self
+            .get()
+            .to_top_left_cell_position::<Base>(overlap)
+            .as_usize();
 
         let side_length_usize = usize::from(Base::SIDE_LENGTH);
 

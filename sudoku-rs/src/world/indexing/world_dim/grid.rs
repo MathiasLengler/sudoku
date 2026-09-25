@@ -1,4 +1,4 @@
-use std::num::NonZeroUsize;
+use std::num::NonZeroU32;
 
 use crate::{
     base::SudokuBase,
@@ -10,7 +10,7 @@ use super::{WorldCellDim, WorldDim};
 pub type WorldGridDim = WorldDim<GridMarker>;
 
 impl WorldGridDim {
-    pub fn grid_count(self) -> usize {
+    pub fn grid_count(self) -> u32 {
         self.object_count()
     }
 
@@ -28,11 +28,11 @@ impl WorldGridDim {
     }
 
     fn grid_axis_count_to_cell_axis_count<Base: SudokuBase>(
-        grid_axis_count: NonZeroUsize,
+        grid_axis_count: NonZeroU32,
         overlap: GridOverlap<Base>,
-    ) -> usize {
+    ) -> u32 {
         let grid_axis_count = grid_axis_count.get();
-        grid_axis_count * usize::from(Base::SIDE_LENGTH)
-            - (grid_axis_count - 1) * overlap.get_usize()
+        grid_axis_count * u32::from(Base::SIDE_LENGTH)
+            - (grid_axis_count - 1) * u32::from(overlap.get())
     }
 }

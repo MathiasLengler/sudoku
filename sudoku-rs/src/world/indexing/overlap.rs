@@ -94,10 +94,10 @@ impl<Base: SudokuBase> GridOverlap<Base> {
         self.overlap
     }
 
-    /// Get the `overlap` as a `u16`.
+    /// Get the `overlap` as a `u32`.
     /// Guaranteed to satisfy `overlap <= Base::BASE`
-    pub fn get_u16(self) -> u16 {
-        u16::from(self.overlap)
+    pub fn get_u32(self) -> u32 {
+        u32::from(self.overlap)
     }
 
     /// Get the `overlap` as a `usize`.
@@ -105,6 +105,7 @@ impl<Base: SudokuBase> GridOverlap<Base> {
     pub fn get_usize(self) -> usize {
         usize::from(self.overlap)
     }
+
     /// Get the `overlap` as a `isize`.
     /// Guaranteed to be contained in the range `0..=Base::BASE`
     pub fn get_isize(self) -> isize {
@@ -118,8 +119,8 @@ impl<Base: SudokuBase> GridOverlap<Base> {
         grid_stride
     }
 
-    pub fn grid_stride_usize(self) -> usize {
-        usize::from(self.grid_stride())
+    pub fn grid_stride_u32(self) -> u32 {
+        u32::from(self.grid_stride())
     }
 }
 

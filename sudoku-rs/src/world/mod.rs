@@ -668,7 +668,7 @@ mod tests {
             .map(
                 |(is_valid, (row_count, column_count), overlap, cells_shape): (
                     bool,
-                    (usize, usize),
+                    (u32, u32),
                     u8,
                     (usize, usize),
                 )| {

@@ -1,4 +1,4 @@
-use std::{num::NonZeroUsize, ops::Add};
+use std::{num::NonZeroU32, ops::Add};
 
 use crate::{
     base::SudokuBase,
@@ -103,8 +103,8 @@ impl WorldCellPosition {
     }
 
     fn cell_axis_index_to_world_grid_cell_axis_indexes<Base: SudokuBase>(
-        world_cell_axis_index: usize,
-        world_grid_axis_count: NonZeroUsize,
+        world_cell_axis_index: u32,
+        world_grid_axis_count: NonZeroU32,
         overlap: GridOverlap<Base>,
     ) -> CellAxisIndexToGridCellAxisIndexes<Base> {
         let world_grid_cell_axis_index = WorldGridCellAxisIndex::<Base>::from_world_cell_axis_index(
@@ -167,8 +167,8 @@ impl<Base: SudokuBase> Add<Position<Base>> for WorldCellPosition {
         let Self { row, column, .. } = self;
 
         Self::new(
-            row + cell_pos.to_row().get_usize(),
-            column + cell_pos.to_column().get_usize(),
+            row + cell_pos.to_row().get_u32(),
+            column + cell_pos.to_column().get_u32(),
         )
     }
 }

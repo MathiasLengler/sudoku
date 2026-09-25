@@ -162,6 +162,12 @@ impl<Base: SudokuBase> Coordinate<Base> {
         u16::from(self.coordinate)
     }
 
+    /// Get the `coordinate` as a `u32`.
+    /// Guaranteed to satisfy `coordinate < Base::SIDE_LENGTH`
+    pub fn get_u32(self) -> u32 {
+        u32::from(self.coordinate)
+    }
+
     /// Get the `coordinate` as a `usize`.
     /// Guaranteed to satisfy `coordinate < Base::SIDE_LENGTH`
     pub fn get_usize(self) -> usize {

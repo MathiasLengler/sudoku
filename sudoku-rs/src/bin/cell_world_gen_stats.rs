@@ -25,7 +25,7 @@ fn main() -> Result<()> {
             .into_iter()
             .map(|(row_count, column_count)| WorldGridDim::new(row_count, column_count).unwrap())
         ) {
-            let grid_count = u64::try_from(grid_dim.grid_count()).unwrap();
+            let grid_count = u64::from(grid_dim.grid_count());
             let target_grid_count = 1_000_000;
 
             let total_seeds = target_grid_count / grid_count;

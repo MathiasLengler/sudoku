@@ -8,17 +8,20 @@ use super::WorldDim;
 
 pub type WorldCellDim = WorldDim<CellMarker>;
 impl WorldCellDim {
-    pub fn cell_count(self) -> usize {
+    pub fn cell_count(self) -> u32 {
         self.object_count()
     }
 
     pub(in crate::world) fn as_cells_shape(
         self,
     ) -> impl ndarray::IntoDimension<Dim = Dim<[usize; 2]>> {
-        [self.row_count.get(), self.column_count.get()]
+        [
+            self.row_count.get().try_into().unwrap(),
+            self.column_count.get().try_into().unwrap(),
+        ]
     }
 
     pub(in crate::world) fn from_cells<TCell>(cells: &Array2<TCell>) -> Result<Self> {
-        Self::new(cells.nrows(), cells.ncols())
+        Self::new(cells.nrows().try_into()?, cells.ncols().try_into()?)
     }
 }
