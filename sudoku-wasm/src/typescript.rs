@@ -44,7 +44,13 @@ pub(crate) fn import_err(err: &JsValue) -> SudokuError {
 }
 
 pub(crate) fn export_value<T: serde::ser::Serialize + ?Sized>(value: &T) -> Result<JsValue> {
-    Ok(value.serialize(&Serializer::json_compatible())?)
+    Ok(value.serialize(
+        &Serializer::json_compatible()
+            // Matches ts-rs default for (i64, u64, i128, u128)
+            // Constraint: usize/isize never cross the WASM boundary.
+            // https://github.com/Aleph-Alpha/ts-rs#configuration
+            .serialize_large_number_types_as_bigints(true),
+    )?)
 }
 
 // Bridge ts_rs and wasm_bindgen using serde_wasm_bindgen
