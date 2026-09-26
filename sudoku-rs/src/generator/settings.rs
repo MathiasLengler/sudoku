@@ -266,15 +266,16 @@ mod dynamic_settings {
     }
 
     #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+    #[cfg_attr(feature = "wasm", derive(tsify::Tsify), tsify(large_number_types_as_bigints))]
     #[derive(Debug, Clone, Default, Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct DynamicGeneratorSettings {
         pub base: BaseEnum,
-        #[cfg_attr(feature = "wasm", ts(optional = nullable))]
+        #[cfg_attr(feature = "wasm", ts(optional = nullable), tsify(optional))]
         pub prune: Option<DynamicPruningSettings>,
-        #[cfg_attr(feature = "wasm", ts(optional = nullable))]
+        #[cfg_attr(feature = "wasm", ts(optional = nullable), tsify(optional))]
         pub solution: Option<DynamicSolutionSettings>,
-        #[cfg_attr(feature = "wasm", ts(optional = nullable))]
+        #[cfg_attr(feature = "wasm", ts(optional = nullable), tsify(optional))]
         pub seed: Option<u64>,
     }
 

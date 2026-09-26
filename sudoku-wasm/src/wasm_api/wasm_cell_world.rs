@@ -3,7 +3,8 @@ use crate::typescript::*;
 use sudoku::base::consts::*;
 use sudoku::error::Error as SudokuError;
 use sudoku::world::dynamic::{DynamicCellWorld, DynamicCellWorldActions};
-use sudoku::world::{CellWorld, WorldGridDim};
+use sudoku::world::{CellWorld, CellWorldDimensions, WorldCellPosition, WorldGridDim};
+use tsify::Ts;
 use wasm_bindgen::prelude::*;
 
 #[allow(dead_code)]
@@ -111,8 +112,8 @@ impl WasmCellWorld {
     pub fn base(&self) -> Result<IBaseEnum> {
         export_base_enum(self.world.base())
     }
-    pub fn dimensions(&self) -> Result<ICellWorldDimensions> {
-        export_cell_world_dimensions(self.world.dimensions())
+    pub fn dimensions(&self) -> Result<Ts<CellWorldDimensions>> {
+        export_ts(&self.world.dimensions())
     }
     #[wasm_bindgen(js_name = isSolved)]
     pub fn is_solved(&self) -> bool {
@@ -131,13 +132,13 @@ impl WasmCellWorld {
     #[wasm_bindgen(js_name = worldCellPositionToNearestWorldGridCellPosition)]
     pub fn world_cell_position_to_nearest_world_grid_cell_position(
         &self,
-        cell_position: IWorldCellPosition,
+        cell_position: Ts<WorldCellPosition>,
         tie_break: IQuadrant,
     ) -> Result<IDynamicWorldGridCellPosition> {
         export_dynamic_world_grid_cell_position(
             self.world
                 .world_cell_position_to_nearest_world_grid_cell_position(
-                    import_world_cell_position(cell_position)?,
+                    cell_position.to_rust()?,
                     import_quadrant(tie_break)?,
                 )?,
         )

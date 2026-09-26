@@ -6,6 +6,8 @@ use crate::{
 use super::WorldPosition;
 
 pub type WorldGridPosition = WorldPosition<GridMarker>;
+#[cfg(feature = "wasm")]
+crate::tsify::tsify_instance!("WorldGridPosition" = WorldPosition<GridMarker>);
 
 impl WorldGridPosition {
     pub fn to_top_left_cell_position<Base: SudokuBase>(

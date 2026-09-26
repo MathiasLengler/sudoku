@@ -9,6 +9,8 @@ use crate::{
 use super::{WorldGridCellAxisIndex, WorldPosition};
 
 pub type WorldCellPosition = WorldPosition<CellMarker>;
+#[cfg(feature = "wasm")]
+crate::tsify::tsify_instance!("WorldCellPosition" = WorldPosition<CellMarker>);
 
 impl WorldCellPosition {
     pub fn to_nearest_world_grid_cell_position<Base: SudokuBase>(

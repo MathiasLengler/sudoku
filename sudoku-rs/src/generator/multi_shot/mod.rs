@@ -16,6 +16,7 @@ use super::{Generator, GeneratorSettings};
 
 pub use dynamic_settings::*;
 
+#[cfg_attr(feature = "wasm", tsify::declare)]
 pub type EvaluatedGridMetric = u64;
 type AtomicEvaluatedGridMetric = AtomicU64;
 
@@ -142,6 +143,7 @@ pub enum GoalOptimization {
     Maximize,
 }
 
+#[cfg_attr(feature = "wasm", tsify::declare)]
 pub type IterationsCounter = u32;
 
 #[derive(Debug)]
@@ -232,6 +234,7 @@ mod dynamic_settings {
 }
 
 #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify), tsify(large_number_types_as_bigints))]
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 #[serde(
     rename_all = "camelCase",

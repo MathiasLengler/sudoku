@@ -8,6 +8,8 @@ use crate::{
 use super::{WorldCellDim, WorldDim};
 
 pub type WorldGridDim = WorldDim<GridMarker>;
+#[cfg(feature = "wasm")]
+crate::tsify::tsify_instance!("WorldGridDim" = WorldDim<GridMarker>);
 
 impl WorldGridDim {
     pub fn grid_count(self) -> u32 {

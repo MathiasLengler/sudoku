@@ -32,6 +32,13 @@ impl From<JsValue> for SudokuWasmError {
     }
 }
 
+// `tsify::Error` wraps a `JsValue`: not `Send`/`Sync`, so it can't become an `anyhow::Error` directly.
+impl From<tsify::Error> for SudokuWasmError {
+    fn from(err: tsify::Error) -> Self {
+        SudokuError::msg(err.to_string()).into()
+    }
+}
+
 impl From<serde_wasm_bindgen::Error> for SudokuWasmError {
     fn from(err: serde_wasm_bindgen::Error) -> Self {
         JsValue::from(err).into()

@@ -1,9 +1,11 @@
 use crate::error::Result;
 use crate::typescript::*;
 use sudoku::base::BaseEnum;
+use sudoku::generator::DynamicGeneratorSettings;
 use sudoku::error::Error as SudokuError;
 use sudoku::transport::TransportSudoku;
 use sudoku::{DynamicSudoku, DynamicSudokuActions};
+use tsify::Ts;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -43,11 +45,11 @@ impl WasmSudoku {
     }
 
     pub fn generate(
-        generator_settings: IDynamicGeneratorSettings,
+        generator_settings: Ts<DynamicGeneratorSettings>,
         on_progress: IGenerateOnProgress,
     ) -> Result<Self> {
         Ok(DynamicSudoku::generate(
-            import_dynamic_generator_settings(generator_settings)?,
+            generator_settings.to_rust()?,
             import_generate_on_progress(on_progress)?,
         )?
         .into())

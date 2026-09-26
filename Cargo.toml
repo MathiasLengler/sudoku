@@ -19,6 +19,8 @@ version = "0.2.0"
 log = { version = "0.4.34" }
 serde = { version = "1.0.229" }
 anyhow = { version = "1.0.104", features = ["backtrace"] }
+tsify = { version = "0.5.8", default-features = false, features = ["js"] }
+wasm-bindgen = { version = "0.2.128" }
 
 [profile.release-debug-full]
 inherits = "release"
@@ -45,3 +47,8 @@ opt-level = 3
 [patch.crates-io.varisat]
 git = "https://github.com/MathiasLengler/varisat"
 # path = "../varisat/varisat"
+
+
+# TODO(vibe): spike, tsify#50
+[profile.dev.package.sudoku]
+codegen-units = 1

@@ -7,6 +7,8 @@ use crate::world::CellMarker;
 use super::WorldDim;
 
 pub type WorldCellDim = WorldDim<CellMarker>;
+#[cfg(feature = "wasm")]
+crate::tsify::tsify_instance!("WorldCellDim" = WorldDim<CellMarker>);
 impl WorldCellDim {
     pub fn cell_count(self) -> u32 {
         self.object_count()

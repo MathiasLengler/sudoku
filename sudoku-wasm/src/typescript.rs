@@ -53,6 +53,15 @@ pub(crate) fn export_value<T: serde::ser::Serialize + ?Sized>(value: &T) -> Resu
     )?)
 }
 
+/// Like `Ts::from_rust`, but with the crate-wide serializer config of `export_value`.
+///
+/// `Ts::from_rust` uses per-type `SERIALIZATION_CONFIG`, which does not reach nested types.
+pub(crate) fn export_ts<T: tsify::Tsify + serde::ser::Serialize>(
+    value: &T,
+) -> Result<tsify::Ts<T>> {
+    Ok(tsify::Ts::new_unchecked(export_value(value)?))
+}
+
 // Bridge ts_rs and wasm_bindgen using serde_wasm_bindgen
 // Macro should be called with a list of (de)serializable types
 macro_rules! serde_wasm_bindgen_interop {
