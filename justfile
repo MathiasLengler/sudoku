@@ -103,7 +103,7 @@ generate-tsrs-bindings:
 # Run all web linters
 [parallel]
 [working-directory('sudoku-web')]
-web-lint: web-lint-tsc web-lint-oxlint web-lint-oxfmt
+web-lint: web-lint-tsc web-lint-oxlint web-lint-oxfmt web-test-headless
 
 # TypeScript compiler
 [working-directory('sudoku-web')]
@@ -119,3 +119,7 @@ web-lint-oxlint:
 [working-directory('sudoku-web')]
 web-lint-oxfmt:
     pnpm run lint:oxfmt
+
+[working-directory('sudoku-web')]
+web-test-headless:
+    pnpm run test:headless

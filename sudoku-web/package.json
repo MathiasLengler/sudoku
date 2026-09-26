@@ -26,7 +26,8 @@
         "lint:tsc:watch": "pnpm run lint:tsc --watch",
         "preview": "vite preview",
         "test": "vitest",
-        "test:bench": "vitest bench"
+        "test:bench": "vitest bench",
+        "test:headless": "vitest run --browser.headless"
     },
     "dependencies": {
         "@emotion/react": "^11.14.0",
