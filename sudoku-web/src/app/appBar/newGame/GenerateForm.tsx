@@ -6,12 +6,11 @@ import { Box, DialogContent, FormGroup, LinearProgress, Stack, Typography } from
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import { useNotifications } from "@toolpad/core/useNotifications";
-import * as _ from "es-toolkit";
 import { useAtom } from "jotai";
 import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
-import type { DynamicGeneratorSettings, GeneratorProgress } from "../../../types";
+import type { GeneratorProgress } from "../../../types";
 import type { NewGameTabValue } from "./NewGameDialog";
 
 import { useGenerate, useGenerateMultiShot, type TrackedMultiShotGeneratorProgress } from "../../actions/sudokuActions";
@@ -38,8 +37,9 @@ import {
     MAX_ITERATIONS_INDEX,
     MIN_ITERATIONS_INDEX,
     SEED_MAX,
+    toGeneratorSettings,
 } from "../../state/forms/generate";
-import { BASE_MARKS, BASE_MAX, BASE_MIN, baseToLabel, parseBase } from "../../utils/base";
+import { BASE_MARKS, BASE_MAX, BASE_MIN, baseToLabel } from "../../utils/base";
 import { baseToCellCount } from "../../utils/sudoku";
 
 function GenerateProgressLayout({
@@ -177,35 +177,9 @@ export function GenerateForm({ onClose }: GenerateFormProps) {
                         id="generate-form"
                         // oxlint-disable-next-line typescript/strict-void-return
                         onSubmit={handleSubmit(async (formValues) => {
-                            const {
-                                base,
-                                minGivens,
-                                setAllDirectCandidates,
-                                strategies,
-                                seed,
-                                useSeed,
-                                multiShot,
-                                iterationsIndex,
-                                metric,
-                                optimize,
-                                parallel,
-                            } = formValues;
+                            const { multiShot, iterationsIndex, metric, optimize, parallel } = formValues;
 
-                            const generatorSettings: DynamicGeneratorSettings = {
-                                base: parseBase(base),
-                                prune: {
-                                    target: {
-                                        minClueCount: minGivens,
-                                    },
-                                    strategies,
-                                    setAllDirectCandidates,
-                                    // TODO: expose
-                                    order: "random",
-                                    startFromNearMinimalGrid: false,
-                                },
-                                solution: undefined,
-                                seed: useSeed && !_.isUndefined(seed) ? BigInt(seed) : undefined,
-                            };
+                            const generatorSettings = toGeneratorSettings(formValues);
 
                             try {
                                 if (multiShot) {

@@ -1,8 +1,11 @@
+import * as _ from "es-toolkit";
 import { atomWithStorage } from "jotai/utils";
 import * as z from "zod";
 
+import type { DynamicGeneratorSettings } from "../../../types";
+
 import { goalOptimizationSchema, gridMetricSchema, selectedStrategiesSchema } from "../../constants";
-import { baseSchema } from "../../utils/base";
+import { baseSchema, parseBase } from "../../utils/base";
 import { getZodLocalStorage } from "../localStorageEffect";
 
 export const SEED_MAX = Number.MAX_SAFE_INTEGER;
@@ -83,3 +86,28 @@ export const generateFormValuesState = atomWithStorage<GenerateFormValues>(
     GENERATE_FORM_DEFAULT_VALUES,
     getZodLocalStorage(generateFormValuesSchema),
 );
+
+export function toGeneratorSettings({
+    base,
+    minGivens,
+    setAllDirectCandidates,
+    strategies,
+    seed,
+    useSeed,
+}: GenerateFormValues): DynamicGeneratorSettings {
+    return {
+        base: parseBase(base),
+        prune: {
+            target: {
+                minClueCount: minGivens,
+            },
+            strategies,
+            setAllDirectCandidates,
+            // TODO: expose
+            order: "random",
+            startFromNearMinimalGrid: false,
+        },
+        solution: undefined,
+        seed: useSeed && !_.isUndefined(seed) ? BigInt(seed) : undefined,
+    };
+}
