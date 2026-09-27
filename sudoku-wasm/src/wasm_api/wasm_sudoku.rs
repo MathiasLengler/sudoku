@@ -5,6 +5,7 @@ use sudoku::generator::DynamicGeneratorSettings;
 use sudoku::error::Error as SudokuError;
 use sudoku::transport::TransportSudoku;
 use sudoku::{DynamicSudoku, DynamicSudokuActions};
+use crate::generic_instances::WasmStrategySet;
 use tsify::Ts;
 use wasm_bindgen::prelude::*;
 
@@ -181,11 +182,9 @@ impl WasmSudoku {
     #[wasm_bindgen(js_name = tryStrategies)]
     pub fn try_strategies(
         &mut self,
-        strategies: IStrategySet,
+        strategies: Ts<WasmStrategySet>,
     ) -> Result<Option<IDynamicSolveStep>> {
-        let opt_dyn_solve_step = self
-            .sudoku
-            .try_strategies(import_strategy_set(strategies)?)?;
+        let opt_dyn_solve_step = self.sudoku.try_strategies(strategies.to_rust()?.0)?;
 
         opt_dyn_solve_step
             .map(export_dynamic_solve_step)

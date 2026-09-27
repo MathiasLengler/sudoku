@@ -12,14 +12,14 @@ use crate::{
     world::{ValidatedWorldPosition, WorldObject, WorldPosition},
 };
 
-#[cfg(feature = "wasm")]
-#[wasm_bindgen::prelude::wasm_bindgen(typescript_custom_section)]
-const TS_WORLD_DIM: &str =
-    "export type WorldDim<T> = { rowCount: number; columnCount: number; readonly [worldObject]: T };";
-
 /// Dimensions of a `CellWorld`.
 /// Can represent either cells or grids.
 #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export), ts(concrete(T = crate::world::CellMarker)))]
+#[cfg_attr(
+    feature = "wasm",
+    derive(tsify::Tsify),
+    tsify(type = "{ rowCount: number; columnCount: number; readonly [worldObject]: T }")
+)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WorldDim<T: WorldObject> {

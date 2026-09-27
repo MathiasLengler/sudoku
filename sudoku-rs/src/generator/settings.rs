@@ -266,7 +266,11 @@ mod dynamic_settings {
     }
 
     #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
-    #[cfg_attr(feature = "wasm", derive(tsify::Tsify), tsify(large_number_types_as_bigints))]
+    #[cfg_attr(
+        feature = "wasm",
+        derive(tsify::Tsify),
+        tsify(large_number_types_as_bigints)
+    )]
     #[derive(Debug, Clone, Default, Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct DynamicGeneratorSettings {

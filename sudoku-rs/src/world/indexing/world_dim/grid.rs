@@ -7,9 +7,9 @@ use crate::{
 
 use super::{WorldCellDim, WorldDim};
 
+// Crosses wasm signatures as `sudoku_wasm::generic_instances::WasmWorldGridDim` (tsify#76).
+#[cfg_attr(feature = "wasm", tsify::declare)]
 pub type WorldGridDim = WorldDim<GridMarker>;
-#[cfg(feature = "wasm")]
-crate::tsify::tsify_instance!("WorldGridDim" = WorldDim<GridMarker>);
 
 impl WorldGridDim {
     pub fn grid_count(self) -> u32 {

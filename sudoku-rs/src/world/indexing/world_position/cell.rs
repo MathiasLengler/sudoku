@@ -8,9 +8,9 @@ use crate::{
 
 use super::{WorldGridCellAxisIndex, WorldPosition};
 
+// Crosses wasm signatures as `sudoku_wasm::generic_instances::WasmWorldCellPosition` (tsify#76).
+#[cfg_attr(feature = "wasm", tsify::declare)]
 pub type WorldCellPosition = WorldPosition<CellMarker>;
-#[cfg(feature = "wasm")]
-crate::tsify::tsify_instance!("WorldCellPosition" = WorldPosition<CellMarker>);
 
 impl WorldCellPosition {
     pub fn to_nearest_world_grid_cell_position<Base: SudokuBase>(

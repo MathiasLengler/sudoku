@@ -5,9 +5,9 @@ use crate::{
 
 use super::WorldPosition;
 
+// Crosses wasm signatures as `sudoku_wasm::generic_instances::WasmWorldGridPosition` (tsify#76).
+#[cfg_attr(feature = "wasm", tsify::declare)]
 pub type WorldGridPosition = WorldPosition<GridMarker>;
-#[cfg(feature = "wasm")]
-crate::tsify::tsify_instance!("WorldGridPosition" = WorldPosition<GridMarker>);
 
 impl WorldGridPosition {
     pub fn to_top_left_cell_position<Base: SudokuBase>(

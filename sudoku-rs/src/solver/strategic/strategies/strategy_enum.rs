@@ -17,6 +17,7 @@ pub mod map {
 
     /// A map of `StrategyEnum` to `T`.
     #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+    #[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
     #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
     pub struct StrategyMap<T> {
         pub naked_singles: T,
@@ -122,6 +123,8 @@ pub mod selection {
     use super::*;
 
     /// A selection of strategies in canonical order.
+    // Crosses wasm signatures as `sudoku_wasm::generic_instances::WasmStrategySet` (tsify#76).
+    #[cfg_attr(feature = "wasm", tsify::declare)]
     pub type StrategySet = StrategyMap<bool>;
     /// A selection of strategies in a specific order.
     pub type StrategyList = Vec<StrategyEnum>;

@@ -356,6 +356,8 @@ mod enum_impl {
     use serde_repr::{Deserialize_repr, Serialize_repr};
 
     #[cfg_attr(feature = "terminal", derive(clap::ValueEnum))]
+    // tsify ignores `serde_repr`; checked against `BaseEnum::all()` in tests.
+    #[cfg_attr(feature = "wasm", derive(tsify::Tsify), tsify(type = "2 | 3 | 4 | 5"))]
     #[derive(Debug, Copy, Clone, Default, Eq, PartialEq, Serialize_repr, Deserialize_repr)]
     #[repr(u8)]
     pub enum BaseEnum {
@@ -550,6 +552,18 @@ mod enum_impl {
                 let cfg: ts_rs::Config = ::ts_rs::Config::from_env();
                 Some(std::path::PathBuf::from(format!("{}.ts", Self::name(&cfg))))
             }
+        }
+
+        #[cfg(test)]
+        #[test]
+        fn tsify_decl_matches_all() {
+            assert_eq!(
+                <BaseEnum as tsify::Tsify>::DECL,
+                format!(
+                    "export type BaseEnum = {};",
+                    BaseEnum::all().map(BaseEnum::into_u8).join(" | ")
+                )
+            );
         }
 
         #[cfg(test)]

@@ -6,9 +6,9 @@ use crate::world::CellMarker;
 
 use super::WorldDim;
 
+// Crosses wasm signatures as `sudoku_wasm::generic_instances::WasmWorldCellDim` (tsify#76).
+#[cfg_attr(feature = "wasm", tsify::declare)]
 pub type WorldCellDim = WorldDim<CellMarker>;
-#[cfg(feature = "wasm")]
-crate::tsify::tsify_instance!("WorldCellDim" = WorldDim<CellMarker>);
 impl WorldCellDim {
     pub fn cell_count(self) -> u32 {
         self.object_count()

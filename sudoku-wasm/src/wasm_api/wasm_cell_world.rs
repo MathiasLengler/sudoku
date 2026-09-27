@@ -3,7 +3,9 @@ use crate::typescript::*;
 use sudoku::base::consts::*;
 use sudoku::error::Error as SudokuError;
 use sudoku::world::dynamic::{DynamicCellWorld, DynamicCellWorldActions};
-use sudoku::world::{CellWorld, CellWorldDimensions, WorldCellPosition, WorldGridDim};
+use sudoku::grid::dynamic::DynamicGrid;
+use crate::generic_instances::WasmWorldCellPosition;
+use sudoku::world::{CellWorld, CellWorldDimensions, WorldGridDim};
 use tsify::Ts;
 use wasm_bindgen::prelude::*;
 
@@ -98,11 +100,11 @@ impl WasmCellWorld {
     #[wasm_bindgen(js_name = setGridAt)]
     pub fn set_grid_at(
         &mut self,
-        grid: IDynamicGrid,
+        grid: Ts<DynamicGrid>,
         grid_position: IWorldGridPosition,
     ) -> Result<()> {
         self.world.set_grid_at(
-            import_dynamic_grid(grid)?,
+            grid.to_rust()?,
             import_world_grid_position(grid_position)?,
         )?;
         Ok(())
@@ -132,13 +134,13 @@ impl WasmCellWorld {
     #[wasm_bindgen(js_name = worldCellPositionToNearestWorldGridCellPosition)]
     pub fn world_cell_position_to_nearest_world_grid_cell_position(
         &self,
-        cell_position: Ts<WorldCellPosition>,
+        cell_position: Ts<WasmWorldCellPosition>,
         tie_break: IQuadrant,
     ) -> Result<IDynamicWorldGridCellPosition> {
         export_dynamic_world_grid_cell_position(
             self.world
                 .world_cell_position_to_nearest_world_grid_cell_position(
-                    cell_position.to_rust()?,
+                    cell_position.to_rust()?.0,
                     import_quadrant(tie_break)?,
                 )?,
         )

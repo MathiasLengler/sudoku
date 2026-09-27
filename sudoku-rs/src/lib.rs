@@ -54,8 +54,6 @@ pub mod position;
 pub mod rng;
 pub mod samples;
 pub mod solver;
-#[cfg(feature = "wasm")]
-mod tsify;
 mod sudoku;
 pub(crate) mod unsafe_utils;
 pub mod world;

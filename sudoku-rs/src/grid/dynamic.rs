@@ -6,6 +6,13 @@ use crate::cell::dynamic::DynamicCell;
 use crate::error::{Error, Result};
 use crate::grid::Grid;
 
+// tsify ignores `serde(try_from, into)`.
+// Default keeps the bare `DynamicGrid` in signatures valid (tsify#76).
+#[cfg_attr(
+    feature = "wasm",
+    derive(tsify::Tsify),
+    tsify(type = "T[]", type_params = "T = DynamicCell")
+)]
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(
     try_from = "Vec<T>",

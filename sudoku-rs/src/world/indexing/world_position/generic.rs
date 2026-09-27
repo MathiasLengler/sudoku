@@ -15,13 +15,13 @@ use super::ValidatedWorldPosition;
 //  we could continue to refer to zod branded schemas or
 //  implement that somehow ourself
 
-#[cfg(feature = "wasm")]
-#[wasm_bindgen::prelude::wasm_bindgen(typescript_custom_section)]
-const TS_WORLD_POSITION: &str =
-    "export type WorldPosition<T> = { row: number; column: number; readonly [worldObject]: T };";
-
 /// A position of a `WorldObject`.
 #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export), ts(concrete(T = crate::world::CellMarker)))]
+#[cfg_attr(
+    feature = "wasm",
+    derive(tsify::Tsify),
+    tsify(type = "{ row: number; column: number; readonly [worldObject]: T }")
+)]
 #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
 pub struct WorldPosition<T: WorldObject> {
     pub row: u32,
