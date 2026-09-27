@@ -18,9 +18,15 @@ describe("generate", async () => {
         toGeneratorSettings({ ...GENERATE_FORM_DEFAULT_VALUES, useSeed: true, seed: String(seed) }),
     );
 
-    bench(`single shot, UI defaults, ${seeds.length} seeds`, () => {
-        for (const settings of settingsBatch) {
-            const _wasmSudoku = WasmSudoku.generate(settings, noopProgress);
-        }
-    });
+    bench(
+        `single shot, UI defaults, ${seeds.length} seeds`,
+        () => {
+            for (const settings of settingsBatch) {
+                const _wasmSudoku = WasmSudoku.generate(settings, noopProgress);
+            }
+        },
+        {
+            iterations: 100,
+        },
+    );
 });
