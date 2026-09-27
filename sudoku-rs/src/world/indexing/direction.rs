@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum RelativeDir {
@@ -32,7 +32,7 @@ impl RelativeDir {
     }
 }
 
-#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Quadrant {

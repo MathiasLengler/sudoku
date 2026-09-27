@@ -3,7 +3,16 @@ import { atom, type Atom } from "jotai";
 import { atomFamily, RESET } from "jotai/utils";
 import { type WasmCellWorld } from "sudoku-wasm";
 
-import type { CellWorldDimensions, DynamicCell, DynamicCells, DynamicPosition } from "../../../types";
+import type {
+    CellWorldDimensions,
+    DynamicCell,
+    DynamicCells,
+    DynamicPosition,
+    WorldCellDim,
+    WorldCellPosition,
+    WorldGridDim,
+    WorldGridPosition,
+} from "../../../types";
 
 import { validateCellWorldPosition } from "../../utils/world";
 import { gameState, type Game } from "../gameMode";
@@ -11,15 +20,7 @@ import { sudokuBaseState, sudokuSideLengthState } from "../sudoku";
 import { wasmCellWorldClassState } from "../wasm/classes";
 import { remoteWasmCellWorldClassState, type RemoteWasmCellWorld } from "../worker";
 import { fixupComlinkRemote } from "../worker/comlinkProxyWrapper";
-import {
-    worldGridDimSchema,
-    worldGridPositionSchema,
-    type GameModeWorld,
-    type WorldCellDim,
-    type WorldCellPosition,
-    type WorldGridDim,
-    type WorldGridPosition,
-} from "./schema";
+import { worldGridDimSchema, worldGridPositionSchema, type GameModeWorld } from "./schema";
 
 export const DEFAULT_WORLD_GRID_POSITION = worldGridPositionSchema.parse({ row: 0, column: 0 });
 

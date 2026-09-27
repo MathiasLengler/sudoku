@@ -96,10 +96,6 @@ ci-local:
     cd sudoku-web && pnpm run lint
     cd sudoku-web && pnpm run docker:dev
 
-# Generate TypeScript bindings from Rust ("ts_rs" crate)
-generate-tsrs-bindings:
-    cargo run --bin generate_tsrs_bindings
-
 # Run all web linters
 [parallel]
 [working-directory('sudoku-web')]

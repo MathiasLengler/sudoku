@@ -4,13 +4,9 @@ use crate::{base::SudokuBase, position::DynamicPosition, world::WorldGridPositio
 
 use super::WorldGridCellPosition;
 
-#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export), ts(concrete(T = crate::world::CellMarker)))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
 #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
 pub struct DynamicWorldGridCellPosition {
-    #[cfg_attr(
-        feature = "wasm",
-        ts(type = "import('../../sudoku-web/src/app/state/world/schema').WorldGridPosition")
-    )]
     world_grid_pos: WorldGridPosition,
     cell_pos: DynamicPosition,
 }

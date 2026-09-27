@@ -100,27 +100,18 @@ impl<Base: SudokuBase> Display for CellWorld<Base> {
     }
 }
 
-#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WorldGenerationResult {
     pub backtrack_count: u32,
 }
 
-#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
 #[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CellWorldDimensions {
-    #[cfg_attr(
-        feature = "wasm",
-        ts(type = "import('../../sudoku-web/src/app/state/world/schema').WorldGridDim")
-    )]
     pub grid_dim: WorldGridDim,
-    #[cfg_attr(
-        feature = "wasm",
-        ts(type = "import('../../sudoku-web/src/app/state/world/schema').WorldCellDim")
-    )]
     pub cell_dim: WorldCellDim,
     pub overlap: u8,
 }

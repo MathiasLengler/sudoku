@@ -7,7 +7,7 @@ use crate::base::SudokuBase;
 use crate::position::Position;
 
 /// The position of a cell in a grid of unknown size.
-#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
 #[derive(
     Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize, Default,
 )]

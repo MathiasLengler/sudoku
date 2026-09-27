@@ -101,7 +101,7 @@ pub struct DetectAndParseReturn {
     pub parsed_grid: DynamicGrid,
 }
 
-#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
 #[enum_dispatch]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum GridFormatEnum {

@@ -90,12 +90,13 @@ export const selectedStrategiesSchema = z.codec(strategyListSchema, strategySetS
         return STRATEGY_NAMES.filter(({ mapKey }) => strategySet[mapKey]).map(({ strategyEnum }) => strategyEnum);
     },
     decode: (strategyList) => {
+        // `interface StrategyMap` has no implicit index signature: cast via `Record`.
         // oxlint-disable-next-line typescript/no-unsafe-type-assertion
         return Object.fromEntries(
             STRATEGY_NAMES.map(({ strategyEnum, mapKey }) => {
                 return [mapKey, strategyList.includes(strategyEnum)];
             }),
-        ) as StrategyMap<boolean>;
+        ) as Record<keyof StrategyMap<boolean>, boolean>;
     },
 });
 

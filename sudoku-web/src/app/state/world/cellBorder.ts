@@ -3,7 +3,7 @@ import { inRange, isEqual } from "es-toolkit";
 import { atom, type Atom } from "jotai";
 import { atomFamily } from "jotai/utils";
 
-import type { WorldCellPosition } from "./schema";
+import type { WorldCellPosition } from "../../../types";
 
 import { cellDimState, cellWorldDimensionsState, selectedGridPositionState } from ".";
 import { getAxisBorders, validateCellWorldPosition } from "../../utils/world";

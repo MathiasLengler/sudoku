@@ -4,9 +4,17 @@
 //! - Each newtype wraps the Rust alias, which declares the instance itself (`tsify::declare`).
 
 use serde::{Deserialize, Serialize};
+use sudoku::cell::dynamic::DynamicCell;
 use sudoku::solver::strategic::strategies::selection::StrategySet;
-use sudoku::world::{WorldCellDim, WorldCellPosition, WorldGridDim, WorldGridPosition};
+use sudoku::world::{WorldCellPosition, WorldGridDim, WorldGridPosition};
 use tsify::Tsify;
+
+#[tsify::declare]
+pub type DynamicCells = Vec<DynamicCell>;
+
+#[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
+#[serde(transparent)]
+pub struct WasmDynamicCells(pub DynamicCells);
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Tsify)]
 #[serde(transparent)]
@@ -19,10 +27,6 @@ pub struct WasmWorldCellPosition(pub WorldCellPosition);
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Tsify)]
 #[serde(transparent)]
 pub struct WasmWorldGridPosition(pub WorldGridPosition);
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, Tsify)]
-#[serde(transparent)]
-pub struct WasmWorldCellDim(pub WorldCellDim);
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Tsify)]
 #[serde(transparent)]

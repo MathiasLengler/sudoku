@@ -16,7 +16,6 @@ use super::ValidatedWorldPosition;
 //  implement that somehow ourself
 
 /// A position of a `WorldObject`.
-#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export), ts(concrete(T = crate::world::CellMarker)))]
 #[cfg_attr(
     feature = "wasm",
     derive(tsify::Tsify),
@@ -26,7 +25,6 @@ use super::ValidatedWorldPosition;
 pub struct WorldPosition<T: WorldObject> {
     pub row: u32,
     pub column: u32,
-    #[cfg_attr(feature = "wasm", ts(skip))]
     #[serde(skip)]
     object: PhantomData<T>,
 }

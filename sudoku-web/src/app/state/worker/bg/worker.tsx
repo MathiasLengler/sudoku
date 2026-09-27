@@ -1,7 +1,7 @@
 import * as Comlink from "comlink";
 import { WasmCellWorld, WasmSudoku } from "sudoku-wasm";
 
-import type { SerializedDynamicCellWorld, SerializedDynamicSudoku } from "../../../utils/serializedData";
+import type { SerializedDynamicCellWorld, SerializedDynamicSudoku } from "../../../../types";
 
 import { initWasm } from "../../wasm/init";
 

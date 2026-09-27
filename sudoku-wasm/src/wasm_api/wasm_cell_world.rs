@@ -1,11 +1,17 @@
 use crate::error::Result;
+use crate::generic_instances::{
+    WasmDynamicCells, WasmWorldCellPosition, WasmWorldGridDim, WasmWorldGridPosition,
+};
+use crate::serialized::{self, ISerializedDynamicCellWorld};
 use crate::typescript::*;
+use sudoku::base::BaseEnum;
 use sudoku::base::consts::*;
-use sudoku::error::Error as SudokuError;
-use sudoku::world::dynamic::{DynamicCellWorld, DynamicCellWorldActions};
 use sudoku::grid::dynamic::DynamicGrid;
-use crate::generic_instances::WasmWorldCellPosition;
-use sudoku::world::{CellWorld, CellWorldDimensions, WorldGridDim};
+use sudoku::world::dynamic::{DynamicCellWorld, DynamicCellWorldActions};
+use sudoku::world::{
+    CellWorld, CellWorldDimensions, DynamicWorldGridCellPosition, Quadrant, WorldGenerationResult,
+    WorldGridDim,
+};
 use tsify::Ts;
 use wasm_bindgen::prelude::*;
 
@@ -33,26 +39,21 @@ impl From<DynamicCellWorld> for WasmCellWorld {
 /// Constructors
 #[wasm_bindgen]
 impl WasmCellWorld {
-    pub fn new(base: IBaseEnum, grid_dim: IWorldGridDim, overlap: u8) -> Result<Self> {
-        Ok(DynamicCellWorld::new(
-            import_base_enum(base)?,
-            import_world_grid_dim(grid_dim)?,
-            overlap,
-        )?
-        .into())
+    pub fn new(base: Ts<BaseEnum>, grid_dim: Ts<WasmWorldGridDim>, overlap: u8) -> Result<Self> {
+        Ok(DynamicCellWorld::new(base.to_rust()?, grid_dim.to_rust()?.0, overlap)?.into())
     }
 
     pub fn with(
-        base: IBaseEnum,
-        grid_dim: IWorldGridDim,
+        base: Ts<BaseEnum>,
+        grid_dim: Ts<WasmWorldGridDim>,
         overlap: u8,
-        cells: IDynamicCells,
+        cells: Ts<WasmDynamicCells>,
     ) -> Result<Self> {
         Ok(DynamicCellWorld::with(
-            import_base_enum(base)?,
-            import_world_grid_dim(grid_dim)?,
+            base.to_rust()?,
+            grid_dim.to_rust()?.0,
             overlap,
-            import_dynamic_cells(cells)?,
+            cells.to_rust()?.0,
         )?
         .into())
     }
@@ -63,8 +64,8 @@ impl WasmCellWorld {
     }
 
     pub fn generate(
-        base: IBaseEnum,
-        grid_dim: IWorldGridDim,
+        base: Ts<BaseEnum>,
+        grid_dim: Ts<WasmWorldGridDim>,
         overlap: u8,
         seed: Option<u64>,
     ) -> Result<Self> {
@@ -82,8 +83,8 @@ impl WasmCellWorld {
     }
 
     #[wasm_bindgen(js_name = generateSolved)]
-    pub fn generate_solved(&mut self, seed: Option<u64>) -> Result<IWorldGenerationResult> {
-        export_world_generation_result(self.world.generate_solved(seed)?)
+    pub fn generate_solved(&mut self, seed: Option<u64>) -> Result<Ts<WorldGenerationResult>> {
+        export_ts(&self.world.generate_solved(seed)?)
     }
     pub fn prune(&mut self, seed: Option<u64>) -> Result<()> {
         Ok(self.world.prune(seed)?)
@@ -91,28 +92,23 @@ impl WasmCellWorld {
 
     // DynamicGrid interop
     #[wasm_bindgen(js_name = toGridAt)]
-    pub fn to_grid_at(&self, grid_position: IWorldGridPosition) -> Result<IDynamicGrid> {
-        export_dynamic_grid(
-            self.world
-                .to_grid_at(import_world_grid_position(grid_position)?)?,
-        )
+    pub fn to_grid_at(&self, grid_position: Ts<WasmWorldGridPosition>) -> Result<Ts<DynamicGrid>> {
+        export_ts(&self.world.to_grid_at(grid_position.to_rust()?.0)?)
     }
     #[wasm_bindgen(js_name = setGridAt)]
     pub fn set_grid_at(
         &mut self,
         grid: Ts<DynamicGrid>,
-        grid_position: IWorldGridPosition,
+        grid_position: Ts<WasmWorldGridPosition>,
     ) -> Result<()> {
-        self.world.set_grid_at(
-            grid.to_rust()?,
-            import_world_grid_position(grid_position)?,
-        )?;
+        self.world
+            .set_grid_at(grid.to_rust()?, grid_position.to_rust()?.0)?;
         Ok(())
     }
 
     // Queries
-    pub fn base(&self) -> Result<IBaseEnum> {
-        export_base_enum(self.world.base())
+    pub fn base(&self) -> Result<Ts<BaseEnum>> {
+        export_ts(&self.world.base())
     }
     pub fn dimensions(&self) -> Result<Ts<CellWorldDimensions>> {
         export_ts(&self.world.dimensions())
@@ -127,21 +123,22 @@ impl WasmCellWorld {
     }
 
     #[wasm_bindgen(js_name = allWorldCells)]
-    pub fn all_world_cells(&self) -> Result<IDynamicCells> {
-        export_dynamic_cells(self.world.all_world_cells())
+    pub fn all_world_cells(&self) -> Result<Ts<WasmDynamicCells>> {
+        export_ts(&WasmDynamicCells(self.world.all_world_cells()))
     }
     // Indexing helpers
     #[wasm_bindgen(js_name = worldCellPositionToNearestWorldGridCellPosition)]
     pub fn world_cell_position_to_nearest_world_grid_cell_position(
         &self,
         cell_position: Ts<WasmWorldCellPosition>,
-        tie_break: IQuadrant,
-    ) -> Result<IDynamicWorldGridCellPosition> {
-        export_dynamic_world_grid_cell_position(
-            self.world
+        tie_break: Ts<Quadrant>,
+    ) -> Result<Ts<DynamicWorldGridCellPosition>> {
+        export_ts(
+            &self
+                .world
                 .world_cell_position_to_nearest_world_grid_cell_position(
                     cell_position.to_rust()?.0,
-                    import_quadrant(tie_break)?,
+                    tie_break.to_rust()?,
                 )?,
         )
     }
@@ -151,14 +148,10 @@ impl WasmCellWorld {
 #[wasm_bindgen]
 impl WasmCellWorld {
     pub fn serialize(&self) -> Result<ISerializedDynamicCellWorld> {
-        let vec = postcard::to_stdvec(&self.world).map_err(SudokuError::from)?;
-        Ok(JsValue::from(vec).into())
+        serialized::serialize(&self.world)
     }
 
-    pub fn deserialize(
-        #[wasm_bindgen(unchecked_param_type = "SerializedDynamicCellWorld")] bytes: &[u8],
-    ) -> Result<Self> {
-        let world: DynamicCellWorld = postcard::from_bytes(bytes).map_err(SudokuError::from)?;
-        Ok(Self { world })
+    pub fn deserialize(bytes: &ISerializedDynamicCellWorld) -> Result<Self> {
+        Ok(serialized::deserialize::<DynamicCellWorld>(bytes)?.into())
     }
 }

@@ -16,7 +16,6 @@ pub mod map {
     use crate::solver::strategic::strategies::StrategyScore;
 
     /// A map of `StrategyEnum` to `T`.
-    #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
     #[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
     #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
     pub struct StrategyMap<T> {
@@ -206,7 +205,7 @@ pub mod selection {
     }
 }
 
-#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
 #[enum_dispatch]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u8)]

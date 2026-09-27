@@ -21,7 +21,7 @@ This is a **Sudoku** application with a touch-optimized web interface. The proje
   - `serde` for serialization
   - `varisat` for SAT-based solving
   - `rayon` for parallel processing (optional)
-  - `ts-rs` for TypeScript binding generation
+  - `tsify` for TypeScript type generation (emitted into the wasm-pack `.d.ts`)
   - `wasm-bindgen` for WebAssembly interop
 - **Testing**: Uses `cargo nextest` and `rstest`
 - **Linting**: Clippy with pedantic warnings enabled
@@ -55,7 +55,6 @@ This is a **Sudoku** application with a touch-optimized web interface. The proje
 │   │   ├── generator/   # Puzzle generator with pruning
 │   │   ├── sudoku/      # High-level Sudoku type with history
 │   │   └── world/       # Multi-grid "world" sudoku support
-│   ├── bindings/        # Auto-generated TypeScript types (ts-rs)
 │   └── benches/         # Criterion benchmarks
 │
 ├── sudoku-wasm/         # WASM bindings
@@ -113,9 +112,6 @@ just pack-dev
 
 # Build WASM with file watching
 just pack-dev-watch
-
-# Generate TypeScript bindings from Rust
-just generate-tsrs-bindings
 ```
 
 ### Frontend (sudoku-web)
@@ -145,7 +141,10 @@ pnpm test
 - Use the crate-specific Result type aliases `crate::error::Result`
   - `sudoku-rs` => Error is `anyhow::Error`
   - `sudoku-wasm`: => Error is `SudokuWasmError`
-- Use `#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]` for WASM-exposed types
+- Use `#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]` for WASM-exposed types
+  - tsify resolves type references by name as written: no `use … as` renames in derived types
+  - Signatures take/return `Ts<T>`: `.to_rust()?` in, `export_ts(&value)` out (`Ts::from_rust` is banned in `clippy.toml`)
+  - Instances of generic types cross signatures as `Wasm*` newtypes (`sudoku-wasm/src/generic_instances.rs`)
 
 ### TypeScript
 
@@ -230,14 +229,6 @@ pnpm run docker:run
 2. Add state atoms in [sudoku-web/src/app/state/](sudoku-web/src/app/state/) if needed
 3. For WASM calls, add to worker in [sudoku-web/src/app/state/worker/](sudoku-web/src/app/state/worker/)
 
-### Updating TypeScript Bindings from Rust
-
-```bash
-just generate-tsrs-bindings
-```
-
-This generates types in [sudoku-rs/bindings/](sudoku-rs/bindings/) from Rust structs decorated with `#[derive(ts_rs::TS)]`.
-
 ## Important Files
 
 | File                                | Purpose                                                            |
@@ -254,5 +245,4 @@ This generates types in [sudoku-rs/bindings/](sudoku-rs/bindings/) from Rust str
 ## Gotchas & Tips
 
 1. **WASM rebuild**: When modifying Rust code, run `just pack-dev` before testing in the browser
-2. **Type generation**: After changing Rust types with `ts_rs::TS`, run `just generate-tsrs-bindings`
-3. **Multi-shot generator**: Uses rayon for parallel puzzle generation when the `parallel` feature is enabled
+2. **Multi-shot generator**: Uses rayon for parallel puzzle generation when the `parallel` feature is enabled

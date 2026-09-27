@@ -14,7 +14,6 @@ use crate::{
 
 /// Dimensions of a `CellWorld`.
 /// Can represent either cells or grids.
-#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export), ts(concrete(T = crate::world::CellMarker)))]
 #[cfg_attr(
     feature = "wasm",
     derive(tsify::Tsify),
@@ -25,7 +24,6 @@ use crate::{
 pub struct WorldDim<T: WorldObject> {
     pub row_count: NonZeroU32,
     pub column_count: NonZeroU32,
-    #[cfg_attr(feature = "wasm", ts(skip))]
     #[serde(skip)]
     object: PhantomData<T>,
 }

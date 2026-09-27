@@ -9,7 +9,7 @@ use crate::position::DynamicPosition;
 use crate::sudoku::DynamicSudoku;
 use crate::sudoku::Sudoku;
 
-#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransportSudoku {
@@ -27,17 +27,19 @@ pub struct TransportSudoku {
     solution: TransportSolutionState,
 }
 
-#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransportCell {
+    // tsify emits `interface … extends` for `flatten`, invalid for a union: an override forces an intersection.
+    #[cfg_attr(feature = "wasm", tsify(type = "DynamicCell"))]
     #[serde(flatten)]
     dynamic_cell: DynamicCell,
     position: DynamicPosition,
     incorrect_value: bool,
 }
 
-#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransportHistory {
@@ -45,7 +47,7 @@ pub struct TransportHistory {
     can_redo: bool,
 }
 
-#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum TransportSolutionState {

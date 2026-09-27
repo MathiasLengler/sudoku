@@ -522,39 +522,12 @@ mod enum_impl {
 
     pub use match_base_enum;
 
-    #[cfg(feature = "wasm")]
+    #[cfg(all(test, feature = "wasm"))]
     mod wasm {
         use itertools::Itertools;
 
         use super::*;
 
-        impl ::ts_rs::TS for BaseEnum {
-            type WithoutGenerics = Self;
-            type OptionInnerType = Self;
-
-            fn name(_cfg: &::ts_rs::Config) -> String {
-                "BaseEnum".to_owned()
-            }
-            fn decl_concrete(cfg: &::ts_rs::Config) -> String {
-                format!("type {} = {};", Self::name(cfg), Self::inline(cfg))
-            }
-            fn decl(cfg: &::ts_rs::Config) -> String {
-                let inline = Self::inline(cfg);
-                format!("type {} = {inline};", Self::name(cfg))
-            }
-            fn inline(_cfg: &::ts_rs::Config) -> String {
-                BaseEnum::all().map(Self::into_u8).join(" | ")
-            }
-            fn inline_flattened(cfg: &::ts_rs::Config) -> String {
-                panic!("{} cannot be flattened", Self::name(cfg))
-            }
-            fn output_path() -> Option<std::path::PathBuf> {
-                let cfg: ts_rs::Config = ::ts_rs::Config::from_env();
-                Some(std::path::PathBuf::from(format!("{}.ts", Self::name(&cfg))))
-            }
-        }
-
-        #[cfg(test)]
         #[test]
         fn tsify_decl_matches_all() {
             assert_eq!(
@@ -564,13 +537,6 @@ mod enum_impl {
                     BaseEnum::all().map(BaseEnum::into_u8).join(" | ")
                 )
             );
-        }
-
-        #[cfg(test)]
-        #[test]
-        fn export_bindings_baseenum() {
-            let cfg: ts_rs::Config = ::ts_rs::Config::from_env();
-            <BaseEnum as ::ts_rs::TS>::export_all(&cfg).expect("could not export type");
         }
     }
 

@@ -16,8 +16,11 @@ use super::{Generator, GeneratorSettings};
 
 pub use dynamic_settings::*;
 
-#[cfg_attr(feature = "wasm", tsify::declare)]
 pub type EvaluatedGridMetric = u64;
+// `tsify::declare` ignores `large_number_types_as_bigints`.
+#[cfg(feature = "wasm")]
+#[wasm_bindgen::prelude::wasm_bindgen(typescript_custom_section)]
+const TS_EVALUATED_GRID_METRIC: &str = "export type EvaluatedGridMetric = bigint;";
 type AtomicEvaluatedGridMetric = AtomicU64;
 
 pub const EVALUATED_GRID_METRIC_FIXED_POINT_SCALE: EvaluatedGridMetric = 1_000;
@@ -28,7 +31,7 @@ pub const EVALUATED_GRID_METRIC_FIXED_POINT_SCALE_F64: f64 =
 static GENERATE_NO_GRIDS: &str = "at least one generation result";
 
 /// A metric used to evaluate the difficulty of a grid.
-#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
 #[derive(Debug, Copy, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", tag = "kind")]
 pub enum GridMetric {
@@ -134,7 +137,7 @@ impl GridMetric {
     }
 }
 
-#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
 #[derive(Debug, Copy, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum GoalOptimization {
@@ -184,7 +187,7 @@ mod dynamic_settings {
     use crate::generator::DynamicGeneratorSettings;
     use std::fmt::Display;
 
-    #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+    #[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct DynamicMultiShotGeneratorSettings {
@@ -233,8 +236,7 @@ mod dynamic_settings {
     }
 }
 
-#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
-#[cfg_attr(feature = "wasm", derive(tsify::Tsify), tsify(large_number_types_as_bigints))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 #[serde(
     rename_all = "camelCase",

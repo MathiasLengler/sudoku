@@ -5,7 +5,7 @@ use crate::position::DynamicPosition;
 use crate::solver::strategic::deduction::{Action, Deduction, Deductions, Reason};
 use crate::{base::SudokuBase, position::Positioned};
 
-#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct TransportDeductions {
     pub deductions: Vec<TransportDeduction>,
@@ -19,7 +19,7 @@ impl<Base: SudokuBase> From<Deductions<Base>> for TransportDeductions {
     }
 }
 
-#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct TransportDeduction {
     pub reasons: Vec<PositionedTransportReason>,
@@ -53,7 +53,7 @@ impl<Base: SudokuBase> From<Deduction<Base>> for TransportDeduction {
     }
 }
 
-#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct PositionedTransportReason {
     pub position: DynamicPosition,
@@ -61,7 +61,7 @@ pub struct PositionedTransportReason {
     pub reason: TransportReason,
 }
 
-#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum TransportReason {
@@ -75,15 +75,17 @@ impl<Base: SudokuBase> From<Reason<Base>> for TransportReason {
     }
 }
 
-#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct PositionedTransportAction {
     pub position: DynamicPosition,
+    // tsify emits `interface … extends` for `flatten`, invalid for a union: an override forces an intersection.
+    #[cfg_attr(feature = "wasm", tsify(type = "TransportAction"))]
     #[serde(flatten)]
     pub action: TransportAction,
 }
 
-#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum TransportAction {

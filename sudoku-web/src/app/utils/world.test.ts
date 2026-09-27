@@ -2,13 +2,14 @@ import { describe, expect, test } from "vitest";
 
 import type { DynamicPosition } from "../../types";
 
+import { worldCellDimSchema } from "../state/world/schema";
 import { validateCellWorldPosition } from "./world";
 
 describe("validateCellWorldPosition", () => {
-    const cellDim = {
+    const cellDim = worldCellDimSchema.parse({
         rowCount: 3,
         columnCount: 3,
-    };
+    });
 
     test.for([
         { row: 0, column: 0 },

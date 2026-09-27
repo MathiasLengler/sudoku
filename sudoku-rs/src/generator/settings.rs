@@ -9,7 +9,7 @@ use crate::{error::Result, solver::strategic::strategies::BruteForce};
 pub use dynamic_settings::*;
 
 /// How much to prune the solution.
-#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
 #[derive(Debug, Copy, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum PruningTarget {
@@ -25,7 +25,7 @@ pub enum PruningTarget {
 }
 
 // TODO: rename behaviour (UK) to behavior (US)
-#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum PruningGroupBehaviour {
@@ -176,7 +176,7 @@ mod dynamic_settings {
 
     use super::*;
 
-    #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+    #[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
     #[derive(Debug, Clone, Default, Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub enum DynamicPruningOrder {
@@ -214,7 +214,7 @@ mod dynamic_settings {
         }
     }
 
-    #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+    #[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
     #[derive(Debug, Clone, Default, Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct DynamicPruningSettings {
@@ -247,7 +247,7 @@ mod dynamic_settings {
         }
     }
 
-    #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+    #[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct DynamicSolutionSettings {
@@ -265,7 +265,6 @@ mod dynamic_settings {
         }
     }
 
-    #[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
     #[cfg_attr(
         feature = "wasm",
         derive(tsify::Tsify),
@@ -275,11 +274,11 @@ mod dynamic_settings {
     #[serde(rename_all = "camelCase")]
     pub struct DynamicGeneratorSettings {
         pub base: BaseEnum,
-        #[cfg_attr(feature = "wasm", ts(optional = nullable), tsify(optional))]
+        #[cfg_attr(feature = "wasm", tsify(optional))]
         pub prune: Option<DynamicPruningSettings>,
-        #[cfg_attr(feature = "wasm", ts(optional = nullable), tsify(optional))]
+        #[cfg_attr(feature = "wasm", tsify(optional))]
         pub solution: Option<DynamicSolutionSettings>,
-        #[cfg_attr(feature = "wasm", ts(optional = nullable), tsify(optional))]
+        #[cfg_attr(feature = "wasm", tsify(optional))]
         pub seed: Option<u64>,
     }
 

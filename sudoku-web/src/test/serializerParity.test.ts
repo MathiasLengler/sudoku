@@ -2,9 +2,9 @@
 // independent of the TS type generator.
 
 import { WasmCellWorld, WasmSudoku } from "sudoku-wasm";
-import { describe, expect, test } from "vitest";
+import { describe, expect, expectTypeOf, test } from "vitest";
 
-import type { DynamicGeneratorSettings } from "../types";
+import type { DynamicGeneratorSettings, EvaluatedGridMetric } from "../types";
 
 import { ALL_STRATEGIES, selectedStrategiesSchema } from "../app/constants";
 import { initWasm } from "../app/state/wasm/init";
@@ -84,18 +84,25 @@ describe("serializer parity", async () => {
             expect(dimensions.gridDim).toEqual({ rowCount: 2, columnCount: 2 });
         });
 
-        // u64 => bigint: pinned by multiShotGeneration.test.ts (needs the worker's rayon pool).
+        // u64 => bigint: runtime pinned by multiShotGeneration.test.ts (needs the worker's rayon pool).
+        test("u64 alias is typed bigint", () => {
+            expectTypeOf<EvaluatedGridMetric>().toEqualTypeOf<bigint>();
+        });
     });
 
     describe("import", () => {
-        test("optional nullable fields accept omitted, undefined and null", () => {
+        test("optional fields accept omitted and undefined", () => {
             for (const settings of [
                 { base },
                 { base, seed: undefined, prune: undefined },
-                { base, seed: null, prune: null },
             ] satisfies DynamicGeneratorSettings[]) {
                 expect(() => WasmSudoku.generate(settings, noopProgress)).not.toThrow();
             }
+        });
+
+        test("optional fields also accept null", () => {
+            // @ts-expect-error pins the deserializer's runtime leniency, which the types forbid
+            expect(() => WasmSudoku.generate({ base, seed: null, prune: null }, noopProgress)).not.toThrow();
         });
 
         test("u64 accepts bigint", () => {

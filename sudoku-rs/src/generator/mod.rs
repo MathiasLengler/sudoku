@@ -40,7 +40,7 @@ pub struct Generator<Base: SudokuBase> {
     settings: GeneratorSettings<Base>,
 }
 
-#[cfg_attr(feature = "wasm", derive(ts_rs::TS), ts(export))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GeneratorProgress {

@@ -1,6 +1,6 @@
 import * as _ from "es-toolkit";
 
-import type { DynamicPosition, WorldDim } from "../../types";
+import type { DynamicPosition, WorldCellDim } from "../../types";
 
 export function validateCellWorldPosition({
     cellWorldPosition: { row: cellRowIndex, column: cellColumnIndex },
@@ -9,7 +9,7 @@ export function validateCellWorldPosition({
     cellDim,
 }: {
     cellWorldPosition: DynamicPosition;
-    cellDim: WorldDim;
+    cellDim: WorldCellDim;
 }) {
     if (!(_.inRange(cellRowIndex, 0, cellRowCount) && _.inRange(cellColumnIndex, 0, cellColumnCount))) {
         throw new Error(
