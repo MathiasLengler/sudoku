@@ -60,14 +60,15 @@ _pack-watch recipe:
     watchexec -e rs,toml just {{ recipe }}
 
 # wasm-pack dev
-pack-dev: (_pack "--dev")
+# With multiple codegen units, tsify definitions go missing from the `.d.ts` (tsify#50).
+pack-dev: (_pack "--dev" "--config" "profile.dev.package.sudoku.codegen-units=1")
 
 # wasm-pack release
 pack-prod: (_pack "--release")
 
 [working-directory('sudoku-wasm')]
-_pack wasm-pack-args:
-    wasm-pack build --target web --reference-types --weak-refs {{ wasm-pack-args }} . -- -Z build-std=panic_abort,std
+_pack wasm-pack-args *cargo-args:
+    wasm-pack build --target web --reference-types --weak-refs {{ wasm-pack-args }} . -- -Z build-std=panic_abort,std {{ cargo-args }}
 
 # upgrade all Cargo dependencies to latest
 upgrade-latest:

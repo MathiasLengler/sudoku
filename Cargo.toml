@@ -47,8 +47,3 @@ opt-level = 3
 [patch.crates-io.varisat]
 git = "https://github.com/MathiasLengler/varisat"
 # path = "../varisat/varisat"
-
-# FIXME: only for WASM builds
-# With multiple codegen units, tsify definitions go missing from the `.d.ts` (tsify#50).
-[profile.dev.package.sudoku]
-codegen-units = 1
