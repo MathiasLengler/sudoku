@@ -145,6 +145,7 @@ pnpm test
   - tsify resolves type references by name as written: no `use … as` renames in derived types
   - Signatures take/return `Ts<T>`: `.to_rust()?` in, `export_ts(&value)` out (`Ts::from_rust` is banned in `clippy.toml`)
   - Instances of generic types cross signatures as `Wasm*` newtypes (`sudoku-wasm/src/generic_instances.rs`)
+  - `Vec<T>` crosses as `Vec<Ts<T>>`; the exception is hot-path `WasmDynamicCells`
 
 ### TypeScript
 

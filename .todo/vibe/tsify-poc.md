@@ -26,4 +26,3 @@
 - `#[serde(flatten)]` of a multi-variant enum emits `interface X extends Union`: invalid TS (TS2312).
   - Workaround: a field-level `tsify(type = "Union")` forces an intersection (`TransportCell`, `PositionedTransportAction`).
 - Structs are emitted as `interface`, not type aliases: no implicit index signature. Broke a `fromEntries(…) as StrategyMap<boolean>` cast in `constants.ts`.
-- `Vec<T>` has no `Tsify` impl: `Ts<Vec<T>>` is impossible, `Vec<Ts<T>>` converts per element. `DynamicCells` became a `declare` alias + `WasmDynamicCells` newtype.

@@ -1,5 +1,6 @@
 avoid-breaking-exported-api = false
 disallowed-methods = [
     { path = "tsify::Ts::from_rust", reason = "uses the top-level type's serializer config: use `export_ts`" },
+    { path = "tsify::Tsify::into_ts", reason = "calls `Ts::from_rust`: use `export_ts`" },
     { path = "tsify::Tsify::into_js", reason = "uses the top-level type's serializer config: use `export_ts`" },
 ]
