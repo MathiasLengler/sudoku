@@ -20,6 +20,7 @@ use sudoku::position::test_utils::{consume_iter, consume_nested_iter};
 use sudoku::rng::{CrateRng, new_crate_rng_with_seed};
 use sudoku::samples;
 use sudoku::solver::sat;
+use sudoku::solver::strategic::strategies::locked_sets::bench_cases::bench_cases;
 use sudoku::solver::strategic::strategies::locked_sets::v2::find_locked_set;
 use sudoku::solver::strategic::strategies::locked_sets::v2::test_utils::locked_set_test_cases_base_3;
 use sudoku::solver::strategic::strategies::{
@@ -345,29 +346,64 @@ fn bench_strategy_group(strategy_group: &mut BenchmarkGroup<WallTime>) {
         |b, grid| b.iter(|| HiddenSingles.execute(grid).unwrap()),
     );
 
-    for (locked_sets_param_name, candidates_group, _) in locked_set_test_cases_base_3() {
-        strategy_group.bench_with_input(
-            BenchmarkId::new("LockedSets/find_locked_set", locked_sets_param_name),
-            &candidates_group,
-            |b, candidates_group| b.iter(|| find_locked_set(candidates_group)),
-        );
-    }
-
-    let grid: Grid<Base3> =
-        "4105300hg281j209i2j081381ag614j20h410hh80318412181h00581033k4109g130342gi0k86s811103m8i4igh0l85805210hla81g20550g12181500h0309090h50120654i0i081032181g10h09054111"
-            .parse()
-            .unwrap();
-    strategy_group.bench_with_input(
-        BenchmarkId::new("LockedSets/execute", "sample_grid_hidden_pairs"),
-        &grid,
-        |b, grid| b.iter(|| LockedSets.execute(grid).unwrap()),
-    );
-
     let grid: Grid<Base3> = "s00905cgdg2103pgc00h03r0ccd85cmcpcece0c0b0g1do036s9sec11c48222g1482c8c0ho421og8o9o1ogc410209sgoi22054gi0o011i6gkiq116q814s0s4ca48kao4s6o4s1003g10610410s0qg081210c".parse().unwrap();
     strategy_group.bench_with_input(
         BenchmarkId::new("GroupIntersection/execute", "sample_grid_pointing_pairs_2"),
         &grid,
         |b, grid| b.iter(|| GroupIntersectionBoth.execute(grid).unwrap()),
+    );
+}
+
+fn bench_locked_sets_group<Base: SudokuBase>(group: &mut BenchmarkGroup<WallTime>) {
+    let base = format!("Base{}", Base::BASE);
+
+    for case in bench_cases::<Base>() {
+        group.bench_with_input(
+            BenchmarkId::new(format!("v2/{base}"), &case.name),
+            &case.candidates_group,
+            |b, candidates_group| b.iter(|| find_locked_set(candidates_group)),
+        );
+
+        if case.v1_feasible {
+            group.bench_with_input(
+                BenchmarkId::new(format!("v1/{base}"), &case.name),
+                &case.candidates_group,
+                |b, candidates_group| {
+                    b.iter(|| LockedSets::find_locked_set_v1(candidates_group.as_slice()))
+                },
+            );
+        }
+    }
+
+    let mut grid = sample_grid::<Base>();
+    grid.set_all_direct_candidates();
+    group.bench_with_input(
+        BenchmarkId::new(format!("execute/{base}"), "sample_grid_direct_candidates"),
+        &grid,
+        |b, grid| b.iter(|| LockedSets.execute(grid).unwrap()),
+    );
+}
+
+/// Real puzzle inputs that the generated cases cannot reproduce.
+fn bench_locked_sets_base_3_extras(group: &mut BenchmarkGroup<WallTime>) {
+    let (name, candidates_group, _) = locked_set_test_cases_base_3()
+        .into_iter()
+        .find(|(name, _, _)| name.starts_with("Sample "))
+        .unwrap();
+    group.bench_with_input(
+        BenchmarkId::new("v2/Base3", name),
+        &candidates_group,
+        |b, candidates_group| b.iter(|| find_locked_set(candidates_group)),
+    );
+
+    let grid: Grid<Base3> =
+        "4105300hg281j209i2j081381ag614j20h410hh80318412181h00581033k4109g130342gi0k86s811103m8i4igh0l85805210hla81g20550g12181500h0309090h50120654i0i081032181g10h09054111"
+            .parse()
+            .unwrap();
+    group.bench_with_input(
+        BenchmarkId::new("execute/Base3", "sample_grid_hidden_pairs"),
+        &grid,
+        |b, grid| b.iter(|| LockedSets.execute(grid).unwrap()),
     );
 }
 
@@ -590,6 +626,15 @@ fn criterion_benchmark(c: &mut Criterion) {
 
     let mut bench_group = c.benchmark_group("Strategies");
     bench_strategy_group(&mut bench_group);
+    bench_group.finish();
+
+    let mut bench_group = c.benchmark_group("LockedSets");
+    bench_group.sample_size(10);
+    bench_locked_sets_group::<Base2>(&mut bench_group);
+    bench_locked_sets_group::<Base3>(&mut bench_group);
+    bench_locked_sets_base_3_extras(&mut bench_group);
+    bench_locked_sets_group::<Base4>(&mut bench_group);
+    bench_locked_sets_group::<Base5>(&mut bench_group);
     bench_group.finish();
 
     let mut bench_group = c.benchmark_group("Candidates");

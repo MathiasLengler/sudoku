@@ -10,6 +10,8 @@ use crate::solver::strategic::deduction::{Action, Deduction, Deductions};
 use crate::solver::strategic::strategies::Strategy;
 use crate::solver::strategic::strategies::StrategyScore;
 
+#[doc(hidden)]
+pub mod bench_cases;
 pub mod v2;
 
 // TODO: optimize
