@@ -197,6 +197,44 @@ or newer) or web API credentials. A write refused for that reason says so.
 - An item marked `"deleted": true` is in the trash. Do not treat it as part
   of the live library.
 
+## Workarounds
+
+Verified against zotero-mcp-server 0.14.1 and Zotero 10.0.6, local mode.
+
+### Full-text search never surfaces attachments
+
+`search` drops attachment items from results, and full-text hits live on
+the attachment, so no mode of `search` finds text inside PDFs. Query the
+local API instead and map the attachment key to its parent:
+
+```bash
+curl -s "http://localhost:23119/api/users/0/items?q=WORD&qmode=everything&format=keys"
+curl -s "http://localhost:23119/api/users/0/items/ATTACHMENT_KEY" | jq -r '.data.parentItem'
+```
+
+Files added with `attach` are not indexed by Zotero until the attachment
+is reindexed in the desktop app (context menu on the attachment). Do that
+once per attached file, or the API search above misses it.
+
+### Scanned PDFs with an invisible OCR layer
+
+Zotero's reader and index read such text; `get fulltext`, `read` and
+`read --find` return it empty, because the pinned pdf-inspector drops
+invisible text and the whole-document fallback only fires when every page
+comes back empty (zotero-mcp #611/#629, pdf-inspector #500/#501, open).
+
+- Content: `read ITEM_KEY --start-page N --format image` (needs the
+  `pdf` extra of the pipx package).
+- Search: the local API query above; Zotero's own index has the text.
+- Read once, then write a note on the item with the anchors you need, so
+  later sessions search notes instead of re-reading images.
+
+### JSON parsing
+
+- `--format image` prints a PyMuPDF deprecation warning to stdout ahead of
+  the JSON; write the output to a file and strip the leading line before `jq`.
+- `get metadata` nests the item under `.data.data`, not `.data`.
+
 ## Full command reference
 
 `reference.md` in this skill directory lists every command and flag. Read it
