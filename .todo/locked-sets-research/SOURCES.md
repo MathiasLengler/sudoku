@@ -7,7 +7,8 @@ Status: `verified` = URL fetched and content checked this session; `doi-resolved
 ## Core — read in this order
 
 ### 1. van Hoeve 2001 — The alldifferent Constraint: A Survey — `PXLSRZ5C`
-- W.J. van Hoeve, arXiv:cs/0105015, https://arxiv.org/abs/cs/0105015 (`verified`, open access, PDF attached in Zotero)
+- W.J. van Hoeve, arXiv:cs/0105015, https://arxiv.org/abs/cs/0105015 (`verified`, open access, PDF attached in Zotero, born-digital)
+- Read; note `IFS2D74P` on the item.
 - Why: clearest exposition; introduces every concept in one place with consistent notation.
 - Need from it:
   - §2 Preliminaries, Theorem 1 (Hall): the condition behind "locked set"; a naked k-set is a tight Hall set.
@@ -18,26 +19,27 @@ Status: `verified` = URL fetched and content checked this session; `doi-resolved
 
 ### 2. Régin 1994 — A Filtering Algorithm for Constraints of Difference in CSPs — `ZIXQG9FN`
 - J.-C. Régin, AAAI-94, pp. 362–367, https://cdn.aaai.org/AAAI/1994/AAAI94-055.pdf (`verified`; "all rights reserved", keep local only)
-- The AAAI scan has no text layer: read it with `zotero-cli read ZIXQG9FN --format image`.
+- The AAAI scan has an invisible OCR layer. zotero-cli (`get fulltext`, `read`, `--find`) returns it empty; Zotero's index has it. Text: `curl -s http://localhost:23119/api/users/0/items/ZQQAFK6Y/fulltext | jq -r .content` (attachment `ZQQAFK6Y`). Figures: `zotero-cli read ZIXQG9FN --start-page N --format image`.
+- Read; note `9QXFDL6N` on the item holds the page anchors and the derived facts for v3.
 - Why: the original algorithm; the one to cite in code.
 - Need from it:
   - Theorem 1 (p. 363): correctness — GAC ⇔ every edge lies in a matching covering X.
   - Property 1 (Berge) + Proposition 1 (p. 364): oriented graph `G_O`, `Succ`; even alternating cycle ⇔ directed cycle.
-  - Algorithm 2 `RemoveEdgesFromG` (p. 365): the removal procedure. Step 2 (BFS from free vertices) vanishes for us: a group has |cells| = |values|, the matching is perfect, no free vertex exists. Only step 3 (SCC) remains. Needs a written proof sketch in our notes.
+  - Algorithm 2 `RemoveEdgesFromG` (p. 365): the removal procedure. Step 2 (BFS from free vertices) vanishes for us: a group has |cells| = |values|, the matching is perfect, no free vertex exists. Only step 3 (SCC) remains. Proof sketch in note `9QXFDL6N` and in the v3 module doc.
   - Algorithm 3 `Diff-Propagation` (p. 365): incremental repair after deletions; relevant only if a persistent variant is pursued later.
   - "vital" edge = candidate in every matching = naked single (observation, verify).
 
 ### 3. Gent, Miguel, Nightingale 2008 — Generalised arc consistency for the AllDifferent constraint: An empirical survey — `MT3I5LYU`
 - I.P. Gent, I. Miguel, P. Nightingale, Artificial Intelligence 172(18), 2008, doi:10.1016/j.artint.2008.10.006 (`doi-resolved`; PDF attached via GUI as `NCST75TX`, born-digital: `get fulltext`, `read --find` and Zotero's index all work)
-- Why: compares implementation choices (matching algorithm, SCC vs. alternatives, incremental SCC, bit-level domains) with measurements. Directly informs the "internal crossover" question (bitset closure at N=9 vs. Tarjan at N=25) and whether incremental is worth it.
-- Need from it: the variants table and which ones won on small domains; any bitset-specific tricks.
+- Why: compares implementation choices (matching algorithm, incremental matching, SCC exploitation, queues) with measurements.
+- Read; note `38KICA95`. Measured only at r = 120..500, nothing at 9–25; the advice targets propagation inside a search tree and does not apply to a one-shot per-group pass. Cited for FF-BFS over Hopcroft–Karp (p. 8, p. 18) and for not materialising the graph (p. 8). No bitset tricks.
 
 ## Sudoku-specific
 
 ### 4. Simonis 2005 — Sudoku as a Constraint Problem — `X7HIV3TG`
 - H. Simonis, CP 2005 Workshop on Modeling and Reformulating CSPs (PDF attached via GUI as `JUAJ8SWF`, born-digital: `get fulltext`, `read --find` and Zotero's index all work)
-- Why: maps human techniques (naked/hidden subsets, X-Wing, …) onto propagation levels (forward checking, bound, hyper-arc). Tells us which of our strategies alldifferent-GAC subsumes and which it does not (nothing crossing groups).
-- Need from it: the technique ↔ consistency-level table; the "GAC on all 27 alldifferents" solve-rate numbers.
+- Why: sudoku as 3n² alldifferents; which propagation level solves puzzles search-free.
+- Read; note `F5I77NW5`. Contains no technique ↔ consistency-level table and never mentions naked/hidden subsets or Hall sets. Gives: each group is a bijection cells ↔ values and channeling is useless under hyper-arc consistency (p. 4); cross-group redundant constraints are what single-group GAC misses (p. 4–5); Table 5 (p. 11) search-free rates, HAC alone 70–100 %, HAC + shaving 100 %.
 
 ## Foundations — cite only, no need to read
 
@@ -66,7 +68,7 @@ Status: `verified` = URL fetched and content checked this session; `doi-resolved
 - Puget 1998 (bound consistency), López-Ortiz et al. 2003 (fast bound consistency): work on interval domains. Sudoku values are unordered symbols; bound/range consistency is meaningless here.
 - Mohr & Masini 1988 GAC4: tuple enumeration, what v1 effectively does. Superseded.
 
-## Open questions for the reading
-- Proof that step 2 of Régin's Algorithm 2 is empty for a group (perfect matching ⇒ no free vertices).
-- Whether Gent et al. measured anything at domain sizes as small as 9–25.
-- Whether an SCC-based "reason" (the sink SCC as the naked set) matches what Simonis calls the naked subset — needed for `Reason::Candidates`.
+## Answered during the reading
+- Step 2 of Régin's Algorithm 2 is empty for a group: |X| = |Y| = N, a matching covering X has N distinct value endpoints and so covers Y; no free vertex. Note `9QXFDL6N`.
+- Gent et al. measured nothing at 9–25 (r = 120..500 only).
+- Simonis has no naked-subset definition, so no mapping to check. Derived instead: a source SCC of the condensation is a naked set, a sink SCC a hidden set, interior SCCs become visible only after the outer sets are applied. Note `9QXFDL6N`, and the v3 module doc in `sudoku-rs/src/solver/strategic/strategies/impls/locked_sets/v3.rs`.

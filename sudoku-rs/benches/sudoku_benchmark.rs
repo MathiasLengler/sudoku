@@ -23,6 +23,7 @@ use sudoku::solver::sat;
 use sudoku::solver::strategic::strategies::locked_sets::bench_cases::bench_cases;
 use sudoku::solver::strategic::strategies::locked_sets::v2::find_locked_set;
 use sudoku::solver::strategic::strategies::locked_sets::v2::test_utils::locked_set_test_cases_base_3;
+use sudoku::solver::strategic::strategies::locked_sets::v3;
 use sudoku::solver::strategic::strategies::{
     GroupIntersectionBoth, HiddenSingles, LockedSets, Strategy,
 };
@@ -363,6 +364,16 @@ fn bench_locked_sets_group<Base: SudokuBase>(group: &mut BenchmarkGroup<WallTime
             &case.candidates_group,
             |b, candidates_group| b.iter(|| find_locked_set(candidates_group)),
         );
+        group.bench_with_input(
+            BenchmarkId::new(format!("v3/{base}"), &case.name),
+            &case.candidates_group,
+            |b, candidates_group| b.iter(|| v3::find_locked_set(candidates_group)),
+        );
+        group.bench_with_input(
+            BenchmarkId::new(format!("v3-all/{base}"), &case.name),
+            &case.candidates_group,
+            |b, candidates_group| b.iter(|| v3::find_locked_sets(candidates_group)),
+        );
 
         if case.v1_feasible {
             group.bench_with_input(
@@ -391,9 +402,14 @@ fn bench_locked_sets_base_3_extras(group: &mut BenchmarkGroup<WallTime>) {
         .find(|(name, _, _)| name.starts_with("Sample "))
         .unwrap();
     group.bench_with_input(
-        BenchmarkId::new("v2/Base3", name),
+        BenchmarkId::new("v2/Base3", &name),
         &candidates_group,
         |b, candidates_group| b.iter(|| find_locked_set(candidates_group)),
+    );
+    group.bench_with_input(
+        BenchmarkId::new("v3/Base3", &name),
+        &candidates_group,
+        |b, candidates_group| b.iter(|| v3::find_locked_set(candidates_group)),
     );
 
     let grid: Grid<Base3> =

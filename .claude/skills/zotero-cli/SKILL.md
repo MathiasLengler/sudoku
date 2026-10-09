@@ -223,16 +223,24 @@ Zotero's reader and index read such text; `get fulltext`, `read` and
 invisible text and the whole-document fallback only fires when every page
 comes back empty (zotero-mcp #611/#629, pdf-inspector #500/#501, open).
 
-- Content: `read ITEM_KEY --start-page N --format image` (needs the
+- Text: the local API serves Zotero's indexed text per attachment:
+  `curl -s "http://localhost:23119/api/users/0/items/ATTACHMENT_KEY/fulltext" | jq -r .content`
+  (OCR quality, no page breaks; fine for prose and anchors).
+- Figures: `read ITEM_KEY --start-page N --format image` (needs the
   `pdf` extra of the pipx package).
 - Search: the local API query above; Zotero's own index has the text.
-- Read once, then write a note on the item with the anchors you need, so
-  later sessions search notes instead of re-reading images.
+- Read once, then write a note on the item (`notes create --item-key KEY
+  --text -`) with the anchors you need, so later sessions search notes
+  instead of re-reading. `search --mode notes` found nothing for such
+  notes; `search WORD --qmode everything` does (note keys come back as
+  items, parent via `get metadata`), and `notes list --item-key KEY` reads
+  them.
 
 ### JSON parsing
 
-- `--format image` prints a PyMuPDF deprecation warning to stdout ahead of
-  the JSON; write the output to a file and strip the leading line before `jq`.
+- `read` with a page range or `--format image` prints a PyMuPDF
+  deprecation warning to stdout ahead of the JSON; strip it before `jq`:
+  `zotero-cli --json read KEY --start-page 4 --end-page 6 | sed '1{/^warning:/d}' | jq -r .data.text`
 - `get metadata` nests the item under `.data.data`, not `.data`.
 
 ## Full command reference

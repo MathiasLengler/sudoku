@@ -6,15 +6,7 @@ use crate::{
 use itertools::Itertools;
 use log::{debug, trace};
 
-// TODO: change API: return deduction
-// => Deduction are currently hard-coded for Position.
-// since this has only knowledge about a single group, it can't refer to grid positions, only group coordinates/indexes.
-// new type: GroupDeduction<Base>
-// Signature:
-// fn find_locked_set<Base: SudokuBase>(
-//     candidates_group: CandidatesGroup<Base>,
-// ) -> Option<GroupDeduction<Base>>
-
+// Superseded by `v3::find_locked_set`, which returns the set itself; kept for benches and tests.
 pub fn find_locked_set<Base: SudokuBase>(
     candidates_group: &CandidatesGroup<Base>,
 ) -> CandidatesGroup<Base> {
