@@ -330,7 +330,12 @@ expression: all_possible_solve_steps
   - strategy: LockedSets
     deductions:
       deductions:
-        - reasons: []
+        - reasons:
+            - position:
+                row: 0
+                column: 1
+              candidates:
+                - 5
           actions:
             - position:
                 row: 0
@@ -338,7 +343,12 @@ expression: all_possible_solve_steps
               deleteCandidates:
                 - 8
                 - 9
-        - reasons: []
+        - reasons:
+            - position:
+                row: 2
+                column: 4
+              candidates:
+                - 9
           actions:
             - position:
                 row: 0
@@ -350,21 +360,51 @@ expression: all_possible_solve_steps
                 column: 3
               deleteCandidates:
                 - 9
-        - reasons: []
+            - position:
+                row: 2
+                column: 0
+              deleteCandidates:
+                - 9
+            - position:
+                row: 2
+                column: 6
+              deleteCandidates:
+                - 9
+            - position:
+                row: 8
+                column: 4
+              deleteCandidates:
+                - 9
+        - reasons:
+            - position:
+                row: 0
+                column: 6
+              candidates:
+                - 1
           actions:
             - position:
                 row: 0
                 column: 6
               deleteCandidates:
                 - 9
-        - reasons: []
+        - reasons:
+            - position:
+                row: 1
+                column: 3
+              candidates:
+                - 2
           actions:
             - position:
                 row: 1
                 column: 3
               deleteCandidates:
                 - 9
-        - reasons: []
+        - reasons:
+            - position:
+                row: 2
+                column: 8
+              candidates:
+                - 2
           actions:
             - position:
                 row: 1
@@ -381,14 +421,12 @@ expression: all_possible_solve_steps
                 column: 6
               deleteCandidates:
                 - 2
-        - reasons: []
-          actions:
+        - reasons:
             - position:
                 row: 1
                 column: 8
-              deleteCandidates:
-                - 2
-        - reasons: []
+              candidates:
+                - 4
           actions:
             - position:
                 row: 1
@@ -396,63 +434,56 @@ expression: all_possible_solve_steps
               deleteCandidates:
                 - 2
                 - 8
-        - reasons: []
+        - reasons:
+            - position:
+                row: 5
+                column: 2
+              candidates:
+                - 3
           actions:
             - position:
-                row: 2
+                row: 3
+                column: 1
+              deleteCandidates:
+                - 3
+            - position:
+                row: 3
+                column: 2
+              deleteCandidates:
+                - 3
+            - position:
+                row: 4
                 column: 0
               deleteCandidates:
-                - 9
+                - 3
             - position:
-                row: 2
+                row: 4
+                column: 1
+              deleteCandidates:
+                - 3
+            - position:
+                row: 5
+                column: 0
+              deleteCandidates:
+                - 3
+            - position:
+                row: 5
+                column: 1
+              deleteCandidates:
+                - 3
+            - position:
+                row: 5
+                column: 5
+              deleteCandidates:
+                - 3
+            - position:
+                row: 5
                 column: 6
               deleteCandidates:
-                - 9
-        - reasons: []
-          actions:
-            - position:
-                row: 3
-                column: 1
-              deleteCandidates:
-                - 3
-            - position:
-                row: 3
-                column: 2
-              deleteCandidates:
-                - 3
-            - position:
-                row: 4
-                column: 0
-              deleteCandidates:
-                - 3
-            - position:
-                row: 4
-                column: 1
-              deleteCandidates:
                 - 3
             - position:
                 row: 5
-                column: 0
-              deleteCandidates:
-                - 3
-            - position:
-                row: 5
-                column: 1
-              deleteCandidates:
-                - 3
-        - reasons: []
-          actions:
-            - position:
-                row: 3
-                column: 1
-              deleteCandidates:
-                - 3
-                - 6
-        - reasons: []
-          actions:
-            - position:
-                row: 3
-                column: 2
+                column: 7
               deleteCandidates:
                 - 3
             - position:
@@ -460,7 +491,25 @@ expression: all_possible_solve_steps
                 column: 2
               deleteCandidates:
                 - 3
-        - reasons: []
+        - reasons:
+            - position:
+                row: 3
+                column: 1
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 3
+                column: 1
+              deleteCandidates:
+                - 3
+                - 6
+        - reasons:
+            - position:
+                row: 8
+                column: 5
+              candidates:
+                - 6
           actions:
             - position:
                 row: 3
@@ -472,85 +521,6 @@ expression: all_possible_solve_steps
                 column: 5
               deleteCandidates:
                 - 6
-        - reasons: []
-          actions:
-            - position:
-                row: 3
-                column: 6
-              deleteCandidates:
-                - 3
-            - position:
-                row: 5
-                column: 6
-              deleteCandidates:
-                - 3
-            - position:
-                row: 5
-                column: 7
-              deleteCandidates:
-                - 3
-        - reasons: []
-          actions:
-            - position:
-                row: 4
-                column: 0
-              deleteCandidates:
-                - 3
-            - position:
-                row: 4
-                column: 1
-              deleteCandidates:
-                - 3
-        - reasons: []
-          actions:
-            - position:
-                row: 4
-                column: 3
-              deleteCandidates:
-                - 7
-        - reasons: []
-          actions:
-            - position:
-                row: 5
-                column: 0
-              deleteCandidates:
-                - 3
-            - position:
-                row: 5
-                column: 1
-              deleteCandidates:
-                - 3
-            - position:
-                row: 5
-                column: 5
-              deleteCandidates:
-                - 3
-            - position:
-                row: 5
-                column: 6
-              deleteCandidates:
-                - 3
-            - position:
-                row: 5
-                column: 7
-              deleteCandidates:
-                - 3
-        - reasons: []
-          actions:
-            - position:
-                row: 5
-                column: 7
-              deleteCandidates:
-                - 3
-        - reasons: []
-          actions:
-            - position:
-                row: 6
-                column: 0
-              deleteCandidates:
-                - 3
-        - reasons: []
-          actions:
             - position:
                 row: 6
                 column: 3
@@ -561,14 +531,104 @@ expression: all_possible_solve_steps
                 column: 3
               deleteCandidates:
                 - 6
-        - reasons: []
+            - position:
+                row: 8
+                column: 6
+              deleteCandidates:
+                - 6
+        - reasons:
+            - position:
+                row: 4
+                column: 7
+              candidates:
+                - 3
+          actions:
+            - position:
+                row: 3
+                column: 6
+              deleteCandidates:
+                - 3
+            - position:
+                row: 4
+                column: 0
+              deleteCandidates:
+                - 3
+            - position:
+                row: 4
+                column: 1
+              deleteCandidates:
+                - 3
+            - position:
+                row: 5
+                column: 6
+              deleteCandidates:
+                - 3
+            - position:
+                row: 5
+                column: 7
+              deleteCandidates:
+                - 3
+        - reasons:
+            - position:
+                row: 4
+                column: 3
+              candidates:
+                - 5
+          actions:
+            - position:
+                row: 4
+                column: 3
+              deleteCandidates:
+                - 7
+        - reasons:
+            - position:
+                row: 6
+                column: 0
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 6
+                column: 0
+              deleteCandidates:
+                - 3
+        - reasons:
+            - position:
+                row: 6
+                column: 8
+              candidates:
+                - 7
           actions:
             - position:
                 row: 6
                 column: 3
               deleteCandidates:
                 - 7
-        - reasons: []
+            - position:
+                row: 7
+                column: 6
+              deleteCandidates:
+                - 7
+        - reasons:
+            - position:
+                row: 6
+                column: 0
+              candidates:
+                - 1
+                - 3
+            - position:
+                row: 6
+                column: 1
+              candidates:
+                - 1
+                - 3
+                - 5
+            - position:
+                row: 6
+                column: 2
+              candidates:
+                - 3
+                - 5
           actions:
             - position:
                 row: 7
@@ -580,32 +640,6 @@ expression: all_possible_solve_steps
                 column: 2
               deleteCandidates:
                 - 5
-        - reasons: []
-          actions:
-            - position:
-                row: 7
-                column: 6
-              deleteCandidates:
-                - 7
-        - reasons: []
-          actions:
-            - position:
-                row: 8
-                column: 3
-              deleteCandidates:
-                - 6
-            - position:
-                row: 8
-                column: 6
-              deleteCandidates:
-                - 6
-        - reasons: []
-          actions:
-            - position:
-                row: 8
-                column: 4
-              deleteCandidates:
-                - 9
   - strategy: GroupIntersectionBoth
     deductions:
       deductions:
@@ -1206,14 +1240,12 @@ expression: all_possible_solve_steps
   - strategy: LockedSets
     deductions:
       deductions:
-        - reasons: []
-          actions:
+        - reasons:
             - position:
-                row: 0
+                row: 5
                 column: 5
-              deleteCandidates:
+              candidates:
                 - 7
-        - reasons: []
           actions:
             - position:
                 row: 0
@@ -1222,7 +1254,32 @@ expression: all_possible_solve_steps
                 - 7
             - position:
                 row: 3
+                column: 3
+              deleteCandidates:
+                - 7
+            - position:
+                row: 3
+                column: 4
+              deleteCandidates:
+                - 7
+            - position:
+                row: 3
                 column: 5
+              deleteCandidates:
+                - 7
+            - position:
+                row: 4
+                column: 3
+              deleteCandidates:
+                - 7
+            - position:
+                row: 5
+                column: 0
+              deleteCandidates:
+                - 7
+            - position:
+                row: 5
+                column: 6
               deleteCandidates:
                 - 7
             - position:
@@ -1230,21 +1287,58 @@ expression: all_possible_solve_steps
                 column: 5
               deleteCandidates:
                 - 7
-        - reasons: []
+        - reasons:
+            - position:
+                row: 0
+                column: 3
+              candidates:
+                - 7
+          actions:
+            - position:
+                row: 0
+                column: 5
+              deleteCandidates:
+                - 7
+            - position:
+                row: 3
+                column: 3
+              deleteCandidates:
+                - 7
+            - position:
+                row: 4
+                column: 3
+              deleteCandidates:
+                - 7
+        - reasons:
+            - position:
+                row: 0
+                column: 6
+              candidates:
+                - 1
           actions:
             - position:
                 row: 0
                 column: 6
               deleteCandidates:
                 - 9
-        - reasons: []
+        - reasons:
+            - position:
+                row: 5
+                column: 7
+              candidates:
+                - 8
           actions:
             - position:
                 row: 0
                 column: 7
               deleteCandidates:
                 - 8
-        - reasons: []
+        - reasons:
+            - position:
+                row: 2
+                column: 0
+              candidates:
+                - 3
           actions:
             - position:
                 row: 1
@@ -1256,11 +1350,9 @@ expression: all_possible_solve_steps
                 column: 1
               deleteCandidates:
                 - 3
-        - reasons: []
-          actions:
             - position:
-                row: 1
-                column: 0
+                row: 2
+                column: 6
               deleteCandidates:
                 - 3
             - position:
@@ -1268,38 +1360,24 @@ expression: all_possible_solve_steps
                 column: 0
               deleteCandidates:
                 - 3
-        - reasons: []
+        - reasons:
+            - position:
+                row: 1
+                column: 8
+              candidates:
+                - 4
           actions:
             - position:
                 row: 1
                 column: 8
               deleteCandidates:
                 - 8
-        - reasons: []
-          actions:
+        - reasons:
             - position:
-                row: 2
+                row: 3
                 column: 6
-              deleteCandidates:
-                - 3
-        - reasons: []
-          actions:
-            - position:
-                row: 3
-                column: 3
-              deleteCandidates:
+              candidates:
                 - 7
-            - position:
-                row: 3
-                column: 4
-              deleteCandidates:
-                - 7
-            - position:
-                row: 3
-                column: 5
-              deleteCandidates:
-                - 7
-        - reasons: []
           actions:
             - position:
                 row: 3
@@ -1317,56 +1395,33 @@ expression: all_possible_solve_steps
               deleteCandidates:
                 - 7
             - position:
-                row: 4
-                column: 3
+                row: 5
+                column: 6
               deleteCandidates:
                 - 7
-        - reasons: []
-          actions:
-            - position:
-                row: 3
-                column: 3
-              deleteCandidates:
-                - 7
+        - reasons:
             - position:
                 row: 4
-                column: 3
-              deleteCandidates:
+                column: 0
+              candidates:
                 - 7
-        - reasons: []
           actions:
             - position:
                 row: 4
                 column: 3
               deleteCandidates:
                 - 7
-        - reasons: []
-          actions:
             - position:
                 row: 5
                 column: 0
               deleteCandidates:
                 - 7
-        - reasons: []
-          actions:
+        - reasons:
             - position:
-                row: 5
-                column: 0
-              deleteCandidates:
-                - 7
-            - position:
-                row: 5
-                column: 6
-              deleteCandidates:
-                - 7
-        - reasons: []
-          actions:
-            - position:
-                row: 5
-                column: 6
-              deleteCandidates:
-                - 7
-        - reasons: []
+                row: 6
+                column: 2
+              candidates:
+                - 5
           actions:
             - position:
                 row: 6
@@ -1376,13 +1431,6 @@ expression: all_possible_solve_steps
             - position:
                 row: 6
                 column: 3
-              deleteCandidates:
-                - 5
-        - reasons: []
-          actions:
-            - position:
-                row: 6
-                column: 1
               deleteCandidates:
                 - 5
             - position:
@@ -1390,41 +1438,71 @@ expression: all_possible_solve_steps
                 column: 2
               deleteCandidates:
                 - 5
-        - reasons: []
+        - reasons:
+            - position:
+                row: 4
+                column: 1
+              candidates:
+                - 2
           actions:
             - position:
                 row: 7
                 column: 1
               deleteCandidates:
                 - 2
-        - reasons: []
+        - reasons:
+            - position:
+                row: 7
+                column: 6
+              candidates:
+                - 2
+          actions:
+            - position:
+                row: 7
+                column: 1
+              deleteCandidates:
+                - 2
+            - position:
+                row: 8
+                column: 6
+              deleteCandidates:
+                - 2
+        - reasons:
+            - position:
+                row: 7
+                column: 5
+              candidates:
+                - 1
           actions:
             - position:
                 row: 7
                 column: 5
               deleteCandidates:
                 - 7
-        - reasons: []
+        - reasons:
+            - position:
+                row: 3
+                column: 2
+              candidates:
+                - 4
           actions:
             - position:
                 row: 8
                 column: 2
               deleteCandidates:
                 - 4
-        - reasons: []
+        - reasons:
+            - position:
+                row: 8
+                column: 4
+              candidates:
+                - 5
           actions:
             - position:
                 row: 8
                 column: 4
               deleteCandidates:
                 - 8
-        - reasons: []
-          actions:
-            - position:
-                row: 8
-                column: 6
-              deleteCandidates:
-                - 2
   - strategy: GroupIntersectionBoth
     deductions:
       deductions:
@@ -1884,7 +1962,12 @@ expression: all_possible_solve_steps
   - strategy: LockedSets
     deductions:
       deductions:
-        - reasons: []
+        - reasons:
+            - position:
+                row: 0
+                column: 1
+              candidates:
+                - 5
           actions:
             - position:
                 row: 0
@@ -1892,7 +1975,12 @@ expression: all_possible_solve_steps
               deleteCandidates:
                 - 8
                 - 9
-        - reasons: []
+        - reasons:
+            - position:
+                row: 0
+                column: 7
+              candidates:
+                - 9
           actions:
             - position:
                 row: 0
@@ -1904,76 +1992,91 @@ expression: all_possible_solve_steps
                 column: 6
               deleteCandidates:
                 - 9
-        - reasons: []
+            - position:
+                row: 6
+                column: 7
+              deleteCandidates:
+                - 9
+        - reasons:
+            - position:
+                row: 8
+                column: 6
+              candidates:
+                - 9
+          actions:
+            - position:
+                row: 0
+                column: 6
+              deleteCandidates:
+                - 9
+            - position:
+                row: 1
+                column: 6
+              deleteCandidates:
+                - 9
+            - position:
+                row: 6
+                column: 7
+              deleteCandidates:
+                - 9
+            - position:
+                row: 8
+                column: 3
+              deleteCandidates:
+                - 9
+        - reasons:
+            - position:
+                row: 0
+                column: 5
+              candidates:
+                - 4
           actions:
             - position:
                 row: 0
                 column: 8
               deleteCandidates:
                 - 4
-        - reasons: []
+        - reasons:
+            - position:
+                row: 5
+                column: 0
+              candidates:
+                - 9
           actions:
             - position:
                 row: 1
                 column: 0
               deleteCandidates:
                 - 9
-        - reasons: []
+            - position:
+                row: 5
+                column: 1
+              deleteCandidates:
+                - 9
+        - reasons:
+            - position:
+                row: 1
+                column: 6
+              candidates:
+                - 3
           actions:
             - position:
                 row: 1
                 column: 6
               deleteCandidates:
                 - 9
-        - reasons: []
+        - reasons:
+            - position:
+                row: 3
+                column: 4
+              candidates:
+                - 8
           actions:
             - position:
                 row: 3
                 column: 3
               deleteCandidates:
                 - 8
-        - reasons: []
-          actions:
-            - position:
-                row: 5
-                column: 1
-              deleteCandidates:
-                - 9
-        - reasons: []
-          actions:
-            - position:
-                row: 6
-                column: 1
-              deleteCandidates:
-                - 1
-        - reasons: []
-          actions:
-            - position:
-                row: 6
-                column: 1
-              deleteCandidates:
-                - 1
-            - position:
-                row: 7
-                column: 1
-              deleteCandidates:
-                - 1
-        - reasons: []
-          actions:
-            - position:
-                row: 6
-                column: 7
-              deleteCandidates:
-                - 9
-        - reasons: []
-          actions:
-            - position:
-                row: 7
-                column: 1
-              deleteCandidates:
-                - 1
-        - reasons: []
-          actions:
             - position:
                 row: 7
                 column: 4
@@ -1984,14 +2087,53 @@ expression: all_possible_solve_steps
                 column: 4
               deleteCandidates:
                 - 8
-        - reasons: []
+        - reasons:
+            - position:
+                row: 6
+                column: 0
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 6
+                column: 1
+              deleteCandidates:
+                - 1
+            - position:
+                row: 7
+                column: 1
+              deleteCandidates:
+                - 1
+        - reasons:
+            - position:
+                row: 7
+                column: 5
+              candidates:
+                - 1
+          actions:
+            - position:
+                row: 7
+                column: 1
+              deleteCandidates:
+                - 1
+        - reasons:
+            - position:
+                row: 4
+                column: 3
+              candidates:
+                - 5
           actions:
             - position:
                 row: 8
                 column: 3
               deleteCandidates:
                 - 5
-        - reasons: []
+        - reasons:
+            - position:
+                row: 6
+                column: 3
+              candidates:
+                - 9
           actions:
             - position:
                 row: 8
@@ -2324,27 +2466,18 @@ expression: all_possible_solve_steps
   - strategy: LockedSets
     deductions:
       deductions:
-        - reasons: []
-          actions:
-            - position:
-                row: 0
-                column: 1
-              deleteCandidates:
-                - 8
-        - reasons: []
-          actions:
-            - position:
-                row: 0
-                column: 1
-              deleteCandidates:
-                - 8
+        - reasons:
             - position:
                 row: 1
+                column: 0
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 0
                 column: 1
               deleteCandidates:
                 - 8
-        - reasons: []
-          actions:
             - position:
                 row: 1
                 column: 1
@@ -2355,21 +2488,70 @@ expression: all_possible_solve_steps
                 column: 8
               deleteCandidates:
                 - 8
-        - reasons: []
+            - position:
+                row: 8
+                column: 0
+              deleteCandidates:
+                - 8
+        - reasons:
+            - position:
+                row: 0
+                column: 8
+              candidates:
+                - 8
           actions:
+            - position:
+                row: 0
+                column: 1
+              deleteCandidates:
+                - 8
             - position:
                 row: 1
                 column: 8
               deleteCandidates:
                 - 8
-        - reasons: []
+        - reasons:
+            - position:
+                row: 3
+                column: 3
+              candidates:
+                - 6
           actions:
             - position:
                 row: 3
                 column: 1
               deleteCandidates:
                 - 6
-        - reasons: []
+        - reasons:
+            - position:
+                row: 5
+                column: 1
+              candidates:
+                - 6
+          actions:
+            - position:
+                row: 3
+                column: 1
+              deleteCandidates:
+                - 6
+        - reasons:
+            - position:
+                row: 7
+                column: 1
+              candidates:
+                - 8
+          actions:
+            - position:
+                row: 8
+                column: 0
+              deleteCandidates:
+                - 8
+        - reasons:
+            - position:
+                row: 8
+                column: 3
+              candidates:
+                - 8
           actions:
             - position:
                 row: 8

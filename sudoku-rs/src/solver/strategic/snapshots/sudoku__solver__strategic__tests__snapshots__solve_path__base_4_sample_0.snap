@@ -160,7 +160,19 @@ expression: solve_steps
 - strategy: LockedSets
   deductions:
     deductions:
-      - reasons: []
+      - reasons:
+          - position:
+              row: 4
+              column: 12
+            candidates:
+              - 4
+              - 7
+          - position:
+              row: 5
+              column: 12
+            candidates:
+              - 4
+              - 7
         actions:
           - position:
               row: 4

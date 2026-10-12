@@ -77,15 +77,18 @@ expression: all_possible_solve_steps
   - strategy: LockedSets
     deductions:
       deductions:
-        - reasons: []
+        - reasons:
+            - position:
+                row: 0
+                column: 3
+              candidates:
+                - 3
           actions:
             - position:
                 row: 0
                 column: 1
               deleteCandidates:
                 - 3
-        - reasons: []
-          actions:
             - position:
                 row: 1
                 column: 2
@@ -96,7 +99,17 @@ expression: all_possible_solve_steps
                 column: 3
               deleteCandidates:
                 - 3
-        - reasons: []
+            - position:
+                row: 2
+                column: 3
+              deleteCandidates:
+                - 3
+        - reasons:
+            - position:
+                row: 3
+                column: 2
+              candidates:
+                - 3
           actions:
             - position:
                 row: 1
@@ -108,32 +121,11 @@ expression: all_possible_solve_steps
                 column: 2
               deleteCandidates:
                 - 3
-        - reasons: []
-          actions:
-            - position:
-                row: 1
-                column: 3
-              deleteCandidates:
-                - 3
             - position:
                 row: 2
                 column: 3
               deleteCandidates:
                 - 3
-        - reasons: []
-          actions:
-            - position:
-                row: 2
-                column: 2
-              deleteCandidates:
-                - 3
-            - position:
-                row: 2
-                column: 3
-              deleteCandidates:
-                - 3
-        - reasons: []
-          actions:
             - position:
                 row: 3
                 column: 0
@@ -236,7 +228,12 @@ expression: all_possible_solve_steps
   - strategy: LockedSets
     deductions:
       deductions:
-        - reasons: []
+        - reasons:
+            - position:
+                row: 0
+                column: 1
+              candidates:
+                - 2
           actions:
             - position:
                 row: 1
@@ -248,7 +245,17 @@ expression: all_possible_solve_steps
                 column: 1
               deleteCandidates:
                 - 2
-        - reasons: []
+            - position:
+                row: 2
+                column: 1
+              deleteCandidates:
+                - 2
+        - reasons:
+            - position:
+                row: 3
+                column: 0
+              candidates:
+                - 4
           actions:
             - position:
                 row: 1
@@ -260,39 +267,40 @@ expression: all_possible_solve_steps
                 column: 0
               deleteCandidates:
                 - 4
-        - reasons: []
-          actions:
-            - position:
-                row: 1
-                column: 1
-              deleteCandidates:
-                - 2
             - position:
                 row: 2
                 column: 1
               deleteCandidates:
-                - 2
-        - reasons: []
+                - 4
+        - reasons:
+            - position:
+                row: 1
+                column: 3
+              candidates:
+                - 1
           actions:
             - position:
                 row: 1
                 column: 2
               deleteCandidates:
                 - 1
-        - reasons: []
-          actions:
             - position:
                 row: 2
-                column: 0
+                column: 3
               deleteCandidates:
-                - 4
+                - 1
+        - reasons:
             - position:
                 row: 2
-                column: 1
-              deleteCandidates:
-                - 4
-        - reasons: []
+                column: 2
+              candidates:
+                - 1
           actions:
+            - position:
+                row: 1
+                column: 2
+              deleteCandidates:
+                - 1
             - position:
                 row: 2
                 column: 3
@@ -395,15 +403,35 @@ expression: all_possible_solve_steps
   - strategy: LockedSets
     deductions:
       deductions:
-        - reasons: []
+        - reasons:
+            - position:
+                row: 1
+                column: 0
+              candidates:
+                - 3
           actions:
             - position:
                 row: 1
                 column: 1
               deleteCandidates:
                 - 3
-        - reasons: []
+            - position:
+                row: 2
+                column: 0
+              deleteCandidates:
+                - 3
+        - reasons:
+            - position:
+                row: 2
+                column: 1
+              candidates:
+                - 3
           actions:
+            - position:
+                row: 1
+                column: 1
+              deleteCandidates:
+                - 3
             - position:
                 row: 2
                 column: 0
