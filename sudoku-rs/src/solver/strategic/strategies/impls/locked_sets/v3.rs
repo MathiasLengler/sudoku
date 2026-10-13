@@ -20,6 +20,8 @@
 //!
 //! References: van Hoeve 2001 §6 (survey, arXiv cs/0105015); Régin 1994 (AAAI-94).
 
+mod closure;
+
 use anyhow::bail;
 
 use crate::base::SudokuBase;

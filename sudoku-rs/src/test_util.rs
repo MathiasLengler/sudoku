@@ -115,3 +115,22 @@ pub(crate) use test_all_sample_grids;
 pub(crate) use test_max_base3;
 pub(crate) use test_max_base4;
 pub(crate) use test_max_base5;
+
+/// Every SIMD level this machine supports, to cover each `dispatch!` arm.
+pub(crate) fn simd_levels() -> Vec<fearless_simd::Level> {
+    use fearless_simd::Simd;
+
+    let level = fearless_simd::Level::new();
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    return [
+        level.as_sse2().map(Simd::level),
+        level.as_sse4_2().map(Simd::level),
+        level.as_avx2().map(Simd::level),
+        level.as_avx512().map(Simd::level),
+    ]
+    .into_iter()
+    .flatten()
+    .collect();
+    #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+    vec![level]
+}
