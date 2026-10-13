@@ -235,6 +235,8 @@ impl<Base: SudokuBase, T: Send + Sync + Copy + Clone + Debug> TryFrom<Vec<T>> fo
     }
 }
 
+pub mod simd;
+
 #[cfg(test)]
 mod tests {
     use crate::{base::consts::*, cell::Value};
